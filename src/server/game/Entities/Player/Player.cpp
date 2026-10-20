@@ -25190,12 +25190,27 @@ Player* Player::GetSelectedPlayer() const
     return nullptr;
 }
 
+// The combo target can leave the map without telling us (despawn, map change); then the pointer dangles
+Unit* Player::GetValidComboTarget()
+{
+    if (!m_comboTarget)
+        return nullptr;
+    if (ObjectAccessor::GetUnit(*this, m_comboTargetGuid) != m_comboTarget)
+    {
+        m_comboTarget = nullptr;
+        m_comboTargetGuid.Clear();
+        m_comboPoints = 0;
+        return nullptr;
+    }
+    return m_comboTarget;
+}
+
 void Player::SendComboPoints()
 {
-    if (m_comboTarget)
+    if (GetValidComboTarget())
     {
         WorldPacket data;
-        ObjectGuid guid = m_comboTarget->GetGUID();
+        ObjectGuid guid = m_comboTargetGuid;
         if (m_mover != this)
         {
             ObjectGuid mover = m_mover->GetGUID();
@@ -25269,12 +25284,13 @@ void Player::AddComboPoints(Unit* target, int8 count, Spell* spell)
 
     if (target && target != m_comboTarget)
     {
-        if (m_comboTarget)
+        if (GetValidComboTarget())
         {
             m_comboTarget->RemoveComboPointHolder(GetGUID());
         }
 
         m_comboTarget = target;
+        m_comboTargetGuid = target->GetGUID();
         m_comboPoints = count;
         target->AddComboPointHolder(GetGUID());
     }
@@ -25288,7 +25304,7 @@ void Player::AddComboPoints(Unit* target, int8 count, Spell* spell)
 
 void Player::ClearComboPoints()
 {
-    if (!m_comboTarget || (m_comboTarget && m_comboTarget->GetGUID().IsEmpty()))
+    if (!GetValidComboTarget() || m_comboTargetGuid.IsEmpty())
         return;
 
     // without combopoints lost (duration checked in aura)
@@ -25298,6 +25314,7 @@ void Player::ClearComboPoints()
     SendComboPoints();
     m_comboTarget->RemoveComboPointHolder(GetGUID());
     m_comboTarget = nullptr;
+    m_comboTargetGuid.Clear();
 }
 
 bool Player::IsInGroup(ObjectGuid groupGuid) const
