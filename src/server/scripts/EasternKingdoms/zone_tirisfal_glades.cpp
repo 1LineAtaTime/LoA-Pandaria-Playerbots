@@ -20,6 +20,7 @@
 #include "Object.h"
 #include "Player.h"
 #include "Random.h"
+#include "TemporarySummon.h"
 
 enum TirisfalGlades
 {
@@ -217,6 +218,9 @@ enum TirisfalGlades
     NPC_DELIVERED_MURLOC_CREDIT             = 38887,
 
     QUEST_EVER_SO_LONELY                    = 24974,
+
+    NPC_DARNELL_RECRUITMENT                 = 49337,
+    POINT_SCARLET_CORPSE                    = 49340,
 
     TEXT_CAPTURE_READY                      = 0,
 
@@ -1506,6 +1510,83 @@ class spell_murloc_leash : public SpellScript
     }
 };
 
+// 91938 - Summon Darnell
+class spell_summon_darnell : public AuraScript
+{
+    PrepareAuraScript(spell_summon_darnell);
+
+    // Darnell only accompanies the player while this aura is up. It is not saved: spell_area casts it again
+    // (summoning Darnell) on login or area change while Beyond the Graves or Recruitment is in the quest log,
+    // and removes it on an area change once the quest is no longer there.
+    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        if (Creature* darnell = ObjectAccessor::GetCreature(*target, target->m_SummonSlot[SUMMON_SLOT_QUEST]))
+            if (darnell->GetEntry() == TirisfalGlades::NPC_DARNELL_RECRUITMENT)
+                if (TempSummon* summon = darnell->ToTempSummon())
+                    summon->UnSummon();
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_summon_darnell::HandleRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 91942 - Select Scarlet Corpse
+class spell_select_scarlet_corpse : public SpellScript
+{
+    PrepareSpellScript(spell_select_scarlet_corpse);
+
+    // The player points at the clicked corpse and sends their Darnell to it; the corpse's
+    // SmartAI picks itself up once Darnell is close (it also checks this spell's aura).
+    void HandleScript(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* corpse = GetHitUnit();
+        if (!player || !corpse)
+            return;
+
+        player->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
+
+        if (Creature* darnell = ObjectAccessor::GetCreature(*player, player->m_SummonSlot[SUMMON_SLOT_QUEST]))
+            if (darnell->GetEntry() == TirisfalGlades::NPC_DARNELL_RECRUITMENT)
+                darnell->GetMotionMaster()->MovePoint(TirisfalGlades::POINT_SCARLET_CORPSE, corpse->GetPositionX(), corpse->GetPositionY(), corpse->GetPositionZ());
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_select_scarlet_corpse::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+// 91945 - Reverse Cast Ride Vehicle
+class spell_reverse_cast_ride_vehicle_darnell : public SpellScript
+{
+    PrepareSpellScript(spell_reverse_cast_ride_vehicle_darnell);
+
+    // Darnell casts this on a Scarlet Corpse he reached, and the corpse casts Ride Vehicle (46598) back on him: his vehicle
+    // has a seat for each of the 6 corpses. Darnell is a personal summon, and spells cannot target another unit's private
+    // objects, so the corpse shares his owner while it casts.
+    void HandleScript(SpellEffIndex effIndex)
+    {
+        Unit* darnell = GetCaster();
+        Unit* corpse = GetHitUnit();
+        if (!corpse)
+            return;
+
+        ObjectGuid const previousOwner = corpse->GetPrivateObjectOwner();
+        corpse->SetPrivateObjectOwner(darnell->GetPrivateObjectOwner());
+        corpse->CastSpell(darnell, uint32(GetSpellInfo()->Effects[effIndex].BasePoints), true);
+        corpse->SetPrivateObjectOwner(previousOwner);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_reverse_cast_ride_vehicle_darnell::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
 struct npc_captured_vile_fin_puddlejumper : public ScriptedAI
 {
     npc_captured_vile_fin_puddlejumper(Creature* creature) : ScriptedAI(creature) { }
@@ -1629,6 +1710,9 @@ void AddSC_tirisfal_glades()
     new creature_script<npc_vile_fin_puddlejumper>("npc_vile_fin_puddlejumper");
     new creature_script<npc_vile_fin_minor_oracle>("npc_vile_fin_minor_oracle");
     new spell_script<spell_murloc_leash>("spell_murloc_leash");
+    new aura_script<spell_summon_darnell>("spell_summon_darnell");
+    new spell_script<spell_select_scarlet_corpse>("spell_select_scarlet_corpse");
+    new spell_script<spell_reverse_cast_ride_vehicle_darnell>("spell_reverse_cast_ride_vehicle_darnell");
     new creature_script<npc_captured_vile_fin_puddlejumper>("npc_captured_vile_fin_puddlejumper");
     new creature_script<npc_captured_vile_fin_minor_oracle>("npc_captured_vile_fin_minor_oracle");
     new creature_script<npc_sedrick_calston>("npc_sedrick_calston");
