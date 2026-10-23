@@ -39,6 +39,13 @@ enum BattlefieldIDs
     BATTLEFIELD_BATTLEID_TB                      = 21 // Wintergrasp battle
 };
 
+enum BattlefieldState : int8
+{
+    BATTLEFIELD_INACTIVE    = 0,
+    BATTLEFIELD_WARMUP      = 1,
+    BATTLEFIELD_IN_PROGRESS = 2
+};
+
 enum BattlefieldObjectiveStates
 {
     BF_CAPTUREPOINT_OBJECTIVESTATE_NEUTRAL = 0,
@@ -90,6 +97,10 @@ class BfCapturePoint
         // Send kill notify to players in the controlling faction
         void SendObjectiveComplete(uint32 id, ObjectGuid guid);
 
+        bool DelCapturePoint();
+
+        BattlefieldObjectiveStates GetObjectiveState() const { return m_State; }
+
         // Used when player is activated/inactivated in the area
         virtual bool HandlePlayerEnter(Player* player);
         virtual GuidSet::iterator HandlePlayerLeave(Player* player);
@@ -109,8 +120,6 @@ class BfCapturePoint
 
         TeamId GetTeamId() { return m_team; }
     protected:
-        bool DelCapturePoint();
-
         // active Players in the area of the objective, 0 - alliance, 1 - horde
         GuidSet m_activePlayers[2];
 
@@ -236,6 +245,8 @@ class Battlefield : public ZoneScript
         /// Return true if battle is start, false if battle is not started
         bool IsWarTime() { return m_isActive; }
 
+        int8 GetState() const { return m_isActive ? BattlefieldState::BATTLEFIELD_IN_PROGRESS : (m_Timer <= m_StartGroupingTimer ? BattlefieldState::BATTLEFIELD_WARMUP : BattlefieldState::BATTLEFIELD_INACTIVE); }
+
         /// Enable or Disable battlefield
         void ToggleBattlefield(bool enable) { m_IsEnabled = enable; }
         /// Return if battlefield is enable
@@ -312,7 +323,10 @@ class Battlefield : public ZoneScript
         /// Called when a player enter in battlefield zone
         virtual void OnPlayerEnterZone(Player* /*player*/) { }
 
+        WorldPacket BuildWarningAnnPacket(std::string const& msg);
         void SendWarningToAllInZone(uint32 entry);
+        /// Send creature_text group `id` of the battlefield stalker (TrinityCore style)
+        void SendWarning(uint8 id, WorldObject const* target = nullptr);
         //void SendWarningToAllInWar(int32 entry, ...); -- UNUSED
         void SendWarningToPlayer(Player* player, uint32 entry);
 

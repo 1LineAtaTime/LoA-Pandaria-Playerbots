@@ -22,6 +22,8 @@
 #include "DynamicObject.h"
 #include "GameObject.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "Item.h"
 #include "Map.h"
 #include "MapInstanced.h"
 #include "MapManager.h"
@@ -54,7 +56,10 @@ void HashMapHolder<T>::Remove(T* o)
 {
     std::unique_lock<std::shared_mutex> lock(*GetLock());
 
-    GetContainer().erase(o->GetGUID());
+    // #181: a stale object must not remove the live entry registered under the same GUID
+    auto itr = GetContainer().find(o->GetGUID());
+    if (itr != GetContainer().end() && itr->second == o)
+        GetContainer().erase(itr);
 }
 
 template<class T>
@@ -100,7 +105,9 @@ namespace PlayerNameMapHolder
 
     void Remove(Player* p)
     {
-        PlayerNameMap.erase(p->GetName());
+        auto itr = PlayerNameMap.find(p->GetName());
+        if (itr != PlayerNameMap.end() && itr->second == p)
+            PlayerNameMap.erase(itr);
     }
 
     Player* Find(std::string const& name)

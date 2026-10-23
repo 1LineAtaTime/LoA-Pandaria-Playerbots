@@ -23,6 +23,9 @@
 #define __WORLDSESSION_H
 
 #include <atomic>
+#include <memory>
+#include <map>
+#include <utility>
 #include "AllPackets.h"
 #include "Common.h"
 #include "SharedDefines.h"
@@ -35,6 +38,7 @@
 #include "Object.h"
 #include "AsyncCallbackProcessor.h"
 #include "DatabaseEnvFwd.h"
+#include <boost/circular_buffer.hpp>
 
 class BigNumber;
 class AccountAchievementMgr;
@@ -48,6 +52,7 @@ class Item;
 class LoginQueryHolder;
 class Object;
 class Player;
+class GameClient;
 class Quest;
 class SpellCastTargets;
 class Unit;
@@ -278,7 +283,7 @@ struct MuteInfo
 class TC_GAME_API WorldSession 
 {
     public:
-        WorldSession(uint32 id, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, uint32 flags, bool isARecruiter, bool hasBoost, bool isBot = false);
+        WorldSession(uint32 id, std::string const& accountName, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, uint32 flags, bool isARecruiter, bool hasBoost, bool isBot = false);
         ~WorldSession();
 
         bool PlayerLoading() const { return m_playerLoading; }
@@ -316,7 +321,9 @@ class TC_GAME_API WorldSession
 
         AccountTypes GetSecurity() const { return _security; }
         uint32 GetAccountId() const { return _accountId; }
+        std::string const& GetAccountName() const { return _accountName; }
         Player* GetPlayer() const { return _player; }
+        GameClient* GetGameClient() const { return _gameClient; }
         std::string const& GetPlayerName() const;
         std::string GetPlayerInfo() const;
 
@@ -325,7 +332,12 @@ class TC_GAME_API WorldSession
 
         ObjectGuid GetGUID() const;
         uint32 GetGuidLow() const;
-        void SetSecurity(AccountTypes security) { _security = security; }
+
+        rbac::RBACData* GetRBACData() const { return _RBACData; }
+        bool HasPermission(uint32 permissionId);
+        void LoadPermissions();
+        QueryCallback LoadPermissionsAsync();
+        void InvalidateRBACData();
         std::string const& GetRemoteAddress() { return m_Address; }
         void SetPlayer(Player* player);
         uint8 Expansion() const { return m_expansion; }
@@ -355,7 +367,8 @@ class TC_GAME_API WorldSession
 
         void LogoutPlayer(bool save);
         void KickPlayerOP(std::string const & reason);
-        void KickPlayer();
+        // AC shape (#27): a kick marks the session kicked unless setKicked is false (AC WorldSessionMgr::KickSession)
+        void KickPlayer(bool setKicked = true);
         bool forceExit;
 
         void QueuePacket(WorldPacket* new_packet);
@@ -458,7 +471,9 @@ class TC_GAME_API WorldSession
 
         uint32 GetLatency() const { return m_latency; }
         void SetLatency(uint32 latency) { m_latency = latency; }
-        void ResetClientTimeDelay() { m_clientTimeDelay = 0; }
+
+        uint32 AdjustClientMovementTime(uint32 time) const;
+        void ComputeNewClockDelta();
 
         std::atomic<time_t> m_timeOutTime;
         void UpdateTimeOutTime(uint32 diff)
@@ -529,10 +544,10 @@ class TC_GAME_API WorldSession
         void HandleInspectHonorStatsOpcode(WorldPacket& recvPacket);
         void HandleInspectRatedBGStatsOpcode(WorldPacket& recvPacket);
 
-        void HandleMoveWaterWalkAck(WorldPacket& recvPacket);
+        void HandleMoveWaterWalkAck(WorldPackets::Movement::MoveWaterWalkAck& packet);
         void HandleFeatherFallAck(WorldPacket& recvData);
 
-        void HandleMoveHoverAck(WorldPacket& recvData);
+        void HandleMoveHoverAck(WorldPackets::Movement::MoveHoverAck& packet);
         void HandleMoveGravityAck(WorldPacket& recvData);
 
         void HandleMountSpecialAnimOpcode(WorldPacket& recvdata);
@@ -545,13 +560,13 @@ class TC_GAME_API WorldSession
         void HandleRepairItemOpcode(WorldPacket& recvPacket);
 
         // Knockback
-        void HandleMoveKnockBackAck(WorldPacket& recvPacket);
+        void HandleMoveKnockBackAck(WorldPackets::Movement::MoveKnockBackAck& packet);
 
-        void HandleMoveTeleportAck(WorldPacket& recvPacket);
-        void HandleForceSpeedChangeAck(WorldPacket& recvData);
-        void HandleSetCollisionHeightAck(WorldPacket& recvPacket);
-        void HandleMovementForceAck(WorldPacket& recvPacket);
-        void HandleMoveSetCanTurnWhileFallingAck(WorldPacket& recvData);
+        void HandleMoveTeleportAck(WorldPackets::Movement::MoveTeleportAck& packet);
+        void HandleForceSpeedChangeAck(WorldPackets::Movement::MoveSpeedChangeAck& packet);
+        void HandleSetCollisionHeightAck(WorldPackets::Movement::MoveSetCollisionHeightAck& packet);
+        void HandleMovementForceAck(WorldPackets::Movement::MovementForceAck& packet);
+        void HandleMoveSetCanTurnWhileFallingAck(WorldPackets::Movement::MoveSetCanTurnWhileFallingAck& packet);
 
         void HandlePingOpcode(WorldPacket& recvPacket);
         void HandleAuthSessionOpcode(WorldPacket& recvPacket);
@@ -625,11 +640,12 @@ class TC_GAME_API WorldSession
 
         void HandleGameObjectQueryOpcode(WorldPackets::Query::QueryGameObject& packet);
 
-        void HandleMoveWorldportAckOpcode(WorldPacket& recvPacket);
+        void HandleMoveWorldportAckOpcode(WorldPackets::Movement::WorldPortResponse& packet);
         void HandleMoveWorldportAck();
 
-        void HandleMovementOpcodes(WorldPacket& recvPacket);
-        void HandleSetActiveMoverOpcode(WorldPacket& recvData);
+        void HandleMovementOpcodes(WorldPackets::Movement::ClientPlayerMovement& packet);
+        void HandleMovementOpcode(OpcodeClient opcode, MovementInfo& movementInfo);
+        void HandleSetActiveMoverOpcode(WorldPackets::Movement::MoveSetActiveMover& packet);
         void HandleMoveNotActiveMover(WorldPacket& recvData);
         void HandleDismissControlledVehicle(WorldPacket& recvData);
         void HandleRequestVehicleExit(WorldPacket& recvData);
@@ -777,6 +793,8 @@ class TC_GAME_API WorldSession
         void HandleAuctionListPendingSales(WorldPacket& recvData);
         void HandleReplicateItems(WorldPackets::AuctionHouse::AuctionReplicateItems& packet);
 
+        bool CanOpenMailBox(ObjectGuid guid);
+
         void HandleGetMailList(WorldPacket& recvData);
         void HandleSendMail(WorldPacket& recvData);
         void HandleMailTakeMoney(WorldPacket& recvData);
@@ -863,7 +881,7 @@ class TC_GAME_API WorldSession
         void HandleCorpseQueryOpcode(WorldPacket& recvPacket);
         void HandleCorpseMapPositionQuery(WorldPacket& recvPacket);
         void HandleResurrectResponseOpcode(WorldPacket& recvPacket);
-        void HandleSummonResponseOpcode(WorldPacket& recvData);
+        void HandleSummonResponseOpcode(WorldPackets::Movement::SummonResponse& packet);
 
         void HandleJoinChannel(WorldPacket& recvPacket);
         void HandleLeaveChannel(WorldPacket& recvPacket);
@@ -1172,6 +1190,9 @@ class TC_GAME_API WorldSession
 
         // bot
         bool HandleSocketClosed();
+        // AC (pussywizard): a kicked session is never parked for 60 s, and a parked one is dropped once kicked (#27)
+        bool IsKicked() const { return _kicked; }
+        void SetKicked(bool val) { _kicked = val; }
 
         union ConnectToKey
         {
@@ -1257,11 +1278,14 @@ class TC_GAME_API WorldSession
 
         uint32 m_GUIDLow;                                   // set loggined or recently logout player (while m_playerRecentlyLogout set)
         Player* _player;
+        GameClient* _gameClient;
         std::shared_ptr<WorldSocket> m_Socket;
         std::string m_Address;
 
         AccountTypes _security;
         uint32 _accountId;
+        std::string _accountName;
+        rbac::RBACData* _RBACData;
         uint8 m_expansion;
 
         CharacterBooster* m_charBooster;
@@ -1277,11 +1301,14 @@ class TC_GAME_API WorldSession
         bool m_playerLogout;                                // code processed in LogoutPlayer
         bool m_playerRecentlyLogout;
         bool m_playerSave;
+        bool _kicked = false;
         LocaleConstant m_sessionDbcLocale;
         LocaleConstant m_sessionDbLocaleIndex;
         uint32 m_latency;
-        uint32 m_clientTimeDelay;
         uint32 m_flags;
+        std::unique_ptr<boost::circular_buffer<std::pair<int64, uint32>>> _timeSyncClockDeltaQueue; // first member: clockDelta. Second member: latency of the packet exchange that was used to compute that clockDelta.
+        int64 _timeSyncClockDelta;
+        std::map<uint32, uint32> _pendingTimeSyncRequests; // key: counter. value: server time when packet with that counter was sent.
         TimeValue m_firstCancelModSpeedNoContorlAurasPacket;
         TimeValue m_lastCancelModSpeedNoContorlAurasPacket;
         AccountData m_accountData[NUM_ACCOUNT_DATA_TYPES];

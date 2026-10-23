@@ -684,16 +684,18 @@ namespace MMAP
 
                 // mark all walkable tiles, both liquids and solids
 
-                /* we want to have triangles with slope less than walkableSlopeAngleNotSteep (<= 55) to have NAV_AREA_GROUND
-                 * and with slope between walkableSlopeAngleNotSteep and walkableSlopeAngle (55 < .. <= 70) to have NAV_AREA_GROUND_STEEP.
-                 * we achieve this using recast API: memset everything to NAV_AREA_GROUND_STEEP, call rcClearUnwalkableTriangles with 70 so
-                 * any area above that will get RC_NULL_AREA (unwalkable), then call rcMarkWalkableTriangles with 55 to set NAV_AREA_GROUND
-                 * on anything below 55 . Players and idle Creatures can use NAV_AREA_GROUND, while Creatures in combat can use NAV_AREA_GROUND_STEEP.
-                 */
+                // AC parity (AC MapBuilder.cpp:686-688):
+                // area == flags == NavTerrain at runtime, so ground triangles get the literal NAV_GROUND
+                // value directly instead of the old TC-7 "priority" scheme (memset NAV_AREA_GROUND_STEEP=10,
+                // then rcMarkWalkableTriangles(walkableSlopeAngleNotSteep) promoting shallow slopes to
+                // NAV_AREA_GROUND=11). That scheme's area ids were never equal to the runtime NavTerrain
+                // bit flags, and the final area->flags remap below turned NAV_AREA_GROUND_STEEP(10) into
+                // NAV_MAGMA(2) at runtime ("steep ground read as magma"). With --maxAngle == --maxAngleNotSteep
+                // (both 60, AC v20's value) there is no steep-but-walkable band to distinguish anyway, so the
+                // rcMarkWalkableTriangles steep pass is dropped entirely, matching AC.
                 unsigned char* triFlags = new unsigned char[tTriCount];
-                memset(triFlags, NAV_AREA_GROUND_STEEP, tTriCount*sizeof(unsigned char));
+                memset(triFlags, NAV_GROUND, tTriCount*sizeof(unsigned char));
                 rcClearUnwalkableTriangles(m_rcContext, tileCfg.walkableSlopeAngle, tVerts, tVertCount, tTris, tTriCount, triFlags);
-                rcMarkWalkableTriangles(m_rcContext, tileCfg.walkableSlopeAngleNotSteep, tVerts, tVertCount, tTris, tTriCount, triFlags, NAV_AREA_GROUND);
                 rcRasterizeTriangles(m_rcContext, tVerts, tVertCount, tTris, triFlags, tTriCount, *tile.solid, config.walkableClimb);
                 delete[] triFlags;
 
@@ -803,17 +805,18 @@ namespace MMAP
         delete[] tiles;
 
         // set polygons as walkable
+        // AC parity (AC MapBuilder.cpp:796-797): the areas
+        // array now already holds the literal NavTerrain values (NAV_GROUND=1, NAV_MAGMA=2, NAV_SLIME=4,
+        // NAV_WATER=8 - see the ground-marking pass above and TerrainBuilder::loadMap/loadVMap), so the
+        // flags are just a copy of the area, not a remapped "priority index -> bit flag" conversion. The
+        // old formula (1 << (NAV_AREA_MAX_VALUE - area)) assumed a disjoint TC-7 area space (8-11) and
+        // silently produced the wrong runtime terrain once area started equal to flags (e.g. WMO
+        // magma/slime at area 8 became flags 8 = NAV_WATER). Core relies on this: "poly.area ==
+        // poly.flags == NavTerrain" (PathGenerator.cpp:721).
         // TODO: special flags for DYNAMIC polygons, ie surfaces that can be turned on and off
         for (int i = 0; i < iv.polyMesh->npolys; ++i)
-        {
-            if (uint8 area = iv.polyMesh->areas[i] & NAV_AREA_ALL_MASK)
-            {
-                if (area >= NAV_AREA_MIN_VALUE)
-                    iv.polyMesh->flags[i] = 1 << (NAV_AREA_MAX_VALUE - area);
-                else
-                    iv.polyMesh->flags[i] = NAV_GROUND; // TODO: these will be dynamic in future
-            }
-        }
+            if (iv.polyMesh->areas[i] & RC_WALKABLE_AREA)
+                iv.polyMesh->flags[i] = iv.polyMesh->areas[i];
 
         // setup mesh parameters
         dtNavMeshCreateParams params;
@@ -1155,8 +1158,11 @@ namespace MMAP
         config.ch = tileConfig.BASE_UNIT_DIM;
         // Keeping these 2 slope angles the same reduces a lot the number of polys.
         // 55 should be the minimum, maybe 70 is ok (keep in mind blink uses mmaps), 85 is too much for players
-        config.walkableSlopeAngle = m_maxWalkableAngle ? *m_maxWalkableAngle : 55;
-        config.walkableSlopeAngleNotSteep = m_maxWalkableAngleNotSteep ? *m_maxWalkableAngleNotSteep : 55;
+        // AC v20 uses 60; match it by default so a
+        // plain run without --maxAngle/--maxAngleNotSteep still gets AC-parity output. walkableSlopeAngleNotSteep
+        // is otherwise unused now that the ground pass above no longer has a separate steep tier.
+        config.walkableSlopeAngle = m_maxWalkableAngle ? *m_maxWalkableAngle : 60;
+        config.walkableSlopeAngleNotSteep = m_maxWalkableAngleNotSteep ? *m_maxWalkableAngleNotSteep : 60;
         config.tileSize = tileConfig.VERTEX_PER_TILE;
         config.walkableRadius = m_bigBaseUnit ? 1 : 2;
         config.borderSize = config.walkableRadius + 3;

@@ -18,6 +18,7 @@
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "CreatureAI.h"
+#include "ObjectMgr.h"
 #include "TemporarySummon.h"
 #include "Pet.h"
 #include "Player.h"
@@ -26,7 +27,7 @@
 
 TempSummon::TempSummon(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) :
 Creature(isWorldObject), m_Properties(properties), m_type(TEMPSUMMON_MANUAL_DESPAWN),
-m_timer(0), m_lifetime(0)
+m_timer(0), m_lifetime(0), m_canFollowOwner(true)
 {
     m_summonerGUID = owner ? owner->GetGUID() : ObjectGuid::Empty;
     m_unitTypeMask |= UNIT_MASK_SUMMON;
@@ -296,6 +297,11 @@ void TempSummon::InitStats(uint32 duration)
 
 void TempSummon::InitSummon()
 {
+    // #791: restored. Creature::Create skips LoadCreaturesAddon for summons ("For summons called in InitSummon", Creature.cpp:902)
+    // but 38c1ea61 removed this call, so no summon got its creature_template_addon auras (1,008 summon-only entries; e.g.
+    // Pa'valak's reinforcement stalkers 61483 never got their summoning aura 119781). alexkulya core: TemporarySummon.cpp:308.
+    LoadCreaturesAddon();
+
     Unit* owner = GetSummoner();
     if (owner)
     {

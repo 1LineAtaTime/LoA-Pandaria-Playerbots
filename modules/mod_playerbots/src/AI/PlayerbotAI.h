@@ -1,13 +1,18 @@
 #ifndef _PLAYERBOT_PLAYERBOTAI_H
 #define _PLAYERBOT_PLAYERBOTAI_H
 
+#include <list>
 #include <queue>
 #include <stack>
 
 #include "Chat.h"
+#include "ChatFilter.h"
+#include "ChatHelper.h"
 #include "Event.h"
+#include "ForceRebuff.h"
 #include "Item.h"
 #include "PlayerbotAIBase.h"
+#include "PlayerbotSecurity.h"
 #include "NewRpgStrategy.h"
 #include "WorldPacket.h"
 
@@ -42,10 +47,32 @@ enum ActivityType
     MAX_ACTIVITY_TYPE
 };
 
+// #611 item 4: AC Bot/PlayerbotAI.h:230-255 (AC enum class GrouperType / GuilderType).
+enum class GrouperType : uint8
+{
+    SOLO = 0,
+    MEMBER = 1,
+    LEADER_2 = 2,
+    LEADER_3 = 3,
+    LEADER_4 = 4,
+    LEADER_5 = 5
+};
+
+enum class GuilderType : uint8
+{
+    SOLO = 0,
+    TINY = 30,
+    SMALL = 50,
+    MEDIUM = 70,
+    LARGE = 120,
+    VERY_LARGE = 250
+};
+
 class Aura;
 class AiObjectContext;
 class Creature;
 class Engine;
+class Strategy;  // #413
 class ExternalEventHelper;
 class GameObject;
 class ObjectGuid;
@@ -99,6 +126,32 @@ private:
     std::stack<WorldPacket> _queue;
 };
 
+// Ported from AC Bot/PlayerbotAI.h:361-384 (#173).
+class BotChatCommand
+{
+public:
+    BotChatCommand(std::string const command, Player* owner = nullptr, uint32 type = CHAT_MSG_WHISPER,
+                      time_t time = 0)
+        : command(command), owner(owner), type(type), time(time)
+    {
+    }
+    BotChatCommand(BotChatCommand const& other)
+        : command(other.command), owner(other.owner), type(other.type), time(other.time)
+    {
+    }
+
+    std::string const& GetCommand() { return command; }
+    Player* GetOwner() { return owner; }
+    uint32& GetType() { return type; }
+    time_t& GetTime() { return time; }
+
+private:
+    std::string const command;
+    Player* owner;
+    uint32 type;
+    time_t time;
+};
+
 class PlayerbotAI : public PlayerbotAIBase
 {
 public:
@@ -119,6 +172,12 @@ public:
     bool AllowActive(ActivityType activityType);
     void DoNextAction(bool min);
 
+    // #173: whisper/party/raid/guild chat commands (AC Bot/PlayerbotAI.cpp:577-1136 shape). Called
+    // from the mod_playerbots.cpp OnChat hooks; HandleCommands() drains the queue every tick from
+    // UpdateAIInternal.
+    void HandleCommand(uint32 type, std::string const text, Player* fromPlayer);
+    bool IsAllowedCommand(std::string const text);
+
     void HandleBotOutgoingPacket(WorldPacket const& packet);
     void HandleMasterIncomingPacket(WorldPacket const& packet);
     void HandleMasterOutgoingPacket(WorldPacket const& packet);
@@ -137,6 +196,14 @@ public:
     Player* GetBot() { return bot; }
     Player* GetMaster() { return master; }
     Player* GetGroupMaster();
+    // Ported from AC Bot/PlayerbotAI.cpp:2145-2169 (#173). This bot's 0-based position in its
+    // group's member list (or -1 outside a group); reserved for the taxi stagger (spec section 3.3,
+    // plan batch S5), unused until then.
+    int32 GetGroupSlotIndex(Player* player);
+    // #173 declaration only (AC Bot/PlayerbotAI.cpp:162,816,1636,1923 glue); the per-map instance/raid
+    // strategy content itself is a separate project - MoP has no Ai/Dungeon or Ai/Raid strategies yet
+    // (spec section 3.2). Not called from anywhere in this pass.
+    void ApplyInstanceStrategies(uint32 mapId, bool tellMaster = false);
     Creature* GetCreature(ObjectGuid guid);
     Unit* GetUnit(ObjectGuid guid);
     Player* GetPlayer(ObjectGuid guid);
@@ -145,8 +212,20 @@ public:
     // static GameObject* GetGameObject(GameObjectData const* gameObjectData);
     WorldObject* GetWorldObject(ObjectGuid guid);
     AiObjectContext* GetAiObjectContext() { return _aiObjectContext; }
+    ChatHelper* GetChatHelper() { return &chatHelper; }
+    PlayerbotSecurity* GetSecurity() { return &security; }
     BotState GetState() { return _currentState; };
-    const NewRpgInfo& GetRpgInfo() { return _rpgInfo; }
+    NewRpgInfo& GetRpgInfo() { return _rpgInfo; }
+    const NewRpgInfo& GetRpgInfo() const { return _rpgInfo; }
+    // Running totals for the "new rpg" quest behaviour (accepted / rewarded / dropped ...).
+    NewRpgStatistic& GetRpgStatistic() { return _rpgStatistic; }
+    // Quests this bot gave up on (no objective progress after sitting at the POI), so the rpg
+    // status machine stops picking them again. Per bot, as upstream has it.
+    std::set<uint32>& GetLowPriorityQuests() { return _lowPriorityQuest; }
+    NewRpgStatistic const& GetRpgStatistic() const { return _rpgStatistic; }
+    // #173 header batch (AC PlayerbotAI.h:609): state only, see AI/ForceRebuff.h. The ready-check
+    // refinement that reads/writes it is plan batch S10, not this pass.
+    ForceRebuffState forceRebuff;
     float GetRange(std::string const type);
 
     bool IsOpposing(Player* player);
@@ -155,6 +234,14 @@ public:
     bool IsRealPlayer() { return master ? (master == bot) : false; }
     // Bot has a master that is a player.
     bool HasRealPlayerMaster();
+    // #611 item 4 (AC PlayerbotAI.h:535-585): HasSkill, HasGameClientMaster, GetFixedBotNumber, GetGrouperType,
+    // GetGuilderType, IsInRealGuild.
+    bool HasSkill(SkillType skill);
+    bool HasGameClientMaster();
+    uint32 GetFixedBotNumber(uint32 maxNum = 100);
+    GrouperType GetGrouperType();
+    GuilderType GetGuilderType();
+    bool IsInRealGuild();
     // Bot has a master that is activly playing.
     bool HasActivePlayerMaster();
     bool HasPlayerNearby(WorldPosition* pos, float range = sPlayerbotAIConfig->reactDistance);
@@ -172,6 +259,9 @@ public:
     bool IsInVehicle(bool canControl = false, bool canCast = false, bool canAttack = false, bool canTurn = false, bool fixed = false);
 
     bool HasStrategy(std::string const name, BotState type);
+    // AC PlayerbotAI.h:416 (#413)
+    bool HasTargetExclusions() const;
+    Strategy* GetStrategy(std::string const name, BotState type);
     bool ContainsStrategy(StrategyType type);
 
     void SetMaster(Player* newMaster) { master = newMaster; }
@@ -183,6 +273,10 @@ public:
     virtual bool IsInterruptableSpellCasting(Unit* player, std::string const spell);
     bool canDispel(SpellInfo const* spellInfo, uint32 dispelType);
     virtual bool HasAuraToDispel(Unit* player, uint32 dispelType);
+    /// Hold off the bot's next decision until a cast it just started has finished, so it does not
+    /// immediately pick a new action and interrupt itself. Channelled spells wait for the channel
+    /// as well as the cast.
+    void WaitForSpellCast(Spell* spell);
     void RemoveAura(std::string const name);
     void RemoveShapeshift();
     void SpellInterrupted(uint32 spellid);
@@ -190,6 +284,9 @@ public:
     virtual bool CastSpell(std::string const name, Unit* target, Item* itemTarget = nullptr);
     bool CastSpell(uint32 spellId, Unit* target, Item* itemTarget = nullptr);
     bool CastSpell(uint32 spellId, float x, float y, float z, Item* itemTarget = nullptr);
+    // #581 (AC PlayerbotAI.h:526-527): cast from a vehicle seat (IoC siege engines, demolishers, cannons).
+    bool CanCastVehicleSpell(uint32 spellId, Unit* target);
+    bool CastVehicleSpell(uint32 spellId, Unit* target);
     virtual bool HasAura(std::string const spellName, Unit* player, bool maxStack = false, bool checkIsOwner = false,
         int maxAmount = -1, bool checkDuration = false);
     Aura* GetAura(std::string const spellName, Unit* unit, bool checkIsOwner = false, bool checkDuration = false,
@@ -207,18 +304,25 @@ public:
     InventoryResult CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool swap, bool not_loading = true) const;
     uint8 FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) const;
 
-    bool TellMaster(std::ostringstream& stream);
-    bool TellMaster(std::string const text);
-    bool TellMasterNoFacing(std::string const text);
-    bool TellMasterNoFacing(std::ostringstream& stream);
+    // #173 (AC Bot/PlayerbotAI.h:465-471): per-call security level, defaulted so every existing caller is unchanged.
+    bool TellMaster(std::ostringstream& stream, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
+    bool TellMaster(std::string const text, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
+    bool TellMasterNoFacing(std::string const text, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
+    bool TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
     bool Whisper(const std::string& msg, const std::string& receiverName);
     bool Say(const std::string& msg);
     bool Yell(const std::string& msg);
     bool SayToRaid(const std::string& msg);
     bool SayToParty(const std::string& msg);
-    bool TellError(std::string const text);
+    bool TellError(std::string const text, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
 private:
     bool _isBotInitializing;
+    // #173: drains chatCommands once per tick (called from UpdateAIInternal).
+    void HandleCommands();
+    // #639 (AC Bot/PlayerbotAI.h:618): group-master upkeep, called from UpdateAI before UpdateAIInternal.
+    void UpdateAIGroupMaster();
+    // #173: the security gate for TellMaster/TellMasterNoFacing/TellError (AC Bot/PlayerbotAI.h:617, private as in AC).
+    bool IsTellAllowed(PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
 
 protected:
     Player* bot;
@@ -228,18 +332,22 @@ protected:
     Engine* _currentEngine;
     Engine* _engines[BOT_STATE_MAX];
     BotState _currentState;
+    // issue #61: when the bot entered the combat engine while not actually in combat, so a bot
+    // stranded there (attacking a non-attackable target) can be recovered back to non-combat.
+    uint32 _combatEngineNoCombatSince{0};
     NewRpgInfo _rpgInfo;
-    //ChatHelper chatHelper;
-    //std::list<ChatCommandHolder> chatCommands;
-    //std::list<ChatQueuedReply> chatReplies;
+    NewRpgStatistic _rpgStatistic;
+    std::set<uint32> _lowPriorityQuest;
+    ChatHelper chatHelper;
+    std::list<BotChatCommand> chatCommands;
     PacketHandlingHelper botOutgoingPacketHandlers;
     PacketHandlingHelper masterIncomingPacketHandlers;
     PacketHandlingHelper masterOutgoingPacketHandlers;
-    //CompositeChatFilter chatFilter;
-    //PlayerbotSecurity security;
-    //std::map<std::string, time_t> whispers;
-    //std::pair<ChatMsg, time_t> currentChat;
-    //static std::set<std::string> unsecuredCommands;
+    CompositeChatFilter chatFilter;
+    PlayerbotSecurity security;
+    std::map<std::string, time_t> whispers;
+    std::pair<ChatMsg, time_t> currentChat;
+    static std::set<std::string> unsecuredCommands;
     bool _allowActive[MAX_ACTIVITY_TYPE];
     time_t _allowActiveCheckTimer[MAX_ACTIVITY_TYPE];
     //bool inCombat = false;

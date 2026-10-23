@@ -62,6 +62,7 @@ enum Events
     EVENT_VORTEX_DUST   = 7,
     EVENT_SMASH         = 8,
     EVENT_MERGE         = 9,
+    EVENT_QUICKSAND     = 10,
 };
  
 enum Adds
@@ -149,6 +150,20 @@ class boss_earthrager_ptah : public CreatureScript
                 Talk(SAY_KILL);
             }
 
+            void JustSummoned(Creature* summon) override
+            {
+                if (summon->GetEntry() != NPC_QUICKSAND)
+                {
+                    BossAI::JustSummoned(summon);
+                    return;
+                }
+
+                // #691: a Quicksand pool stays until the encounter ends (TCPP) and is never put in combat (its SmartAI would chase)
+                summons.Summon(summon);
+                summon->SetReactState(REACT_PASSIVE);
+                summon->SetControlled(true, UNIT_STATE_ROOT);
+            }
+
             void HandleSetBurrow()
             {
                 std::list<Creature*> m_burrowStalker;
@@ -176,7 +191,13 @@ class boss_earthrager_ptah : public CreatureScript
                     me->AttackStop();
                     me->SetReactState(REACT_PASSIVE);
                     DoCast(me, SPELL_SUBMERGE);
-                    me->SetFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
+                    // LoA #665 (core script bug, not bot tactics): no UNIT_FLAG_IMMUNE_TO_PC here. With the ported TC threat
+                    // manager, IMMUNE_TO_PC puts every player's threat reference offline (ThreatManager.cpp:81-109
+                    // FlagsAllowFighting / ShouldBeOffline), so the passive branch of CreatureAI::UpdateVictim
+                    // (CreatureAI.cpp:491-495) sees an empty threat list and evades: Ptah reset to 100% at every 50% submerge
+                    // and could never be killed (waves 15-28: lowest 38-48%, 0 deaths, evade/re-pull loop in the [PROBE] trail).
+                    // NON_ATTACKABLE + NOT_SELECTABLE already make him untargetable for the 30 s submerge.
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                     events.Reset();
                     events.ScheduleEvent(EVENT_SUBMERGE, 2000);
                     return;
@@ -186,13 +207,26 @@ class boss_earthrager_ptah : public CreatureScript
                 {
                     switch (eventId)
                     {
-                        case EVENT_SUBMERGE:           
+                        case EVENT_SUBMERGE:
                             HandleSetBurrow();
-                            DoCast(me, SPELL_QUICKSAND, true);
+                            // #691: Quicksand forms as pools near the players (npc 40503), not as a pulse on the submerged boss.
                             DoCast(me, SPELL_SAND_VORTEX, true);
+                            events.ScheduleEvent(EVENT_QUICKSAND, 8000);
                             events.ScheduleEvent(EVENT_MERGE, 30000);
                             break;
+                        case EVENT_QUICKSAND:
+                            // Wowpedia Earthrager_Ptah: "During the Tumultuous Earthstorm, 7 yard radius pools of quicksand form randomly
+                            // near players" (14.6-15.4k every 2 s, -50% speed). TCPP: SPELL_SUMMON_QUICKSAND (serverside 75550) on a
+                            // random player 10 s into the earthstorm, again every 10-21 s. The pool's SmartAI casts the slow 75548 on
+                            // itself when summoned; the damage is the 75546 pulse (75547 every 2 s).
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                                if (Creature* pool = me->SummonCreature(NPC_QUICKSAND, target->GetPositionX(), target->GetPositionY(),
+                                    target->GetPositionZ(), 0.0f, TEMPSUMMON_MANUAL_DESPAWN))
+                                    pool->CastSpell(pool, SPELL_QUICKSAND, true);
+                            events.ScheduleEvent(EVENT_QUICKSAND, 10000);
+                            break;
                         case EVENT_MERGE:
+                            events.CancelEvent(EVENT_QUICKSAND);
                             me->RemoveAllAuras();
                             me->RemoveFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
                             me->SetReactState(REACT_AGGRESSIVE);

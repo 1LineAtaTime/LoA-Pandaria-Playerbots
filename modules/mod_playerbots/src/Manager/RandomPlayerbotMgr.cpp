@@ -1,42 +1,106 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
- */
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "RandomPlayerbotMgr.h"
+
+#include "Chat.h"  // #808: ChatHandler for the rndbot console command
+#include "ObjectAccessor.h"
 
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <chrono>
 #include <iomanip>
 #include <random>
+
+// DatabaseEnv.h must precede BattlegroundQueue.h: the latter pulls in RatedPvp.h, which uses
+// CharacterDatabaseTransaction without declaring it.
+#include "DatabaseEnv.h"
 
 #include "AccountMgr.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
+#include "BattlegroundQueue.h"
+#include "BattleGroundJoinAction.h"
+#include "BgRatedBg.h"  // #897
 #include "BotFactory.h"
 #include "CharacterCache.h"
 #include "CellImpl.h"
 #include "ChannelMgr.h"
+#include "Config.h"
 #include "DBCStores.h"
 #include "DBCStructure.h"
-#include "DatabaseEnv.h"
 #include "Define.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "GuildMgr.h"
+#include "Group.h"  // #830: CheckLfgQueue reads a queued premade's members
+#include "Helper.h"
 #include "LFGMgr.h"
+#include "LfgAnyLevelRequests.h"  // #702: any-level LFG requests for LfgJoinAction (off by default)
+#include "BgAnyLevelRequests.h"   // #702 P4 (#831): any-level battleground requests for BGJoinAction (off by default)
+#include "ArenaAnyLevelRequests.h" // #702 P5 (#832): arena skirmish census + level window for BGJoinAction (off by default)
+#include "BattlefieldBots.h"  // #900: random bots in outdoor battlefields (WG / Tol Barad)
 #include "MapManager.h"
+#include "MotionMaster.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
 #include "PerformanceMonitor.h"
 #include "Playerbots.h"
+#include "BotScenario.h"
 #include "RandomItemManager.h"
 #include "RandomPlayerbotBracketMgr.h"
+#include "NewRpgDuelSpot.h"  // #201 (#615): sDuelSpotMgr seeder
 #include "SharedDefines.h"
+#include "TravelMgr.h"
 #include "Unit.h"
 #include "World.h"
+
+#include <cctype>   // #148: RandomBotLevelMgr (std::isspace)
+#include <cmath>    // #148: RandomBotLevelMgr (std::round, std::log)
+#include <limits>   // #148: RandomBotLevelMgr (std::numeric_limits)
+#include <mutex>
+#include <sstream>  // #148: RandomBotLevelMgr (ParseLevelMgrExcludeNames)
+
+namespace
+{
+// The random-bot event cache (_eventCache) is read and written by bot AI on map-update threads (RandomBotUpdateAction
+// -> ProcessBot, TradeStatusAction, SuggestWhatToDoAction, Revive, duel spots) and by the world thread. With
+// MapUpdate.Threads > 1 two maps can touch the std::map at the same time. AC (Bot/RandomPlayerbotMgr.cpp:2334
+// FindEvent) has no lock here; this follows AC's pattern for shared state (std::mutex + lock_guard, e.g. AC
+// WarlockActions.cpp:251). Recursive: GetEventData -> GetEventValue. File scope keeps RandomPlayerbotMgr.h (included
+// by every module TU through Playerbots.h) unchanged.
+std::recursive_mutex& EventCacheLock()
+{
+    static std::recursive_mutex lock;
+    return lock;
+}
+
+// #532 (AC Bot/RandomPlayerbotMgr.cpp:1438,1485 read sPlayerbotAIConfig.min/maxRandomBotReviveTime;
+// AC PlayerbotAIConfig.cpp defaults 60/300). Read here instead of adding to PlayerbotAIConfig.h.
+uint32 RandomBotReviveTime()
+{
+    static uint32 const minTime = sConfigMgr->GetIntDefault("AiPlayerbot.MinRandomBotReviveTime", 60);
+    static uint32 const maxTime = sConfigMgr->GetIntDefault("AiPlayerbot.MaxRandomBotReviveTime", 300);
+    return urand(minTime, std::max(minTime, maxTime));
+}
+}  // namespace
 
 RandomPlayerbotMgr::RandomPlayerbotMgr()
     : PlayerbotHolder(),
@@ -89,6 +153,27 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool /*minimal*/)
         auto randomInterval = sPlayerbotAIConfig->randomBotCountChangeMinInterval +
             (std::rand() % (sPlayerbotAIConfig->randomBotCountChangeMaxInterval - sPlayerbotAIConfig->randomBotCountChangeMinInterval + 1));
         SetEventValue(0, "bot_count", maxAllowedBotCount, randomInterval);
+    }
+
+    // Refresh the battleground queue snapshot bots consult before queueing (issue #33).
+    if (sPlayerbotAIConfig->randomBotJoinBG)
+        CheckBgQueue();
+
+    // #900: random bots in outdoor battlefields (accept invites; opt-in census). Self-throttled to 2 s.
+    if (BattlefieldBots::Due())
+    {
+        std::vector<Player*> bfBots;
+        for (auto const& itr : playerBots)
+            if (itr.second && IsRandomBot(itr.second))
+                bfBots.push_back(itr.second);
+        BattlefieldBots::Update(bfBots);
+    }
+
+    // #142 (AC Bot/RandomPlayerbotMgr.cpp:390-394): refresh the LFG queue snapshot random bots consult (LfgJoinAction).
+    if (sPlayerbotAIConfig->randomBotJoinLfg)
+    {
+        if (time(nullptr) > (_lfgCheckTimer + 30))
+            CheckLfgQueue();
     }
 
     GetBots();
@@ -164,73 +249,215 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool /*minimal*/)
         }
     }
 
+    // #201 (#615): duel-spot seeder (population tick). World thread, after the bot loop; no-op unless
+    // DuelSpotEnable && DuelSpotSeedEnable.
+    sDuelSpotMgr->Update(elapsed);
+
     if (pmo)
         pmo->finish();
 }
 
+// #772: port of AC AddRandomBots (AC Bot/RandomPlayerbotMgr.cpp:659-840). The old loop walked randomBotAccounts in fixed
+// order and shuffled only inside one account, so after the #746 boot-time 'add' wipe the same first ~80 accounts were
+// always the ones online and a ghost left on a later account was never logged in again. AC instead pools the characters
+// of every eligible account, shuffles once and logs in Alliance up to the faction ratio, then Horde, then tops up with
+// Alliance (phases 1-3; phase 4 is the shortage error).
+// MoP deviations from AC (API differences only):
+//  - AC's account list is rndBotTypeAccounts (AssignAccountTypes, :494); this fork has no account types, so the
+//    eligible accounts are randomBotAccounts (every prefix account RandomPlayerbotFactory loaded).
+//  - AC's CHAR_SEL_CHARS_BY_ACCOUNT_ID returns guid, race, class; MoP's returns only guid (core statement, left
+//    unchanged), so one module-local query fetches guid, race, class for every selected account at once.
+//  - _currentBots is a std::vector<uint32> here (AC: a set), so membership is std::find.
+//  - Phase 4 logs this fork's existing "Not enough random bot accounts" text (AC's CalculateAvailableCharsPerAccount
+//    does not exist here), with AC's 10 s anti-spam timer.
 uint32 RandomPlayerbotMgr::AddRandomBots()
 {
     uint32 maxAllowedBotCount = GetEventValue(0, "bot_count");
+    static time_t missingBotsTimer = 0;
 
     if (_currentBots.size() < maxAllowedBotCount)
     {
+        // Calculate how many bots to add
         maxAllowedBotCount -= _currentBots.size();
         maxAllowedBotCount = std::min(sPlayerbotAIConfig->randomBotsPerInterval, maxAllowedBotCount);
 
-        for (std::vector<uint32>::iterator i = sPlayerbotAIConfig->randomBotAccounts.begin();
-            i != sPlayerbotAIConfig->randomBotAccounts.end(); i++)
+        // Single RNG instance for all shuffling
+        std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
+
+        // Only need to track the Alliance count, as it's in Phase 1
+        // (AC has no zero guard; both ratios 0 would divide by zero, so fall back to AC's 50/50 default.)
+        uint32 allianceRatio = sPlayerbotAIConfig->randomBotAllianceRatio;
+        uint32 totalRatio = allianceRatio + sPlayerbotAIConfig->randomBotHordeRatio;
+        if (!totalRatio)
         {
-            uint32 accountId = *i;
+            allianceRatio = 50;
+            totalRatio = 100;
+        }
+        uint32 allowedAllianceCount = maxAllowedBotCount * allianceRatio / totalRatio;
 
-            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARS_BY_ACCOUNT_ID);
-            stmt->setUInt32(0, accountId);
-            PreparedQueryResult result = CharacterDatabase.Query(stmt);
-            if (!result)
-                continue;
-            std::vector<uint32> guids;
-            do
-            {
-                Field* fields = result->Fetch();
-                uint64 guid = fields[0].GetInt64();
-                if (GetEventValue(guid, "add"))
-                    continue;
+        uint32 remainder = maxAllowedBotCount * allianceRatio % totalRatio;
 
-                if (GetEventValue(guid, "logout"))
-                    continue;
-
-                if (GetPlayerBot(guid))
-                    continue;
-
-                if (std::find(_currentBots.begin(), _currentBots.end(), guid) != _currentBots.end())
-                    continue;
-
-                guids.push_back(guid);
-            } while (result->NextRow());
-
-            std::mt19937 rnd(time(0));
-            std::shuffle(guids.begin(), guids.end(), rnd);
-
-            for (uint32& guid : guids)
-            {
-                uint32 add_time = 31104000;
-
-                SetEventValue(guid, "add", 1, add_time);
-                SetEventValue(guid, "logout", 0, 0);
-                SetEventValue(guid, "randomize", 1, add_time * 2);
-                SetEventValue(guid, "teleport", 1, add_time * 2);
-                _currentBots.push_back(guid);
-
-                maxAllowedBotCount--;
-                if (!maxAllowedBotCount)
-                    break;
-            }
-
-            if (!maxAllowedBotCount)
-                break;
+        // Fix #1082: Randomly add one based on reminder
+        if (remainder && urand(1, totalRatio) <= remainder)
+        {
+            allowedAllianceCount++;
         }
 
+        // Determine which accounts to use based on EnablePeriodicOnlineOffline
+        std::vector<uint32> accountsToUse;
+        if (sPlayerbotAIConfig->enablePeriodicOnlineOffline)
+        {
+            // Calculate how many accounts can be used
+            // With enablePeriodicOnlineOffline, don't use all of the accounts right away. Fraction results are rounded up
+            uint32 accountsToUseCount = (sPlayerbotAIConfig->randomBotAccounts.size() + sPlayerbotAIConfig->periodicOnlineOfflineRatio - 1)
+                                        / sPlayerbotAIConfig->periodicOnlineOfflineRatio;
+
+            // Randomly select accounts
+            std::vector<uint32> shuffledAccounts = sPlayerbotAIConfig->randomBotAccounts;
+            std::shuffle(shuffledAccounts.begin(), shuffledAccounts.end(), rng);
+
+            for (uint32 i = 0; i < accountsToUseCount && i < shuffledAccounts.size(); i++)
+            {
+                accountsToUse.push_back(shuffledAccounts[i]);
+            }
+        }
+        else
+        {
+            accountsToUse = sPlayerbotAIConfig->randomBotAccounts;
+        }
+
+        // Pre-map all characters from selected accounts
+        struct CharacterInfo
+        {
+            uint32 guid;
+            uint8 rClass;
+            uint8 rRace;
+            uint32 accountId;
+        };
+        std::vector<CharacterInfo> allCharacters;
+
+        if (!accountsToUse.empty())
+        {
+            std::string accountList;
+            for (uint32 accountId : accountsToUse)
+            {
+                if (!accountList.empty())
+                    accountList += ',';
+                accountList += std::to_string(accountId);
+            }
+
+            QueryResult result = CharacterDatabase.PQuery("SELECT guid, race, class, account FROM characters WHERE account IN (%s)", accountList.c_str());
+            if (result)
+            {
+                do
+                {
+                    Field* fields = result->Fetch();
+                    CharacterInfo info;
+                    info.guid = fields[0].GetUInt32();
+                    info.rRace = fields[1].GetUInt8();
+                    info.rClass = fields[2].GetUInt8();
+                    info.accountId = fields[3].GetUInt32();
+                    allCharacters.push_back(info);
+                } while (result->NextRow());
+            }
+        }
+
+        // Shuffle for class balance
+        std::shuffle(allCharacters.begin(), allCharacters.end(), rng);
+
+        // Separate characters by faction for phased login
+        std::vector<CharacterInfo> allianceChars;
+        std::vector<CharacterInfo> hordeChars;
+
+        for (auto const& charInfo : allCharacters)
+        {
+            if (IsAlliance(charInfo.rRace))
+                allianceChars.push_back(charInfo);
+
+            else
+                hordeChars.push_back(charInfo);
+        }
+
+        // Lambda to handle bot login logic
+        auto tryLoginBot = [&](CharacterInfo const& charInfo) -> bool
+        {
+            if (GetEventValue(charInfo.guid, "add") ||
+                GetEventValue(charInfo.guid, "logout") ||
+                GetPlayerBot(charInfo.guid) ||
+                std::find(_currentBots.begin(), _currentBots.end(), charInfo.guid) != _currentBots.end() ||
+                (sPlayerbotAIConfig->disableDeathKnightLogin && charInfo.rClass == CLASS_DEATH_KNIGHT))
+            {
+                return false;
+            }
+
+            uint32 add_time = sPlayerbotAIConfig->enablePeriodicOnlineOffline
+                                ? urand(sPlayerbotAIConfig->minRandomBotInWorldTime,
+                                        sPlayerbotAIConfig->maxRandomBotInWorldTime)
+                                : sPlayerbotAIConfig->permanentlyInWorldTime;
+
+            SetEventValue(charInfo.guid, "add", 1, add_time);
+            SetEventValue(charInfo.guid, "logout", 0, 0);
+            // #714 (AC Bot/RandomPlayerbotMgr.cpp:768-775): AC sets only "add" and "logout" here. "randomize" and
+            // "teleport" stay unset, so ProcessBot schedules the first randomize/teleport shortly after login and then
+            // every Min..MaxRandomBotRandomizeTime / Min..MaxRandomBotTeleportInterval.
+            _currentBots.push_back(charInfo.guid);
+
+            return true;
+        };
+
+        // PHASE 1: Log-in Alliance bots up to allowedAllianceCount
+        for (auto const& charInfo : allianceChars)
+        {
+            if (!allowedAllianceCount)
+                break;
+
+            if (tryLoginBot(charInfo))
+            {
+                maxAllowedBotCount--;
+                allowedAllianceCount--;
+            }
+        }
+
+        // PHASE 2: Log-in Horde bots up to maxAllowedBotCount
+        for (auto const& charInfo : hordeChars)
+        {
+            if (!maxAllowedBotCount)
+                break;
+
+            if (tryLoginBot(charInfo))
+                maxAllowedBotCount--;
+        }
+
+        // PHASE 3: If maxAllowedBotCount wasn't reached, log-in more Alliance bots
+        for (auto const& charInfo : allianceChars)
+        {
+            if (!maxAllowedBotCount)
+                break;
+
+            if (tryLoginBot(charInfo))
+                maxAllowedBotCount--;
+        }
+
+        // PHASE 4: An error is given if maxAllowedBotCount is still not reached
         if (maxAllowedBotCount)
-            TC_LOG_ERROR("playerbots", "Not enough random bot accounts available. Try to increase RandomBotAccountCount in your conf file");
+        {
+            if (missingBotsTimer == 0)
+                missingBotsTimer = time(nullptr);
+
+            if (time(nullptr) - missingBotsTimer >= 10)
+            {
+                TC_LOG_ERROR("playerbots", "Not enough random bot accounts available. Try to increase RandomBotAccountCount in your conf file");
+                missingBotsTimer = 0;    // Reset timer so error is not spammed every tick
+            }
+        }
+        else
+        {
+            missingBotsTimer = 0;       // Reset timer if logins for this interval were successful
+        }
+    }
+    else
+    {
+        missingBotsTimer = 0;           // Reset timer if there's enough bots
     }
 
     return _currentBots.size();
@@ -245,7 +472,10 @@ void RandomPlayerbotMgr::Remove(Player* bot)
     stmt->setUInt32(1, owner.GetCounter());
     PlayerbotsDatabase.Execute(stmt);
 
-    _eventCache[owner.GetCounter()].clear();
+    {
+        std::lock_guard<std::recursive_mutex> guard(EventCacheLock());
+        _eventCache[owner.GetCounter()].clear();
+    }
 
     LogoutPlayerBot(owner);
 }
@@ -299,9 +529,9 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
         // do not randomize or teleport immediately after server start (prevent lagging)
         if (!GetEventValue(bot, "randomize"))
         {
-            int minValue = std::max(7, static_cast<int>(randomBotUpdateInterval * 0.7));
-            int maxValue = std::max(14, static_cast<int>(randomBotUpdateInterval * 1.4));
-            randomTime = minValue + (std::rand() % (maxValue - minValue + 1));
+            // #532 (AC Bot/RandomPlayerbotMgr.cpp:1390-1393): the first randomize comes before the first
+            // teleport - urand(3, max(4, interval * 0.4)), not the teleport window below.
+            randomTime = urand(3, std::max(4, static_cast<int>(randomBotUpdateInterval * 0.4)));
 
             ScheduleRandomize(bot, randomTime);
         }
@@ -349,7 +579,7 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
         if (update)
             ProcessBot(player);
 
-        randomTime = urand(60/*sPlayerbotAIConfig->minRandomBotReviveTime*/, 300/*sPlayerbotAIConfig->maxRandomBotReviveTime*/);
+        randomTime = RandomBotReviveTime() /* #532, AC :1438/:1485 */;
         SetEventValue(bot, "update", 1, randomTime);
 
         return true;
@@ -387,6 +617,11 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
 
     if (player->InBattlegroundQueue())
         return false;
+    // Test harness: a bot running a .botscenario is left alone by the random-bot manager (no random
+    // teleport, randomize or group changes) until the scenario ends, so a 1:1 run is never moved mid-stage.
+    // WantsTrail, not IsStatusLocked: free-mode wander does not lock the status.
+    if (BotScenario::WantsTrail(player))
+        return false;
 
     
 
@@ -395,7 +630,7 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
     {
         if (!GetEventValue(bot, "dead"))
         {
-            uint32 randomTime = urand(60/*sPlayerbotAIConfig->minRandomBotReviveTime*/, 300/*sPlayerbotAIConfig->maxRandomBotReviveTime*/);
+            uint32 randomTime = RandomBotReviveTime() /* #532, AC :1438/:1485 */;
             TC_LOG_DEBUG("playerbots", "Mark bot %s as dead, will be revived in %us.", player->GetName().c_str(), randomTime);
             SetEventValue(bot, "dead", 1, sPlayerbotAIConfig->maxRandomBotInWorldTime);
             SetEventValue(bot, "revive", 1, randomTime);
@@ -433,6 +668,19 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
         if (player->GetInstanceId() || player->GetGroup() || player->InArena() || player->inRandomLfgDungeon() || player->IsInFlight() || player->IsInCombat() || !player->IsAlive())
             return false;
 
+        // issue #96: a bot can arrive in an enemy capital through paths that never consult the city
+        // table - a quest POI, the travel graph / boat, a taxi destination, a corpse run. Send it back
+        // instead of letting it settle there. This log line is the regression signal.
+        if (IsInEnemyCapital(player))
+        {
+            char const* capital = CapitalZoneName(player->GetZoneId());
+            TC_LOG_DEBUG("playerbots", "[CAPITAL] %s (team %u) is inside enemy capital zone %u (%s) - relocating",
+                         player->GetName().c_str(), uint32(player->GetTeam()), player->GetZoneId(),
+                         capital ? capital : "?");
+            RandomTeleportForLevel(player);
+            return false;
+        }
+
         // randomize
         uint32 randomize = GetEventValue(bot, "randomize");
         if (!randomize)
@@ -440,6 +688,11 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
             PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "Randomize");
             Randomize(player);
             TC_LOG_DEBUG("playerbots", "Bot #%u %s:%u <%s>: randomized", bot.GetCounter(), player->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", player->GetLevel(), player->GetName().c_str());
+            // #714 (AC Bot/RandomPlayerbotMgr.cpp:1559-1561): the next periodic randomize is scheduled here, after
+            // Randomize(), from the AC config window (AiPlayerbot.Min/MaxRandomBotRandomizeTime, 2 h - 14 days).
+            uint32 const randomTime =
+                urand(sPlayerbotAIConfig->minRandomBotRandomizeTime, sPlayerbotAIConfig->maxRandomBotRandomizeTime);
+            ScheduleRandomize(bot.GetCounter(), randomTime);
             if (pmo)
                 pmo->finish();
             return true;
@@ -471,6 +724,138 @@ void RandomPlayerbotMgr::TagForRandomize(Player* bot, uint32 level)
     ScheduleRandomize(guid, 0);
 }
 
+namespace
+{
+// AC PlayerbotAIConfig.cpp:194. Read here rather than added to PlayerbotAIConfig.h, which every
+// module TU includes. The default is AC's, so a config without the key keeps the 0.25 this call
+// site used to hard-code.
+float ProbTeleToBankers()
+{
+    static float const value = sConfigMgr->GetFloatDefault("AiPlayerbot.ProbTeleToBankers", 0.25f);
+    return value;
+}
+
+// #219: AC PlayerbotAI::StarterLevelDistanceCheck(player, loc, fromStartUp = true) (Bot/PlayerbotAI.cpp:6728-6755), the
+// only form AC's RandomTeleport uses. File-static here so PlayerbotAI.h does not change. A bot above level 16 passes;
+// below, the destination must be on the race/class start map and within 500 yd (level <= 4), 2500 yd (<= 10) or
+// 10000 yd (11-16) of the start position. AC getRace(true) (the native race) is GetRace() on 5.4.8.
+bool StarterLevelDistanceCheck(Player* player, WorldLocation const& loc)
+{
+    if (player->GetLevel() > 16)
+        return true;
+
+    PlayerInfo const* pInfo = sObjectMgr->GetPlayerInfo(player->GetRace(), player->GetClass());
+    if (!pInfo)
+        return false;   // AC dereferences unchecked; no create info = no start position to measure from
+    if (loc.GetMapId() != pInfo->mapId)
+        return false;
+    float const dis = loc.GetExactDist(pInfo->positionX, pInfo->positionY, pInfo->positionZ);
+
+    float bound = 10000.0f;
+    if (player->GetLevel() <= 4)
+        bound = 500.0f;
+    else if (player->GetLevel() <= 10)
+        bound = 2500.0f;
+
+    return dis <= bound;
+}
+
+// AC RandomPlayerbotMgr::RandomTeleport(Player*, std::vector<WorldLocation>&, bool) (Bot/RandomPlayerbotMgr.cpp:1596-1738),
+// file-static so RandomPlayerbotMgr.h does not change. Filters to randomBotMaps (drops battleground/arena maps -
+// Player::TeleportTo silently refuses those outside an active BG, see death-parity-followup.md Gap 2), drops
+// enemy-team zones and water/invalid ground, and only Resets/moves the bot once a destination has passed every
+// check, so a destination that fails every filter no longer rearms the AI for nothing.
+// #268 S9: `hearth` is AC's third parameter (AC Bot/RandomPlayerbotMgr.cpp:1596). It is what
+// distinguishes the banker/city roll from the grind roll - the only difference between the two
+// calls AC RandomTeleportForLevel makes - and it sets the bot's homebind to where it landed.
+bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, bool hearth = false)
+{
+    if (bot->IsBeingTeleported() || !bot->IsInWorld())
+        return false;
+    if (bot->HasUnitState(UNIT_STATE_ROOT))                       // AC: bot->IsRooted()
+        return false;
+    if (bot->InBattlegroundQueue() || bot->InBattleground() || bot->InArena())
+        return false;
+    if (bot->GetGroup() && !bot->GetGroup()->IsLeader(bot->GetGUID()))
+        return false;
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    if (!botAI)
+        return false;
+    if (bot->GetTransport() && bot->HasUnitState(UNIT_STATE_IGNORE_PATHFINDING) && botAI->HasPlayerNearby())
+        return false;                                              // AC: MOVEMENTFLAG_ONTRANSPORT (no such flag on 5.4.8)
+
+    std::vector<uint32> const& maps = sPlayerbotAIConfig->randomBotMaps;
+    std::vector<WorldLocation> tlocs;
+    for (WorldLocation const& loc : locs)
+        if (std::find(maps.begin(), maps.end(), loc.GetMapId()) != maps.end())
+            tlocs.push_back(loc);
+    if (tlocs.empty())
+    {
+        TC_LOG_DEBUG("playerbots", "Cannot teleport bot %s - no locations available", bot->GetName().c_str());
+        return false;
+    }
+
+    std::mt19937 rnd(urand(0, 0x7FFFFFFF));
+    std::shuffle(tlocs.begin(), tlocs.end(), rnd);
+    for (uint32 i = 0; i < tlocs.size(); ++i)
+    {
+        WorldLocation const& loc = tlocs[i];
+        float x = loc.GetPositionX(), y = loc.GetPositionY(), z = loc.GetPositionZ();
+        Map* map = sMapMgr->FindMap(loc.GetMapId(), 0);           // same call RandomTeleportForLevel used
+        if (!map)
+            continue;
+        AreaTableEntry const* zone = sAreaTableStore.LookupEntry(map->GetZoneId(bot->GetPhaseMask(), x, y, z));
+        AreaTableEntry const* area = sAreaTableStore.LookupEntry(map->GetAreaId(bot->GetPhaseMask(), x, y, z));
+        if (!zone || !area)
+            continue;
+        if ((zone->team == 4 && bot->GetTeamId() == TEAM_ALLIANCE) || (zone->team == 2 && bot->GetTeamId() == TEAM_HORDE))
+            continue;
+        if (map->IsInWater(bot->GetPhaseMask(), x, y, z))
+            continue;
+        float const ground = map->GetHeight(bot->GetPhaseMask(), x, y, z + 0.5f);
+        if (ground <= INVALID_HEIGHT)
+            continue;
+        z = 0.05f + ground;
+        // #219: AC :1716 `if (!botAI->StarterLevelDistanceCheck(bot, loc, true)) continue;`. It was left out while every
+        // MoP random bot was level 90; with random levels (owner 2026-10-14) a level 1-16 bot reaches this from the
+        // level-up teleport (AutoMaintenanceOnLevelupAction::AutoTeleportForLevel), so it is ported (file-static below).
+        if (!StarterLevelDistanceCheck(bot, loc))
+            continue;
+
+        TC_LOG_DEBUG("playerbots", "Random teleporting bot %s (level %u) to map %u zone %u area %u %.1f,%.1f,%.1f (%u/%u locations)",
+            bot->GetName().c_str(), bot->GetLevel(), loc.GetMapId(), zone->ID, area->ID, x, y, z, i + 1, uint32(tlocs.size()));
+
+        if (hearth)                                                // AC Bot/RandomPlayerbotMgr.cpp:1730
+            bot->SetHomebind(loc, zone->ID);
+
+        if (botAI->HasPlayerNearby(150.0f))                        // AC: prevent the blink being seen
+            break;
+
+        bot->GetMotionMaster()->Clear();
+        botAI->Reset(true);
+        bot->RemoveAurasWithInterruptFlags(
+            SpellAuraInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED | AURA_INTERRUPT_FLAG_CHANGE_MAP));
+        bot->TeleportTo(loc.GetMapId(), x, y, z, 0.0f);
+        bot->SendMovementFlagUpdate();
+        return true;
+    }
+    return false;
+}
+
+// AC RandomPlayerbotMgr::RandomTeleportGrindForLevel (1900-1910) + TravelMgr::GetTeleportLocations (TravelMgr.cpp:4480-4488).
+void RandomTeleportGrindForLevel(Player* bot)
+{
+    if (bot->InBattleground())
+        return;
+    // #268 S9: this open-copied the same branch; #268 S4 made it a real TravelMgr entry point,
+    // so call it (AC TravelMgr.cpp:4480-4488 via RandomPlayerbotMgr::RandomTeleportGrindForLevel).
+    std::vector<WorldLocation> const& locs = sTravelMgr.GetTeleportLocations(bot);
+    TC_LOG_DEBUG("playerbots", "Random teleporting bot %s for level %u (%u locations available)",
+        bot->GetName().c_str(), bot->GetLevel(), uint32(locs.size()));
+    RandomTeleportToLocs(bot, locs);
+}
+}   // namespace
+
 void RandomPlayerbotMgr::Revive(Player* player)
 {
     uint64 bot = player->GetGUID();
@@ -479,6 +864,12 @@ void RandomPlayerbotMgr::Revive(Player* player)
     SetEventValue(bot, "revive", 0, 0);
 
     Refresh(player);
+
+    // AC RandomPlayerbotMgr::Revive (Bot/RandomPlayerbotMgr.cpp:1584-1594): a revived random bot goes to a
+    // level-appropriate grind/hub spot from TravelMgr, never a city or a farm-zone point that can land on a
+    // battleground/arena map (death-parity-followup.md Gap 2 - GetFarmZoneForPlayer handed out BG/arena maps
+    // that Player::TeleportTo silently refuses, leaving the bot stuck at the graveyard).
+    RandomTeleportGrindForLevel(player);   // AC Revive (Bot/RandomPlayerbotMgr.cpp:1593)
 }
 
 void RandomPlayerbotMgr::Clear(Player* bot)
@@ -499,18 +890,39 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 
     //PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "RandomizeFirst");
 
-    
-    uint32 level = urand(sPlayerbotAIConfig->randomBotMinLevel, maxLevel);
-    uint32 chance = std::clamp<uint32>(sPlayerbotAIConfig->randomBotMaxLevelChance * 100, 0, 100);
-    if (urand(1, 100) <= chance)
-        level = maxLevel;
-
+    // #808: AC Bot/RandomPlayerbotMgr.cpp:2016-2052 - DK bounds, downgrade branch, max/min chance roll.
+    // AC randomBotMinLevelChance (PlayerbotAIConfig.cpp:179) has no config member here; read it in place.
+    static float const minLevelChance = sConfigMgr->GetFloatDefault("AiPlayerbot.RandomBotMinLevelChance", 0.1f);
+    uint32 minLevel = sPlayerbotAIConfig->randomBotMinLevel;
     if (bot->GetClass() == CLASS_DEATH_KNIGHT)
-        level = urand(std::max(sPlayerbotAIConfig->randomBotMinLevel, sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)), std::max(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL), maxLevel));
+    {
+        maxLevel = std::max(maxLevel, sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+        minLevel = std::max(minLevel, sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    }
+
+    uint32 level;
+    if (sPlayerbotAIConfig->downgradeMaxLevelBot && bot->GetLevel() >= sPlayerbotAIConfig->randomBotMaxLevel)
+    {
+        level = bot->GetClass() == CLASS_DEATH_KNIGHT ? sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)
+                                                      : sPlayerbotAIConfig->randomBotMinLevel;
+    }
+    else
+    {
+        uint32 roll = urand(1, 100);
+        if (roll <= 100 * sPlayerbotAIConfig->randomBotMaxLevelChance)
+            level = maxLevel;
+        else if (roll <= 100 * (sPlayerbotAIConfig->randomBotMaxLevelChance + minLevelChance))
+            level = minLevel;
+        else
+            level = urand(minLevel, maxLevel);
+    }
 
     if (sPlayerbotAIConfig->disableRandomLevels)
     {
-        level = bot->GetClass() == CLASS_DEATH_KNIGHT ? std::max(uint32(55), sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)) : uint32(55);
+        // issue #136: AC RandomizeFirst uses RandombotStartingLevel here (was a hard-coded 55).
+        level = bot->GetClass() == CLASS_DEATH_KNIGHT
+            ? std::max(sPlayerbotAIConfig->randombotStartingLevel, sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL))
+            : sPlayerbotAIConfig->randombotStartingLevel;
     }
 
     SetValue(bot, "level", level);
@@ -552,8 +964,37 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 
 void RandomPlayerbotMgr::Randomize(Player* bot)
 {
+    // #808: 1:1 with AC RandomPlayerbotMgr::Randomize (Bot/RandomPlayerbotMgr.cpp:1956-1975) for every random bot,
+    // whatever DisableRandomLevels says (the old "else" path below the branch - GetValue(bot, "level") +
+    // factory.Randomize(false) + Refresh + teleport - has no AC counterpart).
+    if (IsRandomBot(bot))
+    {
+        if (bot->InBattleground())   // AC :1958
+            return;
+
+        if (bot->GetLevel() < 3 || (bot->GetLevel() < 56 && bot->GetClass() == CLASS_DEATH_KNIGHT))
+        {
+            RandomizeFirst(bot);
+        }
+        else if (bot->GetLevel() < sPlayerbotAIConfig->randomBotMaxLevel || !sPlayerbotAIConfig->downgradeMaxLevelBot)
+        {
+            uint8 level = bot->GetLevel();
+            BotFactory factory(bot, level);
+            factory.Randomize(true);
+            // IncreaseLevel(bot);   // commented out in AC (:1967)
+        }
+        else
+        {
+            RandomizeFirst(bot);
+        }
+        // #714: AC RandomPlayerbotMgr::Randomize (Bot/RandomPlayerbotMgr.cpp:1956-1975) schedules nothing; ProcessBot does.
+        return;
+    }
+
+    // Legacy MoP path, kept for addclass bots only (PlayerbotMgr.cpp:843 - not random bots, so AC's Randomize never
+    // sees them): the master-level Randomize(false) + Refresh + teleport.
     if (GET_PLAYERBOT_AI(bot))
-            GET_PLAYERBOT_AI(bot)->Reset(true);
+        GET_PLAYERBOT_AI(bot)->Reset(true);
 
     uint8 level = GetValue(bot, "level");
     BotFactory factory(bot, level);
@@ -563,8 +1004,136 @@ void RandomPlayerbotMgr::Randomize(Player* bot)
     Refresh(bot);
     RandomTeleportForLevel(bot);
 
-    // -- safe
-    ScheduleRandomize(bot->GetGUID().GetCounter(), 62208000);
+    // #714: no 62208000 s reschedule here (AC Randomize schedules nothing; ProcessBot does, AC :1559-1561).
+}
+
+// #808: port of AC RandomPlayerbotMgr::HandlePlayerbotConsoleCommand (Bot/RandomPlayerbotMgr.cpp:2479-2599), routed from
+// cs_playerbots.cpp ".playerbots rndbot <args>" exactly as AC Script/PlayerbotCommandScript.cpp:67 does. A free function
+// (declared extern in cs_playerbots.cpp) instead of AC's static member, so RandomPlayerbotMgr.h stays untouched; every
+// method it dispatches to is public. Differences from AC, each marked below: "stats", "levelup"/"level", "grind" and
+// "change_strategy" are commented out because PrintStats / IncreaseLevel / RandomTeleport(Player*) / ChangeStrategy
+// do not exist on this fork; "reset" cannot clear the private _eventCache (AC :2503 does) - it says to restart anyway.
+bool HandleRandomPlayerbotConsoleCommand(ChatHandler* /*handler*/, char const* args)
+{
+    if (!sPlayerbotAIConfig->enabled)
+    {
+        TC_LOG_ERROR("playerbots", "Playerbots system is currently disabled!");
+        return false;
+    }
+
+    if (!args || !*args)
+    {
+        TC_LOG_ERROR("playerbots", "Usage: rndbot stats/update/reset/init/refresh/add/remove");
+        return false;
+    }
+
+    std::string const cmd = args;
+
+    if (cmd == "reset")
+    {
+        PlayerbotsDatabase.Execute(PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_DEL_RANDOM_BOTS));
+        // AC :2503 sRandomPlayerbotMgr.eventCache.clear(); _eventCache is private here and the restart below reloads it.
+        TC_LOG_INFO("playerbots", "Random bots were reset for all players. Please restart the Server.");
+        return true;
+    }
+
+    if (cmd == "stats")
+    {
+        // sRandomPlayerbotMgr->PrintStats();   // PrintStats does not exist on this fork
+        // activatePrintStatsThread();
+        return true;
+    }
+
+    if (cmd == "reload")
+    {
+        sPlayerbotAIConfig->Initialize();
+        return true;
+    }
+
+    if (cmd == "update")
+    {
+        sRandomPlayerbotMgr->UpdateAIInternal(0);
+        return true;
+    }
+
+    typedef void (RandomPlayerbotMgr::* ConsoleCommandHandler)(Player*);   // private in RandomPlayerbotMgr.h
+    std::map<std::string, ConsoleCommandHandler> handlers;
+    // handlers["initmin"] = &RandomPlayerbotMgr::RandomizeMin;
+    handlers["init"] = &RandomPlayerbotMgr::RandomizeFirst;
+    handlers["clear"] = &RandomPlayerbotMgr::Clear;
+    // handlers["levelup"] = handlers["level"] = &RandomPlayerbotMgr::IncreaseLevel;   // IncreaseLevel does not exist on this fork
+    handlers["refresh"] = &RandomPlayerbotMgr::Refresh;
+    handlers["teleport"] = &RandomPlayerbotMgr::RandomTeleportForLevel;
+    // handlers["rpg"] = &RandomPlayerbotMgr::RandomTeleportForRpg;
+    handlers["revive"] = &RandomPlayerbotMgr::Revive;
+    // handlers["grind"] = &RandomPlayerbotMgr::RandomTeleport;   // RandomTeleport(Player*) does not exist on this fork
+    // handlers["change_strategy"] = &RandomPlayerbotMgr::ChangeStrategy;   // ChangeStrategy does not exist on this fork
+
+    for (std::map<std::string, ConsoleCommandHandler>::iterator j = handlers.begin(); j != handlers.end(); ++j)
+    {
+        std::string const prefix = j->first;
+        if (cmd.find(prefix) != 0)
+            continue;
+
+        std::string const name = cmd.size() > prefix.size() + 1 ? cmd.substr(1 + prefix.size()) : "%";
+
+        std::vector<uint32> botIds;
+        for (std::vector<uint32>::iterator i = sPlayerbotAIConfig->randomBotAccounts.begin();
+             i != sPlayerbotAIConfig->randomBotAccounts.end(); ++i)
+        {
+            uint32 account = *i;
+            if (QueryResult results = CharacterDatabase.PQuery(
+                    "SELECT guid FROM characters WHERE account = %u AND name like '%s'", account, name.c_str()))
+            {
+                do
+                {
+                    Field* fields = results->Fetch();
+
+                    uint32 botId = fields[0].GetUInt32();
+                    ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(botId);
+                    if (!sRandomPlayerbotMgr->IsRandomBot(guid.GetCounter()))
+                    {
+                        continue;
+                    }
+                    Player* bot = ObjectAccessor::FindPlayer(guid);
+                    if (!bot)
+                        continue;
+
+                    botIds.push_back(botId);
+                } while (results->NextRow());
+            }
+        }
+
+        if (botIds.empty())
+        {
+            TC_LOG_INFO("playerbots", "Nothing to do");
+            return false;
+        }
+
+        uint32 processed = 0;
+        for (std::vector<uint32>::iterator i = botIds.begin(); i != botIds.end(); ++i)
+        {
+            ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(*i);
+            Player* bot = ObjectAccessor::FindPlayer(guid);
+            if (!bot)
+                continue;
+
+            TC_LOG_INFO("playerbots", "[%u/%u] Processing command %s for bot %s", processed++, uint32(botIds.size()),
+                        cmd.c_str(), bot->GetName().c_str());
+
+            ConsoleCommandHandler handler = j->second;
+            (sRandomPlayerbotMgr->*handler)(bot);
+        }
+
+        return true;
+    }
+
+    // std::vector<std::string> messages = sRandomPlayerbotMgr->HandlePlayerbotCommand(args);
+    // for (std::vector<std::string>::iterator i = messages.begin(); i != messages.end(); ++i)
+    // {
+    //     TC_LOG_INFO("playerbots", "%s", i->c_str());
+    // }
+    return true;
 }
 
 void RandomPlayerbotMgr::Refresh(Player* bot)
@@ -586,13 +1155,13 @@ void RandomPlayerbotMgr::Refresh(Player* bot)
     if (bot->InBattleground())
         return;
 
-    TC_LOG_INFO("playerbots", "Refreshing bot #%u <%s>", bot->GetGUID(), bot->GetName().c_str());
+    TC_LOG_INFO("playerbots", "Refreshing bot #%u <%s>", bot->GetGUID().GetCounter(), bot->GetName().c_str());
     PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "Refresh");
 
     botAI->Reset();
     bot->DurabilityRepairAll(false, 1.0f, false);
     bot->SetFullHealth();
-    //bot->SetPvP(true);
+    bot->Unit::SetPvP(sWorld->IsPvPRealm());  // #532, AC Bot/RandomPlayerbotMgr.cpp:2192
     BotFactory factory(bot, bot->GetLevel());
     factory.Refresh();
 
@@ -610,6 +1179,12 @@ void RandomPlayerbotMgr::Refresh(Player* bot)
 
     if (pmo)
         pmo->finish();
+}
+
+void RandomPlayerbotMgr::AddCurrentBotForTest(uint32 guidLow)
+{
+    if (std::find(_currentBots.begin(), _currentBots.end(), guidLow) == _currentBots.end())
+        _currentBots.push_back(guidLow);
 }
 
 bool RandomPlayerbotMgr::IsRandomBot(Player* bot)
@@ -665,6 +1240,7 @@ void RandomPlayerbotMgr::GetBots()
 
 uint32 RandomPlayerbotMgr::GetEventValue(uint32 bot, std::string const event)
 {
+    std::lock_guard<std::recursive_mutex> guard(EventCacheLock());
     // load all events at once on first event load
     if (_eventCache[bot].empty())
     {
@@ -698,6 +1274,7 @@ uint32 RandomPlayerbotMgr::GetEventValue(uint32 bot, std::string const event)
 std::string const RandomPlayerbotMgr::GetEventData(uint32 bot, std::string const event)
 {
     std::string data = "";
+    std::lock_guard<std::recursive_mutex> guard(EventCacheLock());
     if (GetEventValue(bot, event))
     {
         CachedEvent e = _eventCache[bot][event];
@@ -723,7 +1300,7 @@ uint32 RandomPlayerbotMgr::SetEventValue(uint32 bot, std::string const event, ui
         stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_INS_RANDOM_BOTS);
         stmt->setUInt32(0, 0);
         stmt->setUInt64(1, bot);
-        auto time = duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        auto time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         stmt->setInt64(2, time);
         stmt->setUInt32(3, validIn);
         stmt->setString(4, event);
@@ -742,6 +1319,7 @@ uint32 RandomPlayerbotMgr::SetEventValue(uint32 bot, std::string const event, ui
     PlayerbotsDatabase.CommitTransaction(trans);
 
     CachedEvent e(value, (uint32)time(nullptr), validIn, data);
+    std::lock_guard<std::recursive_mutex> guard(EventCacheLock());
     _eventCache[bot][event] = std::move(e);
     return value;
 }
@@ -765,10 +1343,1406 @@ void RandomPlayerbotMgr::SetValue(Player* bot, std::string const type, uint32 va
     SetValue(bot->GetGUID().GetCounter(), type, value, data);
 }
 
+// =====================================================================================================================
+// #148: random bot level management - port of AC Bot/RandomBotLevelMgr.cpp (the level brackets + level reset
+// sub-features, AC :1-1171) with its config loader AC PlayerbotAIConfig::LoadRandomBotLevelConfig
+// (PlayerbotAIConfig.cpp:67-79, :947-1098) and AC struct LevelBracketConfig (PlayerbotAIConfig.h:93-99).
+// Kept in this TU so no widely included header changes (PlayerbotAIConfig.h / RandomPlayerbotMgr.h are pulled in by
+// every module TU through Playerbots.h): the AC config members live in a file-static struct with AC's names, read
+// with sConfigMgr like the other file-local keys here. Same AC keys, same AC defaults; both sub-features are OFF by
+// default (AiPlayerbot.LevelBrackets.Enabled = 0, AiPlayerbot.ResetBotLevel.Enabled = 0).
+// 5.4.8 differences (marked in place):
+//  - AC's literal 80 (the WotLK level cap) in the ResetBotLevel validation and default is 90, the 5.4.8 cap.
+//  - 5.4.8 has no arena teams (patch 5.4.0; see BattleGroundJoinAction.cpp canLeadArenaParty), so BotInArenaTeam is
+//    always false and AiPlayerbot.LevelBrackets.IgnoreArenaTeamBots has nothing to exclude.
+//  - AC's equipAndSpecPersistence branch in AdjustBotToRange is kept commented out: the fork has no equip/spec
+//    persistence feature (BotFactory.cpp:837 note), which is what that branch works around.
+//  - Hooks (AC registers a WorldScript and a PlayerScript, :1097-1171): login and logout are called from
+//    RandomPlayerbotMgr::OnPlayerLogin / OnPlayerLogout below (both run for every player, the login one before the bot
+//    AI exists, like AC's PLAYERHOOK_ON_LOGIN); the world update and the level-changed hook are the exported
+//    RandomBotLevelMgrUpdate / RandomBotLevelMgrOnLevelChanged, called from mod_playerbots.cpp (PlayerbotsWorldScript::
+//    OnUpdate, PlayerbotsPlayerScript::OnLevelChanged). AC's OnStartup load is done on the first call of any hook;
+//    RandomBotLevelMgrReloadConfig is AC's OnAfterConfigLoad(reload = true).
+// =====================================================================================================================
+namespace
+{
+uint8 const RESET_BOT_LEVEL_CAP = 90;   // AC PlayerbotAIConfig.cpp:1032-1069 literal 80 = the WotLK cap; 5.4.8 = 90
+
+// AC PlayerbotAIConfig.h:93-99
+struct LevelBracketConfig
+{
+    uint8 lower = 1;
+    uint8 upper = 80;
+    uint8 pct = 0;
+};
+
+// AC PlayerbotAIConfig.h:514-545 (the level brackets + level reset members).
+struct RandomBotLevelConfig
+{
+    bool levelBracketsEnabled = false;
+    uint32 levelBracketsCheckFrequency = 300;
+    uint32 levelBracketsFlaggedCheckFrequency = 15;
+    uint32 levelBracketsFlaggedProcessLimit = 5;
+    bool levelBracketsIgnoreGuildWithRealPlayers = true;
+    bool levelBracketsIgnoreArenaTeamBots = true;
+    bool levelBracketsIgnoreFriendListed = true;
+    std::vector<std::string> levelBracketsExcludeNames;
+    uint8 levelBracketsNumRanges = 9;
+    std::vector<LevelBracketConfig> levelBracketsAlliance;
+    std::vector<LevelBracketConfig> levelBracketsHorde;
+    bool levelBracketsDynamicDistribution = false;
+    float levelBracketsRealPlayerWeight = 1.0f;
+    bool levelBracketsSyncFactions = false;
+
+    bool resetBotLevelEnabled = false;
+    uint8 resetBotLevelMaxLevel = RESET_BOT_LEVEL_CAP;
+    uint8 resetBotLevelResetTo = 1;
+    uint8 resetBotLevelSkipFrom = 0;
+    uint8 resetBotLevelSkipTo = 1;
+    uint8 resetBotLevelChance = 100;
+    bool resetBotLevelScaledChance = false;
+    bool resetBotLevelRestrictTimePlayed = false;
+    uint32 resetBotLevelMinTimePlayed = 86400;
+    uint32 resetBotLevelPlayedTimeCheckFrequency = 864;
+    bool resetBotLevelIgnoreGuildWithRealPlayers = false;
+    std::vector<std::string> resetBotLevelExcludeNames;
+};
+
+RandomBotLevelConfig& LevelCfg()
+{
+    static RandomBotLevelConfig cfg;
+    return cfg;
+}
+
+// AC PlayerbotAIConfig.cpp:67-79 ParseLevelMgrExcludeNames.
+void ParseLevelMgrExcludeNames(std::string const& csv, std::vector<std::string>& out)
+{
+    out.clear();
+    std::istringstream f(csv);
+    std::string s;
+    while (getline(f, s, ','))
+    {
+        s.erase(std::remove_if(s.begin(), s.end(), [](unsigned char c) { return std::isspace(c); }), s.end());
+        if (!s.empty())
+            out.push_back(s);
+    }
+}
+
+// AC PlayerbotAIConfig::LoadRandomBotLevelConfig (PlayerbotAIConfig.cpp:952-1098). AC GetOption<T> = the fork's
+// Get*Default; uint32 keys read as int.
+void LoadRandomBotLevelConfig()
+{
+    RandomBotLevelConfig& c = LevelCfg();
+
+    // ---- Level brackets ----
+    c.levelBracketsEnabled = sConfigMgr->GetBoolDefault("AiPlayerbot.LevelBrackets.Enabled", false);
+    c.levelBracketsIgnoreGuildWithRealPlayers =
+        sConfigMgr->GetBoolDefault("AiPlayerbot.LevelBrackets.IgnoreGuildBotsWithRealPlayers", true);
+    c.levelBracketsIgnoreArenaTeamBots = sConfigMgr->GetBoolDefault("AiPlayerbot.LevelBrackets.IgnoreArenaTeamBots", true);
+
+    c.levelBracketsCheckFrequency = uint32(sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.CheckFrequency", 300));
+    c.levelBracketsFlaggedCheckFrequency =
+        uint32(sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.CheckFlaggedFrequency", 15));
+    c.levelBracketsDynamicDistribution =
+        sConfigMgr->GetBoolDefault("AiPlayerbot.LevelBrackets.Dynamic.UseDynamicDistribution", false);
+    c.levelBracketsRealPlayerWeight =
+        sConfigMgr->GetFloatDefault("AiPlayerbot.LevelBrackets.Dynamic.RealPlayerWeight", 1.0f);
+    c.levelBracketsSyncFactions = sConfigMgr->GetBoolDefault("AiPlayerbot.LevelBrackets.Dynamic.SyncFactions", false);
+    c.levelBracketsIgnoreFriendListed = sConfigMgr->GetBoolDefault("AiPlayerbot.LevelBrackets.IgnoreFriendListed", true);
+    c.levelBracketsFlaggedProcessLimit =
+        uint32(sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.FlaggedProcessLimit", 5));
+
+    ParseLevelMgrExcludeNames(sConfigMgr->GetStringDefault("AiPlayerbot.LevelBrackets.ExcludeNames", ""),
+        c.levelBracketsExcludeNames);
+
+    c.levelBracketsNumRanges = static_cast<uint8>(sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.NumRanges", 9));
+    c.levelBracketsAlliance.assign(c.levelBracketsNumRanges, LevelBracketConfig());
+    c.levelBracketsHorde.assign(c.levelBracketsNumRanges, LevelBracketConfig());
+
+    uint32 const randomBotMaxLevel = sPlayerbotAIConfig->randomBotMaxLevel;
+    for (uint8 i = 0; i < c.levelBracketsNumRanges; ++i)
+    {
+        std::string idx = std::to_string(i + 1);
+        uint32 defaultLower = (i == 0 ? 1 : i * 10);
+        uint32 defaultUpper = (i < c.levelBracketsNumRanges - 1 ? i * 10 + 9 : randomBotMaxLevel);
+        c.levelBracketsAlliance[i].lower = static_cast<uint8>(
+            sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.Alliance.Range" + idx + ".Lower", defaultLower));
+        c.levelBracketsAlliance[i].upper = static_cast<uint8>(
+            sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.Alliance.Range" + idx + ".Upper", defaultUpper));
+        c.levelBracketsAlliance[i].pct = static_cast<uint8>(
+            sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.Alliance.Range" + idx + ".Pct", 11));
+    }
+
+    for (uint8 i = 0; i < c.levelBracketsNumRanges; ++i)
+    {
+        std::string idx = std::to_string(i + 1);
+        uint32 defaultLower = (i == 0 ? 1 : i * 10);
+        uint32 defaultUpper = (i < c.levelBracketsNumRanges - 1 ? i * 10 + 9 : randomBotMaxLevel);
+        c.levelBracketsHorde[i].lower = static_cast<uint8>(
+            sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.Horde.Range" + idx + ".Lower", defaultLower));
+        c.levelBracketsHorde[i].upper = static_cast<uint8>(
+            sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.Horde.Range" + idx + ".Upper", defaultUpper));
+        c.levelBracketsHorde[i].pct = static_cast<uint8>(
+            sConfigMgr->GetIntDefault("AiPlayerbot.LevelBrackets.Horde.Range" + idx + ".Pct", 11));
+    }
+
+    // A mismatch forcibly disables SyncFactions and logs an error; it never brings the server down.
+    if (c.levelBracketsSyncFactions)
+    {
+        for (uint8 i = 0; i < c.levelBracketsNumRanges; ++i)
+        {
+            if (c.levelBracketsAlliance[i].lower != c.levelBracketsHorde[i].lower ||
+                c.levelBracketsAlliance[i].upper != c.levelBracketsHorde[i].upper)
+            {
+                TC_LOG_ERROR("server.loading",
+                    "[RandomBotLevelMgr] Bracket mismatch detected between factions at index %u. Alliance: %u-%u, "
+                    "Horde: %u-%u. SyncFactions requires both bracket count and min/max levels to match exactly; "
+                    "forcibly disabling SyncFactions for this session. Check your configuration.",
+                    uint32(i), uint32(c.levelBracketsAlliance[i].lower), uint32(c.levelBracketsAlliance[i].upper),
+                    uint32(c.levelBracketsHorde[i].lower), uint32(c.levelBracketsHorde[i].upper));
+                c.levelBracketsSyncFactions = false;
+                break;
+            }
+        }
+    }
+
+    // ---- Level reset ----
+    c.resetBotLevelEnabled = sConfigMgr->GetBoolDefault("AiPlayerbot.ResetBotLevel.Enabled", false);
+
+    c.resetBotLevelMaxLevel =
+        static_cast<uint8>(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.MaxLevel", RESET_BOT_LEVEL_CAP));
+    if ((c.resetBotLevelMaxLevel < 2 || c.resetBotLevelMaxLevel > RESET_BOT_LEVEL_CAP) && c.resetBotLevelMaxLevel != 0)
+    {
+        TC_LOG_ERROR("server.loading",
+            "[RandomBotLevelMgr] Invalid AiPlayerbot.ResetBotLevel.MaxLevel value: %u. Using default value %u.",
+            uint32(c.resetBotLevelMaxLevel), uint32(RESET_BOT_LEVEL_CAP));
+        c.resetBotLevelMaxLevel = RESET_BOT_LEVEL_CAP;
+    }
+
+    c.resetBotLevelResetTo = static_cast<uint8>(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.ResetToLevel", 1));
+    if (c.resetBotLevelResetTo < 1 || (c.resetBotLevelMaxLevel > 0 && c.resetBotLevelResetTo >= c.resetBotLevelMaxLevel))
+    {
+        TC_LOG_ERROR("server.loading",
+            "[RandomBotLevelMgr] Invalid AiPlayerbot.ResetBotLevel.ResetToLevel value: %u. Using default value 1.",
+            uint32(c.resetBotLevelResetTo));
+        c.resetBotLevelResetTo = 1;
+    }
+
+    c.resetBotLevelSkipFrom = static_cast<uint8>(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.SkipFromLevel", 0));
+    if (c.resetBotLevelSkipFrom > RESET_BOT_LEVEL_CAP ||
+        (c.resetBotLevelMaxLevel > 0 && c.resetBotLevelSkipFrom >= c.resetBotLevelMaxLevel))
+    {
+        TC_LOG_ERROR("server.loading",
+            "[RandomBotLevelMgr] Invalid AiPlayerbot.ResetBotLevel.SkipFromLevel value: %u. Using default value 0 "
+            "(disabled).",
+            uint32(c.resetBotLevelSkipFrom));
+        c.resetBotLevelSkipFrom = 0;
+    }
+
+    c.resetBotLevelSkipTo = static_cast<uint8>(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.SkipToLevel", 1));
+    if (c.resetBotLevelSkipTo < 1 || c.resetBotLevelSkipTo > RESET_BOT_LEVEL_CAP ||
+        (c.resetBotLevelMaxLevel > 0 && c.resetBotLevelSkipTo > c.resetBotLevelMaxLevel))
+    {
+        TC_LOG_ERROR("server.loading",
+            "[RandomBotLevelMgr] Invalid AiPlayerbot.ResetBotLevel.SkipToLevel value: %u. Using default value 1.",
+            uint32(c.resetBotLevelSkipTo));
+        c.resetBotLevelSkipTo = 1;
+    }
+
+    c.resetBotLevelChance = static_cast<uint8>(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.ResetChance", 100));
+    if (c.resetBotLevelChance > 100)
+    {
+        TC_LOG_ERROR("server.loading",
+            "[RandomBotLevelMgr] Invalid AiPlayerbot.ResetBotLevel.ResetChance value: %u. Using default value 100.",
+            uint32(c.resetBotLevelChance));
+        c.resetBotLevelChance = 100;
+    }
+
+    c.resetBotLevelScaledChance = sConfigMgr->GetBoolDefault("AiPlayerbot.ResetBotLevel.ScaledChance", false);
+
+    c.resetBotLevelRestrictTimePlayed = sConfigMgr->GetBoolDefault("AiPlayerbot.ResetBotLevel.RestrictTimePlayed", false);
+    c.resetBotLevelMinTimePlayed = uint32(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.MinTimePlayed", 86400));
+    c.resetBotLevelPlayedTimeCheckFrequency =
+        uint32(sConfigMgr->GetIntDefault("AiPlayerbot.ResetBotLevel.PlayedTimeCheckFrequency", 864));
+
+    c.resetBotLevelIgnoreGuildWithRealPlayers =
+        sConfigMgr->GetBoolDefault("AiPlayerbot.ResetBotLevel.IgnoreGuildBotsWithRealPlayers", false);
+
+    ParseLevelMgrExcludeNames(sConfigMgr->GetStringDefault("AiPlayerbot.ResetBotLevel.ExcludeNames", ""),
+        c.resetBotLevelExcludeNames);
+}
+
+char const* FactionName(TeamId team) { return (team == TEAM_ALLIANCE) ? "Alliance" : "Horde"; }
+
+// AC RandomBotLevelMgr.cpp:31-38
+bool IsNameInExcludeList(Player* bot, std::vector<std::string> const& excludeList)
+{
+    if (!bot)
+        return false;
+
+    return std::find(excludeList.begin(), excludeList.end(), bot->GetName()) != excludeList.end();
+}
+
+// AC :40-49. AC IsLoggingOut() = isLogingOut() here.
+bool BotInFriendList(Player* bot, std::vector<uint32> const& socialFriendsList)
+{
+    if (!bot || !bot->IsInWorld() || !bot->GetSession() || bot->GetSession()->isLogingOut() ||
+        bot->IsDuringRemoveFromWorld())
+        return false;
+
+    return std::find(socialFriendsList.begin(), socialFriendsList.end(), bot->GetGUID().GetCounter()) !=
+        socialFriendsList.end();
+}
+
+// AC :51-54
+bool IsDisabledBracket(std::vector<LevelBracketConfig> const& configured, uint8 index)
+{
+    return index < configured.size() && configured[index].pct == 0;
+}
+
+// AC :56-67 asks sArenaTeamMgr for the bot's 2v2/3v3/5v5 team. 5.4.8 has no arena teams (patch 5.4.0, any party of the
+// bracket size queues; BattleGroundJoinAction.cpp canLeadArenaParty), so no bot is ever in one.
+bool BotInArenaTeam(Player* bot)
+{
+    if (!bot)
+        return false;
+    return false;
+}
+
+// AC :69-110. AC sLFGMgr->GetState(guid) = GetActiveState(guid) on 5.4.8 (queues per id, PlayerbotAI.cpp:1618).
+bool IsBotSafeForLevelReset(Player* bot)
+{
+    if (!bot || !bot->GetSession() || bot->GetSession()->isLogingOut() || bot->IsDuringRemoveFromWorld())
+        return false;
+
+    if (!bot->IsInWorld())
+        return false;
+
+    if (!bot->IsAlive())
+        return false;
+
+    if (bot->IsInCombat())
+        return false;
+
+    if (bot->InBattleground() || bot->InArena() || bot->inRandomLfgDungeon() || bot->InBattlegroundQueue())
+        return false;
+
+    if (sLFGMgr->GetActiveState(bot->GetGUID()) != lfg::LFG_STATE_NONE)
+        return false;
+
+    if (Group* group = bot->GetGroup())
+    {
+        if (sLFGMgr->GetActiveState(group->GetGUID()) != lfg::LFG_STATE_NONE)
+            return false;
+    }
+
+    if (bot->IsInFlight())
+        return false;
+
+    if (Group* group = bot->GetGroup())
+    {
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (member && member->IsInWorld() && !GET_PLAYERBOT_AI(member))
+                return false;
+        }
+    }
+    return true;
+}
+
+// AC RandomBotLevelMgr.h:23-96: owns the two sub-features' runtime working state (working bracket copies, the
+// pending-reset queue, the timers). Config lives in LevelCfg() (AC: PlayerbotAIConfig).
+class RandomBotLevelMgr
+{
+public:
+    static RandomBotLevelMgr& instance()
+    {
+        static RandomBotLevelMgr instance;
+
+        return instance;
+    }
+
+    void LoadConfig();
+    void LogStartupSummary() const;
+    void Update(uint32 diff);
+    void OnBotLogin(Player* player);
+    void OnBotLevelChanged(Player* player, uint8 oldLevel);
+    void OnPlayerLogout(Player* player);
+
+    // AC loads the config in PlayerbotAIConfig::Initialize and the working state in RandomBotLevelWorldScript::OnStartup
+    // (:1106-1110); here both happen on the first hook call (the first one is the world update after startup).
+    void EnsureLoaded()
+    {
+        std::call_once(_loadOnce, [this]()
+        {
+            LoadRandomBotLevelConfig();
+            LoadConfig();
+            LogStartupSummary();
+        });
+    }
+
+    // Guards _pendingLevelResets: the logout hook can run off the world thread (a bot session's logout).
+    std::recursive_mutex& Lock() { return _lock; }
+
+private:
+    RandomBotLevelMgr() = default;
+    ~RandomBotLevelMgr() = default;
+
+    RandomBotLevelMgr(RandomBotLevelMgr const&) = delete;
+    RandomBotLevelMgr& operator=(RandomBotLevelMgr const&) = delete;
+
+    RandomBotLevelMgr(RandomBotLevelMgr&&) = delete;
+    RandomBotLevelMgr& operator=(RandomBotLevelMgr&&) = delete;
+
+    // Resolved back to the live _allianceRanges/_hordeRanges vector at process time, since those
+    // vectors can be resized on a config reload.
+    struct PendingResetEntry
+    {
+        ObjectGuid botGuid;
+        int targetRange;
+        TeamId team;
+    };
+
+    // ---- Level brackets sub-feature ----
+    std::vector<LevelBracketConfig>& GetFactionRanges(TeamId team);
+    void ClampAndBalanceBrackets();
+    void ApplyBracketWeights(std::vector<LevelBracketConfig>& ranges, std::vector<float> const& weights);
+    int GetLevelRangeIndex(uint8 level, TeamId team);
+    void AdjustBotToRange(Player* bot, int targetRangeIndex, TeamId team);
+    void LoadSocialFriendList();
+    int GetOrFlagPlayerBracket(Player* player);
+    void RunLevelBracketsDistribution();
+    void ProcessFactionDistribution(TeamId team, uint32 totalBots, std::vector<int>& actualCounts,
+        std::vector<std::vector<Player*>>& botsByRange);
+    void RedistributeSurplusBots(std::vector<Player*>& sourceBots, int fromRange, TeamId team,
+        std::vector<int>& actualCounts, std::vector<int> const& desiredCounts, std::vector<int> const& targetRanges);
+    void ProcessPendingLevelResets();
+
+    // ---- Level reset sub-feature ----
+    uint8 ComputeResetChance(uint8 level) const;
+    void ResetBot(Player* player, uint8 currentLevel);
+    void SkipBotLevel(Player* player, uint8 currentLevel);
+    void RunResetPlayedTimeCheck();
+
+    // Level brackets: working copies, since dynamic distribution and the clamp/rebalance pass
+    // mutate percentages at runtime and must never write back into the config.
+    std::vector<LevelBracketConfig> _allianceRanges;
+    std::vector<LevelBracketConfig> _hordeRanges;
+    uint8 _numRanges = 9;
+    uint8 _randomBotMinLevel = 1;
+    uint8 _randomBotMaxLevel = 80;
+    std::vector<PendingResetEntry> _pendingLevelResets;
+    std::vector<uint32> _socialFriendsList;
+
+    uint32 _bracketsTimer = 0; // Level brackets: distribution adjustments
+    uint32 _flaggedTimer = 0;  // Level brackets: pending reset checks
+    uint32 _resetTimer = 0;    // Level reset: played-time based reset checks
+
+    std::once_flag _loadOnce;
+    std::recursive_mutex _lock;
+};
+
+// =============================================================================
+// LEVEL BRACKETS FEATURE
+// =============================================================================
+
+std::vector<LevelBracketConfig>& RandomBotLevelMgr::GetFactionRanges(TeamId team)
+{
+    return (team == TEAM_ALLIANCE) ? _allianceRanges : _hordeRanges;
+}
+
+// AC :121-133
+void RandomBotLevelMgr::LoadConfig()
+{
+    _allianceRanges = LevelCfg().levelBracketsAlliance;
+    _hordeRanges = LevelCfg().levelBracketsHorde;
+    _numRanges = LevelCfg().levelBracketsNumRanges;
+    _randomBotMinLevel = static_cast<uint8>(sPlayerbotAIConfig->randomBotMinLevel);
+    _randomBotMaxLevel = static_cast<uint8>(sPlayerbotAIConfig->randomBotMaxLevel);
+
+    ClampAndBalanceBrackets();
+}
+
+// AC :135-175
+void RandomBotLevelMgr::LogStartupSummary() const
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    if (!c.levelBracketsEnabled)
+        TC_LOG_INFO("playerbots", "[RandomBotLevelMgr] Level brackets sub-feature disabled via configuration.");
+    else
+    {
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] Level brackets loaded. Check frequency: %u seconds, flagged check frequency: %u "
+            "seconds.",
+            c.levelBracketsCheckFrequency, c.levelBracketsFlaggedCheckFrequency);
+        for (uint8 i = 0; i < _numRanges; ++i)
+            TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] Alliance Range %u: %u-%u, Desired Percentage: %u%%", i + 1,
+                uint32(_allianceRanges[i].lower), uint32(_allianceRanges[i].upper), uint32(_allianceRanges[i].pct));
+        for (uint8 i = 0; i < _numRanges; ++i)
+            TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] Horde Range %u: %u-%u, Desired Percentage: %u%%", i + 1,
+                uint32(_hordeRanges[i].lower), uint32(_hordeRanges[i].upper), uint32(_hordeRanges[i].pct));
+    }
+
+    if (!c.resetBotLevelEnabled)
+        TC_LOG_INFO("playerbots", "[RandomBotLevelMgr] Level reset sub-feature disabled via configuration.");
+    else
+    {
+        std::string const excluded = c.resetBotLevelExcludeNames.empty()
+            ? std::string("None")
+            : std::to_string(c.resetBotLevelExcludeNames.size()) + " names";
+        TC_LOG_INFO("playerbots",
+            "[RandomBotLevelMgr] Level reset loaded. MaxLevel = %u (%s), ResetToLevel = %u, SkipFromLevel = %u (%s), "
+            "SkipToLevel = %u, ResetChance = %u%%, ScaledChance = %s, RestrictTimePlayed = %s, "
+            "IgnoreGuildBotsWithRealPlayers = %s, ExcludedNames = %s.",
+            uint32(c.resetBotLevelMaxLevel), c.resetBotLevelMaxLevel > 0 ? "Enabled" : "Disabled",
+            uint32(c.resetBotLevelResetTo), uint32(c.resetBotLevelSkipFrom),
+            c.resetBotLevelSkipFrom > 0 ? "Enabled" : "Disabled", uint32(c.resetBotLevelSkipTo),
+            uint32(c.resetBotLevelChance), c.resetBotLevelScaledChance ? "Enabled" : "Disabled",
+            c.resetBotLevelRestrictTimePlayed ? "Enabled" : "Disabled",
+            c.resetBotLevelIgnoreGuildWithRealPlayers ? "Enabled" : "Disabled", excluded.c_str());
+    }
+}
+
+// AC :177-242. Clamps bracket bounds to [_randomBotMinLevel, _randomBotMaxLevel] and rebalances the desired
+// percentages (per faction) back to summing to 100, if they don't already.
+void RandomBotLevelMgr::ClampAndBalanceBrackets()
+{
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        if (_allianceRanges[i].lower < _randomBotMinLevel)
+            _allianceRanges[i].lower = _randomBotMinLevel;
+        if (_allianceRanges[i].upper > _randomBotMaxLevel)
+            _allianceRanges[i].upper = _randomBotMaxLevel;
+        if (_allianceRanges[i].lower > _allianceRanges[i].upper)
+            _allianceRanges[i].pct = 0;
+    }
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        if (_hordeRanges[i].lower < _randomBotMinLevel)
+            _hordeRanges[i].lower = _randomBotMinLevel;
+        if (_hordeRanges[i].upper > _randomBotMaxLevel)
+            _hordeRanges[i].upper = _randomBotMaxLevel;
+        if (_hordeRanges[i].lower > _hordeRanges[i].upper)
+            _hordeRanges[i].pct = 0;
+    }
+
+    uint32 totalAlliance = 0;
+    uint32 totalHorde = 0;
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        totalAlliance += _allianceRanges[i].pct;
+        totalHorde += _hordeRanges[i].pct;
+    }
+
+    if (totalAlliance != 100 && totalAlliance > 0)
+    {
+        TC_LOG_TRACE("playerbots",
+            "[RandomBotLevelMgr] Alliance: Sum of percentages is %u (expected 100). Auto adjusting.", totalAlliance);
+        int missing = 100 - totalAlliance;
+        while (missing > 0)
+        {
+            for (uint8 i = 0; i < _numRanges && missing > 0; ++i)
+            {
+                if (_allianceRanges[i].lower <= _allianceRanges[i].upper && _allianceRanges[i].pct > 0)
+                {
+                    _allianceRanges[i].pct++;
+                    missing--;
+                }
+            }
+        }
+    }
+    if (totalHorde != 100 && totalHorde > 0)
+    {
+        TC_LOG_TRACE("playerbots", "[RandomBotLevelMgr] Horde: Sum of percentages is %u (expected 100). Auto adjusting.",
+            totalHorde);
+        int missing = 100 - totalHorde;
+        while (missing > 0)
+        {
+            for (uint8 i = 0; i < _numRanges && missing > 0; ++i)
+            {
+                if (_hordeRanges[i].lower <= _hordeRanges[i].upper && _hordeRanges[i].pct > 0)
+                {
+                    _hordeRanges[i].pct++;
+                    missing--;
+                }
+            }
+        }
+    }
+}
+
+// AC :244-269
+void RandomBotLevelMgr::ApplyBracketWeights(std::vector<LevelBracketConfig>& ranges, std::vector<float> const& weights)
+{
+    float total = 0.0f;
+    for (uint8 i = 0; i < _numRanges; ++i)
+        total += weights[i];
+
+    int pctSum = 0;
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        uint8 pct = (total > 0.0f) ? static_cast<uint8>(std::round((weights[i] / total) * 100)) : 0;
+        ranges[i].pct = pct;
+        pctSum += pct;
+    }
+    // Fix rounding drift so sum = 100.
+    int missing = 100 - pctSum;
+    for (uint8 i = 0; i < _numRanges && missing > 0; ++i)
+    {
+        if (ranges[i].lower <= ranges[i].upper && ranges[i].pct > 0)
+        {
+            ranges[i].pct++;
+            missing--;
+        }
+    }
+}
+
+// AC :271-288
+int RandomBotLevelMgr::GetLevelRangeIndex(uint8 level, TeamId team)
+{
+    if (level < _randomBotMinLevel || level > _randomBotMaxLevel)
+        return -1;
+
+    if (team != TEAM_ALLIANCE && team != TEAM_HORDE)
+        return -1;
+
+    std::vector<LevelBracketConfig> const& ranges = GetFactionRanges(team);
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        if (level >= ranges[i].lower && level <= ranges[i].upper)
+            return i;
+    }
+
+    return -1;
+}
+
+// AC :290-364. Death Knights are never assigned below CONFIG_START_HEROIC_PLAYER_LEVEL.
+void RandomBotLevelMgr::AdjustBotToRange(Player* bot, int targetRangeIndex, TeamId team)
+{
+    if (!bot || !bot->IsInWorld() || !bot->GetSession() || bot->GetSession()->isLogingOut() ||
+        bot->IsDuringRemoveFromWorld())
+        return;
+
+    if (targetRangeIndex < 0 || targetRangeIndex >= _numRanges)
+        return;
+
+    std::vector<LevelBracketConfig> const& factionRanges = GetFactionRanges(team);
+    if (static_cast<size_t>(targetRangeIndex) >= factionRanges.size())
+        return;
+
+    if (bot->IsMounted())
+        bot->Dismount();
+
+    uint8 botOriginalLevel = bot->GetLevel();
+    uint8 newLevel = 0;
+
+    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+
+    if (bot->GetClass() == CLASS_DEATH_KNIGHT)
+    {
+        uint8 lowerBound = factionRanges[targetRangeIndex].lower;
+        uint8 upperBound = factionRanges[targetRangeIndex].upper;
+        if (upperBound < dkMinLevel)
+        {
+            TC_LOG_TRACE("playerbots",
+                "[RandomBotLevelMgr] AdjustBotToRange: Cannot assign %s Death Knight '%s' (%u) to range %u-%u "
+                "(below level %u).",
+                FactionName(team), bot->GetName().c_str(), uint32(botOriginalLevel), uint32(lowerBound),
+                uint32(upperBound), uint32(dkMinLevel));
+            return;
+        }
+        if (lowerBound < dkMinLevel)
+            lowerBound = dkMinLevel;
+        if (lowerBound > upperBound)
+            return;
+        newLevel = urand(lowerBound, upperBound);
+    }
+    else
+    {
+        LevelBracketConfig const& range = factionRanges[targetRangeIndex];
+        if (range.lower > range.upper)
+        {
+            TC_LOG_TRACE("playerbots", "[RandomBotLevelMgr] AdjustBotToRange: Invalid range %u-%u for %s bot '%s'.",
+                uint32(range.lower), uint32(range.upper), FactionName(team), bot->GetName().c_str());
+            return;
+        }
+        newLevel = urand(range.lower, range.upper);
+    }
+
+    BotFactory newFactory(bot, newLevel);
+    newFactory.Randomize(false);
+
+    // AC :349-356 force-resets talents when equipAndSpecPersistence is on and the bot rolled to max level. The fork
+    // has no equip/spec persistence (BotFactory.cpp:837), the issue this works around, so it stays dormant:
+    // if (newLevel == _randomBotMaxLevel && sPlayerbotAIConfig.equipAndSpecPersistence)
+    // {
+    //     PlayerbotFactory tempFactory(bot, newLevel);
+    //     tempFactory.InitTalentsTree(false, true, true);
+    // }
+
+    TC_LOG_TRACE("playerbots",
+        "[RandomBotLevelMgr] AdjustBotToRange: %s Bot '%s' - %s (%u) adjusted to level %u (target range %u-%u).",
+        FactionName(team), bot->GetName().c_str(), ClassToString(Classes(bot->GetClass())).c_str(),
+        uint32(botOriginalLevel), uint32(newLevel), uint32(factionRanges[targetRangeIndex].lower),
+        uint32(factionRanges[targetRangeIndex].upper));
+}
+
+// AC :366-379. Loads the list of social friend low GUIDs (character_social, flags = 1) into _socialFriendsList.
+void RandomBotLevelMgr::LoadSocialFriendList()
+{
+    _socialFriendsList.clear();
+    QueryResult result = CharacterDatabase.Query("SELECT friend FROM character_social WHERE flags = 1");
+
+    if (!result || result->GetRowCount() == 0)
+        return;
+
+    do
+    {
+        _socialFriendsList.push_back(result->Fetch()[0].GetUInt32());
+    } while (result->NextRow());
+}
+
+// AC :381-476. Returns the bracket index for a player, flagging it for a pending level reset (to the closest
+// bracket) if it currently falls outside every defined range for its faction. Only random bots are ever enqueued.
+int RandomBotLevelMgr::GetOrFlagPlayerBracket(Player* player)
+{
+    bool isRandomBot = sRandomPlayerbotMgr->IsRandomBot(player);
+    RandomBotLevelConfig const& c = LevelCfg();
+
+    if (isRandomBot && IsNameInExcludeList(player, c.levelBracketsExcludeNames))
+        return -1;
+
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+    if (isRandomBot && c.levelBracketsIgnoreGuildWithRealPlayers && botAI && botAI->IsInRealGuild())
+        return -1;
+
+    if (isRandomBot && c.levelBracketsIgnoreArenaTeamBots && BotInArenaTeam(player))
+        return -1;
+
+    // Exclude bots grouped with a real player from bracket processing.
+    if (isRandomBot)
+    {
+        if (Group* group = player->GetGroup())
+        {
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+            {
+                Player* member = ref->GetSource();
+                if (member && member->IsInWorld() && !GET_PLAYERBOT_AI(member))
+                    return -1;
+            }
+        }
+    }
+
+    TeamId team = player->GetTeamId();
+    int rangeIndex = GetLevelRangeIndex(player->GetLevel(), team);
+    if (rangeIndex >= 0)
+        return rangeIndex;
+
+    if (team != TEAM_ALLIANCE && team != TEAM_HORDE)
+        return -1;
+
+    // Only random bots may be queued for a level reset below.
+    if (!isRandomBot)
+        return -1;
+
+    std::vector<LevelBracketConfig> const& factionRanges = GetFactionRanges(team);
+
+    int targetRange = -1;
+    int smallestDiff = std::numeric_limits<int>::max();
+    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    for (int i = 0; i < _numRanges; ++i)
+    {
+        if (factionRanges[i].lower > factionRanges[i].upper)
+            continue;
+
+        if (factionRanges[i].pct == 0)
+            continue;
+
+        // Skip brackets that Death Knights cannot be assigned to.
+        if (player->GetClass() == CLASS_DEATH_KNIGHT && factionRanges[i].upper < dkMinLevel)
+            continue;
+
+        int diff = 0;
+        if (player->GetLevel() < factionRanges[i].lower)
+            diff = factionRanges[i].lower - player->GetLevel();
+        else if (player->GetLevel() > factionRanges[i].upper)
+            diff = player->GetLevel() - factionRanges[i].upper;
+        if (diff < smallestDiff)
+        {
+            smallestDiff = diff;
+            targetRange = i;
+        }
+    }
+
+    if (targetRange >= 0)
+    {
+        bool alreadyFlagged = false;
+        ObjectGuid guid = player->GetGUID();
+        for (auto const& entry : _pendingLevelResets)
+        {
+            if (entry.botGuid == guid)
+            {
+                alreadyFlagged = true;
+                break;
+            }
+        }
+        if (!alreadyFlagged)
+            _pendingLevelResets.push_back({guid, targetRange, team});
+    }
+
+    return -1;
+}
+
+// AC :478-514. Moves bots from an over-populated range into ranges that still need bots.
+void RandomBotLevelMgr::RedistributeSurplusBots(std::vector<Player*>& sourceBots, int fromRange, TeamId team,
+    std::vector<int>& actualCounts, std::vector<int> const& desiredCounts, std::vector<int> const& targetRanges)
+{
+    size_t targetIdx = 0;
+    while (actualCounts[fromRange] > desiredCounts[fromRange] && !sourceBots.empty() && targetIdx < targetRanges.size())
+    {
+        Player* bot = sourceBots.back();
+        sourceBots.pop_back();
+
+        int targetRange = targetRanges[targetIdx];
+        if (actualCounts[targetRange] >= desiredCounts[targetRange])
+        {
+            ++targetIdx;
+            continue;
+        }
+
+        ObjectGuid botGuid = bot->GetGUID();
+        bool alreadyFlagged = false;
+        for (auto const& entry : _pendingLevelResets)
+        {
+            if (entry.botGuid == botGuid)
+            {
+                alreadyFlagged = true;
+                break;
+            }
+        }
+        if (!alreadyFlagged)
+            _pendingLevelResets.push_back({botGuid, targetRange, team});
+
+        actualCounts[fromRange]--;
+        actualCounts[targetRange]++;
+        if (actualCounts[targetRange] >= desiredCounts[targetRange])
+            ++targetIdx;
+    }
+}
+
+// AC :516-558. Desired-vs-actual counts for one faction; flags surplus bots (safe first, then flagged ones).
+void RandomBotLevelMgr::ProcessFactionDistribution(TeamId team, uint32 totalBots, std::vector<int>& actualCounts,
+    std::vector<std::vector<Player*>>& botsByRange)
+{
+    if (totalBots == 0)
+        return;
+
+    std::vector<LevelBracketConfig> const& ranges = GetFactionRanges(team);
+    char const* factionName = FactionName(team);
+
+    std::vector<int> desiredCounts(_numRanges, 0);
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        desiredCounts[i] = static_cast<int>(std::round((ranges[i].pct / 100.0) * totalBots));
+        TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] %s Range %u (%u-%u): Desired = %d, Actual = %d.",
+            factionName, i + 1, uint32(ranges[i].lower), uint32(ranges[i].upper), desiredCounts[i], actualCounts[i]);
+    }
+
+    for (uint8 i = 0; i < _numRanges; ++i)
+    {
+        std::vector<Player*> safeBots;
+        std::vector<Player*> flaggedBots;
+        for (Player* bot : botsByRange[i])
+        {
+            if (IsBotSafeForLevelReset(bot))
+                safeBots.push_back(bot);
+            else
+                flaggedBots.push_back(bot);
+        }
+
+        std::vector<int> targetRanges;
+        for (uint8 j = 0; j < _numRanges; ++j)
+        {
+            if (actualCounts[j] < desiredCounts[j])
+                targetRanges.push_back(j);
+        }
+
+        // #148 diagnostic (no AC counterpart): why a surplus range does not drain - safe vs unsafe bots in the range
+        // and the pending-reset queue size, for the surplus ranges only.
+        if (actualCounts[i] > desiredCounts[i])
+            TC_LOG_DEBUG("playerbots",
+                "[RandomBotLevelMgr] %s Range %u surplus %d: safe=%u unsafe=%u targets=%u pending=%u.",
+                factionName, i + 1, actualCounts[i] - desiredCounts[i], uint32(safeBots.size()),
+                uint32(flaggedBots.size()), uint32(targetRanges.size()), uint32(_pendingLevelResets.size()));
+
+        RedistributeSurplusBots(safeBots, i, team, actualCounts, desiredCounts, targetRanges);
+        RedistributeSurplusBots(flaggedBots, i, team, actualCounts, desiredCounts, targetRanges);
+    }
+}
+
+// AC :560-708. The periodic distribution pass.
+void RandomBotLevelMgr::RunLevelBracketsDistribution()
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    auto const& allPlayers = ObjectAccessor::GetPlayers();
+
+    LoadSocialFriendList();
+
+    if (c.levelBracketsDynamicDistribution)
+    {
+        // Calculate real player bracket counts.
+        std::vector<int> allianceRealCounts(_numRanges, 0);
+        std::vector<int> hordeRealCounts(_numRanges, 0);
+        uint32 totalAllianceReal = 0;
+        uint32 totalHordeReal = 0;
+
+        for (auto const& itr : allPlayers)
+        {
+            Player* player = itr.second;
+            if (!player || !player->IsInWorld())
+                continue;
+            if (GET_PLAYERBOT_AI(player))
+                continue; // Only count real players.
+            int rangeIndex = GetOrFlagPlayerBracket(player);
+            if (rangeIndex < 0)
+                continue;
+            if (player->GetTeamId() == TEAM_ALLIANCE)
+            {
+                allianceRealCounts[rangeIndex]++;
+                totalAllianceReal++;
+            }
+            else if (player->GetTeamId() == TEAM_HORDE)
+            {
+                hordeRealCounts[rangeIndex]++;
+                totalHordeReal++;
+            }
+        }
+
+        float const baseline = 1.0f;
+        std::vector<float> allianceWeights(_numRanges, 0.0f);
+        std::vector<float> hordeWeights(_numRanges, 0.0f);
+
+        // SYNCED MODE: real player weighting is combined for both factions, applied to both bracket tables.
+        if (c.levelBracketsSyncFactions)
+        {
+            uint32 totalCombinedReal = totalAllianceReal + totalHordeReal;
+            for (uint8 i = 0; i < _numRanges; ++i)
+            {
+                int combinedReal = allianceRealCounts[i] + hordeRealCounts[i];
+                float weight = baseline + c.levelBracketsRealPlayerWeight *
+                    (totalCombinedReal > 0 ? (1.0f / float(totalCombinedReal)) : 1.0f) * std::log(1 + combinedReal);
+
+                allianceWeights[i] = IsDisabledBracket(c.levelBracketsAlliance, i) ? 0.0f : weight;
+                hordeWeights[i] = IsDisabledBracket(c.levelBracketsHorde, i) ? 0.0f : weight;
+            }
+        }
+        else
+        {
+            // Separate dynamic weighting for each faction.
+            for (uint8 i = 0; i < _numRanges; ++i)
+            {
+                if (_allianceRanges[i].lower > _allianceRanges[i].upper || IsDisabledBracket(c.levelBracketsAlliance, i))
+                    allianceWeights[i] = 0.0f;
+                else
+                    allianceWeights[i] = baseline + c.levelBracketsRealPlayerWeight *
+                        (totalAllianceReal > 0 ? (1.0f / totalAllianceReal) : 1.0f) *
+                        std::log(1 + allianceRealCounts[i]);
+
+                if (_hordeRanges[i].lower > _hordeRanges[i].upper || IsDisabledBracket(c.levelBracketsHorde, i))
+                    hordeWeights[i] = 0.0f;
+                else
+                    hordeWeights[i] = baseline + c.levelBracketsRealPlayerWeight *
+                        (totalHordeReal > 0 ? (1.0f / totalHordeReal) : 1.0f) * std::log(1 + hordeRealCounts[i]);
+            }
+        }
+
+        ApplyBracketWeights(_allianceRanges, allianceWeights);
+        ApplyBracketWeights(_hordeRanges, hordeWeights);
+
+        // Ensure brackets respect global min/max levels and percentages sum to 100.
+        ClampAndBalanceBrackets();
+
+        for (uint8 i = 0; i < _numRanges; ++i)
+            TC_LOG_DEBUG("playerbots",
+                "[RandomBotLevelMgr] Final Range %u: %u-%u, Alliance Desired: %u%%, Horde Desired: %u%%", i + 1,
+                uint32(_allianceRanges[i].lower), uint32(_allianceRanges[i].upper), uint32(_allianceRanges[i].pct),
+                uint32(_hordeRanges[i].pct));
+    }
+
+    uint32 totalAllianceBots = 0;
+    std::vector<int> allianceActualCounts(_numRanges, 0);
+    std::vector<std::vector<Player*>> allianceBotsByRange(_numRanges);
+
+    uint32 totalHordeBots = 0;
+    std::vector<int> hordeActualCounts(_numRanges, 0);
+    std::vector<std::vector<Player*>> hordeBotsByRange(_numRanges);
+
+    for (auto const& itr : allPlayers)
+    {
+        Player* player = itr.second;
+        if (!player || !player->IsInWorld())
+            continue;
+        if (!sRandomPlayerbotMgr->IsRandomBot(player))
+            continue;
+        if (IsNameInExcludeList(player, c.levelBracketsExcludeNames))
+            continue;
+
+        PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+        if (c.levelBracketsIgnoreGuildWithRealPlayers && botAI && botAI->IsInRealGuild())
+            continue;
+        if (c.levelBracketsIgnoreFriendListed && BotInFriendList(player, _socialFriendsList))
+            continue;
+        if (c.levelBracketsIgnoreArenaTeamBots && BotInArenaTeam(player))
+            continue;
+
+        if (player->GetTeamId() == TEAM_ALLIANCE)
+        {
+            totalAllianceBots++;
+            int rangeIndex = GetOrFlagPlayerBracket(player);
+            if (rangeIndex >= 0)
+            {
+                allianceActualCounts[rangeIndex]++;
+                allianceBotsByRange[rangeIndex].push_back(player);
+            }
+        }
+        else if (player->GetTeamId() == TEAM_HORDE)
+        {
+            totalHordeBots++;
+            int rangeIndex = GetOrFlagPlayerBracket(player);
+            if (rangeIndex >= 0)
+            {
+                hordeActualCounts[rangeIndex]++;
+                hordeBotsByRange[rangeIndex].push_back(player);
+            }
+        }
+    }
+
+    TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] Total Alliance Bots: %u. Total Horde Bots: %u.",
+        totalAllianceBots, totalHordeBots);
+
+    ProcessFactionDistribution(TEAM_ALLIANCE, totalAllianceBots, allianceActualCounts, allianceBotsByRange);
+    ProcessFactionDistribution(TEAM_HORDE, totalHordeBots, hordeActualCounts, hordeBotsByRange);
+
+    TC_LOG_DEBUG("playerbots",
+        "[RandomBotLevelMgr] Distribution adjustment complete. Alliance bots: %u, Horde bots: %u.", totalAllianceBots,
+        totalHordeBots);
+}
+
+// AC :710-800. Applies up to FlaggedProcessLimit pending resets per cycle (0 = unlimited).
+void RandomBotLevelMgr::ProcessPendingLevelResets()
+{
+    if (_pendingLevelResets.empty())
+        return;
+
+    RandomBotLevelConfig const& c = LevelCfg();
+    uint32 processed = 0;
+    for (auto it = _pendingLevelResets.begin(); it != _pendingLevelResets.end();)
+    {
+        if (c.levelBracketsFlaggedProcessLimit > 0 && processed >= c.levelBracketsFlaggedProcessLimit)
+            break;
+
+        Player* bot = ObjectAccessor::FindPlayer(it->botGuid);
+
+        if (!bot || !bot->IsInWorld() || !bot->GetSession() || bot->GetSession()->isLogingOut() ||
+            bot->IsDuringRemoveFromWorld())
+        {
+            it = _pendingLevelResets.erase(it);
+            continue;
+        }
+
+        // Defensive: never resolve a queue entry to anything but a random bot.
+        if (!sRandomPlayerbotMgr->IsRandomBot(bot))
+        {
+            it = _pendingLevelResets.erase(it);
+            continue;
+        }
+
+        if (IsNameInExcludeList(bot, c.levelBracketsExcludeNames))
+        {
+            it = _pendingLevelResets.erase(it);
+            continue;
+        }
+
+        int targetRange = it->targetRange;
+
+        PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+        if (c.levelBracketsIgnoreGuildWithRealPlayers && botAI && botAI->IsInRealGuild())
+        {
+            it = _pendingLevelResets.erase(it);
+            continue;
+        }
+
+        if (c.levelBracketsIgnoreFriendListed && BotInFriendList(bot, _socialFriendsList))
+        {
+            it = _pendingLevelResets.erase(it);
+            continue;
+        }
+
+        if (c.levelBracketsIgnoreArenaTeamBots && BotInArenaTeam(bot))
+        {
+            it = _pendingLevelResets.erase(it);
+            continue;
+        }
+
+        // Check if the bot is now grouped with a real player.
+        if (Group* group = bot->GetGroup())
+        {
+            bool hasRealPlayer = false;
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+            {
+                Player* member = ref->GetSource();
+                if (member && member->IsInWorld() && !GET_PLAYERBOT_AI(member))
+                {
+                    hasRealPlayer = true;
+                    break;
+                }
+            }
+            if (hasRealPlayer)
+            {
+                it = _pendingLevelResets.erase(it);
+                continue;
+            }
+        }
+
+        if (IsBotSafeForLevelReset(bot))
+        {
+            AdjustBotToRange(bot, targetRange, it->team);
+            it = _pendingLevelResets.erase(it);
+            ++processed;
+        }
+        else
+            ++it;
+    }
+}
+
+// =============================================================================
+// LEVEL RESET FEATURE
+// =============================================================================
+
+// AC :806-825
+uint8 RandomBotLevelMgr::ComputeResetChance(uint8 level) const
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    uint8 chance = c.resetBotLevelChance;
+    if (c.resetBotLevelScaledChance)
+    {
+        chance = static_cast<uint8>((static_cast<float>(level) / c.resetBotLevelMaxLevel) * c.resetBotLevelChance);
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] ComputeResetChance: For level %u / %u with scaling, computed chance = %u%%",
+            uint32(level), uint32(c.resetBotLevelMaxLevel), uint32(chance));
+    }
+    else
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] ComputeResetChance: For level %u / %u without scaling, chance = %u%%", uint32(level),
+            uint32(c.resetBotLevelMaxLevel), uint32(chance));
+    return chance;
+}
+
+// AC :827-848. Resets a bot to ResetToLevel (or the Death Knight starting level) via a full factory randomize.
+void RandomBotLevelMgr::ResetBot(Player* player, uint8 currentLevel)
+{
+    uint8 levelToResetTo = LevelCfg().resetBotLevelResetTo;
+
+    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    if (player->GetClass() == CLASS_DEATH_KNIGHT && levelToResetTo < dkMinLevel)
+        levelToResetTo = dkMinLevel;
+
+    // Dismount before randomization to prevent a wrong mount at the new level.
+    if (player->IsMounted())
+        player->Dismount();
+
+    BotFactory newFactory(player, levelToResetTo);
+    newFactory.Randomize(false);
+
+    TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] ResetBot: Bot '%s' - %s at level %u was reset to level %u.",
+        player->GetName().c_str(), ClassToString(Classes(player->GetClass())).c_str(), uint32(currentLevel),
+        uint32(levelToResetTo));
+}
+
+// AC :850-871. Sends a bot straight to SkipToLevel (or the Death Knight starting level).
+void RandomBotLevelMgr::SkipBotLevel(Player* player, uint8 currentLevel)
+{
+    uint8 levelToSkipTo = LevelCfg().resetBotLevelSkipTo;
+
+    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    if (player->GetClass() == CLASS_DEATH_KNIGHT && levelToSkipTo < dkMinLevel)
+        levelToSkipTo = dkMinLevel;
+
+    // Dismount before randomization to prevent a wrong mount at the new level.
+    if (player->IsMounted())
+        player->Dismount();
+
+    BotFactory newFactory(player, levelToSkipTo);
+    newFactory.Randomize(false);
+
+    TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] SkipBotLevel: Bot '%s' - %s at level %u was skipped to level %u.",
+        player->GetName().c_str(), ClassToString(Classes(player->GetClass())).c_str(), uint32(currentLevel),
+        uint32(levelToSkipTo));
+}
+
+// AC :873-923. Played-time based reset check for bots at or above MaxLevel.
+void RandomBotLevelMgr::RunResetPlayedTimeCheck()
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] OnUpdate: Starting time-based reset check...");
+
+    auto const& allPlayers = ObjectAccessor::GetPlayers();
+    for (auto const& itr : allPlayers)
+    {
+        Player* candidate = itr.second;
+        if (!candidate || !candidate->IsInWorld())
+            continue;
+        if (!sRandomPlayerbotMgr->IsRandomBot(candidate))
+            continue;
+
+        if (IsNameInExcludeList(candidate, c.resetBotLevelExcludeNames))
+            continue;
+
+        PlayerbotAI* botAI = GET_PLAYERBOT_AI(candidate);
+        if (c.resetBotLevelIgnoreGuildWithRealPlayers && botAI && botAI->IsInRealGuild())
+            continue;
+
+        uint8 currentLevel = candidate->GetLevel();
+        if (currentLevel < c.resetBotLevelMaxLevel)
+            continue;
+
+        // Only reset if the bot has played at least MinTimePlayed seconds at this level.
+        if (candidate->GetLevelPlayedTime() < c.resetBotLevelMinTimePlayed)
+        {
+            TC_LOG_DEBUG("playerbots",
+                "[RandomBotLevelMgr] OnUpdate: Bot '%s' at level %u has insufficient played time (%u < %u "
+                "seconds).",
+                candidate->GetName().c_str(), uint32(currentLevel), candidate->GetLevelPlayedTime(),
+                c.resetBotLevelMinTimePlayed);
+            continue;
+        }
+
+        uint8 resetChance = ComputeResetChance(currentLevel);
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] OnUpdate: Bot '%s' qualifies for time-based reset. Level: %u, "
+            "LevelPlayedTime: %u seconds, computed reset chance: %u%%.",
+            candidate->GetName().c_str(), uint32(currentLevel), candidate->GetLevelPlayedTime(), uint32(resetChance));
+        if (urand(0, 99) < resetChance)
+        {
+            TC_LOG_DEBUG("playerbots",
+                "[RandomBotLevelMgr] OnUpdate: Reset chance check passed for bot '%s'. Resetting bot.",
+                candidate->GetName().c_str());
+            ResetBot(candidate, currentLevel);
+        }
+    }
+}
+
+// =============================================================================
+// SHARED UPDATE / HOOKS
+// =============================================================================
+
+// AC :929-959
+void RandomBotLevelMgr::Update(uint32 diff)
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    if (c.levelBracketsEnabled)
+    {
+        std::lock_guard<std::recursive_mutex> guard(_lock);
+        _bracketsTimer += diff;
+        _flaggedTimer += diff;
+
+        if (_flaggedTimer >= c.levelBracketsFlaggedCheckFrequency * 1000)
+        {
+            ProcessPendingLevelResets();
+            _flaggedTimer = 0;
+        }
+
+        if (_bracketsTimer >= c.levelBracketsCheckFrequency * 1000)
+        {
+            _bracketsTimer = 0;
+            RunLevelBracketsDistribution();
+        }
+    }
+
+    if (c.resetBotLevelEnabled && c.resetBotLevelRestrictTimePlayed && c.resetBotLevelMaxLevel > 0)
+    {
+        _resetTimer += diff;
+        if (_resetTimer >= c.resetBotLevelPlayedTimeCheckFrequency * 1000)
+        {
+            _resetTimer = 0;
+            RunResetPlayedTimeCheck();
+        }
+    }
+}
+
+// AC :961-1012
+void RandomBotLevelMgr::OnBotLogin(Player* player)
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    if (!sRandomPlayerbotMgr->IsRandomBot(player))
+        return;
+
+    if (IsNameInExcludeList(player, c.resetBotLevelExcludeNames))
+        return;
+
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+    if (c.resetBotLevelIgnoreGuildWithRealPlayers && botAI && botAI->IsInRealGuild())
+        return;
+
+    uint8 currentLevel = player->GetLevel();
+
+    if (c.resetBotLevelMaxLevel > 0)
+    {
+        // Bot is above MaxLevel: reset immediately.
+        if (currentLevel > c.resetBotLevelMaxLevel)
+        {
+            TC_LOG_DEBUG("playerbots",
+                "[RandomBotLevelMgr] OnPlayerLogin: Bot '%s' above max level %u. Resetting immediately.",
+                player->GetName().c_str(), uint32(c.resetBotLevelMaxLevel));
+            ResetBot(player, currentLevel);
+            return;
+        }
+
+        // Bot is exactly at MaxLevel: apply the time-played restriction (if any) and chance.
+        if (currentLevel == c.resetBotLevelMaxLevel)
+        {
+            if (!c.resetBotLevelRestrictTimePlayed || player->GetLevelPlayedTime() >= c.resetBotLevelMinTimePlayed)
+            {
+                uint8 resetChance = ComputeResetChance(currentLevel);
+                if (urand(0, 99) < resetChance)
+                {
+                    TC_LOG_DEBUG("playerbots",
+                        "[RandomBotLevelMgr] OnPlayerLogin: Bot '%s' meets reset criteria. Resetting.",
+                        player->GetName().c_str());
+                    ResetBot(player, currentLevel);
+                }
+            }
+        }
+    }
+
+    if (c.resetBotLevelSkipFrom > 0 && currentLevel == c.resetBotLevelSkipFrom)
+    {
+        TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] OnPlayerLogin: Bot '%s' at skip level %u. Applying skip.",
+            player->GetName().c_str(), uint32(currentLevel));
+        SkipBotLevel(player, currentLevel);
+    }
+}
+
+// AC :1014-1081
+void RandomBotLevelMgr::OnBotLevelChanged(Player* player, uint8 oldLevel)
+{
+    RandomBotLevelConfig const& c = LevelCfg();
+    if (!sRandomPlayerbotMgr->IsRandomBot(player))
+        return;
+
+    // Only react to a natural level up.
+    if (player->GetLevel() != oldLevel + 1)
+        return;
+
+    if (IsNameInExcludeList(player, c.resetBotLevelExcludeNames))
+        return;
+
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+    if (c.resetBotLevelIgnoreGuildWithRealPlayers && botAI && botAI->IsInRealGuild())
+        return;
+
+    uint8 newLevel = player->GetLevel();
+
+    if (newLevel == 1)
+        return;
+
+    if (player->GetClass() == CLASS_DEATH_KNIGHT &&
+        newLevel == static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)))
+        return;
+
+    // SkipFromLevel takes priority and is not affected by ScaledChance or RestrictTimePlayed.
+    if (c.resetBotLevelSkipFrom > 0 && newLevel == c.resetBotLevelSkipFrom)
+    {
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] OnPlayerLevelChanged: Bot '%s' reached skip level %u. Skipping to level %u.",
+            player->GetName().c_str(), uint32(newLevel), uint32(c.resetBotLevelSkipTo));
+        SkipBotLevel(player, newLevel);
+        return;
+    }
+
+    if (c.resetBotLevelMaxLevel == 0)
+        return;
+
+    // Strictly above MaxLevel: reset immediately regardless of time played.
+    if (newLevel > c.resetBotLevelMaxLevel)
+    {
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] OnPlayerLevelChanged: Bot '%s' exceeded max level %u. Resetting immediately.",
+            player->GetName().c_str(), uint32(c.resetBotLevelMaxLevel));
+        ResetBot(player, newLevel);
+        return;
+    }
+
+    // Exactly at MaxLevel with a time-played restriction: defer to the OnUpdate timer.
+    if (c.resetBotLevelRestrictTimePlayed && newLevel == c.resetBotLevelMaxLevel)
+    {
+        TC_LOG_DEBUG("playerbots",
+            "[RandomBotLevelMgr] OnPlayerLevelChanged: Bot '%s' at level %u deferred to OnUpdate due to "
+            "time-played restriction.",
+            player->GetName().c_str(), uint32(newLevel));
+        return;
+    }
+
+    uint8 resetChance = ComputeResetChance(newLevel);
+    if (c.resetBotLevelScaledChance || newLevel >= c.resetBotLevelMaxLevel)
+    {
+        TC_LOG_DEBUG("playerbots", "[RandomBotLevelMgr] OnPlayerLevelChanged: Bot '%s' at level %u has reset chance %u%%.",
+            player->GetName().c_str(), uint32(newLevel), uint32(resetChance));
+        if (urand(0, 99) < resetChance)
+            ResetBot(player, newLevel);
+    }
+}
+
+// AC :1083-1092. Drops the bot from the pending-reset queue (always empty when the brackets sub-feature is off).
+void RandomBotLevelMgr::OnPlayerLogout(Player* player)
+{
+    std::lock_guard<std::recursive_mutex> guard(_lock);
+    ObjectGuid guid = player->GetGUID();
+    _pendingLevelResets.erase(
+        std::remove_if(_pendingLevelResets.begin(), _pendingLevelResets.end(),
+            [guid](PendingResetEntry const& entry) { return entry.botGuid == guid; }),
+        _pendingLevelResets.end());
+}
+}  // namespace
+
+// #148: AC RandomBotLevelWorldScript::OnUpdate (RandomBotLevelMgr.cpp:1126-1129). Exported (not a member) so
+// RandomPlayerbotMgr.h does not change; called from mod_playerbots.cpp PlayerbotsWorldScript::OnUpdate (world thread).
+void RandomBotLevelMgrUpdate(uint32 diff)
+{
+    RandomBotLevelMgr::instance().EnsureLoaded();
+    RandomBotLevelMgr::instance().Update(diff);
+}
+
+// #148: AC RandomBotLevelPlayerScript::OnPlayerLevelChanged (:1151-1156); called from mod_playerbots.cpp
+// PlayerbotsPlayerScript::OnLevelChanged (core ScriptMgr::OnPlayerLevelChanged, every player).
+void RandomBotLevelMgrOnLevelChanged(Player* player, uint8 oldLevel)
+{
+    if (!player)
+        return;
+    RandomBotLevelMgr::instance().EnsureLoaded();
+    if (!LevelCfg().resetBotLevelEnabled)
+        return;
+    RandomBotLevelMgr::instance().OnBotLevelChanged(player, oldLevel);
+}
+
+// #148: AC RandomBotLevelWorldScript::OnAfterConfigLoad(reload = true) (:1116-1124) - re-read the keys and the working
+// brackets on ".reload config". Optional hook for mod_playerbots.cpp PlayerbotsWorldScript::OnConfigLoad(true).
+void RandomBotLevelMgrReloadConfig()
+{
+    RandomBotLevelMgr::instance().EnsureLoaded();
+    std::lock_guard<std::recursive_mutex> guard(RandomBotLevelMgr::instance().Lock());
+    LoadRandomBotLevelConfig();
+    RandomBotLevelMgr::instance().LoadConfig();
+    TC_LOG_INFO("playerbots", "[RandomBotLevelMgr] Level management config reloaded.");
+}
+
 void RandomPlayerbotMgr::OnPlayerLogout(Player* player)
 {
     if (!player)
         return;
+
+    // #148: AC RandomBotLevelPlayerScript::OnPlayerLogout (RandomBotLevelMgr.cpp:1158-1161), every player.
+    RandomBotLevelMgr::instance().OnPlayerLogout(player);
 
     DisablePlayerBot(player->GetGUID());
 
@@ -781,7 +2755,7 @@ void RandomPlayerbotMgr::OnPlayerLogout(Player* player)
             botAI->SetMaster(nullptr);
             if (!bot->InBattleground())
             {
-                //botAI->ResetStrategies();
+                botAI->ResetStrategies(); // #162 AC parity: the master logged out, drop its strategies
             }
         }
     }
@@ -796,11 +2770,73 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
     auto maxAllowed = sRandomPlayerbotMgr->GetMaxAllowedBotCount();
     TC_LOG_INFO("playerbots", "%u/%u Bot %s logged in - Active spec tab: %u Spec: %u", playerBots.size(), maxAllowed, bot->GetName().c_str(), (uint32)bot->GetActiveSpec(), (uint32)bot->GetSpecialization());
 
+    // Phase 1.1 (issue #59): repair bots persisted with an empty class spellbook. InitClassSpells
+    // is idempotent and level-filtered; BotFactory logs how much it changed.
+    {
+        BotFactory factory(bot, bot->GetLevel());
+        factory.InitClassSpells();
+        // #734 repair, same idea as #59 above: until #734 no bot ever learned a talent or a glyph (empty premade
+        // links), and a level-90 bot only re-randomizes every 2 h - 14 days. Fill the missing tiers and the empty
+        // unlocked glyph slots now; both are idempotent, so an already talented bot is untouched.
+        factory.InitTalentTiers();
+        factory.InitGlyphs(true);
+    }
+
+    // issue #62 (quests): a bot that logs in somewhere with no level-appropriate data can never
+    // take a quest. Every quest giver in range offers quests it has long outlevelled, so
+    // IsQuestWorthDoing rejects them and the quest counters stay at zero (measured: level 27-90
+    // bots parked in zone 6453, which has no playerbot_farming_zone or playerbot_city row at all).
+    // Re-place it into a level-appropriate zone. Bots that are already somewhere sensible are left
+    // exactly where they are, so this does not scatter the population on every login.
+    {
+        uint32 const level = bot->GetLevel();
+        uint32 const zoneId = bot->GetZoneId();
+
+        bool known = false;
+        bool levelAppropriate = false;
+
+        for (RandomPlayerbotMgr::farm_zone const& zone : sRandomPlayerbotMgr->GetFarmCacheData())
+        {
+            if (zone.zone_id != zoneId)
+                continue;
+            known = true;
+            levelAppropriate = level >= zone.min_level && level <= zone.max_level;
+            break;
+        }
+
+        if (!known)
+        {
+            for (RandomPlayerbotMgr::city const& city : sRandomPlayerbotMgr->GetCityCacheData())
+            {
+                if (city.zone_id != zoneId)
+                    continue;
+                known = true;
+                levelAppropriate = level >= city.min_level && level <= city.max_level;
+                break;
+            }
+        }
+
+        // issue #96: "known" only means the zone has a data row - it says nothing about whether this
+        // bot belongs there. A bot standing in a capital of the other faction is re-placed as well.
+        bool const enemyCapital = IsInEnemyCapital(bot);
+
+        if (!known || !levelAppropriate || enemyCapital)
+        {
+            TC_LOG_DEBUG("playerbots",
+                         "[QUEST] %s level %u in zone %u (known=%d appropriate=%d enemyCapital=%d) - re-placing for level",
+                         bot->GetName().c_str(), level, zoneId, known ? 1 : 0, levelAppropriate ? 1 : 0,
+                         enemyCapital ? 1 : 0);
+            RandomTeleportForLevel(bot);
+        }
+    }
+
     // If this player has been created recently and is not assign horde / alliance as pandaren
     if (bot->GetRace() == RACE_PANDAREN_NEUTRAL)
     {
-        // Allow player to get fully logged
-        bot->AddDelayedEvent(5000, [bot]()
+        // Allow player to get fully logged. Scheduled on Unit::m_Events, which Unit::Update() pumps every
+        // tick. Unit::AddDelayedEvent() pushes into _functionsDelayed, which nothing ever updates, so the
+        // pick has never run in this tree (issue #228).
+        bot->Schedule(TimeValue(std::chrono::milliseconds(5000)), [bot]()
         {
             static const uint32 JOIN_THE_ALLIANCE = 1;
             static const uint32 JOIN_THE_HORDE = 0;
@@ -808,51 +2844,64 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
             WorldPacket packet(CMSG_SELECT_FACTION);
             packet << (std::rand() % 2 ? JOIN_THE_HORDE : JOIN_THE_ALLIANCE);
 
+            if (!bot->IsInWorld())
+                return;
+
             WorldSession* session = bot->GetSession();
+            if (!session)
+                return;
+
             session->HandleSelectFactionOpcode(packet);
 
-            TC_LOG_INFO("playerbots", "%s Assigned to faction: %s", bot->GetName().c_str(), (bot->GetTeamId() ? "Alliance" : "Horde"));
+            TC_LOG_INFO("playerbots", "%s Assigned to faction: %s", bot->GetName().c_str(), (bot->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde"));
         });        
     }
     if (bot->GetRace() == RACE_GOBLIN && bot->GetLevel() == 1)
     {
-        bot->AddDelayedEvent(5000, [bot]()
+        // issue #235: AddDelayedEvent() pushes into Unit::_functionsDelayed, which nothing ever updates
+        // (Unit::Update only pumps m_Events), so this body has never run. Moved onto m_Events through
+        // Unit::Schedule - the same pattern the pandaren faction pick in #228 uses.
+        bot->Schedule(TimeValue(std::chrono::milliseconds(5000)), [bot]()
         {
+            if (!bot->IsInWorld())
+                return;
+
             // -- force finish quest
-            auto it = bot->getRewardedQuests().find(25265);
-            if (it == bot->getRewardedQuests().end())
+            // 25265/25266/25267 are goblin-only (quest_template.AllowableRaces = 256 = 1 << (RACE_GOBLIN-1),
+            // MinLevel 1), so a level 1 goblin is eligible. 25268 "The Voice of Goldrinn" is NOT: it is the
+            // Dark Iron Dwarf chain starter, AllowableRaces = 18875469 (alliance + pandaren), MinLevel 80.
+            // Force-completing it for a level 1 horde goblin was a data bug, so it is dropped here.
+            if (bot->getRewardedQuests().find(25265) == bot->getRewardedQuests().end())
             {
                 bot->CompleteQuest(25265, true, true);
                 bot->CompleteQuest(25266, true, true);
                 bot->CompleteQuest(25267, true, true);
-                bot->CompleteQuest(25268, true, true);
             }
         });
     }
-    if (bot->GetRace() == RACE_WORGEN && bot->GetLevel() == 1)
-    {
-        bot->AddDelayedEvent(5000, [bot]()
-        {
-            // -- force finish quest
-            auto it = bot->getRewardedQuests().find(26706);
-            if (it == bot->getRewardedQuests().end())
-            {
-                bot->CompleteQuest(26706, true, true);
-                bot->CompleteQuest(14434, true, true);
-            }
-        });
-    }
+    // issue #235: the worgen force-completion is retired, not revived. It was dead code
+    // (Unit::AddDelayedEvent -> Unit::_functionsDelayed, which nothing updates) and it is not eligible for
+    // the character it targets: a RACE_WORGEN bot at level 1 is under the minimum level of both quests it
+    // names. In the world DB, 26706 "Endgame" is MinLevel 12 / QuestLevel 12 and 14434 "Rut'theran Village"
+    // is MinLevel 5 / QuestLevel 12. Reviving the body would hand level 5 and level 12 quests to a level 1
+    // character, which is worse than the no-op it replaces. If worgen bots need a real level 1 quest line
+    // that is a separate issue with its own quest ids - do not resurrect this block.
 
     if (bot->GetClass() == CLASS_DEATH_KNIGHT && bot->GetLevel() == 55)
     {
-        bot->AddDelayedEvent(5000, [bot]()
+        // issue #235: same dead Unit::AddDelayedEvent path as the goblin block; moved onto the pumped m_Events.
+        bot->Schedule(TimeValue(std::chrono::milliseconds(5000)), [bot]()
         {
+            if (!bot->IsInWorld())
+                return;
+
             // -- force finish quest
-            auto it = bot->getRewardedQuests().find(13188);
-            if (it == bot->getRewardedQuests().end() && bot->GetTeam() == Team::ALLIANCE)
+            // 13188 "Where Kings Walk" is MinLevel 55 with the alliance race set, 13189 "Warchief's Blessing"
+            // is MinLevel 55 with the horde race set, so the team check below matches eligibility exactly.
+            // Both are StartItem quests (item 43440 / 43441), which is why they have to be forced.
+            if (bot->getRewardedQuests().find(13188) == bot->getRewardedQuests().end() && bot->GetTeam() == Team::ALLIANCE)
                 bot->CompleteQuest(13188, true, true);
-            it = bot->getRewardedQuests().find(13189);
-            if (it == bot->getRewardedQuests().end() && bot->GetTeam() == Team::HORDE)
+            if (bot->getRewardedQuests().find(13189) == bot->getRewardedQuests().end() && bot->GetTeam() == Team::HORDE)
                 bot->CompleteQuest(13189, true, true);
         });
     }
@@ -869,6 +2918,16 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
 
 void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
 {
+    // #148: AC RandomBotLevelPlayerScript::OnPlayerLogin (RandomBotLevelMgr.cpp:1144-1149). Runs for every player; for a
+    // bot it runs before PlayerbotHolder::OnBotLogin attaches the AI (PlayerbotMgr.cpp HandlePlayerBotLoginCallback), as
+    // AC's PLAYERHOOK_ON_LOGIN does (AC HandlePlayerLoginFromDB fires it before PlayerbotHolder::OnBotLogin).
+    if (player)
+    {
+        RandomBotLevelMgr::instance().EnsureLoaded();
+        if (LevelCfg().resetBotLevelEnabled)
+            RandomBotLevelMgr::instance().OnBotLogin(player);
+    }
+
     uint32 botsNearby = 0;
 
     for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
@@ -891,7 +2950,12 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
         {
             Player* member = gref->GetSource();
             PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
-            if (botAI && member == player && (!botAI->GetMaster() || GET_PLAYERBOT_AI(botAI->GetMaster())))
+            // #180: also re-attach when the current master is a stale Player object of the same character (this core
+            // parks the old Player for 60 s on a socket drop and creates a new one on relog; AC re-binds the same
+            // Player, so its bots never hold a stale master).
+            Player* const cur = botAI ? botAI->GetMaster() : nullptr;
+            bool const staleSameCharacter = cur && cur != player && cur->GetGUID() == player->GetGUID();
+            if (botAI && member == player && (!cur || GET_PLAYERBOT_AI(cur) || staleSameCharacter))
             {
                 if (!bot->InBattleground())
                 {
@@ -939,7 +3003,10 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
         //player->TeleportTo(botPos);
     }
 
-    if (!IsRandomBot(player))
+    // #532 (AC Bot/RandomPlayerbotMgr.cpp:2754-2764): a random bot's PvP flag follows the realm type.
+    if (IsRandomBot(player))
+        player->Unit::SetPvP(sWorld->IsPvPRealm());
+    else
     {
         _players.push_back(player);
         TC_LOG_DEBUG("playerbots", "Including non-random bot player %s into random bot update", player->GetName().c_str());
@@ -1171,108 +3238,536 @@ void RandomPlayerbotMgr::PrepareTeleportCache()
     TC_LOG_INFO("server.loading", ">> Loaded %u city zone", city_count);
 }
 
+// ---------------------------------------------------------------------------------------------
+// Battleground queue bookkeeping (issue #33)
+//
+// Ported from AC mod-playerbots (RandomPlayerbotMgr::CheckBgQueue). Bots need to know how many
+// players and bots are already waiting for each (queue type, bracket) before deciding to queue,
+// otherwise every eligible bot piles into the same queue and the brackets never fill evenly.
+//
+// Arena queues are counted by the rated-arena census in strategy/bg/BattleGroundJoinAction.cpp
+// (#437, PlayerbotArena::*), not into BattlegroundInfo.
+// ---------------------------------------------------------------------------------------------
+
+void RandomPlayerbotMgr::PrepareBattleMastersCache()
+{
+    _battleMastersCache.clear();
+
+    uint32 count = 0;
+    for (auto const& itr : sObjectMgr->GetAllCreatureData())
+    {
+        CreatureData const& creatureData = itr.second;
+
+        CreatureTemplate const* creatureTemplate = sObjectMgr->GetCreatureTemplate(creatureData.id);
+        if (!creatureTemplate)
+            continue;
+
+        if (!((creatureTemplate->npcflag | creatureData.npcflag) & UNIT_NPC_FLAG_BATTLEMASTER))
+            continue;
+
+        BattlegroundTypeId bgTypeId = sBattlegroundMgr->GetBattleMasterBG(creatureData.id);
+        if (bgTypeId == BATTLEGROUND_TYPE_NONE)
+            continue;
+
+        FactionTemplateEntry const* factionEntry = sFactionTemplateStore.LookupEntry(creatureTemplate->faction);
+        if (!factionEntry)
+            continue;
+
+        // Same faction-group test the travel caches use: an NPC hostile to a faction group is not
+        // usable by it. A neutral battlemaster lands in both lists.
+        if (!(factionEntry->hostileMask & FACTION_MASK_ALLIANCE))
+            _battleMastersCache[TEAM_ALLIANCE][bgTypeId].push_back(itr.first);
+
+        if (!(factionEntry->hostileMask & FACTION_MASK_HORDE))
+            _battleMastersCache[TEAM_HORDE][bgTypeId].push_back(itr.first);
+
+        ++count;
+    }
+
+    TC_LOG_INFO("playerbots", ">> Loaded %u battlemasters for bot battleground queueing", count);
+}
+
+ObjectGuid RandomPlayerbotMgr::GetBattleMasterGUID(Player* bot, BattlegroundTypeId bgTypeId)
+{
+    if (!bot)
+        return ObjectGuid::Empty;
+
+    auto teamItr = _battleMastersCache.find(bot->GetTeamId());
+    if (teamItr == _battleMastersCache.end())
+        return ObjectGuid::Empty;
+
+    auto bgItr = teamItr->second.find(bgTypeId);
+    if (bgItr == teamItr->second.end() || bgItr->second.empty())
+        return ObjectGuid::Empty;
+
+    // Prefer one on the bot's own map so the guid resolves to a real creature when needed.
+    for (ObjectGuid::LowType spawnId : bgItr->second)
+    {
+        CreatureData const* data = sObjectMgr->GetCreatureData(spawnId);
+        if (!data || data->mapId != bot->GetMapId())
+            continue;
+
+        return ObjectGuid(HighGuid::Unit, data->id, spawnId);
+    }
+
+    return ObjectGuid::Empty;
+}
+
+namespace
+{
+// AC Bot/RandomPlayerbotMgr.cpp:1182 seeds Alterac Valley through the same updateBGInstanceCount
+// helper as the other battlegrounds; Strand of the Ancients needs the same treatment here.
+// AC keeps the bracket vector in PlayerbotAIConfig; read it here
+// instead so PlayerbotAIConfig.h - which every module TU includes - does not change. The key names are
+// AC's own and already sit (unused) in playerbots.conf.dist. An empty list leaves that battleground
+// alone, exactly like the other battlegrounds above.
+// #304: `def` is the code default when the key is absent - AC's for AV/IC (PlayerbotAIConfig.cpp:391,393: "3", "1",
+// level 80) translated to 5.4.8 per-map ids (AV 7, IC 1), and the conf.dist value for the MoP-only maps.
+std::vector<uint32> AutoJoinBrackets(char const* key, char const* def = "")
+{
+    std::vector<uint32> brackets;
+    std::string value = sConfigMgr->GetStringDefault(key, def);
+
+    while (!value.empty())
+    {
+        std::string::size_type comma = value.find(',');
+        brackets.push_back(uint32(std::atoi(value.substr(0, comma).c_str())));
+
+        if (comma == std::string::npos)
+            break;
+
+        value = value.substr(comma + 1);
+    }
+
+    return brackets;
+}
+}  // namespace
+
+void RandomPlayerbotMgr::CheckBgQueue()
+{
+    if (!_bgCheckTimer)
+    {
+        _bgCheckTimer = time(nullptr);
+        return;
+    }
+
+    // A battleground only starts filling on this tick, so it is also the worst-case delay before a
+    // waiting player's queue gets any bots. That matters more the bigger the battleground is:
+    // Warsong Gulch needs 10 a side and pops in seconds, Arathi Basin needs 15 and was measured
+    // taking over three minutes on a 30 s tick. Configurable so a test server can shorten it.
+    if (time(nullptr) < _bgCheckTimer + static_cast<time_t>(sPlayerbotAIConfig->bgCheckInterval))
+        return;
+
+    _bgCheckTimer = time(nullptr);
+    std::unique_lock<std::shared_mutex> bgDataGuard(BattlegroundDataLock);  // w24 hang: see the header
+
+    // Rebuild from scratch: these are live counts, not running totals.
+    for (int bracket = BG_BRACKET_ID_FIRST; bracket < MAX_BATTLEGROUND_BRACKETS; ++bracket)
+        for (int queueType = BATTLEGROUND_QUEUE_AV; queueType < MAX_BATTLEGROUND_QUEUE_TYPES; ++queueType)
+            BattlegroundData[queueType][bracket] = BattlegroundInfo();
+
+    PlayerbotArena::ResetCensus();  // #437: AC :928-934 for the rated-arena fields
+    PlayerbotRatedBg::ResetCensus();  // #897: per-faction rated battleground census
+
+    // #702 P5 (#832, AC's skirmish census + a level window, off by default): AiPlayerbot.ArenaAnyLevel.* read every tick
+    // like the P4 keys; PlayerbotArena::CountQueued counts unrated arena slots only while the census is on.
+    bool const arenaAnyLevel = sConfigMgr->GetBoolDefault("AiPlayerbot.ArenaAnyLevel.Enable", false);
+    uint32 const arenaAnyLevelWindow = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.ArenaAnyLevel.LevelWindow", 2)));
+    ArenaAnyLevelBots::BeginCensus(arenaAnyLevel);
+
+    // #702 P4 (#831, beyond AC, off by default): also note, per (queue, bracket), the real players the core filed there
+    // and whether they are below that bracket (core Battleground.AnyLevel fallback), so BGJoinAction can pick bots around
+    // their level (BgAnyLevelRequests.h). Read here, every tick, so a .reload config applies without a restart.
+    bool const bgAnyLevel = sConfigMgr->GetBoolDefault("AiPlayerbot.BgAnyLevel.Enable", false);
+    uint32 const bgAnyLevelWindow = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.BgAnyLevel.LevelWindow", 5)));
+    std::vector<BgAnyLevel::Request> bgAnyLevelRequests;
+
+    auto countQueued = [this, bgAnyLevel, &bgAnyLevelRequests](Player* player, bool isBot)
+    {
+        if (!player || !player->IsInWorld() || !player->InBattlegroundQueue())
+            return;
+
+        Battleground* currentBg = player->GetBattleground();
+        if (currentBg && currentBg->GetStatus() == STATUS_WAIT_LEAVE)
+            return;
+
+        TeamId teamId = player->GetTeamId();
+
+        for (uint8 slot = 0; slot < PLAYER_MAX_BATTLEGROUND_QUEUES; ++slot)
+        {
+            BattlegroundQueueTypeId queueTypeId = player->GetBattlegroundQueueTypeId(slot);
+            if (queueTypeId == BATTLEGROUND_QUEUE_NONE)
+                continue;
+
+            // Only account for the queues bots are allowed to use, so the fill maths below is
+            // not skewed by queues they will never join.
+            // #437: arena queues feed the rated-arena census (AC RandomPlayerbotMgr.cpp:968-988, 1057-1126),
+            // not the battleground counts below.
+            // #897: the rated battleground queue feeds its own census (BgRatedBg.cpp)
+            if (queueTypeId == BATTLEGORUND_QUEUE_RATED_BG)
+            {
+                PlayerbotRatedBg::CountQueued(player, isBot);
+                continue;
+            }
+
+            if (BattlegroundMgr::BGArenaType(queueTypeId))
+            {
+                PlayerbotArena::CountQueued(player, isBot, queueTypeId);
+                continue;
+            }
+
+            if (!IsSupportedBgQueue(queueTypeId))
+                continue;
+
+            BattlegroundTypeId bgTypeId = BattlegroundMgr::BGTemplateId(queueTypeId);
+            Battleground* bgTemplate = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
+            if (!bgTemplate)
+                continue;
+
+            // #693, AC mod-playerbots#2850 (RandomPlayerbotMgr.cpp:935-948, :973, :1063): a participant may level past
+            // the queue's bracket while waiting or inside the match, so use the bracket the instance or the queue
+            // assigned, never the current level (GetAssignedBgBracket, BattleGroundJoinAction.cpp).
+            PvPDifficultyEntry const* pvpDiff = GetAssignedBgBracket(player, queueTypeId, bgTemplate->GetMapId());
+            if (!pvpDiff)
+                continue;
+
+            BattlegroundBracketId bracketId = pvpDiff->GetBracketId();
+            BattlegroundInfo& info = BattlegroundData[queueTypeId][bracketId];
+
+            info.minLevel = pvpDiff->MinLevel;
+            info.maxLevel = pvpDiff->MaxLevel;
+
+            if (isBot)
+            {
+                if (teamId == TEAM_ALLIANCE)
+                    info.bgAllianceBotCount++;
+                else
+                    info.bgHordeBotCount++;
+            }
+            else
+            {
+                if (teamId == TEAM_ALLIANCE)
+                    info.bgAlliancePlayerCount++;
+                else
+                    info.bgHordePlayerCount++;
+            }
+
+            if (currentBg && InMatchOfBgQueue(player, queueTypeId))  // #693, AC #2850 (RandomPlayerbotMgr.cpp:1012, :1098)
+            {
+                uint32 instanceId = currentBg->GetInstanceID();
+                if (std::find(info.bgInstances.begin(), info.bgInstances.end(), instanceId) == info.bgInstances.end())
+                    info.bgInstances.push_back(instanceId);
+
+                info.bgInstanceCount = info.bgInstances.size();
+            }
+
+            // Only a REAL player waiting in a queue opens it for bots. Upstream does this in its
+            // real-player pass only; its bot pass contributes counts and instance ids and nothing
+            // else. Letting a bot set this flag too (as this originally did) makes every queue a
+            // bot touches permanently "active": bots then sustain their own queues forever and
+            // spread themselves across every battleground, instead of converging on the one queue
+            // somebody is actually waiting in.
+            if (isBot)
+                continue;
+
+            // #702 P4: a real player's (queue, bracket) and level; below the bracket = filed there by the any-level fallback
+            if (bgAnyLevel)
+                bgAnyLevelRequests.push_back({ uint32(queueTypeId), uint32(bracketId), uint8(player->GetLevel()),
+                    player->GetLevel() < pvpDiff->MinLevel });
+
+            // Upstream calls Player::IsInvitedForBattlegroundInstance() with no argument; LoA's
+            // takes an instance id and the backing array is private, so read the invite state off
+            // the queue entry instead.
+            bool invited = false;
+            GroupQueueInfo ginfo;
+            if (sBattlegroundMgr->GetBattlegroundQueue(queueTypeId)
+                    .GetPlayerGroupInfoData(player->GetGUID().GetRawValue(), &ginfo))
+                invited = ginfo.IsInvitedToBGInstanceGUID != 0;
+
+            if (!invited && !player->InBattleground())
+                info.activeBgQueue = 1;
+        }
+    };
+
+    for (Player* player : _players)
+        countQueued(player, false);
+
+    for (auto const& itr : playerBots)
+    {
+        // Upstream's bot pass is restricted to random bots - a bot that belongs to a player is
+        // not part of the pool that fills queues, and is already covered by _players.
+        if (!IsRandomBot(itr.second))
+            continue;
+
+        countQueued(itr.second, true);
+    }
+
+    BgAnyLevel::Publish(bgAnyLevel, bgAnyLevelWindow, std::move(bgAnyLevelRequests));  // #702 P4 (empty and off by default)
+    ArenaAnyLevelBots::Publish(arenaAnyLevel, arenaAnyLevelWindow);                     // #702 P5 (empty and off by default)
+
+    // Auto-join: mark the configured (battleground, bracket) pairs as active even though nobody
+    // is waiting in them, so bots open those queues themselves. This is also what keeps bots
+    // concentrated: without it they spread across every bracket of every battleground and no
+    // single queue ever reaches the players-per-team a match needs.
+    //
+    // #582 (AC Bot/RandomPlayerbotMgr.cpp:1130-1131): like upstream, wait until every random bot is logged in
+    // before seeding, for the battlegrounds and the rated arenas alike.
+    if (!sPlayerbotAIConfig->randomBotAutoJoinBG || playerBots.size() < GetMaxAllowedBotCount())
+    {
+        LogBgQueueState();
+        return;
+    }
+
+    auto seedQueue = [this](BattlegroundQueueTypeId queueTypeId, std::vector<uint32> const& brackets, uint32 minCount)
+    {
+        for (uint32 bracket : brackets)
+        {
+            if (bracket >= MAX_BATTLEGROUND_BRACKETS)
+                continue;
+
+            BattlegroundInfo& info = BattlegroundData[queueTypeId][bracket];
+
+            // Already running (or already being filled) at the requested instance count.
+            if (info.activeBgQueue != 0 || info.bgInstanceCount >= minCount || info.bgInstances.size() >= minCount)
+                continue;
+
+            info.activeBgQueue = 1;
+        }
+    };
+
+    seedQueue(BATTLEGROUND_QUEUE_WS, sPlayerbotAIConfig->randomBotAutoJoinWSBrackets,
+              sPlayerbotAIConfig->randomBotAutoJoinWSCount);
+    seedQueue(BATTLEGROUND_QUEUE_TP, sPlayerbotAIConfig->randomBotAutoJoinTPBrackets,
+              sPlayerbotAIConfig->randomBotAutoJoinTPCount);
+    seedQueue(BATTLEGROUND_QUEUE_AB, sPlayerbotAIConfig->randomBotAutoJoinABBrackets,
+              sPlayerbotAIConfig->randomBotAutoJoinABCount);
+    seedQueue(BATTLEGROUND_QUEUE_EY, sPlayerbotAIConfig->randomBotAutoJoinEYBrackets,
+              sPlayerbotAIConfig->randomBotAutoJoinEYCount);
+    // #304: AC updateBGInstanceCount(BATTLEGROUND_QUEUE_AV/IC, ...) (Bot/RandomPlayerbotMgr.cpp:1185,1187) with
+    // AC's keys and code defaults (PlayerbotAIConfig.cpp:391,393 brackets; :397,:399 counts 0 = AV/IoC not
+    // seeded unless configured). IoC was never seeded here before #304. Bracket ids are per-map PvPDifficulty
+    // RangeIndex (playerbots.conf.dist "Battleground bracket ids on 5.4.8").
+    seedQueue(BATTLEGROUND_QUEUE_IC, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinICBrackets", "1"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGICCount", 0));
+    seedQueue(BATTLEGROUND_QUEUE_AV, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinAVBrackets", "7"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGAVCount", 0));
+    seedQueue(BATTLEGROUND_QUEUE_SA, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinSABrackets", "3"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGSACount", 1));
+    // #304: the Cataclysm/Mists battlegrounds AC has no counterpart for, on AC's pattern (updateBGInstanceCount,
+    // Bot/RandomPlayerbotMgr.cpp:1161-1170,1181-1185; keys named after the queue enum as AC's are; count default 1
+    // like AC's WS/AB/EY at PlayerbotAIConfig.cpp:395-398). Code default brackets are empty: none of these maps has
+    // AC's level-80 bracket, so nothing opens unless configured. 5.4.8 PvpDifficulty RangeIndex per map:
+    // BFG (761) 0 = 85-89, 1 = 90; TOK (998), SM (727), DG (1105) 0 = 90 only.
+    seedQueue(BATTLEGROUND_QUEUE_BFG, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinBFGBrackets"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGBFGCount", 1));
+    seedQueue(BATTLEGROUND_QUEUE_TOK, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinTOKBrackets"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGTOKCount", 1));
+    seedQueue(BATTLEGROUND_QUEUE_SM, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinSMBrackets"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGSMCount", 1));
+    seedQueue(BATTLEGROUND_QUEUE_DG, AutoJoinBrackets("AiPlayerbot.RandomBotAutoJoinDGBrackets"),
+              sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAutoJoinBGDGCount", 1));
+
+    // #437 (AC :1133-1136, :1172-1177): the rated arena seeds, in the same block as upstream.
+    PlayerbotArena::SeedAutoJoin();
+    PlayerbotRatedBg::SeedAutoJoin();  // #897 (beyond AC): AiPlayerbot.RandomBotAutoJoinBGRatedBGCount
+
+    LogBgQueueState();
+}
+
+// #142: port of AC RandomPlayerbotMgr::CheckLfgQueue (Bot/RandomPlayerbotMgr.cpp:1272-1308). Collects the
+// dungeons real players currently have queued (per team) so random bots can queue for the same ones
+// (LfgJoinAction::JoinLFG). 5.4.8 LFGMgr keeps one queue entry per queue id (multi-queue), so the AC
+// GetState(guid)/GetSelectedDungeons(guid) pair becomes a walk over LFGMgr::GetPlayerQueues(): a queue
+// counts while it is past NONE and before the dungeon itself (ROLECHECK/QUEUED/PROPOSAL/BOOT), as AC's
+// `gState != NONE && gState < DUNGEON`. Runs on the world thread (called from UpdateAIInternal), so the
+// AC worker-thread helper (CheckLfgQueueThread) is not ported.
+void RandomPlayerbotMgr::CheckLfgQueue()
+{
+    if (!_lfgCheckTimer || time(nullptr) > (_lfgCheckTimer + 30))
+        _lfgCheckTimer = time(nullptr);
+
+    TC_LOG_DEBUG("playerbots", "Checking LFG Queue...");
+
+    // Clear LFG list
+    LfgDungeons[TEAM_ALLIANCE].clear();
+    LfgDungeons[TEAM_HORDE].clear();
+
+    // #702 (beyond AC, off by default): also note which of those dungeons a real player queued OUTSIDE the dungeon's
+    // own level range (core LFG.AnyLevel) and at what level, so LfgJoinAction can pick bots around that level
+    // (LfgAnyLevelRequests.h). Read here, every 30 s, so a .reload config applies without a restart.
+    bool const anyLevel = sConfigMgr->GetBoolDefault("AiPlayerbot.LfgAnyLevel.Enable", false);
+    uint32 const anyLevelWindow = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.LfgAnyLevel.LevelWindow", 3)));
+    // #830: 0 = off (the level window alone, as phase 1)
+    uint32 const anyLevelItemLevelWindow = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.LfgAnyLevel.ItemLevelWindow", 0)));
+    std::vector<LfgAnyLevel::Request> anyLevelRequests;
+
+    for (Player* player : _players)
+    {
+        if (!player || !player->IsInWorld())
+            continue;
+
+        lfg::PlayerQueueDataMap const* queues = sLFGMgr->GetPlayerQueues(player->GetGUID());
+        if (!queues)
+            continue;
+
+        for (auto const& queue : *queues)
+        {
+            lfg::LfgState const gState = queue.second.State;
+            if (gState == lfg::LFG_STATE_NONE || gState >= lfg::LFG_STATE_DUNGEON)
+                continue;
+
+            for (uint32 const dungeonId : queue.second.Dungeons)
+            {
+                lfg::LFGDungeonData const* dungeon = sLFGMgr->GetLFGDungeon(dungeonId);
+                if (!dungeon)
+                    continue;
+
+                LfgDungeons[player->GetTeamId()].push_back(dungeon->id);
+
+                if (anyLevel)
+                {
+                    // #830: a premade group is scaled to its highest player level (AutoBalance), so its bots are picked
+                    // around that member's level and item level; a solo requester is its own reference (phase 1).
+                    Player* reference = player;
+                    if (Group* group = player->GetGroup())
+                        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+                            if (Player* member = ref->GetSource())
+                                if (member->GetLevel() > reference->GetLevel())
+                                    reference = member;
+
+                    uint32 const playerLevel = reference->GetLevel();
+                    bool const outOfRange = playerLevel < uint32(dungeon->minlevel) ||
+                        (dungeon->maxlevel && playerLevel > uint32(dungeon->maxlevel));
+                    anyLevelRequests.push_back({ player->GetTeamId(), dungeon->id, uint8(playerLevel), outOfRange,
+                                                 reference->GetAverageItemLevel() });
+                }
+            }
+        }
+    }
+
+    LfgAnyLevel::Publish(anyLevel, anyLevelWindow, std::move(anyLevelRequests), anyLevelItemLevelWindow);
+
+    TC_LOG_DEBUG("playerbots", "LFG Queue check finished");
+}
+
+/// Dump every (queue, bracket) that is live, so it is possible to see from the log whether a real
+/// player's queue actually opened for bots and how full each side is.
+BattlegroundInfo RandomPlayerbotMgr::GetBattlegroundInfo(uint32 queueTypeId, uint32 bracketId) const
+{
+    std::shared_lock<std::shared_mutex> guard(BattlegroundDataLock);
+    auto const q = BattlegroundData.find(queueTypeId);
+    if (q == BattlegroundData.end())
+        return BattlegroundInfo();
+    auto const b = q->second.find(bracketId);
+    return b == q->second.end() ? BattlegroundInfo() : b->second;
+}
+
+void RandomPlayerbotMgr::LogBgQueueState()
+{
+    PlayerbotArena::LogCensus();  // #437: AC LogBattlegroundInfo's ARENA lines
+    PlayerbotRatedBg::LogCensus();  // #897
+
+    for (auto const& byQueue : BattlegroundData)
+    {
+        for (auto const& byBracket : byQueue.second)
+        {
+            BattlegroundInfo const& i = byBracket.second;
+            if (!i.activeBgQueue && !i.bgInstanceCount && !i.bgAllianceBotCount && !i.bgHordeBotCount &&
+                !i.bgAlliancePlayerCount && !i.bgHordePlayerCount)
+                continue;
+
+            TC_LOG_DEBUG("playerbots",
+                         "[BGQ] queue %u bracket %u: active=%u instances=%u A(bots %u/players %u) H(bots %u/players %u)",
+                         byQueue.first, byBracket.first, i.activeBgQueue, i.bgInstanceCount,
+                         i.bgAllianceBotCount, i.bgAlliancePlayerCount, i.bgHordeBotCount, i.bgHordePlayerCount);
+        }
+    }
+}
+
 void RandomPlayerbotMgr::RandomTeleportForLevel(Player* bot)
 {
     if (!bot) return;
 
-    // Teleport to city
-    if (bot->GetLevel() >= 10 && urand(0, 100) < 0.25 * 100)
+    // AC RandomTeleportForLevel (Bot/RandomPlayerbotMgr.cpp:1804-1832): never touch a bot in an active BG/arena.
+    if (bot->InBattleground())
+        return;
+
+    // #268 S9: the destination half is TravelMgr's again, exactly as upstream (AC :1811 / :1818). The
+    // RandomPlayerbotMgr farm/city caches that stood in for it - GetFarmZoneForPlayer and
+    // GetCityForPlayer - are deleted; nothing in this file picks a destination from them any more.
+    // Note this also drops death-parity-followup.md Gap 2's ad-hoc fix, which existed only because the
+    // farm-zone table hands out battleground/arena maps: RandomTeleportToLocs already applies AC's
+    // randomBotMaps / team / water / ground filter, which is what that fix reached for.
+    if (bot->GetLevel() >= 10 && urand(0, 100) < ProbTeleToBankers() * 100)
     {
-        if (const auto city_data = GetCityForPlayer(bot))
+        std::vector<WorldLocation> locs = sTravelMgr.GetCityLocations(bot);
+        if (!locs.empty())
         {
-            Map* map = sMapMgr->FindMap(city_data->map_id, 0);
-
-            bot->TeleportTo(city_data->map_id, city_data->x, city_data->y, city_data->z, 0.0f, 0);
-            TC_LOG_INFO("playerbots", "Bot #%u <%s> teleported to City: map{%u} %f:%f:%f", bot->GetGUID(), bot->GetName().c_str(), city_data->map_id, city_data->x, city_data->y, city_data->z);
-        }
-        else if (const auto farm_spot = GetFarmZoneForPlayer(bot))
-        {
-            Map* map = sMapMgr->FindMap(farm_spot->map_id, 0);
-
-            bot->TeleportTo(farm_spot->map_id, farm_spot->x, farm_spot->y, farm_spot->z, 0.0f, 0);
-            TC_LOG_INFO("playerbots", "Bot #%u <%s> teleported to FarmSpot: map{%u} %f:%f:%f", bot->GetGUID(), bot->GetName().c_str(), farm_spot->map_id, farm_spot->x, farm_spot->y, farm_spot->z);
+            RandomTeleportToLocs(bot, locs, true);
+            return;
         }
     }
-    else
-    {
-        if (const auto farm_zone = GetFarmZoneForPlayer(bot))
-        {
-            Map* map = sMapMgr->FindMap(farm_zone->map_id, 0);
 
-            bot->TeleportTo(farm_zone->map_id, farm_zone->x, farm_zone->y, farm_zone->z, 0.0f, 0);
-            TC_LOG_INFO("playerbots", "Bot #%u <%s> teleported to FarmZone: map{%u} %f:%f:%f", bot->GetGUID(), bot->GetName().c_str(), farm_zone->map_id, farm_zone->x, farm_zone->y, farm_zone->z);
-        }
-    }
+    RandomTeleportToLocs(bot, sTravelMgr.GetTeleportLocations(bot));
+
+    // NOT ported (AC :1820-1825): the sPlayerbotAIConfig.randomBotConcentrateInPlayerZone arm and its
+    // GetPlayerZoneTeleportLocations() helper. The key does not exist in the fork's PlayerbotAIConfig
+    // and AC's own default is false, so the arm is dead upstream too, and it is a separate feature
+    // (gather bots into zones real players occupy) rather than part of this substitution.
 }
 
-const RandomPlayerbotMgr::city* RandomPlayerbotMgr::GetCityForPlayer(Player* player)
+namespace
 {
-    if (_city_cache_data.empty()) return nullptr;
+// Capital cities and the faction that owns them (issue #96). Upstream mod-playerbots keeps the same
+// list in TravelMgr::capitals rather than in a DB table; this table is the authority here too,
+// because the DB rows proved easy to get wrong (playerbot_city had Stormwind stored with the Horde
+// value, which let Horde bots into Stormwind and kept Alliance bots out of it).
+struct CapitalZone
+{
+    uint32 zoneId;
+    Team owner;
+    char const* name;
+};
 
-    std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
-    std::shuffle(_city_cache_data.begin(), _city_cache_data.end(), gen);
+constexpr CapitalZone CAPITAL_ZONES[] =
+{
+    {1497, HORDE,    "Undercity"},
+    {1637, HORDE,    "Orgrimmar"},
+    {1638, HORDE,    "Thunder Bluff"},
+    {3487, HORDE,    "Silvermoon"},
+    {1519, ALLIANCE, "Stormwind"},
+    {1537, ALLIANCE, "Ironforge"},
+    {1657, ALLIANCE, "Darnassus"},
+    {3557, ALLIANCE, "The Exodar"},
+};
+}   // namespace
 
-    for (const auto& city_data : _city_cache_data)
-    {
-        if (player->GetLevel() < city_data.min_level || player->GetLevel() > city_data.max_level || city_data.team_disabled == player->GetTeam())
-            continue;
-        return &city_data;
-    }
+char const* RandomPlayerbotMgr::CapitalZoneName(uint32 zoneId)
+{
+    for (CapitalZone const& zone : CAPITAL_ZONES)
+        if (zone.zoneId == zoneId)
+            return zone.name;
 
     return nullptr;
 }
 
-const RandomPlayerbotMgr::farm_spot* RandomPlayerbotMgr::GetFarmZoneForPlayer(Player* player)
+bool RandomPlayerbotMgr::IsEnemyCapitalZone(uint32 zoneId, uint32 team)
 {
-    if (_farm_cache_data.empty()) return nullptr;
+    // Pandaren-neutral bots (and any other non-faction team) never have an "enemy capital".
+    if (team != HORDE && team != ALLIANCE)
+        return false;
 
-    std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
-    std::shuffle(_farm_cache_data.begin(), _farm_cache_data.end(), gen);
+    for (CapitalZone const& zone : CAPITAL_ZONES)
+        if (zone.zoneId == zoneId)
+            return zone.owner != team;
 
-    for (auto& zone : _farm_cache_data)
-    {
-        if (player->GetLevel() < zone.min_level || player->GetLevel() > zone.max_level || zone.team_disabled == player->GetTeam())
-            continue;
+    return false;
+}
 
-        if (zone.max_player != 0)
-        {
-            uint32 playercount = 0;
-            for (const auto& _internal_player : _players)
-            {
-                if (_internal_player && _internal_player->IsInWorld() && !_internal_player->IsBeingTeleported() && _internal_player->GetZoneId() == zone.zone_id && _internal_player != player)
-                    ++playercount;
-            }
+bool RandomPlayerbotMgr::IsInEnemyCapital(Player* bot)
+{
+    if (!bot || !bot->IsInWorld())
+        return false;
 
-            for (PlayerBotMap::const_iterator itr = GetPlayerBotsBegin(); itr != GetPlayerBotsEnd(); ++itr)
-            {
-                Player* const bot = itr->second;
-                if (!bot || bot == player || !bot->IsInWorld() || bot->IsBeingTeleported()
-                    || bot->GetZoneId() != zone.zone_id) continue;
-
-                ++playercount;
-            }
-
-            if (zone.max_player <= playercount)
-            {
-                TC_LOG_DEBUG("playerbots", "Zone {%u} has too many players for: %s {%u} : %u/%u", zone.zone_id, player->GetName().c_str(), player->GetLevel(), playercount, zone.max_player);
-
-                continue;
-            }
-        }
-
-        auto& spots = zone.spots;
-        std::shuffle(spots.begin(), spots.end(), gen);
-        for (auto& spot : spots)
-        {
-            if (player->GetLevel() >= spot.min_level && player->GetLevel() <= spot.max_level)
-            {
-                // -- 
-                TC_LOG_DEBUG("playerbots", "Farm spot found for : %s - level: %u", player->GetName().c_str(), player->GetLevel());
-                return &spot;
-            }
-        }
-    }
-
-    TC_LOG_WARN("playerbots", "No valid zone farm found for %s level: %u", player->GetName().c_str(), player->GetLevel());
-    return nullptr;
+    return IsEnemyCapitalZone(bot->GetZoneId(), bot->GetTeam());
 }

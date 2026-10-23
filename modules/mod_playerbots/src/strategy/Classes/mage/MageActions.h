@@ -8,6 +8,7 @@
 
 #include "GenericSpellActions.h"
 #include "SharedDefines.h"
+#include "UseItemAction.h"
 
 class PlayerbotAI;
 
@@ -90,10 +91,70 @@ public:
     bool isUseful() override;
 };
 
+// Rotation lane 10 (#865): MoP talents with no AC counterpart, Temporal Shield (self, in combat) and
+// Blazing Speed (self, in combat). Spell ids 115610 / 108843 resolve on 5.4.8 (Spell.dbc).
+class CastTemporalShieldAction : public CastBuffSpellAction
+{
+public:
+    CastTemporalShieldAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "temporal shield") {}
+};
+
+class CastBlazingSpeedAction : public CastBuffSpellAction
+{
+public:
+    CastBlazingSpeedAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "blazing speed") {}
+};
+
+// Lane 0 contract base CastSpellOnEnemyCasterAction (GenericSpellActions.h): Counterspell on any interruptible enemy
+// caster.
+class CastCounterspellOnEnemyCasterAction : public CastSpellOnEnemyCasterAction
+{
+public:
+    CastCounterspellOnEnemyCasterAction(PlayerbotAI* botAI) : CastSpellOnEnemyCasterAction(botAI, "counterspell") {}
+};
+
 class CastBlinkAction : public CastSpellAction
 {
 public:
     CastBlinkAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "blink") {}
+    bool isUseful() override;
+};
+
+// #408 (AC parity, MageActions.h:139-142). AC's "blink back": Blink fired AWAY from the current
+// target instead of MoP's CastBlinkAction, which blinks toward it. Triggered by AC's
+// "enemy too close for spell and no firestarter strategy" node. MoP's CastBlinkAction is kept.
+class CastBlinkBackAction : public CastSpellAction
+{
+public:
+    CastBlinkBackAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "blink") {}
+    bool Execute(Event event) override;
+};
+
+// #385 (AC MageActions.h:146-149 CastManaShieldAction). 5.4.8 DIVERGENCE: Mana Shield is not learnable by a
+// 5.4.8 mage (cls.py mage -> NOT-LEARNABLE). This replaces the dead "mana shield" action with the 5.x
+// Incanter's Ward talent (1463) for manual/strategy use only; no strategy edge uses it, because no source
+// documents Incanter's Ward as Mana Shield's successor (Wowpedia patch notes, read 2026-10-04).
+class CastIncantersWardAction : public CastBuffSpellAction
+{
+public:
+    CastIncantersWardAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "incanter's ward") {}
+};
+
+// #385 (AC MageActions.h:161-164). Conjure Mana Gem, 759 (learnable L47 per cls.py).
+class CastConjureManaGemAction : public CastBuffSpellAction
+{
+public:
+    CastConjureManaGemAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "conjure mana gem") {}
+};
+
+// #385 (AC MageActions.h:180-218 UseMana{Sapphire,...}Action + MageActions.cpp:32-70 isUseful).
+// AC's six WotLK gem actions collapse to one: 5.4.8 Conjure Mana Gem (759) creates only Mana Gem,
+// item 36799 (Wowhead mop-classic tooltip item 36799, 2026-10-04). Action name = item name, the same
+// way AC passes "mana sapphire", so UseItemAction resolves it through "inventory items".
+class UseManaGemAction : public UseItemAction
+{
+public:
+    UseManaGemAction(PlayerbotAI* botAI) : UseItemAction(botAI, "mana gem") {}
     bool isUseful() override;
 };
 
@@ -127,6 +188,8 @@ class CastBlizzardAction : public CastSpellAction
 public:
     CastBlizzardAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "blizzard") {}
     ActionThreatType getThreatType() override { return ActionThreatType::Aoe; }
+    // "NOT map type is arena".
+    bool isUseful() override;
 };
 
 class CastConeOfColdAction : public CastSpellAction
@@ -151,12 +214,19 @@ public:
     CastArcaneBrillanceAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "arcane brilliance") {}
 };
 
+// 5.4.8: AC's "arcane intellect on party" ported onto MoP's "arcane brilliance" (see MageTriggers.h).
+BUFF_PARTY_ACTION(CastArcaneBrillianceOnPartyAction, "arcane brilliance");
+
 class CastRemoveCurseAction : public CastCureSpellAction
 {
 public:
     CastRemoveCurseAction(PlayerbotAI* botAI) : CastCureSpellAction(botAI, "remove curse") {}
 };
 
+// 5.4.8: "Remove Lesser Curse" does not exist; curses are removed by the single "Remove Curse" spell on
+// this core (MageAiObjectContext.cpp aliases the "remove lesser curse" action names to
+// CastRemoveCurseAction/CastRemoveCurseOnPartyAction instead of these classes). Kept unregistered for
+// reference in case AC's dual-curse-spell split needs revisiting.
 class CastRemoveLesserCurseAction : public CastCureSpellAction
 {
 public:
@@ -193,10 +263,15 @@ public:
     CastSummonWaterElementalAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "summon water elemental") {}
 };
 
-class CastCombustionAction : public CastBuffSpellAction
+// 5.4.8: Combustion 11129 is an enemy-targeted nuke+stun ("Instantly deals $s2 Fire damage and stuns the target",
+// Spell.dbc; core spell_mage.cpp:450-477 OnHit on the hit unit). AC's WotLK Combustion is a self buff, hence
+// CastBuffSpellAction there (AC MageActions.h:72-76); self-targeted here it fails CheckCast result=13 BAD_TARGETS
+// (w19 Castorin x11). Same shape as the other single-target mage spells.
+class CastCombustionAction : public CastSpellAction
 {
 public:
-    CastCombustionAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "combustion") {}
+    CastCombustionAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "combustion") {}
+    ActionThreatType getThreatType() override { return ActionThreatType::Single; }
 };
 
 BEGIN_SPELL_ACTION(CastCounterspellAction, "counterspell")
@@ -217,16 +292,16 @@ public:
     }
 };
 
-class CastConjureFoodAction : public CastBuffSpellAction
+// 5.4.8: AC's separate "conjure food"/"conjure water" (Cast{Food,Water}Action) merged into a single
+// "Conjure Refreshment" in Cataclysm (one item makes food and drink together). Verified against
+// Spell.dbc: "Conjure Food" (8736)/"Conjure Water" (29975/36879) are still present as rows but
+// "Conjure Refreshment" is the one with a full level-bracket rank ladder (42955/42956/43988/74625/
+// 92727/92739/92799/92802/92805/92822/92826, mirroring "Create Healthstone"'s 4-rank shape) - the
+// old spells are leftover DBC data, not what a leveling mage is taught.
+class CastConjureRefreshmentAction : public CastBuffSpellAction
 {
 public:
-    CastConjureFoodAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "conjure food") {}
-};
-
-class CastConjureWaterAction : public CastBuffSpellAction
-{
-public:
-    CastConjureWaterAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "conjure water") {}
+    CastConjureRefreshmentAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "conjure refreshment") {}
 };
 
 class CastIceBlockAction : public CastBuffSpellAction
@@ -294,6 +369,19 @@ class CastLivingBombOnAttackersAction : public CastDebuffSpellOnAttackerAction
 {
 public:
     CastLivingBombOnAttackersAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "living bomb", true) {}
+};
+
+// #521: same shape as CastLivingBombOnAttackersAction for the other two tier-75 talents.
+class CastFrostBombOnAttackersAction : public CastDebuffSpellOnAttackerAction
+{
+public:
+    CastFrostBombOnAttackersAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "frost bomb", true) {}
+};
+
+class CastNetherTempestOnAttackersAction : public CastDebuffSpellOnAttackerAction
+{
+public:
+    CastNetherTempestOnAttackersAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "nether tempest", true) {}
 };
 
 class CastDragonsBreathAction : public CastSpellAction

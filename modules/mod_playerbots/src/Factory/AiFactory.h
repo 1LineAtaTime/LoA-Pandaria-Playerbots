@@ -27,6 +27,7 @@ public:
     static Engine* createNonCombatEngine(Player* player, PlayerbotAI* const facade, AiObjectContext* aiObjectContext);
     static Engine* createDeadEngine(Player* player, PlayerbotAI* const facade, AiObjectContext* aibjectContext);
     static void AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const facade, Engine* nonCombatEngine);
+    static void AddBattlegroundStrategies(Player* player, Engine* engine, bool nonCombat);
     static void AddDefaultDeadStrategies(Player* player, PlayerbotAI* const facade, Engine* deadEngine);
     static void AddDefaultCombatStrategies(Player* player, PlayerbotAI* const facade, Engine* engine);
 

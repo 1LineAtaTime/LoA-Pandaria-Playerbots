@@ -19,6 +19,13 @@ void GenericPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     triggers.push_back(new TriggerNode("critical health", NextAction::array(0, new NextAction("divine shield",
         ACTION_HIGH + 5), nullptr)));
+    // rotation lane 6 (#861): Rebuke (prio 10/2, current target) and (prio 10/1, any
+    // casting enemy in range). Above Hammer of Justice (prio 6/0). The Divine Shield above is guarded
+    // against carrying a PvP objective in CastDivineShieldAction::isUseful.
+    triggers.push_back(new TriggerNode("rebuke interrupt",
+        NextAction::array(0, new NextAction("rebuke", ACTION_INTERRUPT + 1), nullptr)));
+    triggers.push_back(new TriggerNode("enemy caster in range",
+        NextAction::array(0, new NextAction("rebuke on enemy caster", ACTION_INTERRUPT + 0.5f), nullptr)));
     triggers.push_back(
         new TriggerNode("hammer of justice interrupt",
                         NextAction::array(0, new NextAction("hammer of justice", ACTION_INTERRUPT), nullptr)));
@@ -36,6 +43,14 @@ void GenericPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(new TriggerNode(
         "protect party member",
         NextAction::array(0, new NextAction("blessing of protection on party", ACTION_EMERGENCY + 2), nullptr)));
+    // #163 S8 (AC parity, Ai/Class/Paladin/Strategy/GenericPaladinStrategy.cpp:34-35).
+    triggers.push_back(new TriggerNode(
+        "hand of freedom on party",
+        NextAction::array(0, new NextAction("hand of freedom on party", ACTION_HIGH + 4), nullptr)));
+    // #408 (AC GenericPaladinStrategy.cpp:29-30) - 1:1
+    triggers.push_back(new TriggerNode("divine shield low health",
+        NextAction::array(0, new NextAction("flash of light", ACTION_EMERGENCY + 3),
+                                new NextAction("holy light", ACTION_EMERGENCY + 2), nullptr)));
     triggers.push_back(
         new TriggerNode("high mana", NextAction::array(0, new NextAction("divine plea", ACTION_HIGH), NULL)));
 }
@@ -80,7 +95,9 @@ void PaladinHealerDpsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
                             new NextAction("hammer of wrath", ACTION_DEFAULT + 0.6f),
                             new NextAction("holy shock", ACTION_DEFAULT + 0.5f),
                             new NextAction("shield of righteousness", ACTION_DEFAULT + 0.4f),
-                            new NextAction("judgement of light", ACTION_DEFAULT + 0.3f),
+                            // 5.4.8: Judgement of Light does not exist; Judgement is a single unified
+                            // ability in MoP, so this now casts the generic "judgement" action.
+                            new NextAction("judgement", ACTION_DEFAULT + 0.3f),
                             new NextAction("consecration", ACTION_DEFAULT + 0.2f),
                             new NextAction("exorcism", ACTION_DEFAULT+ 0.1f),
                             nullptr)));

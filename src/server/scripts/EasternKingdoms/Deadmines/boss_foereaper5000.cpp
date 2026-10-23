@@ -42,6 +42,14 @@ enum Spells
     SPELL_OVERDRIVE            = 88481,
     SPELL_OVERDRIVE_DMG        = 88484,
     SPELL_TARGET_BUNNY         = 71371, // rocket artillery
+
+    // #681 heroic Molten Slag (Wowpedia "Foe Reaper 5000", MediaWiki API 2026-10-23: "Activation of the Foe Reaper 5000 causes an
+    // overload in the slag pit, resulting in Molten Slags periodically being spawned"; Fixate 10 s, Molten Shield = 50% less magic
+    // damage taken + 18500-21500 Fire to everyone within 10 yd every 2 s). 5.4.8 SpellEffect.dbc: 91815 eff0 aura 87 -50% (school
+    // 126), eff1 periodic trigger 2 s of 91819 (radius index 13 = 10 yd); 91829 Fixate = aura 11 MOD_TAUNT, 10 s, cast BY the player
+    // ON the slag (CPP boss_foe_reaper_5000.cpp:548-568).
+    SPELL_MOLTEN_SHIELD        = 91815,
+    SPELL_FIXATE_TAUNT         = 91829,
 };
 
 enum Adds
@@ -58,7 +66,8 @@ enum Events
     EVENT_REAPER_STRIKE     = 3,
     EVENT_HARVEST           = 4,
     EVENT_HARVEST1          = 5,
-
+    EVENT_MOLTEN_SLAG       = 6,   // #681
+    EVENT_SLAG_FIXATE       = 7,   // #681
 };
 
 const Position defiasreaperPos[3] =
@@ -158,6 +167,18 @@ class boss_foereaper5000 : public CreatureScript
                             }
                             events.ScheduleEvent(EVENT_HARVEST, 30000, 40000);
                             break;
+                        case EVENT_MOLTEN_SLAG:
+                        {
+                            Position const& pos = moltenslagPos[urand(0, 3)];
+                            me->SummonCreature(NPC_MOLTEN_SLAG, pos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms);
+                            events.ScheduleEvent(EVENT_MOLTEN_SLAG, urand(21000, 22000));
+                            events.RescheduleEvent(EVENT_SLAG_FIXATE, 3000);
+                            break;
+                        }
+                        case EVENT_SLAG_FIXATE:
+                            FixateSlags();
+                            events.ScheduleEvent(EVENT_SLAG_FIXATE, 12000);
+                            break;
                         }
                 }
 
@@ -197,6 +218,10 @@ class boss_foereaper5000 : public CreatureScript
                 events.ScheduleEvent(EVENT_REAPER_STRIKE, urand(5000, 8000));
                 events.ScheduleEvent(EVENT_OVERDRIVE, urand(10000, 15000));
                 events.ScheduleEvent(EVENT_HARVEST, urand(25000, 30000));
+                // #681: CPP boss_foe_reaper_5000.cpp:166-167 / :314-320 - the first slag 17 s into the fight, then one every
+                // 21-22 s; each fixates a random player 3 s after it rises and every 12 s after that (:419-443)
+                if (IsHeroic())
+                    events.ScheduleEvent(EVENT_MOLTEN_SLAG, 17000);
                 DoZoneInCombat();
             }
 
@@ -205,8 +230,37 @@ class boss_foereaper5000 : public CreatureScript
                 Talk(SAY_KILL);
             }
 
+            // #681: every live slag fixates a random player in range: the player "casts" 91829 (taunt) on it, as CPP
+            // spell_foe_reaper_5000_fixate does (boss_foe_reaper_5000.cpp:559-564)
+            void FixateSlags()
+            {
+                std::list<Creature*> slags;
+                GetCreatureListWithEntryInGrid(slags, me, NPC_MOLTEN_SLAG, 100.0f);
+                for (Creature* slag : slags)
+                {
+                    if (!slag->IsAlive())
+                        continue;
+
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                    {
+                        target->CastSpell(slag, SPELL_FIXATE_TAUNT, true);
+                        slag->AI()->AttackStart(target);
+                        TC_LOG_INFO("scripts", "[DM-REAPER] molten slag %u fixates %s", uint32(slag->GetGUID().GetCounter()), target->GetName().c_str());
+                    }
+                }
+            }
+
             void JustSummoned(Creature* summon) override
             {
+                if (summon->GetEntry() == NPC_MOLTEN_SLAG)
+                {
+                    // #681: Molten Shield from the start (CPP casts it 3 s in, :434-437), then the slag joins the fight
+                    BossAI::JustSummoned(summon);
+                    summon->CastSpell(summon, SPELL_MOLTEN_SHIELD, true);
+                    TC_LOG_INFO("scripts", "[DM-REAPER] molten slag %u rises at (%.1f, %.1f)", uint32(summon->GetGUID().GetCounter()), summon->GetPositionX(), summon->GetPositionY());
+                    return;
+                }
+
                 BossAI::JustSummoned(summon);
                 if (summon->GetEntry()== NPC_TARGETING_BUNNY)
                 {

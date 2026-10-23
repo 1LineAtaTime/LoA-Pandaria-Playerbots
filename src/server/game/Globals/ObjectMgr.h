@@ -22,6 +22,7 @@
 #include "Object.h"
 #include "Bag.h"
 #include "Creature.h"
+#include "DB2Stores.h"
 #include "DynamicObject.h"
 #include "GameObject.h"
 #include "TemporarySummon.h"
@@ -46,6 +47,7 @@
 #include "Containers.h"
 #include "ItemSpec.h"
 #include <atomic>
+#include <mutex>
 #include "Hash.h"
 
 class AreaTrigger;
@@ -826,15 +828,6 @@ struct DungeonEncounter
 typedef std::list<DungeonEncounter const*> DungeonEncounterList;
 typedef std::unordered_map<uint32, DungeonEncounterList> DungeonEncounterContainer;
 
-struct HotfixInfo
-{
-    uint32 Type;
-    uint32 Timestamp;
-    uint32 Entry;
-};
-
-typedef std::vector<HotfixInfo> HotfixData;
-
 struct ResearchDigsiteInfo
 {
     uint32 digsiteId;
@@ -880,12 +873,6 @@ struct CreatureDifficultyInfo
     uint8 LevelMax;
     float DamageMod;
     float HealthMod;
-    float MinDamage;
-    float MaxDamage;
-    float MinRangeDamage;
-    float MaxRangeDamage;
-    uint32 AttackPower;
-    uint32 RangedAttackPower;
 };
 
 typedef std::unordered_map<uint32, ResearchProjectRequirements> ResearchProjectRequirementContainer;
@@ -912,22 +899,27 @@ struct RealmCompletedChallenge
 {
     struct ChallengeMember
     {
-        ChallengeMember() :
-                Guid(ObjectGuid::Empty),
-                SpecId(0) {}
+        ChallengeMember()
+        {
+            Guid = ObjectGuid::Empty;
+            SpecId = 0;
+        }
 
-        ObjectGuid Guid{};
-        uint32 SpecId{};
+        ObjectGuid Guid;
+        uint32 SpecId;
     };
 
-    RealmCompletedChallenge() = default;
+    RealmCompletedChallenge()
+    {
+        memset(this, 0, sizeof (RealmCompletedChallenge));
+    }
 
-    uint32 GuildId{0};
-    uint32 AttemptId{0};
-    uint32 CompletionTime{0};
-    uint32 CompletionDate{0};
-    uint8 MedalEarned{0};
-    uint8 MembersCount{0};
+    uint32 GuildId;
+    uint32 AttemptId;
+    uint32 CompletionTime;
+    uint32 CompletionDate;
+    uint8 MedalEarned;
+    uint8 MembersCount;
 
     ChallengeMember Members[5];
 };
@@ -939,11 +931,11 @@ struct ChallengeReward
         memset(this, 0, sizeof(ChallengeReward));
     }
 
-    uint32 MapId{0};
-    uint32 MoneyReward[4]{0};
-    uint32 ValorReward[4]{0};
-    uint32 TitleID{0};
-    uint32 AchievementID{0};
+    uint32 MapId;
+    uint32 MoneyReward[4];
+    uint32 ValorReward[4];
+    uint32 TitleID;
+    uint32 AchievementID;
 };
 
 typedef std::vector<GuildChallengeReward> GuildChallengeRewardData;
@@ -1145,6 +1137,9 @@ class ObjectMgr
         GraveYardData const* FindGraveYardData(uint32 id, uint32 zone);
 
         AreaTriggerStruct const* GetAreaTrigger(uint32 trigger) const;
+        // Read-only view over every areatrigger teleport, keyed by AreaTrigger.dbc id. Used by the
+        // playerbots travel-node generator to turn portals/instance doors into graph links.
+        AreaTriggerContainer const& GetAllAreaTriggers() const { return _areaTriggerStore; }
 
         AccessRequirement const* GetAccessRequirement(uint32 mapid, Difficulty difficulty) const;
 
@@ -1499,6 +1494,10 @@ class ObjectMgr
             if (itr == _creatureDataStore.end()) return NULL;
             return &itr->second;
         }
+        // Read-only view over every loaded creature spawn. Used by the playerbots travel-node
+        // generator, which has to walk all spawns once at startup; matches the accessor upstream
+        // TrinityCore exposes for the same purpose.
+        CreatureDataContainer const& GetAllCreatureData() const { return _creatureDataStore; }
         CreatureData& NewOrExistCreatureData(uint32 guid) { return _creatureDataStore[guid]; }
         void DeleteCreatureData(uint32 guid);
         ObjectGuid GetLinkedRespawnGuid(ObjectGuid guid) const
@@ -1574,6 +1573,8 @@ class ObjectMgr
             return &itr->second;
         }
 
+        // #257 (lane Q): the playerbots QuestGuidpMapValue walks every GO spawn, as AC (AC ObjectMgr.h GetAllGOData).
+        GameObjectDataContainer const& GetAllGOData() const { return _gameObjectDataStore; }
         GameObjectData const* GetGOData(uint32 guid) const
         {
             GameObjectDataContainer::const_iterator itr = _gameObjectDataStore.find(guid);
@@ -1732,8 +1733,6 @@ class ObjectMgr
         HotfixData const& GetHotfixData() const { return _hotfixData; }
         time_t GetHotfixDate(uint32 entry, uint32 type) const;
 
-        void LoadMissingKeyChains();
-
         void LoadResearchDigsiteInfo();
         void LoadArchaeologyFindInfo();
         void LoadResearchProjectRequirements();
@@ -1824,6 +1823,7 @@ class ObjectMgr
         template<HighGuid high>
         inline ObjectGuidGeneratorBase& GetGuidSequenceGenerator()
         {
+            std::lock_guard<std::mutex> guard(_guidGeneratorsLock);  // LoA upstream #439
             auto itr = _guidGenerators.find(high);
             if (itr == _guidGenerators.end())
                 itr = _guidGenerators.insert(std::make_pair(high, std::unique_ptr<ObjectGuidGenerator<high>>(new ObjectGuidGenerator<high>()))).first;
@@ -1832,6 +1832,7 @@ class ObjectMgr
         }
 
         std::map<HighGuid, std::unique_ptr<ObjectGuidGeneratorBase>> _guidGenerators;
+        std::mutex _guidGeneratorsLock;
 
         QuestMap _questTemplates;
         QuestObjectivesByIdContainer _questObjectives;

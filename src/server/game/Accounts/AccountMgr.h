@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,9 @@
 #define SF_ACCMGR_H
 
 #include "Define.h"
+#include "RBAC.h"
 #include <string>
+#include <map>
 #include "Util.h"
 
 enum class AccountOpResult : uint8
@@ -45,11 +47,18 @@ enum PasswordChangeSecurity
 #define MAX_ACCOUNT_STR 16
 #define MAX_EMAIL_STR 64
 
+namespace rbac
+{
+typedef std::map<uint32, rbac::RBACPermission*> RBACPermissionsContainer;
+typedef std::map<uint8, rbac::RBACPermissionContainer> RBACDefaultPermissionsContainer;
+}
+
 class AccountMgr
 {
+
     private:
-        AccountMgr() = default;
-        ~AccountMgr() = default;
+        AccountMgr();
+        ~AccountMgr();
 
     public:
         static AccountMgr* instance();
@@ -75,7 +84,20 @@ class AccountMgr
         static bool IsAdminAccount(uint32 gmlevel);
         static bool IsConsoleAccount(uint32 gmlevel);
 
-        void UpdateAccountAccess(uint32 accountId, uint8 securityLevel, int32 realmId);
+        static bool HasPermission(uint32 accountId, uint32 permissionId, uint32 realmId);
+
+        void UpdateAccountAccess(rbac::RBACData* rbac, uint32 accountId, uint8 securityLevel, int32 realmId);
+
+        void LoadRBAC();
+        rbac::RBACPermission const* GetRBACPermission(uint32 permissionId) const;
+
+        rbac::RBACPermissionsContainer const& GetRBACPermissionList() const { return _permissions; }
+        rbac::RBACPermissionContainer const& GetRBACDefaultPermissions(uint8 secLevel);
+
+    private:
+        void ClearRBAC();
+        rbac::RBACPermissionsContainer _permissions;
+        rbac::RBACDefaultPermissionsContainer _defaultPermissions;
 };
 
 #define sAccountMgr AccountMgr::instance()
@@ -84,13 +106,6 @@ class AccountMgr
 
 namespace Battlenet
 {
-    static bool StringToBool(std::string const& str)
-    {
-        std::string lowerStr = str;
-        std::transform(str.begin(), str.end(), lowerStr.begin(), [](char c) { return char(::tolower(c)); });
-        return lowerStr == "1" || lowerStr == "true" || lowerStr == "yes";
-    }
-
     static bool Utf8ToUpperOnlyLatin(std::string& utf8String)
     {
         std::wstring wstr;
@@ -98,18 +113,28 @@ namespace Battlenet
             return false;
 
         std::transform(wstr.begin(), wstr.end(), wstr.begin(), wcharToUpperOnlyLatin);
+
         return WStrToUtf8(wstr, utf8String);
     }
 
-namespace AccountMgr
+    static bool StringToBool(std::string const& str)
+    {
+        std::string lowerStr = str;
+        std::transform(str.begin(), str.end(), lowerStr.begin(), [](char c) { return char(::tolower(c)); });
+        return lowerStr == "1" || lowerStr == "true" || lowerStr == "yes";
+    }
+
+    namespace AccountMgr
     {
         AccountOpResult CreateBattlenetAccount(std::string email, std::string password, bool withGameAccount = true);
         AccountOpResult ChangePassword(uint32 accountId, std::string newPassword);
+        bool CheckPassword(uint32 accountId, std::string password);
         AccountOpResult LinkWithGameAccount(std::string const& email, std::string const& gameAccountName);
         AccountOpResult UnlinkGameAccount(std::string const& gameAccountName);
 
         uint32 GetId(std::string const& username);
         bool GetName(uint32 accountId, std::string& name);
+        uint32 GetIdByGameAccount(uint32 gameAccountId);
         uint8 GetMaxIndex(uint32 accountId);
 
         std::string CalculateShaPassHash(std::string const& name, std::string const& password);

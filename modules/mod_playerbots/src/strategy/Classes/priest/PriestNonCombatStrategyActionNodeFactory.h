@@ -88,14 +88,14 @@ private:
     {
         return new ActionNode("heal",
                               /*P*/ NextAction::array(0, new NextAction("remove shadowform"), NULL),
-                              /*A*/ NextAction::array(0, new NextAction("lesser heal"), NULL),
+                              /*A*/ NULL, // #524: Lesser Heal not learnable in 5.4.8 (cls.py)
                               /*C*/ NULL);
     }
     static ActionNode* heal_on_party(PlayerbotAI* ai)
     {
         return new ActionNode("heal on party",
                               /*P*/ NextAction::array(0, new NextAction("remove shadowform"), NULL),
-                              /*A*/ NextAction::array(0, new NextAction("lesser heal on party"), NULL),
+                              /*A*/ NULL, // #524: Lesser Heal not learnable in 5.4.8 (cls.py)
                               /*C*/ NULL);
     }
     static ActionNode* lesser_heal(PlayerbotAI* ai)

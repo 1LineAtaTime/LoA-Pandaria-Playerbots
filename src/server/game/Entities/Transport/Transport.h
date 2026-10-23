@@ -21,6 +21,7 @@
 #include "GameObject.h"
 #include "TransportMgr.h"
 #include "VehicleDefines.h"
+#include <mutex>
 
 struct CreatureData;
 
@@ -45,8 +46,11 @@ class Transport : public GameObject, public TransportBase
         
         void BuildUpdate(UpdateDataMapType& data_map) override;
 
-        void AddPassenger(WorldObject* passenger);
-        void RemovePassenger(WorldObject* passenger);
+    /// withAll also places the passenger on the deck (stores its offset from the transport), which
+    /// is what a bot needs when it walks onto a boat/zeppelin. Ported from the mod-playerbots
+    /// AzerothCore fork (issue #86).
+    void AddPassenger(WorldObject* passenger, bool withAll = false);
+    void RemovePassenger(WorldObject* passenger, bool withAll = true);
         PassengerSet const& GetPassengers() const { return _passengers; }
         PassengerSet const& GetStaticPassengers() const { return _staticPassengers; }
 
@@ -104,7 +108,20 @@ class Transport : public GameObject, public TransportBase
 
         TransportTemplate const* GetTransportTemplate() const { return _transportInfo; }
 
+        // #736: stop-frame mode for a local (type 11) transport with a pause time - the Strand of the Ancients boats.
+        // The 5.4.8 client only stops such a transport when the create block lists its stop frames; without them it
+        // loops the whole TransportAnimation path (ocean -> dock -> jump back), which is what the boats did.
+        // #851: mode = Transport.SotaBoatStopFrames: 1 = #736 encoding (GO state 25 throughout, rollback only),
+        // 2 = elevator encoding (TrinityCore type-11 stop-frame states: 24 held at frame 0, 25 to/at stop frame 0)
+        void EnableStopFrames(uint8 mode = 1);          // hold at the path start (progress 0)
+        void StartToFirstStopFrame(uint32 travelTime);  // sail to the first stop frame in travelTime ms, then hold there
+        std::vector<uint32> const* GetStopFrames() const { return _stopFrames.empty() ? nullptr : &_stopFrames; }
+        uint8 GetStopFrameMode() const { return _stopFrames.empty() ? 0 : _stopFrameMode; }  // 0 = no stop frames
+
     private:
+        void UpdateStopFrameProgress();
+        void LogStopFramePosition();                    // #851 "[851] boat-pos" (1 s while sailing, 5 s while held)
+
         void MoveToNextWaypoint();
         float CalculateSegmentPos(float perc);
         bool TeleportTransport(uint32 newMapid, float x, float y, float z, float o);
@@ -132,9 +149,22 @@ class Transport : public GameObject, public TransportBase
         PassengerSet _passengers;
         PassengerSet::iterator _passengerTeleportItr;
         PassengerSet _staticPassengers;
+        // #231: AC Transport.h:111 (`mutable std::mutex Lock`), taken by AddPassenger / RemovePassenger
+        // (AC Transport.cpp:351,380) so boarding from another map-update thread (MapUpdate.Threads > 1)
+        // cannot race the set. Recursive here: MoP's RemovePassenger runs scripts and StopMoving().
+        mutable std::recursive_mutex _passengersLock;
 
         bool _delayedAddModel;
         bool _delayedTeleport;
+
+        // #736 stop-frame mode (empty = the transport behaves as before)
+        std::vector<uint32> _stopFrames;
+        uint32 _stopFrameStartTime;
+        uint32 _stopFrameEndTime;
+        uint32 _stopFrameStartProgress;
+        uint32 _stopFrameTargetProgress;
+        uint8 _stopFrameMode;                           // #851: 1 = #736 encoding, 2 = elevator encoding
+        uint32 _stopFrameLogAt;                         // #851: getMSTime() of the last "[851] boat-pos" line
 };
 
 #endif

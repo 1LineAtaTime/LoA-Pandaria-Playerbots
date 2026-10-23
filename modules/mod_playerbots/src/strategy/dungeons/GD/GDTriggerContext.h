@@ -1,0 +1,33 @@
+/*
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
+ */
+
+// AC Ai/Dungeon/GD/GDTriggerContext.h (#556, epic #569)
+#ifndef PLAYERBOTS_GDTRIGGERCONTEXT_H
+#define PLAYERBOTS_GDTRIGGERCONTEXT_H
+
+#include "GDTriggers.h"
+#include "NamedObjectContext.h"
+
+class WotlkDungeonGDTriggerContext : public NamedObjectContext<Trigger>
+{
+    public:
+        WotlkDungeonGDTriggerContext()
+        {
+            creators["poison nova"] = &WotlkDungeonGDTriggerContext::poison_nova;
+            creators["snake wrap"] = &WotlkDungeonGDTriggerContext::snake_wrap;
+            creators["slad'ran stack on tank"] = &WotlkDungeonGDTriggerContext::sladran_stack_on_tank;
+            creators["slad'ran tank hold"] = &WotlkDungeonGDTriggerContext::sladran_tank_hold;
+            creators["whirling slash"] = &WotlkDungeonGDTriggerContext::whirling_slash;
+        }
+    private:
+        static Trigger* poison_nova(PlayerbotAI* ai) { return new SladranPoisonNovaTrigger(ai); }
+        static Trigger* snake_wrap(PlayerbotAI* ai) { return new SladranSnakeWrapTrigger(ai); }
+        static Trigger* sladran_stack_on_tank(PlayerbotAI* ai) { return new SladranStackOnTankTrigger(ai); }
+        static Trigger* sladran_tank_hold(PlayerbotAI* ai) { return new SladranTankHoldTrigger(ai); }
+        static Trigger* whirling_slash(PlayerbotAI* ai) { return new GaldarahWhirlingSlashTrigger(ai); }
+};
+
+#endif

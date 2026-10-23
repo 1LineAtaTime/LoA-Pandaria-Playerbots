@@ -11,6 +11,8 @@
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   Maelstrom/zone_kezan.cpp
+  Maelstrom/zone_lost_isles.cpp
+  Maelstrom/zone_lost_isles_volcano.cpp
   Maelstrom/zone_deepholm.cpp
   Maelstrom/TheStonecore/boss_corborus.cpp
   Maelstrom/TheStonecore/boss_high_priestess_azil.cpp

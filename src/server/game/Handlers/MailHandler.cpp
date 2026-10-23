@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -32,6 +32,34 @@
 #include "AuctionHouseMgr.h"
 #include "Chat.h"
 #include "WordFilterMgr.h"
+#include "Realm.h"
+#include "RBAC.h"
+
+bool WorldSession::CanOpenMailBox(ObjectGuid guid)
+{
+    if (guid == GetPlayer()->GetGUID())
+    {
+        if (!HasPermission(rbac::RBAC_PERM_COMMAND_MAILBOX))
+        {
+            TC_LOG_WARN("cheat", "%s attempted to open mailbox by using a cheat.", GetPlayerName().c_str());
+            return false;
+        }
+    }
+    else if (guid.IsGameObject())
+    {
+        if (!GetPlayer()->GetGameObjectIfCanInteractWith(guid, GAMEOBJECT_TYPE_MAILBOX))
+            return false;
+    }
+    else if (guid.IsAnyTypeCreature())
+    {
+        if (!GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_MAILBOX))
+            return false;
+    }
+    else
+        return false;
+
+    return true;
+}
 
 void WorldSession::HandleSendMail(WorldPacket& recvData)
 {
@@ -106,13 +134,11 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     // packet read complete, now do check
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
-            {
-                GetPlayer()->SendMailResult(0, MAIL_SEND, MAIL_ERR_SILENT);
-                return;
-            }
+    if (!CanOpenMailBox(mailbox))
+    {
+        GetPlayer()->SendMailResult(0, MAIL_SEND, MAIL_ERR_SILENT);
+        return;
+    }
 
     if (receiverName.empty())
         return;
@@ -248,8 +274,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
         }
     }
 
-    if (!accountBound && player->GetTeam() != receiverTeam &&  !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_MAIL) &&
-        GetAccountId() != receiverAccountId && GetSecurity() == SEC_PLAYER)
+    if (!accountBound && player->GetTeam() != receiverTeam && !HasPermission(rbac::RBAC_PERM_TWO_SIDE_INTERACTION_MAIL))
     {
         player->SendMailResult(0, MAIL_SEND, MAIL_ERR_NOT_YOUR_TEAM);
         return;
@@ -329,7 +354,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     if (itemCount > 0 || money > 0)
     {
-        bool log = GetSecurity() > SEC_PLAYER && sWorld->getBoolConfig(CONFIG_GM_LOG_TRADE);
+        bool log = HasPermission(rbac::RBAC_PERM_LOG_GM_TRADE);
         if (itemCount > 0)
         {
             for (uint8 i = 0; i < itemCount; ++i)
@@ -415,10 +440,8 @@ void WorldSession::HandleMailMarkAsRead(WorldPacket& recvData)
     recvData.ReadByteSeq(mailbox[4]);
     recvData.ReadByteSeq(mailbox[0]);
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
-                return;// Mail interactions on client don't get locked up when this action is performed, thus no result packet is needed
+    if (!CanOpenMailBox(mailbox))
+        return;// Mail interactions on client don't get locked up when this action is performed, thus no result packet is needed
 
     if (Mail* mail = _player->GetMail(mailId))
     {
@@ -501,7 +524,7 @@ void WorldSession::HandleMailReturnToSender(WorldPacket& recvData)
         return;
     }
 
-    if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(NULL))
+    if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         player->SendMailResult(mailId, MAIL_RETURNED_TO_SENDER, MAIL_ERR_INTERNAL_ERROR);
         return;
@@ -572,18 +595,16 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
     recvData.ReadByteSeq(mailbox[3]);
     recvData.ReadByteSeq(mailbox[7]);
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
-            {
-                GetPlayer()->SendMailResult(mailId, MAIL_ITEM_TAKEN, MAIL_ERR_SILENT);
-                return;
-            }
+    if (!CanOpenMailBox(mailbox))
+    {
+        GetPlayer()->SendMailResult(mailId, MAIL_ITEM_TAKEN, MAIL_ERR_SILENT);
+        return;
+    }
 
     Player* player = _player;
 
     Mail* m = player->GetMail(mailId);
-    if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(NULL))
+    if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         player->SendMailResult(mailId, MAIL_ITEM_TAKEN, MAIL_ERR_INTERNAL_ERROR);
         return;
@@ -613,7 +634,7 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
 
             uint32 sender_accId = 0;
 
-            if (GetSecurity() > SEC_PLAYER && sWorld->getBoolConfig(CONFIG_GM_LOG_TRADE))
+            if (HasPermission(rbac::RBAC_PERM_LOG_GM_TRADE))
             {
                 std::string sender_name;
                 if (receiver)
@@ -692,18 +713,16 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
     recvData.ReadByteSeq(mailbox[6]);
     recvData.ReadByteSeq(mailbox[5]);
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
-            {
-                GetPlayer()->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_ERR_SILENT);
-                return;
-            }
+    if (!CanOpenMailBox(mailbox))
+    {
+        GetPlayer()->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_ERR_SILENT);
+        return;
+    }
 
     Player* player = _player;
 
     Mail* m = player->GetMail(mailId);
-    if ((!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(NULL)) ||
+    if ((!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr)) ||
         (money > 0 && m->money != money))
     {
         player->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_ERR_INTERNAL_ERROR);
@@ -725,7 +744,7 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
             attachments << tok[0] << ":" << tok[4];
         }
 
-        uint32 guid;
+        uint32 guid = 0;
         Tokenizer tok2(m->body, ':');
         if (tok.size() == 5)
         {
@@ -734,7 +753,7 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
             {
                 case AUCTION_SUCCESSFUL:    // Money from another player.
                     if (tok2.size() == 5)
-                        guid = strtoul(tok2[0], NULL, 16);
+                        guid = strtoul(tok2[0], nullptr, 16);
                     else
                         attachments << " Unexpected mail body \"" << m->body << '\"';
                     break;
@@ -783,13 +802,11 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
     recvData.ReadByteSeq(mailbox[3]);
     recvData.ReadByteSeq(mailbox[0]);
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
-            {
-                GetPlayer()->SendMailResult(0, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT); // Incorrect mailAction, but we need to feed something to the client for it to unlock mail interactions
-                return;
-            }
+    if (!CanOpenMailBox(mailbox))
+    {
+        GetPlayer()->SendMailResult(0, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT); // Incorrect mailAction, but we need to feed something to the client for it to unlock mail interactions
+        return;
+    }
 
     Player* player = _player;
 
@@ -802,7 +819,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
 
     uint32 mailCount = 0;
     uint32 realCount = 0;                               // true mail count (includes any skipped mail)
-    time_t cur_time = time(NULL);
+    time_t cur_time = time(nullptr);
     ByteBuffer mailData;
 
     WorldPacket data(SMSG_MAIL_LIST_RESULT, 200);       // guess size
@@ -914,7 +931,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
         mailData << uint64(mail->COD);
         mailData.WriteString(mail->subject);
         mailData << uint32(mail->stationery);
-        mailData << float(float(mail->expire_time - time(nullptr)) / (float)DAY);
+        mailData << float(float(mail->expire_time - time(nullptr)) / DAY);
         mailData << uint64(mail->money);
         mailData << uint32(mail->checked);
 
@@ -967,18 +984,16 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket& recvData)
     recvData.ReadByteSeq(mailbox[2]);
     recvData.ReadByteSeq(mailbox[1]);
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
-            {
-                GetPlayer()->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT);
-                return;
-            }
+    if (!CanOpenMailBox(mailbox))
+    {
+        GetPlayer()->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT);
+        return;
+    }
 
     Player* player = _player;
 
     Mail* m = player->GetMail(mailId);
-    if (!m || (m->body.empty() && !m->mailTemplateId) || m->state == MAIL_STATE_DELETED || m->deliver_time > time(NULL))
+    if (!m || (m->body.empty() && !m->mailTemplateId) || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         player->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_INTERNAL_ERROR);
         return;
@@ -1001,7 +1016,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket& recvData)
             return;
         }
 
-        bodyItem->SetText(mailTemplateEntry->content[GetSessionDbcLocale()]);
+        bodyItem->SetText(mailTemplateEntry->content);
     }
     else
         bodyItem->SetText(m->body);

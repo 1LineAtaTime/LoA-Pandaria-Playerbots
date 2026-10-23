@@ -24,6 +24,7 @@
 #include "DisableMgr.h"
 #include "GridNotifiers.h"
 #include "Group.h"
+#include "GroupMgr.h"
 #include "InstanceSaveMgr.h"
 #include "IPLocation.h"
 #include "Language.h"
@@ -33,13 +34,18 @@
 #include "MMapFactory.h"
 #include "MovementGenerator.h"
 #include "ObjectAccessor.h"
+#include "Opcodes.h"
 #include "Pet.h"
 #include "Player.h"
+#include "Realm.h"
 #include "ServiceMgr.h"
 #include "ScriptMgr.h"
+#include "ServiceMgr.h"
 #include "SpellAuras.h"
 #include "SpellHistory.h"
-#include "TargetedMovementGenerator.h"
+#include "Transport.h"
+#include "ChaseMovementGenerator.h"
+#include "FollowMovementGenerator.h"
 #include "WeatherMgr.h"
 #include "WordFilterMgr.h"
 #include "World.h"
@@ -54,147 +60,143 @@ public:
     {
         static std::vector<ChatCommand> badWordCommandTable =
         {
-            { "add",                SEC_ADMINISTRATOR,      true,  &HandleBadWordAddCommand, },
-            { "remove",             SEC_ADMINISTRATOR,      true,  &HandleBadWordRemoveCommand, },
-            { "list",               SEC_ADMINISTRATOR,      true,  &HandleBadWordListCommand, }
+            { "add", &HandleBadWordAddCommand, rbac::RBAC_PERM_COMMAND_WORDFILTER_BADWORD_ADD, Trinity::ChatCommands::Console::Yes },
+            { "remove", &HandleBadWordRemoveCommand, rbac::RBAC_PERM_COMMAND_WORDFILTER_BADWORD_REMOVE, Trinity::ChatCommands::Console::Yes },
+            { "list", &HandleBadWordListCommand, rbac::RBAC_PERM_COMMAND_WORDFILTER_BADWORD_LIST, Trinity::ChatCommands::Console::Yes }
         };
         static std::vector<ChatCommand> wordFilterCommandTable =
         {
-            { "badword",            SEC_ADMINISTRATOR,      true,  badWordCommandTable },
-            { "mod",                SEC_ADMINISTRATOR,      true,  &HandleWordFilterModCommand,}
+            { "badword", badWordCommandTable, rbac::RBAC_PERM_COMMAND_WORDFILTER_BADWORD, Trinity::ChatCommands::Console::Yes },
+            { "mod", &HandleWordFilterModCommand, rbac::RBAC_PERM_COMMAND_WORDFILTER_MOD, Trinity::ChatCommands::Console::Yes }
         };
 
         static std::vector<ChatCommand> toolCommandTable =
         {
-            { "move",           SEC_GAMEMASTER,     false, &HandleToolMoveCommand,              },
-            { "jump",           SEC_GAMEMASTER,     false, &HandleToolJumpCommand,              },
-            { "facing",         SEC_GAMEMASTER,     false, &HandleToolFacingCommand,            },
-            { "teleport",       SEC_GAMEMASTER,     false, &HandleToolTeleportCommand,          },
-            { "xy",             SEC_GAMEMASTER,     false, &HandleToolXYCommand,                },
-            { "xyz",            SEC_GAMEMASTER,     false, &HandleToolXYZCommand,               },
-            { "distance",       SEC_GAMEMASTER,     false, &HandleToolDistanceCommand,          },
-            { "angle",          SEC_GAMEMASTER,     false, &HandleToolAngleCommand,             },
-            { "neargo",         SEC_GAMEMASTER,     false, &HandleToolNearGOCommand,            },
-            { "spawncreature",  SEC_GAMEMASTER,     false, &HandleToolSpawnCreatureCommand,     },
-            { "spawngo",        SEC_GAMEMASTER,     false, &HandleToolSpawnGOCommand,           },
-            { "los",            SEC_GAMEMASTER,     false, &HandleToolLOSCommand,               },
-            { "mmaps",          SEC_GAMEMASTER,     false, &HandleToolMMapsCommand,             },
+            { "move", &HandleToolMoveCommand, rbac::RBAC_PERM_COMMAND_TOOL_MOVE, Trinity::ChatCommands::Console::No },
+            { "jump", &HandleToolJumpCommand, rbac::RBAC_PERM_COMMAND_TOOL_JUMP, Trinity::ChatCommands::Console::No },
+            { "facing", &HandleToolFacingCommand, rbac::RBAC_PERM_COMMAND_TOOL_FACING, Trinity::ChatCommands::Console::No },
+            { "teleport", &HandleToolTeleportCommand, rbac::RBAC_PERM_COMMAND_TOOL_TELEPORT, Trinity::ChatCommands::Console::No },
+            { "xy", &HandleToolXYCommand, rbac::RBAC_PERM_COMMAND_TOOL_XY, Trinity::ChatCommands::Console::No },
+            { "xyz", &HandleToolXYZCommand, rbac::RBAC_PERM_COMMAND_TOOL_XYZ, Trinity::ChatCommands::Console::No },
+            { "distance", &HandleToolDistanceCommand, rbac::RBAC_PERM_COMMAND_TOOL_DISTANCE, Trinity::ChatCommands::Console::No },
+            { "angle", &HandleToolAngleCommand, rbac::RBAC_PERM_COMMAND_TOOL_ANGLE, Trinity::ChatCommands::Console::No },
+            { "neargo", &HandleToolNearGOCommand, rbac::RBAC_PERM_COMMAND_TOOL_NEARGO, Trinity::ChatCommands::Console::No },
+            { "spawncreature", &HandleToolSpawnCreatureCommand, rbac::RBAC_PERM_COMMAND_TOOL_SPAWNCREATURE, Trinity::ChatCommands::Console::No },
+            { "spawngo", &HandleToolSpawnGOCommand, rbac::RBAC_PERM_COMMAND_TOOL_SPAWNGO, Trinity::ChatCommands::Console::No },
+            { "los", &HandleToolLOSCommand, rbac::RBAC_PERM_COMMAND_TOOL_LOS, Trinity::ChatCommands::Console::No },
+            { "mmaps", &HandleToolMMapsCommand, rbac::RBAC_PERM_COMMAND_TOOL_MMAPS, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> visualizeCommandTable =
         {
-            { "position",       SEC_ADMINISTRATOR,      false, &HandleVisualizePositionCommand,     },
-            { "combatreach",    SEC_ADMINISTRATOR,      false, &HandleVisualizeCombatReachCommand,  },
+            { "position", &HandleVisualizePositionCommand, rbac::RBAC_PERM_COMMAND_VISUALIZE_POSITION, Trinity::ChatCommands::Console::No },
+            { "combatreach", &HandleVisualizeCombatReachCommand, rbac::RBAC_PERM_COMMAND_VISUALIZE_COMBATREACH, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> bgCommandTable =
         {
-            { "start",          SEC_ADMINISTRATOR,  false,  &HandleBattlegroundStartCommand     },
-            { "regrated",       SEC_ADMINISTRATOR,  false,  &HandleBattlegroundRegRatedCommand  },
+            { "start",          &HandleBattlegroundStartCommand,     rbac::RBAC_PERM_COMMAND_BG_START,    Trinity::ChatCommands::Console::No },
+            { "regrated", &HandleBattlegroundRegRatedCommand, rbac::RBAC_PERM_COMMAND_BG_REGRATED, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> visibilityCommandTable =
         {
-            { "active",         SEC_ADMINISTRATOR,  false,  &HandleVisibilityActiveCommand,      },
-            { "activego",       SEC_ADMINISTRATOR,  false,  &HandleVisibilityActiveGOCommand,    },
-            { "get",            SEC_ADMINISTRATOR,  false,  &HandleVisibilityGetCommand,         },
-            { "getgo",          SEC_ADMINISTRATOR,  false,  &HandleVisibilityGetGOCommand,       },
-            { "set",            SEC_ADMINISTRATOR,  false,  &HandleVisibilitySetCommand,         },
-            { "setgo",          SEC_ADMINISTRATOR,  false,  &HandleVisibilitySetGOCommand,       },
-            { "reload",         SEC_ADMINISTRATOR,  false,  &HandleVisibilityReloadCommand,      },
-            { "reloadgo",       SEC_ADMINISTRATOR,  false,  &HandleVisibilityReloadGOCommand,    },
-            { "reloadall",      SEC_ADMINISTRATOR,  true,   &HandleVisibilityReloadAllCommand,   },
-            { "stats",          SEC_ADMINISTRATOR,  false,  &HandleVisibilityStatsCommand,       },
-            { "update",         SEC_ADMINISTRATOR,  false,  &HandleVisibilityUpdateCommand,      },
+            { "active", &HandleVisibilityActiveCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_ACTIVE, Trinity::ChatCommands::Console::No },
+            { "activego", &HandleVisibilityActiveGOCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_ACTIVEGO, Trinity::ChatCommands::Console::No },
+            { "get", &HandleVisibilityGetCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_GET, Trinity::ChatCommands::Console::No },
+            { "getgo", &HandleVisibilityGetGOCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_GETGO, Trinity::ChatCommands::Console::No },
+            { "set", &HandleVisibilitySetCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_SET, Trinity::ChatCommands::Console::No },
+            { "setgo", &HandleVisibilitySetGOCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_SETGO, Trinity::ChatCommands::Console::No },
+            { "reload", &HandleVisibilityReloadCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_RELOAD, Trinity::ChatCommands::Console::No },
+            { "reloadgo", &HandleVisibilityReloadGOCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_RELOADGO, Trinity::ChatCommands::Console::No },
+            { "reloadall", &HandleVisibilityReloadAllCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_RELOADALL, Trinity::ChatCommands::Console::Yes },
+            { "stats", &HandleVisibilityStatsCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_STATS, Trinity::ChatCommands::Console::No },
+            { "update", &HandleVisibilityUpdateCommand, rbac::RBAC_PERM_COMMAND_VISIBILITY_UPDATE, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> mutelistCommandTable =
         {
-            { "account",        SEC_MODERATOR,  true,  HandleMuteListAccountCommand          },
-            { "character",      SEC_MODERATOR,  true,  HandleMuteListCharacterCommand        },
+            { "account", HandleMuteListAccountCommand, rbac::RBAC_PERM_COMMAND_MUTELIST_ACCOUNT, Trinity::ChatCommands::Console::Yes },
+            { "character", HandleMuteListCharacterCommand, rbac::RBAC_PERM_COMMAND_MUTELIST_CHARACTER, Trinity::ChatCommands::Console::Yes },
         };
         static std::vector<ChatCommand> replaceCommandTable =
         {
-            { "skill",          SEC_ADMINISTRATOR, true, HandleReplaceCommand                },
+            { "skill", HandleReplaceCommand, rbac::RBAC_PERM_COMMAND_REPLACE_SKILL, Trinity::ChatCommands::Console::Yes },
         };
         static std::vector<ChatCommand> commandTable =
         {
-            { "additem",        SEC_GAMEMASTER, false,  &HandleAddItemCommand,      },
-            { "additemset",     SEC_GAMEMASTER, false,  &HandleAddItemSetCommand,   },
-            { "goname",         SEC_GAMEMASTER,  false,  &HandleAppearCommand,       },
-            { "appear",         SEC_GAMEMASTER,  false,  &HandleAppearCommand,       },
-            { "aura",           SEC_GAMEMASTER, false,  &HandleAuraCommand,         },
-            { "bank",           SEC_MODERATOR,  false,  &HandleBankCommand,         },
-            { "bindsight",      SEC_GAMEMASTER, false,  &HandleBindSightCommand,    },
-            { "combatstop",     SEC_GAMEMASTER, true,   &HandleCombatStopCommand,   },
-            { "cometome",       SEC_GAMEMASTER,  false,  &HandleComeToMeCommand,     },
-            { "commands",       SEC_PLAYER,     true,   &HandleCommandsCommand,     },
-            { "cooldown",       SEC_GAMEMASTER, false,  &HandleCooldownCommand,     },
-            { "damage",         SEC_GAMEMASTER, false,  &HandleDamageCommand,       },
-            { "dev",            SEC_ADMINISTRATOR,  false,  &HandleDevCommand,          },
-            { "die",            SEC_GAMEMASTER, false,  &HandleDieCommand,          },
-            { "dismount",       SEC_PLAYER,     false,  &HandleDismountCommand,     },
-            { "distance",       SEC_GAMEMASTER, false,  &HandleGetDistanceCommand,  },
-            { "freeze",         SEC_GAMEMASTER,  false,  &HandleFreezeCommand,       },
-            { "gps",            SEC_GAMEMASTER, false,  &HandleGPSCommand,          },
-            { "guid",           SEC_GAMEMASTER, false,  &HandleGUIDCommand,         },
-            { "help",           SEC_PLAYER,     true,   &HandleHelpCommand,         },
-            { "hidearea",       SEC_GAMEMASTER, false,  &HandleHideAreaCommand,     },
-            { "itemmove",       SEC_GAMEMASTER, false,  &HandleItemMoveCommand,     },
-            { "kick",           SEC_GAMEMASTER,  true,   &HandleKickPlayerCommand,   },
-            { "linkgrave",      SEC_GAMEMASTER, false,  &HandleLinkGraveCommand,    },
-            { "listfreeze",     SEC_GAMEMASTER, false,  &HandleListFreezeCommand,   },
-            { "maxskill",       SEC_GAMEMASTER, false,  &HandleMaxSkillCommand,     },
-            { "movegens",       SEC_GAMEMASTER, false,  &HandleMovegensCommand,     },
-            { "mute",           SEC_MODERATOR,  true,   &HandleMuteCommand,         },
-            { "mutelist",       SEC_MODERATOR,  true,   mutelistCommandTable        },
-            { "neargrave",      SEC_GAMEMASTER, false,  &HandleNearGraveCommand,    },
-            { "nearareatrigger",SEC_GAMEMASTER, false,  &HandleNearAreaTriggerCommand, },
-            { "pinfo",          SEC_GAMEMASTER,  true,   &HandlePInfoCommand,        },
-            { "playall",        SEC_GAMEMASTER, false,  &HandlePlayAllCommand,      },
-            { "possess",        SEC_GAMEMASTER, false,  &HandlePossessCommand,      },
-            { "recall",         SEC_GAMEMASTER,  false,  &HandleRecallCommand,       },
-            { "repairitems",    SEC_GAMEMASTER, true,   &HandleRepairitemsCommand,  },
-            { "respawn",        SEC_GAMEMASTER, false,  &HandleRespawnCommand,      },
-            { "revive",         SEC_GAMEMASTER, true,   &HandleReviveCommand,       },
-            { "saveall",        SEC_GAMEMASTER, true,   &HandleSaveAllCommand,      },
-            { "save",           SEC_PLAYER,     false,  &HandleSaveCommand,         },
-            { "setskill",       SEC_GAMEMASTER, false,  &HandleSetSkillCommand,     },
-            { "showarea",       SEC_GAMEMASTER, false,  &HandleShowAreaCommand,     },
-            { "namego",         SEC_GAMEMASTER,  false,  &HandleSummonCommand,       },
-            { "summon",         SEC_GAMEMASTER,  false,  &HandleSummonCommand,       },
-            { "unaura",         SEC_GAMEMASTER, false,  &HandleUnAuraCommand,       },
-            { "unbindsight",    SEC_GAMEMASTER, false,  &HandleUnbindSightCommand,  },
-            { "unfreeze",       SEC_GAMEMASTER,  false,  &HandleUnFreezeCommand,     },
-            { "unmute",         SEC_MODERATOR,  true,   &HandleUnmuteCommand,       },
-            { "unpossess",      SEC_GAMEMASTER, false,  &HandleUnPossessCommand,    },
-            { "unstuck",        SEC_GAMEMASTER, true,   &HandleUnstuckCommand,      },
-            { "wchange",        SEC_GAMEMASTER, false,  &HandleChangeWeather,       },
-            { "tool",           SEC_GAMEMASTER, false,  toolCommandTable            },
-            { "visualize",      SEC_ADMINISTRATOR,  true,   visualizeCommandTable       },
-            { "itemspecs",      SEC_ADMINISTRATOR,  true,   &HandleItemSpecsCommand,    },
-            { "loot",           SEC_ADMINISTRATOR,  true,   
-            {
-                { "cooldown",   SEC_ADMINISTRATOR,  true,   &HandleLootCooldownCommand, },
-                { "show",       SEC_ADMINISTRATOR,  true, 
-                {
-                    { "personal",SEC_ADMINISTRATOR, true,   &HandleLootShowPersonalCommand, },
-                    { "bonus",  SEC_ADMINISTRATOR,  true,   &HandleLootShowBonusCommand,    },
-                } },
-                { "get",        SEC_ADMINISTRATOR,  false,
-                {
-                    { "personal",SEC_ADMINISTRATOR, true,   &HandleLootGetPersonalCommand,  },
-                    { "bonus",  SEC_ADMINISTRATOR,  true,   &HandleLootGetBonusCommand,     },
-                } },
-            } },
-            { "bg",             SEC_ADMINISTRATOR,  false,  bgCommandTable              },
-            { "itemdelete",     SEC_GAMEMASTER, true,   &HandleItemDeleteCommand    },
-            { "removeitem",     SEC_GAMEMASTER, false,  &HandleRemoveItemCommand    },
-            { "visibility",     SEC_ADMINISTRATOR,  true,   visibilityCommandTable      },
-            { "replace",        SEC_ADMINISTRATOR, true, replaceCommandTable        },
-            { "checkladder",    SEC_ADMINISTRATOR,  true,   &HandleCheckLadderCommand   },
-            { "wordfilter",         SEC_ADMINISTRATOR,      false, wordFilterCommandTable },
-            { "deleteditem",    SEC_ADMINISTRATOR,  true,
-            {
-                { "list",      SEC_ADMINISTRATOR,   true,   &HandleDeletedItemListCommand,    },
-                { "restore",   SEC_ADMINISTRATOR,   true,   &HandleDeletedItemRestoreCommand, },
-            } },
+            { "additem",        &HandleAddItemCommand,      rbac::RBAC_PERM_COMMAND_ADDITEM,      Trinity::ChatCommands::Console::No },
+            { "additemset",     &HandleAddItemSetCommand,   rbac::RBAC_PERM_COMMAND_ADDITEMSET,   Trinity::ChatCommands::Console::No },
+            { "goname", &HandleAppearCommand, rbac::RBAC_PERM_COMMAND_GONAME, Trinity::ChatCommands::Console::No },
+            { "appear",         &HandleAppearCommand,       rbac::RBAC_PERM_COMMAND_APPEAR,       Trinity::ChatCommands::Console::No },
+            { "aura",           &HandleAuraCommand,         rbac::RBAC_PERM_COMMAND_AURA,         Trinity::ChatCommands::Console::No },
+            { "bank",           &HandleBankCommand,         rbac::RBAC_PERM_COMMAND_BANK,         Trinity::ChatCommands::Console::No },
+            { "bindsight",      &HandleBindSightCommand,    rbac::RBAC_PERM_COMMAND_BINDSIGHT,    Trinity::ChatCommands::Console::No },
+            { "combatstop",     &HandleCombatStopCommand,   rbac::RBAC_PERM_COMMAND_COMBATSTOP,   Trinity::ChatCommands::Console::Yes },
+            { "cometome",       &HandleComeToMeCommand,     rbac::RBAC_PERM_COMMAND_COMETOME,     Trinity::ChatCommands::Console::No },
+            { "commands",       &HandleCommandsCommand,     rbac::RBAC_PERM_COMMAND_COMMANDS,     Trinity::ChatCommands::Console::Yes },
+            { "cooldown",       &HandleCooldownCommand,     rbac::RBAC_PERM_COMMAND_COOLDOWN,     Trinity::ChatCommands::Console::No },
+            { "damage",         &HandleDamageCommand,       rbac::RBAC_PERM_COMMAND_DAMAGE,       Trinity::ChatCommands::Console::No },
+            { "dev",            &HandleDevCommand,          rbac::RBAC_PERM_COMMAND_DEV,          Trinity::ChatCommands::Console::No },
+            { "die",            &HandleDieCommand,          rbac::RBAC_PERM_COMMAND_DIE,          Trinity::ChatCommands::Console::No },
+            { "dismount",       &HandleDismountCommand,     rbac::RBAC_PERM_COMMAND_DISMOUNT,     Trinity::ChatCommands::Console::No },
+            { "distance",       &HandleGetDistanceCommand,  rbac::RBAC_PERM_COMMAND_DISTANCE,     Trinity::ChatCommands::Console::No },
+            { "freeze",         &HandleFreezeCommand,       rbac::RBAC_PERM_COMMAND_FREEZE,       Trinity::ChatCommands::Console::No },
+            { "gps",            &HandleGPSCommand,          rbac::RBAC_PERM_COMMAND_GPS,          Trinity::ChatCommands::Console::No },
+            { "guid",           &HandleGUIDCommand,         rbac::RBAC_PERM_COMMAND_GUID,         Trinity::ChatCommands::Console::No },
+            { "help",           &HandleHelpCommand,         rbac::RBAC_PERM_COMMAND_HELP,         Trinity::ChatCommands::Console::Yes },
+            { "hidearea",       &HandleHideAreaCommand,     rbac::RBAC_PERM_COMMAND_HIDEAREA,     Trinity::ChatCommands::Console::No },
+            { "itemmove",       &HandleItemMoveCommand,     rbac::RBAC_PERM_COMMAND_ITEMMOVE,     Trinity::ChatCommands::Console::No },
+            { "kick",           &HandleKickPlayerCommand,   rbac::RBAC_PERM_COMMAND_KICK,         Trinity::ChatCommands::Console::Yes },
+            { "linkgrave",      &HandleLinkGraveCommand,    rbac::RBAC_PERM_COMMAND_LINKGRAVE,    Trinity::ChatCommands::Console::No },
+            { "listfreeze",     &HandleListFreezeCommand,   rbac::RBAC_PERM_COMMAND_LISTFREEZE,   Trinity::ChatCommands::Console::No },
+            { "maxskill",       &HandleMaxSkillCommand,     rbac::RBAC_PERM_COMMAND_MAXSKILL,     Trinity::ChatCommands::Console::No },
+            { "movegens",       &HandleMovegensCommand,     rbac::RBAC_PERM_COMMAND_MOVEGENS,     Trinity::ChatCommands::Console::No },
+            { "mute",           &HandleMuteCommand,         rbac::RBAC_PERM_COMMAND_MUTE,         Trinity::ChatCommands::Console::Yes },
+            { "mutelist", mutelistCommandTable, rbac::RBAC_PERM_COMMAND_MUTELIST, Trinity::ChatCommands::Console::Yes },
+            { "neargrave",      &HandleNearGraveCommand,    rbac::RBAC_PERM_COMMAND_NEARGRAVE,    Trinity::ChatCommands::Console::No },
+            { "nearareatrigger", &HandleNearAreaTriggerCommand, rbac::RBAC_PERM_COMMAND_NEARAREATRIGGER, Trinity::ChatCommands::Console::No },
+            { "pinfo",          &HandlePInfoCommand,        rbac::RBAC_PERM_COMMAND_PINFO,        Trinity::ChatCommands::Console::Yes },
+            { "playall",        &HandlePlayAllCommand,      rbac::RBAC_PERM_COMMAND_PLAYALL,      Trinity::ChatCommands::Console::No },
+            { "possess",        &HandlePossessCommand,      rbac::RBAC_PERM_COMMAND_POSSESS,      Trinity::ChatCommands::Console::No },
+            { "recall",         &HandleRecallCommand,       rbac::RBAC_PERM_COMMAND_RECALL,       Trinity::ChatCommands::Console::No },
+            { "repairitems",    &HandleRepairitemsCommand,  rbac::RBAC_PERM_COMMAND_REPAIRITEMS,  Trinity::ChatCommands::Console::Yes },
+            { "respawn",        &HandleRespawnCommand,      rbac::RBAC_PERM_COMMAND_RESPAWN,      Trinity::ChatCommands::Console::No },
+            { "revive",         &HandleReviveCommand,       rbac::RBAC_PERM_COMMAND_REVIVE,       Trinity::ChatCommands::Console::Yes },
+            { "saveall",        &HandleSaveAllCommand,      rbac::RBAC_PERM_COMMAND_SAVEALL,      Trinity::ChatCommands::Console::Yes },
+            { "save",           &HandleSaveCommand,         rbac::RBAC_PERM_COMMAND_SAVE,         Trinity::ChatCommands::Console::No },
+            { "setskill",       &HandleSetSkillCommand,     rbac::RBAC_PERM_COMMAND_SETSKILL,     Trinity::ChatCommands::Console::No },
+            { "showarea",       &HandleShowAreaCommand,     rbac::RBAC_PERM_COMMAND_SHOWAREA,     Trinity::ChatCommands::Console::No },
+            { "namego", &HandleSummonCommand, rbac::RBAC_PERM_COMMAND_NAMEGO, Trinity::ChatCommands::Console::No },
+            { "summon",         &HandleSummonCommand,       rbac::RBAC_PERM_COMMAND_SUMMON,       Trinity::ChatCommands::Console::No },
+            { "unaura",         &HandleUnAuraCommand,       rbac::RBAC_PERM_COMMAND_UNAURA,       Trinity::ChatCommands::Console::No },
+            { "unbindsight",    &HandleUnbindSightCommand,  rbac::RBAC_PERM_COMMAND_UNBINDSIGHT,  Trinity::ChatCommands::Console::No },
+            { "unfreeze",       &HandleUnFreezeCommand,     rbac::RBAC_PERM_COMMAND_UNFREEZE,     Trinity::ChatCommands::Console::No },
+            { "unmute",         &HandleUnmuteCommand,       rbac::RBAC_PERM_COMMAND_UNMUTE,       Trinity::ChatCommands::Console::Yes },
+            { "unpossess",      &HandleUnPossessCommand,    rbac::RBAC_PERM_COMMAND_UNPOSSESS,    Trinity::ChatCommands::Console::No },
+            { "unstuck",        &HandleUnstuckCommand,      rbac::RBAC_PERM_COMMAND_UNSTUCK,      Trinity::ChatCommands::Console::Yes },
+            { "wchange",        &HandleChangeWeather,       rbac::RBAC_PERM_COMMAND_WCHANGE,      Trinity::ChatCommands::Console::No },
+            { "tool", toolCommandTable, rbac::RBAC_PERM_COMMAND_TOOL, Trinity::ChatCommands::Console::No },
+            { "visualize", visualizeCommandTable, rbac::RBAC_PERM_COMMAND_VISUALIZE, Trinity::ChatCommands::Console::Yes },
+            { "itemspecs", &HandleItemSpecsCommand, rbac::RBAC_PERM_COMMAND_ITEMSPECS, Trinity::ChatCommands::Console::Yes },
+            { "loot", {
+                { "cooldown", &HandleLootCooldownCommand, rbac::RBAC_PERM_COMMAND_LOOT_COOLDOWN, Trinity::ChatCommands::Console::Yes },
+                { "show", {
+                    { "personal", &HandleLootShowPersonalCommand, rbac::RBAC_PERM_COMMAND_LOOT_SHOW_PERSONAL, Trinity::ChatCommands::Console::Yes },
+                    { "bonus", &HandleLootShowBonusCommand, rbac::RBAC_PERM_COMMAND_LOOT_SHOW_BONUS, Trinity::ChatCommands::Console::Yes },
+                }, rbac::RBAC_PERM_COMMAND_LOOT_SHOW, Trinity::ChatCommands::Console::Yes },
+                { "get", {
+                    { "personal", &HandleLootGetPersonalCommand, rbac::RBAC_PERM_COMMAND_LOOT_GET_PERSONAL, Trinity::ChatCommands::Console::Yes },
+                    { "bonus", &HandleLootGetBonusCommand, rbac::RBAC_PERM_COMMAND_LOOT_GET_BONUS, Trinity::ChatCommands::Console::Yes },
+                }, rbac::RBAC_PERM_COMMAND_LOOT_GET, Trinity::ChatCommands::Console::No },
+            }, rbac::RBAC_PERM_COMMAND_LOOT, Trinity::ChatCommands::Console::Yes },
+            { "bg", bgCommandTable, rbac::RBAC_PERM_COMMAND_BG, Trinity::ChatCommands::Console::No },
+            { "itemdelete", &HandleItemDeleteCommand, rbac::RBAC_PERM_COMMAND_ITEMDELETE, Trinity::ChatCommands::Console::Yes },
+            { "removeitem", &HandleRemoveItemCommand, rbac::RBAC_PERM_COMMAND_REMOVEITEM, Trinity::ChatCommands::Console::No },
+            { "visibility", visibilityCommandTable, rbac::RBAC_PERM_COMMAND_VISIBILITY, Trinity::ChatCommands::Console::Yes },
+            { "replace", replaceCommandTable, rbac::RBAC_PERM_COMMAND_REPLACE, Trinity::ChatCommands::Console::Yes },
+            { "checkladder", &HandleCheckLadderCommand, rbac::RBAC_PERM_COMMAND_CHECKLADDER, Trinity::ChatCommands::Console::Yes },
+            { "wordfilter", wordFilterCommandTable, rbac::RBAC_PERM_COMMAND_WORDFILTER, Trinity::ChatCommands::Console::No },
+            { "deleteditem", {
+                { "list", &HandleDeletedItemListCommand, rbac::RBAC_PERM_COMMAND_DELETEDITEM_LIST, Trinity::ChatCommands::Console::Yes },
+                { "restore", &HandleDeletedItemRestoreCommand, rbac::RBAC_PERM_COMMAND_DELETEDITEM_RESTORE, Trinity::ChatCommands::Console::Yes },
+            }, rbac::RBAC_PERM_COMMAND_DELETEDITEM, Trinity::ChatCommands::Console::Yes },
         };
         return commandTable;
     }
@@ -389,7 +391,7 @@ public:
         float zoneX = object->GetPositionX();
         float zoneY = object->GetPositionY();
 
-        Map2ZoneCoordinates(zoneX, zoneY, zoneId);
+        sDBCManager.Map2ZoneCoordinates(zoneX, zoneY, zoneId);
 
         Map const* map = object->GetMap();
         float groundZ = map->GetHeight(object->GetPhaseMask(), object->GetPositionX(), object->GetPositionY(), MAX_HEIGHT);
@@ -434,9 +436,9 @@ public:
         }
 
         handler->PSendSysMessage(LANG_MAP_POSITION,
-            mapId, (mapEntry ? mapEntry->name[handler->GetSessionDbcLocale()] : "<unknown>"),
-            zoneId, (zoneEntry ? zoneEntry->area_name[handler->GetSessionDbcLocale()] : "<unknown>"),
-            areaId, (areaEntry ? areaEntry->area_name[handler->GetSessionDbcLocale()] : "<unknown>"),
+            mapId, (mapEntry ? mapEntry->name : "<unknown>"),
+            zoneId, (zoneEntry ? zoneEntry->area_name : "<unknown>"),
+            areaId, (areaEntry ? areaEntry->area_name : "<unknown>"),
             object->GetPhaseMask(),
             object->GetPositionX(), object->GetPositionY(), object->GetPositionZ(), object->GetOrientation(),
             cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), object->GetInstanceId(),
@@ -623,12 +625,49 @@ public:
             else
                 _player->SaveRecallPosition();
 
-            // to point to see at target with same orientation
-            float x, y, z;
-            target->GetContactPoint(_player, x, y, z);
+            // #585: ported 1:1 from AC cs_misc.cpp:859-884 (HandleAppearCommand). When the target
+            // rides a transport (boat, zeppelin, elevator), seat the GM on the same transport at the
+            // target's deck offset and keep it there through the teleport; otherwise the GM lands at
+            // the world position and falls off the moving deck.
+            if (Transport* transport = target->GetTransport())
+            {
+                if (Transport* oldTransport = _player->GetTransport())
+                    oldTransport->RemovePassenger(_player, true);
 
-            _player->TeleportTo(target->GetMapId(), x, y, z, _player->GetAngle(target), TELE_TO_GM_MODE);
-            _player->SetPhaseMask(target->GetPhaseMask(), true);
+                float x;
+                float y;
+                float z;
+                float o;
+                target->m_movementInfo.transport.pos.GetPosition(x, y, z, o);
+
+                _player->SetTransport(transport);
+                _player->m_movementInfo.transport.guid = transport->GetGUID();
+                _player->m_movementInfo.transport.pos.Relocate(x, y, z, o);
+                // AC also sets MOVEMENTFLAG_ONTRANSPORT here. 5.4.8 has no such movement flag: the
+                // transport guid in MovementInfo is what marks a passenger, so there is nothing to set.
+
+                float worldX = x;
+                float worldY = y;
+                float worldZ = z;
+                float worldO = o;
+                transport->CalculatePassengerPosition(worldX, worldY, worldZ, &worldO);
+
+                transport->AddPassenger(_player, false);
+
+                // AC passes targetPlayer as TeleportTo's extra target argument; the fork's TeleportTo
+                // has no such parameter. Phase update kept in the fork's form (see the else branch).
+                if (_player->TeleportTo(transport->GetMapId(), worldX, worldY, worldZ + 0.25f, worldO, TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_GM_MODE))
+                    _player->SetPhaseMask(target->GetPhaseMask(), true);
+            }
+            else
+            {
+                // to point to see at target with same orientation
+                float x, y, z;
+                target->GetContactPoint(_player, x, y, z);
+
+                _player->TeleportTo(target->GetMapId(), x, y, z, _player->GetAngle(target), TELE_TO_GM_MODE);
+                _player->SetPhaseMask(target->GetPhaseMask(), true);
+            }
         }
         else
         {
@@ -779,7 +818,7 @@ public:
 
     static bool HandleCommandsCommand(ChatHandler* handler, char const* /*args*/)
     {
-        handler->ShowHelpForCommand(handler->getCommandTable(), "");
+        Trinity::ChatCommands::SendCommandHelpFor(*handler, "");
         return true;
     }
 
@@ -818,6 +857,10 @@ public:
 
         if (target)
         {
+            // #837: AC cs_misc.cpp HandleReviveCommand does the same. A priest in Spirit of Redemption is alive, so
+            // ResurrectPlayer alone left the 27827 aura running and its removal (spell_pri_spirit_of_redemption_form)
+            // killed the "revived" priest up to 25 s later. End the form first (the priest dies), then resurrect.
+            target->RemoveAurasDueToSpell(27827); // Spirit of Redemption
             target->ResurrectPlayer(1.0f);
             target->SpawnCorpseBones();
             target->SaveToDB();
@@ -875,12 +918,11 @@ public:
         char const* cmd = strtok((char*)args, " ");
         if (!cmd)
         {
-            handler->ShowHelpForCommand(handler->getCommandTable(), "help");
-            handler->ShowHelpForCommand(handler->getCommandTable(), "");
+            Trinity::ChatCommands::SendCommandHelpFor(*handler, "");
         }
         else
         {
-            if (!handler->ShowHelpForCommand(handler->getCommandTable(), cmd))
+            if (!Trinity::ChatCommands::SendCommandHelpFor(*handler, cmd))
                 handler->SendSysMessage(LANG_NO_HELP_CMD);
         }
 
@@ -1666,7 +1708,7 @@ public:
 
         if (!target->GetSkillValue(skill))
         {
-            handler->PSendSysMessage(LANG_SET_SKILL_ERROR, tNameLink.c_str(), skill, skillLine->name[handler->GetSessionDbcLocale()]);
+            handler->PSendSysMessage(LANG_SET_SKILL_ERROR, tNameLink.c_str(), skill, skillLine->DisplayName);
             handler->SetSentErrorMessage(true);
             return false;
         }
@@ -1677,7 +1719,7 @@ public:
             return false;
 
         target->SetSkill(skill, target->GetSkillStep(skill), level, max);
-        handler->PSendSysMessage(LANG_SET_SKILL, skill, skillLine->name[handler->GetSessionDbcLocale()], tNameLink.c_str(), level, max);
+        handler->PSendSysMessage(LANG_SET_SKILL, skill, skillLine->DisplayName, tNameLink.c_str(), level, max);
 
         return true;
     }
@@ -2022,8 +2064,8 @@ public:
             handler->PSendSysMessage(LANG_PINFO_CHR_LEVEL_HIGH, level);
 
         // Output XI. LANG_PINFO_CHR_RACE
-        raceStr  = GetRaceName(raceid, locale);
-        classStr = GetClassName(classid, locale);
+        raceStr = sDBCManager.GetRaceName(raceid, locale);
+        classStr = sDBCManager.GetClassName(classid, locale);
         handler->PSendSysMessage(LANG_PINFO_CHR_RACE, (gender == 0 ? handler->GetTrinityString(LANG_CHARACTER_GENDER_MALE) : handler->GetTrinityString(LANG_CHARACTER_GENDER_FEMALE)), raceStr.c_str(), classStr.c_str());
 
         // Output XII. LANG_PINFO_CHR_ALIVE
@@ -2052,7 +2094,7 @@ public:
         }
 
         if (target)
-            handler->PSendSysMessage(LANG_PINFO_CHR_MAP, map ? map->name[handler->GetSessionDbcLocale()] : "<Unknown>", (!zoneName.empty() ? zoneName.c_str() : "<Unknown>"), (!areaName.empty() ? areaName.c_str() : "<Unknown>"));
+            handler->PSendSysMessage(LANG_PINFO_CHR_MAP, map ? map->name : "<Unknown>", (!zoneName.empty() ? zoneName.c_str() : "<Unknown>"), (!areaName.empty() ? areaName.c_str() : "<Unknown>"));
 
         // Output XVII. - XVIX. if they are not empty
         if (!guildName.empty())
@@ -2166,8 +2208,8 @@ public:
         else
         {
             accId = sObjectMgr->GetPlayerAccountIdByGUID(charId);
-            session = sWorld->FindSession(accId);
-            if (session)
+
+            if (session = sWorld->FindSession(accId))
                 target = session->GetPlayer();
         }
 
@@ -2295,8 +2337,8 @@ public:
         else
         {
             accId = sObjectMgr->GetPlayerAccountIdByGUID(charId);
-            session = sWorld->FindSession(accId);
-            if (session)
+
+            if (session = sWorld->FindSession(accId))
                 target = session->GetPlayer();
         }
 
@@ -2776,9 +2818,9 @@ public:
                 {
                     Unit* target = NULL;
                     if (unit->GetTypeId() == TYPEID_PLAYER)
-                        target = static_cast<ChaseMovementGenerator<Player> const*>(movementGenerator)->GetTarget();
+                        target = static_cast<ChaseMovementGenerator const*>(movementGenerator)->GetTarget();
                     else
-                        target = static_cast<ChaseMovementGenerator<Creature> const*>(movementGenerator)->GetTarget();
+                        target = static_cast<ChaseMovementGenerator const*>(movementGenerator)->GetTarget();
 
                     if (!target)
                         handler->SendSysMessage(LANG_MOVEGENS_CHASE_NULL);
@@ -2792,9 +2834,9 @@ public:
                 {
                     Unit* target = NULL;
                     if (unit->GetTypeId() == TYPEID_PLAYER)
-                        target = static_cast<FollowMovementGenerator<Player> const*>(movementGenerator)->GetTarget();
+                        target = static_cast<FollowMovementGenerator const*>(movementGenerator)->GetTarget();
                     else
-                        target = static_cast<FollowMovementGenerator<Creature> const*>(movementGenerator)->GetTarget();
+                        target = static_cast<FollowMovementGenerator const*>(movementGenerator)->GetTarget();
 
                     if (!target)
                         handler->SendSysMessage(LANG_MOVEGENS_FOLLOW_NULL);
@@ -3034,7 +3076,7 @@ public:
             return false;
 
         target->CombatStop();
-        target->getHostileRefManager().deleteReferences();
+        target->GetThreatManager().RemoveMeFromThreatLists();
         return true;
     }
 
@@ -3532,7 +3574,7 @@ public:
         return true;
     }
 
-    static bool HandleBattlegroundStartCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleBattlegroundStartCommand(ChatHandler* handler, char const* args)
     {
         Player* player = handler->GetSession()->GetPlayer();
         Battleground* bg = player->GetBattleground();
@@ -3544,8 +3586,8 @@ public:
 
         uint32 maxTime = bg->IsArena() ? ARENA_COUNTDOWN_MAX : BATTLEGROUND_COUNTDOWN_MAX;
         for (auto&& itr : bg->GetPlayers())
-            if (Player* player2 = ObjectAccessor::FindPlayer(itr.first))
-                player2->SendStartTimer(0, maxTime, TIMER_PVP);
+            if (Player* player = ObjectAccessor::FindPlayer(itr.first))
+                player->SendStartTimer(0, maxTime, TIMER_PVP);
 
         return true;
     }
@@ -3595,7 +3637,7 @@ public:
         }
         return false;
     }
-    static bool HandleVisibilityGetCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityGetCommand(ChatHandler* handler, char const* args)
     {
         if (Creature* target = GetSelectedCreature(handler))
         {
@@ -3605,8 +3647,8 @@ public:
                 {
                     char const* areaName = "???";
                     if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(target->GetCustomVisibilityZoneID()))
-                        if (zone->area_name[handler->GetSessionDbcLocale()])
-                            areaName = zone->area_name[handler->GetSessionDbcLocale()];
+                        if (zone->area_name)
+                            areaName = zone->area_name;
                     handler->PSendSysMessage("%u - %s: %.2f yards (%s)", target->GetEntry(), target->GetNameForLocaleIdx((LocaleConstant)handler->GetSessionDbLocaleIndex()).c_str(), target->GetCustomVisibilityDistance(), areaName);
                 }
                 else
@@ -3618,7 +3660,7 @@ public:
         }
         return false;
     }
-    static bool HandleVisibilityGetGOCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityGetGOCommand(ChatHandler* handler, char const* args)
     {
         if (GameObject* target = GetSelectedGO(handler))
         {
@@ -3628,8 +3670,8 @@ public:
                 {
                     char const* areaName = "???";
                     if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(target->GetCustomVisibilityZoneID()))
-                        if (zone->area_name[handler->GetSessionDbcLocale()])
-                            areaName = zone->area_name[handler->GetSessionDbcLocale()];
+                        if (zone->area_name)
+                            areaName = zone->area_name;
                     handler->PSendSysMessage("%u - %s: %.2f yards (%s)", target->GetEntry(), target->GetNameForLocaleIdx((LocaleConstant)handler->GetSessionDbLocaleIndex()).c_str(), target->GetCustomVisibilityDistance(), areaName);
                 }
                 else
@@ -3653,13 +3695,13 @@ public:
 
             std::stringstream ss;
             if (Map* map = target->FindMap())
-                if (char const* name = map->GetEntry()->name[handler->GetSessionDbcLocale()])
+                if (char const* name = map->GetEntry()->name)
                     ss << name << " - ";
             if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(zoneId))
-                if (char const* name = zone->area_name[handler->GetSessionDbcLocale()])
+                if (char const* name = zone->area_name)
                     ss << name << " - ";
             if (AreaTableEntry const* area = zoneId == areaId ? nullptr : sAreaTableStore.LookupEntry(areaId))
-                if (char const* name = area->area_name[handler->GetSessionDbcLocale()])
+                if (char const* name = area->area_name)
                     ss << name << " - ";
             if (CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry))
                 ss << info->Name;
@@ -3720,13 +3762,13 @@ public:
 
             std::stringstream ss;
             if (Map* map = target->FindMap())
-                if (char const* name = map->GetEntry()->name[handler->GetSessionDbcLocale()])
+                if (char const* name = map->GetEntry()->name)
                     ss << name << " - ";
             if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(zoneId))
-                if (char const* name = zone->area_name[handler->GetSessionDbcLocale()])
+                if (char const* name = zone->area_name)
                     ss << name << " - ";
             if (AreaTableEntry const* area = zoneId == areaId ? nullptr : sAreaTableStore.LookupEntry(areaId))
-                if (char const* name = area->area_name[handler->GetSessionDbcLocale()])
+                if (char const* name = area->area_name)
                     ss << name << " - ";
             if (GameObjectTemplate const* info = sObjectMgr->GetGameObjectTemplate(entry))
                 ss << info->name;
@@ -3775,7 +3817,7 @@ public:
         }
         return false;
     }
-    static bool HandleVisibilityReloadCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityReloadCommand(ChatHandler* handler, char const* args)
     {
         if (Creature* target = GetSelectedCreature(handler))
         {
@@ -3802,7 +3844,7 @@ public:
         }
         return false;
     }
-    static bool HandleVisibilityReloadGOCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityReloadGOCommand(ChatHandler* handler, char const* args)
     {
         if (GameObject* target = GetSelectedGO(handler))
         {
@@ -3829,7 +3871,7 @@ public:
         }
         return false;
     }
-    static bool HandleVisibilityReloadAllCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityReloadAllCommand(ChatHandler* handler, char const* args)
     {
         std::map<CustomVisibility::Type, std::set<uint32>> objects;
 
@@ -3882,7 +3924,7 @@ public:
 
         return true;
     }
-    static bool HandleVisibilityStatsCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityStatsCommand(ChatHandler* handler, char const* args)
     {
         static std::map<CustomVisibility::Importance, std::string> importanceNames =
         {
@@ -3923,7 +3965,7 @@ public:
 
         return true;
     }
-    static bool HandleVisibilityUpdateCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleVisibilityUpdateCommand(ChatHandler* handler, char const* args)
     {
         Player* target = handler->getSelectedPlayer();
         if (!target)
@@ -4264,13 +4306,13 @@ public:
 
         Player* pl = handler->GetSession()->GetPlayer();
         Player* plTarget = handler->getSelectedPlayer();
-        if (!plTarget) {
+        if (!plTarget)
             plTarget = pl;
 
             plTarget->DestroyItemCount(itemId, -count, true, false);
             handler->PSendSysMessage(LANG_REMOVEITEM, itemId, -count, handler->GetNameLink(plTarget).c_str());
             return true;
-        }
+
         ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
         if (!proto)
         {
@@ -4290,7 +4332,7 @@ public:
         return true;
     }
 
-    static bool HandleCheckLadderCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleCheckLadderCommand(ChatHandler* handler, char const* args)
     {
         std::string dir = sConfigMgr->GetStringDefault("LogsDir", ".");
         std::ofstream out{ dir + "/laddercheck.log" };
@@ -4465,7 +4507,7 @@ public:
 
         while (!itemStorage.empty())
         {
-            MailDraft draft("Тех.поддержка", "Возврат удаленных предметов.");
+            MailDraft draft("Technical Support", "Refund of deleted items.");
             for (uint8 i = 0; !itemStorage.empty() && i < MAX_MAIL_ITEMS; ++i)
             {
                 draft.AddItem(itemStorage.front());

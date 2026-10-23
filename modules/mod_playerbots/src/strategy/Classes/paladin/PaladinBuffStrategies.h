@@ -37,6 +37,17 @@ public:
     std::string const getName() override { return "bdps"; }
 };
 
+// #383 (AC PaladinAiObjectContext.cpp:76-77,83-84): AC key aliases "bmight" -> Dps blessing strategy,
+// "bkings" -> Stats blessing strategy. Own getName so Engine::addStrategy/removeStrategy (keyed by
+// getName) can remove them by the same key. Triggers are inherited from the aliased MoP strategy.
+class PaladinBuffMightStrategy : public PaladinBuffDpsStrategy
+{
+public:
+    PaladinBuffMightStrategy(PlayerbotAI* botAI) : PaladinBuffDpsStrategy(botAI) {}
+
+    std::string const getName() override { return "bmight"; }
+};
+
 class PaladinBuffArmorStrategy : public Strategy
 {
 public:
@@ -91,5 +102,42 @@ public:
     std::string const getName() override { return "bstats"; }
 };
 
+// #383: AC "bkings" alias (see PaladinBuffMightStrategy above)
+class PaladinBuffKingsStrategy : public PaladinBuffStatsStrategy
+{
+public:
+    PaladinBuffKingsStrategy(PlayerbotAI* botAI) : PaladinBuffStatsStrategy(botAI) {}
 
+    std::string const getName() override { return "bkings"; }
+};
+
+
+// AC PaladinBuffStrategies.h:95-120 (1:1). Not wired into any default engine on AC either (only
+// Priest gets "rshadow"), so they are registered for parity and manual/config use only.
+class PaladinShadowResistanceStrategy : public Strategy
+{
+public:
+    PaladinShadowResistanceStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "rshadow"; }
+};
+
+class PaladinFrostResistanceStrategy : public Strategy
+{
+public:
+    PaladinFrostResistanceStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "rfrost"; }
+};
+
+class PaladinFireResistanceStrategy : public Strategy
+{
+public:
+    PaladinFireResistanceStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "rfire"; }
+};
 #endif

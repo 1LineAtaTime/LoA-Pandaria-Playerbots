@@ -134,12 +134,14 @@ class boss_jindo_the_godbreaker : public CreatureScript
 
             bool bTwoPhase;
             uint8 chains;
+            uint32 spiritWorldTimer;
 
             void Reset() override
             {
                 _Reset();
                 bTwoPhase = false;
                 chains = 0;
+                spiritWorldTimer = 0;
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                 me->LowerPlayerDamageReq(me->GetHealth());
@@ -229,6 +231,25 @@ class boss_jindo_the_godbreaker : public CreatureScript
                     return;
 
                 events.Update(diff);
+
+                // #838: Spirit World 96689 (2 s, re-applied every 1 s by 98861) reaches the players through area target selection,
+                // which skips a unit in Spirit of Redemption (Spell.cpp WorldObjectSpellTargetCheck, SPELL_AURA_SPIRIT_OF_REDEMPTION),
+                // and entering SoR strips the negative 96689 (spell_priest.cpp spell_pri_spirit_of_redemption). The priest left the
+                // spirit-world phase and every heal failed BAD_TARGETS. Keep a SoR priest in the phase while Spirit World is up.
+                if (bTwoPhase && me->HasAura(SPELL_SPIRIT_WORLD))
+                {
+                    if (spiritWorldTimer <= diff)
+                    {
+                        spiritWorldTimer = 1000;
+                        Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                            if (Player* player = itr->GetSource())
+                                if (player->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
+                                    me->AddAura(SPELL_SPIRIT_WORLD_AURA, player);
+                    }
+                    else
+                        spiritWorldTimer -= diff;
+                }
 
                 if (me->HealthBelowPct(70) && !bTwoPhase)
                 {

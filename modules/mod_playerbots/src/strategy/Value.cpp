@@ -135,7 +135,12 @@ Unit* UnitCalculatedValue::Get()
         if (!lastCheckTime || now - lastCheckTime >= checkInterval)
         {
             lastCheckTime = now;
+            // #72: AC Value.cpp:136-142 also instruments the interval branch.
+            PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(
+                PERF_MON_VALUE, this->getName(), this->context ? &this->context->performanceStack : nullptr);
             value = Calculate();
+            if (pmo)
+                pmo->finish();
         }
     }
     // Prevent crashing by InWorld check

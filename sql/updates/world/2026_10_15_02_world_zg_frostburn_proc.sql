@@ -1,0 +1,15 @@
+-- #836 ZG Zanzil: the Frostburn Formula proc (aura 96325 -> 96331) never landed because 96331 is disabled for players.
+-- world.disables has (sourceType 0 = DISABLE_TYPE_SPELL, entry 96331, flags 7 = SPELL_DISABLE_PLAYER | CREATURE | PET, comment 'op temp');
+-- the same row is in the MoP 5.4.8 disables data. Chain: the cauldron GO 208314 gives the player 96325 (SpellAuraOptions 7267: chance 100,
+-- 1 charge, procFlags 69904, SpellEffect: APPLY_AURA 42 PROC_TRIGGER_SPELL -> 96331); the player's next damaging spell procs it,
+-- Unit::HandleProcTriggerSpell (Unit.cpp:8425) calls CastSpell(victim, 96331), Spell::prepare (Spell.cpp:3471) finds the spell
+-- disabled for a player caster (DisableMgr.cpp:344-367) and finishes with SPELL_FAILED_SPELL_UNAVAILABLE before Spell::_cast, but
+-- HandleProcTriggerSpell still returns true (Unit.cpp:8427), so the charge is spent (Unit.cpp:14600-14601) and the aura drops with
+-- no 96331 at all (w64: 96325 aura+ 15 / aura- 15, 96331 cast 0). A real player hits exactly the same wall.
+-- Wowpedia 'Zanzil (tactics)' (MediaWiki API, 2026-10-14, quoted in 2026_10_14_54): the cauldron makes the player's next attack deal
+-- 65% of the target's maximum health and stun it for 15 sec; Zanzil, Jin'do and their most powerful allies ignore it (the core keeps
+-- that part: Unit.cpp:8213-8215 spends the charge without a cast on a victim above level 85).
+-- Needs a worldserver restart (or .reload disables) to take effect.
+-- Before: disables (0, 96331, 7, '', '', 'op temp'). After: no row.
+-- Undo: INSERT INTO `disables` (`sourceType`, `entry`, `flags`, `params_0`, `params_1`, `comment`) VALUES (0, 96331, 7, '', '', 'op temp');
+DELETE FROM `disables` WHERE `sourceType` = 0 AND `entry` = 96331;

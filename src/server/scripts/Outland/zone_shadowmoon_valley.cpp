@@ -46,6 +46,7 @@ EndContentData */
 #include "Group.h"
 #include "SpellScript.h"
 #include "Player.h"
+#include "WorldSession.h"
 
 /*#####
 # npc_mature_netherwing_drake
@@ -253,13 +254,11 @@ public:
                 Unit* Dragonmaw = me->FindNearestCreature(NPC_DRAGONMAW_SUBJUGATOR, 50);
                 if (Dragonmaw)
                 {
-                    me->AddThreat(Dragonmaw, 100000.0f);
+                    me->GetThreatManager().AddThreat(Dragonmaw, 100000.0f);
                     AttackStart(Dragonmaw);
                 }
 
-                HostileReference* ref = me->GetThreatManager().getOnlineContainer().getReferenceByTarget(caster);
-                if (ref)
-                    ref->removeReference();
+                me->GetThreatManager().ClearThreat(caster);
             }
         }
 
@@ -658,7 +657,7 @@ class npc_karynaku : public CreatureScript
                 player->ActivateTaxiPathTo(TAXI_PATH_ID);
 
             if (quest->GetQuestId() == QUEST_ZUHULED_THE_WACK)
-                creature->SummonCreature(NPC_ZUHULED_THE_WACKED, -4204.94f, 316.397f, 122.508f, 1.309f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 300000);
+                creature->SummonCreature(NPC_ZUHULED_THE_WACKED, -4204.94f, 316.397f, 122.508f, 1.309f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 300000ms);
 
             return true;
         }
@@ -750,7 +749,7 @@ public:
         {
             me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, 0);
             me->SetUInt32Value(UNIT_FIELD_BYTES_1, 0);
-            Unit* Illidan = me->SummonCreature(C_ILLIDAN, -5107.83f, 602.584f, 85.2393f, 4.92598f, TEMPSUMMON_CORPSE_DESPAWN, 0);
+            Unit* Illidan = me->SummonCreature(C_ILLIDAN, -5107.83f, 602.584f, 85.2393f, 4.92598f, TEMPSUMMON_CORPSE_DESPAWN, 0ms);
             if (Illidan)
             {
                 IllidanGUID = Illidan->GetGUID();
@@ -1112,7 +1111,7 @@ public:
         void DoSpawnAssassin()
         {
             //unknown where they actually appear
-            DoSummon(NPC_COILSKAR_ASSASSIN, me, 15.0f, 5000, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT);
+            DoSummon(NPC_COILSKAR_ASSASSIN, me, 15.0f, 5000ms, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT);
         }
 
         void JustEngagedWith(Unit* who) override
@@ -1312,7 +1311,7 @@ public:
                 if (Player* AggroTarget = ObjectAccessor::GetPlayer(*me, AggroTargetGUID))
                 {
                     me->SetTarget(AggroTarget->GetGUID());
-                    me->AddThreat(AggroTarget, 1);
+                    me->GetThreatManager().AddThreat(AggroTarget, 1);
                     me->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
                 }
                 break;
@@ -1674,7 +1673,7 @@ void npc_lord_illidan_stormrage::npc_lord_illidan_stormrageAI::SummonNextWave()
         float Y = SpawnLocation[locIndex + i].y;
         float Z = SpawnLocation[locIndex + i].z;
         float O = SpawnLocation[locIndex + i].o;
-        Spawn = me->SummonCreature(WavesInfo[WaveCount].CreatureId, X, Y, Z, O, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000);
+        Spawn = me->SummonCreature(WavesInfo[WaveCount].CreatureId, X, Y, Z, O, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000ms);
         ++LiveCount;
 
         if (Spawn)
@@ -1857,7 +1856,7 @@ public:
             Unit* totemOspirits = NULL;
 
             if (entry != 0)
-                Summoned = DoSpawnCreature(entry, 0, 0, 1, 0, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 5000);
+                Summoned = DoSpawnCreature(entry, 0, 0, 1, 0, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 5000ms);
 
             // FIND TOTEM, PROCESS QUEST
             if (Summoned)

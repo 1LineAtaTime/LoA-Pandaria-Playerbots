@@ -17,7 +17,7 @@ bool SaveManaAction::Execute(Event event)
     {
         std::ostringstream out;
         out << "Mana save level: " << Format(value);
-        //botAI->TellMaster(out);
+        botAI->TellMaster(out); // #177 AC parity: TellMaster works again (#173)
         return true;
     }
 
@@ -56,7 +56,7 @@ bool SaveManaAction::Execute(Event event)
 
     std::ostringstream out;
     out << "Mana save level set: " << Format(value);
-    //botAI->TellMaster(out);
+    botAI->TellMaster(out); // #177 AC parity: TellMaster works again (#173)
 
     return true;
 }

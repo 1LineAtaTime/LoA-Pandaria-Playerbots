@@ -124,6 +124,7 @@ void AddSC_brawlers_guild();
 void AddSC_on_duel();
 void AddSC_transmog();
 void AddSC_world_map_scripts();
+void AddSC_zeppelins();  // #498
 
 //eastern kingdoms
 void AddSC_boss_alizabal();                  //Baradin Hold
@@ -342,6 +343,7 @@ void AddSC_loch_modan();
 void AddSC_redridge_mountains();
 void AddSC_silverpine_forest();
 void AddSC_stormwind_city();
+void AddSC_tol_barad();
 void AddSC_stranglethorn_vale();
 void AddSC_swamp_of_sorrows();
 void AddSC_tirisfal_glades();
@@ -821,6 +823,8 @@ void AddSC_event_hallows_end();
 void AddSC_event_midsummer_fire_festival();
 void AddSC_event_pilgrims_bounty();
 void AddSC_event_winter_veil();
+void AddSC_event_darkmoon_ring_toss();
+void AddSC_event_darkmoon_cannon();
 
 // Pandaria
 // Gate of the Setting Sun
@@ -1153,6 +1157,7 @@ void AddWorldScripts()
     AddSC_on_duel();
     AddSC_transmog();
     AddSC_world_map_scripts();
+    AddSC_zeppelins();  // #498
 #endif
 }
 
@@ -1375,6 +1380,7 @@ void AddEasternKingdomsScripts()
     AddSC_redridge_mountains();
     AddSC_silverpine_forest();
     AddSC_stormwind_city();
+    AddSC_tol_barad();
     AddSC_stranglethorn_vale();
     AddSC_swamp_of_sorrows();
     AddSC_tirisfal_glades();
@@ -1879,6 +1885,8 @@ void AddEventScripts()
     AddSC_event_midsummer_fire_festival();
     AddSC_event_pilgrims_bounty();
     AddSC_event_winter_veil();
+    AddSC_event_darkmoon_ring_toss();
+    AddSC_event_darkmoon_cannon();
 #endif
 }
 

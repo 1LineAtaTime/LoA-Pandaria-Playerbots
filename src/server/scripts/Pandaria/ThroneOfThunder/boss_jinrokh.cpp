@@ -223,7 +223,7 @@ class boss_jinrokh : public CreatureScript
                 inStorm = false;
 
                 scheduler
-                    .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(2), [this](TaskContext context)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
@@ -259,7 +259,7 @@ class boss_jinrokh : public CreatureScript
                 summons.Despawn(summon);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 _EnterEvadeMode();
                 BossAI::EnterEvadeMode();
@@ -372,8 +372,8 @@ class boss_jinrokh : public CreatureScript
             {
                 if (target && spell->Id == SPELL_THUNDERING_THROW_FORCED_PLAYER)
                 {
-                    if (me->GetThreatManager().getThreat(target))
-                        me->GetThreatManager().modifyThreatPercent(target, -100);
+                    if (me->GetThreatManager().GetThreat(target))
+                        me->GetThreatManager().ModifyThreatByPercent(target, -100);
                 }
             }
 
@@ -409,7 +409,7 @@ class boss_jinrokh : public CreatureScript
 
                 DoCastBossSpell(me, SPELL_LIGHTNING_STORM, false, 3000);
 
-                scheduler.Schedule(Milliseconds(18000), [this](TaskContext /*context*/)
+                scheduler.Schedule(Milliseconds(18000), [this](TaskContext context)
                 {
                     if (me->IsAlive() && instance && instance->GetBossState(DATA_JINROKH) == IN_PROGRESS)
                     {
@@ -471,7 +471,7 @@ class boss_jinrokh : public CreatureScript
                                 me->PrepareChanneledCast(me->GetAngle(target));
                             }
 
-                            scheduler.Schedule(Milliseconds(1500), [this](TaskContext /*context*/)
+                            scheduler.Schedule(Milliseconds(1500), [this](TaskContext context)
                             {
                                 if (me->IsAlive() && instance && instance->GetBossState(DATA_JINROKH) == IN_PROGRESS)
                                     me->RemoveChanneledCast(targetGUID);
@@ -592,7 +592,7 @@ struct npc_focused_lightning : public ScriptedAI
         });
     }
 
-    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    void DamageTaken(Unit* attacker, uint32& damage) override
     {
         damage = 0;
     }
@@ -612,7 +612,7 @@ struct npc_lightning_fissure : public ScriptedAI
     TaskScheduler scheduler;
     InstanceScript* instance;
 
-    void IsSummonedBy(Unit* /*summoner*/) override
+    void IsSummonedBy(Unit* summoner) override
     {
         instance = me->GetInstanceScript();
         me->SetDisplayFromModel(1);
@@ -637,7 +637,7 @@ struct npc_lightning_fissure : public ScriptedAI
         });
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void UpdateAI(uint32 diff) override
     {
@@ -1392,7 +1392,7 @@ class npc_lightning_storm_bunny : public CreatureScript
                 nonCombatEvents.ScheduleEvent(EVENT_LAUNCH, 4 * IN_MILLISECONDS);
             }
 
-            void EnterEvadeMode() override { }
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
             void UpdateAI(uint32 diff) override
             {
@@ -1441,7 +1441,7 @@ struct npc_lightning_strike_charges : public ScriptedAI
             me->DespawnOrUnsummon();
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void UpdateAI(uint32 /*diff*/) override { }
 };
@@ -1625,7 +1625,7 @@ class spell_focused_lightning : public SpellScript
             {
                 GetPositionWithDistInOrientation(caster, 10.0f, caster->GetAngle(target), x, y);
 
-                if (Creature* focusedLightning = caster->SummonCreature(NPC_FOCUSED_LIGHTNING, x, y, caster->GetPositionZ(), 0.0f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 2000))
+                if (Creature* focusedLightning = caster->SummonCreature(NPC_FOCUSED_LIGHTNING, x, y, caster->GetPositionZ(), 0.0f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 2000ms))
                 {
                     focusedLightning->AI()->Talk(0, target);
                     focusedLightning->AI()->SetGUID(target->GetGUID());

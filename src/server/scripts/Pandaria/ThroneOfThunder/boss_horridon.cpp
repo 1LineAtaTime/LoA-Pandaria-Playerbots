@@ -428,14 +428,14 @@ class boss_horridon : public CreatureScript
                 }
 
                 scheduler
-                    .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(2), [this](TaskContext context)
                 {
                     if (instance && instance->GetData(DATA_HORIDON_EVENT) == DONE)
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 _EnterEvadeMode();
                 BossAI::EnterEvadeMode();
@@ -565,7 +565,7 @@ class boss_horridon : public CreatureScript
 
                         scheduler
                             .SetValidator([this] { return instance && instance->GetBossState(DATA_HORRIDON) == IN_PROGRESS; })
-                            .Schedule(Milliseconds(300), [this](TaskContext /*context*/) // very very low delay or it`ll have a wrong anim (hacky, hitbox issue)
+                            .Schedule(Milliseconds(300), [this](TaskContext context) // very very low delay or it`ll have a wrong anim (hacky, hitbox issue)
                         {
                             DoCast(SPELL_CHARGE_SWIPE);
                         });
@@ -628,7 +628,7 @@ class boss_horridon : public CreatureScript
 
                         scheduler
                             .SetValidator([this] { return instance && instance->GetBossState(DATA_HORRIDON) == IN_PROGRESS; })
-                            .Schedule(Seconds(5), [this](TaskContext /*context*/)
+                            .Schedule(Seconds(5), [this](TaskContext context)
                         {
                             if (GameObject* curTribalDoor = ObjectAccessor::GetGameObject(*me, instance ? instance->GetGuidData(GetDoorIdByPhase(eTrashPhases(uPhase))) : ObjectGuid::Empty))
                             {
@@ -713,7 +713,7 @@ class boss_horridon : public CreatureScript
 
                             scheduler
                                 .SetValidator([this] { return instance && instance->GetBossState(DATA_HORRIDON) == IN_PROGRESS; })
-                                .Schedule(Milliseconds(4500), [this](TaskContext /*context*/)
+                                .Schedule(Milliseconds(4500), [this](TaskContext context)
                             {
                                 me->RemoveChanneledCast(targetGUID);
                             });
@@ -980,7 +980,7 @@ struct horridon_tribeAI : public ScriptedAI
             horridon->AI()->JustSummoned(summon);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         if (!me->GetDBTableGUIDLow())
             return;
@@ -1101,7 +1101,7 @@ class npc_war_god_jalak : public CreatureScript
                     if (!playerList.empty() && playerList.front())
                     {
                         Player *pFirst = playerList.front();
-                        me->AddThreat(pFirst, 100000.0f);
+                        me->GetThreatManager().AddThreat(pFirst, 100000.0f);
                         ScriptedAI::AttackStart(pFirst);
                     }
                 }
@@ -1445,13 +1445,13 @@ struct npc_horridon_trashs : public horridon_tribeAI
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankSpecTargetSelector()))
                     {
                         DoResetThreat();
-                        me->AddThreat(target, 100000.0f);
+                        me->GetThreatManager().AddThreat(target, 100000.0f);
                         ScriptedAI::AttackStart(target);
                     }
                     else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 200.0f, true))
                     {
                         DoResetThreat();
-                        me->AddThreat(target, 100000.0f);
+                        me->GetThreatManager().AddThreat(target, 100000.0f);
                         ScriptedAI::AttackStart(target);
                     }
                 
@@ -1713,7 +1713,7 @@ struct npc_direhorn_spirit : public ScriptedAI
 
             // Init delay before start attack
             scheduler
-                .Schedule(Milliseconds(1500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(1500), [this](TaskContext context)
             {
                 me->ClearUnitState(UNIT_STATE_CASTING);
 
@@ -1758,7 +1758,7 @@ struct npc_living_poison : public ScriptedAI
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
 
         scheduler
-            .Schedule(Milliseconds(2500), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(2500), [this](TaskContext context)
         {
             me->GetMotionMaster()->MoveRandom(8.5f);
         });
@@ -1857,7 +1857,7 @@ class npc_amani_shi_warbear : public CreatureScript
             EventMap events;
             InstanceScript* instance;
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (Creature* passenger = ObjectAccessor::GetCreature(*me, m_shamanGuid))
                     passenger->DespawnOrUnsummon();

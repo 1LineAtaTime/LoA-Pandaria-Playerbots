@@ -44,6 +44,7 @@
 #include "PassiveAI.h"
 #include "PetAI.h"
 #include "Pet.h"
+#include "GameClient.h"
 #include "Player.h"
 #include "PlayerAI.h"
 #include "QuestDef.h"
@@ -64,6 +65,7 @@
 #include "WorldPacket.h"
 #include "MovementStructures.h"
 #include "MovementPacketBuilder.h"
+#include "WorldSession.h"
 #include "BattlePetMgr.h"
 #include "SpellHistory.h"
 #include "AreaTrigger.h"
@@ -72,6 +74,7 @@
 #include "SpellScript.h"
 #include "PetBattle.h"
 #include "GameEventMgr.h"
+#include "BattlegroundAnyLevel.h"  // #702 P4 (#831): Battleground.AnyLevel.PvPScaling heals (off by default)
 
 float baseMoveSpeed [MAX_MOVE_TYPE] =
 {
@@ -189,11 +192,10 @@ uint32 ProcEventInfo::GetDamageWithoutResilience() const
 Unit::Unit(bool isWorldObject) :
 WorldObject(isWorldObject), m_movedPlayer(NULL), m_lastSanctuaryTime(0),
 IsAIEnabled(false), NeedChangeAI(false), LastCharmerGUID(),
-m_ControlledByPlayer(false), movespline(new Movement::MoveSpline()),
+m_ControlledByPlayer(false), movespline(new Movement::MoveSpline()), _gameClientMovingMe(nullptr),
 i_AI(NULL), i_disabledAI(NULL), m_procDeep(0),
-m_removedAurasCount(0), i_motionMaster(new MotionMaster(this)), m_ThreatManager(this),
+m_removedAurasCount(0), i_motionMaster(new MotionMaster(this)), m_ThreatManager(this), m_CombatManager(this),
 m_vehicle(NULL), m_vehicleKit(NULL), m_unitTypeMask(UNIT_MASK_NONE),
-m_HostileRefManager(this),
 _aiAnimKitId(0), _movementAnimKitId(0), _meleeAnimKitId(0)
 {
 #ifdef _MSC_VER
@@ -326,6 +328,16 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellInfo const* spellInfo)
 // Methods of class Unit
 Unit::~Unit()
 {
+    // Null the targets of followers that point at this unit before its memory is
+    // released: their destructors call SetTarget(nullptr), which would otherwise
+    // dereference this already-freed unit during map unload (issue #3).
+    if (!_followers.empty())
+    {
+        std::set<AbstractFollower*> followers = _followers;
+        for (AbstractFollower* follower : followers)
+            follower->SetTarget(nullptr);
+    }
+
     // set current spells as deletable
     for (uint8 i = 0; i < CURRENT_MAX_SPELL; ++i)
         if (m_currentSpells [i])
@@ -350,6 +362,7 @@ Unit::~Unit()
     ASSERT(m_removedAuras.empty());
     ASSERT(m_gameObj.empty());
     ASSERT(m_dynObj.empty());
+    ASSERT(!_gameClientMovingMe || _gameClientMovingMe->GetBasePlayer() == this);
 }
 
 void Unit::Update(uint32 p_time)
@@ -393,8 +406,8 @@ void Unit::Update(uint32 p_time)
     // Having this would prevent spells from being proced, so let's crash
     ASSERT(!m_procDeep);
 
-    if (CanHaveThreatList() && GetThreatManager().isNeedUpdateToClient(p_time))
-        SendThreatListUpdate();
+    m_CombatManager.Update(p_time);
+    GetThreatManager().Update(p_time);
 
     // update combat timer only for players and pets (only pets with PetAI)
     if (IsInCombat())
@@ -424,20 +437,21 @@ void Unit::Update(uint32 p_time)
 
             if (canResetCombat && !m_combatTimerPvP)    // We are not fighting boss and PvP timer is expired or never was
             {
-                if (m_HostileRefManager.isEmpty())      // No enemies, exit combat now
+                if (GetThreatManager().GetThreatenedByMeList().empty())      // No enemies, exit combat now
                     ClearInCombat();
                 else if (!m_combatTimerPvE)             // Okay, we have some enemies and PvE combat timer is expired, check if they can reach us
                 {
-                    auto ref = m_HostileRefManager.getFirst();
-                    do
+                    std::vector<ThreatReference*> threats;
+                    for (auto const& pair : GetThreatManager().GetThreatenedByMeList())
+                        threats.push_back(pair.second);
+                    for (ThreatReference* threat : threats)
                     {
-                        Unit* target = ref->GetSource()->GetOwner();
-                        ref = ref->next();
+                        Unit* target = threat->GetOwner();
                         if (Creature* creature = target->ToCreature())
                             if (!creature->CanCreatureAttack(this, false))
-                                m_HostileRefManager.deleteReference(target);
-                    } while (ref);
-                    if (m_HostileRefManager.isEmpty())
+                                threat->ClearThreat();
+                    }
+                    if (GetThreatManager().GetThreatenedByMeList().empty())
                         ClearInCombat();
                     else
                         m_combatTimerPvE = 5000;
@@ -531,6 +545,31 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
     }
 
     UpdateSplinePosition();
+
+    // #747: a playerbot whose spline is announced as client movement status (Movement::SendBotMoveStatus,
+    // MoveSplineInit.cpp): the stop at arrival, a turn when the path bends, a heartbeat every 500 ms - what a real
+    // client sends while it runs (MoP 5.4.8 does the same for its bots)
+    if (movespline->statusMode)
+    {
+        if (arrived)
+        {
+            movespline->statusMode = false;
+            Movement::SendBotMoveStatus(this);
+        }
+        else
+        {
+            movespline->statusTimer += int32(t_diff);
+            float turn = std::fabs(GetOrientation() - movespline->statusO);
+            if (turn > float(M_PI))
+                turn = float(2 * M_PI) - turn;
+            if (movespline->statusTimer >= 500 || (turn > 0.1f && movespline->statusTimer >= 100))
+            {
+                movespline->statusTimer = 0;
+                movespline->statusO = GetOrientation();
+                Movement::SendBotMoveStatus(this);
+            }
+        }
+    }
 }
 
 void Unit::UpdateSplinePosition()
@@ -557,7 +596,16 @@ void Unit::UpdateSplinePosition()
 void Unit::DisableSpline()
 {
     m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
+    // #747: a status-moving bot interrupted mid-path (death, teleport, ...) must be stopped on the observers' clients,
+    // which otherwise keep running it along its heading. A natural arrival is already Finalized here and its stop is
+    // sent by UpdateSplineMovement after the final position update.
+    bool const stopStatus = movespline->statusMode && !movespline->Finalized();
     movespline->_Interrupt();
+    if (stopStatus)
+    {
+        movespline->statusMode = false;
+        Movement::SendBotMoveStatus(this);
+    }
 }
 
 void Unit::resetAttackTimer(WeaponAttackType type)
@@ -634,7 +682,7 @@ void Unit::GetRandomContactPoint(const Unit* obj, float &x, float &y, float &z, 
     uint32 attacker_number = getAttackers().size();
     if (attacker_number > 0)
         --attacker_number;
-    GetNearPoint(obj, x, y, z, obj->GetCombatReach(), distance2dMin + (distance2dMax - distance2dMin) * (float) rand_norm(),
+    GetNearPoint(obj, x, y, z, distance2dMin + (distance2dMax - distance2dMin) * (float) rand_norm(),
                  GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI / 2) - static_cast<float>(M_PI) * (float) rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
 }
 
@@ -1036,7 +1084,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
             victim->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_DIRECT_DAMAGE, spellProto ? spellProto->Id : 0);
 
         if (victim->GetTypeId() != TYPEID_PLAYER)
-            victim->AddThreat(this, float(damage), damageSchoolMask, spellProto);
+            victim->GetThreatManager().AddThreat(this, float(damage), spellProto);
         else                                                // victim is a player
         {
             // random durability for items (HIT TAKEN)
@@ -1386,7 +1434,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
     }
 
     // Script Hook For CalculateSpellDamageTaken -- Allow scripts to change the Damage post class mitigation calculations
-    sScriptMgr->ModifySpellDamageTaken(damageInfo->target, damageInfo->attacker, damage);
+    sScriptMgr->ModifySpellDamageTaken(damageInfo->target, damageInfo->attacker, damage, spellInfo);
 
     // Calculate absorb resist
     if (damage > 0)
@@ -3644,6 +3692,27 @@ bool Unit::IsNonMeleeSpellCasted(bool withDelayed, bool skipChanneled, bool skip
     return false;
 }
 
+bool Unit::IsMovementPreventedByCasting() const
+{
+    // can always move when not casting
+    if (!HasUnitState(UNIT_STATE_CASTING))
+        return false;
+
+    if (Spell* spell = m_currentSpells[CURRENT_GENERIC_SPELL])
+        if (spell->getState() == SPELL_STATE_FINISHED ||
+            !(spell->m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT))
+            return false;
+
+    // channeled spells during channel stage (after the initial cast timer) allow movement if not interrupted by move/turn
+    if (Spell* spell = m_currentSpells[CURRENT_CHANNELED_SPELL])
+        if (spell->getState() != SPELL_STATE_FINISHED && spell->IsChannelActive())
+            if (!(spell->m_spellInfo->ChannelInterruptFlags & (AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_TURNING)))
+                return false;
+
+    // prohibit movement for all other spell casts
+    return true;
+}
+
 void Unit::InterruptNonMeleeSpells(bool withDelayed, uint32 spell_id, bool withInstant)
 {
     // generic spells are interrupted if they are not finished or delayed
@@ -3829,6 +3898,7 @@ Aura* Unit::_TryStackingOrRefreshingExistingAura(SpellInfo const* newAura, uint3
                 eff->SetFloatAmount(std::ceil(cumulativeAmount / ticks)); // New amount was divided as int, try to compensate it
             }
 
+            sScriptMgr->OnAuraApply(this, foundAura); // #793: as AC (stack / refresh of an existing aura)
             return foundAura;
         }
     }
@@ -3872,17 +3942,27 @@ AuraApplication * Unit::_CreateAuraApplication(Aura* aura, uint32 effMask)
     m_appliedAuras.insert(AuraApplicationMap::value_type(aurId, aurApp));
 
     auto procEntry = sSpellMgr->GetSpellProcEvent(aurId);
-    if (procEntry)
+    // #72 perf: list only auras that can pass IsTriggeredAtSpellProcEvent's static gates - no spell_proc entry (those
+    // return false there first) and a non-zero EventProcFlag (spell_proc_event procFlags, else the spell's ProcFlags).
+    // Every other aura (most of a level-90 bot's passive, stat and talent auras) was walked on every proc pass - Cast,
+    // AfterCast and Hit per cast, both sides of every hit and melee swing - with two hash lookups before that false.
+    // AC drops an aura without a proc entry first too (AC Aura::GetProcEffectMask, SpellAuras.cpp:2231-2235, called
+    // per applied aura from Unit::GetProcAurasTriggeredOnEvent, Unit.cpp:12420-12454). Static spell data, same result.
+    uint32 const eventProcFlag = procEntry && procEntry->procFlags ? procEntry->procFlags : aurSpellInfo->ProcFlags;
+    if (eventProcFlag && !sSpellMgr->GetSpellProcEntry(aurId))
     {
-        if (procEntry->phaseMask & ProcPhaseMask::Hit)
+        if (procEntry)
+        {
+            if (procEntry->phaseMask & ProcPhaseMask::Hit)
+                m_procAuras[uint32(ProcPhase::Hit)].insert(AuraApplicationMap::value_type(aurId, aurApp));
+            if (procEntry->phaseMask & ProcPhaseMask::Cast)
+                m_procAuras[uint32(ProcPhase::Cast)].insert(AuraApplicationMap::value_type(aurId, aurApp));
+            if (procEntry->phaseMask & ProcPhaseMask::AfterCast)
+                m_procAuras[uint32(ProcPhase::AfterCast)].insert(AuraApplicationMap::value_type(aurId, aurApp));
+        }
+        else
             m_procAuras[uint32(ProcPhase::Hit)].insert(AuraApplicationMap::value_type(aurId, aurApp));
-        if (procEntry->phaseMask & ProcPhaseMask::Cast)
-            m_procAuras[uint32(ProcPhase::Cast)].insert(AuraApplicationMap::value_type(aurId, aurApp));
-        if (procEntry->phaseMask & ProcPhaseMask::AfterCast)
-            m_procAuras[uint32(ProcPhase::AfterCast)].insert(AuraApplicationMap::value_type(aurId, aurApp));
     }
-    else
-        m_procAuras[uint32(ProcPhase::Hit)].insert(AuraApplicationMap::value_type(aurId, aurApp));
 
     if (aurSpellInfo->AuraInterruptFlags)
     {
@@ -3944,6 +4024,8 @@ void Unit::_ApplyAura(AuraApplication * aurApp, uint32 effMask)
         if (effMask & 1 << i && (!aurApp->GetRemoveMode()))
             aurApp->_HandleEffect(i, true);
     }
+
+    sScriptMgr->OnAuraApply(this, aura); // #793: as AC Unit::_ApplyAura
 }
 
 // removes aura application from lists and unapplies effects
@@ -4035,6 +4117,8 @@ void Unit::_UnapplyAura(AuraApplicationMap::iterator &i, AuraRemoveMode removeMo
     // only way correctly remove all auras from list
     //if (removedAuras != m_removedAurasCount) new aura may be added
     i = m_appliedAuras.begin();
+
+    sScriptMgr->OnAuraRemove(this, aurApp, removeMode); // #793: as AC Unit::_UnapplyAura
 }
 
 void Unit::_UnapplyAura(AuraApplication * aurApp, AuraRemoveMode removeMode)
@@ -4346,7 +4430,7 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, uint64 casterGUID, Unit*
 
             bool stealCharge = aura->GetSpellInfo()->AttributesEx7 & SPELL_ATTR7_DISPEL_CHARGES;
             // Cast duration to unsigned to prevent permanent aura's such as Righteous Fury being permanently added to caster
-            int32 dur = static_cast<int32>(std::min(2 * MINUTE * IN_MILLISECONDS, (uint32)aura->GetDuration()));
+            int32 dur = std::min(2 * MINUTE * IN_MILLISECONDS, static_cast<uint32>(aura->GetDuration()));
 
             // Find the same or similar aura on caster that shouldn't be overridden
             Aura* oldAura = stealer->GetAura(aura->GetId(), aura->GetCasterGUID());
@@ -6686,6 +6770,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                                 if (!target)
                                     return false;
                             }
+
                             if (IsFriendlyTo(target))
                                 return false;
                         }
@@ -7606,7 +7691,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                     triggered_spell_id = 54445;
                     target = this;
                     float addThreat = float(CalculatePct(procSpell->Effects [0].CalcValue(this), triggerAmount));
-                    victim->AddThreat(this, addThreat);
+                    victim->GetThreatManager().AddThreat(this, addThreat);
                     break;
                 }
                 // Silverback
@@ -8775,7 +8860,7 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
         SetInCombatWith(victim);
         if (victim->GetTypeId() == TYPEID_PLAYER)
             victim->SetInCombatWith(this);
-        AddThreat(victim, 0.0f);
+        GetThreatManager().AddThreat(victim, 0.0f);
 
         ToCreature()->SendAIReaction(AI_REACTION_HOSTILE);
         ToCreature()->CallAssistance();
@@ -8844,6 +8929,8 @@ void Unit::CombatStop(bool includingCast)
     RemoveAllAttackers();
     if (GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->SendAttackSwingCancelAttack();     // melee and ranged forced attack cancel
+    m_CombatManager.EndAllPvECombat();
+    m_CombatManager.SuppressPvPCombat();
     ClearInCombat();
 }
 
@@ -9664,6 +9751,10 @@ void Unit::SendHealSpellLog(Unit* victim, uint32 SpellID, uint32 Damage, uint32 
 
 int32 Unit::HealBySpell(Unit* victim, SpellInfo const* spellInfo, uint32 addHealth, bool critical)
 {
+    // #793: AC's hook, same place as AC Unit::HealBySpell. #829: (target, healer) as the hook is declared and as the periodic
+    // heal tick passes them (AC passes the healer first here, so mod-autobalance saw the two swapped on direct heals)
+    sScriptMgr->ModifyHealReceived(victim, this, addHealth, spellInfo);
+
     uint32 absorb = 0;
     // calculate heal absorb and reduce healing
     CalcHealAbsorb(victim, spellInfo, addHealth, absorb);
@@ -9753,7 +9844,7 @@ void Unit::EnergizeBySpell(Unit* victim, uint32 spellId, int32 damage, Powers po
     SendEnergizeSpellLog(victim, spellId, damage, powerType);
     // needs to be called after sending spell log
     victim->ModifyPower(powerType, damage);
-    victim->getHostileRefManager().threatAssist(this, float(damage) * 0.5f, spellInfo);
+    victim->GetThreatManager().ForwardThreatForAssistingMe(this, float(damage) * 0.5f, spellInfo);
 }
 
 int32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 effIndex, int32 damage, DamageEffectType damagetype, uint32 stack) const
@@ -11578,6 +11669,9 @@ void Unit::Dismount()
         else
             player->ResummonPetTemporaryUnSummonedIfAny();
     }
+
+    // #573: AC Unit.cpp:10340 - recompute run speed once the mount aura is gone
+    UpdateSpeed(MOVE_RUN, true);
 }
 
 MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
@@ -11746,7 +11840,17 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
         {
             if (IsAIEnabled)
             {
-                creature->AI()->JustEngagedWith(enemy);
+                // #799: engage through CreatureAI::EngagementStart (guarded by IsEngaged) instead of calling
+                // JustEngagedWith directly. ThreatManager::ProcessAIUpdates -> JustStartedThreateningMe ->
+                // EngagementStart fires JustEngagedWith again right after this (Unit::Attack: SetInCombatWith
+                // then AddThreat), so every override that skips CreatureAI::JustEngagedWith ran twice (Wise
+                // Mari double yell, #796). Upstream TC 3.3.5 only calls JustEngagedWith from EngagementStart
+                // (CreatureAI.cpp EngagementStart -> Creature::AtEngage). JustEnteredCombat clears an engagement
+                // left over from a previous life and engages units without a threat list, exactly as
+                // CombatManager::NotifyAICombat does when it sets the combat flag first.
+                creature->AI()->JustEnteredCombat(enemy);           // units without a threat list engage here
+                if (IsAIEnabled && creature->CanHaveThreatList())
+                    creature->AI()->JustStartedThreateningMe(enemy); // no-op if already engaged
 
                 if (creature->GetEntry() != 69427 && creature->GetEntry() != 69701 && creature->GetEntry() != 69700 && creature->GetEntry() != 69699 && creature->GetEntry() != 72249 && creature->GetEntry() != 71742 && creature->GetEntry() != 71749 && creature->GetEntry() != 71763)
                     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC); // unit has engaged in combat, remove immunity so players can fight back
@@ -12184,7 +12288,6 @@ float Unit::GetBasePowerRegen(Powers power) const
             return 10.0f;
         case POWER_BURNING_EMBERS:
             return 0.5f;
-        default: break;
     }
     return 0.0f;
 }
@@ -12450,11 +12553,28 @@ void Unit::SetSpeed(UnitMoveType mtype, float rate, bool forced)
 
 void Unit::setDeathState(DeathState s)
 {
+    // Assign the death state FIRST. The cleanup below - RemoveAllAurasOnDeath() in particular -
+    // runs script and AI code that asks whether this unit is still alive, and it must not be told
+    // "yes" about a unit that is in the middle of dying.
+    //
+    // Concretely: removing an aura fires Unit::UpdateObjectVisibility(), which runs the AI
+    // relocation notifier, which calls MoveInLineOfSight() on nearby creatures. npc_air_force_bots
+    // gates on me->IsValidAttackTarget(who), which only rejects dead targets - so with the
+    // assignment left at the end of this function the dying unit still looked alive, the guard
+    // re-applied SPELL_GUARDS_MARK to it, RemoveAllAurasOnDeath() saw a fresh non-passive aura and
+    // removed it, and round it went. A bot dying in range of an Air Force trigger NPC pinned a
+    // map-update worker at 100% CPU forever, and the world thread then blocked in
+    // MapUpdater::wait(), which hung the whole server.
+    //
+    // AzerothCore assigns it here for the same structural reason (so HandleChannelDeathItem can
+    // test the death state when creating soul shards).
+    m_deathState = s;
+
     if (s != ALIVE && s != JUST_RESPAWNED)
     {
         CombatStop();
-        DeleteThreatList();
-        getHostileRefManager().deleteReferences();
+        GetThreatManager().RemoveMeFromThreatLists();
+        GetThreatManager().ClearAllThreat();
 
         if (IsNonMeleeSpellCasted(false))
             InterruptNonMeleeSpells(false);
@@ -12502,8 +12622,6 @@ void Unit::setDeathState(DeathState s)
         RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE); // clear skinnable for creature and player (at battleground)
     else if (s == ALIVE)
         ClearComboPointHolders();
-
-    m_deathState = s;
 }
 
 /*########################################
@@ -12511,126 +12629,6 @@ void Unit::setDeathState(DeathState s)
 ########       AGGRO SYSTEM       ########
 ########                          ########
 ########################################*/
-bool Unit::CanHaveThreatList() const
-{
-    // only creatures can have threat list
-    if (GetTypeId() != TYPEID_UNIT)
-        return false;
-
-    // only alive units can have threat list
-    if (!IsAlive() || isDying())
-        return false;
-
-    // totems can not have threat list
-    if (ToCreature()->IsTotem())
-        return false;
-
-    // vehicles can not have threat list
-    //if (ToCreature()->IsVehicle())
-    //    return false;
-
-    // summons can not have a threat list, unless they are controlled by a creature
-    if (HasUnitTypeMask(UNIT_MASK_MINION | UNIT_MASK_GUARDIAN | UNIT_MASK_CONTROLABLE_GUARDIAN) && ((Pet*)this)->GetOwnerGUID().IsPlayer())
-        return false;
-
-    return true;
-}
-
-//======================================================================
-
-float Unit::ApplyTotalThreatModifier(float fThreat, SpellSchoolMask schoolMask)
-{
-    if (!HasAuraType(SPELL_AURA_MOD_THREAT) || fThreat < 0)
-        return fThreat;
-
-    SpellSchools school = GetFirstSchoolInMask(schoolMask);
-
-    return fThreat * m_threatModifier [school];
-}
-
-//======================================================================
-
-void Unit::AddThreat(Unit* victim, float fThreat, SpellSchoolMask schoolMask, SpellInfo const* threatSpell)
-{
-    // Only mobs can manage threat lists
-    if (CanHaveThreatList())
-        m_ThreatManager.addThreat(victim, fThreat, schoolMask, threatSpell);
-}
-
-//======================================================================
-
-void Unit::DeleteThreatList()
-{
-    if (CanHaveThreatList() && !m_ThreatManager.isThreatListEmpty())
-        SendClearThreatListOpcode();
-    m_ThreatManager.clearReferences();
-}
-
-//======================================================================
-
-void Unit::TauntApply(Unit* taunter)
-{
-    ASSERT(GetTypeId() == TYPEID_UNIT);
-
-    if (!taunter || (taunter->GetTypeId() == TYPEID_PLAYER && taunter->ToPlayer()->IsGameMaster()))
-        return;
-
-    if (!CanHaveThreatList())
-        return;
-
-    Creature* creature = ToCreature();
-
-    if (creature->HasReactState(REACT_PASSIVE))
-        return;
-
-    Unit* target = GetVictim();
-    if (target && target == taunter)
-        return;
-
-    SetInFront(taunter);
-    if (creature->IsAIEnabled)
-        creature->AI()->AttackStart(taunter);
-
-    //m_ThreatManager.tauntApply(taunter);
-}
-
-//======================================================================
-
-void Unit::TauntFadeOut(Unit* taunter)
-{
-    ASSERT(GetTypeId() == TYPEID_UNIT);
-
-    if (!taunter || (taunter->GetTypeId() == TYPEID_PLAYER && taunter->ToPlayer()->IsGameMaster()))
-        return;
-
-    if (!CanHaveThreatList())
-        return;
-
-    Creature* creature = ToCreature();
-
-    if (creature->HasReactState(REACT_PASSIVE))
-        return;
-
-    Unit* target = GetVictim();
-    if (!target || target != taunter)
-        return;
-
-    if (m_ThreatManager.isThreatListEmpty())
-    {
-        if (creature->IsAIEnabled)
-            creature->AI()->EnterEvadeMode();
-        return;
-    }
-
-    target = creature->SelectVictim();  // might have more taunt auras remaining
-
-    if (target && target != taunter)
-    {
-        SetInFront(target);
-        if (creature->IsAIEnabled)
-            creature->AI()->AttackStart(target);
-    }
-}
 
 //======================================================================
 
@@ -12692,9 +12690,9 @@ Unit* Creature::SelectVictim()
 
     if (CanHaveThreatList())
     {
-        if (!target && !m_ThreatManager.isThreatListEmpty())
+        if (!target && !GetThreatManager().IsThreatListEmpty())
             // No taunt aura or taunt aura caster is dead standard target selection
-            target = m_ThreatManager.getHostilTarget();
+            target = GetThreatManager().GetCurrentVictim();
     }
     else if (!HasReactState(REACT_PASSIVE))
     {
@@ -13719,7 +13717,7 @@ uint32 Unit::GetPowerIndex(uint32 powerType) const
             }
         }
     }
-    return GetPowerIndexByClass(powerType, classId);
+    return sDBCManager.GetPowerIndexByClass(static_cast<Powers>(powerType), classId);
 }
 
 int32 Unit::GetCreatePowers(Powers power) const
@@ -13785,6 +13783,7 @@ void Unit::AddToWorld()
     {
         WorldObject::AddToWorld();
     }
+    GetMotionMaster()->AddToWorld();
     RebuildTerrainSwaps();
 }
 
@@ -13843,7 +13842,7 @@ void Unit::RemoveFromWorld()
             }
         }
 
-        getHostileRefManager().clearReferences();
+        GetThreatManager().RemoveMeFromThreatLists();
 
         WorldObject::RemoveFromWorld();
         m_duringRemoveFromWorld = false;
@@ -13857,6 +13856,11 @@ void Unit::CleanupBeforeRemoveFromMap(bool finalCleanup)
 
     if (IsInWorld())
         RemoveFromWorld();
+    // #607: a vehicle that never entered the world (e.g. a grid-loaded copy refused by Creature::AddToWorld) still
+    // owns a kit that RemoveFromWorld never uninstalled; deleting it would trip ASSERT(_status == STATUS_UNINSTALLING)
+    // in Vehicle::~Vehicle. AC frees a kit only through RemoveVehicleKit (Uninstall + delete), so uninstall it here.
+    else if (IsVehicle())
+        RemoveVehicleKit(true);
 
     ASSERT(GetGUID());
 
@@ -13870,9 +13874,13 @@ void Unit::CleanupBeforeRemoveFromMap(bool finalCleanup)
 
     m_Events.KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList
     CombatStop(true);                                   // Because scripts in RemoveAllAuras can trigger fucking spells, need to call InterruptNonMeleeSpells another time
+    // Issue #70: CombatStop only *suppresses* PvP combat references (they normally expire on a
+    // timer), so a unit destroyed while it still holds one - e.g. a pet removed mid-battleground -
+    // would trip ASSERT(_pvpRefs.empty()) in ~CombatManager. End them on the removal path.
+    m_CombatManager.EndAllPvPCombat();
     ClearComboPointHolders();
-    DeleteThreatList();
-    getHostileRefManager().setOnlineOfflineState(false);
+    GetThreatManager().RemoveMeFromThreatLists();
+    GetThreatManager().ClearAllThreat();
     GetMotionMaster()->Clear(false);                    // remove different non-standard movement generators.
 }
 
@@ -16171,7 +16179,8 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
 
         if (!creature->IsPet())
         {
-            creature->DeleteThreatList();
+            creature->GetThreatManager().RemoveMeFromThreatLists();
+            creature->GetThreatManager().ClearAllThreat();
             CreatureTemplate const* cInfo = creature->GetCreatureTemplate();
             if (cInfo && (cInfo->lootid || cInfo->maxgold > 0))
                 creature->SetFlag(OBJECT_FIELD_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
@@ -16561,7 +16570,8 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
     if (!aurApp || (aurApp->GetBase()->GetId() != 145065 && aurApp->GetBase()->GetId() != 145171))
     {
         CombatStop(); /// @todo CombatStop(true) may cause crash (interrupt spells)
-        DeleteThreatList();
+        GetThreatManager().RemoveMeFromThreatLists();
+        GetThreatManager().ClearAllThreat();
     }
 
     // Charmer stop charming
@@ -16643,6 +16653,14 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
         else
             GetCharmInfo()->InitCharmCreateSpells();
     }
+    // #736: a player-driven vehicle gets a CharmInfo too (AC Unit.cpp SetCharmedBy "Xinef: I need charmInfo for
+    // vehicle", no create spells), because the global cooldown of a charmed unit lives there (Spell::TriggerGlobalCooldown
+    // / HasGlobalCooldown / CheckPetCast). Without it vehicle weapons whose DBC row has no RecoveryTime and only the
+    // 1.5 s GCD (IoC Glaive Throw 66456/67034, Siege Turret Fire Cannon 67461, gunship cannons 66518/66529) had no
+    // server-side limit and bot gunners (PlayerbotAI::CastVehicleSpell, no client) fired them every AI tick.
+    // NPC-driven vehicles are left as they were (CharmInfo sets the vehicle REACT_PASSIVE until the charm ends).
+    else if (type == CHARM_TYPE_VEHICLE && charmer->GetTypeId() == TYPEID_PLAYER && !GetCharmInfo())
+        InitCharmInfo();
 
     if (charmer->GetTypeId() == TYPEID_PLAYER)
     {
@@ -16655,7 +16673,6 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
                 if (this->GetEntry() != 69458 && this->GetEntry() != 67275 && this->GetEntry() != 68849 && this->GetEntry() != 72952)
                     charmer->ToPlayer()->SetMover(this);
 
-                charmer->ToPlayer()->SetViewpoint(this, true);
                 charmer->ToPlayer()->VehicleSpellInitialize();
                 break;
             case CHARM_TYPE_POSSESS:
@@ -16664,7 +16681,6 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
                 charmer->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 charmer->ToPlayer()->SetMover(this);
                 charmer->ToPlayer()->SetClientControl(this, !HasUnitState(UNIT_STATE_FLEEING | UNIT_STATE_CONFUSED));
-                charmer->ToPlayer()->SetViewpoint(this, true);
                 charmer->ToPlayer()->PossessSpellInitialize();
                 break;
             case CHARM_TYPE_CHARM:
@@ -16734,8 +16750,8 @@ void Unit::RemoveCharmedBy(Unit* charmer)
 
     if (this->GetMapId() != 1136) // look up
     {
-        getHostileRefManager().deleteReferences();
-        DeleteThreatList();
+        GetThreatManager().RemoveMeFromThreatLists();
+        GetThreatManager().ClearAllThreat();
     }
 
     Map* map = GetMap();
@@ -16798,7 +16814,6 @@ void Unit::RemoveCharmedBy(Unit* charmer)
         {
             case CHARM_TYPE_VEHICLE:
                 charmer->ToPlayer()->SetClientControl(charmer, 1);
-                charmer->ToPlayer()->SetViewpoint(this, false);
                 charmer->ToPlayer()->SetClientControl(this, 0);
                 if (GetTypeId() == TYPEID_PLAYER)
                     ToPlayer()->SetMover(this);
@@ -16806,7 +16821,6 @@ void Unit::RemoveCharmedBy(Unit* charmer)
             case CHARM_TYPE_POSSESS:
                 if (!charmer->ToPlayer()->HasUnitState(UNIT_STATE_FLEEING | UNIT_STATE_CONFUSED))
                     charmer->ToPlayer()->SetClientControl(charmer, 1);
-                charmer->ToPlayer()->SetViewpoint(this, false);
                 charmer->ToPlayer()->SetClientControl(this, 0);
                 charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 if (GetTypeId() == TYPEID_PLAYER)
@@ -16836,6 +16850,11 @@ void Unit::RemoveCharmedBy(Unit* charmer)
     if (charmer->GetTypeId() == TYPEID_PLAYER && this != charmer->GetFirstControlled())
         charmer->ToPlayer()->SendRemoveControlBar();
     else if (GetTypeId() == TYPEID_PLAYER || (GetTypeId() == TYPEID_UNIT && !ToCreature()->IsGuardian()))
+        DeleteCharmInfo();
+
+    // #736: the vehicle CharmInfo made in SetCharmedBy goes with the driver (AC "Xinef: Always delete charm info
+    // (restores react state)"); the branch above keeps it whenever the vehicle is no longer the player's first control
+    if (IsVehicle() && GetTypeId() == TYPEID_UNIT && !ToCreature()->IsGuardian())
         DeleteCharmInfo();
 
     if (GetTypeId() == TYPEID_UNIT)
@@ -17272,6 +17291,10 @@ void Unit::ApplyResilience(Unit const* victim, int32* damage) const
 
 void Unit::ApplyPvPHealMods(Unit const* target, uint32& damage, SpellInfo const* spellInfo)
 {
+    // #702 P4: Battleground.AnyLevel.PvPScaling (off by default: returns at once) - Equal-TTK heal multiplier between
+    // two units of different levels in a battleground, one of them below its range (BattlegroundAnyLevel.cpp).
+    BattlegroundAnyLevel::ScaleHealing(this, target, damage);
+
     if (spellInfo->HasAttribute(SPELL_ATTR0_CU_IGNORE_PVP_POWER))
         return;
 
@@ -17348,37 +17371,9 @@ void Unit::SetPhaseMask(uint32 newPhaseMask, bool update)
     {
         RemoveBoundAuras(newPhaseMask, false);             // we can lost access to caster or target
 
-        // modify hostile references for new phasemask, some special cases deal with hostile references themselves
-        if (GetTypeId() == TYPEID_UNIT || (!ToPlayer()->IsGameMaster() && !ToPlayer()->GetSession()->PlayerLogout()))
-        {
-            HostileRefManager& refManager = getHostileRefManager();
-            HostileReference* ref = refManager.getFirst();
-
-            while (ref)
-            {
-                if (Unit* unit = ref->GetSource()->GetOwner())
-                    if (Creature* creature = unit->ToCreature())
-                        refManager.setOnlineOfflineState(creature, creature->InSamePhase(newPhaseMask));
-
-                ref = ref->next();
-            }
-
-            // modify threat lists for new phasemask
-            if (GetTypeId() != TYPEID_PLAYER)
-            {
-                std::list<HostileReference*> threatList = GetThreatManager().getThreatList();
-                std::list<HostileReference*> offlineThreatList = GetThreatManager().getOfflineThreatList();
-
-                // merge expects sorted lists
-                threatList.sort();
-                offlineThreatList.sort();
-                threatList.merge(offlineThreatList);
-
-                for (std::list<HostileReference*>::const_iterator itr = threatList.begin(); itr != threatList.end(); ++itr)
-                    if (Unit* unit = (*itr)->getTarget())
-                        unit->getHostileRefManager().setOnlineOfflineState(ToCreature(), unit->InSamePhase(newPhaseMask));
-            }
-        }
+// re-evaluate threat list online/offline state after the phase change
+            if (GetTypeId() == TYPEID_UNIT || (!ToPlayer()->IsGameMaster() && !ToPlayer()->GetSession()->PlayerLogout()))
+                GetThreatManager().EvaluateSuppressed(true);
     }
 
     WorldObject::SetPhaseMask(newPhaseMask, update);
@@ -17415,33 +17410,8 @@ bool Unit::SetPhased(uint32 id, bool update, bool apply)
 
     if (GetTypeId() == TYPEID_UNIT || (!ToPlayer()->IsGameMaster() && !ToPlayer()->GetSession()->PlayerLogout()))
     {
-        HostileRefManager& refManager = getHostileRefManager();
-        HostileReference* ref = refManager.getFirst();
-
-        while (ref)
-        {
-            if (Unit* unit = ref->GetSource()->GetOwner())
-                if (Creature* creature = unit->ToCreature())
-                    refManager.setOnlineOfflineState(creature, creature->IsPhased(this));
-
-            ref = ref->next();
-        }
-
-        // modify threat lists for new phasemask
-        if (GetTypeId() != TYPEID_PLAYER)
-        {
-            std::list<HostileReference*> threatList = GetThreatManager().getThreatList();
-            std::list<HostileReference*> offlineThreatList = GetThreatManager().getOfflineThreatList();
-
-            // merge expects sorted lists
-            threatList.sort();
-            offlineThreatList.sort();
-            threatList.merge(offlineThreatList);
-
-            for (std::list<HostileReference*>::const_iterator itr = threatList.begin(); itr != threatList.end(); ++itr)
-                if (Unit* unit = (*itr)->getTarget())
-                    unit->getHostileRefManager().setOnlineOfflineState(ToCreature(), unit->IsPhased(this));
-        }
+        // re-evaluate threat list online/offline state after the phase change
+        GetThreatManager().EvaluateSuppressed(true);
     }
 
     for (ControlList::const_iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr)
@@ -17472,7 +17442,10 @@ public:
     virtual bool Execute(uint64 , uint32) 
     {
         Trinity::AIRelocationNotifier notifier(m_owner);
-        m_owner.VisitNearbyObject(m_owner.GetVisibilityRange(), notifier);
+        // #72: AC Unit::ExecuteDelayedUnitAINotifyEvent (Unit.cpp:16019-16027) visits a fixed 60 yd radius, not the
+        // visibility range (90+ yd here, 2.25x the cells and creatures). MoveInLineOfSight reactions (aggro is capped
+        // well below 60 yd) are unaffected; at 1000 bots this notifier was 12-15% of the map thread.
+        m_owner.VisitNearbyObject(std::min(m_owner.GetVisibilityRange(), 60.0f), notifier);
         return true;
     }
 
@@ -17522,10 +17495,17 @@ void Unit::OnRelocated()
 void Unit::UpdateObjectVisibility(bool forced)
 {
     if (forced)
+    {
         VisibilityUpdateTask::UpdateVisibility(this);
+        // call MoveInLineOfSight for nearby creatures
+        Trinity::AIRelocationNotifier notifier(*this);
+        Cell::VisitAllObjects(this, notifier, GetVisibilityRange());
+    }
     else
+    {
         m_Events.AddEvent(new VisibilityUpdateTask(this), m_Events.CalculateTime(1));
-    AINotifyTask::ScheduleAINotify(this);
+        AINotifyTask::ScheduleAINotify(this);
+    }
 }
 
 void Unit::SendMoveKnockBack(Player* player, float speedXY, float speedZ, float vcos, float vsin)
@@ -18442,7 +18422,10 @@ void Unit::_ExitVehicle(Position const* exitPosition)
 
 bool Unit::IsFalling() const
 {
-    return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR) || movespline->isFalling();
+    // #876: AC Unit.cpp:15514-15518 - a finished (or never started) fall spline keeps its 'falling' flag until the next spline starts,
+    // so only a running one counts; without the guard a bot parked after a MoveFall stayed "falling" and LFG refused to port it.
+    return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR) ||
+        (!movespline->Finalized() && movespline->Initialized() && movespline->isFalling());
 }
 
 bool Unit::CanSwim() const
@@ -18450,7 +18433,7 @@ bool Unit::CanSwim() const
     // Mirror client behavior, if this method returns false then client will not use swimming animation and for players will apply gravity as if there was no water
     if (HasUnitFlag(UNIT_FLAG_CANNOT_SWIM))
         return false;
-    if (HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED)) // is player
+    if (HasUnitFlag(UnitFlags(UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_PVP_ATTACKABLE))) // is player (AC: POSSESSED | PLAYER_CONTROLLED 0x8, #499)
         return true;
     if (HasUnitFlag2(UNIT_FLAG2_UNUSED_6))
         return false;
@@ -18482,7 +18465,7 @@ void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusEle
     bool hasMountDisplayId = GetUInt32Value(UNIT_FIELD_MOUNT_DISPLAY_ID) != 0;
     bool hasMovementFlags = GetUnitMovementFlags() != 0;
     bool hasMovementFlags2 = GetExtraUnitMovementFlags() != 0;
-    bool hasTimestamp = mi.time;
+    bool hasTimestamp = true;
     bool hasOrientation = !G3D::fuzzyEq(GetOrientation(), 0.0f);
     bool hasTransportData = GetTransGUID() != 0;
     bool hasSpline = IsSplineEnabled();
@@ -18614,7 +18597,7 @@ void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusEle
             break;
         case MSETimestamp:
             if (hasTimestamp)
-                data << mi.time;
+                data << getMSTime();
             break;
         case MSEPositionX:
             data << GetPositionX();
@@ -18730,7 +18713,7 @@ void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusEle
     }
 }
 
-void Unit::SendTeleportPacket(Position& pos)
+void Unit::SendTeleportPacket(Position& pos, bool teleportingTransport /*= false*/)
 {
     // SMSG_MOVE_UPDATE_TELEPORT is sent to nearby players to signal the teleport
     // SMSG_MOVE_TELEPORT is sent to self in order to trigger CMSG_MOVE_TELEPORT_ACK and update the position server side
@@ -18740,6 +18723,24 @@ void Unit::SendTeleportPacket(Position& pos)
 
     if (GetTypeId() == TYPEID_UNIT)
         Relocate(&pos); // Relocate the unit to its new position in order to build the packets correctly.
+
+    // if the unit is on a transport and it is the unit (not the transport) that is teleported,
+    // recalculate the transport offset so the packet contains the correct offset
+    // #585: `pos` is the destination only for a creature. A player's caller (Player::TeleportTo, near
+    // branch) has already relocated it to the destination, stored the right offset there, and passes
+    // the PRE-teleport position, so building the offset from `pos` re-seated a passenger relative to
+    // where it stood before the teleport (a GM `.appear` onto a riding bot ended up ~5.5k yd away,
+    // swung around the boat). Build it from the destination, as TC does (SendTeleportPacket takes the
+    // teleport location); AC Unit.cpp:15568 never touches the offset here at all.
+    TransportBase* transportBase = GetDirectTransport();
+    if (!teleportingTransport && transportBase)
+    {
+        Position const& dest = GetTypeId() == TYPEID_PLAYER ? oldPos : pos;
+        float x, y, z, o;
+        dest.GetPosition(x, y, z, o);
+        transportBase->CalculatePassengerOffset(x, y, z, &o);
+        m_movementInfo.transport.pos.Relocate(x, y, z, o);
+    }
 
     WorldPacket data(SMSG_MOVE_UPDATE_TELEPORT);
     BuildTeleportUpdateData(&data);
@@ -18797,7 +18798,11 @@ bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool tel
     else if (turn)
         UpdateOrientation(orientation);
 
-    UpdatePositionData();
+    // #72 perf, AC parity (AC Unit.cpp:15586-15622 has no call here): the map relocation above already refreshes the
+    // position data - Map::PlayerRelocation and the same-cell Map::CreatureRelocation directly, a cell-changing
+    // creature in Map::MoveAllCreaturesInMoveList at the end of this map update - and a turn or an unchanged position
+    // changes nothing. The unconditional call made every moving unit pay a second full terrain query
+    // (GetFullTerrainStatusForPosition: VMAP area + liquid + dynamic tree) per spline step.
 
     return (relocated || turn);
 }
@@ -18823,11 +18828,11 @@ void Unit::UpdateHeight(float newZ)
         GetVehicleKit()->RelocatePassengers();
 }
 
-void Unit::SendThreatListUpdate()
+void Unit::SendThreatListUpdate(std::vector<std::pair<Unit*, float>> const& threats)
 {
-    if (!GetThreatManager().isThreatListEmpty())
+    if (!threats.empty())
     {
-        uint32 count = GetThreatManager().getThreatList().size();
+        uint32 count = uint32(threats.size());
 
         TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_THREAT_UPDATE Message");
 
@@ -18843,10 +18848,9 @@ void Unit::SendThreatListUpdate()
         data.WriteBit(Guid[4]);
         data.WriteBits(count, 21);
 
-        ThreatContainer::StorageType const &tlist = GetThreatManager().getThreatList();
-        for (ThreatContainer::StorageType::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
+        for (auto const& pair : threats)
         {
-            ObjectGuid unitGuid = (*itr)->getUnitGuid();
+            ObjectGuid unitGuid = pair.first->GetGUID();
             data.WriteBit(unitGuid[2]);
             data.WriteBit(unitGuid[3]);
             data.WriteBit(unitGuid[6]);
@@ -18861,9 +18865,9 @@ void Unit::SendThreatListUpdate()
 
         data.FlushBits();
 
-        for (ThreatContainer::StorageType::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
+        for (auto const& pair : threats)
         {
-            ObjectGuid unitGuid = (*itr)->getUnitGuid();
+            ObjectGuid unitGuid = pair.first->GetGUID();
             data.WriteByteSeq(unitGuid[6]);
             data.WriteByteSeq(unitGuid[7]);
             data.WriteByteSeq(unitGuid[0]);
@@ -18872,7 +18876,7 @@ void Unit::SendThreatListUpdate()
             data.WriteByteSeq(unitGuid[5]);
             data.WriteByteSeq(unitGuid[3]);
             data.WriteByteSeq(unitGuid[4]);
-            data << uint32((*itr)->getThreat());
+            data << uint32(pair.second);
         }
 
         data.WriteByteSeq(Guid[1]);
@@ -18888,15 +18892,15 @@ void Unit::SendThreatListUpdate()
     }
 }
 
-void Unit::SendChangeCurrentVictimOpcode(HostileReference* pHostileReference)
+void Unit::SendChangeCurrentVictimOpcode(Unit* victim, std::vector<std::pair<Unit*, float>> const& threats)
 {
-    if (!GetThreatManager().isThreatListEmpty())
+    if (!threats.empty())
     {
-        uint32 count = GetThreatManager().getThreatList().size();
+        uint32 count = uint32(threats.size());
 
         TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_HIGHEST_THREAT_UPDATE Message");
-        ObjectGuid unitGuid = pHostileReference->getUnitGuid();
-        ObjectGuid guid = GetGUID(); 
+        ObjectGuid unitGuid = victim->GetGUID();
+        ObjectGuid guid = GetGUID();
         WorldPacket data(SMSG_HIGHEST_THREAT_UPDATE, 8 + 8 + count * 8);
 
         data.WriteBit(unitGuid[3]);
@@ -18914,10 +18918,9 @@ void Unit::SendChangeCurrentVictimOpcode(HostileReference* pHostileReference)
         data.WriteBit(guid[4]);
         data.WriteBits(count, 21);
 
-        ThreatContainer::StorageType const &tlist = GetThreatManager().getThreatList();
-        for (ThreatContainer::StorageType::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
+        for (auto const& pair : threats)
         {
-            ObjectGuid UnitGuid = (*itr)->getUnitGuid();
+            ObjectGuid UnitGuid = pair.first->GetGUID();
             data.WriteBit(UnitGuid[6]);
             data.WriteBit(UnitGuid[1]);
             data.WriteBit(UnitGuid[0]);
@@ -18936,13 +18939,13 @@ void Unit::SendChangeCurrentVictimOpcode(HostileReference* pHostileReference)
 
         data.WriteByteSeq(guid[4]);
 
-        for (ThreatContainer::StorageType::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
+        for (auto const& pair : threats)
         {
-            ObjectGuid UnitGuid = (*itr)->getUnitGuid();
+            ObjectGuid UnitGuid = pair.first->GetGUID();
 
             data.WriteByteSeq(UnitGuid[6]);
 
-            data << uint32((*itr)->getThreat());
+            data << uint32(pair.second);
 
             data.WriteByteSeq(UnitGuid[4]);
             data.WriteByteSeq(UnitGuid[0]);
@@ -19000,11 +19003,11 @@ void Unit::SendClearThreatListOpcode()
     SendMessageToSet(&data, false);
 }
 
-void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
+void Unit::SendRemoveFromThreatListOpcode(Unit* victim)
 {
     TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_THREAT_REMOVE Message");
     ObjectGuid victimGUID = GetGUID();
-    ObjectGuid hostileGUID = pHostileReference->getUnitGuid();
+    ObjectGuid hostileGUID = victim->GetGUID();
 
     WorldPacket data(SMSG_THREAT_REMOVE, 1 + 1 + 8 + 8);
 
@@ -19102,7 +19105,11 @@ void Unit::StopAttackFaction(uint32 faction_id)
             ++itr;
     }
 
-    getHostileRefManager().deleteReferencesForFaction(faction_id);
+    auto threats = GetThreatManager().GetThreatenedByMeList();
+    for (auto const& pair : threats)
+        if (pair.second->GetOwner()->GetFactionTemplateEntry() &&
+            pair.second->GetOwner()->GetFactionTemplateEntry()->faction == faction_id)
+            pair.second->ClearThreat();
 
     for (ControlList::const_iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr)
         (*itr)->StopAttackFaction(faction_id);
@@ -19335,7 +19342,7 @@ bool CharmInfo::IsReturning()
 void Unit::SetInFront(WorldObject const* target)
 {
     if (!HasUnitState(UNIT_STATE_CANNOT_TURN))
-        UpdateOrientation(GetAngle(target));
+        SetOrientation(GetAbsoluteAngle(target));
 }
 
 void Unit::SetFacingTo(float ori)
@@ -19462,6 +19469,13 @@ bool Unit::SetCanFly(bool enable)
         AddUnitMovementFlag(MOVEMENTFLAG_CAN_FLY);
         RemoveUnitMovementFlag(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_SPLINE_ELEVATION);
         SetFall(false);
+        // A client-controlled creature that is put into flight gets full 3D
+        // control (pitch) on top of CAN_FLY. TC's 3.3.5/4.3.4 clients grant this
+        // natively for a controlled flyer; the 5.4.8 client needs the
+        // ALWAYS_ALLOW_PITCHING flag delivered, so the Eye of Acherus and similar
+        // possessed flyers can descend.
+        if (IsMovedByClient())
+            SetAlwaysAllowPitching(true);
     }
     else
     {
@@ -19474,6 +19488,31 @@ bool Unit::SetCanFly(bool enable)
         Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_FLYING, SMSG_MOVE_SET_CAN_FLY).Send();
     else
         Movement::PacketSender(this, SMSG_SPLINE_MOVE_UNSET_FLYING, SMSG_MOVE_UNSET_CAN_FLY).Send();
+
+    return true;
+}
+
+bool Unit::SetAlwaysAllowPitching(bool enable)
+{
+    if (enable == HasExtraUnitMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING))
+        return false;
+
+    if (enable)
+        AddExtraUnitMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING);
+    else
+        RemoveExtraUnitMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING);
+
+    // Push an immediate movement update straight to the controlling player so the
+    // client sees ALWAYS_ALLOW_PITCHING (hasPitch=true) right away, instead of
+    // waiting for the next grid broadcast (which cannot reach a remote mover like
+    // the Eye of Acherus, 1000+ yd from the player). Mirrors TC Master's
+    // Unit::SetAlwaysAllowPitching().
+    if (GameClient* controller = GetGameClientMovingMe())
+    {
+        WorldPacket data(SMSG_PLAYER_MOVE, 100);
+        WriteMovementInfo(data);
+        controller->SendDirectMessage(&data);
+    }
 
     return true;
 }
@@ -19598,14 +19637,59 @@ int32 Unit::GetSplineDuration() const
     return IsSplineEnabled() ? movespline->Duration() : 0;
 }
 
+// #72 perf: AC's values-update cache (AC Unit.cpp:16339-16473, Unit::PatchValuesUpdate), scoped here to ONE
+// WorldObject::BuildUpdate pass (Object.cpp), i.e. one object's VALUES block for every player that sees it in the same
+// map tick. Within that pass nothing changes the unit, so the block bytes depend only on the viewer's visibleFlag
+// (field selection, incl. UF_FLAG_PRIVATE -> valCount) plus the viewer-dependent fields written by writeField() below
+// for NPC_FLAGS, AURA_STATE, FLAGS, DISPLAY_ID, DYNAMIC_FLAGS, BYTES_2 and FACTION_TEMPLATE. The first viewer with a
+// given visibleFlag builds the block as before and records the offsets of those fields; later viewers copy the bytes
+// and patch those fields with their own values. Output is byte-identical to building per viewer. Create blocks and any
+// build outside BuildUpdate (visibility, SendUpdateToPlayer, ...) are not cached (AC also caches those; skipped here so
+// no invalidation hooks are needed and nothing can go stale).
+namespace
+{
+    struct UnitValuesUpdateCacheEntry
+    {
+        uint32 visibleFlag = 0;
+        std::vector<uint8> bytes;
+        std::vector<std::pair<uint16 /*index*/, uint32 /*offset in bytes*/>> targetFields;
+    };
+
+    struct UnitValuesUpdateCache
+    {
+        Unit const* owner = nullptr;
+        size_t used = 0;                                  // entries[0, used) are valid; the rest keep their capacity
+        std::vector<UnitValuesUpdateCacheEntry> entries;
+        ByteBuffer scratch{ 16, ByteBuffer::Reserve{} };  // one viewer-dependent field value
+    };
+
+    thread_local UnitValuesUpdateCache t_unitValuesUpdateCache;  // map threads build their own maps' updates
+
+    bool IsViewerDependentUnitField(uint16 index)
+    {
+        return index == UNIT_FIELD_NPC_FLAGS || index == UNIT_FIELD_AURA_STATE || index == UNIT_FIELD_FLAGS ||
+            index == UNIT_FIELD_DISPLAY_ID || index == OBJECT_FIELD_DYNAMIC_FLAGS || index == UNIT_FIELD_BYTES_2 ||
+            index == UNIT_FIELD_FACTION_TEMPLATE;
+    }
+}
+
+// Called by WorldObject::BuildUpdate around its per-viewer loop (declared there; no header change).
+void BeginUnitValuesUpdateCache(Unit const* unit)
+{
+    t_unitValuesUpdateCache.owner = unit;
+    t_unitValuesUpdateCache.used = 0;
+}
+
+void EndUnitValuesUpdateCache()
+{
+    t_unitValuesUpdateCache.owner = nullptr;
+    t_unitValuesUpdateCache.used = 0;
+}
+
 void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const
 {
     if (!target)
         return;
-
-    UpdateBuilder builder;
-    builder.SetSource(updateType == UPDATETYPE_VALUES ? _changesMask.GetBits() : m_uint32Values, m_valuesCount);
-    builder.SetDest(data);
 
     uint32 valCount = m_valuesCount;
 
@@ -19630,6 +19714,204 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
         valCount = PLAYER_FIELD_INV_SLOTS;
 
     Creature const* creature = ToCreature();
+
+    // Writes the value of field 'index' as this viewer sees it (unchanged per-field logic, moved into a lambda so a
+    // cached block can re-run it for the viewer-dependent fields).
+    auto writeField = [&](uint16 index, ByteBuffer* out)
+    {
+        if (index == UNIT_FIELD_NPC_FLAGS)
+        {
+            uint32 appendValue = m_uint32Values [UNIT_FIELD_NPC_FLAGS];
+
+            if (creature)
+                if (!target->CanSeeSpellClickOn(creature))
+                    appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
+
+            if (Battleground* bg = target->GetBattleground())
+                if (!bg->CanSeeSpellClick(target, this))
+                    appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
+
+            *out << uint32(appendValue);
+        }
+        else if (index == UNIT_FIELD_AURA_STATE)
+        {
+            // Check per caster aura states to not enable using a spell in client if specified aura is not by target
+            *out << BuildAuraStateUpdateForTarget(target);
+        }
+        // FIXME: Some values at server stored in float format but must be sent to client in uint32 format
+        else if (index >= UNIT_FIELD_ATTACK_ROUND_BASE_TIME && index <= UNIT_FIELD_RANGED_ATTACK_ROUND_BASE_TIME)
+        {
+            // convert from float to uint32 and send
+            *out << uint32(m_floatValues [index] < 0 ? 0 : m_floatValues [index]);
+        }
+        // there are some float values which may be negative or can't get negative due to other checks
+        else if ((index >= UNIT_FIELD_STAT_NEG_BUFF   && index <= UNIT_FIELD_STAT_NEG_BUFF + 4) ||
+                 (index >= UNIT_FIELD_RESISTANCE_BUFF_MODS_POSITIVE  && index <= (UNIT_FIELD_RESISTANCE_BUFF_MODS_POSITIVE + 6)) ||
+                 (index >= UNIT_FIELD_RESISTANCE_BUFF_MODS_NEGATIVE  && index <= (UNIT_FIELD_RESISTANCE_BUFF_MODS_NEGATIVE + 6)) ||
+                 (index >= UNIT_FIELD_STAT_POS_BUFF   && index <= UNIT_FIELD_STAT_POS_BUFF + 4))
+        {
+            *out << uint32(m_floatValues [index]);
+        }
+        // Gamemasters should be always able to select units - remove not selectable flag
+        else if (index == UNIT_FIELD_FLAGS)
+        {
+            uint32 appendValue = m_uint32Values [UNIT_FIELD_FLAGS];
+            if (target->IsGameMaster())
+                appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
+
+            *out << uint32(appendValue);
+        }
+        // use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
+        else if (index == UNIT_FIELD_DISPLAY_ID)
+        {
+            uint32 displayId = m_uint32Values [UNIT_FIELD_DISPLAY_ID];
+            if (creature)
+            {
+                CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
+
+                // this also applies for transform auras
+                if (SpellInfo const* transform = sSpellMgr->GetSpellInfo(getTransForm()))
+                    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                        if (transform->Effects [i].IsAura(SPELL_AURA_TRANSFORM))
+                            if (CreatureTemplate const* transformInfo = sObjectMgr->GetCreatureTemplate(transform->Effects [i].MiscValue))
+                            {
+                                cinfo = transformInfo;
+                                break;
+                            }
+
+                if (cinfo->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER)
+                {
+                    if (target->IsGameMaster())
+                        displayId = cinfo->GetFirstVisibleModel()->CreatureDisplayID;
+                }
+            }
+
+            *out << uint32(displayId);
+        }
+        // hide lootable animation for unallowed players
+        else if (index == OBJECT_FIELD_DYNAMIC_FLAGS)
+        {
+            uint32 dynamicFlags = m_uint32Values [OBJECT_FIELD_DYNAMIC_FLAGS] & ~(UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER);
+
+            if (creature)
+            {
+                if (creature->HasLootRecipient())
+                {
+                    dynamicFlags |= UNIT_DYNFLAG_TAPPED;
+                    if (creature->IsTappedBy(target))
+                        dynamicFlags |= UNIT_DYNFLAG_TAPPED_BY_PLAYER;
+                }
+
+                if (!target->IsAllowedToLoot(creature))
+                    dynamicFlags &= ~UNIT_DYNFLAG_LOOTABLE;
+            }
+
+            // unit UNIT_DYNFLAG_TRACK_UNIT should only be sent to caster of SPELL_AURA_MOD_STALKED auras
+            if (dynamicFlags & UNIT_DYNFLAG_TRACK_UNIT)
+                if (!HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, target->GetGUID()))
+                    dynamicFlags &= ~UNIT_DYNFLAG_TRACK_UNIT;
+
+            if (dynamicFlags & UNIT_DYNFLAG_DEAD)
+                if (HasFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH) && IsInRaidWith(target))
+                    dynamicFlags &= ~UNIT_DYNFLAG_DEAD;
+
+            *out << dynamicFlags;
+        }
+        // FG: pretend that OTHER players in own group are friendly ("blue")
+        else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTION_TEMPLATE)
+        {
+            FactionTemplateEntry const* ft1 = GetFactionTemplateEntry();
+            FactionTemplateEntry const* ft2 = target->GetFactionTemplateEntry();
+            if (IsControlledByPlayer() && target != this && (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) || target->GetGroup() && target->GetGroup()->isLFGGroup() && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_LFG)) && IsInRaidWith(target))
+            {
+                if (ft1 && ft2 && !ft1->IsFriendlyTo(*ft2))
+                {
+                    if (index == UNIT_FIELD_BYTES_2)
+                        // Allow targetting opposite faction in party when enabled in config
+                        *out << (m_uint32Values [UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
+                    else
+                        // pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
+                        *out << uint32(target->GetFaction());
+                }
+                else
+                    *out << m_uint32Values [index];
+            }
+            else if (GetMapId() == 37 && sWorld->getBoolConfig(CONFIG_ICORE_ROYALE_EVENT_ENABLED) &&  index == UNIT_FIELD_FACTION_TEMPLATE && IsControlledByPlayer() && target != this && ft1->IsFriendlyTo(*ft2))
+            {
+                // pretend that all other ALLY players have opposing team's faction
+                *out << uint32(target->GetTeamId() == TEAM_ALLIANCE ? 2 : 1);
+            }
+            else
+                *out << m_uint32Values [index];
+        }
+        else if (index >= UNIT_FIELD_SUMMONED_BY && index < UNIT_FIELD_CREATED_BY)
+        {
+            if (IsSummon() && ToTempSummon()->IsSummonedByHidden())
+                *out << 0;
+            else
+                *out << m_uint32Values[index];
+        }
+        else
+        {
+            // send in current format (float as float, uint32 as uint32)
+            *out << m_uint32Values [index];
+        }
+    };
+
+    UnitValuesUpdateCache& cache = t_unitValuesUpdateCache;
+    bool const useCache = updateType == UPDATETYPE_VALUES && cache.owner == this;
+    if (useCache)
+    {
+        for (size_t i = 0; i < cache.used; ++i)
+        {
+            UnitValuesUpdateCacheEntry const& entry = cache.entries[i];
+            if (entry.visibleFlag != visibleFlag)
+                continue;
+
+            size_t const start = data->wpos();
+            data->append(entry.bytes.data(), entry.bytes.size());
+            for (auto const& field : entry.targetFields)
+            {
+                cache.scratch.clear();
+                writeField(field.first, &cache.scratch);
+                if (cache.scratch.size() == sizeof(uint32))      // every viewer-dependent branch writes one uint32
+                    data->put(start + field.second, cache.scratch.contents(), sizeof(uint32));
+            }
+
+#ifdef LOA_VALUES_UPDATE_CACHE_VERIFY
+            // Verification build only (define it for one test run): rebuild the block uncached and compare.
+            {
+                ByteBuffer fresh;
+                cache.owner = nullptr;
+                BuildValuesUpdate(updateType, &fresh, target);
+                cache.owner = this;
+                size_t const len = data->wpos() - start;
+                if (fresh.size() != len || memcmp(fresh.contents(), data->contents() + start, len) != 0)
+                    TC_LOG_ERROR("entities.unit", "values-update cache MISMATCH: %s for viewer %s (visibleFlag 0x%X, cached %u bytes, fresh %u bytes)",
+                        GetGUID().ToString().c_str(), target->GetGUID().ToString().c_str(), visibleFlag, uint32(len), uint32(fresh.size()));
+            }
+#endif
+            return;
+        }
+    }
+
+    UnitValuesUpdateCacheEntry* newEntry = nullptr;
+    if (useCache)
+    {
+        if (cache.used == cache.entries.size())
+            cache.entries.emplace_back();
+        newEntry = &cache.entries[cache.used];
+        newEntry->visibleFlag = visibleFlag;
+        newEntry->bytes.clear();
+        newEntry->targetFields.clear();
+    }
+
+    size_t const start = data->wpos();
+
+    UpdateBuilder builder;
+    builder.SetSource(updateType == UPDATETYPE_VALUES ? _changesMask.GetBits() : m_uint32Values, m_valuesCount);
+    builder.SetDest(data);
+
     for (uint16 index = 0; index < valCount; ++index)
     {
         if (_fieldNotifyFlags & flags[index] ||
@@ -19638,151 +19920,23 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
         {
             builder.SetDestBit(index);
 
-            if (index == UNIT_FIELD_NPC_FLAGS)
-            {
-                uint32 appendValue = m_uint32Values [UNIT_FIELD_NPC_FLAGS];
+            if (newEntry && IsViewerDependentUnitField(index))
+                newEntry->targetFields.emplace_back(index, uint32(data->wpos() - start));
 
-                if (creature)
-                    if (!target->CanSeeSpellClickOn(creature))
-                        appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
-
-                if (Battleground* bg = target->GetBattleground())
-                    if (!bg->CanSeeSpellClick(target, this))
-                        appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
-
-                *data << uint32(appendValue);
-            }
-            else if (index == UNIT_FIELD_AURA_STATE)
-            {
-                // Check per caster aura states to not enable using a spell in client if specified aura is not by target
-                *data << BuildAuraStateUpdateForTarget(target);
-            }
-            // FIXME: Some values at server stored in float format but must be sent to client in uint32 format
-            else if (index >= UNIT_FIELD_ATTACK_ROUND_BASE_TIME && index <= UNIT_FIELD_RANGED_ATTACK_ROUND_BASE_TIME)
-            {
-                // convert from float to uint32 and send
-                *data << uint32(m_floatValues [index] < 0 ? 0 : m_floatValues [index]);
-            }
-            // there are some float values which may be negative or can't get negative due to other checks
-            else if ((index >= UNIT_FIELD_STAT_NEG_BUFF   && index <= UNIT_FIELD_STAT_NEG_BUFF + 4) ||
-                     (index >= UNIT_FIELD_RESISTANCE_BUFF_MODS_POSITIVE  && index <= (UNIT_FIELD_RESISTANCE_BUFF_MODS_POSITIVE + 6)) ||
-                     (index >= UNIT_FIELD_RESISTANCE_BUFF_MODS_NEGATIVE  && index <= (UNIT_FIELD_RESISTANCE_BUFF_MODS_NEGATIVE + 6)) ||
-                     (index >= UNIT_FIELD_STAT_POS_BUFF   && index <= UNIT_FIELD_STAT_POS_BUFF + 4))
-            {
-                *data << uint32(m_floatValues [index]);
-            }
-            // Gamemasters should be always able to select units - remove not selectable flag
-            else if (index == UNIT_FIELD_FLAGS)
-            {
-                uint32 appendValue = m_uint32Values [UNIT_FIELD_FLAGS];
-                if (target->IsGameMaster())
-                    appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
-
-                *data << uint32(appendValue);
-            }
-            // use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
-            else if (index == UNIT_FIELD_DISPLAY_ID)
-            {
-                uint32 displayId = m_uint32Values [UNIT_FIELD_DISPLAY_ID];
-                if (creature)
-                {
-                    CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
-
-                    // this also applies for transform auras
-                    if (SpellInfo const* transform = sSpellMgr->GetSpellInfo(getTransForm()))
-                        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-                            if (transform->Effects [i].IsAura(SPELL_AURA_TRANSFORM))
-                                if (CreatureTemplate const* transformInfo = sObjectMgr->GetCreatureTemplate(transform->Effects [i].MiscValue))
-                                {
-                                    cinfo = transformInfo;
-                                    break;
-                                }
-
-                    if (cinfo->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER)
-                    {
-                        if (target->IsGameMaster())
-                            displayId = cinfo->GetFirstVisibleModel()->CreatureDisplayID;
-                    }
-                }
-
-                *data << uint32(displayId);
-            }
-            // hide lootable animation for unallowed players
-            else if (index == OBJECT_FIELD_DYNAMIC_FLAGS)
-            {
-                uint32 dynamicFlags = m_uint32Values [OBJECT_FIELD_DYNAMIC_FLAGS] & ~(UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER);
-
-                if (creature)
-                {
-                    if (creature->HasLootRecipient())
-                    {
-                        dynamicFlags |= UNIT_DYNFLAG_TAPPED;
-                        if (creature->IsTappedBy(target))
-                            dynamicFlags |= UNIT_DYNFLAG_TAPPED_BY_PLAYER;
-                    }
-
-                    if (!target->IsAllowedToLoot(creature))
-                        dynamicFlags &= ~UNIT_DYNFLAG_LOOTABLE;
-                }
-
-                // unit UNIT_DYNFLAG_TRACK_UNIT should only be sent to caster of SPELL_AURA_MOD_STALKED auras
-                if (dynamicFlags & UNIT_DYNFLAG_TRACK_UNIT)
-                    if (!HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, target->GetGUID()))
-                        dynamicFlags &= ~UNIT_DYNFLAG_TRACK_UNIT;
-
-                if (dynamicFlags & UNIT_DYNFLAG_DEAD)
-                    if (HasFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH) && IsInRaidWith(target))
-                        dynamicFlags &= ~UNIT_DYNFLAG_DEAD;
-
-                *data << dynamicFlags;
-            }
-            // FG: pretend that OTHER players in own group are friendly ("blue")
-            else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTION_TEMPLATE)
-            {
-                FactionTemplateEntry const* ft1 = GetFactionTemplateEntry();
-                FactionTemplateEntry const* ft2 = target->GetFactionTemplateEntry();
-                if (IsControlledByPlayer() && target != this && (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) || target->GetGroup() && target->GetGroup()->isLFGGroup() && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_LFG)) && IsInRaidWith(target))
-                {
-                    if (ft1 && ft2 && !ft1->IsFriendlyTo(*ft2))
-                    {
-                        if (index == UNIT_FIELD_BYTES_2)
-                            // Allow targetting opposite faction in party when enabled in config
-                            *data << (m_uint32Values [UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
-                        else
-                            // pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
-                            *data << uint32(target->GetFaction());
-                    }
-                    else
-                        *data << m_uint32Values [index];
-                }
-                else if (GetMapId() == 37 && sWorld->getBoolConfig(CONFIG_ICORE_ROYALE_EVENT_ENABLED) &&  index == UNIT_FIELD_FACTION_TEMPLATE && IsControlledByPlayer() && target != this && ft1->IsFriendlyTo(*ft2))
-                {
-                    // pretend that all other ALLY players have opposing team's faction
-                    *data << uint32(target->GetTeamId() == TEAM_ALLIANCE ? 2 : 1);
-                }
-                else
-                    *data << m_uint32Values [index];
-            }
-            else if (index >= UNIT_FIELD_SUMMONED_BY && index < UNIT_FIELD_CREATED_BY)
-            {
-                if (IsSummon() && ToTempSummon()->IsSummonedByHidden())
-                    *data << 0;
-                else
-                    *data << m_uint32Values[index];
-            }
-            else
-            {
-                // send in current format (float as float, uint32 as uint32)
-                *data << m_uint32Values [index];
-            }
+            writeField(index, data);
         }
     }
 
     builder.Finish();
 
     BuildDynamicValuesUpdate(updateType, data);
-}
 
+    if (newEntry)
+    {
+        newEntry->bytes.assign(data->contents() + start, data->contents() + data->wpos());
+        ++cache.used;
+    }
+}
 void Unit::Talk(std::string const& text, ChatMsg msgType, Language language, float textRange, WorldObject const* target)
 {
     Trinity::CustomChatTextBuilder builder(this, msgType, text, language, target);
@@ -20196,9 +20350,9 @@ float Unit::GetScallingDamageMod() const
     // calculate celestials scalling mod
     if (GetEntry() == 71955 || GetEntry() == 71953 || GetEntry() == 71952 || GetEntry() == 71954)
     {
-        auto threatList = const_cast<Unit*>(this)->GetThreatManager().getThreatList();
-        for (auto&& itr : threatList)
-            if (Unit* unit = ObjectAccessor::GetUnit(*this, itr->getUnitGuid()))
+        auto threatList = const_cast<Unit*>(this)->GetThreatManager().GetUnsortedThreatList();
+        for (auto&& ref : threatList)
+            if (Unit* unit = ObjectAccessor::GetUnit(*this, ref->GetVictim()->GetGUID()))
                 if (unit->GetTypeId() == TYPEID_PLAYER && unit->IsWithinDist(this, 100.0f))
                     members++;
     }

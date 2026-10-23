@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -27,11 +27,13 @@
 #include "GuildMgr.h"
 #include "Language.h"
 #include "Log.h"
+#include "RBAC.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
 #include "Opcodes.h"
 #include "Realm.h"
 #include "ReputationMgr.h"
+#include <mutex>
 
 #define MAX_GUILD_BANK_TAB_TEXT_LEN 500
 #define EMBLEM_PRICE 10 * GOLD
@@ -842,7 +844,7 @@ bool Guild::Member::LoadFromDB(Field* fields)
             {
                 recipes.resize(300, 0);
                 SkillLineEntry const* skill = sSkillLineStore.LookupEntry(skillId);
-                if (skill && skill->canLink)
+                if (skill && skill->CanLink)
                 {
                     recipes = LoadProfessionRecipesData(skillId, value);
                     needsProfessionSave = true;
@@ -951,7 +953,7 @@ std::vector<uint8> Guild::Member::LoadProfessionRecipesData(uint32 skillId, uint
     data.resize(300, 0);
 
     SkillLineEntry const* skill = sSkillLineStore.LookupEntry(skillId);
-    if (!skill || !skill->canLink)
+    if (!skill || !skill->CanLink)
         return data;
 
     std::set<uint32> spells;
@@ -970,7 +972,7 @@ std::vector<uint8> Guild::Member::LoadProfessionRecipesData(uint32 skillId, uint
     {
         if (SkillLineAbilityEntry const* ability = sSkillLineAbilityStore.LookupEntry(j))
         {
-            if (ability->skillId == skillId && (ability->learnOnGetSkill == ABILITY_LEARNED_ON_GET_PROFESSION_SKILL && value >= ability->req_skill_value || spells.find(ability->spellId) != spells.end()))
+            if (ability->SkillLine == skillId && (ability->AcquireMethod == ABILITY_LEARNED_ON_GET_PROFESSION_SKILL && value >= ability->MinSkillLineRank || spells.find(ability->Spell) != spells.end()))
             {
                 uint32 byte = ability->bitOrder / 8;
                 if (byte < 300)
@@ -1223,7 +1225,7 @@ void Guild::BankMoveItemData::LogAction(MoveItemData* pFrom, bool split) const
     MoveItemData::LogAction(pFrom, split);
     if (!pFrom->IsBank()) /// @todo Move this to scripts
     {
-        if (sWorld->getBoolConfig(CONFIG_GM_LOG_TRADE) && m_pPlayer->GetSession()->GetSecurity() > SEC_PLAYER)
+        if (m_pPlayer->GetSession()->HasPermission(rbac::RBAC_PERM_LOG_GM_TRADE))
             sLog->outCommand(m_pPlayer->GetSession()->GetAccountId(),
             "GM %s (Guid: %u) (Account: %u) deposit item: %s (Entry: %d Count: %u) to guild bank named: %s (Guild ID: %u)",
             m_pPlayer->GetName().c_str(), m_pPlayer->GetGUID().GetCounter(), m_pPlayer->GetSession()->GetAccountId(),
@@ -2463,7 +2465,7 @@ void Guild::HandleMemberDepositMoney(WorldSession* session, uint64 amount, bool 
 
     SendEventBankMoneyChanged();
 
-    if (sWorld->getBoolConfig(CONFIG_GM_LOG_TRADE) && player->GetSession()->GetSecurity() > SEC_PLAYER)
+    if (player->GetSession()->HasPermission(rbac::RBAC_PERM_LOG_GM_TRADE))
     {
         sLog->outCommand(player->GetSession()->GetAccountId(),
             "GM %s (Account: %u) deposit money (Amount: " UI64FMTD ") to guild bank (Guild ID %u)",
@@ -4142,6 +4144,35 @@ void Guild::SendGuildRanksUpdate(ObjectGuid setterGuid, Member* member, bool pro
         member->GetGUID().GetCounter(), setterGuid.GetCounter(), member->GetRankId());
 }
 
+// LoA upstream #455 (4a68016): GiveXP() runs on a map-update thread (quest rewards); with MapUpdate.Threads > 1 a
+// level up walked members on other maps (SetGuildLevel -> AddToUpdate into THEIR map) while those maps updated.
+// GiveXP() now only queues; World::Update applies the queue on the world thread after the maps are updated.
+namespace
+{
+    struct PendingGuildXP
+    {
+        uint64 xp = 0;
+        ObjectGuid source;
+    };
+
+    std::mutex pendingGuildXPLock;
+    std::unordered_map<uint32, PendingGuildXP> pendingGuildXP;
+}
+
+void Guild::ProcessPendingXP()
+{
+    std::unordered_map<uint32, PendingGuildXP> pending;
+    {
+        std::lock_guard<std::mutex> guard(pendingGuildXPLock);
+        pending.swap(pendingGuildXP);
+    }
+
+    for (auto const& entry : pending)
+        if (Guild* guild = sGuildMgr->GetGuildById(entry.first))
+            guild->ApplyXP(uint32(std::min<uint64>(entry.second.xp, std::numeric_limits<uint32>::max())),
+                ObjectAccessor::FindConnectedPlayer(entry.second.source));
+}
+
 void Guild::GiveXP(uint32 xp, Player* source)
 {
     if (!sWorld->getBoolConfig(CONFIG_GUILD_LEVELING_ENABLED))
@@ -4158,10 +4189,19 @@ void Guild::GiveXP(uint32 xp, Player* source)
     if (source)
         source->GetSession()->SendPacket(&data);
 
-    _experience += xp;
-
     if (!xp)
         return;
+
+    std::lock_guard<std::mutex> guard(pendingGuildXPLock);
+    PendingGuildXP& pending = pendingGuildXP[GetId()];
+    pending.xp += xp;
+    if (source)
+        pending.source = source->GetGUID();
+}
+
+void Guild::ApplyXP(uint32 xp, Player* source)
+{
+    _experience += xp;
 
     uint32 oldLevel = GetLevel();
 
@@ -4424,7 +4464,7 @@ void Guild::HandleQueryGuildRecipes(WorldSession* session)
 void Guild::HandleQueryGuildMembersForRecipe(WorldSession* session, uint32 spellId, uint32 skillId, uint32 skillValue)
 {
     SkillLineEntry const* skill = sSkillLineStore.LookupEntry(skillId);
-    if (!skill || !skill->canLink)
+    if (!skill || !skill->CanLink)
         return;
 
     uint32 byte = 0, bit = 0;
@@ -4432,7 +4472,7 @@ void Guild::HandleQueryGuildMembersForRecipe(WorldSession* session, uint32 spell
     {
         if (SkillLineAbilityEntry const* ability = sSkillLineAbilityStore.LookupEntry(j))
         {
-            if (ability->skillId == skillId && ability->spellId == spellId)
+            if (ability->SkillLine == skillId && ability->Spell == spellId)
             {
                 byte = ability->bitOrder / 8;
                 if (byte < 300)

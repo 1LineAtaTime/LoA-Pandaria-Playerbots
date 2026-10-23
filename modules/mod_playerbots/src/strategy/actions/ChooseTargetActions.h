@@ -35,6 +35,16 @@ public:
     std::string const GetTargetName() override { return "tank target"; }
 };
 
+// #269 (AC ChooseTargetActions.h:39-46): was missing from this fork entirely. No travel dependency.
+class AggressiveTargetAction : public AttackAction
+{
+public:
+    AggressiveTargetAction(PlayerbotAI* botAI) : AttackAction(botAI, "aggressive target") {}
+
+    std::string const GetTargetName() override { return "aggressive target"; }
+    bool isUseful() override;
+};
+
 class AttackAnythingAction : public AttackAction
 {
 public:

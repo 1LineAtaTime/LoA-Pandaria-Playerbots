@@ -25,6 +25,12 @@ EndScriptData */
 /* ContentData
 EndContentData */
 
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedEscortAI.h"
+#include "ObjectAccessor.h"
+#include "Player.h"
+
 enum eQuests
 {
     QUEST_SCHOLOMANCER = 27162,
@@ -208,9 +214,128 @@ class spell_shadow_prison_gandling : public AuraScript
     }
 };
 
+/*######
+## npc_anchorite_truuen
+######*/
+
+enum Truuen
+{
+    NPC_GHOST_UTHER             = 17233,
+    NPC_THEL_DANIS              = 1854,
+    NPC_GHOUL                   = 1791,     // ambush
+
+    QUEST_TOMB_LIGHTBRINGER     = 9446,
+
+    SAY_WP_0                    = 0,        // Beware! We are attacked!
+    SAY_WP_1                    = 1,        // It must be the purity of the Mark of the Lightbringer that is drawing forth the Scourge ...
+    SAY_WP_2                    = 2,        // This land truly needs to be cleansed by the Light! ...
+    SAY_WP_3                    = 0,        // Thel'danis: Be welcome, friends!
+    SAY_WP_4                    = 0,        // Uther: Thank you for coming here in remembrance of me. ...
+    SAY_WP_5                    = 1,        // Uther: Please, rise my friend. Keep the Blessing ...
+    SAY_WP_6                    = 2         // Uther: Thank you my friend for making this possible. ...
+};
+
+class npc_anchorite_truuen : public CreatureScript
+{
+public:
+    npc_anchorite_truuen() : CreatureScript("npc_anchorite_truuen") { }
+
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_TOMB_LIGHTBRINGER)
+        {
+            if (npc_anchorite_truuenAI* pEscortAI = CAST_AI(npc_anchorite_truuen::npc_anchorite_truuenAI, creature->AI()))
+                pEscortAI->Start(true, true, player->GetGUID());
+        }
+        return false;
+    }
+
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return new npc_anchorite_truuenAI(creature);
+    }
+
+    struct npc_anchorite_truuenAI : public npc_escortAI
+    {
+        npc_anchorite_truuenAI(Creature* creature) : npc_escortAI(creature) { }
+
+        ObjectGuid UghostGUID;
+
+        void Reset() override { }
+
+        void JustSummoned(Creature* summoned) override
+        {
+            if (summoned->GetEntry() == NPC_GHOUL)
+                summoned->AI()->AttackStart(me);
+        }
+
+        void SummonGhoul(float offset)
+        {
+            me->SummonCreature(NPC_GHOUL, me->GetPositionX() + offset, me->GetPositionY() + offset, me->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 90s);
+        }
+
+        void WaypointReached(uint32 waypointId) override
+        {
+            Player* player = GetPlayerForEscort();
+
+            switch (waypointId)
+            {
+                case 8:
+                    Talk(SAY_WP_0);
+                    SummonGhoul(7.0f);
+                    SummonGhoul(5.0f);
+                    break;
+                case 9:
+                    Talk(SAY_WP_1);
+                    break;
+                case 14:
+                    SummonGhoul(7.0f);
+                    SummonGhoul(5.0f);
+                    SummonGhoul(10.0f);
+                    SummonGhoul(8.0f);
+                    break;
+                case 15:
+                    Talk(SAY_WP_2);
+                    break;
+                case 21:
+                    if (Creature* theldanis = me->FindNearestCreature(NPC_THEL_DANIS, 150.0f))
+                        theldanis->AI()->Talk(SAY_WP_3);
+                    break;
+                case 23:
+                    if (Creature* ughost = me->SummonCreature(NPC_GHOST_UTHER, 971.86f, -1825.42f, 81.99f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30s))
+                    {
+                        UghostGUID = ughost->GetGUID();
+                        ughost->SetDisableGravity(true);
+                        ughost->AI()->Talk(SAY_WP_4, me);
+                    }
+                    break;
+                case 24:
+                    if (Creature* ughost = ObjectAccessor::GetCreature(*me, UghostGUID))
+                        ughost->AI()->Talk(SAY_WP_5, me);
+                    break;
+                case 25:
+                    if (Creature* ughost = ObjectAccessor::GetCreature(*me, UghostGUID))
+                        ughost->AI()->Talk(SAY_WP_6, me);
+                    break;
+                case 26:
+                    if (player)
+                        player->GroupEventHappens(QUEST_TOMB_LIGHTBRINGER, me);
+                    break;
+            }
+        }
+
+        void JustDied(Unit* /*killer*/) override
+        {
+            if (Player* player = GetPlayerForEscort())
+                player->FailQuest(QUEST_TOMB_LIGHTBRINGER);
+        }
+    };
+};
+
 void AddSC_western_plaguelands()
 {
     new creature_script<npc_dark_master_gandling_quest>("npc_dark_master_gandling_quest");
     new npc_thassarian_quest();
     new aura_script<spell_shadow_prison_gandling>("spell_shadow_prison_gandling");
+    new npc_anchorite_truuen();
 }

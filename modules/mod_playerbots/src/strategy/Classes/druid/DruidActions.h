@@ -18,10 +18,14 @@ public:
     CastFaerieFireAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "faerie fire") {}
 };
 
+// #384: 5.x has one Faerie Fire (770); "faerie fire (feral)" is NO-SUCH-NAME in the 5.4.8 DBC (cls.py), and
+// SpellIdValue matches spells by exact name, so the old string could never resolve. The action keeps its
+// registry/log name via getName().
 class CastFaerieFireFeralAction : public CastSpellAction
 {
 public:
-    CastFaerieFireFeralAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "faerie fire (feral)") {}
+    CastFaerieFireFeralAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "faerie fire") {}
+    std::string const getName() override { return "faerie fire (feral)"; }
 };
 
 class CastRejuvenationAction : public CastHealingSpellAction
@@ -134,6 +138,18 @@ public:
     CastOmenOfClarityAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "omen of clarity") {}
 };
 
+// #363 (AC parity, Ai/Class/Druid/Action/DruidActions.h:139-145): Lifebloom on the main tank. AC
+// re-seeds when the bloom is missing, below 3 stacks, or about to expire. Body in the .cpp -
+// Aura::GetStackAmount()/GetDuration() need SpellAuras.h, which the header TU does not pull in
+// (hard rule 7/2).
+class CastLifebloomOnMainTankAction : public BuffOnMainTankAction
+{
+public:
+    CastLifebloomOnMainTankAction(PlayerbotAI* botAI) : BuffOnMainTankAction(botAI, "lifebloom", true) {}
+
+    bool isUseful() override;
+};
+
 class CastWrathAction : public CastSpellAction
 {
 public:
@@ -159,10 +175,13 @@ public:
     CastMoonfireAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "moonfire", true) {}
 };
 
+// #384: Insect Swarm (5570) is NOT-LEARNABLE in 5.4.8; Sunfire (93402, balance, level 18) replaces it (Wowhead
+// mop-classic 93402, 2026-10-04). getName() keeps the AC registry/log name.
 class CastInsectSwarmAction : public CastDebuffSpellAction
 {
 public:
-    CastInsectSwarmAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "insect swarm", true) {}
+    CastInsectSwarmAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "sunfire", true) {}
+    std::string const getName() override { return "insect swarm"; }
 };
 
 class CastStarfireAction : public CastSpellAction
@@ -199,37 +218,63 @@ public:
     bool Execute(Event event) override;
 };
 
+// #163 S8 (AC parity, Ai/Class/Druid/DruidActions.h:222): Cyclone, unchanged since introduction -
+// 5.4.8 spell id 33786. Same pattern as CastHibernateAction/CastHibernateCcAction above.
+class CastCycloneAction : public CastSpellAction
+{
+public:
+    CastCycloneAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "cyclone") {}
+};
+
+class CastCycloneCcAction : public CastSpellAction
+{
+public:
+    CastCycloneCcAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "cyclone on cc") {}
+    Value<Unit*>* GetTargetValue() override;
+    bool Execute(Event event) override;
+};
+
 class CastNaturesGraspAction : public CastBuffSpellAction
 {
 public:
     CastNaturesGraspAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "nature's grasp") {}
 };
 
+// #384: Cure Poison (cls.py: NOT-LEARNABLE, ids 26677) and Abolish Poison (14253) are gone in 5.4.8. Their 5.x
+// successor is Remove Corruption (2782; spec102/103/104 level 22; removes Curse + Poison) for balance/feral/guardian
+// and Nature's Cure (88423; spec105 level 22; Magic + Curse + Poison) for restoration - Wowhead mop-classic 2782 and
+// 88423, 2026-10-04. DruidDispelSpell() picks whichever one this bot knows (defined in DruidActions.cpp). The
+// actions keep their AC registry/log names via getName(), so every strategy edge and the party-dispel triggers are
+// unchanged.
+std::string const DruidDispelSpell(PlayerbotAI* botAI);
+
 class CastCurePoisonAction : public CastCureSpellAction
 {
 public:
-    CastCurePoisonAction(PlayerbotAI* botAI) : CastCureSpellAction(botAI, "cure poison") {}
+    CastCurePoisonAction(PlayerbotAI* botAI);
+    std::string const getName() override { return "cure poison"; }
 };
 
 class CastCurePoisonOnPartyAction : public CurePartyMemberAction
 {
 public:
-    CastCurePoisonOnPartyAction(PlayerbotAI* botAI) : CurePartyMemberAction(botAI, "cure poison", DISPEL_POISON) {}
+    CastCurePoisonOnPartyAction(PlayerbotAI* botAI);
+    std::string const getName() override { return "cure poison on party"; }
 };
 
 class CastAbolishPoisonAction : public CastCureSpellAction
 {
 public:
-    CastAbolishPoisonAction(PlayerbotAI* botAI) : CastCureSpellAction(botAI, "abolish poison") {}
+    CastAbolishPoisonAction(PlayerbotAI* botAI);
+    std::string const getName() override { return "abolish poison"; }
     NextAction** getAlternatives() override;
 };
 
 class CastAbolishPoisonOnPartyAction : public CurePartyMemberAction
 {
 public:
-    CastAbolishPoisonOnPartyAction(PlayerbotAI* botAI) : CurePartyMemberAction(botAI, "abolish poison", DISPEL_POISON)
-    {
-    }
+    CastAbolishPoisonOnPartyAction(PlayerbotAI* botAI);
+    std::string const getName() override { return "abolish poison on party"; }
 
     NextAction** getAlternatives() override;
 };
@@ -246,6 +291,19 @@ public:
     CastInnervateAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "innervate") {}
 
     std::string const GetTargetName() override { return "self target"; }
+};
+
+// #363 (AC parity, Ai/Class/Druid/Action/DruidActions.h:278-286): Innervate handed to the party
+// healer who is low on mana, instead of self-buffing. The target value is the shared
+// "healer low mana" (strategy/value/ValueContext.h:209, strategy/triggers/TriggerContext.h:52).
+class CastInnervateOnHealerAction : public CastSpellAction
+{
+public:
+    CastInnervateOnHealerAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "innervate") {}
+
+    std::string const GetTargetName() override { return "healer low mana"; }
+    bool isPossible() override;
+    NextAction** getPrerequisites() override;
 };
 
 class CastTranquilityAction : public CastAoeHealSpellAction
@@ -287,16 +345,21 @@ public:
     CastPartyNourishAction(PlayerbotAI* ai) : HealPartyMemberAction(ai, "nourish", 25.0f, HealingManaEfficiency::LOW) {}
 };
 
+// #384: "remove curse" was the 3.3.5 druid spell (it is a mage spell in 5.4.8); the druid's curse dispel is
+// Remove Corruption / Nature's Cure (see DruidDispelSpell above).
 class CastDruidRemoveCurseOnPartyAction : public CurePartyMemberAction
 {
 public:
-    CastDruidRemoveCurseOnPartyAction(PlayerbotAI* ai) : CurePartyMemberAction(ai, "remove curse", DISPEL_CURSE) {}
+    CastDruidRemoveCurseOnPartyAction(PlayerbotAI* ai);
+    std::string const getName() override { return "remove curse on party"; }
 };
 
+// #384: Insect Swarm -> Sunfire (93402), see InsectSwarmTrigger in DruidTriggers.h. getName() keeps the AC name.
 class CastInsectSwarmOnAttackerAction : public CastDebuffSpellOnAttackerAction
 {
 public:
-    CastInsectSwarmOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "insect swarm") {}
+    CastInsectSwarmOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "sunfire") {}
+    std::string const getName() override { return "insect swarm on attacker"; }
 };
 
 class CastMoonfireOnAttackerAction : public CastDebuffSpellOnAttackerAction
@@ -327,6 +390,114 @@ class CastForceOfNatureAction : public CastSpellAction
 {
 public:
     CastForceOfNatureAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "force of nature") {}
+};
+
+// #363 (AC parity, Ai/Class/Druid/Action/DruidActions.h:169-175): Typhoon knocks up everything
+// within 15 yards, so AC only fires it when facing and already in melee range.
+class CastTyphoonAction : public CastSpellAction
+{
+public:
+    CastTyphoonAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "typhoon") {}
+
+    ActionThreatType getThreatType() override { return ActionThreatType::Aoe; }
+    bool isUseful() override;
+};
+
+// Base for blanket HoT actions (#363, AC parity, Ai/Class/Druid/Action/DruidActions.h:372-382).
+// GetBlanketTarget() is a member so subclasses can use AI_VALUE and the standard context
+// machinery, exactly as AC does.
+class CastBlanketHotAction : public CastSpellAction
+{
+public:
+    CastBlanketHotAction(PlayerbotAI* ai, std::string const& spell) : CastSpellAction(ai, spell)
+    {
+        range = botAI->GetRange("heal");
+    }
+
+protected:
+    Unit* GetBlanketTarget(std::string const& auraName);
+};
+
+// #363 (AC parity, Ai/Class/Druid/Action/DruidActions.h:384-391). NOTE: the ACTION "rejuvenation
+// blanket" shares its name with the unrelated TRIGGER of the same name (AC registers the trigger
+// at DruidAiObjectContext.cpp:187 and the action at :288); getName() disambiguates the action.
+class CastRejuvenationBlanketAction : public CastBlanketHotAction
+{
+public:
+    CastRejuvenationBlanketAction(PlayerbotAI* ai) : CastBlanketHotAction(ai, "rejuvenation") {}
+
+    bool isUseful() override;
+    Unit* GetTarget() override;
+    std::string const getName() override { return "rejuvenation blanket"; }
+};
+
+// #363 (AC parity, Ai/Class/Druid/Action/DruidActions.h:393-400). Same name collision as above
+// with the "wild growth blanket" TRIGGER (AC :188 vs :289).
+class CastWildGrowthBlanketAction : public CastBlanketHotAction
+{
+public:
+    CastWildGrowthBlanketAction(PlayerbotAI* ai) : CastBlanketHotAction(ai, "wild growth") {}
+
+    bool isUseful() override;
+    Unit* GetTarget() override;
+    std::string const getName() override { return "wild growth blanket"; }
+};
+
+
+// ---- Rotation lane 5 (#860, epic #854): MoP druid rotation ports. Every spell name resolves in the 5.4.8 Spell.dbc
+// (spellname.py mop: 78674 Starsurge, 112071 Celestial Alignment, 124974 Nature's Vigil, 106922 Might of Ursoc, 62606
+// Savage Defense, 102342 Ironbark, 106839 Skull Bash).
+// MoP rotation row 10205 (spec 102, prio group 0/4): Starsurge.
+class CastStarsurgeAction : public CastSpellAction
+{
+public:
+    CastStarsurgeAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "starsurge") {}
+};
+
+// MoP rotation row 10213/10218 (spec 102, prio group 5/1): Celestial Alignment cooldown.
+class CastCelestialAlignmentAction : public CastBuffSpellAction
+{
+public:
+    CastCelestialAlignmentAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "celestial alignment") {}
+};
+
+// MoP rotation row 10214 (spec 102) / 10410 (spec 104), prio group 5/1: Nature's Vigil cooldown.
+class CastNaturesVigilAction : public CastBuffSpellAction
+{
+public:
+    CastNaturesVigilAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "nature's vigil") {}
+};
+
+// MoP rotation row 1100 (class row, all specs, prio group 5/0): Might of Ursoc at health <= 25%.
+class CastMightOfUrsocAction : public CastBuffSpellAction
+{
+public:
+    CastMightOfUrsocAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "might of ursoc") {}
+};
+
+// MoP rotation row 10417 (spec 104, prio group 5/1): Savage Defense at rage >= 80.
+class CastSavageDefenseAction : public CastBuffSpellAction
+{
+public:
+    CastSavageDefenseAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "savage defense") {}
+};
+
+// MoP rotation row 10505 (spec 105, prio group 1/13): Ironbark on the tank at health <= 40%.
+class CastIronbarkOnMainTankAction : public BuffOnMainTankAction
+{
+public:
+    CastIronbarkOnMainTankAction(PlayerbotAI* botAI) : BuffOnMainTankAction(botAI, "ironbark") {}
+};
+
+// MoP rotation row 26 (spec 103, prio group 10/2) + 10421 (spec 104): Skull Bash on a casting enemy. The
+// shared "enemy caster target" value (lane 0, #855) scans every hostile in range, so the edge is limited to
+// battlegrounds and arenas ("in pvp instance", rogue lane pattern); open-world cat/bear keep AC's current-target "bash".
+class CastSkullBashOnEnemyCasterAction : public CastSpellOnEnemyCasterAction
+{
+public:
+    CastSkullBashOnEnemyCasterAction(PlayerbotAI* botAI) : CastSpellOnEnemyCasterAction(botAI, "skull bash") {}
+
+    bool isUseful() override;
 };
 
 #endif

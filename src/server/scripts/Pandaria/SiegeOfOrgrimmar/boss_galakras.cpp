@@ -315,7 +315,7 @@ class boss_galakras : public CreatureScript
                 me->UpdateMovementFlags();
 
                 scheduler
-                    .Schedule(Milliseconds(1500), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(1500), [this](TaskContext context)
                 {
                     if (Creature* zeala = me->SummonCreature(NPC_ZAELA, *me, TEMPSUMMON_MANUAL_DESPAWN))
                         zeala->CastSpell(me, VEHICLE_SPELL_RIDE_HARDCODED, true);
@@ -341,14 +341,14 @@ class boss_galakras : public CreatureScript
                 hasPreEventDone = true;
 
                 scheduler
-                    .Schedule(Milliseconds(2500), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(2500), [this](TaskContext context)
                 {
                     if (Creature* zaela = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_ZAELA) : ObjectGuid::Empty))
                         zaela->AI()->Talk(TALK_INTRO);
                 });
 
                 scheduler
-                    .Schedule(Milliseconds(19500), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(19500), [this](TaskContext context)
                 {
                     if (Creature* zaela = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_ZAELA) : ObjectGuid::Empty))
                         zaela->AI()->Talk(TALK_SPECIAL_1);
@@ -446,7 +446,7 @@ class boss_galakras : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (hasEvade)
                     return;
@@ -972,7 +972,7 @@ struct npc_master_cannoneer_dagryn : public ScriptedAI
             galakras->AI()->SetData(TYPE_NORTH_TOWER_INFLUENCE_COUNT, 40);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -1008,25 +1008,25 @@ struct npc_master_cannoneer_dagryn : public ScriptedAI
 
                     uint32 delay = me->GetSplineDuration();
                     scheduler
-                        .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay), [this](TaskContext context)
                     {
                         me->PrepareChanneledCast(frand(0.0f, 2 * M_PI), SPELL_MUZZLE_SPRAY);
                     });
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 4500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 4500), [this](TaskContext context)
                     {
                         me->PrepareChanneledCast(frand(0.0f, 2 * M_PI), SPELL_MUZZLE_SPRAY);
                     });
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 4500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 4500), [this](TaskContext context)
                     {
                         me->PrepareChanneledCast(frand(0.0f, 2 * M_PI), SPELL_MUZZLE_SPRAY);
                     });
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 4500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 4500), [this](TaskContext context)
                     {
                         me->RemoveChanneledCast(targetGUID);
                     });
@@ -1056,7 +1056,7 @@ struct npc_high_enforcer_thranok : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER))
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -1163,7 +1163,7 @@ struct npc_lieutenant_krugruk : public ScriptedAI
             galakras->AI()->SetData(TYPE_SOUTH_TOWER_INFLUENCE_COUNT, 40);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -1197,25 +1197,25 @@ struct npc_lieutenant_krugruk : public ScriptedAI
 
                     uint32 delay = me->GetSplineDuration();
                     scheduler
-                        .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay), [this](TaskContext context)
                     {
                         me->PrepareChanneledCast(frand(0.0f, 2 * M_PI), SPELL_ARCING_SMASH);
                     });
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 2500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 2500), [this](TaskContext context)
                     {
                         me->PrepareChanneledCast(frand(0.0f, 2 * M_PI), SPELL_ARCING_SMASH);
                     });
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 2500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 2500), [this](TaskContext context)
                     {
                         me->PrepareChanneledCast(frand(0.0f, 2 * M_PI), SPELL_ARCING_SMASH);
                     });
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 2500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 2500), [this](TaskContext context)
                     {
                         me->RemoveChanneledCast(targetGUID);
                     });
@@ -1249,7 +1249,7 @@ struct npc_korgra_the_snake : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER))
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -1339,7 +1339,7 @@ struct npc_galakras_dragonmaw_bonecrusher : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER))
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -1378,13 +1378,13 @@ struct npc_galakras_dragonmaw_bonecrusher : public ScriptedAI
             me->PrepareChanneledCast(me->GetOrientation());
 
             scheduler
-                .Schedule(Milliseconds(500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(500), [this](TaskContext context)
             {
                 DoCast(me, SPELL_FRACTURE);
             });
 
             scheduler
-                .Schedule(Milliseconds(8500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(8500), [this](TaskContext context)
             {
                 me->RemoveChanneledCast(targetGUID);
             });
@@ -1464,7 +1464,7 @@ struct npc_galakras_dragonmaw_flagbearer : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER))
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -1523,7 +1523,7 @@ struct npc_galakras_dragonmaw_tidal_shaman : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER))
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -1700,7 +1700,7 @@ struct npc_galakras_healing_tide_totem : public ScriptedAI
         DoCast(me, SPELL_HEALING_TIDE_PROC);
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void JustDied(Unit* /*killer*/) override
     {
@@ -1719,7 +1719,7 @@ struct npc_galakras_dragonmaw_war_banner : public ScriptedAI
         me->SetDisplayFromModel(0);
         DoCast(me, SPELL_WAR_BANNER_AT);
     }
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void JustDied(Unit* /*killer*/) override
     {
@@ -1757,7 +1757,7 @@ struct npc_galakras_dragonmaw_grunt : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER) && !inTower)
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -1944,7 +1944,7 @@ struct npc_galakras_dragonmaw_proto_drake : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER) && !InAir)
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -2065,7 +2065,7 @@ struct npc_galakras_varian_wrynn : public ScriptedAI
         events.ScheduleEvent(EVENT_VARIAN_CLEAVE, 4 * IN_MILLISECONDS);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -2150,7 +2150,7 @@ struct npc_galakras_sylvanas_windrunner : public ScriptedAI
         events.ScheduleEvent(EVENT_SYLVANAS_MULTI_SHOT, 9 * IN_MILLISECONDS);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -2239,7 +2239,7 @@ struct npc_galakras_aethas_sunreaver : public ScriptedAI
             me->DespawnOrUnsummon();
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -2340,7 +2340,7 @@ struct npc_galakras_vereesa_windrunner : public ScriptedAI
         events.ScheduleEvent(EVENT_SYLVANAS_MULTI_SHOT, 9 * IN_MILLISECONDS);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -2470,7 +2470,7 @@ class npc_galakras_jaina_proudmoore : public CreatureScript
                 events.ScheduleEvent(EVENT_JAINA_WATER_ELEMENTAL, 16 * IN_MILLISECONDS);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 ScriptedAI::EnterEvadeMode();
             }
@@ -2487,40 +2487,40 @@ class npc_galakras_jaina_proudmoore : public CreatureScript
 
                         delay = 6000;
                         scheduler
-                            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay), [this](TaskContext context)
                         {
                             Talk(TALK_INTRO);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 3600), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 3600), [this](TaskContext context)
                         {
                             if (Creature* varian = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_KING_VARIAN_WRYNN) : ObjectGuid::Empty))
                                 varian->AI()->Talk(TALK_SPECIAL_1);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 11100), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 11100), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_1);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 5100), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 5100), [this](TaskContext context)
                         {
                             if (Creature* varian = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_KING_VARIAN_WRYNN) : ObjectGuid::Empty))
                                 varian->AI()->Talk(TALK_SPECIAL_2);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 6100), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 6100), [this](TaskContext context)
                         {
                             if (Creature* varian = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_KING_VARIAN_WRYNN) : ObjectGuid::Empty))
                                 varian->AI()->Talk(TALK_SPECIAL_3);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 3000), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 3000), [this](TaskContext context)
                         {
                             if (Creature* galakras = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(DATA_GALAKRAS) : ObjectGuid::Empty))
                                 galakras->AI()->DoAction(ACTION_START_INTRO);
@@ -2530,26 +2530,26 @@ class npc_galakras_jaina_proudmoore : public CreatureScript
                         delay = 1000;
 
                         scheduler
-                            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_6);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 1800), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 1800), [this](TaskContext context)
                         {
                             if (Creature* varian = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_KING_VARIAN_WRYNN) : ObjectGuid::Empty))
                                 varian->AI()->Talk(TALK_SPECIAL_5);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 3500), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 3500), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_7);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 9700), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 9700), [this](TaskContext context)
                         {
                             if (Creature* varian = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_KING_VARIAN_WRYNN) : ObjectGuid::Empty))
                                 varian->AI()->Talk(TALK_SPECIAL_6);
@@ -2686,7 +2686,7 @@ class npc_galakras_lorthemar_theron : public CreatureScript
                     me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 ScriptedAI::EnterEvadeMode();
             }
@@ -2701,39 +2701,39 @@ class npc_galakras_lorthemar_theron : public CreatureScript
 
                         delay = 4700;
                         scheduler
-                            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay), [this](TaskContext context)
                         {
                             if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_LADY_SYLVANAS_WINDRUNNER) : ObjectGuid::Empty))
                                 sylvanas->AI()->Talk(TALK_INTRO);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 5000), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 5000), [this](TaskContext context)
                         {
                             if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_LADY_SYLVANAS_WINDRUNNER) : ObjectGuid::Empty))
                                 sylvanas->AI()->Talk(TALK_SPECIAL_1);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 6000), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 6000), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_1);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 6100), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 6100), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_2);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 6200), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 6200), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_3);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 3500), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 3500), [this](TaskContext context)
                         {
                             if (Creature* galakras = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(DATA_GALAKRAS) : ObjectGuid::Empty))
                                 galakras->AI()->DoAction(ACTION_START_INTRO);
@@ -2743,26 +2743,26 @@ class npc_galakras_lorthemar_theron : public CreatureScript
                         delay = 1000;
 
                         scheduler
-                            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_7);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 1800), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 1800), [this](TaskContext context)
                         {
                             if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_LADY_SYLVANAS_WINDRUNNER) : ObjectGuid::Empty))
                                 sylvanas->AI()->Talk(TALK_SPECIAL_5);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 3500), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 3500), [this](TaskContext context)
                         {
                             Talk(TALK_SPECIAL_8);
                         });
 
                         scheduler
-                            .Schedule(Milliseconds(delay += 9700), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(delay += 9700), [this](TaskContext context)
                         {
                             if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_LADY_SYLVANAS_WINDRUNNER) : ObjectGuid::Empty))
                                 sylvanas->AI()->Talk(TALK_SPECIAL_6);
@@ -2895,7 +2895,7 @@ struct npc_galakras_demolitions_expert : public ScriptedAI
                 init.Launch();
 
                 scheduler
-                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
                 {
                     DoCast(me, SPELL_MOST_COMPLICATED_BOMB_IN_THE_WORLD_S);
                 });
@@ -2912,7 +2912,7 @@ struct npc_galakras_demolitions_expert : public ScriptedAI
                 init.Launch();
 
                 scheduler
-                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
                 {
                     DoCast(me, SPELL_MOST_COMPLICATED_BOMB_IN_THE_WORLD_N);
 
@@ -3016,7 +3016,7 @@ struct npc_galakras_anti_air_cannon : public ScriptedAI
         clicker->CastSpell(me, VEHICLE_SPELL_RIDE_HARDCODED, true);
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void SetData(uint32 type, uint32 data) override
     {
@@ -3046,7 +3046,7 @@ struct npc_galakras_dragonmaw_ebon_stalker : public ScriptedAI
     {
         if (victim && victim->HasAura(SPELL_IN_A_TOWER))
         {
-            me->GetThreatManager().doAddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
+            me->GetThreatManager().AddThreat(victim, -10000.0f); // remove thread from this target to exclude new pull
 
             // select faction leader
             if (Creature* target = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(me->GetInstanceScript()->GetData(DATA_GROUP_FACTION) ? NPC_LADY_SYLVANAS_WINDRUNNER : NPC_LADY_JAINA_PROUDMOORE) : ObjectGuid::Empty))
@@ -3075,14 +3075,14 @@ struct npc_galakras_dragonmaw_ebon_stalker : public ScriptedAI
             me->PrepareChanneledCast(me->GetOrientation());
 
             scheduler
-                .Schedule(Milliseconds(500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(500), [this](TaskContext context)
             {
                 if (Unit* target = ObjectAccessor::GetUnit(*me, shadowStepTargetGUID))
                     me->PrepareChanneledCast(me->GetAngle(target), SPELL_SHADOW_ASSAULT);
             });
 
             scheduler
-                .Schedule(Milliseconds(8000), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(8000), [this](TaskContext context)
             {
                 me->RemoveChanneledCast(targetGUID);
             });

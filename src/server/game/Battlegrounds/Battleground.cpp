@@ -25,6 +25,7 @@
 #include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "Guild.h"
+#include "GuildMgr.h"
 #include "MapManager.h"
 #include "MiscPackets.h"
 #include "Object.h"
@@ -40,6 +41,7 @@
 #include "Pet.h"
 #include "AchievementMgr.h"
 #include "BattlegroundTOK.h"
+#include "Realm.h"
 
 namespace Trinity
 {
@@ -227,6 +229,13 @@ Battleground::Battleground()
 
 Battleground::~Battleground()
 {
+    // #766: unlink the BG raid groups. At shutdown the battlegrounds are deleted before the GroupMgr static destructor,
+    // and Group::~Group (Group.cpp:75) then read m_bgGroup->GetBgRaid on the freed battleground (w30 shutdown crash,
+    // Crashes/Archive_worldserver.exe_[10-10_9-24-47].txt). AC's ~Group is the same; AC's BG raids are gone before then.
+    for (uint8 i = 0; i < BG_TEAMS_COUNT; ++i)
+        if (Group* raid = m_BgRaids[i])
+            raid->SetBattlegroundGroup(nullptr);
+
     // remove objects and creatures
     // (this is done automatically in mapmanager update, when the instance is reset after the reset time)
     uint32 size = uint32(BgCreatures.size());
@@ -251,6 +260,20 @@ Battleground::~Battleground()
 
     for (BattlegroundScoreMap::const_iterator itr = PlayerScores.begin(); itr != PlayerScores.end(); ++itr)
         delete itr->second;
+}
+
+// #305: AC Battleground.h:343-348
+bool Battleground::IsMaxLevel() const
+{
+    uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    return GetMinLevel() <= maxPlayerLevel && maxPlayerLevel <= GetMaxLevel();
+}
+
+// #305: AC Battleground.cpp:248-252. A real low-level-bracket battleground uses the override when it is set.
+uint32 Battleground::GetMinPlayersPerTeam() const
+{
+    uint32 lowLevelsOverride = sBattlegroundMgr->GetLowLevelsMinPlayersOverride(GetTypeID());
+    return (lowLevelsOverride && !IsTemplate() && !IsMaxLevel() && !IsArena()) ? lowLevelsOverride : m_MinPlayersPerTeam;
 }
 
 void Battleground::Update(uint32 diff)
@@ -350,20 +373,20 @@ void Battleground::UpdateDumpenning(uint32 diff)
 
         ++m_DampeningCounter;
 
-        for (auto&& team : m_arenaTeams)
+        // #774: iterate the arena's players, not m_arenaTeams. A skirmish has no ArenaTeam (the pointers are only set for
+        // rated matches, BattlegroundQueue.cpp:1133/1669), so `*team` dereferenced null once a skirmish lasted the 5 min
+        // dampening delay (w31 crash: Blade's Edge 2v2 skirmish). Same loop shape as the door-open block below.
+        for (auto const& itr : GetPlayers())
         {
-            for (auto&& it : *team)
+            Player* player = ObjectAccessor::FindPlayer(itr.first);
+            if (player && player->GetMap() == GetBgMap())
             {
-                Player* player = ObjectAccessor::FindPlayer(it->Guid);
-                if (player && player->GetMap() == GetBgMap())
-                {
-                    ApplyDampening(player, m_DampeningCounter);
-                    if (Pet* pet = player->GetPet())
-                        ApplyDampening(pet, m_DampeningCounter);
-                    for (auto&& summon : player->GetSummons())
-                        if (summon->IsGuardian())
-                            ApplyDampening(summon, m_DampeningCounter);
-                }
+                ApplyDampening(player, m_DampeningCounter);
+                if (Pet* pet = player->GetPet())
+                    ApplyDampening(pet, m_DampeningCounter);
+                for (auto&& summon : player->GetSummons())
+                    if (summon->IsGuardian())
+                        ApplyDampening(summon, m_DampeningCounter);
             }
         }
     }
@@ -608,12 +631,19 @@ void Battleground::ProcessJoin(uint32 diff)
     // Send packet every 10 seconds until the 2nd field reach 0
     if (m_CountdownTimer >= 10000)
     {
-        uint32 countdownMaxForBGType = IsArena() || GetTypeID() == BATTLEGROUND_SA ? ARENA_COUNTDOWN_MAX : BATTLEGROUND_COUNTDOWN_MAX;
-        uint32 timer = countdownMaxForBGType - (GetElapsedTime() / 1000);
+        // #736 (owner 2026-10-08): Strand of the Ancients has the 2 min preparation of every battleground again (AC
+        // Battleground.cpp:515-517; BattlegroundSA's 1 min "temp hack for ships" is gone), so no arena countdown for it
+        uint32 countdownMaxForBGType = IsArena() ? ARENA_COUNTDOWN_MAX : BATTLEGROUND_COUNTDOWN_MAX;
+        // SotA round 2 sets STATUS_WAIT_JOIN again (BattlegroundSA::ResetObjs) long after this countdown ran out: no
+        // wrapped (uint32) timer then - BattlegroundSA::SendRoundTwoStartTimer sends that warm-up's own countdown
+        if (GetElapsedTime() / 1000 < countdownMaxForBGType)
+        {
+            uint32 timer = countdownMaxForBGType - (GetElapsedTime() / 1000);
 
-        for (BattlegroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-            if (Player* player = ObjectAccessor::FindPlayer(itr->first))
-                player->SendStartTimer(timer, countdownMaxForBGType, TIMER_PVP);
+            for (BattlegroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
+                if (Player* player = ObjectAccessor::FindPlayer(itr->first))
+                    player->SendStartTimer(timer, countdownMaxForBGType, TIMER_PVP);
+        }
 
         m_CountdownTimer = 0;
     }
@@ -1084,7 +1114,7 @@ void Battleground::EndBattleground(uint32 winner)
         {
             //needed cause else in av some creatures will kill the players at the end
             player->CombatStop();
-            player->getHostileRefManager().deleteReferences();
+            player->GetThreatManager().RemoveMeFromThreatLists();
         }
 
         // per player calculation
@@ -1608,9 +1638,13 @@ void Battleground::AddPlayer(Player* player)
         {
             player->CastSpell(player, SPELL_PREPARATION, true);   // reduces all mana cost of spells.
 
-            uint32 countdownMaxForBGType = IsArena() || GetTypeID() == BATTLEGROUND_SA ? ARENA_COUNTDOWN_MAX : BATTLEGROUND_COUNTDOWN_MAX;
-            uint32 timer = countdownMaxForBGType - (GetElapsedTime() / 1000);
-            player->SendStartTimer(timer, countdownMaxForBGType, TIMER_PVP);
+            // #736: SotA counts down its 2 min like every battleground; none after it ran out (SotA round 2)
+            uint32 countdownMaxForBGType = BATTLEGROUND_COUNTDOWN_MAX;
+            if (GetElapsedTime() / 1000 < countdownMaxForBGType)
+            {
+                uint32 timer = countdownMaxForBGType - (GetElapsedTime() / 1000);
+                player->SendStartTimer(timer, countdownMaxForBGType, TIMER_PVP);
+            }
         }
         if (IsRatedBG() || sWorld->getBoolConfig(CONFIG_BATTLEGROUND_IGNORE_FACTION))
         {
@@ -2631,7 +2665,7 @@ void Battleground::StartCriteria(CriteriaStartTypes type, uint32 entry)
 void Battleground::SetBracket(PvPDifficultyEntry const* bracketEntry)
 {
     m_BracketId = bracketEntry->GetBracketId();
-    SetLevelRange(bracketEntry->minLevel, bracketEntry->maxLevel);
+    SetLevelRange(bracketEntry->MinLevel, bracketEntry->MaxLevel);
 }
 
 void Battleground::RewardXPAtKill(Player* killer, Player* victim)

@@ -107,6 +107,7 @@ class boss_halazzi : public CreatureScript
             uint8 phase;
             uint32 health;
             bool isLynx; 
+            bool merged = false;
 
             void Reset() override
             {
@@ -150,6 +151,7 @@ class boss_halazzi : public CreatureScript
                 switch (NextPhase)
                 {
                     case PHASE_LYNX:
+                        merged = true;
                         Talk(SAY_COMBINE);
                         events.CancelEvent(EVENT_EARTH_SHOCK);
                         events.CancelEvent(EVENT_FLAME_SHOCK);
@@ -170,6 +172,19 @@ class boss_halazzi : public CreatureScript
                 }
             }
 
+            // #678 (w105, build 105): the merge used a plain DoCast of Transform Lynx 43271 and relied on SpellHit to run
+            // EnterPhase(PHASE_LYNX). When that cast did not land, Halazzi took his stored health back but the Spirit of the
+            // Lynx 24143 was never despawned (its own bDespawn already set) and no further split could end: w105 probes show
+            // Halazzi back at 62% while the same lynx (guid 925) healed from 14% to 97% beside the Water Totem, and the pull
+            // timed out at 55%. Cast triggered, and enter the lynx phase here when SpellHit did not.
+            void MergeWithLynx()
+            {
+                merged = false;
+                DoCast(me, SPELL_TRANSFORM_LYNX, true);
+                if (!merged)
+                    EnterPhase(PHASE_LYNX);
+            }
+
             void JustDied(Unit* /*killer*/) override
             {
                 Talk(SAY_DEATH);
@@ -183,7 +198,7 @@ class boss_halazzi : public CreatureScript
                     isLynx = true;
                     phase++;
                     me->SetHealth(health);
-                    DoCast(me, SPELL_TRANSFORM_LYNX);
+                    MergeWithLynx();
                 }
             }
 
@@ -213,7 +228,7 @@ class boss_halazzi : public CreatureScript
                     isLynx = true;
                     phase++;
                     me->SetHealth(health);
-                    DoCast(me, SPELL_TRANSFORM_LYNX);
+                    MergeWithLynx();
                     return;
                 }
 

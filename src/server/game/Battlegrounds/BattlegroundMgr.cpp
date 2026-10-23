@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -41,7 +41,9 @@
 #include "BattlegroundTTP.h"
 #include "BattlegroundTV.h"
 #include "Chat.h"
+#include "Config.h"
 #include "Map.h"
+#include "MapInstanced.h"
 #include "MapManager.h"
 #include "Player.h"
 #include "GameEventMgr.h"
@@ -49,6 +51,8 @@
 #include "Formulas.h"
 #include "DisableMgr.h"
 #include "Opcodes.h"
+#include "BattlegroundAnyLevel.h"  // #702 P4 (#831): Battleground.AnyLevel.* (off by default)
+#include "ArenaAnyLevel.h"         // #702 P5 (#832): Arena.AnyLevel.* (off by default)
 
 /*********************************************************/
 /***            BATTLEGROUND MANAGER                   ***/
@@ -60,6 +64,7 @@ BattlegroundMgr::BattlegroundMgr() :
     for (uint8 i = 0; i < BATTLEGROUND_QUEUE_SOLO; i++)
         m_battlegroundQueues[i].reset(new BattlegroundQueue());
     m_battlegroundQueues[BATTLEGROUND_QUEUE_SOLO].reset(new SoloQueue);
+    LoadLowLevelsMinPlayersOverrides();
 }
 
 BattlegroundMgr::~BattlegroundMgr()
@@ -823,6 +828,14 @@ uint32 BattlegroundMgr::CreateClientVisibleInstanceId(BattlegroundTypeId bgTypeI
     return lastId;
 }
 
+// Test-harness arena pin (wave-29 arena legs, #391/#709/#437): `.botscenario - arenapin <bgTypeId>` (mod_playerbots
+// Scenario/BotScenario.cpp) sets it, `arenapin 0` clears it. While it is non-zero, an "All Arenas" draw below returns
+// that arena when it is in the arena pool (weight > 0) and has a PvP bracket for the match level, so a 1:1 leg plays the
+// same map on both cores (AC pins it through its BattlegroundTemplate weights). 0 - the default, and always outside a
+// harness run - leaves the weighted draw untouched. Read and written on the world thread only (SOAP commands and
+// BattlegroundMgr::Update both run there).
+uint32 g_harnessArenaPinTypeId = 0;
+
 template <typename T>
 static Battleground* FromTemplate(Battleground const* bg)
 {
@@ -846,6 +859,56 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId original
             break;
         default:
             break;
+    }
+
+    // #437: "All Arenas" draws from every arena with a selection weight, but Tol'viron (map 980) and Tiger's Peak
+    // (1134) only have a level-90 PvpDifficulty row. A level 10-89 match placed there can never be entered:
+    // HandleBattleFieldPortOpcode drops the accept when the arena's own map has no bracket for the player's level
+    // (BattleGroundHandler.cpp:401-403), so the invite expires and the rated match is lost. Draw again, with the same
+    // weights, among the arenas that do have this bracket's level.
+    if (originalBgTypeId == BATTLEGROUND_AA && bgTypeId != BATTLEGROUND_TYPE_NONE)
+    {
+        // #702 P5 (#832): with Arena.AnyLevel.Enable = 1 an UNRATED match (a skirmish below the maximum level) may be
+        // drawn on every arena of the pool; its players enter with the instance's own bracket (ArenaAnyLevel::
+        // InstanceBracket, BattlegroundAnyLevel::GetBracketByLevel). Off, or a rated match: false, the stock test alone.
+        bool const anyArenaMap = ArenaAnyLevel::AnyArenaMap(isRated);
+        auto enterable = [this, bracketEntry, anyArenaMap](BattlegroundTypeId typeId)
+        {
+            Battleground const* arena = GetBattlegroundTemplate(typeId);
+            return arena && (anyArenaMap || sDBCManager.GetBattlegroundBracketByLevel(arena->GetMapId(), bracketEntry->MinLevel) != nullptr);
+        };
+
+        // Test-harness arena pin (g_harnessArenaPinTypeId above): only an arena the normal draw could pick.
+        if (BattlegroundTypeId const pin = BattlegroundTypeId(g_harnessArenaPinTypeId))
+        {
+            auto const weight = m_ArenaSelectionWeights.find(pin);
+            if (weight != m_ArenaSelectionWeights.end() && weight->second && enterable(pin))
+                bgTypeId = pin;
+        }
+
+        if (!enterable(bgTypeId))
+        {
+            uint32 weight = 0;
+            for (auto&& it : m_ArenaSelectionWeights)
+                if (it.second && enterable(it.first))
+                    weight += it.second;
+
+            if (weight)
+            {
+                uint32 selected = urand(0, weight - 1);
+                for (auto&& it : m_ArenaSelectionWeights)
+                {
+                    if (!it.second || !enterable(it.first))
+                        continue;
+                    if (selected < it.second)
+                    {
+                        bgTypeId = it.first;
+                        break;
+                    }
+                    selected -= it.second;
+                }
+            }
+        }
     }
 
     // get the template BG
@@ -1026,7 +1089,7 @@ void BattlegroundMgr::CreateInitialBattlegrounds(bool reload /*= false*/)
         data.StartMaxDist = dist * dist;
 
         data.scriptId = sObjectMgr->GetScriptId(fields[11].GetCString());
-        data.BattlegroundName = bl->name[DEFAULT_LOCALE];
+        data.BattlegroundName = bl->name;
         data.MapID = bl->mapid[0];
 
         if (data.MaxPlayersPerTeam == 0 || data.MinPlayersPerTeam > data.MaxPlayersPerTeam)
@@ -1144,7 +1207,9 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, ObjectGuid 
     if (it == bgDataStore.end())
         return;
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(it->second.m_Battlegrounds.begin()->second->GetMapId(), player->GetLevel());
+    // #702 P4: Battleground.AnyLevel bracket fallback (off by default = the stock lookup)
+    Battleground const* listTemplate = it->second.m_Battlegrounds.begin()->second;
+    PvPDifficultyEntry const* bracketEntry = BattlegroundAnyLevel::GetBracketByLevel(listTemplate, listTemplate->GetMapId(), player->GetLevel());
     if (!bracketEntry)
         return;
 
@@ -1157,12 +1222,12 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, ObjectGuid 
     data->Initialize(SMSG_BATTLEFIELD_LIST);
     *data << uint32(winnerConquest)
           << uint32(loserHonor)
-          << uint8(bracketEntry->minLevel)
+          << uint8(bracketEntry->MinLevel)
           << uint32(winnerConquest)
           << uint32(winnerHonor)
           << uint32(bgTypeId)
           << uint32(winnerHonor)
-          << uint8(bracketEntry->maxLevel)
+          << uint8(bracketEntry->MaxLevel)
           << uint32(loserHonor);
 
     data->WriteBit(guid[0]);
@@ -1411,6 +1476,52 @@ uint32 BattlegroundMgr::GetRatingDiscardTimer() const
 uint32 BattlegroundMgr::GetPrematureFinishTime() const
 {
     return sWorld->getIntConfig(CONFIG_BATTLEGROUND_PREMATURE_FINISH_TIMER);
+}
+
+// #305: AC reads these through sWorld (WorldConfig.cpp:433-439, worldserver.conf.dist:3995-4024, all default 0).
+// They are read here once at BattlegroundMgr construction (after the config is loaded), same keys and defaults.
+void BattlegroundMgr::LoadLowLevelsMinPlayersOverrides()
+{
+    auto read = [](char const* key) { return uint32(std::max(0, sConfigMgr->GetIntDefault(key, 0))); };
+    m_lowLevelsMinPlayers   = read("Battleground.Override.LowLevels.MinPlayers");
+    m_lowLevelsMinPlayersAV = read("Battleground.Override.LowLevels.MinPlayers.AV");
+    m_lowLevelsMinPlayersWS = read("Battleground.Override.LowLevels.MinPlayers.WS");
+    m_lowLevelsMinPlayersAB = read("Battleground.Override.LowLevels.MinPlayers.AB");
+    m_lowLevelsMinPlayersEY = read("Battleground.Override.LowLevels.MinPlayers.EY");
+    m_lowLevelsMinPlayersSA = read("Battleground.Override.LowLevels.MinPlayers.SA");
+    m_lowLevelsMinPlayersIC = read("Battleground.Override.LowLevels.MinPlayers.IC");
+}
+
+// #305: AC BattlegroundUtils.cpp:4-20. GetMinLevel()/GetMaxLevel() mean the template's range on a template and
+// the bracket's range on a real battleground, so the template path takes the bracket from the caller.
+uint32 BattlegroundMgr::GetMinPlayersPerTeam(Battleground* bg, PvPDifficultyEntry const* bracketEntry) const
+{
+    if (!bg->IsTemplate() || bg->IsArena())
+        return bg->GetMinPlayersPerTeam();
+
+    uint32 maxPlayerLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    bool isMaxLevel = bracketEntry->MinLevel <= maxPlayerLevel && maxPlayerLevel <= bracketEntry->MaxLevel;
+    uint32 lowLevelsOverride = GetLowLevelsMinPlayersOverride(bg->GetTypeID());
+
+    return (lowLevelsOverride && !isMaxLevel) ? lowLevelsOverride : bg->GetMinPlayersPerTeam();
+}
+
+// #305: AC BattlegroundUtils.cpp:22-36. Random BG entries carry BATTLEGROUND_RB as their type, so they always
+// resolve through the global key.
+uint32 BattlegroundMgr::GetLowLevelsMinPlayersOverride(BattlegroundTypeId bgTypeId) const
+{
+    uint32 perBg = 0;
+    switch (bgTypeId)
+    {
+        case BATTLEGROUND_AV: perBg = m_lowLevelsMinPlayersAV; break;
+        case BATTLEGROUND_WS: perBg = m_lowLevelsMinPlayersWS; break;
+        case BATTLEGROUND_AB: perBg = m_lowLevelsMinPlayersAB; break;
+        case BATTLEGROUND_EY: perBg = m_lowLevelsMinPlayersEY; break;
+        case BATTLEGROUND_SA: perBg = m_lowLevelsMinPlayersSA; break;
+        case BATTLEGROUND_IC: perBg = m_lowLevelsMinPlayersIC; break;
+        default: break;
+    }
+    return perBg ? perBg : m_lowLevelsMinPlayers;
 }
 
 void BattlegroundMgr::LoadBattleMastersEntry()

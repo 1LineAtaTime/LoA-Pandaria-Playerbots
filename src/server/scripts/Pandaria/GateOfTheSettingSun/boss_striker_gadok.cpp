@@ -195,13 +195,27 @@ class boss_striker_gadok : public CreatureScript
                     Talk(SAY_SLAY);
             }
 
+            // #655 w60: the periodic summons (EVENT_SUMMONS, every 20-28 s) also sent two Strikers each time and nothing capped
+            // either kind (MAX_DISRUPTOR / MAX_STRIKER were defined and never used): after 172 s the platform had 3-6 Strikers
+            // on the tank (427 bot target ticks on 59778 vs 56 on Ga'dok) and ~16 Disruptors dropping Acid Bombs. Encounter
+            // journal (Wowpedia "Striker Ga'dok", 2026-10-14): Disruptors "continuously bombard the platform", Strikers "attack
+            // players on the platform during Striker Ga'dok's strafe runs". So the periodic wave is Disruptors only, capped at
+            // MAX_DISRUPTOR alive; the Strikers come with the strafing runs (DoStrafingEvent), capped at MAX_STRIKER alive.
+            uint32 CountAliveSummons(uint32 entry) const
+            {
+                uint32 count = 0;
+                for (ObjectGuid const& guid : summons)
+                    if (guid.GetEntry() == entry)
+                        if (Creature* summon = ObjectAccessor::GetCreature(*me, guid))
+                            if (summon->IsAlive())
+                                ++count;
+                return count;
+            }
+
             void DoSpawnKrikThik(uint8 count)
             {
-                for (uint8 i = 0; i < count; ++i)
+                for (uint8 i = 0; i < count && CountAliveSummons(NPC_KRIKTHIK_DISRUPTOR) < MAX_DISRUPTOR; ++i)
                     SummonKrikThik(NPC_KRIKTHIK_DISRUPTOR);
-
-                for (uint8 i = 0; i < count; ++i)
-                    SummonKrikThik(NPC_KRIKTHIK_STRIKER);
             }
 
             TempSummon* SummonKrikThik(uint32 creatureId)
@@ -230,7 +244,7 @@ class boss_striker_gadok : public CreatureScript
                 exploitEvents.ScheduleEvent(EVENT_CHECK_WIPE, 1 * IN_MILLISECONDS);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 summons.DespawnAll();
                 _DespawnAtEvade();
@@ -333,7 +347,7 @@ class boss_striker_gadok : public CreatureScript
 
                         me->GetMotionMaster()->MovePoint(StrafPoints[move].pointIdBegin, StrafPoints[move].begin.GetPositionX(), StrafPoints[move].begin.GetPositionY(), StrafPoints[move].begin.GetPositionZ());
 
-                        for (uint8 i = 0; i < 2; ++i)
+                        for (uint8 i = 0; i < 2 && CountAliveSummons(NPC_KRIKTHIK_STRIKER) < MAX_STRIKER; ++i)
                              if (Creature* striker = SummonKrikThik(NPC_KRIKTHIK_STRIKER))
                                 if (striker->AI())
                                     striker->AI()->DoAction(0);

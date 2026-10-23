@@ -23,7 +23,7 @@ protected:
     Player* bot;
     Player* GetMaster();
     AiObjectContext* context;
-    //ChatHelper* chat;
+    ChatHelper* chat;
 };
 
 class AiNamedObject : public AiObject

@@ -19,7 +19,12 @@
 #include "blackrock_caverns.h"
 
 // Add Nether Essence Channel animation
-// Add Spell for a Charmed Player
+// #699 charmed player: Twilight Evolution (75732, DBC: TRANSFORM + AOE_CHARM 177 + MOD_SCALE) already charms the victim
+// to Corla (AuraEffect::HandleCharmConvert). A charmed player is a Twilight Drakonid with the Evolved Twilight Zealot's
+// four abilities: Wowpedia MediaWiki API "Corla, Herald of Twilight" (read 2026-10-13) - "If a player reaches 100
+// stacks, he will transform and become mind-controlled, likely wiping the group", Twilight Drakonid: Force Blast,
+// Gravity Strike, Grievous Whirl, Shadow Strike. spell_twilight_evolution casts them for the charmed player
+// (cadence of the zealot's events: 10 / 22 / 7 / 14 s).
 
 enum ScriptTexts
 {
@@ -463,6 +468,53 @@ class spell_twilight_evolution : public AuraScript
 {
     PrepareAuraScript(spell_twilight_evolution);
 
+    // #699: the charmed player attacks the group with the Drakonid abilities
+    void HandleUpdate(uint32 diff, AuraEffect* /*aurEff*/)
+    {
+        Player* owner = GetOwner()->ToPlayer();
+        if (!owner || !owner->IsAlive() || !owner->IsCharmed())
+            return;
+
+        auto due = [diff](uint32& timer, uint32 period) -> bool
+        {
+            if (timer > diff)
+            {
+                timer -= diff;
+                return false;
+            }
+            timer = period;
+            return true;
+        };
+
+        // the former allies: players that are not charmed themselves
+        auto randomVictim = [owner]() -> Player*
+        {
+            std::list<Player*> players;
+            GetPlayerListInGrid(players, owner, 60.0f);
+            players.remove_if([owner](Player* player) { return player == owner || !player->IsAlive() || player->IsCharmed(); });
+            if (players.empty())
+                return nullptr;
+            std::list<Player*>::iterator it = players.begin();
+            std::advance(it, urand(0, players.size() - 1));
+            return *it;
+        };
+
+        if (due(forceBlastTimer, 10000))
+            if (Player* victim = randomVictim())
+                owner->CastSpell(victim, SPELL_FORCE_BLAST, true);
+
+        if (due(gravityStrikeTimer, 22000))
+            if (Unit* victim = owner->GetVictim() ? owner->GetVictim() : randomVictim())
+                owner->CastSpell(victim, SPELL_GRAVITY_STRIKE, true);
+
+        if (due(grievousWhirlTimer, 7000))
+            owner->CastSpell(owner, SPELL_GRIEVOUS_WHIRL, true);
+
+        if (due(shadowStrikeTimer, 14000))
+            if (Unit* victim = owner->GetVictim() ? owner->GetVictim() : randomVictim())
+                owner->CastSpell(victim, SPELL_SHADOW_STRIKE, true);
+    }
+
     void OnAuraEffectApply(AuraEffect const* aurEff, AuraEffectHandleModes mode)
     {
         if (Creature* owner = GetOwner()->ToCreature())
@@ -477,7 +529,13 @@ class spell_twilight_evolution : public AuraScript
     void Register() override
     {
         OnEffectApply += AuraEffectApplyFn(spell_twilight_evolution::OnAuraEffectApply, EFFECT_0, SPELL_AURA_TRANSFORM, AURA_EFFECT_HANDLE_REAL);
+        OnEffectUpdate += AuraEffectUpdateFn(spell_twilight_evolution::HandleUpdate, EFFECT_0, SPELL_AURA_TRANSFORM);
     }
+
+    uint32 forceBlastTimer = 10000;
+    uint32 gravityStrikeTimer = 22000;
+    uint32 grievousWhirlTimer = 7000;
+    uint32 shadowStrikeTimer = 14000;
 };
 
 void AddSC_boss_corla_herald_of_twilight()

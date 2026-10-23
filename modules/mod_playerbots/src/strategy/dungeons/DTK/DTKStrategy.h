@@ -1,0 +1,22 @@
+/*
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
+ */
+
+// AC Ai/Dungeon/DTK/DTKStrategy.h:12 (#554, epic #569)
+#ifndef PLAYERBOTS_DTKSTRATEGY_H
+#define PLAYERBOTS_DTKSTRATEGY_H
+
+#include "Strategy.h"
+
+class WotlkDungeonDTKStrategy : public Strategy
+{
+public:
+    WotlkDungeonDTKStrategy(PlayerbotAI* ai) : Strategy(ai) {}
+    std::string const getName() override { return "wotlk-dtk"; }
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
+};
+
+#endif

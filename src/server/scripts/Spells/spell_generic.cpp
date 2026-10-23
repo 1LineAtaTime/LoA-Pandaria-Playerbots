@@ -27,6 +27,7 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "InstanceScript.h"
 #include "LFGMgr.h"
@@ -261,7 +262,7 @@ class spell_spawn_blood_pool : public SpellScript
     {
         Unit* caster = GetCaster();
         LiquidData liquidStatus;
-        /*ZLiquidStatus status*/ caster->GetMap()->GetLiquidStatus(caster->GetPhaseMask(), caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), MAP_ALL_LIQUIDS, &liquidStatus);
+        ZLiquidStatus status = caster->GetMap()->GetLiquidStatus(caster->GetPhaseMask(), caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), MAP_ALL_LIQUIDS, &liquidStatus);
 
         Position summonPos = caster->GetPosition();
         summonPos.m_positionZ = liquidStatus.level;
@@ -671,7 +672,6 @@ class spell_gen_clone : public SpellScript
         }
         else
         {
-            OnEffectHitTarget += SpellEffectFn(spell_gen_clone::HandleScriptEffect, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
             OnEffectHitTarget += SpellEffectFn(spell_gen_clone::HandleScriptEffect, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
         }
     }
@@ -2348,10 +2348,7 @@ class spell_gen_replenishment : public SpellScriptLoader
 
             bool Validate(SpellInfo const* /*spellInfo*/) override
             {
-                if (!sSpellMgr->GetSpellInfo(SPELL_REPLENISHMENT) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_INFINITE_REPLENISHMENT))
-                    return false;
-                return true;
+                return sSpellMgr->GetSpellInfo(SPELL_REPLENISHMENT);
             }
 
             bool Load() override
@@ -3236,7 +3233,7 @@ class spell_gen_survey : public SpellScriptLoader
 
                 GameObject* go = NULL;
                 float dist = player->GetDistance(find->x, find->y, find->z);
-                if (dist <= (float)SURVEY_CLOSE_DIST) // 5yd or less (archaeology find is dug)
+                if (dist <= SURVEY_CLOSE_DIST) // 5yd or less (archaeology find is dug)
                 {
                     digsite->SelectNewArchaeologyFind(false);
 
@@ -3253,9 +3250,9 @@ class spell_gen_survey : public SpellScriptLoader
                 else
                 {
                     uint32 goEntry = 0;
-                    if (dist > (float)SURVEY_CLOSE_DIST && dist <= (float)SURVEY_MEDIUM_DIST) // 6-40yd (green)
+                    if (dist > SURVEY_CLOSE_DIST && dist <= SURVEY_MEDIUM_DIST) // 6-40yd (green)
                         goEntry = GO_SURVEY_TOOL_GREEN;
-                    else if (dist > (float)SURVEY_MEDIUM_DIST && dist <= (float)SURVEY_FAR_DIST) // 41-80yd (yellow)
+                    else if (dist > SURVEY_MEDIUM_DIST && dist <= SURVEY_FAR_DIST) // 41-80yd (yellow)
                         goEntry = GO_SURVEY_TOOL_YELLOW;
                     else // more than 80yd (red)
                         goEntry = GO_SURVEY_TOOL_RED;
@@ -3297,7 +3294,7 @@ class spell_gen_searching_for_artifacts : public SpellScriptLoader
         {
             PrepareSpellScript(spell_gen_searching_for_artifacts_SpellScript);
 
-            void HandleSkillUpdate(SpellEffIndex /*effIndex*/)
+            void HandleSkillUpdate(SpellEffIndex effIndex)
             {
                 if (Player* player = GetCaster()->ToPlayer())
                     if (GameObject* go = GetHitGObj())
@@ -3861,7 +3858,7 @@ class spell_gen_noodle_cart : public SpellScript
 
         for (auto&& summon : player->GetSummons())
         {
-            if (summon->GetEntry() == (uint32)spellInfo->Effects[EFFECT_1].MiscValue)
+            if (summon->GetEntry() == spellInfo->Effects[EFFECT_1].MiscValue)
             {
                 uint32 vendorId = 0, cartVisual = 0;
                 switch (GetSpellInfo()->Id)
@@ -3870,7 +3867,7 @@ class spell_gen_noodle_cart : public SpellScript
                     case 145169: vendorId = NPC_NOODLE_CART_VENDOR_TIER_2; cartVisual = SPELL_COOKING_NOODLE_CART_VISUAL_TIER_2; break;
                     case 145196: vendorId = NPC_NOODLE_CART_VENDOR_TIER_3; cartVisual = SPELL_COOKING_NOODLE_CART_VISUAL_TIER_3; break;
                 }
-                Creature* vendor = player->SummonCreature(vendorId, player->GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 180000);
+                Creature* vendor = player->SummonCreature(vendorId, player->GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 180000ms);
                 if (!vendor)
                     return;
 
@@ -4054,7 +4051,7 @@ class spell_gen_heirloom_experience_bonus : public AuraScript
 {
     PrepareAuraScript(spell_gen_heirloom_experience_bonus);
 
-    void CalculateAmount(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
+    void CalculateAmount(AuraEffect const* aurEff, float& amount, bool& /*canBeRecalculated*/)
     {
         if (Aura* aura = GetAura())
             if (Player* player = aura->GetOwner()->ToPlayer())
@@ -4207,7 +4204,7 @@ class spell_gen_clearcasting_trigger : public AuraScript
 {
     PrepareAuraScript(spell_gen_clearcasting_trigger);
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         uint32 spellId = 0;
         switch (GetUnitOwner()->GetClass())
@@ -4415,7 +4412,7 @@ class spell_gen_cobo_cola : public AuraScript
 
     bool allowRegen = true;
 
-    void CalculatePeriodic(AuraEffect const* /*effect*/, bool&, int32& amplitude)
+    void CalculatePeriodic(AuraEffect const* effect, bool&, int32& amplitude)
     {
         if (GetUnitOwner()->GetMap()->IsBattleArena())
         {
@@ -4424,7 +4421,7 @@ class spell_gen_cobo_cola : public AuraScript
         }
     }
 
-    void CalculateAmount(AuraEffect const* /*effect*/, float& amount, bool&)
+    void CalculateAmount(AuraEffect const* effect, float& amount, bool&)
     {
         if (!allowRegen)
             amount = 0;
@@ -4547,8 +4544,6 @@ class spell_gen_readiness_strength_dps : public spell_gen_readiness_base
             case SPEC_PALADIN_RETRIBUTION:  return 145978;
             case SPEC_WARRIOR_ARMS:         return 145990;
             case SPEC_WARRIOR_FURY:         return 145991;
-
-            default: return 0;
         }
         return 0;
     }
@@ -4570,8 +4565,6 @@ class spell_gen_readiness_agility_dps : public spell_gen_readiness_base
             case SPEC_ROGUE_COMBAT:         return 145984;
             case SPEC_ROGUE_SUBTLETY:       return 145985;
             case SPEC_SHAMAN_ENHANCEMENT:   return 145986;
-
-            default: return 0;
         }
         return 0;
     }
@@ -4591,10 +4584,7 @@ class spell_gen_readiness_tank : public spell_gen_readiness_base
             case SPEC_MONK_BREWMASTER:      return 145967;
             case SPEC_PALADIN_PROTECTION:   return 145976;
             case SPEC_WARRIOR_PROTECTION:   return 145992;
-
-            default: return 0;
         }
-        return 0;
     }
 };
 

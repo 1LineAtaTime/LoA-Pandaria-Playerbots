@@ -31,7 +31,7 @@ class go_ulduar_teleporter : public GameObjectScript
 
         bool OnGossipHello(Player* player, GameObject* gameObject) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             player->ADD_GOSSIP_ITEM(0, ru ? "Перенестись в Главный лагерь экспедиции." : "Teleport to the Expedition Base Camp.", GOSSIP_SENDER_ULDUAR_PORT, SPELL_BASE_CAMP_TELEPORT);
             if (InstanceScript* instance = gameObject->GetInstanceScript())

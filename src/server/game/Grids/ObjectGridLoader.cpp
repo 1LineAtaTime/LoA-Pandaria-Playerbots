@@ -200,6 +200,13 @@ void ObjectGridUnloader::Visit(GridRefManager<T> &m)
         //Example: Flame Leviathan Turret 33139 is summoned when a creature is deleted
         /// @todo Check if that script has the correct logic. Do we really need to summons something before deleting?
         obj->CleanupsBeforeDelete();
+
+        // #199: grid unload is the one path that deletes objects without Map::RemoveFromMap, so take
+        // custom-visibility objects out of the map's sets here (alexkulya ce840ad).
+        if (obj->HasCustomVisibility())
+            if (Map* map = obj->FindMap())
+                map->RemoveCustomVisibilityObject(obj, obj->GetCustomVisibilityZoneID());
+
         ///- object will get delinked from the manager when deleted
         delete obj;
     }
@@ -214,7 +221,8 @@ void ObjectGridStoper::Visit(CreatureMapType &m)
         if (iter->GetSource()->IsInCombat())
         {
             iter->GetSource()->CombatStop();
-            iter->GetSource()->DeleteThreatList();
+            iter->GetSource()->GetThreatManager().RemoveMeFromThreatLists();
+            iter->GetSource()->GetThreatManager().ClearAllThreat();
             iter->GetSource()->AI()->EnterEvadeMode();
         }
     }

@@ -19,17 +19,19 @@
     \ingroup u2w
 */
 
-#include "WorldSocket.h"                                    // must be first to make ACE happy with ACE includes in it
+#include "WorldSocket.h"
 #include "Config.h"
 #include "Common.h"
+#include <memory>
+#include <cmath>
 #include "DatabaseEnv.h"
 #include "AccountMgr.h"
+#include "RBAC.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-
-#include <memory>
+#include "GameClient.h"
 #include "Player.h"
 #include "Vehicle.h"
 #include "ObjectMgr.h"
@@ -99,18 +101,21 @@ bool WorldSessionFilter::Process(WorldPacket* packet)
         return true;
 
     //lets process all packets for non-in-the-world player
-    return !player->IsInWorld();
+    return (player->IsInWorld() == false);
 }
 
 /// WorldSession constructor
-WorldSession::WorldSession(uint32 id, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, uint32 flags, bool isARecruiter, bool hasBoost, bool isBot):
+WorldSession::WorldSession(uint32 id, std::string const& accountName, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, uint32 flags, bool isARecruiter, bool hasBoost, bool isBot):
     m_muteTime(mute_time),
     m_timeOutTime(0),
     AntiDOS(this),
     _player(nullptr),
+    _gameClient(new GameClient(this)),
     m_Socket(sock),
     _security(sec),
     _accountId(id),
+    _accountName(accountName),
+    _RBACData(nullptr),
     m_expansion(expansion),
     m_charBooster(new CharacterBooster(this)),
     _warden(nullptr),
@@ -123,8 +128,8 @@ WorldSession::WorldSession(uint32 id, std::shared_ptr<WorldSocket> sock, Account
     m_sessionDbcLocale(sWorld->GetAvailableDbcLocale(locale)),
     m_sessionDbLocaleIndex(locale),
     m_latency(0),
-    m_clientTimeDelay(0),
-    m_flags(flags),
+    _timeSyncClockDeltaQueue(std::make_unique<boost::circular_buffer<std::pair<int64, uint32>>>(6)),
+    _timeSyncClockDelta(0),
     m_TutorialsChanged(false),
     _filterAddonMessages(false),
     recruiterId(recruiter),
@@ -143,7 +148,7 @@ WorldSession::WorldSession(uint32 id, std::shared_ptr<WorldSocket> sock, Account
 
     // At current time it will never be removed from container, so pointer must be valid all of the session life time.
 
-    _achievementMgr = std::make_unique<AccountAchievementMgr>();
+    _achievementMgr.reset(new AccountAchievementMgr(this));
 }
 
 /// WorldSession destructor
@@ -160,8 +165,10 @@ WorldSession::~WorldSession()
         m_Socket.reset();
     }
 
+    delete _RBACData;
     delete _warden;
     delete m_charBooster;
+    delete _gameClient;
 
     ///- empty incoming packet queue
     WorldPacket* packet = nullptr;
@@ -169,7 +176,55 @@ WorldSession::~WorldSession()
         delete packet;
 
     LoginDatabase.PExecute("UPDATE account SET online = 0 WHERE id = %u;", GetAccountId());     // One-time query
+}
 
+bool WorldSession::HasPermission(uint32 permissionId)
+{
+    if (!_RBACData)
+        LoadPermissions();
+
+    bool hasPermission = _RBACData->HasPermission(permissionId);
+    TC_LOG_DEBUG("rbac", "WorldSession::HasPermission [AccountId: %u, Name: %s, realmId: %d]",
+        _RBACData->GetId(), _RBACData->GetName().c_str(), int32(realm.Id.Realm));
+
+    return hasPermission;
+}
+
+void WorldSession::LoadPermissions()
+{
+    uint32 id = GetAccountId();
+    uint8 secLevel = GetSecurity();
+    std::string accountName = _accountName;
+    if (accountName.empty())
+        sAccountMgr->GetName(id, accountName);
+
+    _RBACData = new rbac::RBACData(id, accountName, realm.Id.Realm, secLevel);
+    _RBACData->LoadFromDB();
+}
+
+QueryCallback WorldSession::LoadPermissionsAsync()
+{
+    uint32 id = GetAccountId();
+    uint8 secLevel = GetSecurity();
+    std::string accountName = _accountName;
+    if (accountName.empty())
+        sAccountMgr->GetName(id, accountName);
+
+    TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: %u, Name: %s, realmId: %d, secLevel: %u]",
+        id, accountName.c_str(), int32(realm.Id.Realm), secLevel);
+
+    _RBACData = new rbac::RBACData(id, accountName, realm.Id.Realm, secLevel);
+    return _RBACData->LoadFromDBAsync();
+}
+
+void WorldSession::InvalidateRBACData()
+{
+    if (_RBACData)
+        TC_LOG_DEBUG("rbac", "WorldSession::InvalidateRBACData [AccountId: %u, Name: %s, realmId: %d]",
+            _RBACData->GetId(), _RBACData->GetName().c_str(), int32(realm.Id.Realm));
+
+    delete _RBACData;
+    _RBACData = nullptr;
 }
 
 std::string const & WorldSession::GetPlayerName() const
@@ -293,7 +348,7 @@ void WorldSession::QueuePacket(WorldPacket* new_packet)
 
 bool WorldSession::HandleSocketClosed()
 {
-    if (m_Socket && !m_Socket->IsOpen() && GetPlayer() && !PlayerLogout() && GetPlayer()->m_taxi.empty() && GetPlayer()->IsInWorld() && !World::IsStopped())
+    if (m_Socket && !m_Socket->IsOpen() && !IsKicked() && GetPlayer() && !PlayerLogout() && GetPlayer()->m_taxi.empty() && GetPlayer()->IsInWorld() && !World::IsStopped())
     {
         m_Socket = nullptr;
         GetPlayer()->TradeCancel(false);
@@ -339,7 +394,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
     ///- Before we process anything:
     /// If necessary, kick the player from the character select screen
-    if (IsConnectionIdle() && m_Socket)
+    if (IsConnectionIdle() && !HasPermission(rbac::RBAC_PERM_IGNORE_IDLE_CONNECTION) && m_Socket)
         m_Socket->CloseSocket();
 
     ///- Retrieve packets from the receive queue and call the appropriate handlers
@@ -546,11 +601,16 @@ void WorldSession::LogoutPlayer(bool save)
         //FIXME: logout must be delayed in case lost connection with client in time of combat
         if (_player->GetDeathTimer())
         {
-            _player->getHostileRefManager().deleteReferences();
+            _player->GetThreatManager().RemoveMeFromThreatLists();
             _player->BuildPlayerRepop();
             _player->RepopAtGraveyard();
         }
-        else if (!_player->getAttackers().empty() || _player->IsCharmed())
+        // #721: playerbot sessions are exempt from the combat-logout kill below. AC's core has no such
+        // branch (AC WorldSession.cpp LogoutPlayer: death-timer repop, spirit of redemption, pending
+        // bind only), so an AC bot logged out in combat stays alive. Here every random-bot logout or
+        // shutdown with bots in combat killed them and saved them as ghosts (263 offline ghosts on
+        // MoP vs 43 on AC; 211 of them released at the 04:47 shutdown after the 1000-bot ramp).
+        else if (!IsBot() && (!_player->getAttackers().empty() || _player->IsCharmed()))
         {
             // build set of player who attack _player or who have pet attacking of _player
             std::set<Player*> attackers;
@@ -728,10 +788,16 @@ void WorldSession::LogoutPlayer(bool save)
 }
 
 /// Kick a player out of the World
-void WorldSession::KickPlayer()
+void WorldSession::KickPlayer(bool setKicked)
 {
     if (m_Socket)
         m_Socket->CloseSocket();
+
+    // AC WorldSession::KickPlayer (#27): the session won't be left ingame for 60 seconds, and
+    // World::KickAll at shutdown also drops parked (offline) sessions in the final UpdateSessions,
+    // instead of leaving them for World::~World after the playerbot managers are gone.
+    if (setKicked)
+        SetKicked(true);
 }
 
 void WorldSession::KickPlayerOP(std::string const& reason)
@@ -741,6 +807,8 @@ void WorldSession::KickPlayerOP(std::string const& reason)
         m_Socket->CloseSocket();
         forceExit = true;
     }
+
+    SetKicked(true); // AC: the AntiDOS kick is a plain KickPlayer(reason), which sets kicked (#27)
 }
 
 void WorldSession::SendNotification(const char *format, ...)

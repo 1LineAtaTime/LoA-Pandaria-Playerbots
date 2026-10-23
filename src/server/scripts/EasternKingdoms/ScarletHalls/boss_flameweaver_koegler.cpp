@@ -93,12 +93,16 @@ class boss_flameweaver_koegler : public CreatureScript
             EventMap nonCombatEvents;
             bool InDragon, Intro;
             ObjectGuid victimGUID;
+            uint32 sweepTimer = 0;
+            uint32 sweepTicks = 0;
+            bool sweeping = false;   // #683: Greater Dragon's Breath is being channelled, face the sweeping target
 
             void Reset() override
             {
                 _Reset();
                 events.Reset();
                 InDragon = false;
+                sweeping = false;
                 me->setRegeneratingHealth(true);
                 me->SetReactState(REACT_AGGRESSIVE);
                 nonCombatEvents.ScheduleEvent(EVENT_DRAGON_BREATH_INTRO, urand(1000, 2000));
@@ -131,6 +135,7 @@ class boss_flameweaver_koegler : public CreatureScript
             void JustDied(Unit* killer) override
             {
                 _JustDied();
+                sweeping = false;
                 Talk(TALK_DEATH);
 
                 if (instance)
@@ -149,9 +154,10 @@ class boss_flameweaver_koegler : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 _DespawnAtEvade();
+                sweeping = false;
 
                 if (instance)
                 {
@@ -174,6 +180,7 @@ class boss_flameweaver_koegler : public CreatureScript
 
                 nonCombatEvents.CancelEvent(EVENT_DRAGON_BREATH_INTRO);
                 me->RemoveAllAuras();
+                sweeping = false;
                 GetEvents();
             }
 
@@ -191,6 +198,25 @@ class boss_flameweaver_koegler : public CreatureScript
                         nonCombatEvents.ScheduleEvent(EVENT_DRAGON_BREATH_INTRO, 4000);
                     }
                     break;
+                }
+
+                // #683: "a full 360-degree sweep of the room" (Wowpedia). The cone of 113653 is built from the caster's server
+                // orientation (Spell.cpp:1142-1159), which PrepareChanneledCast sets once; the Dragon Breath Target stalker
+                // (npc_dragon_breath_targeting) circles Koegler, so turn him to it every 100 ms for as long as the breath lasts.
+                if (sweeping)
+                {
+                    if (sweepTimer <= diff)
+                    {
+                        sweepTimer = 100;
+                        if (Creature* aim = GetClosestCreatureWithEntry(me, NPC_DRAGON_BREATH_TARGET, 80.0f))
+                        {
+                            me->SetFacingTo(me->GetAngle(aim));
+                            if ((++sweepTicks % 10) == 1)
+                                TC_LOG_INFO("scripts", "[SH-KOEGLER] sweep ori=%.2f aim=%.2f", me->GetOrientation(), me->GetAngle(aim));
+                        }
+                    }
+                    else
+                        sweepTimer -= diff;
                 }
 
                 if (!UpdateVictim())
@@ -269,6 +295,7 @@ class boss_flameweaver_koegler : public CreatureScript
                         case EVENT_GREATER_DRAGONS_BREATH_END:
                             events.Reset();
                             InDragon = false;
+                            sweeping = false;
                             GetEvents();
                             me->RemoveChanneledCast(victimGUID);
                             break;
@@ -284,6 +311,8 @@ class boss_flameweaver_koegler : public CreatureScript
                                 me->PrepareChanneledCast(TeleportPoint.GetOrientation());
                             }
                             events.ScheduleEvent(EVENT_DRAGON_BREATH, 1500);
+                            sweeping = true; sweepTicks = 0;
+                            sweepTimer = 0;
                             events.ScheduleEvent(EVENT_GREATER_DRAGONS_BREATH_END, 13500);
                             break;
                         case EVENT_DRAGON_BREATH:
@@ -366,10 +395,35 @@ class spell_koegler_book_burner : public SpellScriptLoader
                 if (!target || !caster)
                     return;
 
-                if (target->GetTypeId() == TYPEID_PLAYER)
-                    return;
+                // #683 Wowpedia "Flameweaver Koegler" (MediaWiki API, fetched 2026-10-22): "Players may intercept the fiery bolt ...
+                // If Koegler's attack successfully hits the books, they begin to burn"; Strategy: "Book Burner needs to be
+                // intercepted by the tank, so only one person has to take the damage ... Just stand on the beam". The spell is a
+                // cone, so every unit in it was hit. A unit with a living player standing on the line between Koegler and it
+                // is shielded: no damage and no fire on the case behind the interceptor; the interceptor himself takes the bolt.
+                bool intercepted = false;
+                Player* interceptor = nullptr;
+                std::list<Player*> players;
+                GetPlayerListInGrid(players, caster, 60.0f);
+                for (Player* player : players)
+                    if (player != target && player->IsAlive() && !player->IsGameMaster() && player->IsInBetween(caster, target, 2.0f))
+                    {
+                        intercepted = true;
+                        interceptor = player;
+                        break;
+                    }
 
-                if (!target->HasAura(SPELL_BURNING_BOOKS))
+                if (target == GetExplTargetUnit())
+                    TC_LOG_INFO("scripts", "[SH-KOEGLER] book burner aimed at %s: %s", target->GetName().c_str(), interceptor ? (std::string("intercepted by ") + interceptor->GetName()).c_str() : "not intercepted");
+
+                if (target->GetTypeId() == TYPEID_PLAYER)
+                {
+                    if (intercepted)
+                        SetHitDamage(0);
+                    return;
+                }
+
+                // only the Book Case the bolt was aimed at burns (not every unit of the cone)
+                if (!intercepted && target->GetEntry() == NPC_BOOK_CASE && target == GetExplTargetUnit() && !target->HasAura(SPELL_BURNING_BOOKS))
                     target->CastSpell(target, SPELL_BURNING_BOOKS, true);
 
                 SetHitDamage(0);
@@ -465,7 +519,7 @@ class spell_dragon_breath_sc : public SpellScriptLoader
             void HandleAfterCast()
             {
                 if (Unit* caster = GetCaster())
-                    caster->SummonCreature(NPC_DRAGON_BREATH_TARGET, DragonBreathMover, TEMPSUMMON_TIMED_DESPAWN, 10 * IN_MILLISECONDS);
+                    caster->SummonCreature(NPC_DRAGON_BREATH_TARGET, DragonBreathMover, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(10 * IN_MILLISECONDS));
             }
 
             void Register() override

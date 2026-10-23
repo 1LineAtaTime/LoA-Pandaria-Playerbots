@@ -154,7 +154,7 @@ class boss_instructor_chillheart : public CreatureScript
                     }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -676,7 +676,11 @@ class spell_summon_books : public SpellScriptLoader
                 Books.insert(std::pair<uint32, uint32>(NPC_WANDERS_BOOK, GetCountExistedBook(NPC_WANDERS_BOOK)));
 
                 // doesn`t matter if 2 or 3 books have equal count of used books. It should select smth
-                uint8 selectedType = std::min(Books.begin()->second, Books.end()->second);
+                // #659: the old std::min(begin()->second, end()->second) dereferenced Books.end() (undefined
+                // behaviour); take the smallest count of the three book types instead.
+                uint32 selectedType = Books.begin()->second;
+                for (auto&& itr : Books)
+                    selectedType = std::min(selectedType, itr.second);
                 uint32 selectedBook = 0;
 
                 // map find doesn`t work, then use handle finder...

@@ -26,6 +26,11 @@ class PetAttackAction : public Action
 public:
     PetAttackAction(PlayerbotAI* ai) : Action(ai, "pet attack") {}
     virtual bool Execute(Event event) override;
+
+private:
+    // #644: the pet and the target of the last attack command (see PetAttackAction::Execute).
+    ObjectGuid lastCommandPet;
+    ObjectGuid lastCommandTarget;
 };
 
 #endif

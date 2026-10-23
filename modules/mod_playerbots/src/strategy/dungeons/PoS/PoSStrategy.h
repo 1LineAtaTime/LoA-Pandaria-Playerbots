@@ -1,0 +1,22 @@
+/*
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
+ */
+
+#ifndef PLAYERBOTS_POSSTRATEGY_H
+#define PLAYERBOTS_POSSTRATEGY_H
+
+#include "Strategy.h"
+
+// AC Ai/Dungeon/PoS/PoSStrategy.h:12
+class WotlkDungeonPoSStrategy : public Strategy
+{
+public:
+    WotlkDungeonPoSStrategy(PlayerbotAI* ai) : Strategy(ai) {}
+    std::string const getName() override { return "wotlk-pos"; }
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
+};
+
+#endif

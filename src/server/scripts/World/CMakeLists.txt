@@ -28,6 +28,7 @@ set(scripts_STAT_SRCS
   World/npc_taxi.cpp
   World/npcs_special.cpp
   World/tarecgosa_scripts.cpp
+  World/zeppelins.cpp
   World/BrawlersGuild/brawlers_guild.cpp
   World/BrawlersGuild/brawlers_guild.h
   World/transmog_scripts.cpp

@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -162,7 +162,7 @@ void PoolGroup<T>::AddEntry(PoolObject& poolitem, uint32 maxentries)
 
 // Method to add a quest id to the proper list. Both equal and explicit chanced objects are stored in the same list due to us reusing them in bulk.
 template<>
-void PoolGroup<Quest>::AddEntry(PoolObject& poolitem, uint32 /*maxentries*/)
+void PoolGroup<Quest>::AddEntry(PoolObject& poolitem, uint32 maxentries)
 {
     EqualChanced.push_back(poolitem);
 }
@@ -541,7 +541,8 @@ void PoolMgr::LoadFromDB()
                 PoolGroup<Creature>& cregroup = mPoolCreatureGroups[pool_id];
                 cregroup.SetPoolId(pool_id);
                 cregroup.AddEntry(plObject, pPoolTemplate->MaxLimit);
-                mCreatureSearchMap.emplace(guid, pool_id);
+                SearchPair p(guid, pool_id);
+                mCreatureSearchMap.insert(p);
 
                 ++count;
             }
@@ -618,7 +619,8 @@ void PoolMgr::LoadFromDB()
                 PoolGroup<GameObject>& gogroup = mPoolGameobjectGroups[pool_id];
                 gogroup.SetPoolId(pool_id);
                 gogroup.AddEntry(plObject, pPoolTemplate->MaxLimit);
-                mGameobjectSearchMap.emplace(guid, pool_id);
+                SearchPair p(guid, pool_id);
+                mGameobjectSearchMap.insert(p);
 
                 ++count;
             }
@@ -683,7 +685,8 @@ void PoolMgr::LoadFromDB()
                 PoolGroup<Pool>& plgroup = mPoolPoolGroups[mother_pool_id];
                 plgroup.SetPoolId(mother_pool_id);
                 plgroup.AddEntry(plObject, pPoolTemplateMother->MaxLimit);
-                mPoolSearchMap.emplace(child_pool_id, mother_pool_id);
+                SearchPair p(child_pool_id, mother_pool_id);
+                mPoolSearchMap.insert(p);
 
                 ++count;
             }
@@ -731,6 +734,16 @@ void PoolMgr::LoadFromDB()
 
             TC_LOG_INFO("server.loading", ">> Loaded %u pools in mother pools in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
         }
+    }
+
+    // Quest pools live in QuestPoolMgr (loaded after this), so remember which pool ids are quest pools; IsEmpty must not report them empty.
+    // Diagnostic only: spawn/despawn logic never consults this set.
+    mQuestPoolIds.clear();
+    if (QueryResult questPoolResult = WorldDatabase.Query("SELECT DISTINCT pool_entry FROM pool_quest"))
+    {
+        do
+            mQuestPoolIds.insert((*questPoolResult)[0].GetUInt32());
+        while (questPoolResult->NextRow());
     }
 
     for (auto const& [poolId, templateData] : mPoolTemplate)
@@ -873,6 +886,10 @@ bool PoolMgr::CheckPool(uint32 pool_id) const
 
 bool PoolMgr::IsEmpty(uint32 pool_id) const
 {
+    // quest pools are held by QuestPoolMgr, not by a PoolGroup; a pool with pool_quest rows is not empty
+    if (mQuestPoolIds.find(pool_id) != mQuestPoolIds.end())
+        return false;
+
     {
         auto it = mPoolGameobjectGroups.find(pool_id);
         if (it != mPoolGameobjectGroups.end() && !it->second.isEmptyDeepCheck())

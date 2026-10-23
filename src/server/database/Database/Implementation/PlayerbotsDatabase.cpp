@@ -1,3 +1,21 @@
+/*
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifdef PLAYERBOTS
 #include "PlayerbotsDatabase.h"
 #include "MySQLPreparedStatement.h"
 
@@ -6,14 +24,18 @@ void PlayerbotsDatabaseConnection::DoPrepareStatements()
     if (!m_reconnecting)
         m_stmts.resize(MAX_PLAYERBOTS_STATEMENTS);
 
-    /*PrepareStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER, "SELECT DISTINCT name FROM playerbots_custom_strategy WHERE owner = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER, "SELECT DISTINCT name FROM playerbots_custom_strategy WHERE owner = ?", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER_AND_NAME, "SELECT idx, action_line FROM playerbots_custom_strategy WHERE owner = ? AND name = ? ORDER BY idx", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER_AND_NAME_AND_IDX, "SELECT action_line FROM playerbots_custom_strategy WHERE owner = ? AND name = ? AND idx = ?", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_DEL_CUSTOM_STRATEGY, "DELETE FROM playerbots_custom_strategy WHERE name = ? AND owner = ? AND idx = ?", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_UPD_CUSTOM_STRATEGY, "UPDATE playerbots_custom_strategy SET action_line = ? WHERE name = ? AND owner = ? AND idx = ?", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_INS_CUSTOM_STRATEGY, "INSERT INTO playerbots_custom_strategy (name, owner, idx, action_line) VALUES (?, ?, ?, ?)", CONNECTION_ASYNC);
+    // NOTE (issue #62): this whole list must stay active. The enum entries exist in
+    // PlayerbotsDatabase.h and the module calls them, so any statement left unprepared makes
+    // MySQLConnection::_Query assert (m_mStmt == null) or PreparedStatementBase assert on
+    // setUInt32(), which crashed the worldserver during OnStartup (travel node graph, db store).
     PrepareStatement(PLAYERBOTS_SEL_DB_STORE, "SELECT `key`,`value` FROM `playerbots_db_store` WHERE `guid` = ?", CONNECTION_SYNCH);
-    PrepareStatement(PLAYERBOTS_DEL_DB_STORE, "DELETE FROM `playerbots_db_store` WHERE `guid` = ?", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_DEL_DB_STORE, "DELETE FROM `playerbots_db_store` WHERE `guid` = ?", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_DB_STORE, "INSERT INTO `playerbots_db_store` (`guid`, `key`, `value`) VALUES (?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_SEL_ENCHANTS, "SELECT class, spec, spellid, slotid FROM playerbots_enchants", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_SEL_EQUIP_CACHE, "SELECT clazz, lvl, slot, quality, item FROM playerbots_equip_cache", CONNECTION_SYNCH);
@@ -24,18 +46,18 @@ void PlayerbotsDatabaseConnection::DoPrepareStatements()
     PrepareStatement(PLAYERBOTS_SEL_GUILD_TASKS_BY_OWNER_DISTINCT, "SELECT DISTINCT guildid FROM playerbots_guild_tasks WHERE owner = ?", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_SEL_GUILD_TASKS_BY_OWNER_ORDERED, "SELECT `value`, `time`, validIn, guildid FROM playerbots_guild_tasks WHERE owner = ? AND type = ? ORDER BY guildid", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_DEL_GUILD_TASKS, "DELETE FROM playerbots_guild_tasks WHERE owner = ? AND guildid = ? AND `type` = ?", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_INS_GUILD_TASKS, "INSERT INTO playerbots_guild_tasks (owner, guildid, `time`, validIn, `type`, `value`) VALUES (?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);*/
-    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_VALUE, "SELECT value FROM playerbots_random_bots WHERE event = ?", CONNECTION_SYNCH);
-    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BOT, "SELECT `bot` FROM playerbots_random_bots WHERE event = ?", CONNECTION_SYNCH);
-    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BY_OWNER_AND_EVENT, "SELECT bot FROM playerbots_random_bots WHERE owner = ? AND event = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_INS_GUILD_TASKS, "INSERT INTO playerbots_guild_tasks (owner, guildid, `time`, validIn, `type`, `value`) VALUES (?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_VALUE, "SELECT value FROM playerbots_random_bots WHERE `event` = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BOT, "SELECT `bot` FROM playerbots_random_bots WHERE `event` = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BY_OWNER_AND_EVENT, "SELECT bot FROM playerbots_random_bots WHERE owner = ? AND `event` = ?", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BY_OWNER_AND_BOT, "SELECT `event`, `value`, `time`, validIn, `data` FROM playerbots_random_bots WHERE owner = ? AND bot = ?", CONNECTION_SYNCH);
-    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BY_EVENT_AND_VALUE, "SELECT bot FROM playerbots_random_bots WHERE event = ? AND value = ?", CONNECTION_SYNCH);
-    PrepareStatement(PLAYERBOTS_INS_RANDOM_BOTS, "INSERT INTO playerbots_random_bots (owner, bot, `time`, validIn, event, `value`, `data`) VALUES (?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_SEL_RANDOM_BOTS_BY_EVENT_AND_VALUE, "SELECT bot FROM playerbots_random_bots WHERE `event` = ? AND `value` = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_INS_RANDOM_BOTS, "INSERT INTO playerbots_random_bots (owner, bot, `time`, validIn, `event`, `value`, `data`) VALUES (?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_DEL_RANDOM_BOTS, "DELETE FROM playerbots_random_bots", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_DEL_RANDOM_BOTS_BY_OWNER, "DELETE FROM playerbots_random_bots WHERE owner = ? AND bot = ?", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_DEL_RANDOM_BOTS_BY_OWNER_AND_EVENT, "DELETE FROM playerbots_random_bots WHERE owner = ? AND bot = ? AND event = ?", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_UPD_RANDOM_BOTS, "UPDATE playerbots_random_bots SET validIn = ? WHERE event = ? AND bot = ?", CONNECTION_ASYNC);
-    /*PrepareStatement(PLAYERBOTS_SEL_RARITY_CACHE, "SELECT item, rarity FROM playerbots_rarity_cache", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_DEL_RANDOM_BOTS_BY_OWNER_AND_EVENT, "DELETE FROM playerbots_random_bots WHERE owner = ? AND bot = ? AND `event` = ?", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_UPD_RANDOM_BOTS, "UPDATE playerbots_random_bots SET validIn = ? WHERE `event` = ? AND bot = ?", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_SEL_RARITY_CACHE, "SELECT item, rarity FROM playerbots_rarity_cache", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_RARITY_CACHE, "INSERT INTO playerbots_rarity_cache (item, rarity) VALUES (?, ?)", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_SEL_RNDITEM_CACHE, "SELECT lvl, type, item FROM playerbots_rnditem_cache", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_RNDITEM_CACHE, "INSERT INTO playerbots_rnditem_cache (lvl, type, item) VALUES (?, ?, ?)", CONNECTION_ASYNC);
@@ -77,7 +99,7 @@ void PlayerbotsDatabaseConnection::DoPrepareStatements()
         "scale_1, scale_2, scale_3, scale_4, scale_5, scale_6, scale_7, scale_8, scale_9, scale_10, scale_11, scale_12, scale_13, scale_14, scale_15, "
         "scale_16, scale_17, scale_18, scale_19, scale_20, scale_21, scale_22, scale_23, scale_24, scale_25, scale_26, scale_27, scale_28, scale_29, scale_30, scale_31, scale_32) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_DEL_EQUIP_CACHE_NEW, "DELETE FROM playerbots_item_info_cache WHERE id = ?", CONNECTION_ASYNC);*/
+    PrepareStatement(PLAYERBOTS_DEL_EQUIP_CACHE_NEW, "DELETE FROM playerbots_item_info_cache WHERE id = ?", CONNECTION_ASYNC);
 }
 PlayerbotsDatabaseConnection::PlayerbotsDatabaseConnection(MySQLConnectionInfo& connInfo, ConnectionFlags connectionFlags) : MySQLConnection(connInfo, connectionFlags)
 {
@@ -85,3 +107,5 @@ PlayerbotsDatabaseConnection::PlayerbotsDatabaseConnection(MySQLConnectionInfo& 
 PlayerbotsDatabaseConnection::~PlayerbotsDatabaseConnection()
 {
 }
+
+#endif

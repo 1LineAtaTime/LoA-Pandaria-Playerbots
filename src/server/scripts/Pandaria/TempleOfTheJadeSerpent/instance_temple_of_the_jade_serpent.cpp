@@ -411,7 +411,7 @@ class instance_temple_of_jade_serpent : public InstanceMapScript
                         {
                             Creature* zao = instance->GetCreature(zaoGUID);
                             {
-                                if (zao->IsAIEnabled)
+                                if (zao && zao->IsAIEnabled) // #651: was dereferenced unchecked (null once Zao is despawned)
                                     zao->AI()->DoAction(2);
                             }
 

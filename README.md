@@ -1,20 +1,124 @@
-**Mists of Pandaria 5.4.8 Build 18414**
+**Mists of Pandaria 5.4.8 (build 18414) with playerbots**
 
-Discord link: https://discord.gg/byBCHbwJEg
+A Mists of Pandaria 5.4.8 server core with a full playerbots module: a world populated by
+hundreds of AI-controlled player characters that quest, group, run dungeons, queue for
+battlegrounds and arenas, and talk, alongside real players.
 
-Client exe files" https://mega.nz/file/xUJDkIDA#I3TMdPymMw8ISNwIUgSaXLl5oHJHYFxAKyPNMXUQjgY
+This fork builds on the Legends of Azeroth Pandaria 5.4.8 core. See [THANKS](THANKS.md) for its
+authors and contributors.
+
+## What this fork adds
+
+**Playerbots ported to MoP 5.4.8**
++ Random bots that live in the world: roaming, questing (including the Cataclysm and Pandaria
+  zone chains), hunting, gathering, travelling by flight path, boat, zeppelin and portal.
++ Groups with real players: follow, assist, loot, ready checks, master/leader commands, and
+  bots that follow their group onto boats, zeppelins, elevators and other moving transports.
++ Dungeon finder with bots: bots queue, accept and run Classic through Mists of Pandaria
+  5-player dungeons, with encounter strategies for the bosses that need them.
++ Battlegrounds and arenas with bots: objective play in every battleground (flags, bases,
+  carts, orbs, siege vehicles), rated battlegrounds, skirmish and rated arenas.
++ Vehicles and transports: bots drive and ride vehicles where a battleground or quest needs it.
++ Class rotations for every class and specialisation of MoP, including the Monk, with PvE and
+  PvP priorities, interrupts, defensives and pet control.
++ Bot chat: greetings, reactions, battleground and group chatter, and duels around the cities.
+
+**Performance**
++ Reworked bot tick scheduling and per-bot update delays: with about 1000 bots online the world
+  update averages a few milliseconds (median 2 ms in our 1000-bot runs), at no extra CPU cost.
++ `.server info` prints the update-time statistics of the last 500 world updates (mean, median,
+  95th and 99th percentile, max), so the cost of a bot population can be measured directly.
+
+**Testing and diagnostics**
++ A headless client (`contrib/headless-client/`): a scriptable, graphics-free 5.4.8 client that
+  logs in as a real player, so grouping, queues, duels, quests and transports can be tested
+  automatically. See its README.
++ GM test commands for bots (`.botscenario`, in `modules/mod_playerbots/src/Scenario/`) to place,
+  group, queue and probe bots in reproducible scenarios.
++ Playerbots logging and diagnostics: per-feature log channels, performance monitor counters,
+  and per-bot debug output that can be switched on from the config.
 
 ## Requirements
 + Platform: Linux, Windows or Mac
 + AMD64 or AArch64 CPU architecture
-+ Processor with SSE2(AMD64 CPU architecture) support
 + MySQL = 5.7 / 8.0-8.1
-+ CMake ≥ 3.27.2 
++ CMake ≥ 3.27.2
 + OpenSSL = 1.1.1 / 3.0-3.1.1 (3.2.0 not supported) (MySQL >= 8.0.33)
-+ Boost ≥ 1.85.0_msvc 14.3 x64
++ Boost ≥ 1.85.0_msvc 14.3 x64 / 1.81 above Linux
 + Windows SDK version 10.0.22621
-+ MS Visual Studio (Community) ≥ 16.4 (2019) (Desktop) (Not previews) 
-+ GCC >= 13.0, Clang >= 12.0 
++ MS Visual Studio (Community) ≥ 16.4 (2019) (Desktop) (Not previews)
++ GCC >= 13.0, Clang >= 12.0
++ A 5.4.8 (build 18414) game client, enUS locale, for the data extraction below.
+
+## Getting started
+
+### 1. Binaries
+Each release has Windows x64 assets:
+
++ `server`: `worldserver.exe`, `authserver.exe`, the runtime DLLs and the `.conf.dist` files.
++ `extractors`: `mapextractor.exe`, `vmap4extractor.exe`, `vmap4assembler.exe`,
+  `mmaps_generator.exe`.
++ `database`: `world.sql` (complete world database) and `auth.sql`, `characters.sql`,
+  `playerbots.sql` (schemas with the static data they need; no accounts or characters).
++ `symbols`: `.pdb` debug symbols, optional, for readable crash reports.
+
+The binaries need the Microsoft Visual C++ 2015-2022 Redistributable (x64) and a 64-bit
+MySQL 8.0 server.
+
+On other platforms (or to build yourself), build from source with CMake.
+
+### 2. Game data
+No game data is shipped. Extract it from your own 5.4.8 client with the bundled tools, run
+from the client folder:
+
+1. `mapextractor.exe` writes `dbc/`, `maps/` and `cameras/`.
+2. `vmap4extractor.exe`, then `vmap4assembler.exe Buildings vmaps`, writes `vmaps/`.
+3. Create an empty `mmaps/` folder, then run `mmaps_generator.exe`. Bots need the movement
+   maps: they path with them everywhere. Generation takes several hours.
+
+Copy `dbc`, `maps`, `vmaps`, `mmaps` and `cameras` into one folder and point `DataDir` in
+`worldserver.conf` at it. Bots need the enUS DBC files.
+
+### 3. Databases
+Create four databases (for example `auth`, `characters`, `world`, `playerbots`), give one MySQL
+user access to all four, and import the release dumps:
+
+```
+mysql -u<user> -p auth       < auth.sql
+mysql -u<user> -p characters < characters.sql
+mysql -u<user> -p world      < world.sql
+mysql -u<user> -p playerbots < playerbots.sql
+```
+
+The auth, characters and playerbots databases fill themselves on the first start: the bot
+accounts, characters and bot data are created by the worldserver.
+
+### 4. Configuration
+Copy the `.conf.dist` files next to the binaries and drop the `.dist` suffix:
+
++ `authserver.conf`: `LoginDatabaseInfo`.
++ `worldserver.conf`: `LoginDatabaseInfo`, `WorldDatabaseInfo`, `CharacterDatabaseInfo`,
+  `PlayerbotsDatabaseInfo`, `DataDir`, `LogsDir`.
++ `playerbots.conf` (placed next to `worldserver.conf`): the same `PlayerbotsDatabaseInfo`, and
+  the bot population, e.g. `AiPlayerbot.MinRandomBots`, `AiPlayerbot.MaxRandomBots` and
+  `AiPlayerbot.RandomBotAccountCount`. `AiPlayerbot.Enabled = 0` turns the module off.
+
+Database updates: the release dumps are complete, so `Updates.EnableDatabases = 0` (the shipped
+default) is fine. To apply SQL updates from a newer checkout of this repository, set
+`Updates.EnableDatabases = 7` (1 auth + 2 characters + 4 world) and point `SourceDirectory` at
+the checkout and `MySQLExecutable` at `mysql.exe`. The world dump already records every update
+it contains, so nothing is applied twice. The playerbots database (mask 8) is not handled by the
+updater yet; import its SQL by hand.
+
+To drive the server from scripts (the headless client's GM verbs use it), enable SOAP in
+`worldserver.conf` (`SOAP.Enabled`, `SOAP.IP`, `SOAP.Port`).
+
+### 5. Run
+Start `authserver`, then `worldserver`. The first start with bots enabled creates the bot
+accounts and characters and takes a while; let it finish. Create your own account from the
+worldserver console (`account create <name> <password>`, then `account set gmlevel <name> 3 -1`
+for a GM). The realm address is `127.0.0.1`; change it in the `realmlist` table of the auth
+database if clients connect from other machines.
 
 ## Copyright
 License: GPL 2.0
@@ -23,16 +127,3 @@ Read file [COPYING](COPYING.md)
 
 ## Authors &amp; Contributors
 Read file [THANKS](THANKS.md)
-
-## Build Status
-[![windows-build](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/actions/workflows/windows-build-release.yml/badge.svg?branch=master)](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/actions/workflows/windows-build-release.yml)
-[![linux-gcc-build](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/actions/workflows/linux_gcc.yml/badge.svg?branch=master)](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/actions/workflows/linux_gcc.yml)
-
-<a href="https://scan.coverity.com/projects/legends-of-azeroth-mop">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/26941/badge.svg"/>
-</a>
-<a href="https://scan.coverity.com/projects/legends-of-azeroth-mop">
-  <img alt="Coverity Scan Build Status"
-       src="https://img.shields.io/coverity/scan/26941.svg"/>
-</a>

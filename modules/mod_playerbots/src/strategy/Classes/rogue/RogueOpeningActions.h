@@ -30,12 +30,19 @@ class CastCheapShotAction : public CastMeleeSpellAction
 {
 public:
     CastCheapShotAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "cheap shot") {}
+
+    // PvP stun guard: in a BG/arena only stun a target that is not already CC'd (body in RogueOpeningActions.cpp).
+    bool isUseful() override;
 };
 
 class CastAmbushAction : public CastMeleeSpellAction
 {
 public:
     CastAmbushAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "ambush") {}
+
+    // #386 (wave-9: checkcast result=97 ONLY_STEALTHED every tick): Ambush 8676 needs Stealth; the AC combat
+    // edge "high energy available" -> ambush (CombatRogueStrategy.cpp:86) is kept, it just no longer fires unstealthed.
+    bool isUseful() override;
 };
 
 #endif

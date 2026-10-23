@@ -35,6 +35,16 @@ public:
     GuardAction(PlayerbotAI* botAI) : MoveToPositionAction(botAI, "move to position", "guard") {}
 };
 
+// Ported from AC mod-playerbots Ai/Base/Actions/PositionAction.h (#177). Scheduled by
+// StayStrategy::InitTriggers() on the "return to stay position" trigger.
+class ReturnToStayPositionAction : public MoveToPositionAction
+{
+public:
+    ReturnToStayPositionAction(PlayerbotAI* botAI) : MoveToPositionAction(botAI, "move to position", "stay") {}
+
+    bool isPossible() override;
+};
+
 class SetReturnPositionAction : public Action
 {
 public:

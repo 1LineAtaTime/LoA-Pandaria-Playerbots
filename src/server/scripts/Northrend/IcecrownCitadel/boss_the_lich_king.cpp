@@ -25,8 +25,10 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "CreatureTextMgr.h"
 #include "icecrown_citadel.h"
+#include "Group.h"
 
 enum Texts
 {
@@ -757,7 +759,7 @@ class boss_the_lich_king : public CreatureScript
                 return !target->HasAura(SPELL_IN_FROSTMOURNE_ROOM) && target->GetPositionZ() > 830.0f;
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 instance->SetBossState(DATA_THE_LICH_KING, FAIL);
                 BossAI::EnterEvadeMode();
@@ -1321,7 +1323,7 @@ class boss_the_lich_king : public CreatureScript
                                         summon->AI()->DoAction(ACTION_PAUSE_RAGING_SPIRIT);
                             break;
                         case EVENT_FROSTMOURNE_HEROIC:
-                            if (TempSummon* terenas = me->GetMap()->SummonCreature(NPC_TERENAS_MENETHIL_FROSTMOURNE_H, TerenasSpawnHeroic, nullptr, 50000))
+                            if (TempSummon* terenas = me->GetMap()->SummonCreature(NPC_TERENAS_MENETHIL_FROSTMOURNE_H, TerenasSpawnHeroic, nullptr, Milliseconds(50000)))
                             {
                                 terenas->AI()->DoAction(ACTION_FROSTMOURNE_INTRO);
                                 std::list<Creature*> triggers;
@@ -2329,13 +2331,14 @@ class npc_terenas_menethil : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 // no running back home
                 if (!me->IsAlive())
                     return;
 
-                me->DeleteThreatList();
+                me->GetThreatManager().RemoveMeFromThreatLists();
+                me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(false);
             }
 
@@ -2515,9 +2518,9 @@ class npc_spirit_bomb : public CreatureScript
     public:
         npc_spirit_bomb() : CreatureScript("npc_spirit_bomb") { }
 
-        struct npc_spirit_bombAI : public CreatureAI
+        struct npc_spirit_bombAI : public ScriptedAI
         {
-            npc_spirit_bombAI(Creature* creature) : CreatureAI(creature) { }
+            npc_spirit_bombAI(Creature* creature) : ScriptedAI(creature) { }
 
             void IsSummonedBy(Unit* /*summoner*/) override
             {
@@ -2562,9 +2565,9 @@ class npc_broken_frostmourne : public CreatureScript
     public:
         npc_broken_frostmourne() : CreatureScript("npc_broken_frostmourne") { }
 
-        struct npc_broken_frostmourneAI : public CreatureAI
+        struct npc_broken_frostmourneAI : public ScriptedAI
         {
-            npc_broken_frostmourneAI(Creature* creature) : CreatureAI(creature) { }
+            npc_broken_frostmourneAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -2583,7 +2586,7 @@ class npc_broken_frostmourne : public CreatureScript
                     _events.ScheduleEvent(EVENT_OUTRO_SUMMON_TERENAS, 6000, 0, PHASE_OUTRO);
             }
 
-            void EnterEvadeMode() override { }
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
             void UpdateAI(uint32 diff) override
             {
@@ -3522,7 +3525,7 @@ class spell_the_lich_king_vile_spirit_move_target_search : public SpellScriptLoa
                     return;
 
                 GetCaster()->ToCreature()->AI()->AttackStart(GetHitUnit());
-                GetCaster()->AddThreat(GetHitUnit(), 100000.0f);
+                GetCaster()->GetThreatManager().AddThreat(GetHitUnit(), 100000.0f);
             }
 
             void Register() override
@@ -3996,7 +3999,7 @@ class spell_the_lich_king_play_movie : public SpellScriptLoader
 
             void Register() override
             {
-                OnEffectHitTarget += SpellEffectFn(spell_the_lich_king_play_movie_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+                OnEffectHitTarget += SpellEffectFn(spell_the_lich_king_play_movie_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_PLAY_MOVIE);
             }
         };
 

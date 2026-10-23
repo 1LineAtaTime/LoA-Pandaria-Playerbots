@@ -1,8 +1,19 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
- */
-
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "GenericTriggers.h"
 
 #include <string>
@@ -12,9 +23,12 @@
 #include "CreatureAI.h"
 #include "GameTime.h"
 #include "LastSpellCastValue.h"
+#include "LootObjectStack.h"
 #include "ObjectGuid.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
+#include "PositionValue.h"
+#include "ServerFacade.h"
 #include "SharedDefines.h"
 #include "TemporarySummon.h"
 #include "ThreatManager.h"
@@ -41,7 +55,6 @@ bool NoPetTrigger::IsActive()
 bool HasPetTrigger::IsActive()
 {
     return (AI_VALUE(Unit*, "pet target")) && !AI_VALUE2(bool, "mounted", "self target");
-    ;
 }
 
 bool PetAttackTrigger::IsActive()
@@ -82,11 +95,32 @@ bool EnoughManaTrigger::IsActive()
     return AI_VALUE2(bool, "has mana", "self target") && AI_VALUE2(uint8, "mana", "self target") > sPlayerbotAIConfig->highMana;
 }
 
+// Ported from AC mod-playerbots GenericTriggers.cpp:94-106 (#149).
+bool ComboPointsAvailableTrigger::IsActive() { return AI_VALUE2(uint8, "combo", "current target") >= amount; }
+
+bool ComboPointsNotFullTrigger::IsActive() { return AI_VALUE2(uint8, "combo", "current target") < amount; }
+
+bool TargetWithComboPointsLowerHealTrigger::IsActive()
+{
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target || !target->IsAlive() || !target->IsInWorld())
+        return false;
+
+    return ComboPointsAvailableTrigger::IsActive() &&
+           (target->GetHealth() / AI_VALUE(float, "estimated group dps")) <= lifeTime;
+}
+
 bool RageAvailable::IsActive() { return AI_VALUE2(uint8, "rage", "self target") >= amount; }
 
 bool EnergyAvailable::IsActive() { return AI_VALUE2(uint8, "energy", "self target") >= amount; }
 
-bool LoseAggroTrigger::IsActive() { return !AI_VALUE2(bool, "has aggro", "current target"); }
+bool LoseAggroTrigger::IsActive()
+{
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (target && target->IsPlayer())
+        return false;  // players have no threat: taunts only waste the cooldown
+    return !AI_VALUE2(bool, "has aggro", "current target");
+}
 
 bool HasAggroTrigger::IsActive() { return AI_VALUE2(bool, "has aggro", "current target"); }
 
@@ -145,11 +179,11 @@ bool BuffTrigger::IsActive()
     if (!SpellTrigger::IsActive())
         return false;
     Aura* aura = botAI->GetAura(spell, target, checkIsOwner, checkDuration);
+    // #628 (AC GenericTriggers.cpp:165-166 + GenericBuffUtils.cpp:36-43 BuffBelowRefreshTarget): with no
+    // force-rebuff pass pending this is exactly the old rule (missing, or below beforeDuration).
     if (!aura)
         return true;
-    if (beforeDuration && aura->GetDuration() < beforeDuration)
-        return true;
-    return false;
+    return botAI->forceRebuff.BuffBelowRefreshTarget(aura->GetDuration(), aura->GetMaxDuration(), beforeDuration);
 }
 
 Value<Unit*>* BuffOnPartyTrigger::GetTargetValue()
@@ -169,6 +203,14 @@ Value<Unit*>* DebuffOnMeleeAttackerTrigger::GetTargetValue()
     return context->GetValue<Unit*>("melee attacker without aura", spell);
 }
 
+bool DuelOpponentUntargetedTrigger::IsActive()
+{
+    if (!bot->duel || !bot->duel->opponent || bot->duel->startTime == 0)
+        return false;
+
+    return bot->duel->opponent->IsAlive() && !AI_VALUE(Unit*, "current target");
+}
+
 bool NoAttackersTrigger::IsActive()
 {
     return !AI_VALUE(Unit*, "current target") && AI_VALUE(uint8, "my attacker count") > 0;
@@ -185,17 +227,17 @@ bool MyAttackerCountTrigger::IsActive()
 
 bool LowTankThreatTrigger::IsActive()
 {
+    Unit* current_target = AI_VALUE(Unit*, "current target");
+    if (!current_target || current_target->IsPlayer())
+        return false;  // players have no threat: Tricks of the Trade / Misdirection would be wasted
+
     Unit* mt = AI_VALUE(Unit*, "main tank");
     if (!mt)
         return false;
 
-    Unit* current_target = AI_VALUE(Unit*, "current target");
-    if (!current_target)
-        return false;
-
     ThreatManager& mgr = current_target->GetThreatManager();
-    float threat = mgr.getThreat(bot);
-    float tankThreat = mgr.getThreat(mt);
+    float threat = mgr.GetThreat(bot);
+    float tankThreat = mgr.GetThreat(mt);
     return tankThreat == 0.0f || threat > tankThreat * 0.5f;
 }
 
@@ -222,24 +264,19 @@ bool AoeTrigger::IsActive()
     return attackers_count >= amount;
 }
 
+// #163 S8 gap fix (a): these were stubbed to `return false` pending "inventory items"/"conjured
+// food"|"conjured water" qualifier support. That support already exists (InventoryAction.cpp's
+// Find(), qualifiers "conjured food"/"conjured water") - only these two triggers hadn't been wired
+// back up to it. AC's `sPlayerbotAIConfig.freeFood` random-bot gate doesn't exist in either this
+// fork's or AC's current PlayerbotAIConfig, so it is dropped rather than invented.
 bool NoFoodTrigger::IsActive()
 {
-    return false;
-    /*bool isRandomBot = sRandomPlayerbotMgr->IsRandomBot(bot);
-    if (isRandomBot && sPlayerbotAIConfig->freeFood)
-        return false;
-
-    return AI_VALUE2(std::vector<Item*>, "inventory items", "conjured food").empty();*/
+    return AI_VALUE2(std::vector<Item*>, "inventory items", "conjured food").empty();
 }
 
 bool NoDrinkTrigger::IsActive()
 {
-    return false;
-    /*bool isRandomBot = sRandomPlayerbotMgr->IsRandomBot(bot);
-    if (isRandomBot && sPlayerbotAIConfig->freeFood)
-        return false;
-
-    return AI_VALUE2(std::vector<Item*>, "inventory items", "conjured water").empty();*/
+    return AI_VALUE2(std::vector<Item*>, "inventory items", "conjured water").empty();
 }
 
 bool TargetInSightTrigger::IsActive() { return AI_VALUE(Unit*, "grind target"); }
@@ -494,11 +531,6 @@ bool IsNotBehindTargetTrigger::IsActive()
 
 bool IsNotFacingTargetTrigger::IsActive() { return !AI_VALUE2(bool, "facing", "current target"); }
 
-bool HasCcTargetTrigger::IsActive()
-{
-    return AI_VALUE2(Unit*, "cc target", getName()) && !AI_VALUE2(Unit*, "current cc target", getName());
-}
-
 bool NoMovementTrigger::IsActive() { return !AI_VALUE2(bool, "moving", "self target"); }
 
 bool NoPossibleTargetsTrigger::IsActive()
@@ -539,6 +571,31 @@ bool NotDpsAoeTargetActiveTrigger::IsActive()
 
 bool IsSwimmingTrigger::IsActive() { return AI_VALUE2(bool, "swimming", "self target"); }
 
+// Ported from AC mod-playerbots StuckTriggers.cpp:144-170 (#149). Uses the "current position" and
+// "combat" values, both already present on this fork (see ReleaseSpiritAction.cpp's
+// RESET_AI_VALUE(bool, "combat::self target") / RESET_AI_VALUE(WorldPosition, "current position")).
+bool CombatStuckTrigger::IsActive()
+{
+    if (!bot->IsInCombat())
+        return false;
+
+    // AC IsRealPlayer(Player*): a master with no PlayerbotAI attached is a person at a client.
+    if (Player* master = botAI->GetMaster())
+        if (!GET_PLAYERBOT_AI(master))
+            return false;
+
+    if (!botAI->AllowActivity(ALL_ACTIVITY))
+        return false;
+
+    MemoryCalculatedValue<bool>* combatVal =
+        dynamic_cast<MemoryCalculatedValue<bool>*>(context->GetUntypedValue("combat::self target"));
+
+    if (combatVal && combatVal->LastChangeDelay() > 5 * MINUTE)
+        return true;
+
+    return false;
+}
+
 bool HasNearestAddsTrigger::IsActive()
 {
     GuidVector targets = AI_VALUE(GuidVector, "nearest adds");
@@ -565,6 +622,32 @@ Value<Unit*>* InterruptEnemyHealerTrigger::GetTargetValue()
 }
 
 bool RandomBotUpdateTrigger::IsActive() { return RandomTrigger::IsActive() && AI_VALUE(bool, "random bot update"); }
+
+// #855 (epic #854): shared rotation triggers, see GenericTriggers.h.
+bool EnemyCasterInRangeTrigger::IsActive() { return AI_VALUE(Unit*, "enemy caster target") != nullptr; }
+
+bool BotIsCcTrigger::IsActive()
+{
+    return bot->IsAlive() && bot->HasUnitState(UNIT_STATE_STUNNED | UNIT_STATE_FLEEING | UNIT_STATE_CONFUSED);
+}
+
+bool EnemyPlayerInMeleeRangeTrigger::IsActive()
+{
+    if (!bot->IsInWorld() || !bot->IsAlive() || !bot->IsInCombat())
+        return false;
+
+    std::list<Player*> players;
+    bot->GetPlayerListInGrid(players, NOMINAL_MELEE_RANGE);  // alive players, surface distance <= 5 yd
+    for (Player* player : players)
+    {
+        if (player == bot || !bot->IsValidAttackTarget(player) || !bot->CanSeeOrDetect(player))
+            continue;
+
+        return true;
+    }
+
+    return false;
+}
 
 
 bool NewPlayerNearbyTrigger::IsActive() { return AI_VALUE(ObjectGuid, "new player nearby"); }
@@ -595,11 +678,56 @@ bool StayTimeTrigger::IsActive()
     return delay && stayTime && now > stayTime + 2 * delay / 1000;
 }
 
+// Ported from AC mod-playerbots Ai/Base/Trigger/GenericTriggers.cpp:681-691 (#177).
+bool ReturnToStayPositionTrigger::IsActive()
+{
+    PositionInfo stayPosition = AI_VALUE(PositionMap&, "position")["stay"];
+    if (stayPosition.isSet())
+    {
+        float const distance = bot->GetDistance(stayPosition.x, stayPosition.y, stayPosition.z);
+        return distance > sPlayerbotAIConfig->followDistance;
+    }
+
+    return false;
+}
+
 bool IsMountedTrigger::IsActive() { return AI_VALUE2(bool, "mounted", "self target"); }
 
 bool CorpseNearTrigger::IsActive()
 {
     return bot->GetCorpse() && bot->GetCorpse()->IsWithinDistInMap(bot, CORPSE_RECLAIM_RADIUS, true);
+}
+
+// Ported from AC mod-playerbots Ai/Base/Trigger/LootTriggers.cpp:12-39 (issue #151), replacing the
+// #149 5-yd corpse-scan diverged body. FarFromCurrentLootTrigger/CanLootTrigger (AC :41-50) are the
+// new strategy/triggers/LootTriggers.h/.cpp; only this trigger stays declared here (see the class
+// comment above) to avoid the ~21-TU GenericTriggers.h rebuild a move would cost.
+bool LootAvailableTrigger::IsActive()
+{
+    if (!AI_VALUE(bool, "has available loot"))
+        return false;
+
+    bool distanceCheck = false;
+    if (botAI->HasStrategy("stay", BOT_STATE_NON_COMBAT))
+    {
+        distanceCheck =
+            sServerFacade->IsDistanceLessOrEqualThan(AI_VALUE2(float, "distance", "loot target"), CONTACT_DISTANCE);
+    }
+    else
+    {
+        distanceCheck = sServerFacade->IsDistanceLessOrEqualThan(AI_VALUE2(float, "distance", "loot target"),
+                                                                  INTERACTION_DISTANCE - 2.0f);
+    }
+
+    // Loot target in range, or no hostile targets to deal with first.
+    if (distanceCheck || AI_VALUE(GuidVector, "all targets").empty())
+        return true;
+
+    // A target that became not loot-possible after being selected - the bot was pulled into combat
+    // while approaching it, or it despawned - never returns to range, so without this it stays
+    // selected forever and the loot action never gets to pick another. Report active so it can.
+    LootObject lootTarget = AI_VALUE(LootObject, "loot target");
+    return !lootTarget.IsEmpty() && !lootTarget.IsLootPossible(bot);
 }
 
 bool IsFallingTrigger::IsActive() { return bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING); }
@@ -609,3 +737,103 @@ bool IsFallingFarTrigger::IsActive() { return bot->HasUnitMovementFlag(MOVEMENTF
 bool HasAreaDebuffTrigger::IsActive() { return AI_VALUE2(bool, "has area debuff", "self target"); }
 
 Value<Unit*>* BuffOnMainTankTrigger::GetTargetValue() { return context->GetValue<Unit*>("main tank", spell); }
+
+bool HasCcTargetTrigger::IsCcTargetFree(Unit* ccTarget, Unit* rtiCcTarget)
+{
+    if (!ccTarget || (rtiCcTarget && ccTarget != rtiCcTarget))
+        return false;
+
+    return !AI_VALUE2(Unit*, "current cc target", getName());
+}
+
+bool HasCcTargetTrigger::IsActive()
+{
+    Unit* rtiCcTarget = nullptr;
+    // 5.4.8: PlayerbotAI::IsInNonRaidDungeon() doesn't exist on this fork; Map::IsNonRaidDungeon()
+    // (Map.h) is the direct core equivalent AC's helper itself calls into.
+    if (bot->GetMap()->IsNonRaidDungeon())
+    {
+        rtiCcTarget = AI_VALUE(Unit*, "rti cc target");
+        if (!rtiCcTarget)
+            return false;
+    }
+
+    return IsCcTargetFree(AI_VALUE2(Unit*, "cc target", getName()), rtiCcTarget);
+}
+
+bool RtiCcTrigger::IsActive()
+{
+    Unit* rtiCcTarget = AI_VALUE(Unit*, "rti cc target");
+    if (!rtiCcTarget)
+        return false;
+
+    Unit* ccTarget = AI_VALUE2(Unit*, "cc target", getName());
+    if (ccTarget && ccTarget == rtiCcTarget)
+        return IsCcTargetFree(ccTarget, rtiCcTarget);
+
+    return botAI->CanCastSpell(getName(), rtiCcTarget);
+}
+
+bool NoRtiTrigger::IsActive()
+{
+    if (!bot->IsInCombat())
+        return false;
+
+    return AI_VALUE(Unit*, "rti target") == nullptr;
+}
+
+bool NewPetTrigger::IsActive()
+{
+    ObjectGuid currentPetGuid = ObjectGuid::Empty;
+
+    if (Pet* pet = bot->GetPet())
+        currentPetGuid = pet->GetGUID();
+    else if (Guardian* guardian = bot->GetGuardianPet())
+        currentPetGuid = guardian->GetGUID();
+
+    if (currentPetGuid != lastPetGuid)
+    {
+        triggered = false;
+        lastPetGuid = currentPetGuid;
+    }
+
+    if (currentPetGuid != ObjectGuid::Empty && !triggered)
+    {
+        triggered = true;
+        return true;
+    }
+
+    return false;
+}
+
+bool LowEnergyTrigger::IsActive() { return AI_VALUE2(uint8, "energy", "self target") < threshold; }
+
+bool LossOfControlTrigger::IsActive()
+{
+    return bot->HasAuraType(SPELL_AURA_MOD_STUN) || bot->HasAuraType(SPELL_AURA_MOD_FEAR) ||
+           bot->HasAuraType(SPELL_AURA_MOD_ROOT) || bot->HasAuraType(SPELL_AURA_MOD_CONFUSE) ||
+           bot->HasAuraType(SPELL_AURA_MOD_CHARM);
+}
+
+bool FearCharmSleepTrigger::IsActive()
+{
+    return bot->HasAuraType(SPELL_AURA_MOD_FEAR) || bot->HasAuraType(SPELL_AURA_MOD_CHARM) ||
+           bot->HasAuraType(SPELL_AURA_AOE_CHARM) || bot->HasAuraWithMechanic(1 << MECHANIC_SLEEP);
+}
+
+bool PoisonDiseaseBleedTrigger::IsActive()
+{
+    return botAI->HasAuraToDispel(bot, DISPEL_POISON) || botAI->HasAuraToDispel(bot, DISPEL_DISEASE) ||
+           bot->HasAuraWithMechanic(1 << MECHANIC_BLEED);
+}
+
+bool MovementImpairedTrigger::IsActive()
+{
+    // 5.4.8: PlayerbotAI::IsMovementImpaired() equivalent, inlined (see the class comment).
+    bool const impaired = bot->HasAuraType(SPELL_AURA_MOD_ROOT) || bot->HasUnitState(UNIT_STATE_ROOT) ||
+        bot->GetSpeedRate(MOVE_RUN) < 1.0f;
+    return impaired && !botAI->HasAnyAuraOf(bot, "stealth", "prowl", nullptr);
+}
+
+// #628 (AC GenericTriggers.cpp:767-770)
+bool ForceRebuffPendingTrigger::IsActive() { return botAI->forceRebuff.IsPending(); }

@@ -19,7 +19,7 @@
 #include"Spell.h"
 #include"blackwing_descent.h"
 
-//todo: реализовать reroure power, low health, корректный double attack
+//todo: implement reroute power, low health, correct double attack
 enum ScriptTexts
 {
     // Chimaeron
@@ -359,19 +359,19 @@ class boss_chimaeron : public CreatureScript
 
 #define GOSSIP_MENU_1 16565
 #define GOSSIP_OPTION_1 "I suppose you'll be needing a key for this cage? Wait, don't tell me. The horrific gibbering monster behind me ate it, right?"
-#define GOSSIP_OPTION_1_RU "Я полагаю, тебе нужен ключ от этой клетки? Погоди, ничего не говори. Невероятно ужасный монстр позади меня съел его, не так ли?"
+#define GOSSIP_OPTION_1_RU "I suppose you'll be needing a key for this cage? Wait, don't tell me. The horrific gibbering monster behind me ate it, right?"
 #define GOSSIP_MENU_2 16593
 #define GOSSIP_OPTION_2 "You were trapped, as I recall. This situation seems oddly similar."
-#define GOSSIP_OPTION_2_RU "Ты оказался в ловушке, как я понимаю. Эта ситуация кажется подозрительно похожей."
+#define GOSSIP_OPTION_2_RU "You were trapped, as I recall. This situation seems oddly similar."
 #define GOSSIP_MENU_3 16594
 #define GOSSIP_OPTION_3 "Gnomes in Lava Suits, for example."
-#define GOSSIP_OPTION_3_RU "Гнома в лава-костюме, например."
+#define GOSSIP_OPTION_3_RU "Gnomes in Lava Suits, for example."
 #define GOSSIP_MENU_4 16595
 #define GOSSIP_OPTION_4 "No, I, uh, haven't seen it. You were saying?"
-#define GOSSIP_OPTION_4_RU "Нет, я, э-э, не видел его. Так что ты говорил?"
+#define GOSSIP_OPTION_4_RU "No, I, uh, haven't seen it. You were saying?"
 #define GOSSIP_MENU_5 16596
 #define GOSSIP_OPTION_5 "Restrictions? What restrictions?"
-#define GOSSIP_OPTION_5_RU "Условия? Что за условия?"
+#define GOSSIP_OPTION_5_RU "Restrictions? What restrictions?"
 #define GOSSIP_MENU_6 16597
 
 class npc_finkle_einhorn : public CreatureScript
@@ -381,7 +381,7 @@ class npc_finkle_einhorn : public CreatureScript
 
         bool OnGossipHello(Player* player, Creature* creature) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
           
             InstanceScript* instance = creature->GetInstanceScript();
             if (!instance)
@@ -395,7 +395,7 @@ class npc_finkle_einhorn : public CreatureScript
 
         bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
         
             InstanceScript* instance = creature->GetInstanceScript();
             if (!instance)

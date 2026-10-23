@@ -38,6 +38,9 @@ class CastKidneyShotAction : public CastMeleeSpellAction
 {
 public:
     CastKidneyShotAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "kidney shot") {}
+
+    // PvP stun guard: in a BG/arena only stun a target that is not already CC'd (body in RogueActions.cpp).
+    bool isUseful() override;
 };
 
 #endif

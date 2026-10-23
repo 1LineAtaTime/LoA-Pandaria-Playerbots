@@ -5,8 +5,16 @@
 
 #include "ShamanActions.h"
 
+#include "AiFactory.h"
+#include "Item.h"
 #include "Playerbots.h"
 #include "Totem.h"
+
+// Wave-74 fix (#858), see the class comment in ShamanActions.h.
+std::string const CastUnleashElementsAction::GetTargetName()
+{
+    return AiFactory::GetPlayerSpecTab(bot) == Specializations::SPEC_SHAMAN_RESTORATION ? "self target" : "current target";
+}
 
 bool CastTotemAction::isUseful()
 {
@@ -67,4 +75,75 @@ bool CastFireNovaAction::isUseful() {
 bool CastCleansingTotemAction::isUseful()
 {
     return CastTotemAction::isUseful() && !AI_VALUE2(bool, "has totem", "mana tide totem");
+}
+
+// #382 (AC GenericSpellActions.cpp:327-364): per-hand weapon imbues. AC's isPossible() rejects a missing item, a
+// miscellaneous weapon, a fishing pole (main hand only in AC) and an item that already carries a temporary enchant,
+// then asks CanCastSpell with the item as the target. 5.4.8 spells the constant ITEM_SUBCLASS_WEAPON_MISCELLANEOUS
+// (same value as AC's ITEM_SUBCLASS_WEAPON_MISC, see actions/SellAction.cpp:106-108).
+bool CastShamanEnchantMainHandAction::Execute(Event /*event*/)
+{
+    Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+    return item && botAI->CastSpell(spell, bot, item);
+}
+
+bool CastShamanEnchantMainHandAction::isPossible()
+{
+    Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+    if (!item || item->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_MISCELLANEOUS ||
+        item->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE ||
+        item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))
+    {
+        return false;
+    }
+
+    return botAI->CanCastSpell(spell, bot, item);
+}
+
+bool CastShamanEnchantOffHandAction::Execute(Event /*event*/)
+{
+    Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+    return item && botAI->CastSpell(spell, bot, item);
+}
+
+bool CastShamanEnchantOffHandAction::isPossible()
+{
+    Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+    if (!item || item->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_MISCELLANEOUS ||
+        item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))
+    {
+        return false;
+    }
+
+    return botAI->CanCastSpell(spell, bot, item);
+}
+
+// #408 (AC parity, AC ShamanActions.cpp:76-91): Spirit Walk for guardian spirit wolves.
+bool CastSpiritWalkAction::Execute(Event /*event*/)
+{
+    constexpr uint32 SPIRIT_WOLF = 29264;
+    constexpr uint32 SPIRIT_WALK_SPELL = 58875;
+
+    for (Unit* unit : bot->m_Controlled)
+    {
+        if (unit->GetEntry() == SPIRIT_WOLF && unit->HasSpell(SPIRIT_WALK_SPELL))
+        {
+            unit->CastSpell(unit, SPIRIT_WALK_SPELL, false);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// #431 (AC parity, AC ShamanActions.cpp:94-117 SetTotemAction::Execute): see the class comment in ShamanActions.h
+// for why the totem is cast instead of written to the (non-existent on MoP) totem bar.
+bool SetTotemAction::isUseful()
+{
+    return botAI->CanCastSpell(totemName, bot);
+}
+
+bool SetTotemAction::Execute(Event /*event*/)
+{
+    return botAI->CastSpell(totemName, bot);
 }

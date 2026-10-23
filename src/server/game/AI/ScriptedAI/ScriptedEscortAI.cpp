@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -96,7 +96,7 @@ bool npc_escortAI::AssistPlayerInCombat(Unit* who)
         else
         {
             who->SetInCombatWith(me);
-            me->AddThreat(who, 0.0f);
+            me->GetThreatManager().AddThreat(who, 0.0f);
             return true;
         }
     }
@@ -108,13 +108,15 @@ void npc_escortAI::MoveInLineOfSight(Unit* who)
 {
     if (!me->HasUnitState(UNIT_STATE_STUNNED) && who->isTargetableForAttack() && who->isInAccessiblePlaceFor(me))
     {
-        if ((HasEscortState(STATE_ESCORT_ESCORTING) && AssistPlayerInCombat(who)) || HasEscortState(STATE_ESCORT_JUMPING))
+        if (HasEscortState(STATE_ESCORT_ESCORTING) && AssistPlayerInCombat(who) || HasEscortState(STATE_ESCORT_JUMPING))
             return;
 
         if (!me->CanFly() && me->GetDistanceZ(who) > CREATURE_Z_ATTACK_RANGE)
             return;
 
-        if (me->IsHostileTo(who))
+        // #891: AC ScriptedEscortAI.cpp:136 only lets an AGGRESSIVE escort start a fight on sight; a passive one (Grandma Wahl
+        // 36458 until waypoint 1) left its path for the first hostile it saw and never reached the scripted waypoint.
+        if (me->IsHostileTo(who) && me->HasReactState(REACT_AGGRESSIVE))
         {
             float fAttackRadius = me->GetAttackDistance(who);
             if (me->IsWithinDistInMap(who, fAttackRadius) && me->IsWithinLOSInMap(who))
@@ -127,7 +129,7 @@ void npc_escortAI::MoveInLineOfSight(Unit* who)
                 else if (me->GetMap()->IsDungeon())
                 {
                     who->SetInCombatWith(me);
-                    me->AddThreat(who, 0.0f);
+                    me->GetThreatManager().AddThreat(who, 0.0f);
                 }
             }
         }
@@ -179,10 +181,11 @@ void npc_escortAI::ReturnToLastPoint()
     me->GetMotionMaster()->MovePoint(POINT_LAST_POINT, x, y, z);
 }
 
-void npc_escortAI::EnterEvadeMode()
+void npc_escortAI::EnterEvadeMode(EvadeReason why)
 {
     me->RemoveAllAuras();
-    me->DeleteThreatList();
+    me->GetThreatManager().RemoveMeFromThreatLists();
+    me->GetThreatManager().ClearAllThreat();
     me->CombatStop(true);
     me->SetLootRecipient(NULL);
 

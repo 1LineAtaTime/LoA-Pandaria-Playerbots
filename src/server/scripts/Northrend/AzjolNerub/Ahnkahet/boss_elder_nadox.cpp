@@ -35,7 +35,7 @@ enum Spells
     SPELL_FEAR                                    = 30584,
     SPELL_ENRAGE                                  = 26662, // Enraged if too far away from home
     SPELL_SUMMON_SWARMERS                         = 56119, // 2x 30178  -- 2x every 10secs
-    SPELL_SUMMON_SWARM_GUARD                      = 56120, // 1x 30176  -- every 25secs
+    SPELL_SUMMON_SWARM_GUARD                      = 56120, // 1x 30176  -- at 50% hp (#552, was a 25 s one-shot timer)
 };
 
 enum Npcs
@@ -149,12 +149,14 @@ class boss_elder_nadox : public CreatureScript
                     uiSwarmerSpawnTimer = 10 * IN_MILLISECONDS;
                 } else uiSwarmerSpawnTimer -= diff;
 
-                if (!bGuardSpawned && uiGuardSpawnTimer <= diff)
+                // #552: the guardian hatches at 50% hp (AC boss_elder_nadox.cpp:157 HealthBelowPctDamaged(50), its SPELL_SUMMON_SWARM_GUARD
+                // comment "at 50%hp"), not on a one-shot 25 s timer - a group that killed Nadox inside 25 s never saw a guardian.
+                if (!bGuardSpawned && HealthBelowPct(50))
                 {
                     Talk(EMOTE_HATCHES);
-                    DoCast(me, SPELL_SUMMON_SWARM_GUARD);
+                    DoCast(me, SPELL_SUMMON_SWARM_GUARD, true); // triggered: AC has the guardian egg cast it triggered (:264)
                     bGuardSpawned = true;
-                } else uiGuardSpawnTimer -= diff;
+                }
 
                 if (Fear_Timer <= diff)
                 {

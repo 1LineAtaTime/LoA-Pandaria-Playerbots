@@ -29,6 +29,10 @@ public:
 
     NextAction** getPrerequisites() override;
 
+    // AC parity (Ai/Base/Actions/GenericSpellActions.h:36): CastTimeMultiplier (#163 S8) needs the
+    // spell name outside the action itself.
+    std::string const getSpell() { return spell; }
+
 protected:
     std::string spell;
     float range;
@@ -114,6 +118,7 @@ public:
     CastBuffSpellAction(PlayerbotAI* botAI, std::string const spell, bool checkIsOwner = false, uint32 beforeDuration = 0);
 
     std::string const GetTargetName() override { return "self target"; }
+    bool Execute(Event event) override;  // AC GenericSpellActions.h:118 (#628)
 };
 
 class CastEnchantItemAction : public CastSpellAction
@@ -292,6 +297,21 @@ public:
 
     Value<Unit*>* GetTargetValue() override;
     std::string const getName() override { return spell + " on enemy healer"; }
+};
+
+// #855 (epic #854, rotation lane 0): interrupt on any hostile casting an interruptible spell in range - the
+// "<class> <interrupt> victim" + "<class> <interrupt> random enemy" rows (priority group 10, condition 17
+// "casting any spell (interruptible)"). Targets the "enemy caster target" value; class lanes derive their interrupt from
+// it ("rebuke on enemy caster", ...). isUseful adds the interrupt's own range so a melee interrupt is not tried on a
+// caster 25 yd away (CanCastSpell accepts SPELL_FAILED_OUT_OF_RANGE).
+class CastSpellOnEnemyCasterAction : public CastSpellAction
+{
+public:
+    CastSpellOnEnemyCasterAction(PlayerbotAI* botAI, std::string const& spell) : CastSpellAction(botAI, spell) {}
+
+    Value<Unit*>* GetTargetValue() override;
+    std::string const getName() override { return spell + " on enemy caster"; }
+    bool isUseful() override;
 };
 
 class CastSnareSpellAction : public CastDebuffSpellAction

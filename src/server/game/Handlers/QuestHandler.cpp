@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -15,9 +15,11 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "Common.h"
 #include "Log.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "Opcodes.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "Player.h"
@@ -170,9 +172,13 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_ACCEPT_QUEST npc = %u, quest = %u, startCheat = %u", guid.GetCounter(), questId, startCheat);
 
     Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
-    Quest const* prevQuestInChain = sObjectMgr->GetQuestTemplate(quest->GetPrevQuestId());
+    // #324: the null check MUST come first. `quest` was dereferenced on the line below BEFORE the guard, so
+    // any questId with no template - trivially reachable from a harness-injected or malformed client packet
+    // - dereferenced null and killed the worldserver (measured: `quest-accept 999999999` crashes it).
     if (!quest)
         return;
+
+    Quest const* prevQuestInChain = sObjectMgr->GetQuestTemplate(quest->GetPrevQuestId());
 
     Object* object;
     if (!guid.IsPlayer())

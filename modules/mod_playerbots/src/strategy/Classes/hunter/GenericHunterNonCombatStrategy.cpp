@@ -12,20 +12,12 @@ class GenericHunterNonCombatStrategyActionNodeFactory : public NamedObjectFactor
 public:
     GenericHunterNonCombatStrategyActionNodeFactory()
     {
-        creators["rapid fire"] = &rapid_fire;
-        creators["boost"] = &rapid_fire;
         creators["aspect of the pack"] = &aspect_of_the_pack;
     }
 
 private:
-    static ActionNode* rapid_fire([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode("rapid fire",
-                              /*P*/ nullptr,
-                              /*A*/ NextAction::array(0, new NextAction("readiness"), nullptr),
-                              /*C*/ nullptr);
-    }
-
+    // #521: the rapid fire -> readiness fallback node was removed (Readiness is not learnable in 5.4.8,
+    // cls.py hunter 2026-10-04); no non-combat trigger casts rapid fire anyway.
     static ActionNode* aspect_of_the_pack([[maybe_unused]] PlayerbotAI* botAI)
     {
         return new ActionNode("aspect of the pack",
@@ -44,9 +36,22 @@ void GenericHunterNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& tri
 {
     NonCombatStrategy::InitTriggers(triggers);
 
+    // #163 S8 / #147 (AC parity, GenericHunterNonCombatStrategy.cpp:31): apply the configured stance
+    // to a freshly tamed/resummoned hunter pet.
+    triggers.push_back(
+        new TriggerNode("new pet", NextAction::array(0, new NextAction("set pet stance", 60.0f), nullptr)));
+    // Rotation fix lane K (#868, BEYOND AC): "drop target" leaves the combat engine; in a running duel nothing re-targets the
+    // opponent there (AC DuelStrategy "no attackers" never fires, the opponent is always in "attackers"), see HunterTriggers.h.
+    triggers.push_back(new TriggerNode("hunter duel retarget",
+                                       NextAction::array(0, new NextAction("attack duel opponent", 70.0f), nullptr)));
+
     triggers.push_back(new TriggerNode("trueshot aura", NextAction::array(0, new NextAction("trueshot aura", 2.0f), nullptr)));
-    triggers.push_back(new TriggerNode("often", NextAction::array(0, new NextAction("apply oil", 1.0f), nullptr)));
-    triggers.push_back(new TriggerNode("low ammo", NextAction::array(0, new NextAction("say::low ammo", ACTION_NORMAL), nullptr)));
+    // #434 (AC GenericHunterNonCombatStrategy.cpp:20-21): stones and oils still exist in 5.4.8 (capped by
+    // weapon item level), so this edge is ported 1:1 (ImbueAction.cpp).
+    triggers.push_back(new TriggerNode("often", NextAction::array(0, new NextAction("apply stone", 1.0f),
+                                                                  new NextAction("apply oil", 1.0f), nullptr)));
+    // 5.4.8: ammo removed in Cataclysm, no MoP equivalent (#149).
+    // triggers.push_back(new TriggerNode("low ammo", NextAction::array(0, new NextAction("say::low ammo", ACTION_NORMAL), nullptr)));
     triggers.push_back(new TriggerNode("no track", NextAction::array(0, new NextAction("track humanoids", ACTION_NORMAL), nullptr)));
     // triggers.push_back(new TriggerNode("no ammo", NextAction::array(0, new NextAction("switch to melee",
     // ACTION_NORMAL + 1), new NextAction("say::no ammo", ACTION_NORMAL), nullptr))); triggers.push_back(new

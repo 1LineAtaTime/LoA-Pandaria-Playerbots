@@ -53,7 +53,13 @@ enum Data
     DATA_OOK_OOK        = 0,
     DATA_HOPTALLUS      = 1,
     DATA_YAN_ZHU        = 2,
-    DATA_HOZEN_SLAIN    = 3
+    DATA_HOZEN_SLAIN    = 3,
+
+    // #690: which of the two brews of each pair Uncle Gao made (0 = first of yanzhuPairs[i], 1 = second): i = 0 Ale
+    // (Yeasty adds / Bubble Shield), 1 Stout (Fizzy = Carbonation / Sudsy = Wall of Suds), 2 Wheat (Bloat / Blackout Brew).
+    // They used to share the numbers 3..5 with DATA_HOZEN_SLAIN (3), so once a Hozen died every pair read as "second"
+    // (the "broken in 24459" note) and the real pick was never random.
+    DATA_YANZHU_BREW    = 16   // 16, 17, 18
 };
 
 #define MAX_ENCOUNTER 3

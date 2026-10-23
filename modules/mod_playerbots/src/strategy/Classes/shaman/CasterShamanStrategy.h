@@ -17,7 +17,8 @@ public:
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
     NextAction** getDefaultActions() override;
-    std::string const getName() override { return "caster"; }
+    // #593 (AC Ai/Class/*/*AiObjectContext.cpp): stored under AC's spec key so the co list matches AC; the fork key "caster" stays a registered alias.
+    std::string const getName() override { return "ele"; }
     uint32 GetType() const override { return STRATEGY_TYPE_COMBAT | STRATEGY_TYPE_DPS | STRATEGY_TYPE_RANGED; }
 };
 

@@ -75,6 +75,8 @@ void HealPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(
         new TriggerNode("party member almost full health",
                         NextAction::array(0,
+                                          // #524 (AC HealPriestStrategy.cpp:87-92): PW:S on party first
+                                          new NextAction("power word: shield on party", ACTION_LIGHT_HEAL + 3),
                                           // new NextAction("penance on party", ACTION_LIGHT_HEAL + 3),
                                           new NextAction("prayer of mending on party", ACTION_LIGHT_HEAL + 2),
                                           new NextAction("renew on party", ACTION_LIGHT_HEAL + 1),
@@ -94,6 +96,15 @@ void HealPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // NextAction("circle of healing on party", 48.0f), nullptr))); triggers.push_back(new TriggerNode("binding heal",
     // NextAction::array(0, new NextAction("binding heal", 52.0f), nullptr))); triggers.push_back(new TriggerNode("low
     // mana", NextAction::array(0, new NextAction("shadowfiend", ACTION_HIGH), nullptr)));
+
+    // Lane 8 / #863 (MoP rotation row 25603 disc / 25703 holy, group 1/10-1/12): the Surge of Light proc makes
+    // Flash Heal free, so spend it on the hurt party member first.
+    triggers.push_back(new TriggerNode(
+        "surge of light proc", NextAction::array(0, new NextAction("flash heal on party", ACTION_MEDIUM_HEAL + 6), nullptr)));
+    // Lane 8 / #863 (MoP rotation row 25607 disc / 25707 holy, group 1/9-1/11): Binding Heal when both the bot
+    // and the target are hurt (BindingHealTrigger = party member low health + self below medium).
+    triggers.push_back(new TriggerNode(
+        "binding heal", NextAction::array(0, new NextAction("binding heal", ACTION_MEDIUM_HEAL + 5), nullptr)));
 
     triggers.push_back(new TriggerNode(
         "critical health", NextAction::array(0, new NextAction("pain suppression", ACTION_EMERGENCY + 1), nullptr)));

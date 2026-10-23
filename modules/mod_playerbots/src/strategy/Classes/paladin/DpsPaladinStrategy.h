@@ -21,4 +21,20 @@ public:
     uint32 GetType() const override { return STRATEGY_TYPE_COMBAT | STRATEGY_TYPE_DPS | STRATEGY_TYPE_MELEE; }
 };
 
+// #383 (AC Strategy/OffhealRetPaladinStrategy.h): declared here instead of a new file so no cmake
+// reconfigure is needed.
+class OffhealRetPaladinStrategy : public GenericPaladinStrategy
+{
+public:
+    OffhealRetPaladinStrategy(PlayerbotAI* botAI);
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "offheal"; }
+    NextAction** getDefaultActions() override;
+    uint32 GetType() const override
+    {
+        return STRATEGY_TYPE_COMBAT | STRATEGY_TYPE_DPS | STRATEGY_TYPE_HEAL | STRATEGY_TYPE_MELEE;
+    }
+};
+
 #endif

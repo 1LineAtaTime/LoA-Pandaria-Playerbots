@@ -28,6 +28,7 @@
 #include "ScriptedCreature.h"
 #include "Group.h"
 #include "Vehicle.h"
+#include "PetDefines.h"  // PET_FOLLOW_DIST (AC charmer branch in EnterEvadeMode)
 #include "SmartAI.h"
 #include "CreatureGroups.h"
 #include "ScriptMgr.h"
@@ -464,7 +465,7 @@ void SmartAI::RemoveAuras()
     }
 }
 
-void SmartAI::EnterEvadeMode()
+void SmartAI::EnterEvadeMode(EvadeReason why)
 {
     if (!me->IsAlive() || me->IsInEvadeMode())
         return;
@@ -475,10 +476,21 @@ void SmartAI::EnterEvadeMode()
         return;
     }
 
+    // AC SmartAI.cpp:747-752: a creature a player controls (vehicle he drives, possessed unit) only drops the fight. Without this a
+    // player-driven SmartAI vehicle (Two-Shoed Lou's Old House 42500, quest 26228) entered evade, its charmer turned
+    // MoveTargetedHome into a follow, UNIT_STATE_EVADE was never cleared and Creature::Update stopped calling UpdateAI.
+    if (me->GetCharmerGUID().IsPlayer() || me->isPossessed())
+    {
+        me->AttackStop();
+        me->RemoveUnitFlag(UNIT_FLAG_IN_COMBAT);
+        return;
+    }
+
     RemoveAuras();
 
     me->AddUnitState(UNIT_STATE_EVADE);
-    me->DeleteThreatList();
+    me->GetThreatManager().RemoveMeFromThreatLists();
+    me->GetThreatManager().ClearAllThreat();
     me->CombatStop(true);
     me->LoadCreaturesAddon();
     me->ApplyInstanceAuraIfNeeded();
@@ -488,7 +500,14 @@ void SmartAI::EnterEvadeMode()
     GetScript()->ProcessEventsFor(SMART_EVENT_EVADE);//must be after aura clear so we can cast spells from db
 
     SetRun(mRun);
-    if (HasEscortState(SMART_ESCORT_ESCORTING))
+    // AC SmartAI.cpp:760-766: a charmed/owned creature follows its owner (a vehicle does not) and does not stay in evade.
+    if (Unit* owner = me->GetCharmerOrOwner())
+    {
+        if (!me->IsVehicle())
+            me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+        me->ClearUnitState(UNIT_STATE_EVADE);
+    }
+    else if (HasEscortState(SMART_ESCORT_ESCORTING))
     {
         AddEscortState(SMART_ESCORT_RETURNING);
         ReturnToLastOOCPos();
@@ -533,7 +552,7 @@ void SmartAI::MoveInLineOfSight(Unit* who)
             else/* if (me->GetMap()->IsDungeon())*/
             {
                 who->SetInCombatWith(me);
-                me->AddThreat(who, 0.0f);
+                me->GetThreatManager().AddThreat(who, 0.0f);
             }
         }
     }
@@ -577,7 +596,7 @@ bool SmartAI::AssistPlayerInCombat(Unit* who)
         else
         {
             who->SetInCombatWith(me);
-            me->AddThreat(who, 0.0f);
+            me->GetThreatManager().AddThreat(who, 0.0f);
             return true;
         }
     }
@@ -587,6 +606,11 @@ bool SmartAI::AssistPlayerInCombat(Unit* who)
 
 void SmartAI::JustAppeared()
 {
+    CreatureAI::JustAppeared();
+
+    if (me->isDead())
+        return;
+
     mDespawnTime = 0;
     mDespawnState = 0;
     mEscortState = SMART_ESCORT_NONE;
@@ -634,6 +658,8 @@ void SmartAI::JustReachedHome()
 
 void SmartAI::JustEngagedWith(Unit* enemy)
 {
+    CreatureAI::JustEngagedWith(enemy);
+
     me->InterruptNonMeleeSpells(false); // must be before ProcessEvents
     GetScript()->ProcessEventsFor(SMART_EVENT_AGGRO, enemy);
     mLastOOCPos = me->GetPosition();

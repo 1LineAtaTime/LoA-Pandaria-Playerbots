@@ -8,6 +8,8 @@
 #include "Event.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "ServerFacade.h"
 
 #include "Log.h"
@@ -19,6 +21,12 @@ bool ReachTargetAction::Execute(Event event)
 
 bool ReachTargetAction::isUseful()
 {
+    // do not move while staying (AC ReachTargetActions.cpp, #827)
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+    {
+        return false;
+    }
+
     // do not move while casting
     if (bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL) != nullptr)
     {
@@ -39,7 +47,32 @@ CastReachTargetSpellAction::CastReachTargetSpellAction(PlayerbotAI* botAI, std::
 }
 bool CastReachTargetSpellAction::isUseful()
 {
-    return sServerFacade->IsDistanceGreaterThan(AI_VALUE2(float, "distance", "current target"), (distance + sPlayerbotAIConfig->contactDistance));
+    // do not move while staying (AC ReachTargetActions.cpp, #827)
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+    {
+        return false;
+    }
+
+    Unit* target = GetTarget();
+    if (!target)
+        return false;
+
+    float const dist = AI_VALUE2(float, "distance", "current target");
+    if (!sServerFacade->IsDistanceGreaterThan(dist, (distance + sPlayerbotAIConfig->contactDistance)))
+        return false;
+
+    // issue #98: there was no upper bound here, and PlayerbotAI::CanCastSpell deliberately lets
+    // SPELL_FAILED_OUT_OF_RANGE through (for casts broken by movement). So a bot whose target was
+    // out of a gap-closer's range kept re-picking it every tick and never reached melee - measured
+    // 35 charge attempts and 35 heroic-leap attempts for one bot in five minutes, with no effect.
+    // Bound it by the spell's own maximum range.
+    uint32 const spellId = AI_VALUE2(uint32, "spell id", spell);
+    SpellInfo const* spellInfo = spellId ? sSpellMgr->GetSpellInfo(spellId) : nullptr;
+    if (!spellInfo)
+        return false;
+
+    float const maxRange = spellInfo->GetMaxRange(false, bot);
+    return !(maxRange > 0.0f && dist > maxRange);
 }
 
 ReachSpellAction::ReachSpellAction(PlayerbotAI* botAI)

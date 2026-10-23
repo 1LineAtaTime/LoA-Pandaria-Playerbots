@@ -15,9 +15,13 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "Containers.h"
+#include "Log.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedEscortAI.h"
+#include "Spell.h"
+#include "SpellMgr.h"
 #include "Vehicle.h"
 
 class AreaTrigger_at_mandori : public AreaTriggerScript
@@ -35,9 +39,17 @@ class AreaTrigger_at_mandori : public AreaTriggerScript
 
            ObjectGuid playerGuid = player->GetGUID();
 
-            auto const aysa = player->SummonCreature(59986, 698.04f, 3601.79f, 142.82f, 3.254830f, TEMPSUMMON_MANUAL_DESPAWN, 0); // Aysa
-            auto const ji   = player->SummonCreature(59988, 698.06f, 3599.34f, 142.62f, 2.668790f, TEMPSUMMON_MANUAL_DESPAWN, 0); // Ji
-            auto const jojo = player->SummonCreature(59989, 702.78f, 3603.58f, 142.01f, 3.433610f, TEMPSUMMON_MANUAL_DESPAWN, 0); // Jojo
+            // Re-entering the trigger while this player's escort is still running must not start a second one.
+            std::list<Creature*> escorts;
+            player->GetCreatureListWithEntryInGrid(escorts, 59986, 200.0f);
+            for (Creature* escort : escorts)
+                if (TempSummon* summon = escort->ToTempSummon())
+                    if (summon->GetSummonerGUID() == playerGuid)
+                        return true;
+
+            auto const aysa = player->SummonCreature(59986, 698.04f, 3601.79f, 142.82f, 3.254830f, TEMPSUMMON_MANUAL_DESPAWN, 0ms); // Aysa
+            auto const ji   = player->SummonCreature(59988, 698.06f, 3599.34f, 142.62f, 2.668790f, TEMPSUMMON_MANUAL_DESPAWN, 0ms); // Ji
+            auto const jojo = player->SummonCreature(59989, 702.78f, 3603.58f, 142.01f, 3.433610f, TEMPSUMMON_MANUAL_DESPAWN, 0ms); // Jojo
 
             if (!aysa || !ji || !jojo)
                 return true;
@@ -267,7 +279,7 @@ class npc_korga : public CreatureScript
         bool OnQuestAccept(Player* player, Creature* /*creature*/, Quest const* quest) override
         {
             if (quest->GetQuestId() == 30589) // Wrecking the Wreck
-                if (Creature* jiEscort = player->SummonCreature(60900, 424.71f, 3635.59f, 92.70f, 2.498430f, TEMPSUMMON_MANUAL_DESPAWN, 0))
+                if (Creature* jiEscort = player->SummonCreature(60900, 424.71f, 3635.59f, 92.70f, 2.498430f, TEMPSUMMON_MANUAL_DESPAWN, 0ms))
                 {
                     jiEscort->SetExplicitSeerGuid(player->GetGUID());
                     jiEscort->SetReactState(REACT_PASSIVE);
@@ -381,6 +393,8 @@ enum
     NPC_VORDRAKA            = 56009,
 };
 
+// #468: unbound by sql/updates/world/2026_10_15_30 (design: Jojo 55940 is SmartAI only, one shared static
+// Vordraka). This personal phase-12 summon was invisible during the fight and appeared next to the player after the kill.
 class npc_jojo_ironbrow : public CreatureScript
 {
 public:
@@ -390,7 +404,7 @@ public:
     {
         if (quest->GetQuestId() == QUEST_AN_ANCIENT_EVIL)
         {
-            if (Creature* const vordraka = player->SummonCreature(NPC_VORDRAKA, 281.74f, 4003.40f, 72.96f, 0.05f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 600000))
+            if (Creature* const vordraka = player->SummonCreature(NPC_VORDRAKA, 281.74f, 4003.40f, 72.96f, 0.05f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 600000ms))
             {
                 vordraka->SetExplicitSeerGuid(player->GetGUID());
                 vordraka->AI()->SetGUID(player->GetGUID());
@@ -435,8 +449,9 @@ public:
         void Reset() override
         {
             summonedAllies = false;
+            _events.Reset();
             _events.ScheduleEvent(EVENT_DEEP_ATTACK, 10000);
-            _events.ScheduleEvent(SPELL_DEEP_SEA_RUPTURE, 12500);
+            _events.ScheduleEvent(EVENT_DEEP_SEA_RUPTURE, 12500); // was scheduled with the spell id, so it never fired
         }
 
         void SetGUID(ObjectGuid guid, int32 /*type*/) override
@@ -461,10 +476,24 @@ public:
                 {
                     aysa->AI()->AttackStart(me);
                     AttackStart(aysa);
-                    me->AddThreat(aysa, 1000.0f);
+                    me->GetThreatManager().AddThreat(aysa, 1000.0f);
                 }
 
             ScriptedAI::MoveInLineOfSight(who);
+        }
+
+        // #468 (lane Y): SAI 56009 id1 (On Aggro -> Set Data 0 1 on Aysa 56416, whose SAI then attacks Vordraka). The LOS
+        // start above only fires when a quester moves in while Aysa is near and never once Vordraka has a victim (laneY t468 rerun 4:
+        // Vordraka idle at its spawn for 55 s, then one Smash after the player pulled it). Whoever pulls, Aysa joins and tanks.
+        void JustEngagedWith(Unit* who) override
+        {
+            ScriptedAI::JustEngagedWith(who);
+            if (Creature* const aysa = GetClosestCreatureWithEntry(me, NPC_AYSA, 40.f))
+            {
+                if (!aysa->IsInCombat())
+                    aysa->AI()->AttackStart(me);
+                me->GetThreatManager().AddThreat(aysa, 1000.0f);
+            }
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -478,6 +507,32 @@ public:
                         player->KilledMonsterCredit(me->GetEntry());
         }
 
+        // Refs #468 (lane Y, 2026-10-21). DBC: Deep Sea Rupture 117456 = one TRIGGER_MISSILE (32 -> 117467)
+        // effect at TARGET_DEST_TARGET_ENEMY (53), SpellRange 10 = 10..40 yd, SpellCastTimes 5 = 2 s; Deep Sea Smash 117287 = 3 s cast
+        // (index 14), SpellRange 34 = 0..25 yd, 25 yd cone. Unit::CastSpell returns void and a creature gets no SMSG_CAST_FAILED, so
+        // three silent failures hid the Rupture:
+        //  - the first Rupture (12.5 s) always fell inside Smash's 10-13 s cast -> SPELL_FAILED_SPELL_IN_PROGRESS (Spell::prepare);
+        //  - a player inside the 10 yd minimum range (melee) -> SPELL_FAILED_TOO_CLOSE (Spell::CheckRange);
+        //  - the Aysa fight wanders (npcstate w86 dbg: 35-60 yd from the spawn), and a player more than 35 yd away was no target at
+        //    all; Smash used the same picker, so it stopped as well (w86 t468 L7: one Smash in the 45 s watch, rupture=0).
+        // SAI 56009 (id 2: Smash at the closest Aysa 56416; id 4: Rupture at a player in range, target 21) is the design:
+        // Smash goes at the current victim (Aysa), Rupture at a live player inside the spell's own min..max range, never mid-cast.
+        Unit* SelectRuptureTarget(SpellInfo const* rupture)
+        {
+            std::list<Player*> playerList;
+            GetPlayerListInGrid(playerList, me, 50.0f);
+            playerList.remove_if([this, rupture](Player* p)
+            {
+                if (!p->IsAlive() || p->IsGameMaster() || !me->IsValidAttackTarget(p))
+                    return true;
+                float const minRange = me->GetSpellMinRangeForTarget(p, rupture);
+                return !me->IsWithinCombatRange(p, me->GetSpellMaxRangeForTarget(p, rupture)) || (minRange > 0.0f && me->IsWithinCombatRange(p, minRange));
+            });
+            if (playerList.empty())
+                return nullptr;
+            return Trinity::Containers::SelectRandomContainerElement(playerList);
+        }
+
         void UpdateAI(uint32 diff) override
         {
             if (!UpdateVictim())
@@ -488,13 +543,13 @@ public:
                 if (Creature* const aysa = GetClosestCreatureWithEntry(me, NPC_AYSA, 30.f))
                 {
                     aysa->AI()->Talk(0);
-                    me->AddThreat(aysa, 1000.0f);
+                    me->GetThreatManager().AddThreat(aysa, 1000.0f);
                 }
 
                 for (int i = 0; i < 3; ++i)
                 {
                     Position pos = me->GetRandomNearPosition(20.f);
-                    if (Creature* const summon = me->SummonCreature(NPC_DEEPSCALE_AGGRESSOR, pos, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 120000))
+                    if (Creature* const summon = me->SummonCreature(NPC_DEEPSCALE_AGGRESSOR, pos, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 120000ms))
                         if (Player * const player = Unit::GetPlayer(*me, summonerGUID))
                             summon->AI()->AttackStart(player);
                 }
@@ -503,22 +558,40 @@ public:
 
             _events.Update(diff);
 
+            // #468: a due event waits for the running cast (Smash 3 s / Rupture 2 s) instead of failing with SPELL_IN_PROGRESS
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
             switch (_events.ExecuteEvent())
             {
                 case EVENT_DEEP_ATTACK:
                 {
-                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 25.0f, true))
-                        me->CastSpell(target, SPELL_DEEP_ATTACK, false);
+                    if (Unit* victim = me->GetVictim())
+                        me->CastSpell(victim, SPELL_DEEP_ATTACK, false);
 
                     _events.ScheduleEvent(EVENT_DEEP_ATTACK, 10000);
                     break;
                 }
                 case EVENT_DEEP_SEA_RUPTURE:
                 {
-                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 25.0f, true))
-                        me->CastSpell(target, SPELL_DEEP_SEA_RUPTURE, false);
+                    SpellInfo const* rupture = sSpellMgr->GetSpellInfo(SPELL_DEEP_SEA_RUPTURE);
+                    Unit* target = rupture ? SelectRuptureTarget(rupture) : nullptr;
+                    if (!target)
+                    {
+                        TC_LOG_DEBUG("playerbots", "[VORDRAKA] %u rupture: no live player inside %.0f..%.0f yd (spell=%u), retry in 2 s",
+                            uint32(me->GetSpawnId()), rupture ? rupture->GetMinRange() : 0.0f,
+                            rupture ? rupture->GetMaxRange() : 0.0f, uint32(rupture != nullptr));
+                        _events.ScheduleEvent(EVENT_DEEP_SEA_RUPTURE, 2000);
+                        break;
+                    }
 
-                    _events.ScheduleEvent(EVENT_DEEP_ATTACK, 10000);
+                    me->CastSpell(target, rupture, false);
+                    // Unit::CastSpell returns void: a started cast is the current generic spell, anything else failed in prepare()
+                    Spell const* cur = me->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+                    bool const started = cur && cur->GetSpellInfo()->Id == SPELL_DEEP_SEA_RUPTURE;
+                    TC_LOG_DEBUG("playerbots", "[VORDRAKA] %u rupture: target=%s dist=%.1f started=%u",
+                        uint32(me->GetSpawnId()), target->GetName().c_str(), me->GetDistance(target), uint32(started));
+                    _events.ScheduleEvent(EVENT_DEEP_SEA_RUPTURE, started ? 15000 : 2000);
                     break;
                 }
             }
@@ -542,7 +615,7 @@ class npc_aysa_gunship_crash : public CreatureScript
         {
             if (quest->GetQuestId() == QUEST_RISKING_IT_ALL)
             {
-                if (Creature* aysa = player->SummonCreature(60729, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 0))
+                if (Creature* aysa = player->SummonCreature(60729, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 0ms))
                 {
                     aysa->SetExplicitSeerGuid(player->GetGUID());
                     aysa->AI()->SetGUID(player->GetGUID());
@@ -630,7 +703,7 @@ public:
         {
             playerGuid = guid;
 
-            if (Creature* ji = me->SummonCreature(NPC_JI_FIREPAW, 230.31f, 4006.67f, 87.27f, 3.38f, TEMPSUMMON_MANUAL_DESPAWN, 0))
+            if (Creature* ji = me->SummonCreature(NPC_JI_FIREPAW, 230.31f, 4006.67f, 87.27f, 3.38f, TEMPSUMMON_MANUAL_DESPAWN, 0ms))
             {
                 ji->SetExplicitSeerGuid(playerGuid);
                 jiGuid = ji->GetGUID();

@@ -133,6 +133,7 @@ enum DeathKnightSpells
     SPELL_SANCTUARY                             = 54661,
     SPELL_BLOOD_BURST                           = 81280,
     SPELL_BLOOD_GORGED                          = 81277,
+    SPELL_DK_BLOOD_GORGED_HEAL                  = 50454,
 
     SPELL_ROGUE_TRICKS_OF_THE_TRADE             = 57933,
 
@@ -147,7 +148,8 @@ class spell_dk_gorefiends_grasp : public SpellScript
 
     void FilterTargets(std::list<WorldObject*>& targets)
     {
-        targets.remove_if([](WorldObject const* obj)
+        Unit* caster = GetCaster();
+        targets.remove_if([=](WorldObject const* obj)
         {
             Unit const* target = obj->ToUnit();
             switch (target->GetCreatureType())
@@ -247,7 +249,7 @@ class spell_dk_might_of_ursoc : public SpellScriptLoader
 
             void Register() override
             {
-                AfterEffectApply += AuraEffectApplyFn(spell_dk_might_of_ursoc_AuraScript::OnApply, EFFECT_0, SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT, AURA_EFFECT_HANDLE_REAL);
+                AfterEffectApply += AuraEffectApplyFn(spell_dk_might_of_ursoc_AuraScript::OnApply, EFFECT_0, SPELL_AURA_MOD_INCREASE_HEALTH_2, AURA_EFFECT_HANDLE_REAL);
             }
         };
 
@@ -281,7 +283,7 @@ class spell_dk_necrotic_strike : public AuraScript
 {
     PrepareAuraScript(spell_dk_necrotic_strike);
 
-    void CalculateAmount(AuraEffect const* /*aurEff*/, float& amount, bool&)
+    void CalculateAmount(AuraEffect const* aurEff, float& amount, bool&)
     {
         if (Unit* caster = GetCaster())
         {
@@ -294,7 +296,7 @@ class spell_dk_necrotic_strike : public AuraScript
             
             if (AuraEffect* necrotic = GetUnitOwner()->GetAuraEffect(73975, EFFECT_0, caster->GetGUID()))
                 absorbAmount += necrotic->GetAmount();
-            amount = (float)absorbAmount;
+            amount = int32(absorbAmount);
         }
     }
 
@@ -852,8 +854,6 @@ class spell_dk_deaths_advance: public SpellScriptLoader
             {
                  DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_0, SPELL_AURA_MOD_SPEED_NOT_STACK);
                  DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_1, SPELL_AURA_MOD_MINIMUM_SPEED);
-                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_1, SPELL_AURA_MOD_SPEED_NOT_STACK);
-                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_0, SPELL_AURA_MOD_MINIMUM_SPEED);
             }
         };
 
@@ -1323,9 +1323,9 @@ class spell_dk_riposte : public SpellScriptLoader
 
                 if (Player const* const player = caster->ToPlayer())
                 {
-                    uint32 rating = player->GetUInt32Value((uint16)PLAYER_FIELD_COMBAT_RATINGS + (uint16)CR_PARRY);
-                    rating += player->GetUInt32Value((uint16)PLAYER_FIELD_COMBAT_RATINGS + (uint16)CR_DODGE);
-                    amount = CalculatePct<float>((float)rating, 75);
+                    uint32 rating = player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + CR_PARRY);
+                    rating += player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + CR_DODGE);
+                    amount = CalculatePct(rating, 75);
                 }
             }
 
@@ -1446,14 +1446,14 @@ class spell_dk_death_and_decay : public AuraScript
 {
     PrepareAuraScript(spell_dk_death_and_decay);
 
-    void CalculateDamage(AuraEffect const* /*eff*/, float& amount, bool&)
+    void CalculateDamage(AuraEffect const* eff, float& amount, bool&)
     {
         // Just for tooltip
         if (Unit* deathknight = GetCaster())
             amount = deathknight->SpellDamageBonusDone(deathknight, sSpellMgr->GetSpellInfo(SPELL_DK_DEATH_AND_DECAY_DAMAGE), EFFECT_0, amount, SPELL_DIRECT_DAMAGE);
     }
 
-    void HandleTick(AuraEffect const* /*eff*/)
+    void HandleTick(AuraEffect const* eff)
     {
         if (Player* deathknight = GetOwner()->ToPlayer())
             if (DynamicObject* dnd = deathknight->GetDynObject(SPELL_DK_DEATH_AND_DECAY))
@@ -1725,7 +1725,7 @@ class spell_dk_vampiric_blood : public AuraScript
 {
     PrepareAuraScript(spell_dk_vampiric_blood);
 
-    void CalculateAmount(AuraEffect const* /*eff*/, float& amount, bool&)
+    void CalculateAmount(AuraEffect const* eff, float& amount, bool&)
     {
         amount = GetUnitOwner()->CountPctFromMaxHealth(amount);
     }
@@ -1761,7 +1761,7 @@ class spell_dk_soul_reaper : public AuraScript
 
     void Register() override
     {
-        OnEffectRemove += AuraEffectApplyFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectApplyFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -1884,7 +1884,7 @@ struct npc_bloodworm : public ScriptedAI
         me->SetMaxHealth(me->GetCreateHealth());
     }
 
-    void UpdateAI(uint32 /*diff*/) override
+    void UpdateAI(uint32 diff) override
     {
         if (!me->GetVictim())
         {
@@ -1922,7 +1922,7 @@ class spell_dk_shadow_infusion_proc : public AuraScript
         return GetOwner()->GetTypeId() == TYPEID_PLAYER;
     }
 
-    bool CheckProc(ProcEventInfo& /*eventInfo*/)
+    bool CheckProc(ProcEventInfo& eventInfo)
     {
         if (Pet* ghoul = GetOwner()->ToPlayer()->GetPet())
             if (ghoul->HasAura(SPELL_DK_DARK_TRANSFORMATION))
@@ -2101,7 +2101,7 @@ class spell_dk_death_siphon : public SpellScript
     {
         int32 damage = GetHitDamage();
         if (Player* target = GetHitUnit()->GetAffectingPlayer())
-            if (GetCaster()->GetAffectingPlayer())
+            if (Player* caster = GetCaster()->GetAffectingPlayer())
                 damage /= (1.0f + target->GetFloatValue(PLAYER_FIELD_MOD_RESILIENCE_PERCENT) / 100.0f);
 
         if (int32 heal = CalculatePct(damage, GetSpellInfo()->Effects[EFFECT_1].BasePoints))
@@ -2269,10 +2269,10 @@ struct npc_ebon_gargoyle : ScriptedAI
         me->SetSpeed(MOVE_RUN, 0.75f, true);
         me->SetReactState(REACT_PASSIVE);
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-        m_scheduler.SetValidator([this]() { return !me->HasUnitState(UNIT_STATE_CASTING); });
+        m_scheduler.SetValidator([=]() { return !me->HasUnitState(UNIT_STATE_CASTING); });
     }
 
-    void IsSummonedBy(Unit* /*summoner*/) override
+    void IsSummonedBy(Unit* summoner) override
     {
         me->GetMotionMaster()->MovePoint(POINT_DESCEND, m_originalPosition.GetPositionX(), m_originalPosition.GetPositionY(), m_originalPosition.GetPositionZ(), false, MOTION_SLOT_CRITICAL);
     }
@@ -2324,12 +2324,12 @@ struct npc_ebon_gargoyle : ScriptedAI
         }
     }
 
-    void JustEngagedWith(Unit* /*who*/) override
+    void JustEngagedWith(Unit* who) override
     {
         m_scheduler.Schedule(Milliseconds(1), std::bind(&npc_ebon_gargoyle::DoAttack, this, std::placeholders::_1));
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void JustDied(Unit*) override
     {
@@ -2485,7 +2485,7 @@ class spell_dk_relentless_grip : public AuraScript
 {
     PrepareAuraScript(spell_dk_relentless_grip);
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         GetUnitOwner()->CastSpell(GetUnitOwner(), SPELL_DK_RELENTLESS_GRIP, true);
     }
@@ -2612,7 +2612,7 @@ class spell_dk_dancing_rune_weapon : public SpellScript
         GetCaster()->CastSpell(GetCaster(), 81256, true);
         for (auto&& itr : GetCaster()->GetSummons())
         {
-            if (itr->GetEntry() == (uint32)GetSpellInfo()->Effects[EFFECT_0].MiscValue)
+            if (itr->GetEntry() == GetSpellInfo()->Effects[EFFECT_0].MiscValue)
             {
                 itr->CastSpell(itr, 53160, true);           //
                 GetCaster()->CastSpell(itr, 63416, true);   // Copy Weapon
@@ -2658,7 +2658,7 @@ class spell_dk_dancing_rune_weapon_driver : public AuraScript
         }
 
         for (auto&& itr : GetUnitOwner()->GetSummons())
-            if (itr->GetEntry() == (uint32)GetSpellInfo()->Effects[EFFECT_0].MiscValue)
+            if (itr->GetEntry() == GetSpellInfo()->Effects[EFFECT_0].MiscValue)
                 itr->CastSpell(itr->GetVictim(), eventInfo.GetSpellInfo()->Id, true);
     }
 
@@ -2698,7 +2698,7 @@ class spell_dk_runic_corruption : public AuraScript
 {
     PrepareAuraScript(spell_dk_runic_corruption);
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         GetUnitOwner()->CastSpell(GetUnitOwner(), 51460, true);
     }
@@ -2760,7 +2760,7 @@ class spell_dk_t15_blood_4p_bonus : public AuraScript
 {
     PrepareAuraScript(spell_dk_t15_blood_4p_bonus);
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         if (GetUnitOwner()->HasAura(SPELL_DK_T15_BLOOD_4P_BONUS))
             GetUnitOwner()->CastSpell(GetUnitOwner(), SPELL_DK_RUNIC_POWER, true);
@@ -2881,7 +2881,7 @@ class spell_dk_t16_blood_2p_bonus : public AuraScript
 
     uint32 counter = 0;
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         Unit* deathknight = GetUnitOwner();
         if (++counter == 10 && deathknight->HasAura(SPELL_DK_T16_BLOOD_2P_BONUS))
@@ -2907,7 +2907,7 @@ class spell_dk_t16_blood_4p_bonus : public AuraScript
         return GetOwner()->GetTypeId() == TYPEID_PLAYER && GetUnitOwner()->GetClass() == CLASS_DEATH_KNIGHT;
     }
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         Player* deathknight = GetUnitOwner()->ToPlayer();
         for (uint32 rune = 0; rune < MAX_RUNES; ++rune)
@@ -3128,7 +3128,7 @@ struct npc_dk_army_of_the_dead_ghoul : public ScriptedAI
             followAngle = M_PI / 2.0f + M_PI * count / 7.0f;
         }
 
-        scheduler.Schedule(Milliseconds(100), [this](TaskContext ctx)
+        scheduler.Schedule(Milliseconds(100), [=](TaskContext ctx)
         {
             if (me->GetPower(POWER_ENERGY) >= 40 && me->GetVictim() && me->IsWithinMeleeRange(me->GetVictim()))
             {
@@ -3151,7 +3151,7 @@ struct npc_dk_army_of_the_dead_ghoul : public ScriptedAI
         DoMeleeAttackIfReady();
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         if (!_EnterEvadeMode())
             return;
@@ -3358,6 +3358,43 @@ class spell_dk_death_gate_eff : public SpellScript
     }
 };
 
+// 81277 - Blood Gorged
+class spell_dk_blood_gorged : public AuraScript
+{
+    PrepareAuraScript(spell_dk_blood_gorged);
+
+    Unit* _procTarget = nullptr;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return sSpellMgr->GetSpellInfo(SPELL_DK_BLOOD_GORGED_HEAL);
+    }
+
+    bool Load() override
+    {
+        _procTarget = nullptr;
+        return true;
+    }
+
+    bool CheckProc(ProcEventInfo& /*eventInfo*/)
+    {
+        _procTarget = GetTarget()->GetOwner();
+        return _procTarget;
+    }
+
+    void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+    {
+        int32 heal = int32(CalculatePct(eventInfo.GetDamageInfo()->GetDamage(), 150));
+        GetTarget()->CastCustomSpell(SPELL_DK_BLOOD_GORGED_HEAL, SPELLVALUE_BASE_POINT0, heal, _procTarget, true, nullptr, aurEff);
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_dk_blood_gorged::CheckProc);
+        OnEffectProc += AuraEffectProcFn(spell_dk_blood_gorged::HandleProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL);
+    }
+};
+
 void AddSC_deathknight_spell_scripts()
 {
     new spell_script<spell_dk_gorefiends_grasp>("spell_dk_gorefiends_grasp");
@@ -3451,4 +3488,5 @@ void AddSC_deathknight_spell_scripts()
     new atrigger_script<sat_dk_anti_magic_zone>("sat_dk_anti_magic_zone");
     new spell_script<spell_dk_death_gate_eff>("spell_dk_death_gate_eff");
     new aura_script<aura_glyph_of_the_geist>("aura_glyph_of_the_geist");
+    new aura_script<spell_dk_blood_gorged>("spell_dk_blood_gorged");
 }

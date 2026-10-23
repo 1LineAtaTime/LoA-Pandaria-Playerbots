@@ -17,6 +17,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "ScriptedEscortAI.h"
 #include "SpellScript.h"
 #pragma execution_character_set("UTF-8")
 
@@ -33,9 +34,9 @@ enum groundTroopsTypes
 };
 
 // AWOL Grunt 42646
-struct npc_azshara_awol_grunt : public CreatureAI
+struct npc_azshara_awol_grunt : public ScriptedAI
 {
-    npc_azshara_awol_grunt(Creature* creature) : CreatureAI(creature) { }
+    npc_azshara_awol_grunt(Creature* creature) : ScriptedAI(creature) { }
 
     TaskScheduler scheduler;
     ObjectGuid targetGUID;
@@ -68,7 +69,7 @@ struct npc_azshara_awol_grunt : public CreatureAI
                 }
 
                 scheduler
-                    .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(2), [this](TaskContext context)
                 {
                     MoveAway();
                 });
@@ -86,7 +87,7 @@ struct npc_azshara_awol_grunt : public CreatureAI
         }
     }
 
-    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    void DamageTaken(Unit* attacker, uint32& damage) override
     {
         if (hasDefeat)
             damage = 0;
@@ -103,7 +104,7 @@ struct npc_azshara_awol_grunt : public CreatureAI
                 target->KilledMonsterCredit(NPC_AWOL_GRUNT_DESCIPLINED);
 
             scheduler
-                .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                .Schedule(Seconds(2), [this](TaskContext context)
             {
                 MoveAway();
             });
@@ -357,7 +358,7 @@ class npc_zarjira : public CreatureScript
             }
         }
 
-        void JustDied(Unit* /*killer*/) override
+        void JustDied(Unit* killer) override
         {
             for(int i=0;i<=2;++i)
                 if(Creature * creature = me->FindNearestCreature(npcId[i], 30.0f))

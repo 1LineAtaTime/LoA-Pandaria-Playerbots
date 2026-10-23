@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -21,23 +21,32 @@
 #include "DisableMgr.h"
 #include "ObjectMgr.h"
 #include "SocialMgr.h"
+#include "Language.h"
 #include "LFGMgr.h"
+#include "LFGAnyLevel.h"  // #702: LFG.AnyLevel.* (off by default)
 #include "LFGScripts.h"
 #include "LFGGroupData.h"
 #include "LFGPlayerData.h"
 #include "LFGQueue.h"
 #include "Group.h"
 #include "Player.h"
+#include "MoveSpline.h"
+#include "RBAC.h"
 #include "GroupMgr.h"
 #include "GameEventMgr.h"
+#include "WorldSession.h"
 #include "ReputationMgr.h"
 #include "Config.h"
 #include "Guild.h"
 #include "ScenarioMgr.h"
+#include "Guild.h"
 #include "Chat.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "WorldPacket.h"
 #include "BattlegroundMgr.h"
 #include "Field.h"
+#include <numeric>
 
 template <typename... Args>
 static void AlmostAssert(char const* filter, Args... args)
@@ -196,7 +205,7 @@ void LFGMgr::LoadLFGDungeons(bool reload /* = false */)
         if (!dungeon)
             continue;
 
-        switch (dungeon->type)
+        switch (dungeon->TypeID)
         {
             case LFG_TYPE_DUNGEON:
             case LFG_TYPE_RAID:
@@ -394,6 +403,91 @@ void LFGMgr::Update(uint32 diff)
         m_ShortageCheckTimer += diff;
 }
 
+// #830 (#702 phase 3, LFGAnyLevel.h): which entries LFG.AnyLevel unlocks for a player at or above LFG.AnyLevel.MinLevel.
+// Phase 1 (#828): 5-man normal/heroic dungeons (unchanged). #830: Raid Finder wings (LFG.AnyLevel.Raids), scenarios
+// (LFG.AnyLevel.Scenarios), random 5-man entries (LFG.AnyLevel.Random) and random scenarios (LFG.AnyLevel.Scenarios).
+// An entry Blizzard retired (min level above the level cap: 99-99 in the 5.4.8 DBC - the BC/WotLK heroic randoms 260/262,
+// Temple of Kotmogu 540, the test scenarios) stays locked, and flex (RAID_DIFFICULTY_1025MAN_FLEX) is never unlocked. Only
+// called while LFG.AnyLevel.Enable is on.
+static bool AnyLevelCovers(LFGDungeonData const& dungeon)
+{
+    bool const retired = dungeon.minlevel > sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    if (dungeon.type == LFG_TYPE_DUNGEON || dungeon.type == LFG_TYPE_HEROIC)
+    {
+        switch (dungeon.difficulty)
+        {
+            case DUNGEON_DIFFICULTY_NORMAL:
+            case DUNGEON_DIFFICULTY_HEROIC:
+                return true;                                            // phase 1
+            case RAID_DIFFICULTY_25MAN_LFR:
+                return !retired && AnyLevel::Raids();
+            case SCENARIO_DIFFICULTY_NORMAL:
+            case SCENARIO_DIFFICULTY_HEROIC:
+                return !retired && AnyLevel::Scenarios();
+            default:
+                return false;
+        }
+    }
+
+    if (dungeon.type == LFG_TYPE_RANDOM && !retired)
+        return dungeon.category == LFG_CATEGORY_SCENARIO ? AnyLevel::Scenarios() :
+            (dungeon.category == LFG_CATEGORY_DUNGEON && AnyLevel::Random());
+
+    return false;
+}
+
+// #830 (JoinLfg, only while LFG.AnyLevel.Enable is on): the pool of a random queue. Phase 1 lifted the level locks of
+// every 5-man, which silently widened a random queue to its whole dungeon group (a level-20 Random Classic could pick
+// Upper Blackrock Spire). A member keeps the stock pool - the dungeons outside its native level range (and, when
+// LFG.AnyLevel.IgnoreItemLevel lifted it, its item level) are dropped and reported in `locks` as the stock lock list
+// would - unless the key of that random's kind is on (AnyLevelCovers) AND the member is outside the random entry's own
+// level range: then the whole group stays (any-level random: one expansion's set, like Blizzard's per-expansion
+// Timewalking queues) and AutoBalance scales the instance. A member below LFG.AnyLevel.MinLevel has the stock locks already.
+static void AnyLevelRandomPool(LFGMgr* mgr, uint32 rDungeonId, LfgDungeonSet& dungeons, LfgGuidSet const& players, LfgLockPartyMap& locks)
+{
+    LFGDungeonData const* randomEntry = mgr->GetLFGDungeon(rDungeonId);
+    if (!randomEntry)
+        return;
+
+    bool const keyOn = AnyLevelCovers(*randomEntry);
+    for (ObjectGuid const& guid : players)
+    {
+        Player* member = ObjectAccessor::FindConnectedPlayer(guid);
+        if (!member)
+            continue;
+
+        uint32 const level = member->GetLevel();
+        if (!AnyLevel::AppliesToLevel(level))
+            continue;
+
+        bool const outOfRange = level < randomEntry->minlevel || (randomEntry->maxlevel && level > randomEntry->maxlevel);
+        if (keyOn && outOfRange)
+            continue;
+
+        float const itemLevel = member->GetAverageItemLevel();
+        for (auto itr = dungeons.begin(); itr != dungeons.end();)
+        {
+            LFGDungeonData const* dungeon = mgr->GetLFGDungeon(*itr);
+            uint32 status = 0;
+            if (dungeon && dungeon->minlevel > level)
+                status = LFG_LOCKSTATUS_TOO_LOW_LEVEL;
+            else if (dungeon && dungeon->maxlevel && dungeon->maxlevel < level)
+                status = LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
+            else if (dungeon && dungeon->requiredItemLevel > itemLevel && AnyLevel::IgnoreItemLevel())
+                status = LFG_LOCKSTATUS_TOO_LOW_GEAR_SCORE;
+
+            if (!status)
+            {
+                ++itr;
+                continue;
+            }
+
+            locks[guid][*itr] = LfgLockInfoData(status, dungeon->requiredItemLevel, itemLevel);
+            itr = dungeons.erase(itr);
+        }
+    }
+}
+
 /**
     Generate the dungeon lock map for a given player
 
@@ -407,8 +501,14 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
     uint8 expansion = player->GetSession()->Expansion();
     LfgDungeonSet const& dungeons = GetDungeonsByRandom(0);
     LfgLockMap lock;
+    bool denyJoin = !player->GetSession()->HasPermission(rbac::RBAC_PERM_JOIN_DUNGEON_FINDER);
 
     float itemLevel = player->GetAverageItemLevel();
+
+    // #702: LFG.AnyLevel (off by default, LFGAnyLevel.h) - a player of at least LFG.AnyLevel.MinLevel gets no level lock
+    // (and, with LFG.AnyLevel.IgnoreItemLevel, no item-level lock) on 5-man normal/heroic dungeons; AutoBalance scales the
+    // instance to the group. With the switch off anyLevel is false and every check below is the stock one.
+    bool const anyLevel = AnyLevel::AppliesToLevel(level);
 
     for (LfgDungeonSet::const_iterator it = dungeons.begin(); it != dungeons.end(); ++it)
     {
@@ -416,8 +516,14 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
         if (!dungeon) // should never happen - We provide a list from sLFGDungeonStore
             continue;
 
+        // #830: AnyLevelCovers adds Raid Finder / scenarios / random entries under their own keys; with those keys off it is
+        // phase 1's rule (5-man normal/heroic). Not evaluated at all while LFG.AnyLevel.Enable is off.
+        bool const anyLevelDungeon = anyLevel && AnyLevelCovers(*dungeon);
+
         uint32 lockStatus = 0;
-        if (dungeon->faction >= 0 && player->GetTeamId() != !dungeon->faction)
+        if (denyJoin)
+            lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
+        else if (dungeon->faction >= 0 && player->GetTeamId() != !dungeon->faction)
             lockStatus = LFG_LOCKSTATUS_INCOMPATIBLE_FACTION;
         else if (DisableMgr::IsDisabledFor(DISABLE_TYPE_MAP, dungeon->map, player, dungeon->difficulty))
             lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
@@ -427,13 +533,13 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
             lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
         else if (dungeon->expansion > expansion)
             lockStatus = LFG_LOCKSTATUS_INSUFFICIENT_EXPANSION;
-        else if (dungeon->minlevel > level)
+        else if (dungeon->minlevel > level && !anyLevelDungeon)
             lockStatus = LFG_LOCKSTATUS_TOO_LOW_LEVEL;
-        else if (dungeon->maxlevel && dungeon->maxlevel < level)
+        else if (dungeon->maxlevel && dungeon->maxlevel < level && !anyLevelDungeon)
             lockStatus = LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
         else if (dungeon->seasonal && !IsSeasonActive(dungeon->id))
             lockStatus = LFG_LOCKSTATUS_NOT_IN_SEASON;
-        else if (dungeon->requiredItemLevel > itemLevel)
+        else if (dungeon->requiredItemLevel > itemLevel && !(anyLevelDungeon && AnyLevel::IgnoreItemLevel()))
             lockStatus = LFG_LOCKSTATUS_TOO_LOW_GEAR_SCORE;
         else if (AccessRequirement const* ar = sObjectMgr->GetAccessRequirement(dungeon->map, Difficulty(dungeon->difficulty)))
         {
@@ -585,7 +691,9 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
     // Check player or group member restrictions
     bool playerOnCooldown = false, partyOnCooldown = false;
     // At first check that dungeons are not empty
-    if (dungeons.empty())
+    if (!player->GetSession()->HasPermission(rbac::RBAC_PERM_JOIN_DUNGEON_FINDER))
+        joinData.result = LFG_JOIN_NOT_MEET_REQS;
+    else if (dungeons.empty())
         joinData.result = LFG_JOIN_NOT_MEET_REQS;
     // If not always check group, all checks below included for ALL group member
     else if (group)
@@ -598,7 +706,9 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
             for (GroupReference* itr = group->GetFirstMember(); itr && joinData.result == LFG_JOIN_OK; itr = itr->next())
             {
                 Player* member = itr->GetSource();
-                if (member->HasAura(LFG_SPELL_DUNGEON_DESERTER))
+                if (!member->GetSession() || !member->GetSession()->HasPermission(rbac::RBAC_PERM_JOIN_DUNGEON_FINDER))
+                    joinData.result = LFG_JOIN_NOT_MEET_REQS;
+                else if (member->HasAura(LFG_SPELL_DUNGEON_DESERTER))
                     joinData.result = LFG_JOIN_PARTY_DESERTER;
                 else if (member->HasAura(LFG_SPELL_DUNGEON_COOLDOWN) && !isContinue)
                     partyOnCooldown = true; // Cooldown case is handled later, should not apply to LFR and specific dungeons
@@ -647,7 +757,8 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
     else
         players.insert(player->GetGUID());
 
-    bool isRaid = category == LFG_CATEGORY_LFR || LFG_CATEGORY_FLEX;
+    // #778: the right operand was the bare enum constant (always true), so every dungeon queue was treated as a raid.
+    bool isRaid = category == LFG_CATEGORY_LFR || category == LFG_CATEGORY_FLEX;
     if ((playerOnCooldown || partyOnCooldown) && rDungeonId && !isRaid)
         joinData.result = playerOnCooldown ? LFG_JOIN_RANDOM_COOLDOWN : LFG_JOIN_PARTY_RANDOM_COOLDOWN;
 
@@ -657,10 +768,19 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
         if (rDungeonId)
             dungeons = GetDungeonsByRandom(rDungeonId);
 
+        // #830: LFG.AnyLevel random pool (AnyLevelRandomPool; nothing runs while LFG.AnyLevel.Enable is off). A group that
+        // continues its dungeon (isContinue) keeps its pool.
+        LfgLockPartyMap anyLevelLocks;
+        if (rDungeonId && !isContinue && AnyLevel::Enabled())
+            AnyLevelRandomPool(this, rDungeonId, dungeons, players, anyLevelLocks);
+
         // if we have lockmap then there are no compatible dungeons
         GetCompatibleDungeons(dungeons, players, joinData.lockmap, isContinue || rDungeonId != 0);
         if (dungeons.empty())
             joinData.result = group ? LFG_JOIN_INTERNAL_ERROR : LFG_JOIN_NOT_MEET_REQS;
+        if (dungeons.empty())
+            for (auto const& member : anyLevelLocks)        // #830: empty unless AnyLevelRandomPool dropped dungeons
+                joinData.lockmap[member.first].insert(member.second.begin(), member.second.end());
     }
 
     // Can't join. Send result
@@ -693,7 +813,7 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
 
         DungeonQueue const& queue = GetQueueManager(gguid).GetQueue(*dungeons.begin());
         LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(*dungeons.begin());
-        bool flex = dungeon && dungeon->difficulty == RAID_DIFFICULTY_1025MAN_FLEX;
+        bool flex = dungeon && dungeon->DifficultyID == RAID_DIFFICULTY_1025MAN_FLEX;
 
         roleCheck.neededTanks   = flex ? 0 : queue.GetRoleSlots(PLAYER_ROLE_TANK);
         roleCheck.neededHealers = flex ? 0 : queue.GetRoleSlots(PLAYER_ROLE_HEALER);
@@ -2000,7 +2120,14 @@ void LFGMgr::TeleportPlayer(Player* player, bool out, bool fromOpcode /*= false*
         error = LFG_TELEPORTERROR_INVALID_LOCATION;
 
     if (error != LFG_TELEPORTERROR_OK)
+    {
         player->GetSession()->SendLfgTeleportError(uint8(error));
+        // #876: a member left outside after everyone accepted was invisible in the logs (the error only goes to the client).
+        TC_LOG_INFO("lfg", "TeleportPlayer: Player %s NOT teleported to map %u: error %u (map %u, falling %d [flag %d spline %d done %d], vehicle %d, alive %d)",
+            player->GetName().c_str(), dungeon->map, uint32(error), player->GetMapId(), int32(player->IsFalling()),
+            int32(player->HasUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR)), int32(player->movespline->isFalling()),
+            int32(player->movespline->Finalized()), int32(player->GetVehicle() != nullptr), int32(player->IsAlive()));
+    }
 
     TC_LOG_DEBUG("lfg", "TeleportPlayer: Player %s is being teleported in to map %u "
         "(x: %f, y: %f, z: %f) Result: %u", player->GetName().c_str(), dungeon->map,
@@ -2225,6 +2352,39 @@ LfgDungeonSet const& LFGMgr::GetDungeonsByRandom(uint32 randomdungeon)
 */
 LfgReward const* LFGMgr::GetRandomDungeonReward(uint32 dungeon, uint8 level)
 {
+    // #830: LFG.AnyLevel.Loot = 1 (LFGAnyLevel.h; off by default, and 0 whenever LFG.AnyLevel.Enable is off). A random entry
+    // or Raid Finder wing outside the player's level range (an any-level queue) rewards the random 5-man reward of the
+    // player's OWN level: the random 5-man entry whose level range holds the player, same heroic-ness as the queued one,
+    // newest expansion first, then the lowest id; none (e.g. a normal at level 90, levels 10-14) = the queued entry's own
+    // reward, as before. Seasonal bosses keep their holiday reward. FinishDungeon and the SMSG_LFG_PLAYER_INFO reward
+    // preview (LFGHandler.cpp) both come through here.
+    if (AnyLevel::Loot() == AnyLevel::LOOT_LEVEL_RANDOM_REWARD && AnyLevel::AppliesToLevel(level))
+    {
+        LFGDungeonData const* queued = GetLFGDungeon(dungeon & 0x00FFFFFF);
+        if (queued && !queued->seasonal && (queued->type == LFG_TYPE_RANDOM || queued->difficulty == RAID_DIFFICULTY_25MAN_LFR) &&
+            (level < queued->minlevel || (queued->maxlevel && level > queued->maxlevel)))
+        {
+            bool const heroic = queued->difficulty == DUNGEON_DIFFICULTY_HEROIC || queued->difficulty == SCENARIO_DIFFICULTY_HEROIC;
+            LFGDungeonData const* best = nullptr;
+            for (auto const& itr : LfgDungeonStore)
+            {
+                LFGDungeonData const& candidate = itr.second;
+                if (candidate.type != LFG_TYPE_RANDOM || candidate.category != LFG_CATEGORY_DUNGEON || candidate.seasonal)
+                    continue;
+                if ((candidate.difficulty == DUNGEON_DIFFICULTY_HEROIC) != heroic)
+                    continue;
+                if (level < candidate.minlevel || (candidate.maxlevel && level > candidate.maxlevel))
+                    continue;
+                if (RewardMapStore.find(candidate.id) == RewardMapStore.end())
+                    continue;
+                if (!best || candidate.expansion > best->expansion || (candidate.expansion == best->expansion && candidate.id < best->id))
+                    best = &candidate;
+            }
+            if (best)
+                dungeon = best->id;
+        }
+    }
+
     LfgReward const* rew = NULL;
     LfgRewardContainerBounds bounds = RewardMapStore.equal_range(dungeon & 0x00FFFFFF);
     for (LfgRewardContainer::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
@@ -2600,6 +2760,22 @@ void LFGMgr::RemoveGroupData(ObjectGuid group)
         return;
     }
 
+    // #539: a group disbanded while QUEUED must leave the QueueManager too. Without this its queuer
+    // (m_queuerData) outlived the members' per-player queue data removed below, and the next
+    // QueueManager::UpdateQueueTimers read GetSelectedDungeons() for a player that no longer had that
+    // queueId (LfgDataOwner::GetQueueData const returns end()->second) - ACCESS_VIOLATION at
+    // LFGQueue.cpp:655 (crash 2026-10-04 21:47:51, a headless leader's `leavegroup` = Group::Disband
+    // while its group sat in the dungeon-finder queue). AC never keeps a dangling entry: its
+    // RemoveGroupData resets every member to LFG_STATE_NONE and its queue update does not dereference
+    // per-player data (AC LFGMgr.cpp:2659-2680, LFGQueue.cpp UpdateQueueTimers). Same effect as
+    // LeaveLfg's QUEUED branch above, done here because Disband does not call OnRemoveMember.
+    // Must run BEFORE the players are removed: GetQueueManager(group) picks the manager by a member's team.
+    // PROPOSAL is left alone on purpose - the proposal owns its queuers (RemoveProposal re-adds/removes them).
+    if (auto queues = GetGroupQueues(group))
+        for (auto&& itr : *queues)
+            if (GetState(group, itr.first) == LFG_STATE_QUEUED)
+                GetQueueManager(group).RemoveFromQueue(Queuer{ group, itr.first });
+
     // Make copy because I want RemovePlayerFromGroup for logging
     LfgGuidSet players = it->second.GetPlayers();
     for (auto&& player : players)
@@ -2923,11 +3099,18 @@ uint32 LFGMgr::GetLFGDungeonEntry(uint32 id)
 LfgDungeonSet LFGMgr::GetRandomAndSeasonalDungeons(uint8 level, uint8 expansion)
 {
     LfgDungeonSet randomDungeons;
+    // #830: LFG.AnyLevel.Raids (off by default) also lists the Raid Finder wings outside the player's level range. The 5.4.8
+    // Raid Finder dropdown has no level filter of its own (FrameXML RaidFinder.lua:165-200, tekkub/wow-ui-source tag 5.4.8),
+    // unlike the random dungeon / scenario dropdowns (LFGFrame.lua:2131-2135 LFG_IsRandomDungeonDisplayable), so only the
+    // wings are worth listing; out-of-range random entries are queued with .lfgjoin (LFGAnyLevel.cpp).
+    bool const anyLevelLfr = AnyLevel::Raids() && AnyLevel::AppliesToLevel(level);
     for (lfg::LFGDungeonContainer::const_iterator itr = LfgDungeonStore.begin(); itr != LfgDungeonStore.end(); ++itr)
     {
         lfg::LFGDungeonData const& dungeon = itr->second;
         if (((dungeon.type == lfg::LFG_TYPE_RANDOM || dungeon.difficulty == RAID_DIFFICULTY_25MAN_LFR) || (dungeon.seasonal && sLFGMgr->IsSeasonActive(dungeon.id)))
             && dungeon.expansion <= expansion && dungeon.minlevel <= level && level <= dungeon.maxlevel)
+            randomDungeons.insert(dungeon.Entry());
+        else if (anyLevelLfr && dungeon.difficulty == RAID_DIFFICULTY_25MAN_LFR && dungeon.expansion <= expansion && AnyLevelCovers(dungeon))
             randomDungeons.insert(dungeon.Entry());
     }
     return randomDungeons;

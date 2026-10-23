@@ -28,7 +28,11 @@ enum eMisc
 
 enum eBosses
 {
-    BOSS_MING_THE_CUNNING,
+    // #805: BossAI writes instance->SetBossState(bossId, ...). The old ids 0/1/2 collided with DATA_TRIAL_OF_THE_KING /
+    // DATA_GEKKAN / DATA_XIN_THE_WEAPONMASTER (Kuai engaging marked Gekkan IN_PROGRESS, Ming's reset could clear the Trial).
+    // Ids >= MAX_ENCOUNTER are ignored by Set/GetBossState (bounds-checked), so the champions touch no encounter state.
+    // They are NOT indexes into pTrialHomePositions any more (use TYPE_MING/KUAI/HAIYAN for that).
+    BOSS_MING_THE_CUNNING = MAX_ENCOUNTER,
     BOSS_KUAI_THE_BRUTE,
     BOSS_HAIYAN_THE_UNSTOPPABLE,
 };
@@ -335,6 +339,7 @@ class boss_ming_the_cunning : public CreatureScript
             boss_ming_the_cunning_AI(Creature* creature) : BossAI(creature, BOSS_MING_THE_CUNNING)
             {
                 me->SetHomePosition(pTrialHomePositions[TYPE_MING]);
+                m_bIsMovingHome = false; // #654: retire is one-shot (was uninitialized, and every re-engage reset it)
             }
 
             bool m_bIsMovingHome;
@@ -350,13 +355,28 @@ class boss_ming_the_cunning : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_PULL_TOWARDS_DEST, true);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (instance && instance->GetBossState(DATA_TRIAL_OF_THE_KING) == DONE)
                     return;
 
+                // #654: HandleRetire sets IMMUNE_TO_PC + REACT_PASSIVE, so every player threat ref goes offline
+                // (ThreatReference::FlagsAllowFighting) and CreatureAI::UpdateVictim evades the champion on the next tick.
+                // That is not a wipe: drop combat and walk home, but keep IMMUNE_TO_PC (the old path below removed it, the
+                // bots re-engaged and the champion retired again: w44 Kuai 5x, w42 Ming 3x "defeated"), skip
+                // TYPE_WIPE_FIRST_BOSS and leave the retire timer running.
+                if (m_bIsMovingHome)
+                {
+                    _EnterEvadeMode();
+                    me->GetMotionMaster()->MoveTargetedHome();
+                    return;
+                }
+
                 _EnterEvadeMode();
 
+                // #805: pass this champion's index (0 Ming/adepts, 1 Kuai/scrappers, 2 Haiyan/grunts); it was always 0, so a
+                // Kuai or Haiyan wipe retired the wrong clan. The instance re-arms the Trial (ResetTrialAfterWipe).
+                me->SetFullHealth();
                 if (instance)
                     instance->SetData(TYPE_WIPE_FIRST_BOSS, 0);
 
@@ -370,7 +390,12 @@ class boss_ming_the_cunning : public CreatureScript
                 me->m_Events.Schedule(delay += me->GetSplineDuration(), 11, [this, tempGUID]()
                 {
                     me->StopMoving();
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED);
+                    // #805: stay passive and immune until the instance restarts the Trial (TYPE_MING/KUAI/HAIYAN handler
+                    // sets faction/react/combat). Left aggressive at home it re-aggroed on its own with the doors open and
+                    // the clan not encouraging, and the instance never ran the shuffle again.
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                    me->SetReactState(REACT_PASSIVE);
                 });
 
                 events.Reset();
@@ -378,7 +403,7 @@ class boss_ming_the_cunning : public CreatureScript
 
             void JustEngagedWith(Unit* /*who*/) override
             {
-                if (instance->GetData(TYPE_SHUFFLE_ORDER) == DONE)
+                if (m_bIsMovingHome || instance->GetData(TYPE_SHUFFLE_ORDER) == DONE) // #654: retired stays retired
                     return;
 
                 me->CastSpell(me, SPELL_GUARDIAN_GRUNT, false);
@@ -386,7 +411,6 @@ class boss_ming_the_cunning : public CreatureScript
                 events.ScheduleEvent(EVENT_WHIRLING_DERVISH, 20000);
                 events.ScheduleEvent(EVENT_MAGNETIC_FIELD, 30000);
 
-                m_bIsMovingHome = false;
             }
 
             void KilledUnit(Unit* /*victim*/) override
@@ -420,7 +444,15 @@ class boss_ming_the_cunning : public CreatureScript
                 me->AttackStop();
                 me->CastStop();
                 events.Reset();
-                events.ScheduleEvent(EVENT_BOSS_RETIRE, 11000);
+                // #654: the 11 s retire timer was an AI EventMap event: the evade right after the retire cleared it
+                // (events.Reset) and UpdateAI only executes events in combat, so TYPE_SHUFFLE_ORDER never ran and the
+                // next champion never came (w41/w44). The creature's own event processor runs out of combat.
+                InstanceScript* trialInstance = instance;
+                me->m_Events.Schedule(11000, [trialInstance]()
+                {
+                    if (trialInstance)
+                        trialInstance->SetData(TYPE_SHUFFLE_ORDER, 0);
+                });
                 if (instance)
                     instance->SetData(TYPE_MING_RETIRED, 0);
 
@@ -810,6 +842,7 @@ class boss_kuai_the_brute : public CreatureScript
                 }
 
                 me->SetHomePosition(pTrialHomePositions[TYPE_KUAI]);
+                m_bIsMovingHome = false; // #654: retire is one-shot (was uninitialized, and every re-engage reset it)
             }
 
             ObjectGuid pet_guid;
@@ -826,15 +859,30 @@ class boss_kuai_the_brute : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_PULL_TOWARDS_DEST, true);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (instance && instance->GetBossState(DATA_TRIAL_OF_THE_KING) == DONE)
                     return;
 
+                // #654: HandleRetire sets IMMUNE_TO_PC + REACT_PASSIVE, so every player threat ref goes offline
+                // (ThreatReference::FlagsAllowFighting) and CreatureAI::UpdateVictim evades the champion on the next tick.
+                // That is not a wipe: drop combat and walk home, but keep IMMUNE_TO_PC (the old path below removed it, the
+                // bots re-engaged and the champion retired again: w44 Kuai 5x, w42 Ming 3x "defeated"), skip
+                // TYPE_WIPE_FIRST_BOSS and leave the retire timer running.
+                if (m_bIsMovingHome)
+                {
+                    _EnterEvadeMode();
+                    me->GetMotionMaster()->MoveTargetedHome();
+                    return;
+                }
+
                 _EnterEvadeMode();
 
+                // #805: pass this champion's index (0 Ming/adepts, 1 Kuai/scrappers, 2 Haiyan/grunts); it was always 0, so a
+                // Kuai or Haiyan wipe retired the wrong clan. The instance re-arms the Trial (ResetTrialAfterWipe).
+                me->SetFullHealth();
                 if (instance)
-                    instance->SetData(TYPE_WIPE_FIRST_BOSS, 0);
+                    instance->SetData(TYPE_WIPE_FIRST_BOSS, 1);
 
                 Movement::MoveSplineInit init(me);
                 init.MoveTo(me->GetHomePosition().GetPositionX(), me->GetHomePosition().GetPositionY(), me->GetHomePosition().GetPositionZ());
@@ -846,7 +894,12 @@ class boss_kuai_the_brute : public CreatureScript
                 me->m_Events.Schedule(delay += me->GetSplineDuration(), 11, [this, tempGUID]()
                 {
                     me->StopMoving();
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED);
+                    // #805: stay passive and immune until the instance restarts the Trial (TYPE_MING/KUAI/HAIYAN handler
+                    // sets faction/react/combat). Left aggressive at home it re-aggroed on its own with the doors open and
+                    // the clan not encouraging, and the instance never ran the shuffle again.
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                    me->SetReactState(REACT_PASSIVE);
                 });
 
                 events.Reset();
@@ -878,7 +931,7 @@ class boss_kuai_the_brute : public CreatureScript
 
             void JustEngagedWith(Unit* /*who*/) override
             {
-                if (instance->GetData(TYPE_SHUFFLE_ORDER) == DONE)
+                if (m_bIsMovingHome || instance->GetData(TYPE_SHUFFLE_ORDER) == DONE) // #654: retired stays retired
                     return;
 
                 events.ScheduleEvent(EVENT_SHOCKWAVE, 15 * IN_MILLISECONDS);
@@ -886,7 +939,6 @@ class boss_kuai_the_brute : public CreatureScript
                 if (Creature* mu_shiba = me->GetMap()->GetCreature(pet_guid))
                     mu_shiba->AI()->DoAction(ACTION_ATTACK);
 
-                m_bIsMovingHome = false;
             }
 
             void HandleRetire()
@@ -900,7 +952,15 @@ class boss_kuai_the_brute : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
                 me->AttackStop();
                 events.Reset();
-                events.ScheduleEvent(EVENT_BOSS_RETIRE, 11000);
+                // #654: the 11 s retire timer was an AI EventMap event: the evade right after the retire cleared it
+                // (events.Reset) and UpdateAI only executes events in combat, so TYPE_SHUFFLE_ORDER never ran and the
+                // next champion never came (w41/w44). The creature's own event processor runs out of combat.
+                InstanceScript* trialInstance = instance;
+                me->m_Events.Schedule(11000, [trialInstance]()
+                {
+                    if (trialInstance)
+                        trialInstance->SetData(TYPE_SHUFFLE_ORDER, 0);
+                });
                 if (instance)
                     instance->SetData(TYPE_KUAI_RETIRED, 0);
 
@@ -1104,7 +1164,8 @@ class boss_haiyan_the_unstoppable : public CreatureScript
         {
             boss_haiyan_the_unstoppable_AI(Creature* creature) : BossAI(creature, BOSS_HAIYAN_THE_UNSTOPPABLE)
             {
-                me->SetHomePosition(pTrialHomePositions[BOSS_HAIYAN_THE_UNSTOPPABLE]);
+                me->SetHomePosition(pTrialHomePositions[TYPE_HAIYAN]);
+                m_bIsMovingHome = false; // #654: retire is one-shot (was uninitialized, and every re-engage reset it)
             }
 
             bool m_bIsMovingHome;
@@ -1122,24 +1183,38 @@ class boss_haiyan_the_unstoppable : public CreatureScript
 
             void JustEngagedWith(Unit* /*who*/) override
             {
-                if (instance->GetData(TYPE_SHUFFLE_ORDER) == DONE)
+                if (m_bIsMovingHome || instance->GetData(TYPE_SHUFFLE_ORDER) == DONE) // #654: retired stays retired
                     return;
 
-                m_bIsMovingHome = false;
                 events.ScheduleEvent(EVENT_TRAUMATIC_BLOW, 10000);
                 events.ScheduleEvent(EVENT_CONFLAGRATE, 20000);
                 events.ScheduleEvent(EVENT_METEOR, 40000);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (instance && instance->GetBossState(DATA_TRIAL_OF_THE_KING) == DONE)
                     return;
 
+                // #654: HandleRetire sets IMMUNE_TO_PC + REACT_PASSIVE, so every player threat ref goes offline
+                // (ThreatReference::FlagsAllowFighting) and CreatureAI::UpdateVictim evades the champion on the next tick.
+                // That is not a wipe: drop combat and walk home, but keep IMMUNE_TO_PC (the old path below removed it, the
+                // bots re-engaged and the champion retired again: w44 Kuai 5x, w42 Ming 3x "defeated"), skip
+                // TYPE_WIPE_FIRST_BOSS and leave the retire timer running.
+                if (m_bIsMovingHome)
+                {
+                    _EnterEvadeMode();
+                    me->GetMotionMaster()->MoveTargetedHome();
+                    return;
+                }
+
                 _EnterEvadeMode();
 
+                // #805: pass this champion's index (0 Ming/adepts, 1 Kuai/scrappers, 2 Haiyan/grunts); it was always 0, so a
+                // Kuai or Haiyan wipe retired the wrong clan. The instance re-arms the Trial (ResetTrialAfterWipe).
+                me->SetFullHealth();
                 if (instance)
-                    instance->SetData(TYPE_WIPE_FIRST_BOSS, 0);
+                    instance->SetData(TYPE_WIPE_FIRST_BOSS, 2);
 
                 Movement::MoveSplineInit init(me);
                 init.MoveTo(me->GetHomePosition().GetPositionX(), me->GetHomePosition().GetPositionY(), me->GetHomePosition().GetPositionZ());
@@ -1151,7 +1226,12 @@ class boss_haiyan_the_unstoppable : public CreatureScript
                 me->m_Events.Schedule(delay += me->GetSplineDuration(), 11, [this, tempGUID]()
                 {
                     me->StopMoving();
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED);
+                    // #805: stay passive and immune until the instance restarts the Trial (TYPE_MING/KUAI/HAIYAN handler
+                    // sets faction/react/combat). Left aggressive at home it re-aggroed on its own with the doors open and
+                    // the clan not encouraging, and the instance never ran the shuffle again.
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                    me->SetReactState(REACT_PASSIVE);
                 });
 
                 events.Reset();
@@ -1188,7 +1268,15 @@ class boss_haiyan_the_unstoppable : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
                 me->AttackStop();
                 events.Reset();
-                events.ScheduleEvent(EVENT_BOSS_RETIRE, 11000);
+                // #654: the 11 s retire timer was an AI EventMap event: the evade right after the retire cleared it
+                // (events.Reset) and UpdateAI only executes events in combat, so TYPE_SHUFFLE_ORDER never ran and the
+                // next champion never came (w41/w44). The creature's own event processor runs out of combat.
+                InstanceScript* trialInstance = instance;
+                me->m_Events.Schedule(11000, [trialInstance]()
+                {
+                    if (trialInstance)
+                        trialInstance->SetData(TYPE_SHUFFLE_ORDER, 0);
+                });
                 if (instance)
                     instance->SetData(TYPE_HAIYAN_RETIRED, 0);
 
@@ -1327,7 +1415,7 @@ class npc_glintrok_scout : public CreatureScript
                 if (n < 0)
                     return false;
 
-                if (Creature* pBat = me->SummonCreature(CREATURE_CAVE_BAT, apCaveBatPositions[n], TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000))
+                if (Creature* pBat = me->SummonCreature(CREATURE_CAVE_BAT, apCaveBatPositions[n], TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000ms))
                 {
                     pBat->SetCanFly(true);
                     pBat->CastSpell(pBat, SPELL_CAVEBAT_VISUAL, true);

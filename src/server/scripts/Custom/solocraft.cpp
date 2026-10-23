@@ -200,7 +200,7 @@ class SolocraftConfig
             D10 = sConfigMgr->GetFloatDefault("Solocraft.Heroic", 10.0);
             D25 = sConfigMgr->GetFloatDefault("Solocraft.Raid25", 25.0);
             D40 = sConfigMgr->GetFloatDefault("Solocraft.Raid40", 40.0);
-            // Множитель (обычный)
+            // Multiplier (normal)
             diff_Multiplier =
             {
                 /// VANILLA
@@ -276,36 +276,36 @@ class SolocraftConfig
                 {33, sConfigMgr->GetFloatDefault("Solocraft.ShadowfangKeep", 5.0) }, // ShadowfangKeep
                 {36, sConfigMgr->GetFloatDefault("Solocraft.DeadMines", 5.0) }, // DeadMines
                 {645, sConfigMgr->GetFloatDefault("Solocraft.BlackrockCaverns", 5.0) }, // BlackrockCaverns
-                {643, sConfigMgr->GetFloatDefault("Solocraft.ThroneOfTheTides", 5.0) }, // Трон Приливов
-                {657, sConfigMgr->GetFloatDefault("Solocraft.TheVortexPinnacle", 5.0) }, // Вершина Смерча
-                {725, sConfigMgr->GetFloatDefault("Solocraft.TheStonecore", 5.0) }, // Каменные Недра
-                {755, sConfigMgr->GetFloatDefault("Solocraft.LostCityOfTheTol'vir", 5.0) }, // Затерянный город Тол'вир
-                {644, sConfigMgr->GetFloatDefault("Solocraft.HallsOfOrigination", 5.0) }, // Чертоги Созидания
-                {670, sConfigMgr->GetFloatDefault("Solocraft.GrimBatol", 5.0) }, // Грим Батол
-                {669, sConfigMgr->GetFloatDefault("Solocraft.BlackwingDescent", 10.0) }, // Твердыня Крыла Тьмы
-                {671, sConfigMgr->GetFloatDefault("Solocraft.TheBastionOfTwilight", 10.0) }, // Сумеречный бастион
-                {754, sConfigMgr->GetFloatDefault("Solocraft.ThroneOfTheFourWinds", 10.0) }, // Трон Четырех Ветров
-                {757, sConfigMgr->GetFloatDefault("Solocraft.BaradinHold", 10.0) }, // Крепость Барадин
-                {720, sConfigMgr->GetFloatDefault("Solocraft.Firelands", 10.0) }, // Огненные Просторы
-                {967, sConfigMgr->GetFloatDefault("Solocraft.DragonSoul", 10.0) }, // Душа Дракона
-                {859, sConfigMgr->GetFloatDefault("Solocraft.Zul'gurub", 5.0) }, // Зул'Гуруб
-                {568, sConfigMgr->GetFloatDefault("Solocraft.ZulAman", 5.0) }, // Зул'Аман
-                {576, sConfigMgr->GetFloatDefault("Solocraft.Nexus", 5.0) }, // Нексус
+                {643, sConfigMgr->GetFloatDefault("Solocraft.ThroneOfTheTides", 5.0) }, // Throne of the Tides
+                {657, sConfigMgr->GetFloatDefault("Solocraft.TheVortexPinnacle", 5.0) }, // Vortex Pinnacle
+                {725, sConfigMgr->GetFloatDefault("Solocraft.TheStonecore", 5.0) }, // The Stonecore
+                {755, sConfigMgr->GetFloatDefault("Solocraft.LostCityOfTheTol'vir", 5.0) }, // Lost City of Tol'vir
+                {644, sConfigMgr->GetFloatDefault("Solocraft.HallsOfOrigination", 5.0) }, // Halls of Origination
+                {670, sConfigMgr->GetFloatDefault("Solocraft.GrimBatol", 5.0) }, // Grim Batol
+                {669, sConfigMgr->GetFloatDefault("Solocraft.BlackwingDescent", 10.0) }, // Blackwing Descent
+                {671, sConfigMgr->GetFloatDefault("Solocraft.TheBastionOfTwilight", 10.0) }, // Bastion of Twilight
+                {754, sConfigMgr->GetFloatDefault("Solocraft.ThroneOfTheFourWinds", 10.0) }, // Throne of the Four Winds
+                {757, sConfigMgr->GetFloatDefault("Solocraft.BaradinHold", 10.0) }, // Baradin Hold
+                {720, sConfigMgr->GetFloatDefault("Solocraft.Firelands", 10.0) }, // Firelands
+                {967, sConfigMgr->GetFloatDefault("Solocraft.DragonSoul", 10.0) }, // Dragon Soul
+                {859, sConfigMgr->GetFloatDefault("Solocraft.Zul'gurub", 5.0) }, // Zul'Gurub
+                {568, sConfigMgr->GetFloatDefault("Solocraft.ZulAman", 5.0) }, // Zul'Aman
+                {576, sConfigMgr->GetFloatDefault("Solocraft.Nexus", 5.0) }, // Nexus
                 /// MISTS OF PANDARIA
-                {959, sConfigMgr->GetFloatDefault("Solocraft.ShadoPanMonastery", 5.0) }, // Монастырь Шадо-Пан
-                {1007, sConfigMgr->GetFloatDefault("Solocraft.Scholomance", 5.0) }, // Некроситет
-                {1004, sConfigMgr->GetFloatDefault("Solocraft.ScarletMonastery", 5.0) }, // Монастырь Алого ордена
-                {994, sConfigMgr->GetFloatDefault("Solocraft.Mogu'shanPalace", 5.0) }, // Дворец Могу'шан
-                {1008, sConfigMgr->GetFloatDefault("Solocraft.Mogu'shanVaults", 10.0) }, // Подземелья Могу'шан
-                {1136, sConfigMgr->GetFloatDefault("Solocraft.SiegeOfOrgrimmar", 10.0) }, // Осада Оргриммара
-                {1098, sConfigMgr->GetFloatDefault("Solocraft.ThroneOfThunder", 10.0) }, // Престол Гроз
-                {1009, sConfigMgr->GetFloatDefault("Solocraft.HeartOfFear", 10.0) }, // Сердце Страха
-                {996, sConfigMgr->GetFloatDefault("Solocraft.TerraceOfEndlessSpring", 10.0) }, // Терраса Вечной Весны
-                {1001, sConfigMgr->GetFloatDefault("Solocraft.ScarletHalls", 5.0) }, // Залы Алого ордена
-                {962, sConfigMgr->GetFloatDefault("Solocraft.GateOfTheSettingSun", 5.0) }, // Врата Заходящего Солнца
-                {1011, sConfigMgr->GetFloatDefault("Solocraft.SiegeOfNiuzaoTemple", 5.0) }, // Осада храма Нюцзао
-                {960, sConfigMgr->GetFloatDefault("Solocraft.TempleOfTheJadeSerpent", 5.0) }, // Храм Нефритовой Змеи
-                {961, sConfigMgr->GetFloatDefault("Solocraft.StormstoutBrewery", 5.0) }, // Хмелеварня Буйных Портеров
+                {959, sConfigMgr->GetFloatDefault("Solocraft.ShadoPanMonastery", 5.0) }, // Shado-Pan Monastery
+                {1007, sConfigMgr->GetFloatDefault("Solocraft.Scholomance", 5.0) }, // Scholomance
+                {1004, sConfigMgr->GetFloatDefault("Solocraft.ScarletMonastery", 5.0) }, // Scarlet Monastery
+                {994, sConfigMgr->GetFloatDefault("Solocraft.Mogu'shanPalace", 5.0) }, // Mogu'shan Palace
+                {1008, sConfigMgr->GetFloatDefault("Solocraft.Mogu'shanVaults", 10.0) }, // Mogu'shan Vaults
+                {1136, sConfigMgr->GetFloatDefault("Solocraft.SiegeOfOrgrimmar", 10.0) }, // Siege of Orgrimmar
+                {1098, sConfigMgr->GetFloatDefault("Solocraft.ThroneOfThunder", 10.0) }, // Throne of Thunder
+                {1009, sConfigMgr->GetFloatDefault("Solocraft.HeartOfFear", 10.0) }, // Heart of Fear
+                {996, sConfigMgr->GetFloatDefault("Solocraft.TerraceOfEndlessSpring", 10.0) }, // Terrace of Endless Spring
+                {1001, sConfigMgr->GetFloatDefault("Solocraft.ScarletHalls", 5.0) }, // Scarlet Halls
+                {962, sConfigMgr->GetFloatDefault("Solocraft.GateOfTheSettingSun", 5.0) }, // Gate of the Setting Sun
+                {1011, sConfigMgr->GetFloatDefault("Solocraft.SiegeOfNiuzaoTemple", 5.0) }, // Siege of the Niuzao Temple
+                {960, sConfigMgr->GetFloatDefault("Solocraft.TempleOfTheJadeSerpent", 5.0) }, // Temple of the Jade Serpent
+                {961, sConfigMgr->GetFloatDefault("Solocraft.StormstoutBrewery", 5.0) }, // Stormstout Brewery
             };
             // diff_Multiplier_Heroics
             diff_Multiplier_Heroics =

@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -39,6 +39,7 @@
 #include "AchievementMgr.h"
 #include "SocialMgr.h"
 #include "Config.h"
+#include "BattlegroundAnyLevel.h"  // #702 P4 (#831): Battleground.AnyLevel.* (off by default)
 #include <filesystem>
 
 Roll::Roll(ObjectGuid lootGuid, LootItem const& li) : lootGUID(lootGuid), itemid(li.itemid),
@@ -88,6 +89,10 @@ Group::~Group()
     // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
     // will be unloaded first so we must be prepared for both cases
     // this may unload some instance saves
+    // #766 (w32 shutdown crash, Crashes/Archive_worldserver.exe_[10-10_22-39-31]): GroupMgr's static destructor runs after
+    // MapManager's, and InstanceSave::UnloadIfEmpty -> sMapMgr->FindMap read the destroyed map container. Once the world
+    // has stopped the process is exiting and this bookkeeping is in-memory only, so skip it.
+    if (!World::IsStopped())
     for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
         for (BoundInstancesMap::iterator itr2 = m_boundInstances[i].begin(); itr2 != m_boundInstances[i].end(); ++itr2)
             itr2->second.save->RemoveGroup(this);
@@ -241,6 +246,7 @@ void Group::LoadMemberFromDB(ObjectGuid::LowType guidLow, uint8 memberFlags, uin
     member.group = subgroup;
     member.flags = memberFlags;
     member.roles = roles;
+    member.readyCheckHasResponded = false;  // #142 L7: uninitialised here, a garbage `true` ended every ready check after the first confirm
 
     m_memberSlots.push_back(member);
 
@@ -437,6 +443,7 @@ bool Group::AddMember(Player* player)
     member.group     = subGroup;
     member.flags     = 0;
     member.roles     = 0;
+    member.readyCheckHasResponded = false;  // #142 L7: see LoadMemberFromDB
     m_memberSlots.push_back(member);
 
     SubGroupCounterIncrease(subGroup);
@@ -487,18 +494,18 @@ bool Group::AddMember(Player* player)
         player->ResetInstances(INSTANCE_RESET_GROUP_JOIN, false);
         player->ResetInstances(INSTANCE_RESET_GROUP_JOIN, true);
 
-        if (player->GetLevel() >= LEVELREQUIREMENT_HEROIC)
+        // #811: every joining member takes the group's difficulty, as in AC Group::AddMember (Group.cpp:506-515). The old
+        // level >= LEVELREQUIREMENT_HEROIC gate left low-level members on their own saved difficulty, so a level-36 bot with a
+        // saved HEROIC difficulty failed the heroic access requirement while its group entered on normal.
+        if (player->GetDungeonDifficulty() != GetDungeonDifficulty())
         {
-            if (player->GetDungeonDifficulty() != GetDungeonDifficulty())
-            {
-                player->SetDungeonDifficulty(GetDungeonDifficulty());
-                player->SendDungeonDifficulty(GetDungeonDifficulty());
-            }
-            if (player->GetRaidDifficulty() != GetRaidDifficulty())
-            {
-                player->SetRaidDifficulty(GetRaidDifficulty());
-                player->SendRaidDifficulty(GetRaidDifficulty());
-            }
+            player->SetDungeonDifficulty(GetDungeonDifficulty());
+            player->SendDungeonDifficulty(GetDungeonDifficulty());
+        }
+        if (player->GetRaidDifficulty() != GetRaidDifficulty())
+        {
+            player->SetRaidDifficulty(GetRaidDifficulty());
+            player->SendRaidDifficulty(GetRaidDifficulty());
         }
     }
     player->SetGroupUpdateFlag(GROUP_UPDATE_FULL);
@@ -2517,7 +2524,8 @@ GroupJoinBattlegroundResult Group::CanJoinBattlegroundQueue(Battleground const* 
     if (!reference)
         return ERR_BATTLEGROUND_JOIN_FAILED;
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bgOrTemplate->GetMapId(), reference->GetLevel());
+    // #702 P4: Battleground.AnyLevel bracket fallback (off by default = the stock lookup); arenas never get one
+    PvPDifficultyEntry const* bracketEntry = BattlegroundAnyLevel::GetBracketByLevel(bgOrTemplate, bgOrTemplate->GetMapId(), reference->GetLevel());
     if (!bracketEntry)
         return ERR_BATTLEGROUND_JOIN_FAILED;
 
@@ -2537,7 +2545,7 @@ GroupJoinBattlegroundResult Group::CanJoinBattlegroundQueue(Battleground const* 
         if (member->GetTeam() != team)
             return ERR_BATTLEGROUND_JOIN_TIMED_OUT;
         // not in the same battleground level braket, don't let join
-        PvPDifficultyEntry const* memberBracketEntry = GetBattlegroundBracketByLevel(bracketEntry->mapId, member->GetLevel());
+        PvPDifficultyEntry const* memberBracketEntry = BattlegroundAnyLevel::GetBracketByLevel(bgOrTemplate, bracketEntry->MapID, member->GetLevel());
         if (memberBracketEntry != bracketEntry)
             return ERR_BATTLEGROUND_JOIN_RANGE_INDEX;
         // don't let join if someone from the group is already in that bg queue
@@ -2759,7 +2767,7 @@ InstanceGroupBind* Group::GetBoundInstance(MapEntry const* mapEntry)
 InstanceGroupBind* Group::GetBoundInstance(Difficulty difficulty, uint32 mapId)
 {
     // some instances only have one difficulty
-    GetDownscaledMapDifficultyData(mapId, difficulty);
+    sDBCManager.GetDownscaledMapDifficultyData(mapId, difficulty);
 
     BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapId);
     if (itr != m_boundInstances[difficulty].end())
@@ -3663,9 +3671,7 @@ std::string Group::FormatLeader()
 char const* Group::GetMapName(uint32 id)
 {
     if (MapEntry const* map = sMapStore.LookupEntry(id))
-        for (uint8 locale = 0; locale < TOTAL_LOCALES; ++locale)
-            if (map->name[locale] && *map->name[locale])
-                return map->name[locale];
+        return map->name;
 
     return "<unknown>";
 }

@@ -34,6 +34,8 @@ enum Spells
     SPELL_BRUTAL_STRIKE     = 42384,
     SPELL_SURGE             = 42402,
     SPELL_LACERATING_SLASH  = 42395,
+    SPELL_REND_FLESH        = 42397, // #678: Wowpedia "Nalorakk (tactics)" bear form "Rend Flesh ... 6000 Physical damage every
+                                     // 0.5 sec for 5 sec" = 5.4.8 SpellEffect 42397 (aura 3, bp 6000 / heroic 9950, 500 ms, 5 s)
     SPELL_DEAFENING_ROAR    = 49721,
 };
 
@@ -45,6 +47,7 @@ enum Events
     EVENT_LACERATING_SLASH  = 4,
     EVENT_DEAFENING_ROAR    = 5,
     EVENT_TROLLFORM         = 6,
+    EVENT_REND_FLESH        = 7,
 };
 
 class boss_nalorakk : public CreatureScript
@@ -126,12 +129,18 @@ class boss_nalorakk : public CreatureScript
                             events.CancelEvent(EVENT_BRUTAL_STRIKE);
                             DoCast(me, SPELL_BEARFORM);
                             events.ScheduleEvent(EVENT_LACERATING_SLASH, 6000);
+                            // #678: AC boss_nalorakk.cpp:304-307 (bear form): Rend Flesh on the victim, 6-21 s, repeat 6-21 s.
+                            events.ScheduleEvent(EVENT_REND_FLESH, urand(6000, 21000));
                             events.ScheduleEvent(EVENT_DEAFENING_ROAR, urand(3000, 8000));
                             events.ScheduleEvent(EVENT_TROLLFORM, 30000);
                             break;
                         case EVENT_LACERATING_SLASH:
                             DoCastVictim(SPELL_LACERATING_SLASH);
                             events.ScheduleEvent(EVENT_LACERATING_SLASH, 20000);
+                            break;
+                        case EVENT_REND_FLESH:
+                            DoCastVictim(SPELL_REND_FLESH);
+                            events.ScheduleEvent(EVENT_REND_FLESH, urand(6000, 21000));
                             break;
                         case EVENT_DEAFENING_ROAR:
                             DoCastAOE(SPELL_DEAFENING_ROAR);
@@ -140,6 +149,7 @@ class boss_nalorakk : public CreatureScript
                         case EVENT_TROLLFORM:
                             Talk(SAY_TROLL);
                             events.CancelEvent(EVENT_LACERATING_SLASH);
+                            events.CancelEvent(EVENT_REND_FLESH);
                             events.CancelEvent(EVENT_DEAFENING_ROAR);
                             events.ScheduleEvent(EVENT_BEARFORM, 30000);
                             events.ScheduleEvent(EVENT_BRUTAL_STRIKE, 6000);

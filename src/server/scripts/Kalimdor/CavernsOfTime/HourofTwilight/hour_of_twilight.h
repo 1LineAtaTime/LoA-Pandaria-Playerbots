@@ -241,8 +241,14 @@ enum iActions
     ACTION_FLY_TO_DRAGON_SOUL            = 13,
     ACTION_REMOVE_ALL_PASSENGERS         = 14,
     ACTION_COMBAT                        = 15,
-    ACTION_WATER_SHIELD                  = 16
+    ACTION_WATER_SHIELD                  = 16,
+    ACTION_ARCURION_WIPE                 = 17, // Refs #824: Arcurion evaded (wipe) - Thrall 55779 leaves combat and his Icy Tomb
+    ACTION_ASIRA_DEATH                   = 18, // Refs #696: Asira died - Thrall 54972 leaves combat and starts the Life Warden sequence
+    ACTION_BENEDICTUS_WIPE               = 19, // Refs #696: Benedictus evaded (wipe) - Thrall 54971 leaves combat, passive again
+    ACTION_THRALL_ORB_LIGHTNING          = 20, // Refs #696: Thrall 54971 Chain Lightnings two of the three Purifying Light orbs
 };
+
+#define NPC_WORLD_TRIGGER_HOT 22515 // Refs #696: "World Trigger" (flags_extra TRIGGER), the Icy Boulder glyph marker
 
 #define DoomHammer 56228
 #define MagharStaff 50805

@@ -1,9 +1,23 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
- */
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "WorldPosition.h"
+#include "DatabaseEnv.h"  // #611: getGameObjectsNear spawn-guid read
+#include <mutex>
 
 #include <iomanip>
 #include <numeric>
@@ -13,6 +27,7 @@
 #include "MapManager.h"
 #include "PathGenerator.h"
 #include "Playerbots.h"
+#include "TravelMgr.h"
 #include "StrategyContext.h"
 #include "TransportMgr.h"
 #include "VMapFactory.h"
@@ -183,9 +198,35 @@ float WorldPosition::getZ() { return GetPositionZ(); }
 
 float WorldPosition::getO() { return GetOrientation(); }
 
+// #720: AC TravelMgr.cpp:256-259 lists the WotLK open-world continents (0/1/530/571 - the same set as AC's
+// MapEntry::IsContinent, DBCStructure.h:1406-1409, and AC's default AiPlayerbot.RandomBotMaps). Every caller reads it as
+// "open world, not a battleground/dungeon/raid" (AllowActive, RPG BG queue, group ready, boss/elite destinations, node
+// naming/pruning, area names). Cata/MoP extension of that pattern: the non-instanced (Map.dbc type 0) open-world maps
+// of those expansions - 646 Deepholm, 648 Kezan/Lost Isles, 654 Gilneas, 730 Maelstrom, 732 Tol Barad (open world +
+// battlefield, as Wintergrasp in 571), 861 Molten Front, 860 Wandering Isle, 870 Pandaria, 1064 Isle of Thunder.
+// Phase/terrain-swap child maps (e.g. 969-972, 1061/1062, 1120/1121) keep the root map id on the player and need no
+// entry; transport and test maps stay excluded as in AC.
 bool WorldPosition::isOverworld()
 {
-    return GetMapId() == 0 || GetMapId() == 1 || GetMapId() == 530 || GetMapId() == 571;
+    switch (GetMapId())
+    {
+        case 0:    // Eastern Kingdoms (AC)
+        case 1:    // Kalimdor (AC)
+        case 530:  // Outland (AC)
+        case 571:  // Northrend (AC)
+        case 646:  // Deepholm
+        case 648:  // Kezan / The Lost Isles (goblin start)
+        case 654:  // Gilneas (worgen start)
+        case 730:  // The Maelstrom
+        case 732:  // Tol Barad
+        case 861:  // Molten Front
+        case 860:  // The Wandering Isle (pandaren start)
+        case 870:  // Pandaria
+        case 1064: // Isle of Thunder
+            return true;
+        default:
+            return false;
+    }
 }
 
 bool WorldPosition::isInWater()
@@ -234,9 +275,10 @@ float WorldPosition::fDist(WorldPosition* center)
         return sqrt(sqDistance2d(center));
 
     // this -> mapTransfer | mapTransfer -> center
-    //return sTravelMgr->fastMapTransDistance(*this, *center);
-
-    return 0.0f;
+    // issue #86: returning 0 here made every cross-map node look equidistant, so TravelNodeMap's
+    // "closest nodes" partial_sort was arbitrary and the A* started from a useless node (routes
+    // always came back empty). Use the map-transfer distance instead.
+    return sTravelMgr.fastMapTransDistance(*this, *center);
 };
 
 // When moving from this along list return last point that falls within range.
@@ -364,6 +406,19 @@ std::string const WorldPosition::to_string()
     return out.str();
 };
 
+// #611: AC TravelMgr.cpp:445-455 verbatim.
+std::vector<std::string> WorldPosition::split(std::string const& s, char delimiter)
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter))
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
 void WorldPosition::printWKT(std::vector<WorldPosition> points, std::ostringstream& out, uint32 dim, bool loop)
 {
     switch (dim)
@@ -415,14 +470,14 @@ std::string const WorldPosition::getAreaName(bool fullName, bool zoneName)
     {
         MapEntry const* map = sMapStore.LookupEntry(getMapId());
         if (map)
-            return map->name[0];
+            return map->name;
     }
 
     AreaTableEntry const* area = getArea();
     if (!area)
         return "";
 
-    std::string areaName = area->area_name[0];
+    std::string areaName = area->area_name;
 
     if (fullName)
     {
@@ -434,7 +489,7 @@ std::string const WorldPosition::getAreaName(bool fullName, bool zoneName)
             if (!parentArea)
                 break;
 
-            std::string const subAreaName = parentArea->area_name[0];
+            std::string const subAreaName = parentArea->area_name;
 
             if (zoneName)
                 areaName = subAreaName;
@@ -876,4 +931,106 @@ bool GuidPosition::isDead()
         return false;
 
     return true;
+}
+// #611: AC TravelMgr.cpp:275-278 verbatim (MAPID_INVALID is Position.h:182 on this core as well).
+bool WorldPosition::IsValid()
+{
+    return !(getMapId() == MAPID_INVALID && getX() == 0 && getY() == 0 && getZ() == 0);
+}
+
+// #611: AC TravelMgr.cpp:909-929 (the two Find* workers) verbatim, with the fork's accessor names (getMapId/getX...) and
+// 5.4.8 field names (CreatureData::mapId, GameObjectData::mapid).
+void FindPointCreatureData::operator()(CreatureData const& creatureData)
+{
+    if (!entry || creatureData.id == entry)
+        if ((!point || creatureData.mapId == point.getMapId()) &&
+            (!radius || point.sqDistance(WorldPosition(creatureData.mapId, creatureData.posX, creatureData.posY,
+                                                       creatureData.posZ)) < radius * radius))
+        {
+            data.push_back(&creatureData);
+        }
+}
+
+void FindPointGameObjectData::operator()(GameObjectData const& gameobjectData)
+{
+    if (!entry || gameobjectData.id == entry)
+        if ((!point || gameobjectData.mapid == point.getMapId()) &&
+            (!radius || point.sqDistance(WorldPosition(gameobjectData.mapid, gameobjectData.posX, gameobjectData.posY,
+                                                       gameobjectData.posZ)) < radius * radius))
+        {
+            data.push_back(&gameobjectData);
+        }
+}
+
+// AC TravelMgr.cpp:931-938.
+std::vector<CreatureData const*> WorldPosition::getCreaturesNear(float radius, uint32 entry)
+{
+    FindPointCreatureData worker(*this, radius, entry);
+    for (auto const& itr : sObjectMgr->GetAllCreatureData())
+        worker(itr.second);
+
+    return worker.GetResult();
+}
+
+namespace
+{
+// 5.4.8: AC walks `sObjectMgr->GetAllGOData()` (AC TravelMgr.cpp:940-947). ObjectMgr keeps _gameObjectDataStore private
+// (Globals/ObjectMgr.h:1952) and exposes only GetGOData(guid) (:1575), and ObjectMgr.h is a core file outside this
+// lane. The same whole-store walk is reproduced from the spawn guids themselves: `gameobject.guid` is the store's key
+// (ObjectMgr::LoadGameobjects keys _gameObjectDataStore by it), so one world-DB read of the guid column, cached, then
+// GetGOData(guid) for each. If ObjectMgr::GetAllGOData() is ever added, this helper and the cache go away.
+std::vector<uint32> const& GameObjectSpawnGuids()
+{
+    static std::vector<uint32> guids;
+    static std::once_flag once;
+    std::call_once(once,
+                   []()
+                   {
+                       if (QueryResult result = WorldDatabase.Query("SELECT guid FROM gameobject"))
+                       {
+                           do
+                           {
+                               Field* fields = result->Fetch();
+                               guids.push_back(fields[0].GetUInt32());
+                           } while (result->NextRow());
+                       }
+                   });
+
+    return guids;
+}
+}  // namespace
+
+// AC TravelMgr.cpp:940-947, see GameObjectSpawnGuids().
+std::vector<GameObjectData const*> WorldPosition::getGameObjectsNear(float radius, uint32 entry)
+{
+    FindPointGameObjectData worker(*this, radius, entry);
+    for (uint32 const guid : GameObjectSpawnGuids())
+        if (GameObjectData const* goData = sObjectMgr->GetGOData(guid))
+            worker(*goData);
+
+    return worker.GetResult();
+}
+
+// #611: AC TravelMgr.cpp:1037-1057 (GuidPosition::IsCreatureOrGOAccessible) with the fork's accessors. QuestValues.cpp:109-131
+// carries a file-local copy of this body (the member did not exist when #257 was ported); both now agree.
+bool GuidPosition::IsCreatureOrGOAccessible()
+{
+    Map* map = getMap();
+    if (!map || !map->IsGridLoaded(getX(), getY()))
+        return false;
+
+    if (IsCreature())
+    {
+        Creature* creature = GetCreature();
+        if (creature && creature->IsInWorld() && creature->IsAlive())
+            return true;
+    }
+    else if (IsGameObject())
+    {
+        GameObject* go = GetGameObject();
+        if (go && go->IsInWorld())
+            return true;
+    }
+
+    return false;
 }

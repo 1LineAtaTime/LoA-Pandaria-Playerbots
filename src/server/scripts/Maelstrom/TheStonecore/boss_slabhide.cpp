@@ -18,8 +18,18 @@
 #include "ScriptPCH.h"
 #include "the_stonecore.h"
 
+// #701 heroic Crystal Storm. Wowpedia MediaWiki API "Slabhide" (read 2026-10-13): "After Slabhide lifts off and finishes
+// creating stalactites, he then lands. Before the stalactites disappear, he begins to channel Crystal Storm for 6 sec.
+// Every 0.5 second Slabhide inflicts 9425 to 10575 Nature damage to all enemies. Slabhide must have line of sight to an
+// enemy to deal damage with Crystal Storm." Strategy: "Hiding behind the stalactites dropped in the air phase will
+// allow you to avoid the damage ... not effective if you are still within melee range." Wowhead Cata tooltip API 92265:
+// "Unlimited range, 2.5 sec cast. Deals 9425 to 10575 Nature damage to all enemies every 0.5 sec. Lasts 6 sec. This spell
+// requires line of sight." DBC chain: 92265 -> TRIGGER_SPELL 92301 (periodic trigger 92300 every 500 ms, 6 s) ->
+// 92300 SCHOOL_DAMAGE 9424+1151 to every enemy within 50000 yd (SRC_CASTER + SRC_AREA_ENEMY). The landed stalactite
+// is the gameobject 204337 (80647 summons it), see spell_slabhide_crystal_storm for the line-of-sight cover.
 enum Spells
 {
+    SPELL_CRYSTAL_STORM            = 92265,
     SPELL_SAND_BLAST               = 80807,
     SPELL_LAVA_FISSURE_DUM         = 80798,
     SPELL_ERUPTION                 = 80800,
@@ -38,6 +48,12 @@ enum Events
     EVENT_ERUPTION                 = 5,
     EVENT_STALACTITE               = 6,
     EVENT_COSMETIC_DONE            = 7,
+    EVENT_CRYSTAL_STORM            = 8,
+};
+
+enum StalactiteGameObject
+{
+    GO_STALACTITE_LANDED           = 204337,
 };
 
 enum Adds
@@ -140,7 +156,7 @@ class boss_slabhide : public CreatureScript
                         case 1:
                             events.ScheduleEvent(EVENT_GROUND, 10000);
 
-                            if (TempSummon* Bunny = me->SummonCreature(NPC_GENERAL_BUNNY_JMF, 1272.27f, 1212.80f, 247.15f, 0.0f, TEMPSUMMON_TIMED_DESPAWN, 30 * IN_MILLISECONDS))
+                            if (TempSummon* Bunny = me->SummonCreature(NPC_GENERAL_BUNNY_JMF, 1272.27f, 1212.80f, 247.15f, 0.0f, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(30 * IN_MILLISECONDS)))
                                 Bunny->CastSpell(Bunny, SPELL_STALACTITE_CALL, false); // not sure about that, but if encounter not AT GROUND, then stalactite makes spawn under encounter
                             break;
                         case 2:
@@ -152,6 +168,9 @@ class boss_slabhide : public CreatureScript
                             events.ScheduleEvent(EVENT_SAND_BLAST, 10000);
                             events.ScheduleEvent(EVENT_LAVA_FISSURE, urand(15000, 28000));
                             events.ScheduleEvent(EVENT_FLY, 50000);
+                            // heroic: the Crystal Storm follows the landing, before the stalactites (30 s) are gone
+                            if (IsHeroic())
+                                events.ScheduleEvent(EVENT_CRYSTAL_STORM, 500);
                             AttackStart(me->GetVictim());
                             break;
                     }
@@ -229,6 +248,10 @@ class boss_slabhide : public CreatureScript
                             events.Reset();
                             me->GetMotionMaster()->MovePoint(2, slabhidegroundPos);
                             break;
+                        case EVENT_CRYSTAL_STORM:
+                            // 2.5 s cast, then 6 s of 0.5 s ticks; the events below wait while it is cast
+                            DoCast(me, SPELL_CRYSTAL_STORM);
+                            break;
                         case EVENT_SAND_BLAST:
                             DoCast(SPELL_SAND_BLAST);
                             events.ScheduleEvent(EVENT_SAND_BLAST, 10000);
@@ -252,7 +275,7 @@ class boss_slabhide : public CreatureScript
                     for (uint32 i = 0; i < sCount; ++i)
                     {
                         uint32 pPos = urand(0, 4);
-                        me->SummonCreature(NPC_STALACTITE_TRASH, StalactitePreEventPos[pPos].GetPositionX() + frand(-10.0f, 10.0f), StalactitePreEventPos[pPos].GetPositionY() + frand(-7.0f, 7.0f), StalactitePreEventPos[pPos].GetPositionZ() + 2.0f, StalactitePreEventPos[pPos].GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20 * IN_MILLISECONDS);
+                        me->SummonCreature(NPC_STALACTITE_TRASH, StalactitePreEventPos[pPos].GetPositionX() + frand(-10.0f, 10.0f), StalactitePreEventPos[pPos].GetPositionY() + frand(-7.0f, 7.0f), StalactitePreEventPos[pPos].GetPositionZ() + 2.0f, StalactitePreEventPos[pPos].GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, Milliseconds(20 * IN_MILLISECONDS));
                     }
                 }
 
@@ -351,6 +374,64 @@ class npc_lava_fissure : public CreatureScript
         }
 };
 
+// Crystal Storm damage 92300: "Slabhide must have line of sight to an enemy". A landed stalactite (gameobject 204337, size
+// 2) hides the players standing behind it, except in melee range. The core's own line-of-sight test of the spell is
+// kept; this adds the stalactites explicitly (the gameobject's collision is not guaranteed in the dynamic map tree).
+class spell_slabhide_crystal_storm : public SpellScript
+{
+    PrepareSpellScript(spell_slabhide_crystal_storm);
+
+    static constexpr float COVER_RADIUS = 2.5f;   // a stalactite's half width (estimate)
+    static constexpr float MELEE_EXEMPT = 8.0f;   // "not effective if you are still within melee range"
+
+    void FilterBehindStalactites(std::list<WorldObject*>& targets)
+    {
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        std::list<GameObject*> pillars;
+        caster->GetGameObjectListWithEntryInGrid(pillars, GO_STALACTITE_LANDED, 120.0f);
+        if (pillars.empty())
+            return;
+
+        float const cx = caster->GetPositionX();
+        float const cy = caster->GetPositionY();
+
+        targets.remove_if([&](WorldObject* target)
+        {
+            if (caster->GetExactDist2d(target) < MELEE_EXEMPT)
+                return false;
+
+            float const dx = target->GetPositionX() - cx;
+            float const dy = target->GetPositionY() - cy;
+            float const len2 = dx * dx + dy * dy;
+            if (len2 < 0.01f)
+                return false;
+
+            for (GameObject const* pillar : pillars)
+            {
+                // where the pillar projects onto the caster -> target line, and how far it stands off the line
+                float const t = ((pillar->GetPositionX() - cx) * dx + (pillar->GetPositionY() - cy) * dy) / len2;
+                if (t <= 0.0f || t >= 1.0f)
+                    continue;
+
+                float const ex = cx + t * dx - pillar->GetPositionX();
+                float const ey = cy + t * dy - pillar->GetPositionY();
+                if (ex * ex + ey * ey < COVER_RADIUS * COVER_RADIUS)
+                    return true;
+            }
+
+            return false;
+        });
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_slabhide_crystal_storm::FilterBehindStalactites, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+    }
+};
+
 // AreaTrigger 6070
 class AreaTrigger_at_behind_slabhide : public AreaTriggerScript
 {
@@ -372,5 +453,6 @@ void AddSC_boss_slabhide()
     new boss_slabhide();
     new npc_stalactite();
     new npc_lava_fissure();
+    new spell_script<spell_slabhide_crystal_storm>("spell_slabhide_crystal_storm");
     new AreaTrigger_at_behind_slabhide();
 }

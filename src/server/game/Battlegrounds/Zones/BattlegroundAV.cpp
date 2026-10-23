@@ -313,8 +313,10 @@ Creature* BattlegroundAV::AddAVCreature(uint16 cinfoid, uint16 type)
     if (info->MinLevel != 0)
     {
         auto copy = *creature->GetCreatureTemplate();
-        copy.minlevel = info->MinLevel + m_maxLevel - 60;
-        copy.maxlevel = info->MaxLevel + m_maxLevel - 60;
+        // #175: the retail 5.4.8 rule is bracket max (PvpDifficulty MaxLevel) + (vanilla level - 60), not the
+        // first player's level rounded up to 10 (m_maxLevel)
+        copy.minlevel = info->MinLevel + GetMaxLevel() - 60;
+        copy.maxlevel = info->MaxLevel + GetMaxLevel() - 60;
         creature->SelectLevel(&copy); // HP and damage here.
     }
 
@@ -998,6 +1000,12 @@ void BattlegroundAV::EventPlayerAssaultsPoint(Player* player, uint32 object)
         }
     }
 
+    // #166 AC parity (AC BattlegroundAV.cpp:1069-1070): assault the node BEFORE relocating the ghosts waiting at
+    // it. Relocating first sent them back to this same graveyard (still counted as held), whose spirit guide is
+    // then despawned and its queue cleared, leaving them dead for the rest of the match. AssaultNode only
+    // changes Owner/State/Timer; the block below reads TotalOwner and the saved previous owner (`owner`).
+    AssaultNode(node, team);
+
     //if snowfall gots capped it can be handled like all other graveyards
     if (m_Nodes[node].TotalOwner != AV_NEUTRAL_TEAM)
     {
@@ -1025,7 +1033,6 @@ void BattlegroundAV::EventPlayerAssaultsPoint(Player* player, uint32 object)
     }
 
     SpawnBGObject(object, RESPAWN_ONE_DAY); //delete old banner
-    AssaultNode(node, team);
     UpdateNodeWorldState(node);
 
     // send a nice message to all :)

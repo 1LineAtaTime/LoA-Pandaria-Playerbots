@@ -554,8 +554,10 @@ struct npc_headless_horseman_fire : public ScriptedAI
             else 
             {
                 if (me->IsSummon())
-                    if (Unit* eventKeeper =  me->ToTempSummon()->GetSummoner())
-                        eventKeeper->ToCreature()->AI()->SetData(HALLOWEND_FIRE_REMOVE, id);
+                    if (Unit* eventKeeper = me->ToTempSummon()->GetSummoner())   // IsSummon() above: ToTempSummon() is set
+                        if (Creature* keeper = eventKeeper->ToCreature())
+                            if (keeper->AI())
+                                keeper->AI()->SetData(HALLOWEND_FIRE_REMOVE, id);
                 Fire = false;
             }
             return;
@@ -578,11 +580,17 @@ struct npc_headless_horseman_fire : public ScriptedAI
         {
             if (me->HasAura(RangoFire[0]) && !Fire)
             {
+                // 2026-10-20 (Hallow's End live): a DB-spawned fire is no TempSummon, and a summoner can be gone or not a
+                // creature - ToTempSummon()->GetSummoner() then dereferenced null (worldserver crash 12:30, wave 73).
                 if (!RateFire)
-                    if (Unit * Owner = me->ToTempSummon()->GetSummoner())
-                        RateFire = Owner->ToCreature()->AI()->GetData(0);
-                    else 
+                {
+                    TempSummon* summon = me->ToTempSummon();
+                    Unit* owner = summon ? summon->GetSummoner() : nullptr;
+                    Creature* ownerCreature = owner ? owner->ToCreature() : nullptr;
+                    if (!ownerCreature || !ownerCreature->AI())
                         return;
+                    RateFire = ownerCreature->AI()->GetData(0);
+                }
                 if (!RateFire)
                     return;
                 Fire = true;
@@ -744,8 +752,11 @@ struct npc_shade_of_the_horseman : public ScriptedAI
     {
         std::list<Creature*> FireNodsList;
         FireNodsList.clear();
-        if (Unit * Owner = me->ToTempSummon()->GetSummoner())
-            CountFire = Owner->ToCreature()->AI()->GetData(0);
+        if (TempSummon* summon = me->ToTempSummon())   // 2026-10-20: guard like UpdateAI (null for a DB spawn)
+            if (Unit* Owner = summon->GetSummoner())
+                if (Creature* ownerCreature = Owner->ToCreature())
+                    if (ownerCreature->AI())
+                        CountFire = ownerCreature->AI()->GetData(0);
         GetCreatureListWithEntryInGrid(FireNodsList, me, NPC_HEADLESS_HORSEMAN_FIRE_DND, 150.0f);
         uint32 CountFireer = 0;
         if (!FireNodsList.empty())
@@ -827,7 +838,7 @@ struct npc_start_stink_bombs_away : public ScriptedAI
 
         player->CastSpell(player, stinkBombsAwaySummonBroom[team]);
         Creature* broom = GetClosestCreatureWithEntry(me, stinkBombsAwayBroom[team], 50.0f, true);
-        Creature* starter = broom->SummonCreature(me->GetEntry(), me->GetPosition(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 420000);
+        Creature* starter = broom->SummonCreature(me->GetEntry(), me->GetPosition(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 420000ms);
         ObjectGuid guid = player->GetGUID();
         if (broom && starter && guid)
         {
@@ -1282,7 +1293,7 @@ class at_the_collectors_agent : public AreaTriggerScript
                             sanath->HandleEmoteStateCommand(EMOTE_ONESHOT_NONE);
 
                             Position pos = trigger->ID == 6924 ? Position({ 1579.189f, 61.371f, 62.5377f, 6.26843f }) : Position({ -8496.792f, 758.109f, 72.758f, 2.210720f });
-                            if (Creature* uvoid = sanath->SummonCreature(54114, pos, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, MINUTE * 2 * IN_MILLISECONDS))
+                            if (Creature* uvoid = sanath->SummonCreature(54114, pos, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, Milliseconds(MINUTE * 2 * IN_MILLISECONDS)))
                                 if (Player* player = ObjectAccessor::GetPlayer(*sanath, guid))
                                     uvoid->Attack(player, true);
 

@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -79,7 +79,7 @@ class go_deadmines_teleport : public GameObjectScript
 
         bool OnGossipHello(Player* player, GameObject* go) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             if (InstanceScript* instance = go->GetInstanceScript())
             {
@@ -124,13 +124,13 @@ class spell_deadmines_off_line : public SpellScriptLoader
         {
             PrepareAuraScript(spell_deadmines_off_line_AuraScript);
 
-            void OnAuraEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void OnAuraEffectApply(AuraEffect const* aurEff, AuraEffectHandleModes mode)
             {
                 if (Creature* m_caster = GetOwner()->ToCreature())
                     m_caster->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
             }
 
-            void OnAuraEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void OnAuraEffectRemove(AuraEffect const* aurEff, AuraEffectHandleModes mode)
             {
                 if (Creature* m_caster = GetOwner()->ToCreature())
                     m_caster->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);

@@ -100,7 +100,7 @@ class boss_grandmaster_gandling : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -123,7 +123,8 @@ class boss_grandmaster_gandling : public CreatureScript
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                 }
                 events.ScheduleEvent(EVENT_IMMOLATE, urand(5000, 10000));
-                events.ScheduleEvent(EVENT_RISE, 45 * IN_MILLISECONDS);
+                // #806: Rise is cast when a tank or healer is sent to a classroom (Wowpedia "Darkmaster Gandling", MediaWiki API, 2026-10-22),
+                // not on a timer: EVENT_RISE is scheduled from EVENT_HARSH_LESSON below.
                 events.ScheduleEvent(EVENT_HARSH_LESSON, urand(25000, 40000));
                 events.ScheduleEvent(EVENT_INCINERATE, 0.5 * IN_MILLISECONDS);
 
@@ -187,17 +188,21 @@ class boss_grandmaster_gandling : public CreatureScript
                                 break;
 
                             DoCast(me, SPELL_RISE);
-                            events.ScheduleEvent(EVENT_RISE, 1 * MINUTE * IN_MILLISECONDS + 10 * IN_MILLISECONDS);
                             break;
                         case EVENT_HARSH_LESSON:
                             if (HandleRescheduleEventsIfCastAny(eventId))
                                 break;
 
                             if (Unit* controller = ObjectAccessor::GetUnit(*me, RoomController()))
-                                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
+                                // #806: any random player can be sent, the tank and healer included (Wowpedia: "teleports a random player").
+                                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
                                 {
+                                    Player* lessonPlayer = target->ToPlayer();
+                                    bool const tankOrHealer = lessonPlayer && (target == me->GetVictim() || lessonPlayer->GetRoleForGroup() == ROLES_TANK || lessonPlayer->GetRoleForGroup() == ROLES_HEALER);
                                     me->CastSpell(target, SPELL_HARSH_LESSON, false);
                                     Talk(TALK_HARSH_LESSON, target);
+                                    if (tankOrHealer)
+                                        events.ScheduleEvent(EVENT_RISE, 1500); // "When a tank or healer is sent, Gandling channels Rise!"
                                     target->ToPlayer()->TeleportTo(controller->GetMapId(), controller->GetPositionX(), controller->GetPositionY(), controller->GetPositionZ(), controller->GetOrientation(), TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET);
                                 }
 

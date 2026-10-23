@@ -16,9 +16,11 @@
 */
 
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "UpdateData.h"
+#include "Item.h"
 #include "Map.h"
 #include "Transport.h"
 #include "ObjectAccessor.h"
@@ -131,18 +133,29 @@ inline void CreatureUnitRelocationWorker(Creature* c, Unit* u)
     if (!u->IsAlive() || !c->IsAlive() || c == u || u->IsInFlight())
         return;
 
-    if (c->HasReactState(REACT_AGGRESSIVE) && !c->HasUnitState(UNIT_STATE_SIGHTLESS))
+    if (!c->HasUnitState(UNIT_STATE_SIGHTLESS))
+    {
         if (c->IsAIEnabled && c->CanSeeOrDetect(u, false, true))
             c->AI()->MoveInLineOfSight_Safe(u);
+        else
+            if (u->GetTypeId() == TYPEID_PLAYER && u->HasStealthAura() && c->IsAIEnabled && c->CanSeeOrDetect(u, false, true, true))
+                c->AI()->TriggerAlert(u);
+    }
 }
 
 void AIRelocationNotifier::Visit(CreatureMapType &m)
 {
+    // #72: AC AIRelocationNotifier::Visit (GridNotifiers.cpp:173-187) skips creatures whose MoveInLineOfSight is
+    // strictly disabled, on both sides of the pair. AC's extra isNeedNotify() test belongs to its own delayed-notify
+    // system and has no counterpart here.
+    // #72 perf: the strictly-disabled state is cached per creature (Creature::IsMoveInLineOfSightStrictlyDisabled, AC pattern)
+    bool const self = isCreature && !((Creature*)&i_unit)->IsMoveInLineOfSightStrictlyDisabled();
     for (CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
         Creature* c = iter->GetSource();
-        CreatureUnitRelocationWorker(c, &i_unit);
-        if (isCreature)
+        if (!c->IsMoveInLineOfSightStrictlyDisabled())
+            CreatureUnitRelocationWorker(c, &i_unit);
+        if (self)
             CreatureUnitRelocationWorker((Creature*)&i_unit, c);
     }
 }

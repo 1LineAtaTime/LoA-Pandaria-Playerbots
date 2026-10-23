@@ -750,7 +750,9 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             SpawnBGObject(BG_DG_OBJECT_CART_ALLIANCE, RESPAWN_IMMEDIATELY);
             PlaySoundToAll(BG_DG_SOUND_CART_RETURNED);
             UpdatePlayerScore(player, SCORE_CART_RETURNS, 1);
-            //UpdateTeamScore(TEAM_ALLIANCE, m_flagGold[TEAM_ALLIANCE]);
+            // #797: the stolen gold rides on the cart until it is home again: returning it restores it, once
+            // (Wowpedia "Deepwind Gorge (original)": "they can recapture it - and earn back the gold you stole").
+            UpdateTeamScore(TEAM_ALLIANCE, m_flagGold[TEAM_ALLIANCE]);
             m_flagGold[TEAM_ALLIANCE] = 0;
         }
         else
@@ -763,6 +765,8 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             player->CastSpell(player, BG_DG_ALLIANCE_MINE_CART, true);
             player->CastSpell(player, BG_DG_ALLIANCE_CART_HOLDER_AURA, true);
             m_flagState[TEAM_ALLIANCE] = BG_DG_CART_STATE_ON_PLAYER;
+            // #797: the dropped cart still carries the gold taken at the base pick-up (m_flagGold); re-picking it moves no
+            // gold. The owner gets it back only on return / drop-timer respawn, the thief's team only on capture.
             UpdateCartState(HORDE, BG_DG_CART_STATE_ON_PLAYER);
             //UpdateWorldState(BG_WS_FLAG_UNK_ALLIANCE, 1);
         }
@@ -782,7 +786,8 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             SpawnBGObject(BG_DG_OBJECT_CART_HORDE, RESPAWN_IMMEDIATELY);
             PlaySoundToAll(BG_DG_SOUND_CART_RETURNED);
             UpdatePlayerScore(player, SCORE_CART_RETURNS, 1);
-            //UpdateTeamScore(TEAM_HORDE, m_flagGold[TEAM_HORDE]);
+            // #797: returning the cart restores the gold it carries, once (see the Alliance branch above).
+            UpdateTeamScore(TEAM_HORDE, m_flagGold[TEAM_HORDE]);
             m_flagGold[TEAM_HORDE] = 0;
         }
         else
@@ -795,6 +800,7 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
             player->CastSpell(player, BG_DG_HORDE_MINE_CART, true);
             player->CastSpell(player, BG_DG_HORDE_CART_HOLDER_AURA, true);
             m_flagState[TEAM_HORDE] = BG_DG_CART_STATE_ON_PLAYER;
+            // #797: re-picking the dropped cart moves no gold; it still carries m_flagGold (see the Alliance branch above).
             UpdateCartState(ALLIANCE, BG_DG_CART_STATE_ON_PLAYER);
             //UpdateWorldState(BG_WS_FLAG_UNK_HORDE, 1);
         }
@@ -876,6 +882,10 @@ void BattlegroundDG::RespawnFlagAfterDrop(uint32 team)
         return;
 
     m_flagState[team] = BG_DG_CART_STATE_ON_BASE;
+
+    // #797: nobody picked the dropped cart up in time, so it goes home with its gold: restore it to its team, once.
+    UpdateTeamScore(team, m_flagGold[team]);
+    m_flagGold[team] = 0;
 
     SpawnBGObject(BG_DG_OBJECT_CART_ALLIANCE + team, RESPAWN_IMMEDIATELY);
 
@@ -999,7 +1009,8 @@ void BattlegroundDG::EventPlayerDroppedFlag(Player* player)
             player->RemoveAurasDueToSpell(BG_DG_HORDE_MINE_CART);
             player->RemoveAurasDueToSpell(BG_DG_HORDE_CART_HOLDER_AURA);
             m_flagState[TEAM_HORDE] = BG_DG_CART_STATE_ON_GROUND;
-            UpdateTeamScore(TEAM_HORDE, m_flagGold[TEAM_HORDE]);
+            // #797: no gold moves on a drop: the cart keeps m_flagGold until it is returned / respawns (owner) or captured
+            // (thief). Crediting it here as well minted it: the owner got it back at the drop and again on capture/return.
             if (AddObject(BG_DG_OBJECT_CART_HORDE_GROUND, BG_DG_OBJECTID_CART_HORDE_GROUND, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f))
             {
                 SpawnBGObject(BG_DG_OBJECT_CART_HORDE_GROUND, RESPAWN_IMMEDIATELY);
@@ -1022,7 +1033,7 @@ void BattlegroundDG::EventPlayerDroppedFlag(Player* player)
             player->RemoveAurasDueToSpell(BG_DG_ALLIANCE_MINE_CART);
             player->RemoveAurasDueToSpell(BG_DG_ALLIANCE_CART_HOLDER_AURA);
             m_flagState[TEAM_ALLIANCE] = BG_DG_CART_STATE_ON_GROUND;
-            UpdateTeamScore(TEAM_ALLIANCE, m_flagGold[TEAM_ALLIANCE]);
+            // #797: no gold moves on a drop (see the Horde branch above).
             if (AddObject(BG_DG_OBJECT_CART_ALLY_GROUND, BG_DG_OBJECTID_CART_ALLY_GROUND, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f))
             {
                 SpawnBGObject(BG_DG_OBJECT_CART_ALLY_GROUND, RESPAWN_IMMEDIATELY);
@@ -1074,6 +1085,10 @@ void BattlegroundDG::RemovePlayer(Player* player, ObjectGuid guid, uint32 team)
             TC_LOG_ERROR("bg.battleground", "BattlegroundWS: Removing offline player who has the FLAG!!");
             SetAllianceCartPicker(ObjectGuid::Empty);
             SendClearFlagsPositions();
+            // #797: the cart goes straight home, so its gold goes back to its team, once (not while the match is over).
+            if (GetStatus() == STATUS_IN_PROGRESS)
+                UpdateTeamScore(TEAM_ALLIANCE, m_flagGold[TEAM_ALLIANCE]);
+            m_flagGold[TEAM_ALLIANCE] = 0;
             m_flagState[TEAM_ALLIANCE] = BG_DG_CART_STATE_ON_BASE;
             SpawnBGObject(BG_DG_OBJECT_CART_ALLIANCE, RESPAWN_IMMEDIATELY);
         }
@@ -1088,6 +1103,10 @@ void BattlegroundDG::RemovePlayer(Player* player, ObjectGuid guid, uint32 team)
             TC_LOG_ERROR("bg.battleground", "BattlegroundWS: Removing offline player who has the FLAG!!");
             SetHordeFlagPicker(ObjectGuid::Empty);
             SendClearFlagsPositions();
+            // #797: the cart goes straight home with its gold (see the Alliance branch above).
+            if (GetStatus() == STATUS_IN_PROGRESS)
+                UpdateTeamScore(TEAM_HORDE, m_flagGold[TEAM_HORDE]);
+            m_flagGold[TEAM_HORDE] = 0;
             m_flagState[TEAM_HORDE] = BG_DG_CART_STATE_ON_BASE;
             SpawnBGObject(BG_DG_OBJECT_CART_HORDE, RESPAWN_IMMEDIATELY);
         }

@@ -98,7 +98,9 @@ enum ePoins
 
 const Position AughPos = {-11068.9f, -1668.37f, 0.74569f, 0.74265f};
 
-const uint32 SummonRandomAugh[3]=
+constexpr uint8 MAX_AUGH_SUMMONS = 3;
+
+const uint32 SummonRandomAugh[MAX_AUGH_SUMMONS]=
 {
     SPELL_SUMMON_AUGH_DRAGONS_BREATH,
     SPELL_SUMMON_AUGH_WHITLWIND,
@@ -128,7 +130,7 @@ class boss_lockmaw : public CreatureScript
 
                 summons.DespawnAll();
                 Rage = false;
-                uiPrevAughId = 0;
+                uiPrevAughId = MAX_AUGH_SUMMONS;   // #680: none yet, so the first roll can pick any of the three
             }
 
             void JustEngagedWith(Unit* /*who*/) override
@@ -174,10 +176,11 @@ class boss_lockmaw : public CreatureScript
             {
                 if (Creature* stalker = me->FindNearestCreature(45124, 50.0f))
                 {
-                    uint8 roll = urand(0, 3);
+                    // #680: was urand(0, 3) into the 3-entry SummonRandomAugh (index 3 read past the array); never the same Augh twice in a row
+                    uint8 roll = urand(0, MAX_AUGH_SUMMONS - 1);
 
                     while (roll == uiPrevAughId)
-                        roll = urand(0, 2);
+                        roll = urand(0, MAX_AUGH_SUMMONS - 1);
 
                     stalker->CastSpell(stalker, SummonRandomAugh[roll], false);
                     uiPrevAughId = roll;
@@ -304,9 +307,9 @@ class npc_frenzied_croc : public CreatureScript
                     if (Player* player = itr->GetSource())
                     {
                         if (player->HasAura(SPELL_SCENT_OF_BLOOD))
-                            me->AddThreat(player, 100500.0f);
+                            me->GetThreatManager().AddThreat(player, 100500.0f);
                         else
-                            me->GetThreatManager().modifyThreatPercent(player, -10);
+                            me->GetThreatManager().ModifyThreatByPercent(player, -10);
                     }
             }
 

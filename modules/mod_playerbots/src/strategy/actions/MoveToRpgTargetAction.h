@@ -1,0 +1,25 @@
+/*
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
+ * and/or modify it under version 2 of the License, or (at your option), any later version.
+ *
+ * Ported from the mod-playerbots module for AzerothCore (Ai/Base/Actions/MoveToRpgTargetAction.h)
+ * into the Legends of Azeroth Pandaria fork, issue #272.
+ */
+
+#ifndef PLAYERBOTS_MOVETORPGTARGETACTION_H
+#define PLAYERBOTS_MOVETORPGTARGETACTION_H
+
+#include "MovementActions.h"
+
+class PlayerbotAI;
+
+class MoveToRpgTargetAction : public MovementAction
+{
+public:
+    MoveToRpgTargetAction(PlayerbotAI* botAI) : MovementAction(botAI, "move to rpg target") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+#endif

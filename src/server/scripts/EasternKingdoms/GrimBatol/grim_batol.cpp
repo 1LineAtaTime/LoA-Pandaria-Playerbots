@@ -1840,14 +1840,14 @@ class npc_battered_red_drake : public CreatureScript
     public:
         npc_battered_red_drake() : CreatureScript("npc_battered_red_drake") { }
 
-        struct npc_battered_red_drakeAI : public CreatureAI
+        struct npc_battered_red_drakeAI : public ScriptedAI
         {
-            npc_battered_red_drakeAI(Creature* creature) : CreatureAI(creature) { }
+            npc_battered_red_drakeAI(Creature* creature) : ScriptedAI(creature) { }
 
             void OnSpellClick(Unit* clicker, bool& /*result*/) override
             {
                 if (InstanceScript* instance = me->GetInstanceScript())
-                    if (instance->GetData(DATA_FORGEMASTER_THRONGUS) != DONE)
+                    if (instance->GetBossState(DATA_FORGEMASTER_THRONGUS) != DONE)
                         return;
 
                 if (me->GetEntry() == 42571)

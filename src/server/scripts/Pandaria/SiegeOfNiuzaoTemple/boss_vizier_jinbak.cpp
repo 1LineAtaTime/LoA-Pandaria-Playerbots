@@ -76,7 +76,14 @@ class boss_vizier_jinbak : public CreatureScript
                 events.Reset();
 
                 if (Creature* trigger = Creature::GetCreature(*me, puddleGUID))
+                {
+                    // #656 (w44 spellwatch): the passive puddle never enters combat, so its evade did not reset it; the Grow
+                    // stacks and the stacker survived Jin'bak's reset and the 1 s Sap Residue kept casting (667 casts in the
+                    // next leg) with a radius that reached the stage (w43: 4 bots died out of combat 17 yd from the pool).
+                    trigger->RemoveAurasDueToSpell(SPELL_GROW);
+                    trigger->RemoveAurasDueToSpell(SPELL_GROW_STACKER);
                     trigger->ToCreature()->AI()->EnterEvadeMode();
+                }
 
                 ClearDebuffs();
 
@@ -411,20 +418,77 @@ class spell_sap_residue : public SpellScriptLoader
         {
             PrepareSpellScript(spell_sap_residue_SpellScript);
 
+            // #656 (w45): the touch radius is 4 yd at base size (LegionCore-7.3.5 value), widened by Grow 119942 only:
+            // SPELL_AURA_MOD_SCALE +30 per stack, HandleAuraModScale -> scale = 1 + 0.3 x stacks. It is taken from the Grow
+            // stack count and capped by GetObjectScale(), so neither a stray OBJECT_FIELD_SCALE nor a missed filter can
+            // stretch the 100 yd SpellRadius search over the room (w45: Grow 0, yet 5 players 17.3 yd away got 1 stack/s).
+            static float PuddleRadius(Unit* puddle)
+            {
+                float growScale = 1.0f + 0.3f * float(puddle->GetAuraCount(SPELL_GROW));
+                return 4.0f * std::min(growScale, puddle->GetObjectScale());
+            }
+
             void FilterTargets(std::list<WorldObject*>& targets)
             {
                 if (Unit*  caster = GetCaster())
                 {
-                    float dist = 4.0f * caster->GetObjectScale();
+                    float dist = PuddleRadius(caster);
+                    uint32 players = 0;
+                    float nearest = 1000.0f;
+                    for (WorldObject const* unit : targets)
+                        if (unit->GetTypeId() == TYPEID_PLAYER)
+                        {
+                            ++players;
+                            nearest = std::min(nearest, unit->GetExactDist2d(caster));
+                        }
 
                     if (!targets.empty())
                         targets.remove_if ([&caster, &dist](const WorldObject * unit) { return unit->GetExactDist2d(caster) > dist; });
+
+                    // #656 evidence (remove with the issue): one line per tick while a player is inside the 100 yd search.
+                    if (players && m_scriptSpellId == 119941)
+                        TC_LOG_ERROR("scripts", "[SAPWATCH] select puddle=%.1f,%.1f,%.1f scale=%.2f grow=%u radius=%.1f players=%u nearest=%.1f kept=%u",
+                            caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), caster->GetObjectScale(),
+                            caster->GetAuraCount(SPELL_GROW), dist, players, nearest, uint32(targets.size()));
                 }
+            }
+
+            // #656: hit-time guard. Whatever put a unit on the target list (area filter or not), Sap Residue only lands on
+            // a unit that is actually standing in the puddle when the 20 yd/s missile arrives.
+            void HandleHit(SpellEffIndex effIndex)
+            {
+                Unit* caster = GetCaster();
+                Unit* target = GetHitUnit();
+                if (!caster || !target)
+                    return;
+
+                float dist = PuddleRadius(caster);
+                if (target->GetExactDist2d(caster) <= dist)
+                    return;
+
+                TC_LOG_ERROR("scripts", "[SAPWATCH] guard dropped %s dist=%.1f radius=%.1f scale=%.2f puddle=%.1f,%.1f",
+                    target->GetName().c_str(), target->GetExactDist2d(caster), dist, caster->GetObjectScale(),
+                    caster->GetPositionX(), caster->GetPositionY());
+                PreventHitDefaultEffect(effIndex);
+                PreventHitAura();
             }
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sap_residue_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                // #656: the old EFFECT_1 / TARGET_UNIT_CASTER binding matches neither spell (5.4.8 SpellEffect.dbc: 119941
+                // Sap Residue has only EFFECT_0, TARGET_SRC_CASTER + TARGET_UNIT_SRC_AREA_ENEMY, radius index 12 = 100 yd;
+                // 120070 has only EFFECT_0, TARGET_SRC_CASTER + TARGET_UNIT_SRC_AREA_ENTRY). Startup logged "Spell `119941`
+                // Effect `Index: EFFECT_1 Target: 1` of script `spell_sap_residue` did not match dbc effect data - handler
+                // ... won't be executed", so the 4 yd x scale filter never ran and the puddle's 1 s Sap Residue tick
+                // (aura 119939) stacked on every player within 100 yd (wave 41: the whole group wiped before the pull).
+                // Same binding as LegionCore-7.3.5 boss_jinbak.cpp spell_sap_residue (EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY).
+                if (m_scriptSpellId == 120070)
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sap_residue_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                else
+                {
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sap_residue_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                    OnEffectHitTarget += SpellEffectFn(spell_sap_residue_SpellScript::HandleHit, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
+                }
             }
         };
 

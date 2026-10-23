@@ -19,6 +19,7 @@
 #include "heart_of_fear.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "ScriptedEscortAI.h"
 #include "CreatureAI.h"
 #include "MoveSplineInit.h"
 #include "InstanceSaveMgr.h"
@@ -1292,7 +1293,7 @@ class npc_instructor_maltik : public CreatureScript
                 CallForHelpMyStudients(me, me->GetGUID());
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->GetMotionMaster()->MoveTargetedHome();
             }
@@ -1698,7 +1699,7 @@ struct npc_zephyr_tornado : public ScriptedAI
         init.Launch();
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 };
 
 // Kaz`rik 64826

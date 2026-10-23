@@ -15,24 +15,30 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptPCH.h"
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "SpellScript.h"
 #include "BattlefieldMgr.h"
 #include "BattlefieldTB.h"
 #include "Battlefield.h"
-#include "ScriptSystem.h"
-#include "WorldSession.h"
+#include "Containers.h"
 #include "ObjectMgr.h"
+#include "Player.h"
+#include "WorldSession.h"
 
 enum eTBqueuenpctext
 {
+    // npc_text
     TB_NPCQUEUE_TEXT_H_NOWAR       = 110006,
     TB_NPCQUEUE_TEXT_H_QUEUE       = 110002,
     TB_NPCQUEUE_TEXT_H_WAR         = 110005,
     TB_NPCQUEUE_TEXT_A_NOWAR       = 110003,
     TB_NPCQUEUE_TEXT_A_QUEUE       = 110001,
     TB_NPCQUEUE_TEXT_A_WAR         = 110004,
-    TB_NPCQUEUE_TEXTOPTION_JOIN    = -1732009,
 };
+
+#define TB_GOSSIP_QUEUE_JOIN "Queue for Tol Barad."
 
 class npc_tb_spiritguide : public CreatureScript
 {
@@ -41,7 +47,7 @@ class npc_tb_spiritguide : public CreatureScript
 
         bool OnGossipHello(Player* player, Creature* creature) override
         {
-            if (creature->isQuestGiver())
+            if (creature->IsQuestGiver())
                 player->PrepareQuestMenu(creature->GetGUID());
 
             Battlefield* BfTB = sBattlefieldMgr->GetBattlefieldByBattleId(BATTLEFIELD_BATTLEID_TB);
@@ -50,7 +56,7 @@ class npc_tb_spiritguide : public CreatureScript
                 GraveyardVect graveyard = BfTB->GetGraveyardVector();
                 for (uint8 i = 0; i < graveyard.size(); i++)
                     if (graveyard[i]->GetControlTeamId() == player->GetTeamId())
-                       player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, sObjectMgr->GetTrinityStringForDBCLocale(((BfGraveyardTB*)graveyard[i])->GetTextId()), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + i);
+                        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, ((BfGraveyardTB*)graveyard[i])->GetName(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + i);
             }
 
             player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
@@ -68,9 +74,26 @@ class npc_tb_spiritguide : public CreatureScript
                 for (uint8 i = 0; i < graveyard.size(); i++)
                     if (action - GOSSIP_ACTION_INFO_DEF == i && graveyard[i]->GetControlTeamId() == player->GetTeamId())
                         if (WorldSafeLocsEntry const* safeLoc = sWorldSafeLocsStore.LookupEntry(graveyard[i]->GetGraveyardId()))
-                        player->TeleportTo(safeLoc->map_id, safeLoc->x, safeLoc->y, safeLoc->z, 0);
+                            player->TeleportTo(safeLoc->map_id, safeLoc->x, safeLoc->y, safeLoc->z, 0);
             }
             return true;
+        }
+
+        // Same as npc_wg_spirit_guide: keep channeling the spirit heal
+        struct npc_tb_spiritguideAI : public ScriptedAI
+        {
+            npc_tb_spiritguideAI(Creature* creature) : ScriptedAI(creature) { }
+
+            void UpdateAI(uint32 /*diff*/) override
+            {
+                if (!me->HasUnitState(UNIT_STATE_CASTING))
+                    DoCast(me, SPELL_TB_SPIRIT_HEAL_CHANNEL);
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return new npc_tb_spiritguideAI(creature);
         }
 };
 
@@ -81,7 +104,7 @@ class npc_tol_barad_battlemage : public CreatureScript
 
         bool OnGossipHello(Player* player, Creature* creature) override
         {
-            if (creature->isQuestGiver())
+            if (creature->IsQuestGiver())
                 player->PrepareQuestMenu(creature->GetGUID());
 
             Battlefield* BfTB = sBattlefieldMgr->GetBattlefieldByBattleId(BATTLEFIELD_BATTLEID_TB);
@@ -89,22 +112,20 @@ class npc_tol_barad_battlemage : public CreatureScript
             {
                 if (BfTB->IsWarTime())
                 {
-                    player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, sObjectMgr->GetTrinityStringForDBCLocale(TB_NPCQUEUE_TEXTOPTION_JOIN), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
+                    player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, TB_GOSSIP_QUEUE_JOIN, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
                     player->SEND_GOSSIP_MENU(BfTB->GetDefenderTeam() ? TB_NPCQUEUE_TEXT_H_WAR : TB_NPCQUEUE_TEXT_A_WAR, creature->GetGUID());
                 }
                 else
                 {
-                    uint32 uiTime = BfTB->GetTimer()/1000;
-                    player->SendUpdateWorldState(5332, time(NULL)+uiTime);
+                    uint32 uiTime = BfTB->GetTimer() / 1000;
+                    player->SendUpdateWorldState(TB_WS_TIME_NEXT_BATTLE, time(NULL) + uiTime);
                     if (uiTime < 15 * MINUTE)
                     {
-                        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, sObjectMgr->GetTrinityStringForDBCLocale(TB_NPCQUEUE_TEXTOPTION_JOIN), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
+                        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, TB_GOSSIP_QUEUE_JOIN, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
                         player->SEND_GOSSIP_MENU(BfTB->GetDefenderTeam() ? TB_NPCQUEUE_TEXT_H_QUEUE : TB_NPCQUEUE_TEXT_A_QUEUE, creature->GetGUID());
                     }
                     else
-                    {
-                        player->SEND_GOSSIP_MENU(BfTB->GetDefenderTeam() ? TB_NPCQUEUE_TEXT_H_NOWAR:TB_NPCQUEUE_TEXT_A_NOWAR, creature->GetGUID());
-                    }
+                        player->SEND_GOSSIP_MENU(BfTB->GetDefenderTeam() ? TB_NPCQUEUE_TEXT_H_NOWAR : TB_NPCQUEUE_TEXT_A_NOWAR, creature->GetGUID());
                 }
             }
             return true;
@@ -117,12 +138,11 @@ class npc_tol_barad_battlemage : public CreatureScript
             Battlefield* BfTB = sBattlefieldMgr->GetBattlefieldByBattleId(BATTLEFIELD_BATTLEID_TB);
             if (BfTB)
             {
-                if (BfTB->IsWarTime()){
+                if (BfTB->IsWarTime())
                     BfTB->InvitePlayerToWar(player);
-                }
                 else
                 {
-                    uint32 uiTime = BfTB->GetTimer()/1000;
+                    uint32 uiTime = BfTB->GetTimer() / 1000;
                     if (uiTime < 15 * MINUTE)
                         BfTB->InvitePlayerToQueue(player);
                 }
@@ -165,6 +185,7 @@ public:
 
 void AddSC_tol_barad()
 {
-   new npc_tol_barad_battlemage();
-   new npc_tb_spiritguide();
+    new npc_tol_barad_battlemage();
+    new npc_tb_spiritguide();
+    new spell_siege_cannon();
 }

@@ -18,8 +18,34 @@ BUFF_ACTION(CastSealOfRighteousnessAction, "seal of righteousness");
 BUFF_ACTION(CastSealOfCommandAction, "seal of command");
 BUFF_ACTION(CastSealOfInsightAction, "seal of insight");
 
+// seals - 5.4.8 remaining paladin seals (AC PaladinActions.h:15-19). AC's "seal of vengeance" is
+// deliberately not ported: that spell was renamed to Seal of Corruption in patch 3.1, so 5.4.8
+// spell names only know "seal of corruption" (registered below).
+BUFF_ACTION(CastSealOfJusticeAction, "seal of justice");
+BUFF_ACTION(CastSealOfLightAction, "seal of light");
+BUFF_ACTION(CastSealOfWisdomAction, "seal of wisdom");
+BUFF_ACTION(CastSealOfCorruptionAction, "seal of corruption");
+// #525 (AC DpsPaladinStrategy.cpp:130 "seal of corruption"): Seal of Truth (31801) is the 5.x
+// successor of Seal of Corruption/Vengeance (Wowhead 31801 tooltip 2026-10-04: "Replaces Seal of Command").
+BUFF_ACTION(CastSealOfTruthAction, "seal of truth");
+
 // judgements
-SPELL_ACTION(CastJudgementAction, "judgement");
+// #525: the 5.4.8 spell is spelled "Judgment" (20271, Spell.dbc / Wowhead 2026-10-04). SpellIdValue
+// matches names exactly, so the old "judgement" string never resolved and Judgment was never cast.
+// The registered action key stays "judgement" (AC "judgement of light/wisdom" edges map onto it).
+SPELL_ACTION(CastJudgementAction, "judgment");
+
+// #525: Holy Power spenders with no AC equivalent (WotLK has no Holy Power).
+// #735 (owner 2026-10-08: AC's methodology): PlayerbotAI::CanCastSpell checks with
+// TRIGGERED_IGNORE_POWER_AND_REAGENT_COST (as AC does), so a spender's Holy Power cost is NOT checked there - a
+// spender cast at 0 Holy Power failed SPELL_FAILED_NO_POWER (88). As AC gates its combo-point finishers (plain
+// actions, AC RogueFinishingActions.h:14-42, driven by "combo points N available" triggers, AC
+// CombatRogueStrategy.cpp:118-126), the spenders stay plain actions and the strategies fire them from the
+// "holy power N available" / "divine purpose" triggers (PaladinTriggers.h).
+// Templar's Verdict 85256: 3 Holy Power, Ret melee finisher (Wowhead 2026-10-04).
+MELEE_ACTION(CastTemplarsVerdictAction, "templar's verdict");
+// Inquisition 84963: Ret buff, +30% holy damage, consumes up to 3 Holy Power (Wowhead 2026-10-04).
+BUFF_ACTION(CastInquisitionAction, "inquisition");
 
 // auras
 BUFF_ACTION(CastDevotionAuraAction, "devotion aura");
@@ -28,6 +54,10 @@ BUFF_ACTION(CastConcentrationAuraAction, "concentration aura");
 BUFF_ACTION(CastCrusaderAuraAction, "crusader aura");
 BUFF_ACTION(CastSanctityAuraAction, "sanctity aura");
 
+// resistance auras (AC PaladinActions.h:33-35) - all three still exist in 5.4.8
+BUFF_ACTION(CastShadowResistanceAuraAction, "shadow resistance aura");
+BUFF_ACTION(CastFrostResistanceAuraAction, "frost resistance aura");
+BUFF_ACTION(CastFireResistanceAuraAction, "fire resistance aura");
 SPELL_ACTION(CastHolyShockAction, "holy shock");
 
 // consecration
@@ -139,6 +169,17 @@ public:
     CastFlashOfLightAction(PlayerbotAI* botAI) : CastHealingSpellAction(botAI, "flash of light") {}
 };
 
+// #521: "word of glory on party" was used by the nc strategy but never registered. Word of Glory 85673
+// (L9, Holy Power heal; cls.py paladin) - same HealPartyMemberAction shape as Flash of Light below.
+class CastWordOfGloryOnPartyAction : public HealPartyMemberAction
+{
+public:
+    CastWordOfGloryOnPartyAction(PlayerbotAI* botAI)
+        : HealPartyMemberAction(botAI, "word of glory", 15.0f, HealingManaEfficiency::HIGH)
+    {
+    }
+};
+
 class CastFlashOfLightOnPartyAction : public HealPartyMemberAction
 {
 public:
@@ -178,6 +219,8 @@ class CastDivineShieldAction : public CastBuffSpellAction
 {
 public:
     CastDivineShieldAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "divine shield") {}
+    // rotation lane 6 (#861): prio group 5 - never while carrying a PvP objective.
+    bool isUseful() override;
 };
 
 class CastHolyWrathAction : public CastMeleeSpellAction
@@ -229,7 +272,11 @@ public:
 class CastHandOfReckoningAction : public CastSpellAction
 {
 public:
-    CastHandOfReckoningAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "hand of reckoning") {}
+    // #525: the 5.4.8 taunt is "Reckoning" (62124; "Hand of Reckoning" is the WotLK name and does not
+    // exist in 5.4.8 Spell.dbc - cls.py 2026-10-04; Wowhead 62124). Action key stays "hand of reckoning".
+    CastHandOfReckoningAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "reckoning") {}
+    // #835: never taunt a player (BG lose-aggro edge can see the old target, then dps assist switches to a player).
+    bool isUseful() override { Unit* t = GetTarget(); return t && !t->IsPlayer() && CastSpellAction::isUseful(); }
 };
 
 class CastRighteousDefenseAction : public CastSpellAction
@@ -251,6 +298,8 @@ public:
     CastCleanseDiseaseAction(PlayerbotAI* botAI) : CastCureSpellAction(botAI, "cleanse") {}
 };
 
+// #383: "cleanse magic" is not a 5.4.8 spell name (cls.py: 55598 NOT-LEARNABLE) - Cleanse Magic merged into
+// Cleanse (4987, L20) in 4.0.1, so every cleanse action here already casts "cleanse" (DISPEL_* picks the type).
 class CastCleanseMagicAction : public CastCureSpellAction
 {
 public:
@@ -314,15 +363,48 @@ public:
     CastHammerOfJusticeSnareAction(PlayerbotAI* botAI) : CastSnareSpellAction(botAI, "hammer of justice") {}
 };
 
+// #357 slice 6 (AC PaladinActions.h:352) - 1:1
+class CastSenseUndeadAction : public CastBuffSpellAction
+{
+public:
+    CastSenseUndeadAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "sense undead") {}
+};
+
 class CastTurnUndeadAction : public CastBuffSpellAction
 {
 public:
-    CastTurnUndeadAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "turn undead") {}
+    // #383 (AC PaladinActions.h Turn Undead): Turn Undead was replaced by Turn Evil (10326, L46) in
+    // patch 4.0.1 (cls.py 2026-10-04; Wowhead 10326 "Undead, Aberration or Demon target flees").
+    CastTurnUndeadAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "turn evil") {}
 
     Value<Unit*>* GetTargetValue() override;
 };
 
-PROTECT_ACTION(CastBlessingOfProtectionProtectAction, "blessing of protection");
+class CastBlessingOfProtectionProtectAction : public CastProtectSpellAction
+{
+public:
+    // #383 (AC GenericPaladinStrategy.cpp "protect party member"): Blessing of Protection became Hand of
+    // Protection (1022, L48) in patch 4.0.1 (cls.py 2026-10-04; Wowhead 1022). Action key unchanged.
+    CastBlessingOfProtectionProtectAction(PlayerbotAI* botAI) : CastProtectSpellAction(botAI, "hand of protection") {}
+
+    std::string const getName() override { return "blessing of protection on party"; }
+};
+
+// #163 S8 (AC parity, Ai/Class/Paladin/Actions/PaladinActions.h:363-368): free the first snared
+// party member (or self, if the bot itself is snared and ungrouped/no one else can help). AC also
+// tracks "any Paladin Hand already on this target from this caster" via a shared Hand-family helper
+// (HasAnyPaladinHandFromCaster) this fork doesn't have (Hand of Protection/Salvation/Sacrifice
+// aren't ported); substituted with a plain "does the target already have hand of freedom" check.
+class CastHandOfFreedomOnPartyAction : public CastBuffSpellAction
+{
+public:
+    CastHandOfFreedomOnPartyAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "hand of freedom") {}
+
+    std::string const getName() override { return "hand of freedom on party"; }
+    Unit* GetTarget() override;
+    Value<Unit*>* GetTargetValue() override;
+    bool isUseful() override;
+};
 
 class CastDivinePleaAction : public CastBuffSpellAction
 {
@@ -333,7 +415,9 @@ public:
 class ShieldOfRighteousnessAction : public CastMeleeSpellAction
 {
 public:
-    ShieldOfRighteousnessAction(PlayerbotAI* ai) : CastMeleeSpellAction(ai, "shield of righteousness") {}
+    // #525: the 5.4.8 spell is "Shield of the Righteous" (53600, 3 Holy Power; Wowhead 2026-10-04).
+    // "shield of righteousness" was the WotLK name and never resolved. Action key unchanged.
+    ShieldOfRighteousnessAction(PlayerbotAI* ai) : CastMeleeSpellAction(ai, "shield of the righteous") {}
 };
 
 class CastBeaconOfLightOnMainTankAction : public BuffOnMainTankAction
@@ -374,4 +458,80 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
 };
+
+// ---- rotation lane 6 (#861, epic #854): MoP paladin rotations ----
+
+// Rebuke 96231. Prio 10/2 on the current target and 10/1 on any casting enemy. AC has no
+// Rebuke (WotLK Paladin has no interrupt); the action was registered as a node only and no strategy used it.
+class CastRebukeAction : public CastMeleeSpellAction
+{
+public:
+    CastRebukeAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "rebuke") {}
+};
+
+// shared contract (lane 0 #855): CastSpellOnEnemyCasterAction targets the "enemy caster target" value.
+class CastRebukeOnEnemyCasterAction : public CastSpellOnEnemyCasterAction
+{
+public:
+    CastRebukeOnEnemyCasterAction(PlayerbotAI* botAI) : CastSpellOnEnemyCasterAction(botAI, "rebuke") {}
+};
+
+// Cooldowns (self buffs). Holy Avenger 105809 (Ret, row 7016), Guardian of Ancient Kings (Holy 86669 row 6503,
+// Prot/Ret 86698 rows 6617/7021; the name resolves per spec), Ardent Defender 31850 (Prot, row 6618).
+BUFF_ACTION(CastHolyAvengerAction, "holy avenger");
+BUFF_ACTION(CastGuardianOfAncientKingsAction, "guardian of ancient kings");
+BUFF_ACTION(CastArdentDefenderAction, "ardent defender");
+
+// Execution Sentence 114157. Ret: on the current target (row 7005). Holy: on an injured tank <= 60% (row 6506), below.
+SPELL_ACTION(CastExecutionSentenceAction, "execution sentence");
+
+// Holy Power heals. Eternal Flame 114163 costs 3 Holy Power (or a Divine Purpose proc, aura 90174). As in #735 the cast
+// check ignores the power cost, so the gate lives here (holy and prot).
+class CastEternalFlameAction : public CastHealingSpellAction
+{
+public:
+    CastEternalFlameAction(PlayerbotAI* botAI) : CastHealingSpellAction(botAI, "eternal flame") {}
+    bool isUseful() override;
+};
+
+class CastEternalFlameOnPartyAction : public HealPartyMemberAction
+{
+public:
+    CastEternalFlameOnPartyAction(PlayerbotAI* botAI)
+        : HealPartyMemberAction(botAI, "eternal flame", 25.0f, HealingManaEfficiency::HIGH)
+    {
+    }
+    bool isUseful() override;
+};
+
+// Divine Light 82326 (row 6512) and Holy Radiance 82327 (row 6510, 3+ members < 50% within 10 yd of the target).
+class CastDivineLightOnPartyAction : public HealPartyMemberAction
+{
+public:
+    CastDivineLightOnPartyAction(PlayerbotAI* botAI)
+        : HealPartyMemberAction(botAI, "divine light", 50.0f, HealingManaEfficiency::MEDIUM)
+    {
+    }
+};
+
+class CastHolyRadianceOnPartyAction : public HealPartyMemberAction
+{
+public:
+    CastHolyRadianceOnPartyAction(PlayerbotAI* botAI)
+        : HealPartyMemberAction(botAI, "holy radiance", 30.0f, HealingManaEfficiency::LOW)
+    {
+    }
+};
+
+// Execution Sentence on the tank (role tank and health <= 60%).
+class CastExecutionSentenceOnPartyAction : public HealPartyMemberAction
+{
+public:
+    CastExecutionSentenceOnPartyAction(PlayerbotAI* botAI)
+        : HealPartyMemberAction(botAI, "execution sentence", 25.0f, HealingManaEfficiency::LOW)
+    {
+    }
+    bool isUseful() override;
+};
+
 #endif

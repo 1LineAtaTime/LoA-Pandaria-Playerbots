@@ -41,33 +41,19 @@ bool SpellCastUsefulValue::Calculate()
     }
 
     // TODO: workaround
-    if (qualifier == "windfury weapon" || qualifier == "flametongue weapon" || qualifier == "frostbrand weapon" ||
-        qualifier == "rockbiter weapon" || qualifier == "earthliving weapon" || qualifier == "spellstone")
+    if (qualifier == "windfury weapon" || qualifier == "flametongue weapon" ||
+        qualifier == "frostbrand weapon" || qualifier == "rockbiter weapon" ||
+        qualifier == "earthliving weapon" || qualifier == "spellstone")
     {
-        /*if (Item* item = AI_VALUE2(Item*, "item for spell", spellid))
-            if (item->IsInWorld() && item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))*/
+        if (Item* item = AI_VALUE2(Item*, "item for spell", spellid))
+            if (item->IsInWorld() && item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))
                 return false;
     }
 
-    /*std::set<uint32>& skipSpells = AI_VALUE(std::set<uint32>&, "skip spells list");
-    if (skipSpells.find(spellid) != skipSpells.end())
-        return false;
-
-    std::string const spellName = spellInfo->SpellName[0];
-    for (uint32 skipSpellId : skipSpells)
-    {
-        SpellInfo const* skipSpellInfo = sSpellMgr->GetSpellInfo(skipSpellId);
-        if (!skipSpellInfo)
-            continue;
-
-        std::wstring wnamepart;
-        if (!Utf8toWStr(std::string(skipSpellInfo->SpellName[0]), wnamepart))
-            continue;
-
-        wstrToLower(wnamepart);
-        if (!spellName.empty() && spellName.length() == wnamepart.length() && Utf8FitTo(spellName, wnamepart))
-            return false;
-    }*/
-
+    // NOTE (issue #98): upstream's "skip spells list" block is deliberately NOT ported here.
+    // AI_VALUE(std::set<uint32>&, "skip spells list") dereferences a value that is not available in
+    // every context in this fork and crashed the worldserver (ACCESS_VIOLATION in
+    // SpellCastUsefulValue::Calculate, archive [22-9_14-52-17]). Re-add it only with a null-safe
+    // lookup that is validated on a live run.
     return true;
 }

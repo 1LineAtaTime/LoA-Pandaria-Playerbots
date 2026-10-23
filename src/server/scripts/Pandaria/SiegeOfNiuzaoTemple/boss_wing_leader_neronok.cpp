@@ -172,7 +172,7 @@ class boss_wing_leader_neronok : public CreatureScript
                 _JustReachedHome();
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 ClearDebuffs();
                 BossAI::EnterEvadeMode();
@@ -300,6 +300,30 @@ class spell_quick_dry_resin : public SpellScriptLoader
         {
             PrepareAuraScript(spell_quick_dry_resin_AuraScript)
 
+            // #687: "Jump to prevent the resin from hardening!" (Wowhead MoP tooltip 121447 buff text; Wowpedia
+            // "Wing Leader Ner'onok": "Jumping counteracts this effect and if the target breaks free they become
+            // Invigorated", both read 2026-10-12). Nothing reacted to a jump, so every victim was encased. A jump is
+            // the moment the target leaves the ground: a client jump sets MOVEMENTFLAG_FALLING (Unit::IsFalling), a
+            // server-driven jump (playerbot JumpTo -> MotionMaster::MoveJump) runs an EFFECT_MOTION_TYPE generator.
+            // Each jump softens the resin by RESIN_JUMP_DRAIN, more than the +5 a tick adds, so jumping about once
+            // a second breaks free (<= 10, Invigorated) in ~8 s; standing still encases in 10 s. The retail amount
+            // is unknown (see the tick below), the drain is an estimate.
+            static constexpr int32 RESIN_JUMP_DRAIN = 10;
+            bool wasAirborne = false;
+
+            void HandleUpdate(uint32 /*diff*/, AuraEffect* /*aurEff*/)
+            {
+                Unit* target = GetUnitOwner();
+                if (!target)
+                    return;
+
+                bool const airborne = target->IsFalling() ||
+                    target->GetMotionMaster()->GetCurrentMovementGeneratorType() == EFFECT_MOTION_TYPE;
+                if (airborne && !wasAirborne)
+                    target->SetPower(POWER_ALTERNATE_POWER, std::max(0, target->GetPower(POWER_ALTERNATE_POWER) - RESIN_JUMP_DRAIN));
+                wasAirborne = airborne;
+            }
+
             void PeriodicTick(AuraEffect const * aurEff)
             {
                 if (Unit* target = GetUnitOwner())
@@ -359,6 +383,7 @@ class spell_quick_dry_resin : public SpellScriptLoader
                 OnEffectApply += AuraEffectApplyFn(spell_quick_dry_resin_AuraScript::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
                 OnEffectRemove += AuraEffectRemoveFn(spell_quick_dry_resin_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
                 OnEffectPeriodic += AuraEffectPeriodicFn(spell_quick_dry_resin_AuraScript::PeriodicTick, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE);
+                OnEffectUpdate += AuraEffectUpdateFn(spell_quick_dry_resin_AuraScript::HandleUpdate, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE);
             }
         };
 

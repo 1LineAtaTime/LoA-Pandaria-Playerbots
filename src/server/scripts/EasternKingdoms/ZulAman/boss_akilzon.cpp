@@ -168,14 +168,14 @@ class boss_akilzon : public CreatureScript
                                 if (!Unit::GetUnit(*me, Eagles[i]))
                                 {
                                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
-                                        if (Creature* pEagle = me->SummonCreature(NPC_SOARING_EAGLE, target->GetPositionX() + irand(-10, 10), target->GetPositionY() + irand(-10, 10), target->GetPositionZ() + urand(10, 15), target->GetOrientation(), TEMPSUMMON_CORPSE_DESPAWN, 0))
+                                        if (Creature* pEagle = me->SummonCreature(NPC_SOARING_EAGLE, target->GetPositionX() + irand(-10, 10), target->GetPositionY() + irand(-10, 10), target->GetPositionZ() + urand(10, 15), target->GetOrientation(), TEMPSUMMON_CORPSE_DESPAWN, 0ms))
                                             Eagles[i] = pEagle->GetGUID();
                                 }
                             }
                             break;
                         case EVENT_SUMMON_KIDNAPPER:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true, -SPELL_PLUCKED))
-                                if (Creature* pKidnapper = me->SummonCreature(NPC_AMANI_KIDNAPPER, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ() + 3, target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 5000))
+                                if (Creature* pKidnapper = me->SummonCreature(NPC_AMANI_KIDNAPPER, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ() + 3, target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 5000ms))
                                     target->CastSpell(pKidnapper, SPELL_PLUCKED, true);
                                 
                             break;
@@ -317,7 +317,15 @@ class spell_akilzon_electrical_storm : public SpellScriptLoader
                     player->SetClientControl(player, 1);
                     player->SetCanFly(false);
                     player->RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-                }                
+
+                    // #669 w68: nothing brought the victim back down. A game client falls on its own once gravity returns,
+                    // but a server-side player (playerbot, headless client) kept the lifted z: the w68 storm-1 victim hung
+                    // at z 86.5 over the 74.5 platform for 60 s, the next Amani Kidnapper was summoned at his z + 3 (89.3),
+                    // out of melee reach, and he died plucked under the second storm. Drop the victim to the floor
+                    // (MotionMaster::MoveFall: fall spline to the map height, also used by Player::KillPlayer).
+                    if (player->IsInWorld() && !player->GetVehicle())
+                        player->GetMotionMaster()->MoveFall();
+                }
             }
 
             void Register() override
@@ -340,7 +348,11 @@ class ElectricalSafeCheck
 
         bool operator()(WorldObject* object) const
         {
-            return object->ToUnit()->HasAura(SPELL_ELECTRICAL_SAFE);
+            // #669: the lifted victim (43648) hangs 12 yd above the eye's DynamicObject, outside its 10 yd area aura, so it
+            // lost 44007 and took the whole storm itself (w67: the rogue died twice while lifted, the tank once).
+            // Design (Wowpedia "Akil'zon (tactics)"): players within range of the immobilized player are safe.
+            Unit* unit = object->ToUnit();
+            return !unit || unit->HasAura(SPELL_ELECTRICAL_SAFE) || unit->HasAura(SPELL_ELECTRICAL_STORM);
         }
 };
 

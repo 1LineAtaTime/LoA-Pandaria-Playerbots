@@ -29,4 +29,14 @@ public:
     std::string const getName() override { return "fire aoe"; }
 };
 
+// #385 (AC Ai/Class/Mage/Strategy/FireMageStrategy.h:24-31): "firestarter", off by default ("co +firestarter").
+class FirestarterStrategy : public CombatStrategy
+{
+public:
+    FirestarterStrategy(PlayerbotAI* botAI);
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "firestarter"; }
+};
+
 #endif

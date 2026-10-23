@@ -41,6 +41,31 @@ enum Spells
     SPELL_FLESH_RIP             = 40199
 };
 
+enum Spirits
+{
+    // #635: AC boss_anzu.cpp:46-62 (spirit ids and spells), 184-236 (npc_anzu_spirit)
+    NPC_HAWK_SPIRIT             = 23134,
+    NPC_FALCON_SPIRIT           = 23135,
+    NPC_EAGLE_SPIRIT            = 23136,
+
+    SPELL_HAWK                  = 40237,
+    SPELL_FALCON                = 40241,
+    SPELL_EAGLE                 = 40240,
+
+    SPELL_FREEZE_ANIM           = 16245,
+    SPELL_STONEFORM             = 40308,
+
+    SAY_STONED                  = 0
+};
+
+// AC boss_anzu.cpp:71-76
+Position const AnzuSpiritPos[3] =
+{
+    { -96.4816f, 304.236f, 26.5135f, 5.23599f },    // Hawk Spirit
+    { -72.3434f, 290.861f, 26.4851f, 3.29867f },    // Falcon Spirit
+    { -99.5906f, 276.661f, 26.8467f, 0.750492f },   // Eagle Spirit
+};
+
 enum Events
 {
     EVENT_PARALYZING_SCREECH    = 1,
@@ -80,6 +105,7 @@ class boss_anzu : public CreatureScript
             void JustEngagedWith(Unit* /*who*/) override
             {
                 _JustEngagedWith();
+                SummonSpirits();
                 events.ScheduleEvent(EVENT_PARALYZING_SCREECH, 14000);
                 events.ScheduleEvent(EVENT_CYCLONE_OF_FEATHERS, 5000);
             }
@@ -87,6 +113,18 @@ class boss_anzu : public CreatureScript
             void JustDied(Unit* /*killer*/) override
             {
                 _JustDied();
+            }
+
+            // AC boss_anzu.cpp:152-157. The fork's Reset() does not call _Reset(), so clear any spirits left
+            // from an earlier attempt before summoning a fresh set.
+            void SummonSpirits()
+            {
+                summons.DespawnEntry(NPC_HAWK_SPIRIT);
+                summons.DespawnEntry(NPC_FALCON_SPIRIT);
+                summons.DespawnEntry(NPC_EAGLE_SPIRIT);
+                me->SummonCreature(NPC_HAWK_SPIRIT, AnzuSpiritPos[0], TEMPSUMMON_MANUAL_DESPAWN);
+                me->SummonCreature(NPC_FALCON_SPIRIT, AnzuSpiritPos[1], TEMPSUMMON_MANUAL_DESPAWN);
+                me->SummonCreature(NPC_EAGLE_SPIRIT, AnzuSpiritPos[2], TEMPSUMMON_MANUAL_DESPAWN);
             }
 
             void DamageTaken(Unit* /*killer*/, uint32 &damage) override
@@ -129,7 +167,7 @@ class boss_anzu : public CreatureScript
                         case EVENT_SUMMON:
                             // TODO: Add pathing for Brood of Anzu
                             for (uint8 i = 0; i < 7; i++)
-                                me->SummonCreature(NPC_BROOD_OF_ANZU, PosSummonBrood[i], TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 46000);
+                                me->SummonCreature(NPC_BROOD_OF_ANZU, PosSummonBrood[i], TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 46000ms);
 
                             DoCast(me, SPELL_BANISH_SELF);
                             events.ScheduleEvent(EVENT_SPELL_BOMB, 12000);
@@ -163,7 +201,90 @@ class boss_anzu : public CreatureScript
         }
 };
 
+// AC boss_anzu.cpp:184-236. Every 2.4 s: a Druid HoT on the spirit frees it and it casts its Spite on itself,
+// otherwise it stays stoned (Stoneform + Freeze Anim, Say 0).
+class npc_anzu_spirit : public CreatureScript
+{
+    public:
+        npc_anzu_spirit() : CreatureScript("npc_anzu_spirit") { }
+
+        struct npc_anzu_spiritAI : public ScriptedAI
+        {
+            npc_anzu_spiritAI(Creature* creature) : ScriptedAI(creature) { }
+
+            void IsSummonedBy(Unit* /*summoner*/) override
+            {
+                _scheduler.Schedule(1ms, [this](TaskContext task)
+                {
+                    // Check for Druid HoTs every 2400ms
+                    if (HasDruidHoT())
+                    {
+                        me->RemoveAurasDueToSpell(SPELL_FREEZE_ANIM);
+                        me->RemoveAurasDueToSpell(SPELL_STONEFORM);
+
+                        switch (me->GetEntry())
+                        {
+                            case NPC_HAWK_SPIRIT:
+                                DoCast(me, SPELL_HAWK);
+                                break;
+                            case NPC_FALCON_SPIRIT:
+                                DoCast(me, SPELL_FALCON);
+                                break;
+                            case NPC_EAGLE_SPIRIT:
+                                DoCast(me, SPELL_EAGLE);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else if (!me->HasAura(SPELL_STONEFORM))
+                    {
+                        Talk(SAY_STONED);
+                        DoCast(me, SPELL_FREEZE_ANIM, true);
+                        DoCast(me, SPELL_STONEFORM, true);
+                    }
+
+                    task.Repeat(2400ms);
+                });
+            }
+
+            // #635: AC's GetAuraEffect(type, family, iconId, 0) matches by SpellIconID only; the fork's iconId overload
+            // (Unit.cpp:5097) additionally requires !SpellFamilyFlags, which Rejuvenation (icon 64) has in 5.4.8, so it never
+            // matched and the spirits never woke. Match family + icon directly (same semantics as AC).
+            bool HasDruidHoT() const
+            {
+                Unit::AuraEffectList const& hots = me->GetAuraEffectsByType(SPELL_AURA_PERIODIC_HEAL);
+                for (AuraEffect const* eff : hots)
+                {
+                    SpellInfo const* info = eff->GetSpellInfo();
+                    if (info->SpellFamilyName == SPELLFAMILY_DRUID && info->SpellIconID == 64)
+                        return true;
+                }
+                return false;
+            }
+
+            void Reset() override
+            {
+                _scheduler.CancelAll();
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                _scheduler.Update(diff);
+            }
+
+        private:
+            TaskScheduler _scheduler;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return GetSethekkHallsAI<npc_anzu_spiritAI>(creature);
+        }
+};
+
 void AddSC_boss_anzu()
 {
     new boss_anzu();
+    new npc_anzu_spirit();
 }

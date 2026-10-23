@@ -13,12 +13,22 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "BotScenario.h"
 #include "Chat.h"
+#include "ObjectAccessor.h"
+#include "Player.h"
+#include "PlayerbotAI.h"
+#include "Playerbots.h"
 #include "PlayerbotMgr.h"
+#include "Timer.h"
 #include "PerformanceMonitor.h"
 #include "PlayerbotAIConfig.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
+
+#include <sstream>
+
+bool HandleRandomPlayerbotConsoleCommand(ChatHandler* handler, char const* args);   // Manager/RandomPlayerbotMgr.cpp (#808)
 
 class playerbots_commandscript : public CommandScript
 {
@@ -27,10 +37,23 @@ public:
 
     std::vector<ChatCommand> GetCommands() const override
     {
+        // #650: AC's ".playerbots ..." table (AC Script/PlayerbotCommandScript.cpp:42-49) - "bot", "pmon" and (#808)
+        // "rndbot" exist on this fork; gtask / debug / account have no counterpart here yet. The older top-level
+        // ".npcbot" and ".pmon" stay as aliases so existing harness scripts keep working.
+        static std::vector<ChatCommand> playerbotsCommandTable =
+        {
+            { "bot",  &HandlePlayerbotCommand, rbac::RBAC_PERM_COMMAND_NPCBOT, Trinity::ChatCommands::Console::Yes },
+            { "pmon", &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
+            // #808: AC SEC_GAMEMASTER + Console::Yes (PlayerbotCommandScript.cpp:45); console/SOAP only needs Console::Yes.
+            { "rndbot", &HandleRandomPlayerbotCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
+        };
         static std::vector<ChatCommand> commandTable =
         {
-            { "npcbot",         SEC_ADMINISTRATOR,          true,           &HandlePlayerbotCommand},
-            { "pmon",           SEC_GAMEMASTER,             true,           &HandlePerfMonCommand},
+            { "playerbots", playerbotsCommandTable, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
+            { "npcbot", &HandlePlayerbotCommand, rbac::RBAC_PERM_COMMAND_NPCBOT, Trinity::ChatCommands::Console::Yes },
+            { "pmon",   &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
+            { "botscenario", &HandleBotScenarioCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
+            { "botprobe", &HandleBotProbeCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
         };
         return commandTable;
     }
@@ -38,6 +61,13 @@ public:
     static bool HandlePlayerbotCommand(ChatHandler* handler, char const* args)
     {
         return PlayerbotMgr::HandlePlayerbotMgrCommand(handler, args);
+    }
+
+    // #808: AC Script/PlayerbotCommandScript.cpp:60-70 HandleRandomPlayerbotCommand -> RandomPlayerbotMgr::
+    // HandlePlayerbotConsoleCommand; defined in Manager/RandomPlayerbotMgr.cpp (free function, header untouched).
+    static bool HandleRandomPlayerbotCommand(ChatHandler* handler, char const* args)
+    {
+        return HandleRandomPlayerbotConsoleCommand(handler, args);
     }
 
     static bool HandlePerfMonCommand(ChatHandler* handler, char const* args)
@@ -51,12 +81,14 @@ public:
         if (!strcmp(args, "tick"))
         {
             sPerformanceMonitor->PrintStats(true, false);
+            sPerformanceMonitor->DumpJson(true);  // AC PlayerbotCommandScript.cpp:83
             return true;
         }
 
         if (!strcmp(args, "stack"))
         {
             sPerformanceMonitor->PrintStats(false, true);
+            sPerformanceMonitor->DumpJson(false);  // AC PlayerbotCommandScript.cpp:90
             return true;
         }
 
@@ -71,7 +103,22 @@ public:
         }
 
         sPerformanceMonitor->PrintStats();
+        sPerformanceMonitor->DumpJson(false);  // AC PlayerbotCommandScript.cpp:104
         return true;
+    }
+
+    // .botscenario <botname> goto|wander|attack|stop ... - all parsing/state lives in
+    // Scenario/BotScenario.cpp (HARNESS-SPEC-botscenario-v3-module); this is a one-line forward so
+    // the harness can change without recompiling this file.
+    static bool HandleBotScenarioCommand(ChatHandler* handler, char const* args)
+    {
+        return BotScenario::HandleScenarioCommand(handler, args);
+    }
+
+    // .botprobe <botname> on [intervalMs]|off, or .botprobe list - see BotScenario.h.
+    static bool HandleBotProbeCommand(ChatHandler* handler, char const* args)
+    {
+        return BotScenario::HandleProbeCommand(handler, args);
     }
 };
 

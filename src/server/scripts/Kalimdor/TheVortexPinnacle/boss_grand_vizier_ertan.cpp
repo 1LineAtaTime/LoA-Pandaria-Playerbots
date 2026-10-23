@@ -50,6 +50,16 @@ enum Actions
     ACTION_VORTEX_PULL_BACK,
 };
 
+// #663: distance from Ertan at which a called-in cyclone stops. It was "dist - 5" from the cyclone's own spot on its 35.8 yd
+// orbit, i.e. ~5 yd from her (4.6-5.4: the orbit centre EranCenterPos is 0.4 yd off her spawn). Cyclone Shield 86292 reaches
+// 4 yd (SpellMgr.cpp radius override, entry 26) + the player's 1.5 yd combat reach (Spell.cpp WorldObjectSpellAreaTargetCheck ->
+// IsWithinDist3d) = 5.5 yd, so no spot inside the pulled-in ring was out of every cyclone's reach: in wave 64 all 8 cyclones hit
+// each bot stacked under her every second until the group died. Wowpedia Grand_Vizier_Ertan (MediaWiki API, read 2026-10-15),
+// Strategy: "It is possible to avoid the whirlwind damage and debuff if you stack directly underneath the Boss." 9 yd leaves a
+// 3.5 yd pocket under her (her own combat reach is 6.25 yd, model 35181, so the ring still hugs her model). Storm's Edge is
+// unchanged by this: its surface-distance test (EVENT_STORM_EDGE) keeps reading 0 for the ring and for players under her.
+static constexpr float VORTEX_PULLED_IN_DIST = 9.0f;
+
 class boss_grand_vizier_ertan : public CreatureScript
 {
     public:
@@ -214,7 +224,7 @@ struct npc_ertan_vortex : public ScriptedAI
     TaskScheduler scheduler;
     float x, y, dist, prevX, prevY;
 
-    void IsSummonedBy(Unit* /*summoner*/) override
+    void IsSummonedBy(Unit* summoner) override
     {
         x = 0.0f; y = 0.0f;
         SetCombatMovement(false);
@@ -235,7 +245,9 @@ struct npc_ertan_vortex : public ScriptedAI
 
                 if (Creature* ertan = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(DATA_ERTAN) : ObjectGuid::Empty))
                 {
-                    GetPositionWithDistInOrientation(me, dist - 5.0f, me->GetAngle(ertan), x, y);
+                    // #663: stop VORTEX_PULLED_IN_DIST from Ertan herself (was a fixed "dist - 5.0f" travel, see the constant)
+                    float const pull = me->GetExactDist2d(ertan) - VORTEX_PULLED_IN_DIST;
+                    GetPositionWithDistInOrientation(me, pull > 0.0f ? pull : 0.0f, me->GetAngle(ertan), x, y);
                     me->GetMotionMaster()->MovePoint(0, x, y, me->GetPositionZ(), me->GetAngle(ertan));
                 }
                 break;
@@ -244,7 +256,7 @@ struct npc_ertan_vortex : public ScriptedAI
 
                 me->GetMotionMaster()->MovePoint(0, prevX, prevY, me->GetPositionZ(), 0.0f);
                 scheduler
-                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
                 {
                     me->StopMoving();
                     SetHandleCycleMovement();

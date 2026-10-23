@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -15,7 +15,9 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "Common.h"
 #include "ArenaTeam.h"
+#include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -30,6 +32,8 @@
 #include "DisableMgr.h"
 #include "Group.h"
 #include "LFGMgr.h"
+#include "BattlegroundAnyLevel.h"  // #702 P4 (#831): Battleground.AnyLevel.* (off by default)
+#include "ArenaAnyLevel.h"         // #702 P5 (#832): Arena.AnyLevel.* (off by default)
 
 void WorldSession::HandleBattlemasterHelloOpcode(WorldPacket& recvData)
 {
@@ -135,7 +139,9 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
         return;
 
     // expected bracket entry
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->GetLevel());
+    // #702 P4: Battleground.AnyLevel (off by default) gives a level below every bracket of this map a fallback bracket;
+    // with the switch off this is exactly sDBCManager.GetBattlegroundBracketByLevel(bg->GetMapId(), level).
+    PvPDifficultyEntry const* bracketEntry = BattlegroundAnyLevel::GetBracketByLevel(bg, bg->GetMapId(), _player->GetLevel());
     if (!bracketEntry)
         return;
 
@@ -221,7 +227,8 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
             return;
 
         err = grp->CanJoinBattlegroundQueue(bg, bgQueueTypeId, 0, bg->GetMaxPlayersPerTeam(), false, 0);
-        isPremade = (grp->GetMembersCount() >= 4);
+        // AC parity (#210 S10 G9): premade only from the BG's own team minimum, never for random BG.
+        isPremade = (grp->GetMembersCount() >= bg->GetMinPlayersPerTeam() && bgTypeId != BATTLEGROUND_RB);
 
         BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
         GroupQueueInfo* ginfo = NULL;
@@ -396,7 +403,9 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket &recvData)
     bgTypeId = bg->GetTypeID();
 
     // expected bracket entry
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->GetLevel());
+    // #702 P4: the bracket the any-level join used (off by default = the stock lookup); without it an any-level
+    // player could neither enter nor leave the queue it was invited from.
+    PvPDifficultyEntry const* bracketEntry = BattlegroundAnyLevel::GetBracketByLevel(bg, bg->GetMapId(), _player->GetLevel());
     if (!bracketEntry)
         return;
 
@@ -552,8 +561,8 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket & /*recvData*/)
             if (!bg)
                 continue;
 
-            // expected bracket entry
-            PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->GetLevel());
+            // expected bracket entry (#702 P4: any-level fallback, off by default = the stock lookup)
+            PvPDifficultyEntry const* bracketEntry = BattlegroundAnyLevel::GetBracketByLevel(bg, bg->GetMapId(), _player->GetLevel());
             if (!bracketEntry)
                 continue;
 
@@ -563,6 +572,93 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket & /*recvData*/)
             SendPacket(&data);
         }
     }
+}
+
+// #702 P5 (#832): an arena skirmish join (Arena.AnyLevel.Enable = 1 and a level below CONFIG_MAX_PLAYER_LEVEL, see
+// ArenaAnyLevel.h). AC's skirmish join (azerothcore-wotlk@7f12e89e src/server/game/Handlers/BattleGroundHandler.cpp:792-830
+// alone, :832 on as a party) on this core's queue: an unrated entry (isRated = false, isPremade = false) in the bracket's
+// NORMAL queue, matched by BattlegroundQueue::BattlegroundQueueUpdate's unrated pass (CheckNormalMatch /
+// CheckSkirmishForSameFaction), the pass the wave-29 harness skirmishes use (#544). Never reached with the switch off.
+static void ArenaAnyLevelJoinSkirmish(Player* player, Battleground* bg, BattlegroundTypeId bgTypeId,
+    BattlegroundQueueTypeId bgQueueTypeId, PvPDifficultyEntry const* bracketEntry, uint8 arenatype, uint8 arenaslot)
+{
+    Group* grp = player->GetGroup();
+    if (grp && grp->GetLeaderGUID() != player->GetGUID())
+        return;                                             // as the rated join: only the party leader queues a party
+
+    GroupJoinBattlegroundResult err = ERR_BATTLEGROUND_NONE;
+    if (grp)
+    {
+        if (grp->GetMembersCount() > arenatype)
+            err = ERR_ARENA_TEAM_PARTY_SIZE;
+        else
+            err = grp->CanJoinBattlegroundQueue(bg, bgQueueTypeId, grp->GetMembersCount(), arenatype, false, arenaslot);
+    }
+    else
+    {
+        // Group::CanJoinBattlegroundQueue's per-member checks (Group.cpp), for a player without a party
+        if (player->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId))
+            err = ERR_BATTLEGROUND_JOIN_FAILED;
+        else if (player->InBattlegroundQueueForBattlegroundQueueType(BattlegroundMgr::BGQueueTypeId(BATTLEGROUND_RB, 0)))
+            err = ERR_IN_RANDOM_BG;
+        else if (!player->CanJoinToBattleground(bg))
+            err = ERR_GROUP_JOIN_BATTLEGROUND_DESERTERS;
+        else if (!player->HasFreeBattlegroundQueueId())
+            err = ERR_BATTLEGROUND_TOO_MANY_QUEUES;
+        else if (player->IsUsingLfg(false))
+            err = ERR_LFG_CANT_USE_BATTLEGROUND;
+        else
+            for (BattlegroundQueueTypeId rated : { BATTLEGROUND_QUEUE_2v2, BATTLEGROUND_QUEUE_3v3, BATTLEGROUND_QUEUE_5v5, BATTLEGROUND_QUEUE_SOLO })
+                if (player->InBattlegroundQueueForBattlegroundQueueType(rated))
+                    err = ERR_BATTLEGROUND_QUEUED_FOR_RATED;
+    }
+
+    if (err)
+    {
+        auto sendFailed = [bg, player, err](Player* member)
+        {
+            WorldPacket data;
+            sBattlegroundMgr->BuildStatusFailedPacket(&data, bg, player, 0, err);
+            member->GetSession()->SendPacket(&data);
+        };
+        if (grp)
+        {
+            for (auto&& member : *grp)
+                if (member)
+                    sendFailed(member);
+        }
+        else
+            sendFailed(player);
+        return;
+    }
+
+    BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
+    GroupQueueInfo* ginfo = bgQueue.AddGroup(player, grp, bgTypeId, bracketEntry, arenatype, false, false, 0, 0);
+    uint32 const avgTime = bgQueue.GetAverageQueueWaitTime(ginfo, bracketEntry->GetBracketId());
+
+    auto queueMember = [bg, bgTypeId, bgQueueTypeId, bracketEntry, arenatype, ginfo, avgTime](Player* member)
+    {
+        uint32 const queueSlot = member->AddBattlegroundQueueId(bgQueueTypeId);
+        member->AddBattlegroundQueueJoinTime(bgTypeId, ginfo->JoinTime);
+
+        WorldPacket data; // send status packet (in queue)
+        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, member, queueSlot, STATUS_WAIT_QUEUE, avgTime, ginfo->JoinTime, arenatype);
+        member->GetSession()->SendPacket(&data);
+
+        TC_LOG_DEBUG("bg.battleground", "Battleground: player joined queue for arena skirmish (Arena.AnyLevel) queue type %u bg type %u bracket %u: GUID %u, NAME %s",
+            uint32(bgQueueTypeId), uint32(bgTypeId), uint32(bracketEntry->GetBracketId()), member->GetGUID().GetCounter(), member->GetName().c_str());
+    };
+    if (grp)
+    {
+        for (auto&& member : *grp)
+            if (member)
+                queueMember(member);
+    }
+    else
+        queueMember(player);
+
+    // arena MMR 0 -> BattlegroundMgr::Update runs the queue update with isRated = false (the unrated pass)
+    sBattlegroundMgr->ScheduleQueueUpdate(0, arenatype, bgQueueTypeId, bgTypeId, bracketEntry->GetBracketId());
 }
 
 void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
@@ -601,9 +697,18 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
 
     BattlegroundTypeId bgTypeId = bg->GetTypeID();
     BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, arenatype);
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->GetLevel());
+    PvPDifficultyEntry const* bracketEntry = sDBCManager.GetBattlegroundBracketByLevel(bg->GetMapId(), _player->GetLevel());
     if (!bracketEntry)
         return;
+
+    // #702 P5 (#832): Arena.AnyLevel (off by default: IsSkirmishJoin is false and the stock rated join below runs). Below
+    // the maximum level the join is an unrated skirmish, alone or as the leader of a party of at most the bracket size;
+    // a max-level join stays the rated join below (ArenaAnyLevel.h).
+    if (ArenaAnyLevel::IsSkirmishJoin(_player->GetLevel()))
+    {
+        ArenaAnyLevelJoinSkirmish(_player, bg, bgTypeId, bgQueueTypeId, bracketEntry, arenatype, arenaslot);
+        return;
+    }
 
     GroupJoinBattlegroundResult err = ERR_BATTLEGROUND_NONE;
 
@@ -687,7 +792,7 @@ void WorldSession::HandleBattlemasterJoinRated(WorldPacket& recvData)
     BattlegroundTypeId bgTypeId = bg->GetTypeID();
     BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, 0);
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), GetPlayer()->GetLevel());
+    PvPDifficultyEntry const* bracketEntry = sDBCManager.GetBattlegroundBracketByLevel(bg->GetMapId(), GetPlayer()->GetLevel());
     if (!bracketEntry)
         return;
 
@@ -887,7 +992,7 @@ void WorldSession::EnterSoloQueue(bool asGroup)
     if (!bg)
         return;
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), GetPlayer()->GetLevel());
+    PvPDifficultyEntry const* bracketEntry = sDBCManager.GetBattlegroundBracketByLevel(bg->GetMapId(), GetPlayer()->GetLevel());
     if (!bracketEntry)
         return;
 

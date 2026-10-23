@@ -212,22 +212,22 @@ struct npc_stormwind_infantry : public ScriptedAI
     {
         if (who->GetTypeId() == TYPEID_PLAYER)
         {
-            me->GetThreatManager().resetAllAggro();
-            who->AddThreat(me, 1.0f);
-            me->AddThreat(who, 1.0f);
+            me->GetThreatManager().ResetAllThreat();
+            who->GetThreatManager().AddThreat(me, 1.0f);
+            me->GetThreatManager().AddThreat(who, 1.0f);
             me->AI()->AttackStart(who);
         }
         else if (who->IsPet())
         {
-            me->GetThreatManager().resetAllAggro();
-            me->AddThreat(who, 1.0f);
+            me->GetThreatManager().ResetAllThreat();
+            me->GetThreatManager().AddThreat(who, 1.0f);
             me->AI()->AttackStart(who);
         }
 
         if (who->GetEntry() == ElwynnForest::NPC_BLACKROCK_BATTLE_WORG && me->HealthBelowPct(ElwynnForest::AI_HEALTH_MIN))
         {
             damage = 0;
-            me->AddThreat(who, 1.0f);
+            me->GetThreatManager().AddThreat(who, 1.0f);
             me->AI()->AttackStart(who);
         }
     }
@@ -274,22 +274,22 @@ struct npc_blackrock_battle_worg : public ScriptedAI
     {
         if (who->GetTypeId() == TYPEID_PLAYER)
         {
-            me->GetThreatManager().resetAllAggro();
-            who->AddThreat(me, 1.0f);
-            me->AddThreat(who, 1.0f);
+            me->GetThreatManager().ResetAllThreat();
+            who->GetThreatManager().AddThreat(me, 1.0f);
+            me->GetThreatManager().AddThreat(who, 1.0f);
             me->AI()->AttackStart(who);
         }
         else if (who->IsPet())
         {
-            me->GetThreatManager().resetAllAggro();
-            me->AddThreat(who, 1.0f);
+            me->GetThreatManager().ResetAllThreat();
+            me->GetThreatManager().AddThreat(who, 1.0f);
             me->AI()->AttackStart(who);
         }
 
         if (who->GetEntry() == ElwynnForest::NPC_STORMWIND_INFANTRY && me->HealthBelowPct(ElwynnForest::AI_HEALTH_MIN))
         {
             damage = 0;
-            me->AddThreat(who, 1.0f);
+            me->GetThreatManager().AddThreat(who, 1.0f);
             me->AI()->AttackStart(who);
         }
     }
@@ -352,7 +352,7 @@ struct npc_brother_paxton : public ScriptedAI
         _cooldownTimer = 0;
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         return;
     }
@@ -718,7 +718,7 @@ class npc_varian_wrynn_alliance_way_quest : public CreatureScript
                             delay = 0;
                             owner->m_Events.Schedule(delay += 1000, 1, [owner]()
                             {
-                                owner->SetPhaseMask(1, true);
+                                owner->GetPhaseMgr().SetCustomPhase(0); // #511: back to the zone's own phases
                             });
                         }
                     });
@@ -858,7 +858,7 @@ class npc_varian_wrynn_alliance_way_quest : public CreatureScript
                         me->m_Events.Schedule(delay += me->GetSplineDuration(), 27, [this]()
                         {
                             if (Player* owner = ObjectAccessor::GetPlayer(*me, summonerGUID))
-                                owner->SetPhaseMask(1, true);
+                                owner->GetPhaseMgr().SetCustomPhase(0); // #511: back to the zone's own phases
 
                             me->DespawnOrUnsummon();
                         });
@@ -1000,8 +1000,13 @@ class spell_summ_varian_alliance_way : public SpellScript
     {
         if (Player* pCaster = GetCaster()->ToPlayer())
         {
-            pCaster->SetPhaseMask(3, true);
-            pCaster->CastSpell(pCaster, SPELL_SUMMON_AYSA_AND_JOJO, true);
+            // #516: 120352 effect 1 (SPELL_EFFECT_FORCE_PLAYER_INTERACTION, trigger 120344) already makes the player
+            // cast Summon Aysa (+ 120345 Summon Jojo); casting it again here summoned a second Aysa and Jojo.
+            // #511: a plain SetPhaseMask(3) is overwritten by PhaseMgr on the next zone update (every teleport ack calls
+            // Player::UpdateZone, MovementHandler.cpp:308): Stormwind 1519 has 6 unconditional phase_definitions, so
+            // PhaseData::SendPhaseMaskToPlayer reset the player to 8065 (no bit 2) and the phase-2 Varian/Aysa/Jojo
+            // vanished mid-walk (t445 A2 wave 9: 'Yes. Go on.' heard, then nothing). A custom phase survives it.
+            pCaster->GetPhaseMgr().SetCustomPhase(3);
         }
     }
 
@@ -1153,10 +1158,10 @@ struct npc_hogger : public ScriptedAI
                     break;
                 case ElwynnForest::EVENT_SUMMON_KIDS:
                 {
-                    if (Creature* ragamuffin_1 = me->SummonCreature(ElwynnForest::NPC_RAGAMUFFIN, -10130.9f, 653.302f, 36.05013f, 1.652422f, TEMPSUMMON_TIMED_DESPAWN, 7500))
+                    if (Creature* ragamuffin_1 = me->SummonCreature(ElwynnForest::NPC_RAGAMUFFIN, -10130.9f, 653.302f, 36.05013f, 1.652422f, TEMPSUMMON_TIMED_DESPAWN, 7500ms))
                         ragamuffin_1->AI()->SetData(0, 1);
 
-                    if (Creature* ragamuffin_2 = me->SummonCreature(ElwynnForest::NPC_RAGAMUFFIN, -10122.5f, 660.198f, 36.03663f, 2.837752f, TEMPSUMMON_TIMED_DESPAWN, 6500))
+                    if (Creature* ragamuffin_2 = me->SummonCreature(ElwynnForest::NPC_RAGAMUFFIN, -10122.5f, 660.198f, 36.03663f, 2.837752f, TEMPSUMMON_TIMED_DESPAWN, 6500ms))
                         ragamuffin_2->AI()->SetData(0, 2);
 
                     events.ScheduleEvent(ElwynnForest::EVENT_SAY_GRR, 8s + 500ms);

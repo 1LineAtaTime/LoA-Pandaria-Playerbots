@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -16,7 +16,9 @@
 */
 
 #include "Common.h"
+#include "DatabaseEnv.h"
 #include "Group.h"
+#include "GroupMgr.h"
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
@@ -225,6 +227,9 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recvData)
 
     if (group && group->isBGGroup())
         group = GetPlayer()->GetOriginalGroup();
+    // #583: AC GroupHandler.cpp:155-156 - a leader with no group yet keeps inviting into the pending invite group
+    if (!group)
+        group = GetPlayer()->GetGroupInvite();
 
     Group* group2 = player->GetGroup();
     if (group2 && group2->isBGGroup())
@@ -264,6 +269,10 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recvData)
             return;
         }
     }
+
+    // #583: AC GroupHandler.cpp:197-199 (leader-guarded fallback)
+    if (!group && GetPlayer()->GetGroupInvite() && GetPlayer()->GetGroupInvite()->GetLeaderGUID() == GetPlayer()->GetGUID())
+        group = GetPlayer()->GetGroupInvite();
 
     // ok, but group not exist, start a new group
     // but don't create and save the group to the DB until

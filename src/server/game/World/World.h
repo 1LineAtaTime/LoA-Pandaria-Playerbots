@@ -1,5 +1,5 @@
 /*
-* This file is part of the Legends of Azeroth Pandria Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -157,6 +157,7 @@ enum WorldBoolConfigs
     CONFIG_ARENA_LOG_EXTENDED_INFO,
     CONFIG_OFFHAND_CHECK_AT_SPELL_UNLEARN,
     CONFIG_VMAP_INDOOR_CHECK,
+    CONFIG_DONT_CACHE_RANDOM_MOVEMENT_PATHS,
     CONFIG_START_ALL_SPELLS,
     CONFIG_START_ALL_EXPLORED,
     CONFIG_START_ALL_REP,
@@ -188,6 +189,7 @@ enum WorldBoolConfigs
     CONFIG_WARDEN_ENABLED,
     CONFIG_ENABLE_MMAPS,
     CONFIG_WINTERGRASP_ENABLE,
+    CONFIG_TOLBARAD_ENABLE,
     CONFIG_GUILD_LEVELING_ENABLED,
     CONFIG_UI_QUESTLEVELS_IN_DIALOGS,     // Should we add quest levels to the title in the NPC dialogs?
     CONFIG_EVENT_ANNOUNCE,
@@ -531,6 +533,13 @@ enum WorldIntConfigs
     CONFIG_WINTERGRASP_BATTLETIME,
     CONFIG_WINTERGRASP_NOBATTLETIME,
     CONFIG_WINTERGRASP_RESTART_AFTER_CRASH,
+    CONFIG_TOLBARAD_PLR_MAX,
+    CONFIG_TOLBARAD_PLR_MIN,
+    CONFIG_TOLBARAD_PLR_MIN_LVL,
+    CONFIG_TOLBARAD_BATTLETIME,
+    CONFIG_TOLBARAD_BONUSTIME,
+    CONFIG_TOLBARAD_NOBATTLETIME,
+    CONFIG_TOLBARAD_RESTART_AFTER_CRASH,
     CONFIG_GUILD_SAVE_INTERVAL,
     CONFIG_GUILD_MAX_LEVEL,
     CONFIG_GUILD_UNDELETABLE_LEVEL,
@@ -946,6 +955,7 @@ class TC_GAME_API World
         AccountTypes GetPlayerSecurityLimit() const { return m_allowedSecurityLevel; }
         void SetPlayerSecurityLimit(AccountTypes sec);
         void LoadDBAllowedSecurityLevel();
+        void ReloadRBAC();
 
         /// Active session server limit
         void SetPlayerAmountLimit(uint32 limit) { m_playerLimit = limit; }

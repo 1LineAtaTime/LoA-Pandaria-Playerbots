@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -16,7 +16,9 @@
 */
 
 #include "MovementStructures.h"
+#include "GameClient.h"
 #include "Player.h"
+#include "MoveSpline.h"
 
 MovementStatusElements const PlayerMove[] = // 5.4.8 18414
 {
@@ -6621,7 +6623,9 @@ Movement::PacketSender::PacketSender(Unit* unit, uint16 serverControl, uint16 pl
     if (unit->GetTypeId() == TYPEID_PLAYER && unit->ToPlayer()->m_mover->GetTypeId() == TYPEID_PLAYER)
     {
         _selfOpcode = playerControl;
-        _broadcast = unit->IsSplineEnabled() ? serverControl : broadcast;
+        // #747: a playerbot moving by client status (Movement::SendBotMoveStatus) is a running player to observers:
+        // it gets the player's MOVE_UPDATE_* (with its movement status), not the SPLINE_SET_* of a spline mover
+        _broadcast = unit->IsSplineEnabled() && !unit->movespline->statusMode ? serverControl : broadcast;
     }
     else
     {
@@ -6642,6 +6646,16 @@ void Movement::PacketSender::Send() const
             _unit->WriteMovementInfo(data, _extraElements);
             player->SendDirectMessage(&data);
         }
+    }
+    else if (GameClient* controller = _unit->GetGameClientMovingMe())
+    {
+        if (_selfOpcode != NULL_OPCODE)
+        {
+            WorldPacket data(_selfOpcode);
+            _unit->WriteMovementInfo(data, _extraElements);
+            controller->SendDirectMessage(&data);
+        }
+        isPlayerMovement = true;
     }
 
     if (_broadcast != NULL_OPCODE)

@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -16,6 +16,7 @@
 */
 
 #include "AchievementMgr.h"
+#include "ArenaTeam.h"
 #include "Battleground.h"
 #include "CellImpl.h"
 #include "Chat.h"
@@ -31,10 +32,12 @@
 #include "GuildMgr.h"
 #include "InstanceScript.h"
 #include "Language.h"
+#include "RBAC.h"
 #include "Map.h"
 #include "MapManager.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "Realm.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
@@ -42,6 +45,7 @@
 #include "WorldPacket.h"
 #include "BattlePetMgr.h"
 #include "PetBattle.h"
+#include "Battleground.h"
 #include "BattlegroundSA.h"
 
 namespace Trinity
@@ -521,7 +525,7 @@ void PlayerAchievementMgrBase::ResetAchievementCriteria(AchievementCriteriaTypes
     TC_LOG_DEBUG("achievement", "ResetAchievementCriteria(%u, " UI64FMTD ", " UI64FMTD ")", type, miscValue1, miscValue2);
 
     // disable for gamemasters with GM-mode enabled
-    if (GetOwner()->IsGameMaster())
+    if (GetOwner()->IsGameMaster() || GetOwner()->GetSession()->HasPermission(rbac::RBAC_PERM_CANNOT_EARN_ACHIEVEMENTS))
         return;
 
     for (auto&& criteria : sAchievementMgr->GetAchievementCriteriaByType(type, m_type))
@@ -1461,6 +1465,72 @@ static const uint32 achievIdForDungeon[][4] =
     { 0,         false,     false,  false }
 };
 
+namespace
+{
+    // #72 perf: AC keeps the asset-keyed criteria in AchievementGlobalMgr::_specialList[type][asset]
+    // (AC AchievementMgr.cpp:2663-2760, read through GetSpecialAchievementCriteriaByType at :840-878), so an event only
+    // touches the criteria of its own creature / spell / item / quest / gameobject. Same index here, built once from
+    // the per-type lists (loaded at startup by LoadAchievementCriteriaList, never reloaded) in their original order.
+    // A type is listed only where RequirementsSatisfied already rejects every criterion whose asset differs from
+    // miscValue1, so the index skips exactly the criteria that could never pass; the result is unchanged.
+    enum class AssetKeyMode
+    {
+        None,       // not indexed: walk the whole per-type list
+        Required,   // RequirementsSatisfied: !miscValue1 || asset != miscValue1 -> false
+        IfNonZero,  // RequirementsSatisfied: miscValue1 && asset != miscValue1 -> false (0 = login/recheck pass)
+    };
+
+    AssetKeyMode GetAssetKeyMode(AchievementCriteriaTypes type)
+    {
+        switch (type)
+        {
+            case ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE:       // 2068 criteria, every kill (AC :2670-2672)
+            case ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_CREATURE:  // AC :2688-2690
+            case ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET:     // AC :2694-2696
+            case ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET2:
+            case ACHIEVEMENT_CRITERIA_TYPE_CAST_SPELL:          // AC :2697-2699
+            case ACHIEVEMENT_CRITERIA_TYPE_CAST_SPELL2:
+            case ACHIEVEMENT_CRITERIA_TYPE_USE_ITEM:            // 1104 criteria (AC :2715-2717)
+            case ACHIEVEMENT_CRITERIA_TYPE_USE_GAMEOBJECT:      // AC :2757-2759
+                return AssetKeyMode::Required;
+            case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST:      // 1372 criteria (AC :2691-2693)
+            case ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM:            // 870 criteria, every stored item (AC :2709-2711)
+            case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL:         // RequirementsSatisfied: miscValue1 == asset (AC :2706-2708)
+                return AssetKeyMode::IfNonZero;
+            default:
+                return AssetKeyMode::None;
+        }
+    }
+
+    uint64 AssetCriteriaKey(AchievementType achievementType, AchievementCriteriaTypes type, uint32 asset)
+    {
+        return (uint64(achievementType) << 48) | (uint64(type) << 32) | asset;
+    }
+
+    CriteriaList const& GetAssetKeyedCriteria(AchievementCriteriaTypes type, AchievementType achievementType, uint64 asset)
+    {
+        static CriteriaList const empty;
+        static std::unordered_map<uint64, CriteriaList> const index = []()
+        {
+            std::unordered_map<uint64, CriteriaList> lists;
+            for (size_t a = 0; a < size_t(AchievementType::Max); ++a)
+                for (uint32 t = 0; t < ACHIEVEMENT_CRITERIA_TYPE_TOTAL; ++t)
+                    if (GetAssetKeyMode(AchievementCriteriaTypes(t)) != AssetKeyMode::None)
+                        for (Criteria const* criteria : sAchievementMgr->GetAchievementCriteriaByType(AchievementCriteriaTypes(t), AchievementType(a)))
+                            if (criteria->Entry->Asset.Raw) // the union member every asset aliases; 0 never equals a non-zero miscValue1
+                                lists[AssetCriteriaKey(AchievementType(a), AchievementCriteriaTypes(t), criteria->Entry->Asset.Raw)].push_back(criteria);
+            return lists;
+        }();
+
+        // 0 (Required types) and values above uint32 never equal a criterion asset
+        if (!asset || asset > std::numeric_limits<uint32>::max())
+            return empty;
+
+        auto itr = index.find(AssetCriteriaKey(achievementType, type, uint32(asset)));
+        return itr != index.end() ? itr->second : empty;
+    }
+}
+
 /**
  * this function will be called whenever the user might have done a criteria relevant action
  */
@@ -1480,7 +1550,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
     }
 
     // disable for gamemasters with GM-mode enabled
-    if (referencePlayer->IsGameMaster())
+    if (referencePlayer->IsGameMaster() || referencePlayer->GetSession()->HasPermission(rbac::RBAC_PERM_CANNOT_EARN_ACHIEVEMENTS))
     {
         TC_LOG_DEBUG("achievement", "UpdateAchievementCriteria: [Player %s GM mode on] %s, %s (%u), " UI64FMTD ", " UI64FMTD ", " UI64FMTD,
             referencePlayer->GetName().c_str(), GetGUID().GetTypeName(), AchievementGlobalMgr::GetCriteriaTypeString(type), type, miscValue1, miscValue2, miscValue3);
@@ -1494,7 +1564,14 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
     if (m_type == AchievementType::Guild && !sWorld->getBoolConfig(CONFIG_GUILD_LEVELING_ENABLED))
         return;
 
-    auto criterias = sAchievementMgr->GetAchievementCriteriaByType(type, m_type);
+    // #72: by reference - this copied the whole per-type criteria vector on every call (every spell hit / cast).
+    // #72 perf: an asset-keyed type reads only the criteria of that asset (AC _specialList pattern, see GetAssetKeyedCriteria);
+    // an IfNonZero type with miscValue1 == 0 (login / recheck pass) still walks the whole list.
+    AssetKeyMode const assetMode = GetAssetKeyMode(type);
+    bool const assetIndexed = assetMode == AssetKeyMode::Required || (assetMode == AssetKeyMode::IfNonZero && miscValue1);
+    auto const& criterias = assetIndexed ? GetAssetKeyedCriteria(type, m_type, miscValue1)
+                                         : sAchievementMgr->GetAchievementCriteriaByType(type, m_type);
+
     for (auto&& achievementCriteria : criterias)
     {
         CriteriaTreeList const* trees = sAchievementMgr->GetCriteriaTreesByCriteria(achievementCriteria->Entry->ID, m_type);
@@ -1708,7 +1785,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                     SkillLineAbilityMapBounds bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellIter->first);
                     for (SkillLineAbilityMap::const_iterator skillIter = bounds.first; skillIter != bounds.second; ++skillIter)
                     {
-                        if (skillIter->second->skillId == achievementCriteria->Entry->Asset.SkillLine)
+                        if (skillIter->second->SkillLine == achievementCriteria->Entry->Asset.SkillLine)
                             spellCount++;
                     }
                 }
@@ -1733,7 +1810,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                 {
                     SkillLineAbilityMapBounds bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellIter->first);
                     for (SkillLineAbilityMap::const_iterator skillIter = bounds.first; skillIter != bounds.second; ++skillIter)
-                        if (skillIter->second->skillId == achievementCriteria->Entry->Asset.SkillLine)
+                        if (skillIter->second->SkillLine == achievementCriteria->Entry->Asset.SkillLine)
                             spellCount++;
                 }
                 SetCriteriaProgress(achievementCriteria, spellCount, referencePlayer);
@@ -1954,6 +2031,9 @@ bool AchievementMgr::CanCompleteCriteriaTree(CriteriaTreeNode const* tree, Playe
 
     if (achievement->Flags & (ACHIEVEMENT_FLAG_REALM_FIRST_REACH | ACHIEVEMENT_FLAG_REALM_FIRST_KILL))
     {
+        if (referencePlayer->GetSession()->HasPermission(rbac::RBAC_PERM_CANNOT_EARN_REALM_FIRST_ACHIEVEMENTS))
+            return false;
+
         // someone on this realm has already completed that achievement
         if (sAchievementMgr->IsRealmCompleted(achievement))
             return false;
@@ -2385,7 +2465,7 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement, P
     }
 
     // disable for gamemasters with GM-mode enabled
-    if (referencePlayer->IsGameMaster())
+    if (referencePlayer->IsGameMaster() || referencePlayer->GetSession()->HasPermission(rbac::RBAC_PERM_CANNOT_EARN_ACHIEVEMENTS))
         return;
 
     if (achievement->Flags & ACHIEVEMENT_FLAG_COUNTER || HasAchieved(achievement->ID))

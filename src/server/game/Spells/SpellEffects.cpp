@@ -14,6 +14,7 @@
 * You should have received a copy of the GNU General Public License along
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include "AccountMgr.h"
 #include "AreaTrigger.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
@@ -24,6 +25,7 @@
 #include "CreatureAI.h"
 #include "DatabaseEnv.h"
 #include "DynamicObject.h"
+#include "Formulas.h"
 #include "GameObject.h"
 #include "GameObjectAI.h"
 #include "GossipDef.h"
@@ -31,6 +33,7 @@
 #include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "Guild.h"
+#include "GuildMgr.h"
 #include "InstanceScript.h"
 #include "Log.h"
 #include "Language.h"
@@ -40,6 +43,7 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "OutdoorPvPMgr.h"
+#include "RBAC.h"
 #include "PathGenerator.h"
 #include "Pet.h"
 #include "PetBattle.h"
@@ -50,6 +54,7 @@
 #include "ServiceMgr.h"
 #include "SharedDefines.h"
 #include "SkillExtraItems.h"
+#include "SkillDiscovery.h"
 #include "Spell.h"
 #include "SpellAuras.h"
 #include "SpellAuraEffects.h"
@@ -240,7 +245,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectUpdatePlayerPhase,                        //167 SPELL_EFFECT_UPDATE_PLAYER_PHASE
     &Spell::EffectNULL,                                     //168 SPELL_EFFECT_168
     &Spell::EffectDestroyItem,                              //169 SPELL_EFFECT_DESTROY_ITEM
-    &Spell::EffectUpdateZoneAurasAndPhases,                 //170 SPELL_EFFECT_UPDATE_ZONE_AURAS_AND_PHASES
+    &Spell::EffectNULL,                                     //170 SPELL_EFFECT_UPDATE_ZONE_AURAS_AND_PHASES - #176: no-op as every public 5.4.8 core (was EffectUpdateZoneAurasAndPhases; its re-entry looped quest 31092, #174)
     &Spell::EffectSummonPersonalGameObject,                 //171 SPELL_EFFECT_SUMMON_PERSONAL_GAMEOBJECT
     &Spell::EffectResurrectWithAura,                        //172 SPELL_EFFECT_RESURRECT_WITH_AURA
     &Spell::EffectUnlockGuildVaultTab,                      //173 SPELL_EFFECT_UNLOCK_GUILD_VAULT_TAB
@@ -1446,7 +1451,7 @@ void Spell::EffectPowerBurn(SpellEffIndex effIndex)
         return;
 
     if (unitTarget->GetPowerType() != powerType)
-        if (m_spellInfo->Id != 108222 || GetPowerIndexByClass(powerType, unitTarget->GetClass()) == MAX_POWERS) // Mana Void (Cobalt Globule)
+        if (m_spellInfo->Id != 108222 || sDBCManager.GetPowerIndexByClass(powerType, unitTarget->GetClass()) == MAX_POWERS) // Mana Void (Cobalt Globule)
             return;
 
     // burn x% of target's mana, up to maximum of 2x% of caster's mana (Mana Burn)
@@ -1765,7 +1770,7 @@ void Spell::DoCreateItem(uint32 /*i*/, uint32 itemtype)
             bool cooking = false;
             auto bounds = sSpellMgr->GetSkillLineAbilityMapBounds(m_spellInfo->Id);
             for (auto itr = bounds.first; itr != bounds.second; ++itr)
-                if (itr->second->skillId == SKILL_COOKING || (itr->second->skillId >= SKILL_WAY_OF_THE_GRILL && itr->second->skillId <= SKILL_WAY_OF_THE_BREW))
+                if (itr->second->SkillLine == SKILL_COOKING || (itr->second->SkillLine >= SKILL_WAY_OF_THE_GRILL && itr->second->SkillLine <= SKILL_WAY_OF_THE_BREW))
                     cooking = true;
 
             if (cooking)
@@ -2279,9 +2284,13 @@ void Spell::EffectOpenLock(SpellEffIndex effIndex)
                 return;
             }
         }
-        else if (m_spellInfo->Id == 1842 && gameObjTarget->GetGOInfo()->type == GAMEOBJECT_TYPE_TRAP && gameObjTarget->GetOwner())
+        // #718: AC parity (AC SpellEffects.cpp:2249-2257) - Disarm Trap works on any trap; an unowned (spawned) trap
+        // comes back after its auto-close time. MoP GetAutoCloseTime() already returns seconds (AC's returns ms).
+        else if (m_spellInfo->Id == 1842 && gameObjTarget->GetGOInfo()->type == GAMEOBJECT_TYPE_TRAP)
         {
             gameObjTarget->SetLootState(GO_JUST_DEACTIVATED);
+            if (gameObjTarget->getLootState() == GO_JUST_DEACTIVATED && !gameObjTarget->GetOwner())
+                gameObjTarget->SetRespawnTime(gameObjTarget->GetGOInfo()->GetAutoCloseTime());
             return;
         }
         /// @todo Add script for spell 41920 - Filling, becouse server it freze when use this spell
@@ -2324,14 +2333,21 @@ void Spell::EffectOpenLock(SpellEffIndex effIndex)
             if (gameObjTarget->HasFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_LOCKED))
                 gameObjTarget->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_LOCKED);
 
-        // idk how it must works, hack for Massive Seaforium Charge at Strands of the Ancients
-        if (gameObjTarget->GetGOInfo()->type != GAMEOBJECT_TYPE_TRAP)
-            SendLoot(guid, lootType);
+        // #718: AC/TC parity (AC SpellEffects.cpp:2288-2289) - every opened GO goes through SendLoot, traps included.
+        // A planted Seaforium charge (trap 190752/195235/195331, lock 1819, opened by 1843 Disarm) is defused this
+        // way: Player::SendLoot moves it GO_READY -> GO_ACTIVATED, so the bomb branch of GameObject::Update (which
+        // only fires in GO_READY) never detonates it, and the loot release (DoLootRelease, loot empty) sets
+        // GO_JUST_DEACTIVATED, which deletes the owned charge. The old MoP hack skipped SendLoot for every trap,
+        // so a defuse cast did nothing.
+        SendLoot(guid, lootType);
     }
     else if (itemTarget)
     {
         itemTarget->SetFlag(ITEM_FIELD_DYNAMIC_FLAGS, ITEM_FLAG_UNLOCKED);
-        itemTarget->SetState(ITEM_CHANGED, player);
+        // #193: queue the save for the item's owner, as AC does. The caster may not own it (a rogue
+        // unlocking a lockbox in a trade window), and Item::AddToUpdateQueueOf drops non-owners.
+        if (Player* itemOwner = itemTarget->GetOwner())
+            itemTarget->SetState(ITEM_CHANGED, itemOwner);
     }
 
     // not allow use skill grow at item base open
@@ -2591,7 +2607,7 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                 // Summons a vehicle, but doesn't force anyone to enter it (see SUMMON_CATEGORY_VEHICLE)
                 case SUMMON_TYPE_VEHICLE:
                 case SUMMON_TYPE_VEHICLE2:
-                    summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
+                    summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, Milliseconds(duration), m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
                     break;
                 case SUMMON_TYPE_LIGHTWELL:
                 case SUMMON_TYPE_TOTEM:
@@ -2600,7 +2616,7 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                     break;
                 case SUMMON_TYPE_MINIPET:
                 {
-                    summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
+                    summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, Milliseconds(duration), m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
                     if (!summon || !summon->HasUnitTypeMask(UNIT_MASK_MINION))
                         return;
 
@@ -2655,7 +2671,7 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                             // randomize position for multiple summons
                             pos = m_caster->GetRandomPoint(*destTarget, radius);
 
-                        summon = m_originalCaster->SummonCreature(entry, pos, summonType, duration, 0, privateObjectOwner);
+                        summon = m_originalCaster->SummonCreature(entry, pos, summonType, Milliseconds(duration), 0, privateObjectOwner);
                         if (!summon)
                             continue;
 
@@ -2675,12 +2691,12 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
             SummonGuardian(effIndex, entry, properties, numSummons, privateObjectOwner);
             break;
         case SUMMON_CATEGORY_PUPPET:
-            summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
+            summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, Milliseconds(duration), m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
             break;
         case SUMMON_CATEGORY_VEHICLE:
             // Summoning spells (usually triggered by npc_spellclick) that spawn a vehicle and that cause the clicker
             // to cast a ride vehicle spell on the summoned unit.
-            summon = m_originalCaster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_caster, m_spellInfo->Id, 0, privateObjectOwner);
+            summon = m_originalCaster->GetMap()->SummonCreature(entry, *destTarget, properties, Milliseconds(duration), m_caster, m_spellInfo->Id, 0, privateObjectOwner);
             if (!summon || !summon->IsVehicle())
                 return;
 
@@ -2975,11 +2991,7 @@ void Spell::EffectDistract(SpellEffIndex /*effIndex*/)
     if (unitTarget->HasUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_STUNNED | UNIT_STATE_FLEEING))
         return;
 
-    unitTarget->SetFacingTo(unitTarget->GetAngle(destTarget));
-    unitTarget->ClearUnitState(UNIT_STATE_MOVING);
-
-    if (unitTarget->GetTypeId() == TYPEID_UNIT)
-        unitTarget->GetMotionMaster()->MoveDistract(damage * IN_MILLISECONDS);
+    unitTarget->GetMotionMaster()->MoveDistract(damage * IN_MILLISECONDS, unitTarget->GetAbsoluteAngle(destTarget));
 }
 
 void Spell::EffectPickPocket(SpellEffIndex /*effIndex*/)
@@ -3083,16 +3095,16 @@ void Spell::EffectLearnSkill(SpellEffIndex effIndex)
 
     uint32 skillid = m_spellInfo->Effects[effIndex].MiscValue;
 
-    auto entry = GetSkillRaceClassInfo(skillid, unitTarget->GetRace(), unitTarget->GetClass());
+    auto entry = sDBCManager.GetSkillRaceClassInfo(skillid, unitTarget->GetRace(), unitTarget->GetClass());
     if (!entry)
     {
         TC_LOG_ERROR("spells", "Spell::EffectLearnSkill skill (%u) not found in SkillRaceClassInfo.dbc", skillid);
         return;
     }
-    auto skillTier = sSkillTiersStore.LookupEntry(entry->SkillTierId);
+    auto skillTier = sSkillTiersStore.LookupEntry(entry->SkillTierID);
     if (!skillTier)
     {
-        TC_LOG_ERROR("spells", "Spell::EffectLearnSkill skill tier (%u) not found for skill %u", entry->SkillTierId, skillid);
+        TC_LOG_ERROR("spells", "Spell::EffectLearnSkill skill tier (%u) not found for skill %u", entry->SkillTierID, skillid);
         return;
     }
 
@@ -3175,7 +3187,7 @@ void Spell::EffectEnchantItemPerm(SpellEffIndex effIndex)
         if (!item_owner)
             return;
 
-        if (item_owner != player && player->GetSession()->GetSecurity() > SEC_PLAYER && sWorld->getBoolConfig(CONFIG_GM_LOG_TRADE))
+        if (item_owner != player && player->GetSession()->HasPermission(rbac::RBAC_PERM_LOG_GM_TRADE))
         {
             sLog->outCommand(player->GetSession()->GetAccountId(), "GM %s (Account: %u) enchanting(perm): %s (Entry: %d) for player: %s (Account: %u)",
                 player->GetName().c_str(), player->GetSession()->GetAccountId(),
@@ -3191,7 +3203,10 @@ void Spell::EffectEnchantItemPerm(SpellEffIndex effIndex)
         // remove old enchanting before applying new if equipped
         item_owner->ApplyEnchantment(itemTarget, slot, false);
 
-        itemTarget->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchant_id, 0, enchant->Charges, m_caster->GetGUID());
+        // #200: write the slot chosen above. Tinkers go to ENGINEERING_ENCHANTMENT_SLOT and stack with
+        // the permanent enchant (retail 4.0.1+); writing PERM_ENCHANTMENT_SLOT replaced the real enchant
+        // while its stats stayed applied.
+        itemTarget->SetEnchantment(slot, enchant_id, 0, enchant->Charges, m_caster->GetGUID());
 
         // add new enchanting if equipped
         item_owner->ApplyEnchantment(itemTarget, slot, true);
@@ -3321,7 +3336,7 @@ void Spell::EffectEnchantItemTmp(SpellEffIndex effIndex)
     if (!item_owner)
         return;
 
-    if (item_owner != player && player->GetSession()->GetSecurity() > SEC_PLAYER && sWorld->getBoolConfig(CONFIG_GM_LOG_TRADE))
+    if (item_owner != player && player->GetSession()->HasPermission(rbac::RBAC_PERM_LOG_GM_TRADE))
     {
         sLog->outCommand(player->GetSession()->GetAccountId(), "GM %s (Account: %u) enchanting(temp): %s (Entry: %d) for player: %s (Account: %u)",
             player->GetName().c_str(), player->GetSession()->GetAccountId(),
@@ -3557,11 +3572,11 @@ void Spell::EffectTaunt(SpellEffIndex /*effIndex*/)
     Player* player = m_caster->ToPlayer();
     if (player && player->GetRoleForGroup() == ROLES_TANK)
     {
-        if (auto currentVictim = unitTarget->GetThreatManager().getCurrentVictim())
+        if (Unit* currentVictim = unitTarget->GetThreatManager().GetCurrentVictim())
         {
             const uint32 spellVengeance = 132365;
 
-            if (AuraEffect* victimVengeance = currentVictim->getTarget()->GetAuraEffect(spellVengeance, EFFECT_0))
+            if (AuraEffect* victimVengeance = currentVictim->GetAuraEffect(spellVengeance, EFFECT_0))
             {
                 AuraEffect* myVengeance = m_caster->GetAuraEffect(spellVengeance, EFFECT_0);
                 if (!myVengeance || myVengeance->GetAmount() < victimVengeance->GetAmount() / 2)
@@ -3576,18 +3591,17 @@ void Spell::EffectTaunt(SpellEffIndex /*effIndex*/)
     }
 
     // Also use this effect to set the taunter's threat to the taunted creature's highest value
-    if (unitTarget->GetThreatManager().getCurrentVictim())
+    if (Unit* currentVictim = unitTarget->GetThreatManager().GetCurrentVictim())
     {
-        float myThreat = unitTarget->GetThreatManager().getThreat(m_caster);
-        float itsThreat = unitTarget->GetThreatManager().getCurrentVictim()->getThreat();
+        float myThreat = unitTarget->GetThreatManager().GetThreat(m_caster);
+        float itsThreat = unitTarget->GetThreatManager().GetThreat(currentVictim);
         if (itsThreat > myThreat)
-            unitTarget->GetThreatManager().addThreat(m_caster, itsThreat - myThreat);
+            unitTarget->GetThreatManager().AddThreat(m_caster, itsThreat - myThreat);
     }
 
     //Set aggro victim to caster
-    if (!unitTarget->GetThreatManager().getOnlineContainer().empty())
-        if (HostileReference* forcedVictim = unitTarget->GetThreatManager().getOnlineContainer().getReferenceByTarget(m_caster))
-            unitTarget->GetThreatManager().setCurrentVictim(forcedVictim);
+    if (unitTarget->GetThreatManager().IsThreatenedBy(m_caster))
+        unitTarget->GetThreatManager().FixateTarget(m_caster);
 
     if ((unitTarget->ToCreature()->IsAIEnabled && !unitTarget->ToCreature()->HasReactState(REACT_PASSIVE)) || (unitTarget->IsPetGuardianStuff() && unitTarget->GetCharmerOrOwnerGUID().IsPlayer()))
         unitTarget->ToCreature()->AI()->AttackStart(m_caster);
@@ -3804,7 +3818,7 @@ void Spell::EffectThreat(SpellEffIndex /*effIndex*/)
     if (!unitTarget->CanHaveThreatList())
         return;
 
-    unitTarget->AddThreat(m_caster, float(damage));
+    unitTarget->GetThreatManager().AddThreat(m_caster, float(damage));
 }
 
 void Spell::EffectHealMaxHealth(SpellEffIndex /*effIndex*/)
@@ -3906,6 +3920,19 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
     }
 }
 
+// #850: the map's GO low-guid sequence starts at 1 and the GUID key is (entry, counter), the same key DB-spawned GOs use
+// (counter = spawnId). With creatures now updating far from players, wild summons run often enough for the counter to
+// reach a loaded DB spawn of the same entry -> ObjectsStore Insert ASSERT in GameObject::AddToWorld. Skip every counter
+// that is a DB spawn id (loaded or not), so a wild GO can never collide with a spawn that is or becomes loaded.
+static ObjectGuid::LowType GenerateWildGameObjectLowGuid(Map* map)
+{
+    ObjectGuid::LowType low;
+    do
+        low = map->GenerateLowGuid<HighGuid::GameObject>();
+    while (sObjectMgr->GetGOData(uint32(low)));
+    return low;
+}
+
 void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT)
@@ -3927,7 +3954,7 @@ void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 
     Map* map = target->GetMap();
 
-    if (!pGameObj->Create(map->GenerateLowGuid<HighGuid::GameObject>(), gameobject_id, map,
+    if (!pGameObj->Create(GenerateWildGameObjectLowGuid(map), gameobject_id, map,
         m_caster->GetPhaseMask(), x, y, z, target->GetOrientation(), { }, 100, GO_STATE_READY))
     {
         delete pGameObj;
@@ -3957,7 +3984,7 @@ void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
     if (uint32 linkedEntry = pGameObj->GetGOInfo()->GetLinkedGameObjectEntry())
     {
         GameObject* linkedGO = new GameObject;
-        if (linkedGO->Create(map->GenerateLowGuid<HighGuid::GameObject>(), linkedEntry, map,
+        if (linkedGO->Create(GenerateWildGameObjectLowGuid(map), linkedEntry, map,
             m_caster->GetPhaseMask(), x, y, z, target->GetOrientation(), { }, 100, GO_STATE_READY))
         {
             linkedGO->AddToTransportIfNeeded(m_caster->GetTransport());
@@ -4593,7 +4620,12 @@ void Spell::EffectSanctuary(SpellEffIndex /*effIndex*/)
     if (!unitTarget)
         return;
 
-    unitTarget->getHostileRefManager().UpdateVisibility();
+    {
+        auto threats = unitTarget->GetThreatManager().GetThreatenedByMeList();
+        for (auto const& pair : threats)
+            if (!pair.second->GetOwner()->CanSeeOrDetect(unitTarget))
+                pair.second->ClearThreat();
+    }
 
     Unit::AttackerSet const& attackers = unitTarget->getAttackers();
     for (Unit::AttackerSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
@@ -4608,7 +4640,7 @@ void Spell::EffectSanctuary(SpellEffIndex /*effIndex*/)
     if (m_spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && (m_spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG0_ROGUE_VANISH))
     {
         // While subterfuge is active the rogue is always visible for mobs. Just ensures that threat will be removed.
-        unitTarget->getHostileRefManager().deleteReferences();
+        unitTarget->GetThreatManager().RemoveMeFromThreatLists();
         return;
     }
 
@@ -5464,24 +5496,31 @@ void Spell::EffectCharge(SpellEffIndex /*effIndex*/)
     if (!unitTarget)
         return;
 
+    Unit* unitCaster = m_caster->ToUnit();
+    if (!unitCaster)
+        return;
+
     if (effectHandleMode == SPELL_EFFECT_HANDLE_LAUNCH_TARGET)
     {
+        // charge changes fall time
+        if (unitCaster->GetTypeId() == TYPEID_PLAYER)
+            unitCaster->ToPlayer()->SetFallInformation(0, unitCaster->GetPositionZ());
+
         // Spell is not using explicit target - no generated path
-        if (!m_preGeneratedPath || m_preGeneratedPath->GetPathType() == PATHFIND_BLANK)
+        if (!m_preGeneratedPath)
         {
-            //unitTarget->GetContactPoint(m_caster, pos.m_positionX, pos.m_positionY, pos.m_positionZ);
-            Position pos = unitTarget->GetFirstCollisionPosition(unitTarget->GetObjectSize(), unitTarget->GetRelativeAngle(m_caster));
-            m_caster->GetMotionMaster()->MoveCharge(pos.m_positionX, pos.m_positionY, pos.m_positionZ);
+            Position pos = unitTarget->GetFirstCollisionPosition(unitTarget->GetCombatReach(), unitTarget->GetRelativeAngle(m_caster));
+            unitCaster->GetMotionMaster()->MoveCharge(pos.m_positionX, pos.m_positionY, pos.m_positionZ);
         }
         else
-            m_caster->GetMotionMaster()->MoveCharge(*m_preGeneratedPath);
+            unitCaster->GetMotionMaster()->MoveCharge(*m_preGeneratedPath);
     }
 
     if (effectHandleMode == SPELL_EFFECT_HANDLE_HIT_TARGET)
     {
         // not all charge effects used in negative spells
         if (!m_spellInfo->IsPositive() && m_caster->GetTypeId() == TYPEID_PLAYER)
-            m_caster->Attack(unitTarget, true);
+            unitCaster->Attack(unitTarget, true);
     }
 }
 
@@ -5843,7 +5882,7 @@ void Spell::EffectModifyThreatPercent(SpellEffIndex /*effIndex*/)
     if (!unitTarget)
         return;
 
-    unitTarget->GetThreatManager().modifyThreatPercent(m_caster, damage);
+    unitTarget->GetThreatManager().ModifyThreatByPercent(m_caster, damage);
 }
 
 void Spell::EffectTransmitted(SpellEffIndex effIndex)
@@ -6549,7 +6588,7 @@ void Spell::SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* 
             // randomize position for multiple summons
             pos = m_caster->GetRandomPoint(*destTarget, radius);
 
-        TempSummon* summon = map->SummonCreature(entry, pos, properties, duration, caster, m_spellInfo->Id, 0, privateObjectOwner);
+        TempSummon* summon = map->SummonCreature(entry, pos, properties, Milliseconds(duration), caster, m_spellInfo->Id, 0, privateObjectOwner);
         if (!summon)
             return;
         if (summon->HasUnitTypeMask(UNIT_MASK_GUARDIAN))
@@ -6610,7 +6649,7 @@ void Spell::SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* 
 
 TempSummon* Spell::SummonTotem(uint32 entry, SummonPropertiesEntry const* properties, uint32 duration, ObjectGuid privateObjectOwner)
 {
-    auto summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
+    auto summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, Milliseconds(duration), m_originalCaster, m_spellInfo->Id, 0, privateObjectOwner);
     if (!summon || !summon->IsTotem())
         return nullptr;
 
@@ -7194,6 +7233,30 @@ void Spell::EffectBonusRoll(SpellEffIndex effIndex)
 
     if (m_CastItem)
     {
+        // MoP pet-supply bags (Sack of Pet Supplies, Pandaren Spirit / Fabled Pandaren /
+        // Brawler's Pet Supplies) use SPELL_EFFECT_BONUS_ROLL. They must hand out every
+        // successful item_loot_template roll of the bag (guaranteed supply + chance items),
+        // not the single BonusLoot pick below. Scoped to these spells only so other
+        // item-cast bonus rolls (e.g. Heroic Cache of Treasures) keep their behaviour.
+        // Ported from Spell::EffectBonusRoll of an earlier MoP core.
+        switch (GetSpellInfo()->Id)
+        {
+            case 143506: // Brawler's Pet Supplies (98095)
+            case 143507: // Fabled Pandaren Pet Supplies (94207)
+            case 143508: // Sack of Pet Supplies (89125)
+            case 143509: // Pandaren Spirit Pet Supplies (93146)
+            case 143510: // Pandaren Spirit Pet Supplies (93147)
+            case 143511: // Pandaren Spirit Pet Supplies (93149)
+            case 143512: // Pandaren Spirit Pet Supplies (93148)
+            {
+                uint32 itemEntry = m_CastItem->GetEntry();
+                player->AutoStoreLoot(itemEntry, LootTemplates_Item, ItemPickupSourceType::ItemLoot, itemEntry);
+                return;
+            }
+            default:
+                break;
+        }
+
         BonusLootTemplate lootTemplate;
         lootTemplate.LootIdPersonal = m_CastItem->GetEntry();
         lootTemplate.Source = BonusLootTemplate::Item;

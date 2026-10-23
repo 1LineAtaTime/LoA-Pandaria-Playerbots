@@ -22,6 +22,7 @@
 #include "Creature.h"
 #include "GameObject.h"
 #include "QuestDef.h"
+#include <unordered_set>
 
 struct PoolTemplateData
 {
@@ -159,6 +160,7 @@ class PoolMgr
         SearchMap mGameobjectSearchMap;
         SearchMap mPoolSearchMap;
         std::unordered_map<uint32, std::vector<uint32>> mAutoSpawnPoolsPerMap;
+        std::unordered_set<uint32> mQuestPoolIds; // pool ids that have pool_quest rows (emptiness diagnostic only)
 };
 
 #define sPoolMgr PoolMgr::instance()

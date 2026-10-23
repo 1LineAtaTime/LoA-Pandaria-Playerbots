@@ -106,12 +106,31 @@ void FeralDruidStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // enemy contact", ACTION_NORMAL + 8), nullptr)));
     triggers.push_back(new TriggerNode(
         "critical health", NextAction::array(0, new NextAction("survival instincts", ACTION_EMERGENCY + 1), nullptr)));
+    // #384 (AC FeralDruidStrategy.cpp:86-87): AC fires Survival Instincts from "low health" at 91.0 (the fork's
+    // "critical health" edge above stays). Survival Instincts (61336) is spec103/104 level 56 in 5.4.8 (cls.py
+    // druid); the ActionNode falls back to barkskin when it is on cooldown.
+    triggers.push_back(new TriggerNode(
+        "low health", NextAction::array(0, new NextAction("survival instincts", ACTION_EMERGENCY + 1), nullptr)));
     triggers.push_back(new TriggerNode(
         "omen of clarity", NextAction::array(0, new NextAction("omen of clarity", ACTION_HIGH + 9), nullptr)));
     triggers.push_back(new TriggerNode("player has flag",
                                        NextAction::array(0, new NextAction("dash", ACTION_EMERGENCY + 2), nullptr)));
     triggers.push_back(new TriggerNode("enemy flagcarrier near",
                                        NextAction::array(0, new NextAction("dash", ACTION_EMERGENCY + 2), nullptr)));
-    triggers.push_back(
-        new TriggerNode("berserk", NextAction::array(0, new NextAction("berserk", ACTION_HIGH + 6), nullptr)));
+    // #595 (AC FeralDruidStrategy.cpp:75-92 has no berserk edge): the fork-only "berserk" edge (ACTION_HIGH+6) that
+    // lived here duplicated DruidBoostStrategy's "berserk" -> berserk at 27.5 (AC GenericDruidStrategy.cpp:103) and
+    // fired outside the "boost" strategy; removed, Berserk 106952 (spec103/104 L48) now comes only from "boost".
+}
+
+// #408 (AC parity, Ai/Class/Druid/Strategy/FeralDruidStrategy.cpp:94-104).
+void FeralChargeDruidStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+{
+    Player* bot = botAI->GetBot();
+
+    if (bot->HasSpell(768) /*cat form*/ && !bot->HasAura(16931) /*thick hide*/)
+        triggers.push_back(new TriggerNode(
+            "enemy out of melee", NextAction::array(0, new NextAction("feral charge - cat", 29.0f), nullptr)));
+    else
+        triggers.push_back(new TriggerNode(
+            "enemy out of melee", NextAction::array(0, new NextAction("feral charge - bear", 18.0f), nullptr)));
 }

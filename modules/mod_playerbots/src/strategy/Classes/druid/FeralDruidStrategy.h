@@ -83,4 +83,17 @@ public:
     uint32 GetType() const override { return STRATEGY_TYPE_COMBAT | STRATEGY_TYPE_MELEE; }
 };
 
+// #408 (AC parity, Ai/Class/Druid/Strategy/FeralDruidStrategy.h:91-103). Registers the
+// "enemy out of melee" -> Feral Charge trigger, spec-gated at init time so cats get
+// Feral Charge (Cat) and bears get Feral Charge (Bear).
+// Disable with: co -feral charge    Re-enable with: co +feral charge
+class FeralChargeDruidStrategy : public CombatStrategy
+{
+public:
+    FeralChargeDruidStrategy(PlayerbotAI* botAI) : CombatStrategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "feral charge"; }
+};
+
 #endif

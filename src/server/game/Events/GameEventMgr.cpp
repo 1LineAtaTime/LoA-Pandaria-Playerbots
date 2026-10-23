@@ -1283,6 +1283,13 @@ void GameEventMgr::GameEventSpawn(int16 event_id)
             // We use spawn coords to spawn
             if (!map->Instanceable() && map->IsGridLoaded(data->posX, data->posY))
             {
+                // #507: a spawn linked to two events that are both active (or already loaded by the grid)
+                // is already in the map. On continents LoA reuses the spawn id as the runtime GUID, so a
+                // second copy collides in the object store. Skip it, as TrinityCore's
+                // Creature::LoadFromDB does ("Would have spawned ... but ... already exists").
+                if (map->GetCreatureBySpawnIdStore().count(*itr))
+                    continue;
+
                 Creature* creature = new Creature;
                 //TC_LOG_DEBUG("misc", "Spawning creature %u", *itr);
                 if (!creature->LoadCreatureFromDB(*itr, map))
@@ -1310,6 +1317,12 @@ void GameEventMgr::GameEventSpawn(int16 event_id)
             // We use current coords to unspawn, not spawn coords since creature can have changed grid
             if (!map->Instanceable() && map->IsGridLoaded(data->posX, data->posY))
             {
+                // #507: same guard for gameobjects. `.event start 75` (Darkmoon Faire) asserted in
+                // Trinity::Insert<GameObject> because DMF banners are also linked to Brewfest (26), which
+                // had already spawned them; the GameObject's runtime GUID is its spawn id on continents.
+                if (map->GetGameObjectBySpawnIdStore().count(*itr))
+                    continue;
+
                 GameObject* pGameobject = new GameObject;
                 //TC_LOG_DEBUG("misc", "Spawning gameobject %u", *itr);
                 /// @todo find out when it is add to map
@@ -1727,14 +1740,15 @@ public:
     void Visit(std::unordered_map<ObjectGuid, Creature*>& creatureMap)
     {
         for (auto const& p : creatureMap)
-            if (p.second->IsInWorld() && p.second->IsAIEnabled)
+            if (p.second->IsInWorld() && p.second->IsAIEnabled && p.second->AI())
                 p.second->AI()->sOnGameEvent(_activate, _eventId);
     }
 
     void Visit(std::unordered_map<ObjectGuid, GameObject*>& gameObjectMap)
     {
+        // #917: a GameObject that has not been updated yet can still have no AI (as AzerothCore, check it).
         for (auto const& p : gameObjectMap)
-            if (p.second->IsInWorld())
+            if (p.second->IsInWorld() && p.second->AI())
                 p.second->AI()->OnGameEvent(_activate, _eventId);
     }
 

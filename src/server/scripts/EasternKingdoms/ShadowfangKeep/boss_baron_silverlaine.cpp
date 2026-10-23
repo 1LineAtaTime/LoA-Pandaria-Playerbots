@@ -45,7 +45,7 @@ enum Spells
 
 enum Adds
 {
-    NPC_RETHILGORE_DUMMY = 50085,
+    NPC_RETHILGORE_DUMMY = 51085,  // #668: was 50085 (Overlord Sunderfury); 5.4.8 SpellEffect.dbc 93926 summons 51085
     NPC_RAZORCLAW_DUMMY  = 51080,
     NPC_ODO_DUMMY        = 50934,
     NPC_NANDOS_DUMMY     = 51047,
@@ -96,13 +96,31 @@ class boss_baron_silverlaine : public CreatureScript
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
 
                 Talk(SAY_AGGRO);
-                events.ScheduleEvent(EVENT_VEIL_OF_SHADOW, 12000);
+                // #682: heroic casts Cursed Veil instead of Veil of Shadow (Wowpedia Baron Silverlaine; TCPP
+                // boss_baron_silverlaine.cpp: Cursed Veil 5 s after the pull, then every 27 s)
+                if (IsHeroic())
+                    events.ScheduleEvent(EVENT_CURSED_VEIL_H, 5000);
+                else
+                    events.ScheduleEvent(EVENT_VEIL_OF_SHADOW, 12000);
                 DoZoneInCombat();
             }
 
             void KilledUnit(Unit* /*victim*/) override
             {
                 Talk(SAY_KILL);
+            }
+
+            void JustSummoned(Creature* summon) override
+            {
+                BossAI::JustSummoned(summon);
+
+                // #668/#682: Rethilgore's Worgen Spirit is 51085 (Summon Spirit of Rethilgore 93925 -> 93926, SpellEffect.dbc
+                // MiscValue 51085), and 51085 has no ScriptName in the world DB (MoP test DB), so
+                // npc_silverlaine_worgen_spirit never ran for it and Rethilgore (93927 -> 93929 summons 50834) never came:
+                // w60-w67 saw Odo / Nandos / Razorclaw / Lupine Spectres only, never Soul Drain. Cast his spell on the spirit
+                // here, the way that AI's IsSummonedBy does for the other three; skipped once the DB binds the script.
+                if (summon->GetEntry() == NPC_RETHILGORE_DUMMY && summon->GetScriptName() != "npc_silverlaine_worgen_spirit")
+                    me->CastSpell(summon, SPELL_RETHILGORE_T, false);
             }
 
             void JustDied(Unit* /*killer*/) override
@@ -118,17 +136,18 @@ class boss_baron_silverlaine : public CreatureScript
 
             void DamageTaken(Unit* /*attacker*/, uint32& damage) override
             {
-                if (HealthBelowPct(70) && phase == 0)
+                // #682: a Worgen Spirit at 70 / 35% on normal and at 90 / 60 / 30% on heroic (Wowpedia Baron Silverlaine;
+                // TCPP boss_baron_silverlaine.cpp DamageTaken)
+                uint32 threshold = 0;
+                if (IsHeroic())
+                    threshold = phase == 0 ? 90 : phase == 1 ? 60 : phase == 2 ? 30 : 0;
+                else
+                    threshold = phase == 0 ? 70 : phase == 1 ? 35 : 0;
+
+                if (threshold && HealthBelowPct(threshold))
                 {
-                    phase = 1;
+                    ++phase;
                     DoCast(SPELL_SUMMON_WORGEN_SPIRIT);
-                    return;
-                }
-                if (HealthBelowPct(35) && phase == 1)
-                {
-                    phase = 2;
-                    DoCast(SPELL_SUMMON_WORGEN_SPIRIT);
-                    return;
                 }
             }
 
@@ -144,14 +163,20 @@ class boss_baron_silverlaine : public CreatureScript
                     
                 while (uint32 eventId = events.ExecuteEvent())
                 {
-                    if (eventId == EVENT_VEIL_OF_SHADOW)
+                    switch (eventId)
                     {
-                        if (Unit* target = me->GetVictim())
-                            DoCast(target, SPELL_VEIL_OF_SHADOW);
+                        case EVENT_VEIL_OF_SHADOW:
+                            if (Unit* target = me->GetVictim())
+                                DoCast(target, SPELL_VEIL_OF_SHADOW);
 
-                        events.ScheduleEvent(EVENT_VEIL_OF_SHADOW, 12000);
+                            events.ScheduleEvent(EVENT_VEIL_OF_SHADOW, 12000);
+                            break;
+                        case EVENT_CURSED_VEIL_H:
+                            DoCastAOE(SPELL_CURSED_VEIL_H);
+                            events.ScheduleEvent(EVENT_CURSED_VEIL_H, 27000);
+                            break;
                     }
-                    break;
+                    break;  // one cast per update (a second DoCast would cut the first one's cast time)
                 }
 
                 DoMeleeAttackIfReady();

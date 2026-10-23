@@ -195,7 +195,7 @@ class boss_volazj : public CreatureScript
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 DoCastAOE(SPELL_CLEAR_ALL_INSANITY, true);
                 me->RemoveAllAuras();
@@ -281,6 +281,9 @@ class boss_volazj : public CreatureScript
                         // Not good target or too many players
                         if (target->GetTypeId() != TYPEID_PLAYER || insanityHandled > 4)
                             return;
+                        // #569 (AC spell_herald_volzaj_insanity target filter): only players in combat with Volazj are phased.
+                        if (!me->IsInCombatWith(target))
+                            return;
 
                         // First target - start channel visual and set self as unnattackable
                         if (!insanityHandled)
@@ -298,9 +301,12 @@ class boss_volazj : public CreatureScript
                         target->CastSpell(target, InsanitySpells[insanityHandled], true);
 
                         // summon twisted party members for this target
+                        // #569: AC clones only the insanity targets (players in combat with Volazj). Cloning every map player
+                        // also cloned an idle player (the headless test master) whose visage never engaged, so summons
+                        // never emptied and Volazj stayed NOT_SELECTABLE + stunned for good (w31b: 40% vs AC 0%).
                         for (auto&& ref : me->GetMap()->GetPlayers())
                             if (Player* player = ref.GetSource())
-                                if (player->IsAlive() && player != target)
+                                if (player->IsAlive() && player != target && me->IsInCombatWith(player))
                                     player->CastSpell(player, SummonTwistedVisageSpells[insanityHandled], true);
 
                         ++insanityHandled;
@@ -401,6 +407,17 @@ class npc_twisted_visage : public CreatureScript
 
                 DoCast(summoner, SPELL_SUMMON_TWISTED_VISAGE_SPAWN, true);
 
+                // #569 (AC spell_herald_volzaj_insanity: summon->AddThreat(plrTarget) + SetInCombatWith both ways): engage the
+                // phased insanity target at once instead of waiting for it to walk into aggro range.
+                for (auto&& ref : me->GetMap()->GetPlayers())
+                    if (Player* player = ref.GetSource())
+                        if (player->IsAlive() && player != summoner && (player->GetPhaseMask() & me->GetPhaseMask() & ~uint32(1)))
+                        {
+                            me->GetThreatManager().AddThreat(player, 0.0f);
+                            AttackStart(player);
+                            break;
+                        }
+
                 if (Player* player = summoner->ToPlayer())
                 {
                     _class = player->GetClass();
@@ -425,7 +442,7 @@ class npc_twisted_visage : public CreatureScript
                 spellTimer = urand(2000, 7000);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->DespawnOrUnsummon();
             }

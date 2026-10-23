@@ -1744,7 +1744,7 @@ struct npc_monk_s_e_f_spirit : public ScriptedAI
                     if (Unit* target = me->SelectVictim())
                     {
                         float x, y, z;
-                        target->GetNearPoint(me, x, y, z, me->GetCombatReach(), CONTACT_DISTANCE, target->GetOrientation() + M_PI);
+                        target->GetNearPoint(me, x, y, z, CONTACT_DISTANCE, target->GetOrientation() + M_PI);
                         me->GetMotionMaster()->MovePoint(POINT_ATTACK_START, x, y, z);
                         state = State::GettingRound;
                     }
@@ -1784,7 +1784,7 @@ struct npc_monk_s_e_f_spirit : public ScriptedAI
         me->DespawnOrUnsummon();
     }
 
-    void EnterEvadeMode() override 
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override 
     {
         if (state == State::Attacking && me->IsAlive())
             DoDespawn();

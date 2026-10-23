@@ -18,6 +18,15 @@
 #include "ScriptPCH.h"
 #include "blackrock_caverns.h"
 
+// #699 Quake rupture. Wowpedia MediaWiki API "Rom'ogg Bonecrusher" (read 2026-10-13): "Quake: Rom'ogg Bonecrusher slams the
+// ground, cracking the earth under each player and inflicting 3000 Physical damage each second to them for 3 sec. After
+// 3 seconds, each of the ground cracks then ruptures and inflicts 7125 to 7875 Physical damage to all enemy targets
+// within 4 yards of the crack. In Heroic Difficulty, an Angered Earth creature is summoned from each ground crack."
+// Wowhead Cata tooltip 75347 Ground Rupture: "The ground ruptures, inflicting 14250 to 15750 Physical damage to enemies
+// within 4 yards of the rupture" (heroic row). DBC: Quake 75272 eff0 = 3000 x 3 s periodic damage, eff1 = SCRIPT_EFFECT on
+// every enemy (bp 75372); 75372 = SUMMON NPC 40401 ("Quake") at the caster; Ground Rupture 75347 = 4 yd damage around
+// the caster, eff1 (heroic rows) = SUMMON 50376 Angered Earth. No core code turned the script effect into the crack,
+// and the crack NPC had no AI, so neither the rupture nor (before) the heroic add came from it.
 enum ScriptTexts
 {
     SAY_AGGRO    = 0,
@@ -39,6 +48,7 @@ enum Spells
     SPELL_CHAINS_OF_WOE_TELE                    = 75437,
     SPELL_CHAINS_OF_WOE_TELE_0                  = 75464,
     SPELL_CHAINS_OF_WOE_ROOT                    = 82192,
+    SPELL_GROUND_RUPTURE                        = 75347,
 };
  
 enum Adds
@@ -108,7 +118,7 @@ class boss_romogg_bonecrusher : public CreatureScript
                     case NPC_ANGERED_EARTH:
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                         {
-                            summon->AddThreat(target, 10.0f);
+                            summon->GetThreatManager().AddThreat(target, 10.0f);
                             summon->Attack(target, true);
                             summon->GetMotionMaster()->MoveChase(target);
                         }
@@ -206,15 +216,9 @@ class boss_romogg_bonecrusher : public CreatureScript
                             events.ScheduleEvent(EVENT_WOUNDING_STRIKE, urand(6000, 7000));
                             break;
                         case EVENT_QUAKE:
+                            // each hit player gets a crack (spell_romogg_quake); 3 s later it ruptures and, on heroic,
+                            // spawns an Angered Earth (npc_romogg_quake)
                             DoCast(me, SPELL_QUAKE);
-                            if (IsHeroic())
-                            {
-                                Map::PlayerList const& players = me->GetMap()->GetPlayers();
-                                if (me->GetMap()->IsDungeon() && !players.isEmpty())
-                                    for (auto&& ref : players)
-                                        if (Player* player = ref.GetSource())
-                                            me->SummonCreature(NPC_ANGERED_EARTH, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 0);
-                            }
                             events.ScheduleEvent(EVENT_QUAKE, urand(18000, 20000));
                             break;
                     }
@@ -233,6 +237,88 @@ class boss_romogg_bonecrusher : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const override
         {
             return GetInstanceAI<boss_romogg_bonecrusherAI>(creature);
+        }
+};
+
+// Quake 75272: the script effect on every enemy cracks the earth under him (75372 summons the Quake NPC 40401). Summoned
+// by Rom'ogg so the crack keeps the creature template's hostile faction (a summon by the player would not hurt players).
+class spell_romogg_quake : public SpellScript
+{
+    PrepareSpellScript(spell_romogg_quake);
+
+    void HandleCrack(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (caster && target)
+            caster->SummonCreature(NPC_QUAKE, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 6000ms);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_romogg_quake::HandleCrack, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+// Quake NPC 40401 (ground crack): 3 s after the Quake it ruptures (Ground Rupture 75347, 4 yd around the crack). The
+// heroic Angered Earth the rupture summons is handed to Rom'ogg so it is aggroed and despawned with the encounter.
+class npc_romogg_quake : public CreatureScript
+{
+    public:
+        npc_romogg_quake() : CreatureScript("npc_romogg_quake") { }
+
+        struct npc_romogg_quakeAI : public ScriptedAI
+        {
+            npc_romogg_quakeAI(Creature* creature) : ScriptedAI(creature) { }
+
+            void Reset() override
+            {
+                me->SetReactState(REACT_PASSIVE);
+                ruptureTimer = 3000;
+            }
+
+            void IsSummonedBy(Unit* summoner) override
+            {
+                romoggGuid = summoner->GetGUID();
+                ruptureTimer = 3000;
+            }
+
+            void JustSummoned(Creature* summon) override
+            {
+                if (Creature* romogg = ObjectAccessor::GetCreature(*me, romoggGuid))
+                    if (romogg->IsAlive() && romogg->AI())
+                    {
+                        romogg->AI()->JustSummoned(summon);
+                        return;
+                    }
+
+                summon->DespawnOrUnsummon();
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (!ruptureTimer)
+                    return;
+
+                if (ruptureTimer > diff)
+                {
+                    ruptureTimer -= diff;
+                    return;
+                }
+
+                ruptureTimer = 0;
+                DoCast(me, SPELL_GROUND_RUPTURE, true);
+                me->DespawnOrUnsummon(1500);
+            }
+
+        private:
+            uint32 ruptureTimer = 3000;
+            ObjectGuid romoggGuid;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return new npc_romogg_quakeAI(creature);
         }
 };
 
@@ -352,6 +438,8 @@ class spell_romogg_skullcracker_eff : public SpellScript
 void AddSC_boss_romogg_bonecrusher()
 {
     new boss_romogg_bonecrusher();
+    new spell_script<spell_romogg_quake>("spell_romogg_quake");
+    new npc_romogg_quake();
     new spell_script<spell_chains_of_woe>("spell_chains_of_woe");
     new spell_script<spell_chains_of_woe_eff>("spell_chains_of_woe_eff");
     new spell_script<spell_chains_of_woe_teleport>("spell_chains_of_woe_teleport");

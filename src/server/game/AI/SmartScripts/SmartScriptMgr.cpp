@@ -965,7 +965,7 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
             {
                 auto it = _creatureSpellSummonCache.find(e.action.summonCreature.creature);
                 if (it != _creatureSpellSummonCache.end())
-                    TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u creature summon: There is a summon spell for creature entry %u (SpellId: %u, effect: %u)",
+                    TC_LOG_DEBUG("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u creature summon: There is a summon spell for creature entry %u (SpellId: %u, effect: %u)",
                         e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), e.action.summonCreature.creature, it->second.SpellId, it->second.EffectIndex);
             }
 
@@ -982,7 +982,7 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
             {
                 auto it = _killCreditsSpellCache.find(e.action.killedMonster.creature);
                 if (it != _killCreditsSpellCache.end())
-                    TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u Kill Credit: %u has already spell kill credit (SpellId: %u effect: %u)", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), e.action.killedMonster.creature, it->second.SpellId, it->second.EffectIndex);
+                    TC_LOG_DEBUG("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u Kill Credit: %u has already spell kill credit (SpellId: %u effect: %u)", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), e.action.killedMonster.creature, it->second.SpellId, it->second.EffectIndex);
             }
 
             if (e.GetTargetType() == SMART_TARGET_POSITION)

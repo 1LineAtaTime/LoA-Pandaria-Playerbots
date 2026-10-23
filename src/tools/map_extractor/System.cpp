@@ -917,6 +917,7 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
 
     memset(holes, 0, sizeof(holes));
     bool hasHoles = false;
+    uint32 highResHoleChunks = 0;
 
     for (int i = 0; i < ADT_CELLS_PER_GRID; ++i)
     {
@@ -925,11 +926,43 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
             adt_MCNK * cell = adt.cells[i][j];
             if (!cell)
                 continue;
-            holes[i][j] = cell->holes;
-            if (!hasHoles && cell->holes != 0)
+
+            uint16 cellHoles = static_cast<uint16>(cell->holes);
+
+            // 5.3+ "high-resolution holes" (MCNK flag 0x10000): Blizzard reuses the 8 bytes that
+            // otherwise hold offsMCVT/offsMCNR as a 64-bit hole mask (one byte per row, one bit
+            // per column). Mirrors TrinityCore master src/tools/map_extractor/System.cpp:449-461
+            // (TransformToHighRes) and :632-643 (union_5_3_0.HighResHoles overlaying offsMCVT/
+            // offsMCNR); adt.h there declares `uint8 HighResHoles[8]` unioned with those two
+            // uint32 offsets, exactly where this fork's adt_MCNK still has them as plain fields.
+            // We do the inverse of TransformToHighRes: fold each 2x2 block of high-res bits (hi
+            // row i, column j) into the matching low-res bit (i/2, j/2) with OR, instead of
+            // expanding a low-res bit into a 2x2 high-res block. This keeps the on-disk .map
+            // format (16-bit low-res holes) and the server's GridMap reader unchanged; it just
+            // stops discarding the high-res data. OR punches a whole 8.3yd low-res square where
+            // Blizzard may have only cut a 4.2yd high-res one (see mmaps-pipeline.md P1/P1b).
+            if (cell->flags & 0x10000)
+            {
+                uint8 const* hiResHoles = reinterpret_cast<uint8 const*>(&cell->offsMCVT);
+                for (int hi = 0; hi < 8; ++hi)
+                {
+                    for (int hj = 0; hj < 8; ++hj)
+                    {
+                        if ((hiResHoles[hi] >> hj) & 1)
+                            cellHoles |= static_cast<uint16>(1 << ((hi / 2) * 4 + (hj / 2)));
+                    }
+                }
+                ++highResHoleChunks;
+            }
+
+            holes[i][j] = cellHoles;
+            if (!hasHoles && cellHoles != 0)
                 hasHoles = true;
         }
     }
+
+    if (highResHoleChunks)
+        printf("  High-res holes (MCNK flag 0x10000): %u chunk(s) folded into low-res holes -> %s\n", highResHoleChunks, filename2);
 
     if (hasHoles)
         map.holesSize = sizeof(holes);

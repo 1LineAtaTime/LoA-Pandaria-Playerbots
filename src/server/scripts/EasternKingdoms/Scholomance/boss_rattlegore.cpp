@@ -107,7 +107,7 @@ class boss_rattlegore : public CreatureScript
                 RemoveSoulFlame();
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -218,16 +218,18 @@ class boss_rattlegore : public CreatureScript
                             std::list<Creature*> soul_flame_triggers;
                             me->GetCreatureListWithEntryInGrid(soul_flame_triggers, NPC_SOULFLAME_ACTIVATED_STALKER, 150.0F);
                             m_uSoul.clear();
-                            for (uint32 i = 0; i < 2; i++)
+                            // #804 (w43 crash: ASSERT in Object::GetGuidValue from this event): the old loop dereferenced begin() of a
+                            // possibly empty list and kept using an iterator it had just erased. Pick up to two distinct stalkers
+                            // that do not burn yet.
+                            soul_flame_triggers.remove_if([](Creature* c) { return !c || c->HasAura(SPELL_SOULFLAME); });
+                            for (uint32 i = 0; i < 2 && !soul_flame_triggers.empty(); i++)
                             {
                                 auto it = soul_flame_triggers.begin();
-                                if ((*it)->HasAura(SPELL_SOULFLAME))
-                                    soul_flame_triggers.erase(it);
-                                else
-                                    std::advance(it, urand(0, soul_flame_triggers.size() - 1));
-
-                                (*it)->AddAura(SPELL_SOULFLAME, (*it));
-                                m_uSoul.push_back((*it)->GetGUID());
+                                std::advance(it, urand(0, uint32(soul_flame_triggers.size()) - 1));
+                                Creature* stalker = *it;
+                                soul_flame_triggers.erase(it);
+                                stalker->AddAura(SPELL_SOULFLAME, stalker);
+                                m_uSoul.push_back(stalker->GetGUID());
                             }
                             events.ScheduleEvent(EVENT_REMOVE_SOULFLAME, 15000);
                             events.ScheduleEvent(EVENT_SOULFLAME, urand(18000, 22000));

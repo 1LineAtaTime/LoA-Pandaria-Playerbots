@@ -3237,7 +3237,7 @@ class spell_dru_starfall_damage : public SpellScript
             if (!druid->CanSeeOrDetect(target))
                 return true;
             if (Creature* creature = target->ToCreature())
-                if (!creature->GetThreatManager().getOnlineContainer().getReferenceByTarget(druid))
+                if (!creature->GetThreatManager().IsThreateningTo(druid))
                     return true;
             if (Unit* unit = target->ToUnit())
             {
@@ -3671,7 +3671,7 @@ struct npc_force_of_nature_balance : public ScriptedAI
         DoCastVictim(SPELL_WRATH);
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 };
 
 // 54983

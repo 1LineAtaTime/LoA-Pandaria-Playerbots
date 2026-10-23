@@ -1,5 +1,5 @@
 /*
-* This file is part of the Legends of Azeroth Pandria Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -25,6 +25,7 @@
 #include "QueryHolder.h"
 #include "Transaction.h"
 #include "Config.h"
+#include "SystemConfig.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
@@ -34,12 +35,15 @@
 #include "SkillExtraItems.h"
 #include "SkillDiscovery.h"
 #include "World.h"
+#include "UpdateTime.h"
 #include "AccountMgr.h"
+#include "RBAC.h"
 #include "AchievementMgr.h"
 #include "AuctionHouseBot.h"
 #include "AuctionHouseMgr.h"
 #include "BlackMarketMgr.h"
 #include "ObjectMgr.h"
+#include "Guild.h"
 #include "GuildMgr.h"
 #include "GuildFinderMgr.h"
 #include "TicketMgr.h"
@@ -55,6 +59,7 @@
 #include "CreatureAIRegistry.h"
 #include "BattlegroundMgr.h"
 #include "OutdoorPvPMgr.h"
+#include "TemporarySummon.h"
 #include "WaypointMovementGenerator.h"
 #include "M2Stores.h"
 #include "MMapFactory.h"
@@ -73,9 +78,13 @@
 #include "ScriptMgr.h"
 #include "AddonMgr.h"
 #include "LFGMgr.h"
+#include "LFGAnyLevel.h"                // #702: LFG.AnyLevel.* (off by default)
+#include "AutoBalanceLevelScaling.h"    // #702: AutoBalance.* level scaling (off by default)
+#include "BattlegroundAnyLevel.h"       // #702 P4 (#831): Battleground.AnyLevel.* (off by default)
 #include "ConditionMgr.h"
 #include "DisableMgr.h"
 #include "CharacterDatabaseCleaner.h"
+#include "ScriptMgr.h"
 #include "WeatherMgr.h"
 #include "CreatureTextMgr.h"
 #include "SmartAI.h"
@@ -97,10 +106,11 @@
 #include "Realm.h"
 #include "VMapFactory.h"
 #include "VMapManager2.h"
+#include <boost/asio/ip/address.hpp>
 #include "CharacterCache.h"
-
 #ifdef ELUNA
 #include "LuaEngine.h"
+#include "HookMgr.h"
 #endif
 
 uint8 World::m_ExitCode = SHUTDOWN_EXIT_CODE;
@@ -275,7 +285,7 @@ bool World::RemoveSession(uint32 id)
         if (itr->second->PlayerLoading())
             return false;
 
-        itr->second->KickPlayer();
+        itr->second->KickPlayer(false); // AC WorldSessionMgr::KickSession: KickPlayer("KickSession", false) (#27)
     }
 
     return true;
@@ -326,8 +336,9 @@ void World::AddSession_(WorldSession* s)
                     _offlineSessions.erase(iter);
                     delete tmp;
                 }
-                else
-                    _offlineSessions[oldSession->GetAccountId()] = oldSession;
+                // #181: always park the old session (the else-only park leaked it) and start its linger timer
+                _offlineSessions[oldSession->GetAccountId()] = oldSession;
+                m_disconnects[oldSession->GetAccountId()] = time(NULL);
             }
             else
             {
@@ -347,7 +358,7 @@ void World::AddSession_(WorldSession* s)
     if (decrease_session)
         --Sessions;
 
-    if (pLimit > 0 && Sessions >= pLimit && !s->GetSecurity() == SEC_PLAYER && !HasRecentlyDisconnected(s))
+    if (pLimit > 0 && Sessions >= pLimit && !s->HasPermission(rbac::RBAC_PERM_SKIP_QUEUE) && !HasRecentlyDisconnected(s))
     {
         AddQueuedPlayer(s);
         UpdateMaxSessionCounters();
@@ -493,6 +504,9 @@ void World::LoadConfigSettings(bool reload)
 
     if (reload)
         sLog->LoadFromConfig();
+
+    // #912 (AC World::LoadConfigSettings): load update time related configs
+    sWorldUpdateTime.LoadFromConfig();
 
     m_defaultDbcLocale = LocaleConstant(sConfigMgr->GetIntDefault("DBC.Locale", 0));
 
@@ -837,6 +851,12 @@ void World::LoadConfigSettings(bool reload)
 
     m_bool_configs[CONFIG_INSTANCE_IGNORE_LEVEL] = sConfigMgr->GetBoolDefault("Instance.IgnoreLevel", false);
     m_bool_configs[CONFIG_INSTANCE_IGNORE_RAID]  = sConfigMgr->GetBoolDefault("Instance.IgnoreRaid", false);
+
+    // #702 (all off by default): dungeon finder any-level queueing and AutoBalance instance level scaling. Kept out of
+    // the World.h config enums on purpose (no rebuild of every World.h includer); see LFGAnyLevel.h / AutoBalanceLevelScaling.h.
+    lfg::AnyLevel::LoadConfig();
+    AutoBalance::LoadConfig();
+    BattlegroundAnyLevel::LoadConfig();  // #702 P4 (#831): battleground bracket fallback + PvP scaling, BattlegroundAnyLevel.h
 
     m_bool_configs[CONFIG_CAST_UNSTUCK] = sConfigMgr->GetBoolDefault("CastUnstuck", true);
     int32 instanceResetDay = sConfigMgr->GetIntDefault("Instance.ResetTimeDay", 3);
@@ -1306,6 +1326,7 @@ void World::LoadConfigSettings(bool reload)
     TC_LOG_INFO("server.loading", "WORLD: MMap data directory is: %smmaps", m_dataPath.c_str());
 
     m_bool_configs[CONFIG_VMAP_INDOOR_CHECK] = sConfigMgr->GetBoolDefault("vmap.enableIndoorCheck", true);
+    m_bool_configs[CONFIG_DONT_CACHE_RANDOM_MOVEMENT_PATHS] = sConfigMgr->GetBoolDefault("DontCacheRandomMovementPaths", false); // AC WorldConfig.cpp:314
     bool enableIndoor = sConfigMgr->GetBoolDefault("vmap.enableIndoorCheck", true);
     bool enableLOS = sConfigMgr->GetBoolDefault("vmap.enableLOS", true);
     bool enableHeight = sConfigMgr->GetBoolDefault("vmap.enableHeight", true);
@@ -1434,6 +1455,15 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_WINTERGRASP_BATTLETIME] = sConfigMgr->GetIntDefault("Wintergrasp.BattleTimer", 30);
     m_int_configs[CONFIG_WINTERGRASP_NOBATTLETIME] = sConfigMgr->GetIntDefault("Wintergrasp.NoBattleTimer", 150);
     m_int_configs[CONFIG_WINTERGRASP_RESTART_AFTER_CRASH] = sConfigMgr->GetIntDefault("Wintergrasp.CrashRestartTimer", 10);
+
+    m_bool_configs[CONFIG_TOLBARAD_ENABLE] = sConfigMgr->GetBoolDefault("TolBarad.Enable", false);
+    m_int_configs[CONFIG_TOLBARAD_PLR_MAX] = sConfigMgr->GetIntDefault("TolBarad.PlayerMax", 100);
+    m_int_configs[CONFIG_TOLBARAD_PLR_MIN] = sConfigMgr->GetIntDefault("TolBarad.PlayerMin", 0);
+    m_int_configs[CONFIG_TOLBARAD_PLR_MIN_LVL] = sConfigMgr->GetIntDefault("TolBarad.PlayerMinLvl", 85);
+    m_int_configs[CONFIG_TOLBARAD_BATTLETIME] = sConfigMgr->GetIntDefault("TolBarad.BattleTimer", 15);
+    m_int_configs[CONFIG_TOLBARAD_BONUSTIME] = sConfigMgr->GetIntDefault("TolBarad.BonusTimer", 5);
+    m_int_configs[CONFIG_TOLBARAD_NOBATTLETIME] = sConfigMgr->GetIntDefault("TolBarad.NoBattleTimer", 150);
+    m_int_configs[CONFIG_TOLBARAD_RESTART_AFTER_CRASH] = sConfigMgr->GetIntDefault("TolBarad.CrashRestartTimer", 10);
 
     // Stats limits
     m_bool_configs[CONFIG_STATS_LIMITS_ENABLE] = sConfigMgr->GetBoolDefault("Stats.Limits.Enable", false);
@@ -1750,11 +1780,13 @@ void World::SetInitialWorldSettings()
 
     ///- Initialize VMapManager function pointers (to untangle game/collision circular deps)
     VMAP::VMapManager2* vmmgr2 = VMAP::VMapFactory::createOrGetVMapManager();
-    vmmgr2->GetLiquidFlagsPtr = &GetLiquidFlags;
+    vmmgr2->GetLiquidFlagsPtr = &DBCManager::GetLiquidFlags;
     vmmgr2->IsVMAPDisabledForPtr = &DisableMgr::IsVMAPDisabledFor;
 
     ///- Initialize config settings
     LoadConfigSettings();
+
+    sAccountMgr->LoadRBAC();
 
     ///- Initialize Allowed Security Level
     LoadDBAllowedSecurityLevel();
@@ -1804,8 +1836,13 @@ void World::SetInitialWorldSettings()
 
     ///- Load the DBC files
     TC_LOG_INFO("server.loading", "Initialize data stores...");
-    LoadDBCStores(m_dataPath, m_availableDbcLocaleMask);
-    LoadDB2Stores(m_dataPath, m_availableDbcLocaleMask);
+    sDBCManager.LoadDBCStores(m_dataPath, m_defaultDbcLocale);
+    m_availableDbcLocaleMask = sDB2Manager.LoadStores(m_dataPath, m_defaultDbcLocale);
+    if (!(m_availableDbcLocaleMask & (1 << m_defaultDbcLocale)))
+    {
+        TC_LOG_FATAL("server.loading", "Unable to load db2/dbc files for %s locale specified in DBC.Locale config!", localeNames[m_defaultDbcLocale]);
+        exit(1);
+    }
 
     // Load cinematic cameras
     LoadM2Cameras(m_dataPath);
@@ -1894,6 +1931,9 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading Transport templates...");
     sTransportMgr->LoadTransportTemplates();
+
+    TC_LOG_INFO("server.loading", "Loading Transport animations and rotations...");
+    sTransportMgr->LoadTransportAnimationAndRotation();
 
     TC_LOG_INFO("server.loading", "Loading Spell Rank Data...");
     sSpellMgr->LoadSpellRanks();
@@ -2278,9 +2318,19 @@ void World::SetInitialWorldSettings()
         sCreatureTextMgr->LoadCreatureTextLocales();
     }
 
+    ///- Initialize static helper structures (AI and movement factories).
+    /// #917: must run before OnConfigLoad. The playerbots module creates its random bot characters there,
+    /// and Player::Create instantiates the start continents, whose local transports (elevators) select
+    /// their GameObjectAI from this registry. With an empty registry they got no AI, and the first
+    /// GameEventMgr::RunSmartAIScripts call dereferenced it (AzerothCore also runs this early).
+    AIRegistry::Initialize();
+
     TC_LOG_INFO("server.loading", "Initializing Scripts...");
     sScriptMgr->Initialize();
     sScriptMgr->OnConfigLoad(false);                                // must be done after the ScriptMgr has been properly initialized
+    lfg::AnyLevel::RegisterScripts();                               // #830: the .lfgjoin command, only when LFG.AnyLevel.Enable is on
+    AutoBalance::RegisterScripts();                                 // #702: only when AutoBalance level scaling is on at startup
+    BattlegroundAnyLevel::RegisterScripts();                        // #702 P4: only when Battleground.AnyLevel.PvPScaling is on at startup
 
     TC_LOG_INFO("server.loading", "Validating spell scripts...");
     sObjectMgr->ValidateSpellScripts();
@@ -2367,9 +2417,6 @@ void World::SetInitialWorldSettings()
     mail_timer_expires = ((DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
     TC_LOG_INFO("server.loading", "Mail timer set to: " UI64FMTD ", mail return is called every " UI64FMTD " minutes", uint64(mail_timer), uint64(mail_timer_expires));
 
-    ///- Initilize static helper structures
-    AIRegistry::Initialize();
-
     ///- Initialize MapManager
     TC_LOG_INFO("server.loading", "Starting Map System");
     sMapMgr->Initialize();
@@ -2452,9 +2499,6 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading black market auctions...");
     sBlackMarketMgr->LoadAuctions();
-
-    TC_LOG_INFO("server.loading", "Loading missing KeyChains...");
-    sObjectMgr->LoadMissingKeyChains();
 
     TC_LOG_INFO("server.loading", "Loading realm completed challenges...");
     sObjectMgr->LoadRealmCompletedChallenges();
@@ -2588,6 +2632,10 @@ void World::Update(uint32 diff)
     ///- Update the game time and check for shutdown time
     _UpdateGameTime();
 
+    // #912 (AC World::Update): last-500-diffs statistics for `.server info`, plus the time.update log line
+    sWorldUpdateTime.UpdateWithDiff(diff);
+    sWorldUpdateTime.RecordUpdateTime(getMSTime(), diff, GetActiveSessionCount());
+
     /// Handle daily quests reset time
     if (m_gameTime > m_NextDailyQuestReset)
     {
@@ -2706,6 +2754,7 @@ void World::Update(uint32 diff)
     /// <li> Handle all other objects
     ///- Update objects when the timer has passed (maps, transport, creatures, ...)
     sMapMgr->Update(diff);
+    Guild::ProcessPendingXP();  // LoA upstream #455: guild XP queued by map threads, applied on the world thread
 
     if (sWorld->getBoolConfig(CONFIG_AUTOBROADCAST))
     {
@@ -2864,12 +2913,11 @@ void World::SendGlobalGMMessage(WorldPacket* packet, WorldSession* self, uint32 
     {
         // check if session and can receive global GM Messages and its not self
         WorldSession* session = itr->second;
-        Player* player = session->GetPlayer();
 
-        if (session == self || session->GetSecurity() < SEC_GAMEMASTER)
+        if (!session || session == self || !session->HasPermission(rbac::RBAC_PERM_RECEIVE_GLOBAL_GM_TEXTMESSAGE))
             continue;
 
-        // Player should be in world
+        Player* player = session->GetPlayer();
         if (!player || !player->IsInWorld())
             continue;
 
@@ -2968,7 +3016,7 @@ void World::SendGMText(int32 string_id, ...)
     {
         // Session should have permissions to receive global gm messages
         WorldSession* session = itr->second;
-        if (session->GetSecurity() < SEC_GAMEMASTER)
+        if (!session || !session->HasPermission(rbac::RBAC_PERM_RECEIVE_GLOBAL_GM_TEXTMESSAGE))
             continue;
 
         // Player should be in world
@@ -3420,7 +3468,9 @@ void World::UpdateSessions(uint32 diff)
         next = itr;
         ++next;
         WorldSession* pSession = itr->second;
-        if (!pSession->GetPlayer() || m_disconnects[pSession->GetAccountId()] + 60 < currTime)
+        // AC WorldSessionMgr::UpdateSessions (#27): a kicked parked session goes now - at shutdown
+        // World::KickAll kicks them, so they log out here and not in World::~World (static teardown)
+        if (!pSession->GetPlayer() || m_disconnects[pSession->GetAccountId()] + 60 < currTime || pSession->IsKicked())
         {
             _offlineSessions.erase(itr);
             delete pSession;
@@ -4008,6 +4058,15 @@ void World::ProcessQueryCallbacks()
     //         lResult.cancel();
     //     }
     // }
+}
+
+void World::ReloadRBAC()
+{
+    // Passive reload, we mark the data as invalidated and next time a permission is checked it will be reloaded
+    TC_LOG_INFO("rbac", "World::ReloadRBAC()");
+    for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
+        if (WorldSession* session = itr->second)
+            session->InvalidateRBACData();
 }
 
 /**

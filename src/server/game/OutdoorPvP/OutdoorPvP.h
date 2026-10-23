@@ -141,6 +141,11 @@ class OPvPCapturePoint
         bool SetCapturePointData(uint32 entry, uint32 map, float x, float y, float z, float o = 0,
             float rotation0 = 0, float rotation1 = 0, float rotation2 = 0, float rotation3 = 0);
 
+        // Read-only views of the capture bar, for consumers outside this header (the playerbots
+        // module picks which objective a roaming bot should walk to using these).
+        [[nodiscard]] float GetSlider() const { return m_value; }
+        [[nodiscard]] float GetMinValue() const { return m_minValue; }
+
     protected:
 
         bool AddObject(uint32 type, uint32 entry, uint32 map, float x, float y, float z, float o,
@@ -248,6 +253,9 @@ class OutdoorPvP : public ZoneScript
         virtual bool CanTalkTo(Player* player, Creature* c, GossipMenuItems const& gso);
 
         void TeamApplyBuff(TeamId team, uint32 spellId, uint32 spellId2 = 0);
+
+        // Read-only view of this event's objectives, keyed by capture-point lowguid.
+        [[nodiscard]] OPvPCapturePointMap const& GetCapturePoints() const { return m_capturePoints; }
 
     protected:
 

@@ -54,4 +54,24 @@ public:
     std::string const getName() override { return "healer dps"; }
 };
 
+// #408 (AC parity, AC GenericShamanStrategy.h:31-38): Boost strategy (heroism/bloodlust/fire elemental totem).
+class ShamanBoostStrategy : public Strategy
+{
+public:
+    ShamanBoostStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "boost"; }
+};
+
+// #408 (AC parity, AC GenericShamanStrategy.h:40-47): AoE strategy (fire nova / chain lightning).
+class ShamanAoeStrategy : public CombatStrategy
+{
+public:
+    ShamanAoeStrategy(PlayerbotAI* botAI) : CombatStrategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "aoe"; }
+};
+
 #endif

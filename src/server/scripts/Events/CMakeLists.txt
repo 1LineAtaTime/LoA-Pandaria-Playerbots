@@ -16,6 +16,9 @@ set(scripts_STAT_SRCS
   Events/midsummer_fire_festival.cpp
   Events/pilgrims_bounty.cpp
   Events/winter_veil.cpp
+  Events/darkmoonfaire/darkmoon_faire.h
+  Events/darkmoonfaire/darkmoon_ring_toss.cpp
+  Events/darkmoonfaire/darkmoon_cannon.cpp
 )
 
 message("  -> Prepared: Events")

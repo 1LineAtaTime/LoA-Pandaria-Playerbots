@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -16,11 +16,14 @@
 */
 
 #include "TCSoap.h"
+#include "soapH.h"
 #include "soapStub.h"
 #include "World.h"
 #include "AccountMgr.h"
 #include "Log.h"
 #include "Chat.h"
+#include <chrono>
+#include <memory>
 
 void TCSoapThread(const std::string& host, uint16 port)
 {
@@ -111,21 +114,32 @@ int ns1__executeCommand(soap* soap, char* command, char** result)
         return soap_sender_fault(soap, "Command can not be empty", "The supplied command was an empty string");
 
     TC_LOG_INFO("network.soap", "Received command '%s'", command);
-    SOAPCommand connection;
+    // #187 (AC ACSoap.cpp ns1__executeCommand): shared so the object survives if we stop waiting
+    // below - the queued command keeps a raw pointer to it and the world thread may still run it
+    // after that. The extra reference is released by commandFinished() once the world side is done.
+    auto connection = std::make_shared<SOAPCommand>();
+    connection->m_self = connection;
 
     // commands are executed in the world thread. We have to wait for them to be completed
     {
         // CliCommandHolder will be deleted from world, accessing after queueing is NOT safe
-        CliCommandHolder* cmd = new CliCommandHolder(&connection, command, &SOAPCommand::print, &SOAPCommand::commandFinished);
+        CliCommandHolder* cmd = new CliCommandHolder(connection.get(), command, &SOAPCommand::print, &SOAPCommand::commandFinished);
         sWorld->QueueCliCommand(cmd);
     }
 
-    // Wait until the command has finished executing
-    connection.finishedPromise.get_future().wait();
+    // Wait for the command to finish, but bail on shutdown: ProcessCliCommands() (which fulfils
+    // the promise) stops once the world loop exits, so an unbounded wait here deadlocks main's
+    // soapThread join (#187).
+    std::future<void> finished = connection->finishedPromise.get_future();
+    while (finished.wait_for(std::chrono::seconds(1)) != std::future_status::ready)
+    {
+        if (World::IsStopped())
+            return soap_receiver_fault(soap, "Server is shutting down", "Command aborted: the server is shutting down");
+    }
 
     // The command has finished executing already
-    char* printBuffer = soap_strdup(soap, connection.m_printBuffer.c_str());
-    if (connection.hasCommandSucceeded())
+    char* printBuffer = soap_strdup(soap, connection->m_printBuffer.c_str());
+    if (connection->hasCommandSucceeded())
     {
         *result = printBuffer;
         return SOAP_OK;
@@ -138,6 +152,8 @@ void SOAPCommand::commandFinished(void* soapconnection, bool success)
 {
     SOAPCommand* con = (SOAPCommand*)soapconnection;
     con->setCommandSuccess(success);
+    // world side is done with us; drop the keep-alive (may free the object) - #187, AC parity
+    con->m_self.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

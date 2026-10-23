@@ -16,6 +16,7 @@
 */
 
 #include "Common.h"
+#include "AutoBalanceLevelScaling.h"  // #829: AutoBalance money scaling (off unless AutoBalance.Enable.Global = 1)
 #include "Log.h"
 #include "Corpse.h"
 #include "Creature.h"
@@ -230,6 +231,11 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
 
         if (!loot)
             continue;
+
+        // #829: AutoBalance money scaling (AC PlayerScript::OnPlayerBeforeLootMoney, same place; no-op unless
+        // AutoBalance.Enable.Global = 1 in a scaled instance)
+        if (AutoBalance::IsActive())
+            AutoBalance::OnPlayerBeforeLootMoney(player, loot, guid);
 
         loot->NotifyMoneyRemoved();
         if (shareMoney && player->GetGroup())      //item, pickpocket and players can be looted only single player
@@ -581,7 +587,10 @@ void WorldSession::DoLootReleaseAll()
 
 void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
 {
-    if (!GetPlayer()->GetGroup() || GetPlayer()->GetGroup()->GetLooterGuid() != GetPlayer()->GetGUID())
+    // AC LootHandler.cpp HandleLootMasterGiveOpcode also requires MASTER_LOOT: GetLooterGuid() is the
+    // round-robin looter under the other loot methods, who must not be able to master-give.
+    if (!GetPlayer()->GetGroup() || GetPlayer()->GetGroup()->GetLooterGuid() != GetPlayer()->GetGUID()
+        || GetPlayer()->GetGroup()->GetLootMethod() != MASTER_LOOT)
     {
         GetPlayer()->SendLootRelease(GetPlayer()->GetLootGUID());
         return;
@@ -640,6 +649,14 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     if (!target)
         return;
 
+    // AC parity (LootHandler.cpp HandleLootMasterGiveOpcode: IsInRaidWith): only a member of the master
+    // looter's group can receive the item.
+    if (!GetPlayer()->IsInSameRaidWith(target))
+    {
+        TC_LOG_INFO("loot", "MasterLootItem: %s tried to give loot to %s, who is not in the group", GetPlayer()->GetName().c_str(), target->GetName().c_str());
+        return;
+    }
+
     TC_LOG_DEBUG("network", "WorldSession::HandleLootMasterGiveOpcode (CMSG_LOOT_MASTER_GIVE, 0x1DE1) Target = [%s].", target->GetName().c_str());
 
     auto& lootView = GetPlayer()->GetLootView();
@@ -648,7 +665,12 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     {
         auto it = lootView.find(lootViews[i]);
         if (it == lootView.end())
+        {
+            // #192: every early return below used to be silent, so a lost give left no trace.
+            TC_LOG_INFO("loot", "MasterLootItem: %s gave slot %u of loot " UI64FMTD " that is not in their loot view",
+                GetPlayer()->GetName().c_str(), uint32(slots[i]), lootViews[i].GetRawValue());
             continue;
+        }
 
         Loot* loot = nullptr;
 
@@ -658,7 +680,13 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
         {
             Creature* creature = GetPlayer()->GetMap()->GetCreature(lootguid);
             if (!creature)
+            {
+                // #192: the corpse decayed (Corpse.Decay.*, 60 s for a normal creature) or was unsummoned
+                // while the loot window was still open.
+                TC_LOG_INFO("loot", "MasterLootItem: %s gave slot %u of creature " UI64FMTD " which is no longer in the map",
+                    GetPlayer()->GetName().c_str(), uint32(slots[i]), lootguid.GetRawValue());
                 return;
+            }
 
             lootedObject = creature;
             loot = &creature->loot;
@@ -667,7 +695,11 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
         {
             GameObject* pGO = GetPlayer()->GetMap()->GetGameObject(lootguid);
             if (!pGO)
+            {
+                TC_LOG_INFO("loot", "MasterLootItem: %s gave slot %u of gameobject " UI64FMTD " which is no longer in the map",
+                    GetPlayer()->GetName().c_str(), uint32(slots[i]), lootguid.GetRawValue());
                 return;
+            }
 
             lootedObject = pGO;
             loot = &pGO->loot;
@@ -679,7 +711,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
         uint8 slotId = slots[i];
         if (slots[i] >= loot->items.size() + loot->quest_items.size())
         {
-            TC_LOG_DEBUG("loot", "MasterLootItem: Player %s might be using a hack! (slot %d, size %lu)",
+            TC_LOG_INFO("loot", "MasterLootItem: Player %s might be using a hack! (slot %d, size %lu)",
                 GetPlayer()->GetName().c_str(), slotId, (unsigned long)loot->items.size());
             return;
         }

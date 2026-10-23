@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -20,7 +20,9 @@
 #include "Opcodes.h"
 #include "Log.h"
 #include "ObjectMgr.h"
+#include "Player.h"
 #include "UpdateMask.h"
+#include "Path.h"
 #include "WaypointMovementGenerator.h"
 
 void WorldSession::HandleTaxiNodeStatusQueryOpcode(WorldPacket& recvData)
@@ -225,7 +227,17 @@ void WorldSession::SendDoFlight(uint32 mountDisplayId, uint32 path, uint32 pathN
         GetPlayer()->GetMotionMaster()->MovementExpired(false);
 
     if (mountDisplayId)
+    {
+        // #252: a taxi flight puts the pet away for the flight, like AC (Unit::Mount -> UnsummonPetTemporaryIfAny,
+        // AC Unit.cpp:10255-10265) and like this core's own Unit::Mount rule for flying mounts (Unit.cpp:11563-11581).
+        // The taxi mount carries no SPELL_AURA_MOUNTED, so Unit::Mount alone kept the pet out (stunned) and the
+        // follow re-anchor had to drag it along the whole route; any tick where it fell behind by more than the
+        // visibility range dropped it for good (Player.cpp:1520-1523, PET_REMOVE_FLAG_RESET_CURRENT). Landing
+        // (FlightPathMovementGenerator::DoFinalize -> Dismount, Unit.cpp:11615-11627) brings it back. Only when a
+        // mount is set: Dismount() returns early for an unmounted player, so it would never be resummoned.
+        GetPlayer()->UnsummonPetTemporaryIfAny();
         GetPlayer()->Mount(mountDisplayId);
+    }
 
     GetPlayer()->GetMotionMaster()->MoveTaxiFlight(path, pathNode);
 }
@@ -375,7 +387,13 @@ void WorldSession::HandleMoveSplineDoneOpcode(WorldPacket& recvData)
             TaxiPathNodeEntry const& node = flight->GetPath()[flight->GetCurrentNode()];
             flight->SkipCurrentNode();
 
-            GetPlayer()->TeleportTo(curDestNode->map_id, node.LocX, node.LocY, node.LocZ, GetPlayer()->GetOrientation());
+            // issue #101: this hop must keep the taxi state (TELE_TO_NOT_LEAVE_TAXI) or the flight
+            // generator is torn down mid-map-change - the bot then appears in mid-air and falls.
+            TC_LOG_DEBUG("playerbots", "[TAXI] %s continues its taxi across a map boundary to node %u (map %u)",
+                         GetPlayer()->GetName().c_str(), curDest, curDestNode->map_id);
+
+            GetPlayer()->TeleportTo(curDestNode->map_id, node.LocX, node.LocY, node.LocZ, GetPlayer()->GetOrientation(),
+                                     TELE_TO_NOT_LEAVE_TAXI);
         }
         return;
     }

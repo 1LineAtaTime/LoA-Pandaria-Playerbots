@@ -200,6 +200,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/zone_burning_steppes.cpp
   EasternKingdoms/zone_blasted_lands.cpp
   EasternKingdoms/zone_stormwind_city.cpp
+  EasternKingdoms/zone_tol_barad.cpp
   EasternKingdoms/ZulAman/boss_halazzi.cpp
   EasternKingdoms/ZulAman/boss_hexlord.cpp
   EasternKingdoms/ZulAman/boss_daakara.cpp

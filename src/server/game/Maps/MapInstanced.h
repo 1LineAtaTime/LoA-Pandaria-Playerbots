@@ -21,6 +21,7 @@
 #include "Map.h"
 #include "InstanceSaveMgr.h"
 #include "DBCEnums.h"
+#include "Log.h"
 
 class MapInstanced : public Map
 {
@@ -54,6 +55,14 @@ class MapInstanced : public Map
 
         void RemoveGridMapReference(GridCoord const& p)
         {
+            // guard against underflow: a reference removal without a matching add
+            // would wrap uint16 0 -> 65535 (issue #13)
+            if (!GridMapReference[p.x_coord][p.y_coord])
+            {
+                TC_LOG_ERROR("maps", "MapInstanced::RemoveGridMapReference: map %u (instance %u) reference underflow for grid[%u, %u] - remove without add, ignoring",
+                    GetId(), i_InstanceId, p.x_coord, p.y_coord);
+                return;
+            }
             --GridMapReference[p.x_coord][p.y_coord];
             if (!GridMapReference[p.x_coord][p.y_coord])
                 SetUnloadReferenceLock(GridCoord(63-p.x_coord, 63-p.y_coord), false);

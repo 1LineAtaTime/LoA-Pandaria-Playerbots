@@ -23,6 +23,8 @@ public:
     virtual void ExternalEvent([[maybe_unused]] std::string const param, [[maybe_unused]] Player* owner = nullptr) {}
     virtual void ExternalEvent([[maybe_unused]] WorldPacket& packet, [[maybe_unused]] Player* owner = nullptr) {}
     virtual bool IsActive() { return false; }
+    virtual bool IsBuffTrigger() { return false; }    // AC Trigger.h:30 (#628)
+    virtual bool IsDebuffTrigger() { return false; }  // AC Trigger.h:31 (#628)
     virtual NextAction** getHandlers() { return nullptr; }
     void Update() {}
     virtual void Reset() {}

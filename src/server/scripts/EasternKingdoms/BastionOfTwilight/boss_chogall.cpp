@@ -19,10 +19,10 @@
 #include"Spell.h"
 #include"bastion_of_twilight.h"
 
-// todo: ����������� � entry ����� � orders
-// todo: ����������� ���������� absorb fire, absorb shadow
-// todo: ������� ������ ������
-// todo: ����������� � ��������� fester blood
+// todo: implement entry order and orders
+// todo: implement abilities absorb fire, absorb shadow
+// todo: implement cast abilities
+// todo: implement in casting fester blood
 
 enum ScriptTexts
 {

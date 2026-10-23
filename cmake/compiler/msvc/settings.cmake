@@ -12,7 +12,7 @@
 # set up output paths for executable binaries (.exe-files, and .dll-files on DLL-capable platforms)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(MSVC_EXPECTED_VERSION 19.37.32826.1)
+set(MSVC_EXPECTED_VERSION 19.29.30159.0)
 
 if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS MSVC_EXPECTED_VERSION)
   message(FATAL_ERROR "MSVC: SkyFire requires version ${MSVC_EXPECTED_VERSION} (MSVC 2022) to build but found ${CMAKE_CXX_COMPILER_VERSION}")
@@ -43,7 +43,7 @@ endif()
 
 # Set build-directive (used in core to tell which buildtype we used)
 if("${CMAKE_MAKE_PROGRAM}" MATCHES "MSBuild")
-  add_compile_options(-D_BUILD_DIRECTIVE="$(ConfigurationName)")
+  add_compile_options(-D_BUILD_DIRECTIVE="$<CONFIG>")
 else()
   add_compile_options(-D_BUILD_DIRECTIVE="$<CONFIG>")
 endif()
@@ -80,14 +80,21 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm500")
 # 'virtual_function' : no override available for virtual member function from base 'class'; function is hidden
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /we4263 /we4264")
 
-macro(ApplyFlags variable)
-  string(REGEX REPLACE "/INCREMENTAL *" "/INCREMENTAL:NO" ${variable} "${${variable}}")
+# #72 perf: disable incremental linking unconditionally, like AC (src/cmake/compiler/msvc/settings.cmake:143-152).
+# CMake's RelWithDebInfo default is "/debug /INCREMENTAL" and this was only rewritten under BUILD_DEV (OFF in
+# build-ninja), so worldserver.exe was linked incrementally: every call went through an ILT jump thunk (5.9% of the
+# dominant map thread's samples sat on ILT+ thunks at 2000 bots, 0% on AC) and /OPT:REF,ICF were off (85 MB vs AC 53 MB).
+# /INCREMENTAL:NO with /debug turns the linker defaults /OPT:REF,ICF back on. Link flags only: no recompile, one relink.
+macro(DisableIncrementalLinking variable)
+  string(REGEX REPLACE "/INCREMENTAL(:NO)? *" "" ${variable} "${${variable}}")
+  set(${variable} "${${variable}} /INCREMENTAL:NO")
 endmacro()
 
+DisableIncrementalLinking(CMAKE_EXE_LINKER_FLAGS_DEBUG)
+DisableIncrementalLinking(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO)
+DisableIncrementalLinking(CMAKE_SHARED_LINKER_FLAGS_DEBUG)
+DisableIncrementalLinking(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO)
+
 if (BUILD_DEV)
-  ApplyFlags(CMAKE_EXE_LINKER_FLAGS_DEBUG)
-  ApplyFlags(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO)
-  ApplyFlags(CMAKE_SHARED_LINKER_FLAGS_DEBUG)
-  ApplyFlags(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
 endif()

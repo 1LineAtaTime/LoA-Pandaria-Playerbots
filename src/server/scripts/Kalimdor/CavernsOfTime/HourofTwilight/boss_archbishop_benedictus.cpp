@@ -80,8 +80,12 @@ enum Spells
     SPELL_WAVE_OF_TWILIGHT_DMG          = 103781,
 
     SPELL_WAVE_OF_LIGHT                 = 103678,
-    SPELL_WAVE_OF_LIGHT_DMG             = 103684
+    SPELL_WAVE_OF_LIGHT_DMG             = 103684,
+
+    SPELL_WATER_SHELL_BUFF              = 103744  // Refs #696: Thrall's Water Shell pulse on the players inside it
 };
+
+constexpr float WAVE_HIT_RADIUS = 6.0f;           // npc_twilight_light_wave: the wave's reach (unchanged from the old GetPlayers)
 
 enum Events
 {
@@ -221,8 +225,50 @@ class boss_archbishop_benedictus : public CreatureScript
 
             }
 
+            // Refs #696 (the #824 pattern): Thrall 54971 is put in combat with Benedictus (SendThrallInCombat) and takes no
+            // damage, so after a wipe the evaded boss was re-engaged by Thrall alone in the same update and the encounter
+            // restarted with no players. Only players (and their pets) pull him; an engage with no live player within 100 yd
+            // evades on the next update, and every evade sends Thrall back to passive.
+            void MoveInLineOfSight(Unit* who) override
+            {
+                if (!who || !who->GetCharmerOrOwnerPlayerOrPlayerItself())
+                    return;
+
+                BossAI::MoveInLineOfSight(who);
+            }
+
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
+            {
+                evadeNoPlayer = false;
+                if (me->IsAlive())
+                    if (Creature* thrall = me->FindNearestCreature(NPC_THRALL_5, 200.0f))
+                        if (thrall->AI())
+                            thrall->AI()->DoAction(ACTION_BENEDICTUS_WIPE);
+
+                BossAI::EnterEvadeMode(why);
+            }
+
+            bool AnyLivePlayerNear() const
+            {
+                Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->GetSource())
+                        if (player->IsAlive() && !player->IsGameMaster() && !player->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION)
+                            && player->IsWithinDistInMap(me, 100.0f))
+                            return true;
+                return false;
+            }
+
+            // Refs #824 w105 (boss_arcurion.cpp JustEngagedWith): a player-owned source (a dead caster's DoT, a dead owner's
+            // guardian) re-engaged the evaded Arcurion with every player dead; only a live, attackable player near starts the fight.
             void JustEngagedWith(Unit* /*who*/) override
             {
+                if (!AnyLivePlayerNear())
+                {
+                    evadeNoPlayer = true;
+                    return;
+                }
+
                 me->SetReactState(REACT_AGGRESSIVE);
                 bPhase = false;
                 _JustEngagedWith();
@@ -273,6 +319,13 @@ class boss_archbishop_benedictus : public CreatureScript
 
             void UpdateAI(uint32 diff) override
             {
+                if (evadeNoPlayer)
+                {
+                    evadeNoPlayer = false;
+                    EnterEvadeMode();
+                    return;
+                }
+
                 nonCombatEvents.Update(diff);
                 events.Update(diff);
 
@@ -350,13 +403,22 @@ class boss_archbishop_benedictus : public CreatureScript
                             events.ScheduleEvent(EVENT_SMITE, urand(5000, 7000));
                             break;
                         case EVENT_PURIFYING_LIGHT:
+                        {
+                            Creature* thrall = GetClosestCreatureWithEntry(me, NPC_THRALL_5, 100.0f);
+                            uint8 struck = 0;
                             for (uint8 i = 0; i < 3; ++i)
-                                me->SummonCreature(NPC_PURIFYING_LIGHT, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 15.0f, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000);
+                                if (Creature* orb = me->SummonCreature(NPC_PURIFYING_LIGHT, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 15.0f, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000ms))
+                                    if (thrall && thrall->AI() && struck < 2) // Refs #696: two of the three for Thrall's Chain Lightning
+                                    {
+                                        thrall->AI()->SetGUID(orb->GetGUID(), ACTION_THRALL_ORB_LIGHTNING);
+                                        ++struck;
+                                    }
                             DoCast(me, SPELL_PURIFYING_LIGHT);
                             for (auto itr : GetSphereStalkers(me, NPC_PURIFYING_LIGHT))
                                 itr->AI()->DoAction(ACTION_BLAST);
                             events.ScheduleEvent(EVENT_PURIFYING_LIGHT, urand(15000, 20000));
                             break;
+                        }
                         case EVENT_RIGHTEOUS_SNEAR:
                             DoCastAOE(SPELL_RIGHTEOUS_SNEAR_AOE);
                             events.ScheduleEvent(EVENT_RIGHTEOUS_SNEAR, urand(20000, 25000));
@@ -374,7 +436,7 @@ class boss_archbishop_benedictus : public CreatureScript
                             break;
                         case EVENT_CORRUPTING_TWILIGHT:
                             for (uint8 i = 0; i < 3; ++i)
-                                me->SummonCreature(NPC_TWILIGHT_BLAST, me->GetPositionX() + frand(-5.0f, 5.0f), me->GetPositionY() + frand(-3.0f, 3.0f), me->GetPositionZ() + 15.0f, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000);
+                                me->SummonCreature(NPC_TWILIGHT_BLAST, me->GetPositionX() + frand(-5.0f, 5.0f), me->GetPositionY() + frand(-3.0f, 3.0f), me->GetPositionZ() + 15.0f, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000ms);
                             DoCast(me, SPELL_CORRUPTING_TWILIGHT);
                             for (auto itr : GetSphereStalkers(me, NPC_TWILIGHT_BLAST))
                                 itr->AI()->DoAction(ACTION_BLAST);
@@ -385,8 +447,9 @@ class boss_archbishop_benedictus : public CreatureScript
                             events.ScheduleEvent(EVENT_TWILIGHT_SNEAR, urand(20000, 25000));
                             break;
                         case EVENT_WAVE_OF_TWILIGHT:
+                            // Refs #696: no shell in phase 2 - Thrall is held by Engulfing Twilight (103762) and Wowpedia "Archbishop
+                            // Benedictus (tactics)": "there will be no shield to hide under for the Wave of Twilight".
                             me->SummonCreature(NPC_WAVE_OF_TWILIGHT, WaveSpawnPoint, TEMPSUMMON_MANUAL_DESPAWN);
-                            SendThrallActivateShield();
                             events.ScheduleEvent(EVENT_WAVE_OF_TWILIGHT, 50000);
                             break;
                         case EVENT_WAVE_OF_LIGHT:
@@ -404,6 +467,7 @@ class boss_archbishop_benedictus : public CreatureScript
 
         private:
             bool bPhase;
+            bool evadeNoPlayer = false; // Refs #696: set in JustEngagedWith, evade on the next UpdateAI
 
             void DespawnCreatures(uint32 entry)
             {
@@ -546,27 +610,22 @@ class npc_twilight_light_wave : public CreatureScript
                 damage = 0;
             }
 
+            // Refs #696: the shell exemption checked 103688 - Thrall's channel, which no player ever carries - so it protected
+            // nobody. The players inside the shell carry its 1 s pulse 103744 (SpellEffect.dbc: 103688 PERIODIC_TRIGGER_SPELL ->
+            // 103744, 4 yd SRC_AREA_ALLY). The damage spells hit an area themselves (103684 / 103781: DEST_CASTER +
+            // UNIT_DEST_AREA_ENEMY, 15 yd), so one cast per tick is enough (one cast per player in reach hit everybody once per
+            // such player); spell_benedictus_wave_damage keeps the hit to the unshelled players within WAVE_HIT_RADIUS.
             void GetPlayers()
             {
                 std::list <Player*> PlayersInArea;
-                GetPlayerListInGrid(PlayersInArea, me, 6.0f);
-
-                if (PlayersInArea.empty())
-                    return;
+                GetPlayerListInGrid(PlayersInArea, me, WAVE_HIT_RADIUS);
 
                 for (auto itr : PlayersInArea)
-                    if (itr->IsAlive())
-                        if (!itr->HasAura(103688))
-                            switch (me->GetEntry())
-                        {
-                            case NPC_WAVE_OF_TWILIGHT:
-                                me->CastSpell(itr, SPELL_WAVE_OF_TWILIGHT_DMG, false);
-                                break;
-                            case NPC_WAVE_OF_VIRTUE:
-                                me->CastSpell(itr, SPELL_WAVE_OF_LIGHT_DMG, false);
-                                break;
-                        }
-                        
+                    if (itr->IsAlive() && !itr->HasAura(SPELL_WATER_SHELL_BUFF))
+                    {
+                        me->CastSpell(me, me->GetEntry() == NPC_WAVE_OF_TWILIGHT ? SPELL_WAVE_OF_TWILIGHT_DMG : SPELL_WAVE_OF_LIGHT_DMG, true);
+                        return;
+                    }
             }
 
             void UpdateAI(uint32 diff) override
@@ -659,7 +718,7 @@ class spell_light_wall_cosmetic : public SpellScriptLoader
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_light_wall_cosmetic_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_light_wall_cosmetic_SpellScript::FilterTargets, EFFECT_0, TARGET_DEST_NEARBY_ENTRY);
             }
         };
 
@@ -669,6 +728,32 @@ class spell_light_wall_cosmetic : public SpellScriptLoader
         }
 };
 
+// Refs #696: Wave of Virtue 103684 / Wave of Twilight 103781 damage + knockback - only the players the wave reaches that are not
+// inside Thrall's Water Shell (103744). Needs spell_script_names rows (sql/updates/world/2026_10_23_hot_benedictus_wave.sql).
+class spell_benedictus_wave_damage : public SpellScript
+{
+    PrepareSpellScript(spell_benedictus_wave_damage);
+
+    void FilterTargets(std::list<WorldObject*>& targets)
+    {
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        targets.remove_if([caster](WorldObject* target) -> bool
+        {
+            Unit* unit = target->ToUnit();
+            return !unit || unit->HasAura(SPELL_WATER_SHELL_BUFF) || caster->GetExactDist2d(unit) > WAVE_HIT_RADIUS;
+        });
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_benedictus_wave_damage::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_benedictus_wave_damage::FilterTargets, EFFECT_1, TARGET_UNIT_DEST_AREA_ENEMY);
+    }
+};
+
 void AddSC_boss_archbishop_benedictus()
 {
     new boss_archbishop_benedictus();
@@ -676,4 +761,5 @@ void AddSC_boss_archbishop_benedictus()
     new npc_twilight_light_wave();
     new spell_archbishop_benedictus_righteous_snear_aoe();
     new spell_light_wall_cosmetic();
+    new spell_script<spell_benedictus_wave_damage>("spell_benedictus_wave_damage");
 }

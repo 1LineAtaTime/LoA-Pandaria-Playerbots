@@ -126,13 +126,13 @@ struct npc_feelwood_ferli_drizzle : public ScriptedAI
 
         uint32 delay = 1000;
         scheduler
-            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay), [this](TaskContext context)
         {
             Talk(0);
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 3000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 3000), [this](TaskContext context)
         {
             if (Player* owner = ObjectAccessor::GetPlayer(*me, ownerGUID))
             {
@@ -148,7 +148,7 @@ struct npc_feelwood_ferli_drizzle : public ScriptedAI
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 2500), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 2500), [this](TaskContext context)
         {
             Talk(1);
             canAchieve = true;
@@ -176,7 +176,7 @@ struct npc_feelwood_ferli_drizzle : public ScriptedAI
                     Talk(1);
 
                     scheduler
-                        .Schedule(Milliseconds(delay += 2000), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(delay += 2000), [this](TaskContext context)
                     {
                         me->GetMotionMaster()->MovePoint(0, fulborogsLeavePos[0]);
                         me->DespawnOrUnsummon(me->GetSplineDuration());
@@ -215,12 +215,12 @@ class go_totem_of_ruumbo : public GameObjectScript
     public:
         go_totem_of_ruumbo() : GameObjectScript("go_totem_of_ruumbo") { }
 
-        bool OnQuestAccept(Player* player, GameObject* /*go*/, Quest const* quest) override
+        bool OnQuestAccept(Player* player, GameObject* go, Quest const* quest) override
         {
             if (quest->GetQuestId() == QUEST_DANCE_FOR_RUUMBO)
             {
-                player->SummonCreature(NPC_FERLI, fulborogsLeavePos[2], TEMPSUMMON_MANUAL_DESPAWN, 60 * IN_MILLISECONDS);
-                player->SummonCreature(NPC_DRIZLE, fulborogsLeavePos[3], TEMPSUMMON_MANUAL_DESPAWN, 60 * IN_MILLISECONDS);
+                player->SummonCreature(NPC_FERLI, fulborogsLeavePos[2], TEMPSUMMON_MANUAL_DESPAWN, Milliseconds(60 * IN_MILLISECONDS));
+                player->SummonCreature(NPC_DRIZLE, fulborogsLeavePos[3], TEMPSUMMON_MANUAL_DESPAWN, Milliseconds(60 * IN_MILLISECONDS));
             }
 
             return true;

@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -318,7 +318,7 @@ class InstanceScript : public ZoneScript
         //Handle open / close objects
         //use HandleGameObject(0, boolen, GO); in OnObjectCreate in instance scripts
         //use HandleGameObject(GUID, boolen, NULL); in any other script
-        void HandleGameObject(ObjectGuid guid, bool open, GameObject* go = NULL);
+        void HandleGameObject(ObjectGuid guid, bool open, GameObject* go = nullptr);
 
         //change active state of doors or buttons
         void DoUseDoorOrButton(ObjectGuid guid, uint32 withRestoreTime = 0, bool useAlternativeState = false);
@@ -379,6 +379,10 @@ class InstanceScript : public ZoneScript
 
         virtual bool SetBossState(uint32 id, EncounterState state);
         EncounterState GetBossState(uint32 id) const { return id < bosses.size() ? bosses[id].state : TO_BE_DECIDED; }
+        // Ported from AC azerothcore-wotlk InstanceScript.h:278 (1:1). MoP 5.4.8 dropped this accessor,
+        // which left no way to iterate every encounter - the Shaman "Totemic Recall" trigger needs it to
+        // tell whether ANY boss is IN_PROGRESS (AC ShamanTriggers.cpp:198). Additive; no behaviour change.
+        uint32 GetEncounterCount() const { return bosses.size(); }
         BossBoundaryMap const* GetBossBoundary(uint32 id) const { return id < bosses.size() ? &bosses[id].boundary : NULL; }
 
         // Achievement criteria additional requirements check
@@ -387,6 +391,8 @@ class InstanceScript : public ZoneScript
 
         // Checks boss requirements (one boss required to kill other)
         virtual bool CheckRequiredBosses(uint32 /*bossId*/, Player const* /*player*/ = NULL) const { return true; }
+
+        bool _SkipCheckRequiredBosses(Player const* player = NULL) const;
 
         // Checks encounter state at kill/spellcast
         void UpdateEncounterState(EncounterCreditType type, uint32 creditEntry, Unit* source);

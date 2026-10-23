@@ -73,10 +73,14 @@ class instance_stormstout_brewery : public InstanceMapScript
             std::list<Player*> payersInList;
             ObjectGuid okOokGUID, hoptallusGUID, yanzhuGUID, ookOokDoorGUID, uncleGaoGUID, chenYanzhuGUID;
             uint32 hozenSlain;
+            uint32 yanzhuBrew[3] = { 0, 0, 0 };
 
             void Initialize() override
             {
                 InitializeYanzhuAdds(2);
+                // #690: one random brew of each pair, like retail (SetData(DATA_YANZHU_BREW + i, v) overrides it for a test).
+                for (uint32 i = 0; i < 3; ++i)
+                    yanzhuBrew[i] = urand(0, 1);
 
                 SetBossNumber(MAX_ENCOUNTER);
                 LoadDoorData(doorData);
@@ -123,18 +127,15 @@ class instance_stormstout_brewery : public InstanceMapScript
                 if (n < 0)
                     return false;
 
-                // uint32 add = urand(0, 1);
-                // SetData(n + 3, add); // broken in 24459 FIXME!
-
                 yanzhuAuraMap.insert(std::make_pair(yanzhuPairs[n].entry_1, yanzhuPairs[n].spell_1));
                 yanzhuAuraMap.insert(std::make_pair(yanzhuPairs[n].entry_2, yanzhuPairs[n].spell_2));
 
                 return InitializeYanzhuAdds(n - 1);
             }
 
-            uint32 GetAddToSummonEntry(uint32 type) // always uses second value, broken in 24459 FIXME
+            uint32 GetAddToSummonEntry(uint32 type) // type 3..5 = pair 0..2; #690 reads the dedicated brew slots
             {
-                return GetData(type) ? yanzhuPairs[type - 3].entry_2 : yanzhuPairs[type - 3].entry_1;
+                return yanzhuBrew[type - 3] ? yanzhuPairs[type - 3].entry_2 : yanzhuPairs[type - 3].entry_1;
             }
 
             uint32 GetAffectedSpellToAdd(uint32 type)
@@ -169,9 +170,9 @@ class instance_stormstout_brewery : public InstanceMapScript
                         break;
                     case NPC_YAN_ZHU:
                         yanzhuGUID = creature->GetGUID();
-                        // Sudsy brew currently disabled until targeting type is fixed
+                        // #690: the real pick - one brew of each pair (Sudsy / Wall of Suds is back on).
                         for (int i = 3; i < 5 + 1; ++i)
-                            creature->AddAura(GetAffectedSpellToAdd(i) == SPELL_SUDSY_BREW ? SPELL_FIZZY_BREW : GetAffectedSpellToAdd(i), creature);
+                            creature->AddAura(GetAffectedSpellToAdd(i), creature);
                         break;
                     case NPC_HOZEN_CLINGER:
                         creature->SetCanFly(true);
@@ -353,6 +354,11 @@ class instance_stormstout_brewery : public InstanceMapScript
                         hozenSlain = data;
                         SaveToDB();
                         break;
+                    case DATA_YANZHU_BREW:
+                    case DATA_YANZHU_BREW + 1:
+                    case DATA_YANZHU_BREW + 2:
+                        yanzhuBrew[type - DATA_YANZHU_BREW] = data ? 1 : 0;
+                        break;
                 }
             }
 
@@ -362,6 +368,10 @@ class instance_stormstout_brewery : public InstanceMapScript
                 {
                     case DATA_HOZEN_SLAIN:
                         return hozenSlain;
+                    case DATA_YANZHU_BREW:
+                    case DATA_YANZHU_BREW + 1:
+                    case DATA_YANZHU_BREW + 2:
+                        return yanzhuBrew[type - DATA_YANZHU_BREW];
                 }
 
                 return 0;
@@ -493,6 +503,10 @@ class AreaTrigger_at_stormstout_intro : public AreaTriggerScript
 //7781 (just after stairs, currently unknown)
 
 //8366
+// #728: AreaTrigger 8366 (AreaTrigger.dbc, map 961) is the 80x20x10 box over the Tasting Room floor at (-697.2, 1154.8, 166.1),
+// the room where Uncle Gao brews Yan-Zhu (Wowpedia "Yan-Zhu the Uncasked", location Tasting Room, 2026-10-12). Entering it
+// starts Gao's wave event (ACTION_START_BOSS = 4, guarded by encounterStarted). Gao's own MoveInLineOfSight start (30 yd,
+// z > 160) stays as the second path. The box reaches ~80 yd from Gao, so Gao is found through the instance, not by range.
 class AreaTrigger_at_uncle_gao : public AreaTriggerScript
 {
     public:
@@ -500,7 +514,16 @@ class AreaTrigger_at_uncle_gao : public AreaTriggerScript
 
         bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/) override
         {
-            if (Creature* gao = GetClosestCreatureWithEntry(player, NPC_UNCLE_GAO, 42.f))
+            if (!player->IsAlive())
+                return false;
+
+            Creature* gao = nullptr;
+            if (InstanceScript* instance = player->GetInstanceScript())
+                gao = instance->instance->GetCreature(instance->GetGuidData(NPC_UNCLE_GAO));
+            if (!gao)
+                gao = GetClosestCreatureWithEntry(player, NPC_UNCLE_GAO, 100.f);
+
+            if (gao && gao->IsAlive() && gao->IsAIEnabled)
             {
                 gao->AI()->DoAction(4);
                 return true;
@@ -514,5 +537,5 @@ void AddSC_instance_stormstout_brewery()
 {
     new instance_stormstout_brewery();
     new AreaTrigger_at_stormstout_intro();
-    //new AreaTrigger_at_uncle_gao();
+    new AreaTrigger_at_uncle_gao(); // #728
 }

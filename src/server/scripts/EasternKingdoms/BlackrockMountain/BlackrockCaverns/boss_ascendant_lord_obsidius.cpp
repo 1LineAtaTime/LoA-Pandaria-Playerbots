@@ -18,7 +18,12 @@
 #include "ScriptPCH.h"
 #include "blackrock_caverns.h"
 
-//todo: сделать спелл трансформации
+// #699 Transformation (Wowpedia MediaWiki API "Ascendant Lord Obsidius", read 2026-10-13): "When Ascendant Lord Obsidius
+// reaches 69% and 34% of his remaining health, he will randomly target one of the Shadows of Obsidius and jump into it.
+// This results in Obsidius and the Shadow switching places." Strategy: "everything will stop for a moment ... Tank
+// threat is transferred; however, the kiter will need to pick up the assistant left in place". Retail ids: Transformation
+// 76196 / 76200 / 76211 (Wowhead Cata tooltip: "Obsidius possesses one of his shadows"; DBC: a DUMMY with a scale aura
+// on the shadow), here done in script as the swap of the two bodies' positions with a short pause.
 
 enum ScriptTexts
 {
@@ -35,6 +40,11 @@ enum Spells
     SPELL_TWITCHY               = 76167,
     SPELL_SHADOW_OF_OBSIDIUS    = 76164,
     SPELL_CREPUSCULAR_VEIL      = 76189,
+};
+
+enum Misc
+{
+    TRANSFORM_PAUSE_MS          = 2500,   // "everything will stop for a moment"
 };
 
 enum Events
@@ -74,6 +84,9 @@ class boss_ascendant_lord_obsidius : public CreatureScript
             {
                 _Reset();
                 summons.DespawnAll();
+                transformStage = 0;
+                transformPending = false;
+                pauseTimer = 0;
                 for (uint8 i = (IsHeroic() ? 0 : 1); i < 3; i++)
                     shadows[i] = me->SummonCreature(NPC_SHADOW_OF_OBSIDIUS, shadowofobsidiusPos[i]);
 
@@ -125,6 +138,39 @@ class boss_ascendant_lord_obsidius : public CreatureScript
                     summon->SetInCombatWithZone();
             }
 
+            void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+            {
+                // 69% and 34%; the swap itself runs from UpdateAI (not inside the damage call)
+                if (transformStage < 2 && !transformPending && me->HealthBelowPctDamaged(transformStage == 0 ? 69 : 34, damage))
+                    transformPending = true;
+            }
+
+            // Obsidius jumps into a random living Shadow of Obsidius: the two bodies trade places.
+            void Transform()
+            {
+                std::vector<Creature*> shadows;
+                for (ObjectGuid const& guid : summons)
+                    if (Creature* shadow = ObjectAccessor::GetCreature(*me, guid))
+                        if (shadow->GetEntry() == NPC_SHADOW_OF_OBSIDIUS && shadow->IsAlive())
+                            shadows.push_back(shadow);
+
+                ++transformStage;
+                if (shadows.empty())
+                    return;
+
+                Creature* shadow = shadows[urand(0, shadows.size() - 1)];
+                Talk(SAY_TRANSFORMATION);
+
+                Position const bossPos = me->GetPosition();
+                Position const shadowPos = shadow->GetPosition();
+                me->NearTeleportTo(shadowPos.GetPositionX(), shadowPos.GetPositionY(), shadowPos.GetPositionZ(), shadowPos.GetOrientation());
+                shadow->NearTeleportTo(bossPos.GetPositionX(), bossPos.GetPositionY(), bossPos.GetPositionZ(), bossPos.GetOrientation());
+
+                // the pause: no events, no swings for a moment
+                events.DelayEvents(TRANSFORM_PAUSE_MS);
+                pauseTimer = TRANSFORM_PAUSE_MS;
+            }
+
             void UpdateAI(uint32 diff) override
             {
                 if (!UpdateVictim())
@@ -134,6 +180,18 @@ class boss_ascendant_lord_obsidius : public CreatureScript
                 {
                     EnterEvadeMode();
                     return;
+                }
+
+                if (pauseTimer)
+                {
+                    pauseTimer = pauseTimer > diff ? pauseTimer - diff : 0;
+                    return;
+                }
+
+                if (transformPending && !me->HasUnitState(UNIT_STATE_CASTING))
+                {
+                    transformPending = false;
+                    Transform();
                 }
 
                 events.Update(diff);
@@ -166,6 +224,9 @@ class boss_ascendant_lord_obsidius : public CreatureScript
 
             private:
                 Creature* shadows[3];
+                uint8 transformStage = 0;
+                bool transformPending = false;
+                uint32 pauseTimer = 0;
         };
      
         CreatureAI* GetAI(Creature* creature) const
@@ -205,7 +266,7 @@ class npc_shadow_of_obsidius : public CreatureScript
                 if (me->GetVictim() != attacker)
                 {
                     DoResetThreat();
-                    me->AddThreat(attacker, 1000000.0f);
+                    me->GetThreatManager().AddThreat(attacker, 1000000.0f);
                     me->Attack(attacker, true);
                     me->GetMotionMaster()->MoveChase(attacker);
                 }

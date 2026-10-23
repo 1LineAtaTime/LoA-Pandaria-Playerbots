@@ -35,6 +35,7 @@
 #include "SceneMgr.h"
 #include "VignetteMgr.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/dynamic_bitset.hpp>
@@ -825,7 +826,13 @@ enum TeleportToOptions
     TELE_TO_NOT_LEAVE_TRANSPORT = 0x02,
     TELE_TO_NOT_LEAVE_COMBAT = 0x04,
     TELE_TO_NOT_UNSUMMON_PET = 0x08,
-    TELE_TO_SPELL = 0x10
+    TELE_TO_SPELL = 0x10,
+    TELE_TO_TRANSPORT_TELEPORT = 0x20,
+    // issue #101: keep the taxi/flight state across a teleport. Used by the cross-map taxi hop in
+    // TaxiHandler (and by the bot module's copy of it). Without it the flight generator was left
+    // dangling after the map change, which is what made a gryphon appear in mid-air and fall, and
+    // eventually crashed the worldserver.
+    TELE_TO_NOT_LEAVE_TAXI = 0x40
 };
 
 /// Type of environmental damages
@@ -1310,7 +1317,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
     PlayerSocial *GetSocial()
     {
-        return m_social;
+        return m_social.get();
     }
 
     PlayerTaxi m_taxi;
@@ -2879,6 +2886,9 @@ public:
     void UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow);
     void UpdatePhasing();
     void PlayerSendSetPhaseShift(std::set<uint32> const& phaseIds);
+    // #72 perf: set by WorldObject::UpdateAreaAndZonePhase when the old code would have stripped the default phase 169
+    // until the next Player::Update; WorldSession::SendSetPhaseShift then leaves 169 out of this player's own phase set
+    bool m_hidePhase169FromClient = false;
 
     uint8 m_forced_speed_changes [MAX_MOVE_TYPE];
 
@@ -3561,7 +3571,7 @@ protected:
     ////////////////////Rest System/////////////////////
 
     // Social
-    PlayerSocial *m_social;
+    std::shared_ptr<PlayerSocial> m_social;
 
     // Groups
     GroupReference m_group[(uint32)GroupSlot::Max];

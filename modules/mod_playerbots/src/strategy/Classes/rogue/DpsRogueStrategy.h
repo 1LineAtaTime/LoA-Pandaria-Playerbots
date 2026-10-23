@@ -17,7 +17,8 @@ public:
     DpsRogueStrategy(PlayerbotAI* botAI);
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
-    std::string const getName() override { return "dps"; }
+    // #593 (AC Ai/Class/*/*AiObjectContext.cpp): stored under AC's spec key so the co list matches AC; the fork key "dps" stays a registered alias.
+    std::string const getName() override { return "combat"; }
     NextAction** getDefaultActions() override;
     uint32 GetType() const override { return MeleeCombatStrategy::GetType() | STRATEGY_TYPE_DPS; }
 };

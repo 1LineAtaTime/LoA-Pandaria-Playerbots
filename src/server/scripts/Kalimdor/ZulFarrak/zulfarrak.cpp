@@ -447,7 +447,7 @@ class npc_sandfury_executioner : public CreatureScript
                 }
             }
 
-            void UpdateAI(uint32 /*diff*/) override
+            void UpdateAI(uint32 diff) override
             {
                 if (!UpdateVictim())
                     return;
@@ -613,10 +613,10 @@ class go_shallow_grave : public GameObjectScript
             {
                 uint32 randomchance = urand(0, 100);
                 if (randomchance < CHANCE_ZOMBIE)
-                    go->SummonCreature(NPC_ZOMBIE, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), 0, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000);
+                    go->SummonCreature(NPC_ZOMBIE, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), 0, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000ms);
                 else
                     if ((randomchance - CHANCE_ZOMBIE) < CHANCE_DEAD_HERO)
-                        go->SummonCreature(NPC_DEAD_HERO, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), 0, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000);
+                        go->SummonCreature(NPC_DEAD_HERO, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), 0, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000ms);
             }
             go->AddUse();
             return false;

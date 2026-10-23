@@ -52,6 +52,7 @@ EndContentData */
 #include "GameObjectAI.h"
 #include "Spell.h"
 #include "Player.h"
+#include "WorldSession.h"
 
 /*######
 ## go_cat_figurine
@@ -130,7 +131,7 @@ public:
         {
             if (player->GetQuestStatus(9678) == QUEST_STATUS_INCOMPLETE)
             {
-                if (Creature* Stillblade = player->SummonCreature(NPC_STILLBLADE, 8106.11f, -7542.06f, 151.775f, 3.02598f, TEMPSUMMON_DEAD_DESPAWN, 60000))
+                if (Creature* Stillblade = player->SummonCreature(NPC_STILLBLADE, 8106.11f, -7542.06f, 151.775f, 3.02598f, TEMPSUMMON_DEAD_DESPAWN, 60000ms))
                     Stillblade->AI()->AttackStart(player);
             }
         }
@@ -245,7 +246,7 @@ public:
         int Random = rand() % (sizeof(NpcPrisonEntry) / sizeof(uint32));
 
         if (Creature* creature = player->SummonCreature(NpcPrisonEntry[Random], go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player),
-            TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000))
+            TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000ms))
         {
             if (!creature->IsHostileTo(player))
             {
@@ -295,7 +296,7 @@ public:
         int Random = rand() % (sizeof(NpcStasisEntry) / sizeof(uint32));
 
         player->SummonCreature(NpcStasisEntry[Random], go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player),
-            TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+            TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000ms);
 
         return false;
     }
@@ -318,7 +319,7 @@ public:
     bool OnGossipHello(Player* /*player*/, GameObject* go) override
     {
         if (go->GetGoType() == GAMEOBJECT_TYPE_GOOBER)
-            go->SummonCreature(NPC_GOGGEROC, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 300000);
+            go->SummonCreature(NPC_GOGGEROC, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 300000ms);
 
         return false;
     }
@@ -341,7 +342,7 @@ public:
     bool OnGossipHello(Player* player, GameObject* go) override
     {
         if (go->GetGoType() == GAMEOBJECT_TYPE_GOOBER)
-            player->SummonCreature(NPC_ARIKARA, -5008.338f, -2118.894f, 83.657f, 0.874f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+            player->SummonCreature(NPC_ARIKARA, -5008.338f, -2118.894f, 83.657f, 0.874f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000ms);
 
         return true;
     }
@@ -387,7 +388,7 @@ public:
         }
 
         if (BirdEntry)
-            player->SummonCreature(BirdEntry, fX, fY, fZ, go->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 60000);
+            player->SummonCreature(BirdEntry, fX, fY, fZ, go->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 60000ms);
 
         return false;
     }
@@ -414,7 +415,7 @@ public:
         //implicitTarget=48 not implemented as of writing this code, and manual summon may be just ok for our purpose
         //player->CastSpell(player, SPELL_SUMMON_RIZZLE, false);
 
-        if (Creature* creature = player->SummonCreature(NPC_RIZZLE, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_DEAD_DESPAWN, 0))
+        if (Creature* creature = player->SummonCreature(NPC_RIZZLE, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_DEAD_DESPAWN, 0ms))
             creature->CastSpell(player, SPELL_BLACKJACK, false);
 
         return false;
@@ -696,7 +697,7 @@ public:
     {
         if (player->GetQuestStatus(QUEST_PRISON_BREAK) == QUEST_STATUS_INCOMPLETE)
         {
-            go->SummonCreature(25318, 3485.089844f, 6115.7422188f, 70.966812f, 0, TEMPSUMMON_TIMED_DESPAWN, 60000);
+            go->SummonCreature(25318, 3485.089844f, 6115.7422188f, 70.966812f, 0, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
             player->CastSpell(player, SPELL_ARCANE_PRISONER_KILL_CREDIT, true);
             return true;
         }
@@ -722,7 +723,7 @@ public:
     bool OnGossipHello(Player* player, GameObject* go) override
     {
         if (go->GetGoType() == GAMEOBJECT_TYPE_GOOBER)
-            player->SummonCreature(NPC_ZELEMAR, -369.746f, 166.759f, -21.50f, 5.235f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+            player->SummonCreature(NPC_ZELEMAR, -369.746f, 166.759f, -21.50f, 5.235f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000ms);
 
         return true;
     }
@@ -857,7 +858,7 @@ public:
         if (!player->HasItemCount(ITEM_TELEPORTER_POWER_PACK))
             return false;
 
-        go->SummonCreature(NPC_IMAGE_WIND_TRADER, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000);
+        go->SummonCreature(NPC_IMAGE_WIND_TRADER, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000ms);
 
         return true;
     }
@@ -1071,8 +1072,8 @@ public:
     bool OnGossipHello(Player* player, GameObject* go) override
     {
         player->SendLoot(go->GetGUID(), LOOT_CORPSE);
-        go->SummonCreature(NPC_HIVE_AMBUSHER, go->GetPositionX()+1, go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000);
-        go->SummonCreature(NPC_HIVE_AMBUSHER, go->GetPositionX(), go->GetPositionY()+1, go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000);
+        go->SummonCreature(NPC_HIVE_AMBUSHER, go->GetPositionX()+1, go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000ms);
+        go->SummonCreature(NPC_HIVE_AMBUSHER, go->GetPositionX(), go->GetPositionY()+1, go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000ms);
         return true;
     }
 };

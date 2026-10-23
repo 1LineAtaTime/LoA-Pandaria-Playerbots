@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ObjectMgr.h"
+#include "ScriptMgr.h"
 #include "Vehicle.h"
 
 enum GalionSpellData
@@ -106,7 +107,7 @@ class boss_galion : public CreatureScript
 
             void KilledUnit(Unit* /*victim*/) override { }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 summons.DespawnAll();
                 _DespawnAtEvade();

@@ -1,6 +1,7 @@
 #include "RandomPlayerbotBracketMgr.h"
 
 #include "Helper.h"
+#include "PlayerbotAIConfig.h"
 #include "PlayerbotSpec.h"
 #include "RandomPlayerbotMgr.h"
 
@@ -95,6 +96,10 @@ void RandomBotBacketManager::AdjustBotToRange(Player* bot, int targetRangeIndex,
 
 void RandomBotBacketManager::Update(uint32 diff)
 {
+    // issue #136: AC has no bracket manager; with DisableRandomLevels the level comes from RandombotStartingLevel.
+    if (sPlayerbotAIConfig->disableRandomLevels)
+        return;
+
     _timer += diff;
     if (_timer < (_BotDistCheckFrequency * 1000))
         return;

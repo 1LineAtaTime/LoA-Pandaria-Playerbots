@@ -5,6 +5,8 @@
 
 #include "PartyMemberToHealValue.h"
 
+#include "Group.h"
+#include "ObjectAccessor.h"
 #include "Playerbots.h"
 #include "PlayerbotSpec.h"
 #include "ServerFacade.h"
@@ -38,6 +40,35 @@ Unit* PartyMemberToHeal::Calculate()
 
     bool isRaid = bot->GetGroup()->isRaidGroup();
     MinValueCalculator calc(100);
+
+    // #163 S8 (AC parity, PartyMemberToHeal.cpp:41-67): when the "focus heal targets" strategy is
+    // active, heal only the hand-picked list instead of the whole group.
+    if (botAI->HasStrategy("focus heal targets", BOT_STATE_COMBAT))
+    {
+        GuidVector const focusHealTargets = AI_VALUE(GuidVector, "focus heal targets");
+
+        for (ObjectGuid const& focusHealTarget : focusHealTargets)
+        {
+            Player* player = ObjectAccessor::FindPlayer(focusHealTarget);
+            if (!player || !player->IsInWorld() || !player->IsAlive() || !player->IsInSameGroupWith(bot))
+                continue;
+
+            float health = player->GetHealthPct();
+            if (isRaid || health < sPlayerbotAIConfig->mediumHealth || !IsTargetOfSpellCast(player, predicate))
+            {
+                float probeValue = 100.0f;
+                if (player->GetDistance2d(bot) > sPlayerbotAIConfig->healDistance)
+                    probeValue = health + 30.0f;
+                else
+                    probeValue = health + player->GetDistance2d(bot) / 10.0f;
+
+                if (probeValue < calc.minValue && Check(player))
+                    calc.probe(probeValue, player);
+            }
+        }
+
+        return (Unit*)calc.param;
+    }
 
     for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
     {
@@ -148,4 +179,31 @@ Unit* PartyMemberToProtect::Calculate()
     sort(needProtect.begin(), needProtect.end(), compareByHealth);
 
     return needProtect[0];
+}
+
+// #163 S8 (AC parity, PartyMemberToHeal.cpp:138-162): the group's healer with the lowest mana %.
+Unit* HealerLowMana::Calculate()
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return nullptr;
+
+    MinValueCalculator calc(100);
+
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* player = gref->GetSource();
+        if (!player || player == bot)
+            continue;
+        if (player->IsGameMaster() || !player->IsAlive())
+            continue;
+        if (!PlayerBotSpec::IsHeal(player))
+            continue;
+
+        float mana = player->GetPowerPct(POWER_MANA);
+        if (mana < calc.minValue)
+            calc.probe(mana, player);
+    }
+
+    return (Unit*)calc.param;
 }

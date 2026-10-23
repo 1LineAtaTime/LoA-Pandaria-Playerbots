@@ -647,7 +647,7 @@ class npc_dragon_soul_twilight_portal : public CreatureScript
 
                 events.Update(diff);
 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                 {
                     if (!SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
                     {
@@ -708,7 +708,7 @@ class npc_dragon_soul_crimson_globule : public CreatureScript
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
                 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                 {
                     me->CastCustomSpell(SPELL_SEARING_BLOOD, SPELLVALUE_MAX_TARGETS, RAID_MODE(3, 8), me); 
                     events.ScheduleEvent(EVENT_SEARING_BLOOD, (me->HasAura(SPELL_GLOWING_BLOOD_OF_SHUMA_2) ? 7000 : 14000));
@@ -768,7 +768,7 @@ class npc_dragon_soul_acidic_globule : public CreatureScript
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
                 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                 {
                     DoCastAOE(SPELL_DIGESTIVE_ACID);
                     events.ScheduleEvent(EVENT_DIGESTIVE_ACID, (me->HasAura(SPELL_GLOWING_BLOOD_OF_SHUMA_2) ? 7000 : 14000));
@@ -828,7 +828,7 @@ class npc_dragon_soul_dark_globule : public CreatureScript
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
                 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                 {
                     DoCastVictim(SPELL_PSYCHIC_SLICE);
                     events.ScheduleEvent(EVENT_PSYCHIC_SLICE, (me->HasAura(SPELL_GLOWING_BLOOD_OF_SHUMA_2) ? 7000 : 14000));
@@ -888,7 +888,7 @@ class npc_dragon_soul_shadowed_globule : public CreatureScript
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
                 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                 {
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
                         DoCast(target, SPELL_DEEP_CORRUPTION);
@@ -951,7 +951,7 @@ class npc_dragon_soul_cobalt_globule : public CreatureScript
 
                 events.Update(diff);
 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                     DoCast(me, SPELL_MANA_VOID);
 
                 DoMeleeAttackIfReady();
@@ -1186,7 +1186,7 @@ class npc_dragon_soul_eye_of_gorath : public CreatureScript
 
                 events.Update(diff);
 
-                if (events.ExecuteEvent())
+                if (uint32 eventId = events.ExecuteEvent())
                 {
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
                         DoCast(target, SPELL_SHADOW_GAZE);
@@ -1644,8 +1644,8 @@ class npc_dragon_soul_thrall : public CreatureScript
                             break;
                         case EVENT_SPAWN_NPC:
                             instance->DoRemoveAurasDueToSpellOnPlayers(106368); // Twilight Shift
-                            me->SummonCreature(NPC_SKY_CAPTAIN_SWAYZE, customPos[1], TEMPSUMMON_MANUAL_DESPAWN, 0);
-                            me->SummonCreature(NPC_KAANU_REEVS, customPos[2], TEMPSUMMON_MANUAL_DESPAWN, 0);
+                            me->SummonCreature(NPC_SKY_CAPTAIN_SWAYZE, customPos[1], TEMPSUMMON_MANUAL_DESPAWN, 0ms);
+                            me->SummonCreature(NPC_KAANU_REEVS, customPos[2], TEMPSUMMON_MANUAL_DESPAWN, 0ms);
                             if (Creature* pSwayze = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_SWAYZE)))
                                 pSwayze->AI()->Talk(9);
                             events.ScheduleEvent(EVENT_TALK_ULTRAXION_WIN_1, 10000);
@@ -1896,7 +1896,7 @@ class npc_dragon_soul_twilight_assaulter : public CreatureScript
                 if (me->GetReactState() == REACT_PASSIVE)
                 {
                     me->CombatStop(true);
-                    me->getHostileRefManager().deleteReferences();
+                    me->GetThreatManager().RemoveMeFromThreatLists();
                     if (wasChanneling)
                         DoCastAOE(SPELL_TWLIGHT_FLAMES_CHANNEL);
                     return;
@@ -1990,7 +1990,7 @@ class npc_dragon_soul_twilight_assaulter : public CreatureScript
                     if (me->IsInCombat())
                     {
                         me->CombatStop(true);
-                        me->getHostileRefManager().deleteReferences();
+                        me->GetThreatManager().RemoveMeFromThreatLists();
                         EnterEvadeMode();
                     }
                 }
@@ -2303,7 +2303,7 @@ class spell_dragon_soul_cobalt_globule_mana_void : public SpellScriptLoader
                             return true;
                         if (unit->ToPlayer()->GetPowerType() == POWER_MANA)
                             return false;
-                        return GetPowerIndexByClass(POWER_MANA, unit->ToPlayer()->GetClass()) == MAX_POWERS;
+                        return sDBCManager.GetPowerIndexByClass(POWER_MANA, unit->ToPlayer()->GetClass()) == MAX_POWERS;
                     }
             };
         };

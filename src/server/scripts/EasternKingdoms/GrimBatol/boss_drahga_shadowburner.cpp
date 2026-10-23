@@ -20,20 +20,29 @@
 #include "ScriptPCH.h"
 #include "Vehicle.h"
 
-// todo: починить spell_flaming_fixate
+// #688: Flaming Fixate and the Valiona phase follow the real fight (Wowpedia Drahga_Shadowburner, fetched 2026-10-23) and the
+// 4.3.4 script of the Cataclysm Preservation Project (TrinityCore fork, GrimBatol/boss_drahga_shadowburner.cpp @0927c5af):
+// the Invoked Flaming Spirit fixates one random player (82850) after 2 s and chases only that player; Drahga keeps casting
+// Burning Shadowbolt and Invocation of Flame from Valiona's back; Valiona breathes Valiona's Flame at a random player
+// (heroic: Devouring Flames at a Devouring Flames stalker on a random player) and leaves at 20% health.
 
+// #688 R15: the groups of creature_text 40319 / 40320 (test world DB) and the 4.3.4 Texts enum. The old values were off by one
+// or two: a kill said the spirit emote, every Invocation of Flame said "Dragon, you will do as I command! Catch me!" and
+// Valiona leaving announced "begins to cast Devouring Flames".
 enum ScriptTexts
 {
     // drahga
-    SAY_AGGRO                          = 0,
-    SAY_KILL                           = 2,
-    SAY_DEATH                          = 3,
-    SAY_ADDS                           = 4,
-    SAY_VALIONA                        = 5,
-                                       
-    // valiona                         
-    SAY_ENTER                          = 0,
-    SAY_LEAVE                          = 1,
+    SAY_AGGRO                          = 1,   // group 0 holds the same line (4.3.4 SAY_INTRO)
+    SAY_ANNOUNCE_ADDS                  = 2,   // raid boss emote: summons an Invoked Flaming Spirit
+    SAY_ADDS                           = 3,   // "BY FIRE BE... BURNED!" / "INCINERATE THEM, MINIONS!"
+    SAY_VALIONA                        = 4,   // "Dragon, you will do as I command! Catch me!"
+    SAY_KILL                           = 5,
+    SAY_DEATH                          = 6,
+
+    // valiona
+    SAY_ENTER                          = 0,   // "If they do not kill you, I will do it myself!"
+    SAY_ANNOUNCE_DEVOURING_FLAMES      = 1,   // raid boss emote (heroic)
+    SAY_LEAVE                          = 2,   // "I will not die for you, Drahga."
 };
 
 enum Spells
@@ -50,7 +59,8 @@ enum Spells
     SPELL_SEEPING_TWILIGHT             = 75274,
     SPELL_SEEPING_TWILIGHT_DMG         = 75317,
     SPELL_VALIONAS_FLAME               = 75321,
-    SPELL_DEVOURING_FLAMES             = 90950,
+    SPELL_DEVOURING_FLAMES             = 90950,   // 2.5 s cast, 5 s channel on the 48798 stalker -> 90949 every 1 s
+    SPELL_DEVOURING_FLAMES_DMG         = 90949,   // 150 degree cone, 40k at Valiona, less with distance (spell script below)
 };
 
 enum Adds
@@ -75,6 +85,7 @@ enum Events
 enum Actions
 {
     ACTION_VALIONA_LEAVE               = 1,
+    ACTION_CLEAR_FIXATE                = 2,   // Invoked Flaming Spirit: drop Flaming Fixate from its target (Supernova)
 };
 
 const Position drahgavalionaPos[3] =
@@ -121,7 +132,10 @@ class boss_drahga_shadowburner : public CreatureScript
 
                 me->ExitVehicle();
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetReactState(REACT_AGGRESSIVE);
                 summons.DespawnAll();
+                if (instance)
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_FLAMING_FIXATE);
                 stage = 0;
             }
 
@@ -164,8 +178,10 @@ class boss_drahga_shadowburner : public CreatureScript
 
             void DoAction(int32 actionId) override
             {
-                events.ScheduleEvent(EVENT_BURNING_SHADOWBOLT, urand(2000, 5000));
+                events.RescheduleEvent(EVENT_BURNING_SHADOWBOLT, urand(2000, 5000));
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                // Valiona has left: Drahga fights on foot again (he stayed REACT_PASSIVE from the 30% transition before).
+                me->SetReactState(REACT_AGGRESSIVE);
                 if (Player* itr = me->FindNearestPlayer(80.0f))
                     me->AI()->AttackStart(itr);
             }
@@ -179,6 +195,8 @@ class boss_drahga_shadowburner : public CreatureScript
 
                 Talk(SAY_DEATH);
                 summons.DespawnAll();
+                if (instance)
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_FLAMING_FIXATE);
             }
 
             void KilledUnit(Unit* /*victim*/) override
@@ -197,6 +215,9 @@ class boss_drahga_shadowburner : public CreatureScript
                         valiona->SetCanFly(true);
                         me->EnterVehicle(valiona, 0);
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        // Wowpedia: "Drahga will continue casting fireballs at random party members and summoning elemental
+                        // adds during this phase" (4.3.4 reschedules both when Valiona lands). Invocation never stopped.
+                        events.RescheduleEvent(EVENT_BURNING_SHADOWBOLT, 8000);
                     }
                 }
             }
@@ -242,7 +263,8 @@ class boss_drahga_shadowburner : public CreatureScript
                                 target->GetPositionX(),
                                 target->GetPositionY(),
                                 target->GetPositionZ(),
-                                0.0f, TEMPSUMMON_TIMED_DESPAWN, 6000);
+                                0.0f, TEMPSUMMON_TIMED_DESPAWN, 6000ms);
+                                Talk(SAY_ANNOUNCE_ADDS);
                                 Talk(SAY_ADDS);
                             }
                             events.ScheduleEvent(EVENT_INVOCATION_OF_FLAME, 20000);
@@ -295,6 +317,7 @@ class npc_drahga_valiona : public CreatureScript
                 nonCombatEvents.ScheduleEvent(EVENT_VALIONA_MOVE, 100);
                 me->SetCanFly(true);
                 me->SetDisableGravity(true);
+                Talk(SAY_ENTER);   // 4.3.4 EVENT_MOVE_INTRO
             }
 
             void Reset() override
@@ -308,6 +331,16 @@ class npc_drahga_valiona : public CreatureScript
             void JustSummoned(Creature* summon) override
             {
                 summons.Summon(summon);
+
+                // Heroic Devouring Flames: turn to the stalker on the random player and channel at it (4.3.4 JustSummoned).
+                // 90950 targets the nearest 48798 (TARGET_UNIT_NEARBY_ENTRY, conditions row in the #688 SQL).
+                if (summon->GetEntry() == NPC_DEVOURING_FLAMES)
+                {
+                    summon->SetReactState(REACT_PASSIVE);
+                    me->SetFacingToObject(summon);
+                    Talk(SAY_ANNOUNCE_DEVOURING_FLAMES);
+                    me->CastSpell(summon, SPELL_DEVOURING_FLAMES, false);
+                }
             }
 
             void SummonedCreatureDespawn(Creature* summon) override
@@ -317,7 +350,8 @@ class npc_drahga_valiona : public CreatureScript
 
             void JustEngagedWith(Unit* /*who*/) override
             {
-                events.ScheduleEvent(EVENT_VALIONAS_FLAME, urand(10000, 15000));
+                // 4.3.4: Shredding Swipe 1 s after landing then every 25 s; the breath at 15.5 s then every 25 s.
+                events.ScheduleEvent(EVENT_VALIONAS_FLAME, 15500);
                 events.ScheduleEvent(EVENT_SHREDDING_SWIPE, urand(8000, 10000));
             }
 
@@ -347,7 +381,7 @@ class npc_drahga_valiona : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (me->GetVehicleKit())
                     me->GetVehicleKit()->RemoveAllPassengers();
@@ -371,10 +405,12 @@ class npc_drahga_valiona : public CreatureScript
                 if (!UpdateVictim())
                     return;
 
-                if (me->HealthBelowPct(30) && stage == 0)
+                // Wowpedia / 4.3.4: Valiona fights "until she reaches 20% remaining health", then ejects Drahga and leaves.
+                if (me->HealthBelowPct(20) && stage == 0)
                 {
                     stage = 1;
                     events.Reset();
+                    me->InterruptNonMeleeSpells(false);
                     DoCast(me, SPELL_TWILIGHT_SHIFT);
                     me->SetReactState(REACT_PASSIVE);
                     if (me->GetVehicleKit())
@@ -401,15 +437,23 @@ class npc_drahga_valiona : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_VALIONAS_FLAME:
-                            if (IsHeroic())
-                                DoCast(me, SPELL_DEVOURING_FLAMES);
-                            else
-                                DoCast(me, SPELL_VALIONAS_FLAME);
-                            events.ScheduleEvent(EVENT_VALIONAS_FLAME, urand(15000, 22000));
+                            // "breathes ... in the direction of a random player" (Wowpedia); it was cast on herself before.
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                            {
+                                if (IsHeroic())
+                                    me->SummonCreature(NPC_DEVOURING_FLAMES, target->GetPositionX(), target->GetPositionY(),
+                                                       target->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 8000ms);
+                                else
+                                {
+                                    me->SetFacingToObject(target);
+                                    DoCast(target, SPELL_VALIONAS_FLAME);
+                                }
+                            }
+                            events.ScheduleEvent(EVENT_VALIONAS_FLAME, 25000);
                             break;
                         case EVENT_SHREDDING_SWIPE:
                             DoCast(me->GetVictim(), SPELL_SHREDDING_SWIPE);
-                            events.ScheduleEvent(EVENT_SHREDDING_SWIPE, urand(20000, 22000));
+                            events.ScheduleEvent(EVENT_SHREDDING_SWIPE, 25000);
                             break;
                     }
                 }
@@ -438,17 +482,8 @@ class npc_invocation_of_flame_stalker : public CreatureScript
             
             InstanceScript* instance;
             
-            void JustSummoned(Creature* summon) override
-            {
-                switch (summon->GetEntry())
-                {
-                    case NPC_INVOKED_FLAMING_SPIRIT:
-                        if (Creature* drahga = Unit::GetCreature(*me, instance->GetGuidData(DATA_DRAHGA_SHADOWBURNER)))
-                            if (Unit* target = drahga->GetAI()->SelectTarget(SELECT_TARGET_RANDOM))
-                                summon->AI()->AttackStart(target);
-                        break;
-                }
-            }
+            // The Invoked Flaming Spirit picks and fixates its own target 2 s after it appears (npc_invoked_flaming_spirit).
+            void JustSummoned(Creature* /*summon*/) override { }
 
             void Reset() override
             {
@@ -480,14 +515,57 @@ class npc_invoked_flaming_spirit : public CreatureScript
             }
             
             InstanceScript* instance;
+            ObjectGuid fixateGUID;
+            uint32 chaseTimer = 2000;
 
             void Reset() override
             {
                 DoCast(me, SPELL_INVOKED_FLAME);
+                me->SetReactState(REACT_PASSIVE);
+                chaseTimer = 2000;
+            }
+
+            void DoAction(int32 action) override
+            {
+                if (action == ACTION_CLEAR_FIXATE)
+                    ClearFixate();
+            }
+
+            void ClearFixate()
+            {
+                if (Unit* target = ObjectAccessor::GetUnit(*me, fixateGUID))
+                    target->RemoveAurasDueToSpell(SPELL_FLAMING_FIXATE, me->GetGUID());
+                fixateGUID = ObjectGuid::Empty;
+                me->GetThreatManager().ClearFixate();
+            }
+
+            // Flaming Fixate 82850 (4.3.4 EVENT_CHASE_PLAYER): one random player of Drahga's threat list, chased and nobody else
+            // ("ignoring all attempts to forcibly change its target", Wowpedia). A new one when the fixated player dies.
+            bool Fixate()
+            {
+                ClearFixate();
+
+                Creature* drahga = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_DRAHGA_SHADOWBURNER));
+                Unit* target = drahga && drahga->AI() ? drahga->AI()->SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true) : nullptr;
+                if (!target)
+                    return false;
+
+                me->SetReactState(REACT_AGGRESSIVE);
+                DoCast(target, SPELL_FLAMING_FIXATE, true);
+                // 82850 is an endless channel (duration -1): Spell::prepare makes it the current channel, which keeps
+                // UNIT_STATE_CASTING on the spirit and UnitAI::DoMeleeAttackIfReady returns early, so it would never swing
+                // and never proc Supernova (Invoked Flame 75235). 4.3.4 clears the state right after the cast too.
+                me->ClearUnitState(UNIT_STATE_CASTING);
+                fixateGUID = target->GetGUID();
+                me->GetThreatManager().AddThreat(target, 1500000.0f, nullptr, true, true);
+                me->GetThreatManager().FixateTarget(target);
+                AttackStart(target);
+                return true;
             }
 
             void JustDied(Unit* /*target*/) override
             {
+                ClearFixate();
                 me->DespawnOrUnsummon();
             }
 
@@ -496,8 +574,38 @@ class npc_invoked_flaming_spirit : public CreatureScript
                 if (!instance)
                     return;
 
-                if (instance->GetData(DATA_DRAHGA_SHADOWBURNER) != IN_PROGRESS)
+                // #688 R15: GetBossState, not GetData. instance_grim_batol has no GetData override, so GetData(2) is always
+                // ZoneScript's 0 (!= IN_PROGRESS) and every spirit despawned on its first update, before the 2 s fixate timer
+                // (w106/w107: 75222 x4/x11, 82850 x0, no 40357 in any [PROBE] target/attacker field).
+                if (instance->GetBossState(DATA_DRAHGA_SHADOWBURNER) != IN_PROGRESS)
+                {
+                    ClearFixate();
                     me->DespawnOrUnsummon();
+                    return;
+                }
+
+                if (chaseTimer)
+                {
+                    if (chaseTimer <= diff)
+                    {
+                        chaseTimer = 0;
+                        Fixate();
+                    }
+                    else
+                        chaseTimer -= diff;
+                    return;
+                }
+
+                Unit* target = ObjectAccessor::GetUnit(*me, fixateGUID);
+                if (!target || !target->IsAlive())
+                {
+                    if (!Fixate())
+                        return;
+                    target = ObjectAccessor::GetUnit(*me, fixateGUID);
+                }
+
+                if (target && me->GetVictim() != target)
+                    AttackStart(target);
 
                 DoMeleeAttackIfReady();
             }
@@ -544,10 +652,13 @@ class spell_drahga_supernova : public SpellScriptLoader
             {
                 PreventHitDefaultEffect(effIndex);
 
-                if (!GetCaster())
+                Creature* spirit = GetCaster() ? GetCaster()->ToCreature() : nullptr;
+                if (!spirit)
                     return;
 
-                GetCaster()->ToCreature()->DespawnOrUnsummon(500);
+                if (spirit->AI())
+                    spirit->AI()->DoAction(ACTION_CLEAR_FIXATE);
+                spirit->DespawnOrUnsummon(500);
             }
 
             void Register() override
@@ -562,8 +673,43 @@ class spell_drahga_supernova : public SpellScriptLoader
         }
 };
 
+// Devouring Flames 90949 (heroic): "Valiona inflicts less damage to players within the cone of flames the farther away they are
+// positioned from her" (Wowpedia); 4.3.4 spell_drahga_devouring_flames takes 3% off per yard. Registered in spell_script_names.
+class spell_drahga_devouring_flames : public SpellScriptLoader
+{
+    public:
+        spell_drahga_devouring_flames() : SpellScriptLoader("spell_drahga_devouring_flames") { }
+
+        class spell_drahga_devouring_flames_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_drahga_devouring_flames_SpellScript);
+
+            void ChangeDamage()
+            {
+                Unit* caster = GetCaster();
+                Unit* target = GetHitUnit();
+                if (!caster || !target)
+                    return;
+
+                float const pct = std::min(100.0f, target->GetDistance(caster) * 3.0f);
+                SetHitDamage(int32(GetHitDamage() * (100.0f - pct) / 100.0f));
+            }
+
+            void Register() override
+            {
+                OnHit += SpellHitFn(spell_drahga_devouring_flames_SpellScript::ChangeDamage);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_drahga_devouring_flames_SpellScript();
+        }
+};
+
 void AddSC_boss_drahga_shadowburner()
 {
+    new spell_drahga_devouring_flames();
     new boss_drahga_shadowburner();
     new npc_invocation_of_flame_stalker();
     new npc_invoked_flaming_spirit();

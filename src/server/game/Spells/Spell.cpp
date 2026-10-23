@@ -16,7 +16,9 @@
 */
 
 #include "Common.h"
+#include "DatabaseEnv.h"
 #include "WorldPacket.h"
+#include "WorldSession.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "Opcodes.h"
@@ -56,6 +58,7 @@
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "SpellHistory.h"
+#include "Guild.h"
 #include "LootLockoutMap.h"
 #include "BattlePetMgr.h"
 #include "TradeData.h"
@@ -622,6 +625,12 @@ m_spellValue(new SpellValue(m_spellInfo)), m_researchData(NULL)
 
     m_CastItem = NULL;
     m_castItemGUID = ObjectGuid::Empty;
+
+    // #723: m_powerType was only set in prepare(). A Spell that is checked without prepare() - the bot module's
+    // CanCast* paths do `new Spell` + CheckCast - read it uninitialised (w16 dump: power 0x8610FBE6) and
+    // CheckPower -> GetPower -> GetPowerIndexByClass indexed PowersByClass with it. Same value prepare() computes
+    // (prepare recomputes it). m_powerEntryIndex keeps its -1 default until prepare().
+    m_powerType = m_spellInfo->GetPowerType(m_caster);
 
     unitTarget = NULL;
     itemTarget = NULL;
@@ -2833,7 +2842,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         int32 gain = caster->DealHeal(unitTarget, heal);
         caster->SendHealSpellLog(unitTarget, GetSpellInfo()->Id, heal, uint32(heal - gain), absorb, crit);
 
-        unitTarget->getHostileRefManager().threatAssist(caster, float(gain) * 0.5f, m_spellInfo);
+        unitTarget->GetThreatManager().ForwardThreatForAssistingMe(caster, float(gain) * 0.5f, m_spellInfo);
         m_healing = gain;
 
         // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
@@ -2943,7 +2952,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         // Add caster to target's threatlist in case they both are in combat after Unit::CombatStart, but the spell did no direct damage and no threat was added in Spell::HandleThreatSpells.
         // Otherwise combat will be removed from the caster on next update due to him not having any hostile references.
         if (delayedDamage && initialAggro && caster->IsInCombat() && unit->IsInCombat() && m_spellInfo->AttributesCu & SPELL_ATTR0_CU_NO_INITIAL_THREAT)
-            unit->AddThreat(caster, 0.0f);
+            unit->GetThreatManager().AddThreat(caster, 0.0f);
 
         if (m_spellInfo->AttributesCu & SPELL_ATTR0_CU_AURA_CC)
             if (!unit->IsStandState())
@@ -3055,10 +3064,12 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
                 if (m_caster->GetTypeId() == TYPEID_PLAYER)
                     m_caster->ToPlayer()->UpdatePvP(true);
             }
-            if (unit->IsInCombat() && !(m_spellInfo->AttributesEx3 & SPELL_ATTR3_NO_INITIAL_AGGRO) && !(m_spellInfo->AttributesEx & (SPELL_ATTR1_NOT_BREAK_STEALTH | SPELL_ATTR1_NO_THREAT)))
+            // AC Spell.cpp:3177-3182 - triggered spells should not prolong combat
+            if (m_originalCaster && unit->IsInCombat() && !(m_spellInfo->AttributesEx3 & SPELL_ATTR3_NO_INITIAL_AGGRO) && !m_triggeredByAuraSpell)
             {
-                m_caster->SetInCombatState(unit->GetPvPCombatTimer() > 0, unit);
-                unit->getHostileRefManager().threatAssist(m_caster, 0.0f);
+                if (m_originalCaster->IsControlledByPlayer())
+                    m_originalCaster->GetCombatManager().InheritCombatStatesFrom(unit);
+                unit->GetThreatManager().ForwardThreatForAssistingMe(m_originalCaster, 0.0f, nullptr, true);
             }
         }
     }
@@ -3586,7 +3597,7 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
             {
                 auto bounds = sSpellMgr->GetSkillLineAbilityMapBounds(m_spellInfo->Id);
                 for (auto it = bounds.first; it != bounds.second; ++it)
-                    if (it->second->skillId == SKILL_HERBALISM)
+                    if (it->second->SkillLine == SKILL_HERBALISM)
                         m_caster->RemoveAurasByType(SPELL_AURA_MOUNTED);
             }
         }
@@ -3910,6 +3921,8 @@ void Spell::cast(bool skipCheck)
 
     }
 
+    sScriptMgr->OnUnitSpellCast(this, m_caster, m_spellInfo, skipCheck); // #793: AC's ScriptMgr::OnSpellCast spot (Spell::_cast)
+
     SetExecutedCurrently(false);
 }
 
@@ -4157,6 +4170,12 @@ void Spell::_handle_finish_phase()
 void Spell::SendSpellCooldown()
 {
     bool startCooldown = m_caster->GetTypeId() == TYPEID_PLAYER || m_caster->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN);
+    // #736: a vehicle that a player (or playerbot) controls keeps its weapons' DBC cooldowns server-side (Rocket
+    // Blast 2 s, Hurl Boulder 2-3 s, Ram 4 s, Steam Rush 15 s, Blade Salvo 30 s). Before this only the client's
+    // action bar limited them, so bot gunners (PlayerbotAI::CastVehicleSpell - no client) fired back to back.
+    // AC: Handlers/PetHandler.cpp HandlePetCastSpellOpcode -> Creature::AddSpellCooldown(spellId) on every cast.
+    if (!startCooldown && m_caster->IsVehicle() && m_caster->GetCharmerGUID().IsPlayer())
+        startCooldown = true;
     if (!startCooldown)
         return;
 
@@ -6191,14 +6210,14 @@ void Spell::HandleThreatSpells()
 
         // positive spells distribute threat among all units that are in combat with target, like healing
         if (m_spellInfo->_IsPositiveSpell())
-            target->getHostileRefManager().threatAssist(m_caster, threat, m_spellInfo);
+            target->GetThreatManager().ForwardThreatForAssistingMe(m_caster, threat, m_spellInfo);
         // for negative spells threat gets distributed among affected targets
         else
         {
             if (!target->CanHaveThreatList())
                 continue;
 
-            target->AddThreat(m_caster, threat, m_spellInfo->GetSchoolMask(), m_spellInfo);
+            target->GetThreatManager().AddThreat(m_caster, threat, m_spellInfo);
         }
     }
     TC_LOG_DEBUG("spells", "Spell %u, added an additional %f threat for %s %u target(s)", m_spellInfo->Id, threat, m_spellInfo->_IsPositiveSpell() ? "assisting" : "harming", uint32(m_UniqueTargetInfo.size()));
@@ -6239,8 +6258,11 @@ void Spell::HandleEffects(Unit* pUnitTarget, Item* pItemTarget, GameObject* pGOT
 SpellCastResult Spell::CheckCast(bool strict)
 {
     // check death state
+    // #456: AC Spell.cpp:5853 lets any triggered cast that no aura triggered through for a dead caster; this core required
+    // TRIGGERED_IGNORE_CASTER_DEATH_STATE, which TRIGGERED_FULL_MASK does not include, so death-triggered SmartAI casts (Volcanoth's
+    // explosion, 38855 id203) never left the corpse. The explicit flag keeps working as before.
     if (!m_caster->IsAlive() && !m_spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE) && !m_spellInfo->HasAttribute(SPELL_ATTR0_CASTABLE_WHILE_DEAD) &&
-        !(_triggeredCastFlags & TRIGGERED_IGNORE_CASTER_DEATH_STATE && !m_triggeredByAuraSpell))
+        !((IsTriggered() || (_triggeredCastFlags & TRIGGERED_IGNORE_CASTER_DEATH_STATE)) && !m_triggeredByAuraSpell))
         return (_triggeredCastFlags & TRIGGERED_DONT_REPORT_CAST_ERROR) ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_DONT_REPORT;
 
     // check cooldowns to prevent cheating
@@ -6695,43 +6717,45 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_EFFECT_CHARGE:
             {
-                if (m_caster->HasUnitState(UNIT_STATE_ROOT) && GetSpellInfo()->Id != 114029 && GetSpellInfo()->Id != 54216) // Safeguard, Master's Call
+                Unit* unitCaster = m_caster->ToUnit();
+                if (!unitCaster)
+                    return SPELL_FAILED_BAD_TARGETS;
+
+                if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR)
+                {
+                    // Warbringer - can't be handled in proc system - should be done before checkcast root check and charge effect process
+                    if (strict && unitCaster->IsScriptOverriden(m_spellInfo, 6953))
+                        unitCaster->RemoveMovementImpairingAuras(true);
+                }
+
+                if (!(_triggeredCastFlags & TRIGGERED_IGNORE_CASTER_AURAS) && unitCaster->HasUnitState(UNIT_STATE_ROOT))
                     return SPELL_FAILED_ROOTED;
 
                 if (GetSpellInfo()->NeedsExplicitUnitTarget())
                 {
-                    if (m_caster->GetTypeId() == TYPEID_PLAYER || m_caster->IsPet())
-                    {
-                        if (Unit* target = m_targets.GetUnitTarget())
-                        {
-                            if (!target->IsAlive())
-                                return SPELL_FAILED_BAD_TARGETS;
+                    Unit* target = m_targets.GetUnitTarget();
+                    if (!target)
+                        return SPELL_FAILED_DONT_REPORT;
 
-                            float objSize = target->GetObjectSize();
-                            float range = m_spellInfo->GetMaxRange(true, m_caster, this) * 1.5f + objSize; // can't be overly strict
+                    // first we must check to see if the target is in LoS. A path can usually be built but LoS matters for charge spells
+                    if (!target->IsWithinLOSInMap(unitCaster))
+                        return SPELL_FAILED_LINE_OF_SIGHT;
 
-                            m_preGeneratedPath.reset(new PathGenerator(m_caster));
-                            m_preGeneratedPath->SetPathLengthLimit(range);
-                            
-                            // first try with raycast, if it fails fall back to normal path
-                            bool result = m_preGeneratedPath->CalculatePath(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false, true, true);
-                            if (m_preGeneratedPath->GetPathType() & PATHFIND_SHORT)
-                                return SPELL_FAILED_OUT_OF_RANGE;
-                            else if (!result || m_preGeneratedPath->GetPathType() & (PATHFIND_NOPATH | PATHFIND_INCOMPLETE))
-                            {
-                                result = m_preGeneratedPath->CalculatePath(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false, false, true);
-                                if (m_preGeneratedPath->GetPathType() & PATHFIND_SHORT)
-                                    return SPELL_FAILED_OUT_OF_RANGE;
-                                else if (!result || m_preGeneratedPath->GetPathType() & (PATHFIND_NOPATH | PATHFIND_INCOMPLETE))
-                                    return SPELL_FAILED_NOPATH;
-                            }
-                            else if (std::all_of(m_preGeneratedPath->GetPath().begin(), m_preGeneratedPath->GetPath().end(), [this](G3D::Vector3 const& point) { return point.z <= m_caster->GetPositionZ(); }))
-                                m_preGeneratedPath->SetPathType(PATHFIND_BLANK); // Clear path if straight line succeeded - let caster boost through the air (but only if we don't have any point higher than caster, otherwise we risk falling below ground)
+                    float objSize = target->GetCombatReach();
+                    float range = m_spellInfo->GetMaxRange(true, unitCaster, this) * 1.5f + objSize; // can't be overly strict
 
-                            if (m_preGeneratedPath->GetPathType() != PATHFIND_BLANK)
-                                m_preGeneratedPath->ShortenPathUntilDist(PositionToVector3(target), objSize); // move back
-                        }
-                    }
+                    m_preGeneratedPath.reset(new PathGenerator(unitCaster));
+                    m_preGeneratedPath->SetPathLengthLimit(range);
+
+                    bool result = m_preGeneratedPath->CalculatePath(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false);
+                    if (m_preGeneratedPath->GetPathType() & PATHFIND_SHORT)
+                        return SPELL_FAILED_NOPATH;
+                    else if (!result || m_preGeneratedPath->GetPathType() & (PATHFIND_NOPATH | PATHFIND_INCOMPLETE))
+                        return SPELL_FAILED_NOPATH;
+                    else if (m_preGeneratedPath->IsInvalidDestinationZ(target)) // Check position z, if not in a straight line
+                        return SPELL_FAILED_NOPATH;
+
+                    m_preGeneratedPath->ShortenPathUntilDist(PositionToVector3(target), objSize); // move back
                 }
                 break;
             }
@@ -7522,8 +7546,8 @@ SpellCastResult Spell::CheckPower()
             return SPELL_FAILED_CASTER_AURASTATE;
         return SPELL_CAST_OK;
     }
-    // Check valid power type
-    if (m_powerType >= MAX_POWERS)
+    // Check valid power type (unsigned: Powers is a signed enum on MSVC, so a negative value passed the old check)
+    if (uint32(m_powerType) >= MAX_POWERS)
     {
         TC_LOG_ERROR("spells", "Spell::CheckPower: Unknown power type '%d'", m_powerType);
         return SPELL_FAILED_UNKNOWN;
@@ -7724,6 +7748,16 @@ SpellCastResult Spell::CheckItems()
                         }
                         if (GetSpellInfo()->Id == 759 || GetSpellInfo()->Id == 119316)
                         {
+                            // #707, AC parity (azerothcore-wotlk Spells/Spell.cpp:7689-7697): only recharge a gem the
+                            // player actually carries. With no gem and no room (a full backpack) the recharge spell
+                            // (54408/119318, a cast-time spell) was started for nothing on every attempt, so a
+                            // playerbot mage looped it forever and every other cast (Herb Gathering 2366) failed
+                            // SPELL_FAILED_SPELL_IN_PROGRESS.
+                            if (!player->HasItemCount(m_spellInfo->Effects[i].ItemType))
+                            {
+                                player->SendEquipError(msg, NULL, NULL, m_spellInfo->Effects[i].ItemType);
+                                return SPELL_FAILED_DONT_REPORT;
+                            }
                             player->CastSpell(player, GetSpellInfo()->Id == 119316 ? 119318 : 54408, false);
                             return SPELL_FAILED_DONT_REPORT;
                         }
@@ -9255,6 +9289,11 @@ void Spell::TriggerGlobalCooldown()
         // gcd modifier auras are applied only to own spells and only players have such mods
         if (m_caster->GetTypeId() == TYPEID_PLAYER)
             m_caster->ToPlayer()->ApplySpellMod(m_spellInfo->Id, SPELLMOD_GLOBAL_COOLDOWN, gcd, this);
+
+        // w76 #868: the mods run after the clamp (AC applies them before it), so a large negative mod could leave gcd < 0,
+        // which AddGlobalCooldown(uint32) turns into a ~49-day lock: every GCD spell then fails NOT_READY. Floor at 0.
+        if (gcd < 0)
+            gcd = 0;
     }
 
     // Only players or controlled units have global cooldown

@@ -54,7 +54,8 @@ public:
 private:
     // -- buffs
     ACTION_NODE(seal_of_righteousness, "seal of righteousness");
-    ACTION_NODE(seal_of_command, "seal of command");
+    // #730, AC GenericPaladinStrategyActionNodeFactory.h:91-97: seal of command -> seal of righteousness.
+    ACTION_NODE_A(seal_of_command, "seal of command", "seal of righteousness");
     ACTION_NODE(seal_of_insight, "seal of insight");
 
     ACTION_NODE(blessing_of_kings, "blessing of kings");

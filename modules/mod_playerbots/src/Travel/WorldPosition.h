@@ -20,7 +20,7 @@ class ObjectGuid;
 class Quest;
 class Player;
 class PlayerbotAI;
-class CreatureData;
+struct CreatureData;
 class WorldObject;
 
 struct GameObjectData;
@@ -135,6 +135,8 @@ public:
     std::string const print();
 
     std::string const to_string();
+    // #611 (AC TravelMgr.h:129): AC WorldPosition::split, used by the AC CSV/map-export code in LoadQuestTravelTable.
+    std::vector<std::string> split(std::string const& s, char delimiter);
 
     void printWKT(std::vector<WorldPosition> points, std::ostringstream& out, uint32 dim = 0, bool loop = false);
     void printWKT(std::ostringstream& out) { printWKT({ *this }, out); }
@@ -144,6 +146,8 @@ public:
     bool isOverworld();
     bool isInWater();
     bool isUnderWater();
+    // #611 (AC TravelMgr.h:139, TravelMgr.cpp:275-278): only the default-constructed position is invalid.
+    bool IsValid();
 
     WorldPosition relPoint(WorldPosition* center);
     WorldPosition offset(WorldPosition* center);
@@ -324,6 +328,16 @@ public:
     bool GetReachableRandomPointOnGround(Player* bot, float radius, bool randomRange = true);
 
     uint32 getUnitsAggro(GuidVector& units, Player* bot);
+
+    // #611 (AC TravelMgr.h:325-329, TravelMgr.cpp:931-947): whole-spawn-store walks, radius/entry optional
+    // (radius 0 and entry 0 = no filter). The fork's O(1) SpawnGridIndex (TravelMgr.h) is the replacement the
+    // hot TravelNode paths use; these are the AC-shaped members the AC export code and any no-argument caller expect.
+    // Creatures
+    std::vector<CreatureData const*> getCreaturesNear(float radius = 0, uint32 entry = 0);
+
+    // GameObjects
+    std::vector<GameObjectData const*> getGameObjectsNear(float radius = 0, uint32 entry = 0);
+
 private:
     uint32 visitors = 0;
 };
@@ -357,6 +371,50 @@ inline ByteBuffer& operator>>(ByteBuffer& b, [[maybe_unused]] WorldPosition& g)
     return b;
 }
 
+// Generic creature finder (AC TravelMgr.h:364-384)
+class FindPointCreatureData
+{
+public:
+    FindPointCreatureData(WorldPosition point1 = WorldPosition(), float radius1 = 0, uint32 entry1 = 0)
+    {
+        point = point1;
+        radius = radius1;
+        entry = entry1;
+    }
+
+    void operator()(CreatureData const& dataPair);
+    std::vector<CreatureData const*> GetResult() const { return data; };
+
+private:
+    WorldPosition point;
+    float radius;
+    uint32 entry;
+
+    std::vector<CreatureData const*> data;
+};
+
+// Generic gameObject finder (AC TravelMgr.h:386-406)
+class FindPointGameObjectData
+{
+public:
+    FindPointGameObjectData(WorldPosition point1 = WorldPosition(), float radius1 = 0, uint32 entry1 = 0)
+    {
+        point = point1;
+        radius = radius1;
+        entry = entry1;
+    }
+
+    void operator()(GameObjectData const& dataPair);
+    std::vector<GameObjectData const*> GetResult() const { return data; };
+
+private:
+    WorldPosition point;
+    float radius;
+    uint32 entry;
+
+    std::vector<GameObjectData const*> data;
+};
+
 class GuidPosition : public ObjectGuid, public WorldPosition
 {
 public:
@@ -376,6 +434,8 @@ public:
     bool HasNpcFlag(NPCFlags flag);
 
     bool isDead();  // For loaded grids check if the unit/object is unloaded/dead.
+    // #611 (AC TravelMgr.h:425, TravelMgr.cpp:1037-1057): For loaded grids check if the creature/gameobject is in world + alive
+    bool IsCreatureOrGOAccessible();
 
     operator bool() const { return !IsEmpty(); }
     bool operator==(ObjectGuid const& guid) const { return GetRawValue() == guid.GetRawValue(); }

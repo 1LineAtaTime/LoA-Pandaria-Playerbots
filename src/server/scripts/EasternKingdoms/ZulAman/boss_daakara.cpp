@@ -50,9 +50,14 @@ enum Spells
     SPELL_PILLAR_OF_FLAME_VISUAL    = 43541,
     SPELL_PILLAR_OF_FLAME_AURA      = 43218,
 
-    //SPELL_ENERGY_STORM              = 43983,
-    //SPELL_ZAP_INFORM                = 42577,
-    //SPELL_ZAP_DAMAGE                = 43137,
+    // #678 eagle form (port of AC boss_zuljin.cpp:50-56 + spell_zuljin_zap :438-459): Energy Storm is an enemy area aura
+    // (SpellEffect 129, 99 yd) whose proc (SpellAuraOptions procFlags 0x14000 = magic spells done, 500 ms cooldown) makes the
+    // caster trigger Zap Inform 42577 on the nearest Feather Vortex (`conditions` 13/1/42577 -> 24136); the vortex answers
+    // with Zap 43137 (8000 / heroic 12000 Nature) on that caster. Wowhead 43137 (cata, 2026-10-23): "Unleashes a blast of
+    // electricity when a spell is cast nearby, inflicting 12000 Nature damage to the caster of the spell."
+    SPELL_ENERGY_STORM              = 43983,
+    SPELL_ZAP_INFORM                = 42577,
+    SPELL_ZAP_DAMAGE                = 43137,
     //SPELL_SUMMON_VORTEX             = 43112,
 
     SPELL_SWEEPING_WINDS            = 97647,
@@ -105,6 +110,17 @@ enum Actions
     ACTION_MOVE_TO_PLAYER   = 1,
 };
 
+enum DaakaraForms
+{
+    DK_FORM_BEAR       = 0,
+    DK_FORM_LYNX       = 1,
+    DK_FORM_DRAGONHAWK = 2,
+    DK_FORM_EAGLE      = 3,
+    DK_FORM_NONE       = 0xFF,
+};
+
+#define POINT_SWEEP 1
+
 #define CENTER_X 120.148811f
 #define CENTER_Y 703.713684f
 #define CENTER_Z 45.111477f
@@ -142,6 +158,7 @@ class boss_daakara : public CreatureScript
                 _Reset();
 
                 phase = 0;
+                animalForm = DK_FORM_NONE;
                 bEnrage = false;
                 bAchieve = true;
 
@@ -156,6 +173,7 @@ class boss_daakara : public CreatureScript
                 Talk(SAY_AGGRO);
 
                 phase = 0;
+                animalForm = DK_FORM_NONE;
                 bEnrage = false;
                 bAchieve = true;
 
@@ -235,6 +253,9 @@ class boss_daakara : public CreatureScript
                         me->RemoveAurasDueToSpell(SPELL_SHAPE_OF_THE_LYNX);
                         me->RemoveAurasDueToSpell(SPELL_SHAPE_OF_THE_BEAR);
                         DoCast(me, SPELL_SHAPE_OF_THE_EAGLE, true);
+                        // #678: Zap needs the enemy aura up for the rest of the fight (AC boss_zuljin.cpp:332).
+                        DoCast(me, SPELL_ENERGY_STORM, true);
+                        // Wowpedia "Daakara": one Feather Cyclone per living player, at that player's feet.
                         std::list<Unit*> targets;
                         SelectTargetList(targets, 5, SELECT_TARGET_RANDOM, 0.0f, true);
                         if (targets.size() > 0)
@@ -259,9 +280,16 @@ class boss_daakara : public CreatureScript
                 if (me->HealthBelowPct(80) && phase == 0)
                 {
                     phase++;
-                    events.CancelEvent(EVENT_WHIRLWIND); 
+                    events.CancelEvent(EVENT_WHIRLWIND);
                     events.CancelEvent(EVENT_GRIEVOUS_THROW);
-                    EnterPhase(urand(0, 1));
+                    // #678: random bear or lynx, as before. A form aura already on him is kept (no-op in play; a test can
+                    // set it with `npcaura 23863 42594|42607` to make the pair deterministic).
+                    animalForm = urand(DK_FORM_BEAR, DK_FORM_LYNX);
+                    if (me->HasAura(SPELL_SHAPE_OF_THE_BEAR))
+                        animalForm = DK_FORM_BEAR;
+                    else if (me->HasAura(SPELL_SHAPE_OF_THE_LYNX))
+                        animalForm = DK_FORM_LYNX;
+                    EnterPhase(animalForm);
                     return;
                 }
                 else if (me->HealthBelowPct(40) && phase == 1)
@@ -272,8 +300,11 @@ class boss_daakara : public CreatureScript
                     events.CancelEvent(EVENT_OVERPOWER);
                     events.CancelEvent(EVENT_LYNX_RUSH);
                     events.CancelEvent(EVENT_CLAW_RAGE);
-                    //EnterPhase(urand(2, 3));
-                    EnterPhase(2);
+                    // #678: Wowpedia "Daakara" (MediaWiki API, 2026-10-23): "Daakara shifts to one of two possible pairs of
+                    // animal forms (bear/eagle or lynx/dragonhawk)". Eagle restored: Sweeping Winds now finds the vortices
+                    // (spell_daakara_sweeping_winds target hook), Zap is scripted (spell_daakara_zap), the bots have a
+                    // cyclone edge (cata-za "za feather cyclone").
+                    EnterPhase(animalForm == DK_FORM_BEAR ? DK_FORM_EAGLE : DK_FORM_DRAGONHAWK);
                     return;
                 }
 
@@ -345,7 +376,16 @@ class boss_daakara : public CreatureScript
                             events.ScheduleEvent(EVENT_FLAME_WHIRL, 12000);
                             break;
                         case EVENT_FLAME_BREATH:
-                            DoCastAOE(SPELL_FLAME_BREATH);
+                            // #669: the dragonhawk form is REACT_PASSIVE after AttackStop() (EnterPhase case 2), so it has no
+                            // victim, and 43140 needs a unit target (effect 0 TARGET_DEST_TARGET_ENEMY; Spell::InitExplicitTargets
+                            // only falls back to GetVictim()): DoCastAOE never cast it. Breathe at a random player in range, as
+                            // Jan'alai does (boss_janalai.cpp:249-253), turned to it first so the 97497 fire line
+                            // (spell_janalai_flame_breath, laid along the caster's orientation) follows the cone.
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 50.0f, true))
+                            {
+                                me->SetFacingTo(me->GetAngle(target));
+                                DoCast(target, SPELL_FLAME_BREATH);
+                            }
                             events.ScheduleEvent(EVENT_FLAME_BREATH, 15000);
                             break;
                         case EVENT_PILLAR_OF_FLAME:
@@ -371,6 +411,7 @@ class boss_daakara : public CreatureScript
             ObjectGuid ClawTargetGUID;
             bool bEnrage;
             uint8 phase;
+            uint8 animalForm;
             bool bAchieve;
         };
 
@@ -391,6 +432,10 @@ class npc_daakara_vortex : public CreatureScript
             {
                 DoCast(me, SPELL_FEATHER_VORTEX_VISUAL, true);
                 me->SetReactState(REACT_PASSIVE);
+                // #678: not a target (AC boss_zuljin.cpp npc_zuljin_vortex::Reset, UNIT_FLAG_NOT_SELECTABLE): the cyclones are
+                // avoided, not killed; the template unit_flags (0x8000 = CAN_SWIM) leave them attackable.
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                bStart = false; // #678: was never initialised (read in UpdateAI before any write)
                 startTimer = 2000;
                 victimGUID = ObjectGuid::Empty;
                 SetCombatMovement(false);
@@ -407,12 +452,28 @@ class npc_daakara_vortex : public CreatureScript
                 victimGUID = guid;
             }
 
+            // #678: Wowpedia "Daakara" (2026-10-23): the cyclones "only move when affected by Sweeping Winds" and then "move in
+            // a straight line to the location of a random player. Merely moving away from where you were standing when the
+            // whirlwinds begin moving will allow you to avoid them." The old MoveChase on the summon-time player homed in
+            // forever. Now: a straight run to where a random player stands at the end of the Sweeping Winds cast, then a stop.
             void DoAction(int32 action) override
             {
-                if (action == ACTION_MOVE_TO_PLAYER)
-                    if (Unit* target = ObjectAccessor::GetUnit(*me, victimGUID))
-                        me->GetMotionMaster()->MoveChase(target);
+                if (action != ACTION_MOVE_TO_PLAYER)
+                    return;
 
+                Unit* target = nullptr;
+                if (TempSummon* summon = me->ToTempSummon())
+                    if (Unit* summoner = summon->GetSummoner())
+                        if (summoner->IsAIEnabled && summoner->IsInCombat())
+                            target = summoner->GetAI()->SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true);
+                if (!target)
+                    target = ObjectAccessor::GetUnit(*me, victimGUID);
+                if (!target || !target->IsAlive())
+                    return;
+
+                me->SetWalk(false);
+                me->GetMotionMaster()->Clear();
+                me->GetMotionMaster()->MovePoint(POINT_SWEEP, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ());
             }
 
             void UpdateAI(uint32 diff) override
@@ -561,14 +622,32 @@ class spell_daakara_sweeping_winds : public SpellScriptLoader
         {
             PrepareSpellScript(spell_daakara_sweeping_winds_SpellScript);
 
+            // #678: 97647 effect 0 is TARGET_UNIT_SRC_AREA_ENTRY with SpellEffect radius index 0 and no `conditions` row
+            // (checked 2026-10-23), so the area search found no vortex and nothing ever moved.
+            // Every live Feather Vortex in the arena is a target ("causing nearby Feather Vortecies to move", Wowhead 97647).
+            void SelectVortices(std::list<WorldObject*>& targets)
+            {
+                targets.clear();
+                Unit* caster = GetCaster();
+                if (!caster)
+                    return;
+
+                std::list<Creature*> vortices;
+                caster->GetCreatureListWithEntryInGrid(vortices, NPC_FEATHER_VORTEX, 100.0f);
+                for (Creature* vortex : vortices)
+                    if (vortex->IsAlive())
+                        targets.push_back(vortex);
+            }
+
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
-                if (GetHitUnit() && GetHitUnit()->GetEntry() == NPC_FEATHER_VORTEX)
+                if (GetHitUnit() && GetHitUnit()->GetEntry() == NPC_FEATHER_VORTEX && GetHitUnit()->IsAIEnabled)
                     GetHitUnit()->GetAI()->DoAction(ACTION_MOVE_TO_PLAYER);
             }
 
             void Register() override
             {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_daakara_sweeping_winds_SpellScript::SelectVortices, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
                 OnEffectHitTarget += SpellEffectFn(spell_daakara_sweeping_winds_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
             }
         };
@@ -576,6 +655,43 @@ class spell_daakara_sweeping_winds : public SpellScriptLoader
         SpellScript* GetSpellScript() const override
         {
             return new spell_daakara_sweeping_winds_SpellScript();
+        }
+};
+
+// #678: 42577 Zap Inform (Energy Storm proc). Port of AC boss_zuljin.cpp:438-459 spell_zuljin_zap: the hit Feather Vortex
+// answers with Zap 43137 on the player whose spell triggered the proc (the 42577 caster).
+class spell_daakara_zap : public SpellScriptLoader
+{
+    public:
+        spell_daakara_zap() : SpellScriptLoader("spell_daakara_zap") { }
+
+        class spell_daakara_zap_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_daakara_zap_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_ZAP_DAMAGE) != nullptr;
+            }
+
+            void HandleScript(SpellEffIndex effIndex)
+            {
+                PreventHitDefaultEffect(effIndex);
+                Unit* caster = GetCaster();
+                Unit* vortex = GetHitUnit();
+                if (caster && vortex && vortex->IsAlive() && caster->IsAlive())
+                    vortex->CastSpell(caster, SPELL_ZAP_DAMAGE, true);
+            }
+
+            void Register() override
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_daakara_zap_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_daakara_zap_SpellScript();
         }
 };
 
@@ -606,6 +722,7 @@ void AddSC_boss_daakara()
     new npc_daakara_amani_lynx();
     new spell_daakara_claw_rage_charge();
     new spell_daakara_sweeping_winds();
+    new spell_daakara_zap();
     new achievement_ring_out();
 }
 

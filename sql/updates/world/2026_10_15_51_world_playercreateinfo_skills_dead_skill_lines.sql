@@ -1,0 +1,11 @@
+-- Refs #186 (misc boot-time data mismatches: playercreateinfo_skills)
+-- ERROR CLASS: "Wrong skill id N in `playercreateinfo_skills` table, ignoring." (ObjectMgr.cpp:3739) - 36 lines per boot, one per row.
+-- WHY INVALID: these 36 skill ids are the WotLK talent-tree skill lines (Mage Frost 6, Fire 8, Arcane 237, Warrior Arms 26 / Fury 256 / Prot 257, Rogue 38/39/253,
+--   Hunter 50/51/163, Priest 56/78/613, Druid 134/573/574, Paladin 184/267/594, Warlock 354/355/593, Shaman 373/374/375, Death Knight 770-772) plus the class
+--   'General' lines 797/799/801/802/803 and Thrown 176. None exists in SkillLine.db2 of build 18414 (MoP replaced them with specialization skill lines), so the core
+--   already ignores every row; deleting them changes nothing at runtime. The MoP 5.4.8 data has no playercreateinfo_skills table to compare.
+-- ROWS: 36 deletes keyed on the exact PK (raceMask=0, classMask, skill).
+-- VERIFY: SELECT COUNT(*) FROM playercreateinfo_skills WHERE skill IN (6,8,26,38,39,50,51,56,78,134,163,176,184,237,253,256,257,267,354,355,373,374,375,573,574,593,594,613,770,771,772,797,799,801,802,803); -- 0
+-- EXPECTED DBErrors.log DROP: 36 lines.
+-- UNDO: back up first: mysqldump -t world playercreateinfo_skills --where="skill IN (6,8,26,38,39,50,51,56,78,134,163,176,184,237,253,256,257,267,354,355,373,374,375,573,574,593,594,613,770,771,772,797,799,801,802,803)" > playercreateinfo_skills-before.sql
+DELETE FROM `playercreateinfo_skills` WHERE `raceMask`=0 AND `skill` IN (6,8,26,38,39,50,51,56,78,134,163,176,184,237,253,256,257,267,354,355,373,374,375,573,574,593,594,613,770,771,772,797,799,801,802,803);

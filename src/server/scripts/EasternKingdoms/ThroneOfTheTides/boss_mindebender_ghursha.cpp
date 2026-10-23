@@ -229,8 +229,52 @@ class boss_mindbender_ghursha : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_CONFUSE, true);
             }
 
+            // #700: Enslave (76207). Wowhead Cata tooltip 76207 (read 2026-10-12): "Leaps onto the head of a random enemy
+            // player, charming them. The victim will have increased health, damage and healing as long as they remain
+            // charmed. This effect lasts for 30 sec or until the victim reachs 50% health." Wowpedia "Mindbender Ghur'sha"
+            // (2026-10-12): the group brings the victim below 50% "so that dps can resume on" Ghur'sha. The event only
+            // talked before. 76207 = CONTROL_VEHICLE (no-op, a player has no vehicle kit) + MOD_CHARM + MOD_SCALE,
+            // 30 s; the victim's buff is 76213 (+200% damage and health, +100% healing). While riding, Ghur'sha is
+            // passive and cannot be targeted, and his other abilities wait.
+            ObjectGuid enslavedGUID;
+
+            void FreeEnslaved()
+            {
+                if (Player* victim = ObjectAccessor::GetPlayer(*me, enslavedGUID))
+                {
+                    victim->RemoveAurasDueToSpell(SPELL_ENSLAVE);
+                    victim->RemoveAurasDueToSpell(SPELL_ENSLAVE_BUFF);
+                }
+                enslavedGUID.Clear();
+            }
+
+            void EndEnslave()
+            {
+                FreeEnslaved();
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetReactState(REACT_AGGRESSIVE);
+                me->GetMotionMaster()->Clear();   // UpdateVictim picks the next victim and chases it
+            }
+
+            void SpellHitTarget(Unit* target, SpellInfo const* spell) override
+            {
+                if (spell->Id != SPELL_ENSLAVE || target->GetTypeId() != TYPEID_PLAYER || !target->HasAura(SPELL_ENSLAVE))
+                    return;
+
+                enslavedGUID = target->GetGUID();
+                target->CastSpell(target, SPELL_ENSLAVE_BUFF, true);
+                me->AttackStop();
+                me->SetReactState(REACT_PASSIVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->GetMotionMaster()->Clear();
+                me->GetMotionMaster()->MoveFollow(target, 0.0f, 0.0f);
+            }
+
             void Reset() override
             {
+                FreeEnslaved();
                 _Reset();
 
                 if (instance)
@@ -272,7 +316,17 @@ class boss_mindbender_ghursha : public CreatureScript
 
             void UpdateAI(uint32 diff) override
             {
+                if (!enslavedGUID.IsEmpty())
+                {
+                    Player* victim = ObjectAccessor::GetPlayer(*me, enslavedGUID);
+                    if (!victim || !victim->IsAlive() || !victim->HasAura(SPELL_ENSLAVE) || victim->HealthBelowPct(50))
+                        EndEnslave();
+                }
+
                 if (!UpdateVictim())
+                    return;
+
+                if (!enslavedGUID.IsEmpty())
                     return;
 
                 events.Update(diff);
@@ -286,6 +340,9 @@ class boss_mindbender_ghursha : public CreatureScript
                     {
                         case EVENT_ENSLAVE:
                             Talk(SAY_ENCLAVE);
+                            // #700: a random player in the 60 yd spell range (Wowhead 76207); the charm starts in SpellHitTarget
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 60.0f, true))
+                                DoCast(target, SPELL_ENSLAVE);
                             events.ScheduleEvent(EVENT_ENSLAVE, 31000);
                             break;
                         case EVENT_ABSORB_MAGIC:
@@ -312,6 +369,7 @@ class boss_mindbender_ghursha : public CreatureScript
 
             void JustDied(Unit* /*killer*/) override
             {
+                FreeEnslaved();
                 _JustDied();
 
                 if (instance)

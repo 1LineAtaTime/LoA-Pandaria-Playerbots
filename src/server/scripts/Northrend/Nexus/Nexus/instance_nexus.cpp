@@ -59,6 +59,32 @@ class instance_nexus : public InstanceMapScript
                 TelestrasContainmentSphere = ObjectGuid::Empty;
             }
 
+            // #553: the Alliance-default trash/commander are swapped to their Horde entries for an Alliance group. When the
+            // grid loads before any player is on the map (the first teleport into a fresh instance), TeamInInstance is 0 and
+            // nothing was swapped, so an Alliance group met FRIENDLY Alliance Commander 27949 (w57: 0 boss ticks). Remember
+            // those creatures and swap them when the first player enters (AC instance_nexus.cpp:71-84 uses the instance team).
+            std::vector<std::pair<ObjectGuid, uint32>> _pendingSwap;
+
+            void SwapForAlliance(Creature* creature, uint32 team, uint32 hordeEntry)
+            {
+                if (team == ALLIANCE)
+                    creature->UpdateEntry(hordeEntry, HORDE);
+                else if (!team)
+                    _pendingSwap.emplace_back(creature->GetGUID(), hordeEntry);
+            }
+
+            void OnPlayerEnter(Player* player) override
+            {
+                if (_pendingSwap.empty())
+                    return;
+                if (player->GetTeam() == ALLIANCE)
+                    for (auto const& [guid, entry] : _pendingSwap)
+                        if (Creature* creature = instance->GetCreature(guid))
+                            if (creature->IsAlive() && !creature->IsInCombat())
+                                creature->UpdateEntry(entry, HORDE);
+                _pendingSwap.clear();
+            }
+
             void OnCreatureCreate(Creature* creature) override
             {
                 Map::PlayerList const& players = instance->GetPlayers();
@@ -83,40 +109,35 @@ class instance_nexus : public InstanceMapScript
                     {
                         if (ServerAllowsTwoSideGroups())
                             creature->SetFaction(FACTION_HOSTILE_FOR_ALL);
-                        if (TeamInInstance == ALLIANCE)
-                            creature->UpdateEntry(NPC_HORDE_BERSERKER, HORDE);
+                        SwapForAlliance(creature, TeamInInstance, NPC_HORDE_BERSERKER);
                         break;
                     }
                     case NPC_ALLIANCE_RANGER:
                     {
                         if (ServerAllowsTwoSideGroups())
                             creature->SetFaction(FACTION_HOSTILE_FOR_ALL);
-                        if (TeamInInstance == ALLIANCE)
-                            creature->UpdateEntry(NPC_HORDE_RANGER, HORDE);
+                        SwapForAlliance(creature, TeamInInstance, NPC_HORDE_RANGER);
                         break;
                     }
                     case NPC_ALLIANCE_CLERIC:
                     {
                         if (ServerAllowsTwoSideGroups())
                             creature->SetFaction(FACTION_HOSTILE_FOR_ALL);
-                        if (TeamInInstance == ALLIANCE)
-                            creature->UpdateEntry(NPC_HORDE_CLERIC, HORDE);
+                        SwapForAlliance(creature, TeamInInstance, NPC_HORDE_CLERIC);
                         break;
                     }
                     case NPC_ALLIANCE_COMMANDER:
                     {
                         if (ServerAllowsTwoSideGroups())
                             creature->SetFaction(FACTION_HOSTILE_FOR_ALL);
-                        if (TeamInInstance == ALLIANCE)
-                            creature->UpdateEntry(NPC_HORDE_COMMANDER, HORDE);
+                        SwapForAlliance(creature, TeamInInstance, NPC_HORDE_COMMANDER);
                         break;
                     }
                     case NPC_COMMANDER_STOUTBEARD:
                     {
                         if (ServerAllowsTwoSideGroups())
                             creature->SetFaction(FACTION_HOSTILE_FOR_ALL);
-                        if (TeamInInstance == ALLIANCE)
-                            creature->UpdateEntry(NPC_COMMANDER_KOLURG, HORDE);
+                        SwapForAlliance(creature, TeamInInstance, NPC_COMMANDER_KOLURG);
                         commanderGUID = creature->GetGUID();
                         break;
                     }

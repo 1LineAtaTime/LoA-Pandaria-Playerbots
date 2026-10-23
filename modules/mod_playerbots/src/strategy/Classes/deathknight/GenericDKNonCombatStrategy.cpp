@@ -43,14 +43,14 @@ void GenericDKNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
 {
     NonCombatStrategy::InitTriggers(triggers);
 
-    triggers.push_back(
-        new TriggerNode("no pet", NextAction::array(0, new NextAction("raise dead", ACTION_NORMAL + 1), nullptr)));
+    // #434 (AC GenericDKNonCombatStrategy.cpp:18): sharpening stone / weightstone on the weapons, 1:1.
+    triggers.push_back(new TriggerNode("often", NextAction::array(0, new NextAction("apply stone", 1.0f), nullptr)));
+    // #128 (AC GenericDKNonCombatStrategy.cpp:14-23): AC raises no ghoul and toggles no pet spell out of
+    // combat; the MoP "no pet -> raise dead" / "has pet -> toggle pet spell" lines here looped Raise Dead.
     triggers.push_back(
         new TriggerNode("horn of winter", NextAction::array(0, new NextAction("horn of winter", 21.0f), nullptr)));
     triggers.push_back(
         new TriggerNode("bone shield", NextAction::array(0, new NextAction("bone shield", 21.0f), nullptr)));
-    triggers.push_back(
-        new TriggerNode("has pet", NextAction::array(0, new NextAction("toggle pet spell", 11.0f), NULL)));
 }
 
 void DKBuffDpsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

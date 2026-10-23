@@ -34,6 +34,10 @@ Unit* Trigger::GetTarget() { return GetTargetValue()->Get(); }
 
 bool Trigger::needCheck()
 {
+    // #628 (AC Trigger.cpp:37-39): during an out-of-combat force-rebuff, evaluate every buff trigger each tick
+    if (IsBuffTrigger() && !IsDebuffTrigger() && botAI->forceRebuff.IsPending() && !bot->IsInCombat())
+        return true;
+
     if (checkInterval < 2)
         return true;
 

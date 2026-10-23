@@ -18,6 +18,13 @@
 #ifndef RATED_PVP_H
 #define RATED_PVP_H
 
+// #273: `CharacterDatabaseTransaction` is used in the declarations below but this header never declared it;
+// it compiled only because every previous includer happened to pull DatabaseEnvFwd.h in first. Including
+// BattlegroundIC.h from the playerbots module (for NPC_KEEP_CANNON/NPC_CATAPULT in the VehicleActions
+// auto-board loop) changed that include order and exposed it. Declaring it here is the correct fix - the
+// header is not self-contained without it.
+#include "DatabaseEnvFwd.h"
+
 #include "Common.h"
 
 enum ArenaType : uint32;

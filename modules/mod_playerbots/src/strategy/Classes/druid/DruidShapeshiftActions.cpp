@@ -52,7 +52,9 @@ bool CastCancelTreeFormAction::isUseful()
 
 bool CastCancelTreeFormAction::Execute(Event event)
 {
-    botAI->RemoveAura("tree of life");
+    // #384: the 5.4.8 aura (33891) is named "Incarnation: Tree of Life"; "tree of life" only matches the
+    // removed 3.3.5 spell ids.
+    botAI->RemoveAura("incarnation: tree of life");
     return true;
 }
 
@@ -60,3 +62,12 @@ bool CastTreeFormAction::isUseful()
 {
     return GetTarget() && CastSpellAction::isUseful() && !botAI->HasAura(33891, bot);
 }
+
+// #363 (AC parity, Ai/Class/Druid/Action/DruidShapeshiftActions.cpp:47-53).
+bool CastCancelDruidAction::Execute(Event /*event*/)
+{
+    botAI->RemoveAura(auraName);
+    return true;
+}
+
+bool CastCancelDruidAction::isUseful() { return bot->HasAura(auraId); }

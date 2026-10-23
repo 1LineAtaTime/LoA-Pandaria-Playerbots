@@ -32,6 +32,7 @@
 #include "DynamicTree.h"
 #include "GameObjectModel.h"
 #include "ObjectGuid.h"
+#include "Duration.h"
 
 #include <bitset>
 #include <list>
@@ -95,6 +96,8 @@ struct map_fileheader
     uint32 holesOffset;
     uint32 holesSize;
 };
+
+#define UPDATABLE_OBJECT_LIST_RECHECK_TIMER 30 * IN_MILLISECONDS // #850: AC Map.h:96 - time to recheck update object list
 
 #define MAP_AREA_NO_AREA      0x0001
 
@@ -430,8 +433,8 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         bool IsChallengeDungeon() const { return i_spawnMode == DUNGEON_DIFFICULTY_CHALLENGE || GetId() == 1148; } // proving grounds too has model of challenge conditions
         bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
         bool IsRaidOrHeroicDungeon() const { return IsRaid() || (IsNonRaidDungeon() && i_spawnMode == DUNGEON_DIFFICULTY_HEROIC); }
-        bool IsHeroic() const { return ((IsRaid() && (i_spawnMode == RAID_DIFFICULTY_10MAN_HEROIC || i_spawnMode == RAID_DIFFICULTY_25MAN_HEROIC)) ||
-            (IsNonRaidDungeon() && (i_spawnMode == DUNGEON_DIFFICULTY_HEROIC || IsChallengeDungeon())) || (IsScenario() && i_spawnMode == SCENARIO_DIFFICULTY_HEROIC)); } // Heroic Raids, Dungeons, Scenarios.
+        bool IsHeroic() const { return (IsRaid() && (i_spawnMode == RAID_DIFFICULTY_10MAN_HEROIC || i_spawnMode == RAID_DIFFICULTY_25MAN_HEROIC) ||
+            IsNonRaidDungeon() && (i_spawnMode == DUNGEON_DIFFICULTY_HEROIC || IsChallengeDungeon()) || IsScenario() && i_spawnMode == SCENARIO_DIFFICULTY_HEROIC); } // Heroic Raids, Dungeons, Scenarios.
         bool Is25ManRaid() const { return IsRaid() && (i_spawnMode == RAID_DIFFICULTY_25MAN_NORMAL || i_spawnMode == RAID_DIFFICULTY_25MAN_HEROIC || 
             i_spawnMode == RAID_DIFFICULTY_25MAN_LFR); }   // Raids 25 man Normal, Heroic and LFR.
         bool Is40ManRaid() const { return IsRaid() && i_spawnMode == RAID_DIFFICULTY_40MAN; } // 40 man Raid.
@@ -458,6 +461,13 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         void resetMarkedCells() { marked_cells.reset(); }
         bool isCellMarked(uint32 pCellId) { return marked_cells.test(pCellId); }
         void markCell(uint32 pCellId) { marked_cells.set(pCellId); }
+
+        // #850: AC Map.h:544-557 - per-map updatable object list (creatures only in this port)
+        size_t GetUpdatableObjectsCount() const { return _updatableObjectList.size(); }
+        void AddObjectToPendingUpdateList(WorldObject* obj);
+        void RemoveObjectFromMapUpdateList(WorldObject* obj);
+        typedef std::vector<WorldObject*> UpdatableObjectList;
+        typedef std::unordered_set<WorldObject*> PendingAddUpdatableObjectList;
 
         bool HavePlayers() const { return !m_mapRefManager.isEmpty(); }
         uint32 GetPlayersCountExceptGMs() const;
@@ -493,7 +503,7 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
 
         void UpdateIteratorBack(Player* player);
 
-        TempSummon* SummonCreature(uint32 entry, Position const& pos, SummonPropertiesEntry const* properties = NULL, uint32 duration = 0, Unit* summoner = NULL, uint32 spellId = 0, uint32 vehId = 0, ObjectGuid privateObjectOwner = ObjectGuid::Empty);
+        TempSummon* SummonCreature(uint32 entry, Position const& pos, SummonPropertiesEntry const* properties = NULL, Milliseconds duration = 0ms, Unit* summoner = NULL, uint32 spellId = 0, uint32 vehId = 0, ObjectGuid privateObjectOwner = ObjectGuid::Empty);
         void SummonCreatureGroup(uint8 group, std::list<TempSummon*>* list = NULL);
         Player* GetPlayer(ObjectGuid guid);
         AreaTrigger* GetAreaTrigger(ObjectGuid const& guid);
@@ -501,6 +511,11 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         Creature* GetCreature(ObjectGuid guid);
         GameObject* GetGameObject(ObjectGuid guid);
         Transport* GetTransport(ObjectGuid guid);
+
+    /// The transport (boat/zeppelin) whose deck is under (x, y, z), by raycasting its model.
+    /// Ported from the mod-playerbots AzerothCore fork; playerbots use it to board transports
+    /// (issue #86).
+    Transport* GetTransportForPos(uint32 phase, float x, float y, float z, WorldObject* worldobject = nullptr);
         DynamicObject* GetDynamicObject(ObjectGuid guid);
         Creature* GetCreatureBySpawnId(ObjectGuid::LowType spawnId) const;
         GameObject* GetGameObjectBySpawnId(ObjectGuid::LowType spawnId) const;
@@ -717,7 +732,12 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         void UpdateActiveCells(const float &x, const float &y, const uint32 t_diff);
 
     protected:
-        void SetUnloadReferenceLock(const GridCoord &p, bool on) { getNGrid(p.x_coord, p.y_coord)->setUnloadReferenceLock(on); }
+        void SetUnloadReferenceLock(const GridCoord &p, bool on)
+        {
+            // parent/base ngrid may already be gone during teardown (issue #13) - never dereference NULL here
+            if (NGridType* grid = getNGrid(p.x_coord, p.y_coord))
+                grid->setUnloadReferenceLock(on);
+        }
 
         std::mutex Lock;
         std::mutex GridLock;
@@ -838,6 +858,15 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         ZoneDynamicInfoMap _zoneDynamicInfo;
         IntervalTimer _weatherUpdateTimer;
         uint32 _defaultLight;
+
+        // #850: AC Map.h:705-707
+        void UpdateNonPlayerObjects(uint32 const diff);
+        void _AddObjectToUpdateList(WorldObject* obj);
+        void _RemoveObjectFromUpdateList(WorldObject* obj);
+        bool WasUpdatedByCellVisit(WorldObject* obj); // #850: double-update guard (cell already visited this tick)
+        UpdatableObjectList _updatableObjectList;
+        PendingAddUpdatableObjectList _pendingAddUpdatableObjectList;
+        IntervalTimer _updatableObjectListRecheckTimer;
 };
 
 enum InstanceResetMethod

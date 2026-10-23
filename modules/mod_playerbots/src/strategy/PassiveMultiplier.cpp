@@ -19,6 +19,7 @@ PassiveMultiplier::PassiveMultiplier(PlayerbotAI* botAI) : Multiplier(botAI, "pa
         allowedActions.push_back("nc");
         allowedActions.push_back("reset botAI");
         allowedActions.push_back("check mount state");
+        allowedActions.push_back("lfg");  // #843: AC Bot/Engine/PassiveMultiplier.cpp:21
     }
 
     if (allowedParts.empty())

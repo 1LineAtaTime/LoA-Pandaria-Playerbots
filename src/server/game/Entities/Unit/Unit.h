@@ -18,17 +18,16 @@
 #ifndef SF_UNIT_H
 #define SF_UNIT_H
 
+#include "AbstractFollower.h"
 #include "DBCStructure.h"
 #include "EventProcessor.h"
-#include "FollowerReference.h"
-#include "FollowerRefManager.h"
 #include "FunctionProcessor.h"
-#include "HostileRefManager.h"
 #include "MotionMaster.h"
 #include "Object.h"
 #include "SpellAuraDefines.h"
 #include "SpellDefines.h"
 #include "ThreatManager.h"
+#include "CombatManager.h"
 #include "MoveSplineInit.h"
 #include "SpellMgr.h"
 #include "TimeValue.h"
@@ -209,6 +208,8 @@ class Vehicle;
 class TransportBase;
 class SpellCastTargets;
 class SpellHistory;
+
+class GameClient;
 
 namespace Movement
 {
@@ -1595,6 +1596,10 @@ public:
         return HasUnitState(UNIT_STATE_IN_FLIGHT);
     }
 
+    bool IsImmuneToAll() const { return IsImmuneToPC() && IsImmuneToNPC(); }
+    bool IsImmuneToPC() const { return HasUnitFlag(UNIT_FLAG_IMMUNE_TO_PC); }
+    bool IsImmuneToNPC() const { return HasUnitFlag(UNIT_FLAG_IMMUNE_TO_NPC); }
+
     bool IsInCombat() const
     {
         return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
@@ -1697,7 +1702,7 @@ public:
     void SendSpellDamageImmune(Unit* target, uint32 spellId);
 
     void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
-    void SendTeleportPacket(Position& pos);
+    void SendTeleportPacket(Position& pos, bool teleportingTransport = false);
     void BuildTeleportUpdateData(WorldPacket* data);
     virtual bool UpdatePosition(float x, float y, float z, float ang, bool teleport = false);
     // returns true if unit's position really changed
@@ -1725,6 +1730,7 @@ public:
     bool SetFall(bool enable);
     bool SetSwim(bool enable);
     bool SetCanFly(bool enable);
+    bool SetAlwaysAllowPitching(bool enable);
     bool SetWaterWalking(bool enable, bool packetOnly = false);
     bool SetFeatherFall(bool enable, bool packetOnly = false);
     bool SetHover(bool enable, bool packetOnly = false);
@@ -1734,10 +1740,10 @@ public:
     void SetFacingTo(float ori);
     void SetFacingToObject(WorldObject* object);
 
-    void SendChangeCurrentVictimOpcode(HostileReference* pHostileReference);
+    void SendChangeCurrentVictimOpcode(Unit* victim, std::vector<std::pair<Unit*, float>> const& threats);
     void SendClearThreatListOpcode();
-    void SendRemoveFromThreatListOpcode(HostileReference* pHostileReference);
-    void SendThreatListUpdate();
+    void SendRemoveFromThreatListOpcode(Unit* victim);
+    void SendThreatListUpdate(std::vector<std::pair<Unit*, float>> const& threats);
 
     void SendClearTarget();
 
@@ -1826,6 +1832,8 @@ public:
     void UpdateCharmAI();
     //Player* GetMoverSource() const;
     Player* m_movedPlayer;
+
+    GameClient* _gameClientMovingMe;
     SharedVisionList const& GetSharedVisionList()
     {
         return m_sharedVision;
@@ -2030,11 +2038,11 @@ public:
     int32 GetCreatePowers(Powers power) const;
     float GetPosStat(Stats stat) const
     {
-        return GetFloatValue((uint16)UNIT_FIELD_STAT_POS_BUFF + (uint16)stat);
+        return GetFloatValue(UNIT_FIELD_STAT_POS_BUFF + stat);
     }
     float GetNegStat(Stats stat) const
     {
-        return GetFloatValue((uint16)UNIT_FIELD_STAT_NEG_BUFF + (uint16)stat);
+        return GetFloatValue(UNIT_FIELD_STAT_NEG_BUFF + stat);
     }
     float GetCreateStat(Stats stat) const
     {
@@ -2051,6 +2059,7 @@ public:
     // delayed+channeled spells are always accounted as casted
     // we can skip channeled or delayed checks using flags
     bool IsNonMeleeSpellCasted(bool withDelayed, bool skipChanneled = false, bool skipAutorepeat = false, bool isAutoshoot = false, bool skipInstant = true) const;
+    bool IsMovementPreventedByCasting() const;
 
     // set withDelayed to true to interrupt delayed spells too
     // delayed+channeled spells are always interrupted
@@ -2156,25 +2165,19 @@ public:
     uint32 m_lastSanctuaryTime;
 
     // Threat related methods
-    bool CanHaveThreatList() const;
-    void AddThreat(Unit* victim, float fThreat, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NORMAL, SpellInfo const* threatSpell = NULL);
-    float ApplyTotalThreatModifier(float fThreat, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NORMAL);
-    void DeleteThreatList();
-    void TauntApply(Unit* victim);
-    void TauntFadeOut(Unit* taunter);
+    bool CanHaveThreatList() const { return m_ThreatManager.CanHaveThreatList(); }
+    bool IsThreatenedBy(Unit const* who) const { return who && m_ThreatManager.IsThreatenedBy(who, true); }
+    bool IsInCombatWith(Unit const* who) const { return who && m_CombatManager.IsInCombatWith(who); }
+    bool IsEngagedBy(Unit const* who) const { return CanHaveThreatList() ? IsThreatenedBy(who) : IsInCombatWith(who); }
     ThreatManager& GetThreatManager() { return m_ThreatManager; }
     ThreatManager const& GetThreatManager() const { return m_ThreatManager; }
-    void addHatedBy(HostileReference* pHostileReference)
-    {
-        m_HostileRefManager.insertFirst(pHostileReference);
-    };
-    void removeHatedBy(HostileReference* /*pHostileReference*/)
-    { /* nothing to do yet */
-    }
-    HostileRefManager& getHostileRefManager()
-    {
-        return m_HostileRefManager;
-    }
+    CombatManager& GetCombatManager() { return m_CombatManager; }
+    CombatManager const& GetCombatManager() const { return m_CombatManager; }
+
+    // returns if the unit can't enter combat
+    bool IsCombatDisallowed() const { return _isCombatDisallowed; }
+    // enables / disables combat interaction of this unit
+    void SetIsCombatDisallowed(bool apply) { _isCombatDisallowed = apply; }
 
     VisibleAuraMap const* GetVisibleAuras()
     {
@@ -2313,13 +2316,8 @@ public:
     void  ModSpellCastTime(SpellInfo const* spellProto, int32& castTime, Spell* spell = NULL);
     float CalculateLevelPenalty(SpellInfo const* spellProto) const;
 
-    void addFollower(FollowerReference* pRef)
-    {
-        m_FollowingRefManager.insertFirst(pRef);
-    }
-    void removeFollower(FollowerReference* /*pRef*/)
-    { /* nothing to do yet */
-    }
+    void FollowerAdded(AbstractFollower* follower) { _followers.insert(follower); }
+    void FollowerRemoved(AbstractFollower* follower) { _followers.erase(follower); }
     static Unit* GetUnit(WorldObject& object, ObjectGuid guid);
     static Player* GetPlayer(WorldObject& object, ObjectGuid guid);
     static Creature* GetCreature(WorldObject& object, ObjectGuid guid);
@@ -2521,6 +2519,12 @@ public:
     // Movement info
     Movement::MoveSpline* movespline;
 
+    // real time client control status of this unit (possess effects, vehicles and similar). For example, if this unit is a player temporarily under fear, it will return false.
+    bool IsMovedByClient() const { return GetGameClientMovingMe() != nullptr; }
+    bool IsMovedByServer() const { return !IsMovedByClient(); }
+    GameClient* GetGameClientMovingMe() const { return _gameClientMovingMe; }
+    void SetGameClientMovingMe(GameClient* gameClientMovingMe) { _gameClientMovingMe = gameClientMovingMe; }
+
     virtual void Talk(std::string const& text, ChatMsg msgType, Language language, float textRange, WorldObject const* target);
     virtual void Say(std::string const& text, Language language, WorldObject const* target = nullptr);
     virtual void Yell(std::string const& text, Language language, WorldObject const* target = nullptr);
@@ -2662,6 +2666,8 @@ protected:
     uint32 m_regenTimer;
 
     ThreatManager m_ThreatManager;
+    CombatManager m_CombatManager;
+    bool _isCombatDisallowed = false;
 
     Vehicle* m_vehicle;
     std::shared_ptr<Vehicle> m_vehicleKit;
@@ -2715,10 +2721,8 @@ private:
     TimeTrackerSmall m_splineSyncTimer;
 
     Diminishing m_Diminishing;
-    // Manage all Units that are threatened by us
-    HostileRefManager m_HostileRefManager;
 
-    FollowerRefManager m_FollowingRefManager;
+    std::set<AbstractFollower*> _followers;
 
     GuidSet m_comboPointHolders;
     uint32 m_comboPointResetTimer = 0;

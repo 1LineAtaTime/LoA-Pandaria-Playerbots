@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -154,6 +154,10 @@ enum PaladinSpells
     SPELL_PALADIN_GLYPH_OF_THE_MOUNTED_KING      = 57958,
     SPELL_PALADIN_BLESSING_OF_KINGS              = 20217,
     PALADIN_SPELL_GLYPH_OF_CONTEMPLATION         = 121183,
+    SPELL_PALADIN_EYE_FOR_AN_EYE                 = 25988,
+    SPELL_PALADIN_EYE_FOR_AN_EYE_DAMAGE          = 25997,
+    SPELL_PALADIN_HEALING_FEEDBACK               = 37705,
+    SPELL_PALADIN_HEALING_FOCUS                  = 37706,
 
     SPELL_DRUID_CONSECRATION_DAMAGE              = 110705,
 
@@ -1014,7 +1018,7 @@ class spell_pal_judgment : public SpellScript
         return sSpellMgr->GetSpellInfo(PALADIN_SPELL_JUDGMENT) != nullptr;
     }
 
-    void HandleHit(SpellEffIndex /*effIndex*/)
+    void HandleHit(SpellEffIndex effIndex)
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* unitTarget = GetHitUnit();
@@ -1425,7 +1429,7 @@ class spell_pal_consecration : public AuraScript
             summonSpell = sSpellMgr->GetSpellInfo(GetSpellInfo()->Effects[EFFECT_2].TriggerSpell);
 
         for (auto&& itr : caster->GetSummons())
-            if (itr->GetEntry() == (uint32)summonSpell->Effects[EFFECT_2].MiscValue)
+            if (itr->GetEntry() == summonSpell->Effects[EFFECT_2].MiscValue)
                 caster->CastSpell(itr->GetPosition(), spellId, true);
     }
 
@@ -1622,7 +1626,7 @@ class spell_pal_holy_wrath : public SpellScript
         if (GetCaster()->HasAura(SPELL_PALADIN_GLYPH_OF_FOCUSED_WRATH) && !targets.empty())
         {
             WorldObject* random = Trinity::Containers::SelectRandomContainerElement(targets);
-                targets.remove_if([this](WorldObject* target)
+                targets.remove_if([=](WorldObject* target)
             {
                 return target->GetGUID() != GetCaster()->GetTarget();
             });
@@ -1980,6 +1984,7 @@ class spell_pal_beacon_of_light : public AuraScript
         auto list = GetUnitOwner()->GetBoundAurasBySpellId(SPELL_PALADIN_BEACON_OF_LIGHT);
 
         Unit* beaconTarget = list->front()->GetUnitOwner();
+        Unit* healTarget = eventInfo.GetActionTarget();
 
         static std::map<uint32, int32> const map = 
         {
@@ -1993,7 +1998,7 @@ class spell_pal_beacon_of_light : public AuraScript
         auto it = map.find(eventInfo.GetSpellInfo()->Id);
         int32 pct = it != map.end() ? it->second : 50;
 
-        int32 heal = CalculatePct<int32>((int32)eventInfo.GetHealInfo()->GetHeal(), pct);
+        int32 heal = CalculatePct(eventInfo.GetHealInfo()->GetHeal(), pct);
         if (AuraEffect const* setBonus = GetUnitOwner()->GetAuraEffect(SPELL_PALADIN_T15_HOLY_4P_BONUS, EFFECT_0))
             AddPct(heal, setBonus->GetAmount());
         TriggerCastFlags flags = TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_IGNORE_CASTER_AURAS);
@@ -2051,7 +2056,7 @@ class spell_pal_seal_of_insight : public AuraScript
         return true;
     }
 
-    void HandleProc(AuraEffect const* eff, ProcEventInfo& /*eventInfo*/)
+    void HandleProc(AuraEffect const* eff, ProcEventInfo& eventInfo)
     {
         float ap = GetUnitOwner()->GetTotalAttackPowerValue(BASE_ATTACK);
         float sp = GetUnitOwner()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY);
@@ -2347,7 +2352,7 @@ class spell_pal_t16_protection_4p_bonus : public AuraScript
 {
     PrepareAuraScript(spell_pal_t16_protection_4p_bonus);
 
-    void HandleProc(ProcEventInfo& /*eventInfo*/)
+    void HandleProc(ProcEventInfo& eventInfo)
     {
         if (GetUnitOwner()->GetAuraCount(SPELL_PALADIN_BASTION_OF_GLORY) >= 3)
             GetUnitOwner()->CastSpell(GetUnitOwner(), SPELL_PALADIN_BASTION_OF_POWER, true);
@@ -2659,6 +2664,124 @@ class spell_pal_glyph_of_contemplation : public SpellScriptLoader
         }
 };
 
+// 85256 / 138165 - Templar's Verdict
+class spell_pal_templar_s_verdict : public SpellScript
+{
+    PrepareSpellScript(spell_pal_templar_s_verdict);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return sSpellMgr->GetSpellInfo(SPELL_PALADIN_DIVINE_PURPOSE);
+    }
+
+    bool Load() override
+    {
+        if (GetCaster()->GetTypeId() != TYPEID_PLAYER)
+            return false;
+        if (GetCaster()->ToPlayer()->GetClass() != CLASS_PALADIN)
+            return false;
+        return true;
+    }
+
+    void ChangeDamage(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        int32 damage = GetHitDamage();
+
+        if (caster->HasAura(SPELL_PALADIN_DIVINE_PURPOSE))
+            damage *= 7.5;
+        else
+        {
+            switch (caster->GetPower(POWER_HOLY_POWER))
+            {
+            case 0:
+                damage = damage;
+                break;
+            case 1:
+                damage *= 3;
+                break;
+            case 2:
+                damage *= 7.5;
+                break;
+            }
+        }
+
+        SetHitDamage(damage);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_pal_templar_s_verdict::ChangeDamage, EFFECT_0, SPELL_EFFECT_WEAPON_PERCENT_DAMAGE);
+    }
+};
+
+// 25988 - Eye for an Eye
+class spell_pal_eye_for_an_eye : public SpellScriptLoader
+{
+public:
+    spell_pal_eye_for_an_eye() : SpellScriptLoader("spell_pal_eye_for_an_eye") { }
+
+    class spell_pal_eye_for_an_eye_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_pal_eye_for_an_eye_AuraScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_PALADIN_EYE_FOR_AN_EYE_DAMAGE);
+        }
+
+        void HandleEffectProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+        {
+            PreventDefaultAction();
+            int32 damage = CalculatePct(eventInfo.GetDamageInfo()->GetDamage(), aurEff->GetAmount());
+            GetTarget()->CastCustomSpell(SPELL_PALADIN_EYE_FOR_AN_EYE_DAMAGE, SPELLVALUE_BASE_POINT0, damage, eventInfo.GetProcTarget(), true, NULL, aurEff);
+        }
+
+        void Register() override
+        {
+            OnEffectProc += AuraEffectProcFn(spell_pal_eye_for_an_eye_AuraScript::HandleEffectProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL);
+        }
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_pal_eye_for_an_eye_AuraScript();
+    }
+};
+
+// 37705 - Healing Feedback
+class spell_pal_healing_feedback : public SpellScriptLoader
+{
+public:
+    spell_pal_healing_feedback() : SpellScriptLoader("spell_pal_healing_feedback") { }
+
+    class spell_pal_healing_feedback_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_pal_healing_feedback_AuraScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_PALADIN_HEALING_FOCUS);
+        }
+
+        void HandleProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
+        {
+            PreventDefaultAction();
+            GetTarget()->CastSpell(GetTarget(), SPELL_PALADIN_HEALING_FOCUS, true, NULL, aurEff);
+        }
+
+        void Register() override
+        {
+            OnEffectProc += AuraEffectProcFn(spell_pal_healing_feedback_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL);
+        }
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_pal_healing_feedback_AuraScript();
+    }
+};
+
 void AddSC_paladin_spell_scripts()
 {
     new spell_pal_glyph_of_devotian_aura();
@@ -2746,4 +2869,7 @@ void AddSC_paladin_spell_scripts()
     new aura_script<spell_pal_hand_of_sacrifice>("spell_pal_hand_of_sacrifice");
     new aura_script<spell_pal_glyph_of_bladed_judgement>("spell_pal_glyph_of_bladed_judgement");
     new spell_pal_glyph_of_contemplation();
+    new spell_script<spell_pal_templar_s_verdict>("spell_pal_templar_s_verdict");
+    new spell_pal_eye_for_an_eye();
+    new spell_pal_healing_feedback();
 }

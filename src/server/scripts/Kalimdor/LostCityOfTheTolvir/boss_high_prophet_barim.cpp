@@ -69,12 +69,15 @@ enum eActions
     ACTION_REPENTANCE_DONE                     = 2,
 };
 
+// creature_text 43612 (MoP test world DB): group 0 aggro, 1 "May peace find you now." / "The heavens take you!" (kills),
+// 2 "Kneel before me and repent!", 3 "Death is only the beginning!" - the old 1/2/3 mapping yelled the kill line at Repentance
+// and the death line on every kill (w68 headless chat: "Death is only the beginning!" 22 s after the kneel, Barim at 49%).
 enum eTexts
 {
     SAY_AGGRO                                  = 0,
-    SAY_KNEEL_DOWN                             = 1,
-    SAY_DEATH                                  = 2,
-    SAY_KILL_PLAYER                            = 3,
+    SAY_KILL_PLAYER                            = 1,
+    SAY_KNEEL_DOWN                             = 2,
+    SAY_DEATH                                  = 3,
 };
 
 enum ePhases
@@ -343,7 +346,7 @@ class boss_high_prophet_barim : public CreatureScript
                         case EVENT_PLAGUE_OF_AGES:
                             {
                                 if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
-                                    me->CastSpell(target, SPELL_PLAGUE_OF_AGES, false, NULL, NULL, target->GetGUID());
+                                    me->CastSpell(target, SPELL_PLAGUE_OF_AGES, true); // #680 (w105: 0 casts): with the player target as original caster the hostile spell never went off; Barim casts it, triggered
 
                                 events.ScheduleEvent(EVENT_PLAGUE_OF_AGES, urand(10000, 25000), 0, PHASE_BARIM);
                             }
@@ -394,7 +397,10 @@ class npc_blaze_of_the_heavens : public CreatureScript
                 uiBirthPhase = 1;
                 Birth = true;
 
-                instance->SetData64(DATA_BLAZE, me->GetGUID());
+                // #666: SetData64 is ZoneScript's empty default (ZoneScript.h:50) - the instance stores these guids in SetGuidData
+                // (instance_lost_city_of_the_tolvir.cpp:169-180), so Barim never found his phoenix (no egg at Repentance, no despawn
+                // on reset / death)
+                instance->SetGuidData(DATA_BLAZE, me->GetGUID());
             }
 
             void Reset() override
@@ -433,9 +439,9 @@ class npc_blaze_of_the_heavens : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
-                instance->SetData64(DATA_BLAZE, 0);
+                instance->SetGuidData(DATA_BLAZE, ObjectGuid::Empty);
 
                 lSummons.DespawnAll();
                 me->DespawnOrUnsummon();
@@ -650,7 +656,9 @@ class npc_harbinger_of_darkness : public CreatureScript
                 uiBirthPhase = 0;
                 Birth = true;
 
-                instance->SetData64(DATA_HARBINGER, me->GetGUID());
+                // #666: SetGuidData, not SetData64 (a no-op here) - with DATA_HARBINGER never stored every Soul Fragment despawned in
+                // IsSummonedBy (no 43934 in any wave's Barim log, "lct kill soul fragment" never fired)
+                instance->SetGuidData(DATA_HARBINGER, me->GetGUID());
             }
 
             void Reset() override
@@ -664,9 +672,9 @@ class npc_harbinger_of_darkness : public CreatureScript
                     barim->AI()->JustSummoned(me);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
-                instance->SetData64(DATA_HARBINGER, 0);
+                instance->SetGuidData(DATA_HARBINGER, ObjectGuid::Empty);
 
                 if (Creature* barim = Unit::GetCreature(*me, instance->GetGuidData(DATA_HIGH_PROPHET_BARIM)))
                     barim->AI()->EnterEvadeMode();
@@ -680,7 +688,7 @@ class npc_harbinger_of_darkness : public CreatureScript
 
                     if (!Dead)
                     {
-                        instance->SetData64(DATA_HARBINGER, 0);
+                        instance->SetGuidData(DATA_HARBINGER, ObjectGuid::Empty);
 
                         if (Creature* barim = me->FindNearestCreature(BOSS_HIGH_PROPHET_BARIM, 300.0f))
                             barim->AI()->DoAction(ACTION_REPENTANCE_DONE);
@@ -868,7 +876,7 @@ class spell_repentance_pull_player : public SpellScriptLoader
                 if (caster->GetDistance2d(_x, _y) < 9.0f)
                     return;
 
-                caster->GetNearPoint2D(x, y, frand(5.0f, 9.0f), caster->GetAngle(_x, _y));
+                caster->GetNearPoint2D(nullptr, x, y, frand(5.0f, 9.0f), caster->GetAngle(_x, _y));
                 float z = caster->GetMap()->GetHeight(x, y, MAX_HEIGHT);
                 float speedZ = (float)(GetSpellInfo()->Effects[effIndex].CalcValue() / 10);
                 float speedXY = (float)(GetSpellInfo()->Effects[effIndex].MiscValue / 10);
@@ -1046,6 +1054,56 @@ class spell_repentance_player_summon_mirror : public SpellScriptLoader
         }
 };
 
+// #680: Plague of Ages jumps (TC 4.3.4 spell_barim_plague_of_ages, registered twice with exclusion lists). 82622 (Barim's cast)
+// FORCE_CASTs 82637 on its victim, and 82637 FORCE_CASTs 82640. Both jumps are TARGET_SRC_CASTER + TARGET_UNIT_SRC_AREA_ALLY, 30 yd,
+// with no target cap (5.4.8 SpellEffect.dbc). Without a filter every ally within 30 yd of the victim got the plague, and every
+// one of them passed it on again: one cast = 1 + N + N*N plagues, where Wowpedia's "High Prophet Barim" has one target that
+// jumps to a second and a third. Each jump now picks ONE random ally without an earlier stage. Needs the spell_script_names
+// rows in sql/updates/world/2026_10_23_lct_plague_of_ages.sql.
+class spell_barim_plague_of_ages : public SpellScriptLoader
+{
+    public:
+        spell_barim_plague_of_ages(char const* name, uint32 excludeA, uint32 excludeB) : SpellScriptLoader(name), _excludeA(excludeA), _excludeB(excludeB) { }
+
+        class spell_barim_plague_of_ages_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_barim_plague_of_ages_SpellScript)
+
+            public:
+                spell_barim_plague_of_ages_SpellScript(uint32 excludeA, uint32 excludeB) : _excludeA(excludeA), _excludeB(excludeB) { }
+
+            private:
+                void FilterTargets(std::list<WorldObject*>& targets)
+                {
+                    targets.remove_if([this](WorldObject* object)
+                    {
+                        Unit* unit = object->ToUnit();
+                        return !unit || unit->HasAura(_excludeA) || (_excludeB && unit->HasAura(_excludeB));
+                    });
+
+                    if (targets.size() > 1)
+                        Trinity::Containers::RandomResizeList(targets, 1);
+                }
+
+                void Register() override
+                {
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_barim_plague_of_ages_SpellScript::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ALLY);
+                }
+
+                uint32 _excludeA;
+                uint32 _excludeB;
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_barim_plague_of_ages_SpellScript(_excludeA, _excludeB);
+        }
+
+    private:
+        uint32 _excludeA;
+        uint32 _excludeB;
+};
+
 void AddSC_boss_high_prophet_barim()
 {
     new boss_high_prophet_barim();
@@ -1058,4 +1116,6 @@ void AddSC_boss_high_prophet_barim()
     new spell_copy_melee_weapon();
     new spell_repentance_player_kneel();
     new spell_repentance_player_summon_mirror();
+    new spell_barim_plague_of_ages("spell_barim_plague_of_ages_first", SPELL_PLAGUE_OF_AGES, 0);            // on 82637
+    new spell_barim_plague_of_ages("spell_barim_plague_of_ages_second", SPELL_PLAGUE_OF_AGES, 82637);       // on 82640
 }

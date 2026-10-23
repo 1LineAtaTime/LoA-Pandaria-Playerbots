@@ -10,6 +10,9 @@
 
 #include "Playerbots.h"
 
+#include "ChatActionContext.h"
+#include "DungeonContexts.h"
+#include "ChatTriggerContext.h"
 #include "SharedValueContext.h"
 #include "StrategyContext.h"
 #include "TriggerContext.h"
@@ -26,12 +29,20 @@ AiObjectContext::AiObjectContext(PlayerbotAI* botAI) : PlayerbotAIAware(botAI)
 
     actionContexts.Add(new ActionContext());
     actionContexts.Add(new WorldPacketActionContext());
+    actionContexts.Add(new ChatActionContext());
 
     triggerContexts.Add(new TriggerContext());
     triggerContexts.Add(new WorldPacketTriggerContext());
+    triggerContexts.Add(new ChatTriggerContext());
 
     valueContexts.Add(new ValueContext());
     valueContexts.Add(sSharedValueContext);
+
+    // #545 (epic #569): the dungeon entries of AC Bot/Engine/BuildShared{Strategy,Action,Trigger,Value}Contexts.cpp
+    DungeonContexts::AddStrategyContexts(strategyContexts);
+    DungeonContexts::AddActionContexts(actionContexts);
+    DungeonContexts::AddTriggerContexts(triggerContexts);
+    DungeonContexts::AddValueContexts(valueContexts);
 }
 
 void AiObjectContext::Update()

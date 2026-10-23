@@ -16,6 +16,7 @@
 */
 
 #include "Creature.h"
+#include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
 #include "Common.h"
@@ -36,6 +37,7 @@
 #include "LootMgr.h"
 #include "MapManager.h"
 #include "MoveSpline.h"
+#include "MoveSplineInit.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "OutdoorPvPMgr.h"
@@ -213,7 +215,7 @@ m_PlayerDamageReq(0), m_lootRecipient(), m_lootRecipientGroup(0), m_corpseRemove
 m_respawnDelay(300), m_corpseDelay(60), m_wanderDistance(0.0f), m_WalkMode(0.0f), m_reactState(REACT_AGGRESSIVE),
 m_defaultMovementType(IDLE_MOTION_TYPE), m_spawnId(0), m_equipmentId(0), m_originalEquipmentId(0), m_AlreadyCallAssistance(false),
 m_AlreadySearchedAssistance(false), m_cannotReachTarget(false), m_cannotReachTimer(0), m_regenHealth(true), m_AI_locked(false), _isMissingSwimmingFlagOutOfCombat(false), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL),
-m_creatureInfo(nullptr), m_creatureData(nullptr), m_path_id(0), m_formation(nullptr), m_triggerJustAppeared(false), m_respawnDelayMax(0), dynamicHealthPlayersCount(0)
+m_creatureInfo(nullptr), m_creatureData(nullptr), m_path_id(0), m_formation(nullptr), m_triggerJustAppeared(true), m_respawnDelayMax(0), dynamicHealthPlayersCount(0)
 {
     m_regenTimer = 0;
     m_valuesCount = UNIT_END;
@@ -249,6 +251,26 @@ void Creature::AddToWorld()
     ///- Register the creature for guid lookup
     if (!IsInWorld())
     {
+        // issue #104: a second Creature carrying a GUID that is already in the map's object store used
+        // to trip the assert in Trinity::Insert ("Object with certain key already in but objects are
+        // different!") and take the worldserver down - three crashes on 22-09-2026, one of them while
+        // a GM was using .appear. Log who the duplicate is and refuse to re-add it: the server keeps
+        // running and the log names the source of the duplicate spawn.
+        if (Creature* existing = GetMap()->GetCreature(GetGUID()))
+        {
+            TC_LOG_ERROR("entities.creature",
+                         "[DUP] creature guid %s entry %u spawnId %u at (%.1f %.1f %.1f) map %u zone %u "
+                         "already exists as entry %u spawnId %u at (%.1f %.1f %.1f) - refusing to add the duplicate",
+                         GetGUID().ToString().c_str(), GetEntry(), m_spawnId, GetPositionX(), GetPositionY(),
+                         GetPositionZ(), GetMapId(), GetZoneId(), existing->GetEntry(), existing->m_spawnId,
+                         existing->GetPositionX(), existing->GetPositionY(), existing->GetPositionZ());
+            // The refused copy stays in the grid until it unloads; drop its (never installed) vehicle kit so
+            // that deletion cannot trip the Vehicle::~Vehicle status assert.
+            if (IsVehicle())
+                RemoveVehicleKit(true);
+            return;
+        }
+
         GetMap()->GetObjectsStore().Insert<Creature>(GetGUID(), this);
         if (m_spawnId)
             GetMap()->GetCreatureBySpawnIdStore().insert(std::make_pair(m_spawnId, this));
@@ -285,6 +307,56 @@ void Creature::RemoveFromWorld()
 
         GetMap()->GetObjectsStore().Remove<Creature>(GetGUID());
     }
+}
+
+// #850: true if a player of the map stands in the grid of (x, y) or one of its 8 neighbours (grids are 533 yd).
+static bool IsPlayerInOrNextToGrid(Map* map, float x, float y)
+{
+    GridCoord const g = Trinity::ComputeGridCoord(x, y);
+    for (Map::PlayerList::const_iterator itr = map->GetPlayers().begin(); itr != map->GetPlayers().end(); ++itr)
+    {
+        Player* player = itr->GetSource();
+        if (!player || !player->IsInWorld())
+            continue;
+        GridCoord const p = Trinity::ComputeGridCoord(player->GetPositionX(), player->GetPositionY());
+        if (std::abs(int(p.x_coord) - int(g.x_coord)) <= 1 && std::abs(int(p.y_coord) - int(g.y_coord)) <= 1)
+            return true;
+    }
+    return false;
+}
+
+// #850: AC Creature.cpp:3991-4019. Note: called from the 30s recheck of the map's updatable object list only.
+bool Creature::IsUpdateNeeded()
+{
+    if (WorldObject::IsUpdateNeeded())
+        return true;
+
+    // AC: GetMap()->isCellMarked(GetCurrentCell().GetCellCoord().GetId()). MapObject::GetCurrentCell is private to Map
+    // here, so use the cell of the position (same id formula as Map::VisitNearbyCellsOf); the marks are the cells
+    // players / active objects / viewpoints visited this tick. This also stands in for AC's
+    // GetObjectVisibilityContainer().GetVisiblePlayersMap().empty() check (MoP has no such container).
+    CellCoord const cellCoord = Trinity::ComputeCellCoord(GetPositionX(), GetPositionY());
+    if (GetMap()->isCellMarked(cellCoord.y_coord * TOTAL_NUMBER_OF_CELLS_PER_MAP + cellCoord.x_coord))
+        return true;
+
+    if (IsInCombat())
+        return true;
+
+    if (ToTempSummon())
+        return true;
+
+    if (HasUnitState(UNIT_STATE_EVADE))
+        return true;
+
+    // #850 (item 1): the patrol / formation clauses keep a creature on the list only while a player is in its grid or an
+    // adjacent grid (the 7k Cata-sniffed patrols per continent are what made the full AC clause cost 330-440 ms/tick).
+    // Creature::Update re-adds it when a cell visit updates it again, so a patrol never stays frozen near a player.
+    if (GetMotionMaster()->GetCurrentMovementGeneratorType(MOTION_SLOT_DEFAULT) == WAYPOINT_MOTION_TYPE ||
+        GetMotionMaster()->GetCurrentMovementGeneratorType(MOTION_SLOT_ACTIVE) == WAYPOINT_MOTION_TYPE ||
+        (m_formation && m_formation->GetLeader() != this))
+        return IsPlayerInOrNextToGrid(GetMap(), GetPositionX(), GetPositionY());
+
+    return false;
 }
 
 void Creature::DisappearAndDie()
@@ -341,6 +413,8 @@ void Creature::RemoveCorpse(bool setSpawnTime)
  */
 bool Creature::InitEntry(uint32 entry, uint32 /*team*/, const CreatureData* data)
 {
+    m_moveInLineOfSightStrictlyDisabled = -1;  // #72: entry / template / script may change - recompute on next use
+
     CreatureTemplate const* normalInfo = sObjectMgr->GetCreatureTemplate(entry);
     if (!normalInfo)
     {
@@ -462,6 +536,8 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
     if (!IsPet())
     {
         float armor = (float)stats->GenerateArmor(cInfo); /// @todo Why is this treated as uint32 when it's a float?
+        if (AutoBalance::IsActive())
+            armor = AutoBalance::ModifyCreatureArmor(this, armor);  // #829: AutoBalance player-count armor multiplier
         SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, armor);
         SetModifierValue(UNIT_MOD_RESISTANCE_HOLY, BASE_VALUE, float(cInfo->resistance[SPELL_SCHOOL_HOLY]));
         SetModifierValue(UNIT_MOD_RESISTANCE_FIRE, BASE_VALUE, float(cInfo->resistance[SPELL_SCHOOL_FIRE]));
@@ -505,6 +581,8 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
         ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, true);
     }
 
+    SetIsCombatDisallowed((cInfo->flags_extra & CREATURE_FLAG_EXTRA_NO_COMBAT) != 0);
+
     if (cInfo->flags_extra & CREATURE_FLAG_EXTRA_NO_KNOCK_BACK)
     {
         ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);
@@ -542,15 +620,29 @@ void Creature::SetPhaseMask(uint32 newPhaseMask, bool update)
 
 void Creature::Update(uint32 diff)
 {
-    if (IsAIEnabled && m_triggerJustAppeared)
+    // #850: a cell visit is updating a patrol / formation follower that the list dropped (no player was near at the last
+    // recheck): put it back on the list so it keeps moving after it leaves the visited cells (AC re-add, PlayerUpdates.cpp:1711)
+    // (AddObjectToPendingUpdateList returns at once when the list is off or the object is already queued/updating.)
+    if (IsInWorld() &&
+        (GetMotionMaster()->GetCurrentMovementGeneratorType(MOTION_SLOT_DEFAULT) == WAYPOINT_MOTION_TYPE || (m_formation && m_formation->GetLeader() != this)))
+        GetMap()->AddObjectToPendingUpdateList(this);
+
+    if (IsAIEnabled && m_triggerJustAppeared && m_deathState != DEAD)
     {
         m_triggerJustAppeared = false;
         AI()->JustAppeared();
-        if (m_vehicleKit)
+        // AC parity (#216, AC Creature.cpp:718): skip the vehicle reset for summons - it would eject a
+        // passenger the summon spell seated synchronously before this first update.
+        if (m_vehicleKit && !IsSummon())
             m_vehicleKit->Reset();
         if (GetMap()->IsRaid() && ((InstanceMap*)GetMap())->GetInstanceScript())
             ((InstanceMap*)GetMap())->GetInstanceScript()->UpdateDynamicHealth(GetGUID());
     }
+
+    // #702: AutoBalance re-scales an idle creature after the instance's players (count, highest level) or the config
+    // changed, and reverts it when AutoBalance no longer applies (two relaxed atomic loads when the feature is off)
+    if (AutoBalance::NeedsCreatureUpdate() && m_deathState == ALIVE && GetMap()->IsDungeon())
+        AutoBalance::OnCreatureUpdate(this);
 
     UpdateMovementFlags();
 
@@ -779,6 +871,8 @@ bool Creature::AIM_Initialize(CreatureAI* ai)
 
     UnitAI* oldAI = i_AI;
 
+    m_moveInLineOfSightStrictlyDisabled = -1;  // #72: recompute on next use (AI name / script / summon masks are final here)
+
     Motion_Initialize();
 
     i_AI = ai ? ai : FactorySelector::selectAI(this);
@@ -816,8 +910,11 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, 
         SetPhased(data->phaseid, false, true);
 
     if (data && data->phaseGroup)
-        for (auto ph : GetPhasesForGroup(data->phaseGroup))
-            SetPhased(ph, false, true);
+    {
+        std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(data->phaseGroup);
+        for (uint32 phaseId : *phasesInGroup)
+            SetPhased(phaseId, false, true);
+    }
 
     CreatureTemplate const* cinfo = sObjectMgr->GetCreatureTemplate(Entry);
     if (!cinfo)
@@ -895,6 +992,8 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, 
 
     if (Entry == VISUAL_WAYPOINT)
         SetVisible(false);
+
+    GetThreatManager().Initialize();
 
     return true;
 }
@@ -1177,27 +1276,14 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     uint8 dbminlevel = cinfo->minlevel;
     uint8 dbmaxlevel = cinfo->maxlevel;
     float hpmod = cinfo->ModHealth;
-    float mindmg = cinfo->mindmg;
-    float maxdmg = cinfo->maxdmg;
-    float minrangedmg = cinfo->minrangedmg;
-    float maxrangedmg = cinfo->maxrangedmg;
-    uint32 attackpower = cinfo->attackpower;
-    uint32 rangedattackpower = cinfo->rangedattackpower;
 
-    CreatureDifficultyInfo const* difficultyInfo = nullptr;
     if (GetMap()->GetDifficulty() > REGULAR_DIFFICULTY || GetMap()->IsBattleground())
     {
-        difficultyInfo = sObjectMgr->SelectDifficultyInfo(GetMap(), GetEntry());
-        if (difficultyInfo)
+        if (auto difficultyInfo = sObjectMgr->SelectDifficultyInfo(GetMap(), GetEntry()))
         {
             dbminlevel = difficultyInfo->LevelMin;
             dbmaxlevel = difficultyInfo->LevelMax;
             hpmod = difficultyInfo->HealthMod;
-            mindmg = difficultyInfo->MinDamage;
-            maxdmg = difficultyInfo->MaxDamage;
-            minrangedmg = difficultyInfo->MinRangeDamage;
-            maxrangedmg = difficultyInfo->MaxRangeDamage;
-            rangedattackpower = difficultyInfo->RangedAttackPower;
         }
     }
 
@@ -1207,6 +1293,13 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     uint8 minlevel = std::min(dbmaxlevel, dbminlevel);
     uint8 maxlevel = std::max(dbmaxlevel, dbminlevel);
     uint8 level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+
+    // #702: AutoBalance level scaling (off unless AutoBalance.Enable.Global = 1). AC calls OnBeforeCreatureSelectLevel
+    // at this point (AC Creature.cpp:1523), so everything below is computed for the scaled level.
+    int32 scaledExpansion = -1;
+    if (AutoBalance::IsActive())
+        level = AutoBalance::OnCreatureSelectLevel(this, cinfo, level, scaledExpansion);
+
     SetLevel(level);
 
     CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(level, cinfo->unit_class);
@@ -1221,18 +1314,28 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
             expansion = EXPANSION_CATACLYSM;
         else if (level > 71)
             expansion = EXPANSION_WRATH_OF_THE_LICH_KING;
+        else
+            expansion = EXPANSION_CLASSIC; // #175: the TBC column has holes (basehp1/damage_exp1 0/1 at 45-57, 74-83)
     }
+    else if (scaledExpansion >= 0)
+        expansion = uint32(scaledExpansion); // #702: the column of the scaled level (AutoBalance::ExpansionColumnForLevel)
 
     // health
     uint32 health = uint32(std::ceil(stats->BaseHealth[expansion] * hpmod * _GetHealthMod(rank)));
+
+    // mana
+    uint32 mana = stats->GenerateMana(cinfo);
+
+    // #829: AutoBalance player-count multipliers of health, mana and armor (AB ModifyCreatureAttributes; no-op unless
+    // AutoBalance.Enable.Global = 1 and the creature is scaled)
+    if (AutoBalance::IsActive())
+        AutoBalance::ModifyCreatureHealthMana(this, health, mana);
 
     SetCreateHealth(health);
     SetMaxHealth(health);
     SetHealth(health);
     ResetPlayerDamageReq();
 
-    // mana
-    uint32 mana = stats->GenerateMana(cinfo);
     SetCreateMana(mana);
 
     switch (GetClass())
@@ -1255,16 +1358,11 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
     SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
 
-    float basedamage = stats->BaseDamage[cinfo->expansion];
-    if (basedamage && !difficultyInfo)
-    {
-        mindmg = basedamage;
-        maxdmg = basedamage * 1.5f;
-        minrangedmg = mindmg;
-        maxrangedmg = maxdmg;
-        attackpower = stats->AttackPower;
-        rangedattackpower = stats->RangedAttackPower;
-    }
+    // #175: damage uses the same expansion column as health (it read the template's classic column, so level
+    // 80-90 battleground NPCs hit for ~1/240 of AC's damage and ~0 at level 90)
+    float basedamage = stats->BaseDamage[expansion];
+    float mindmg = basedamage;
+    float maxdmg = basedamage * 1.5f;
 
     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, mindmg);
     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxdmg);
@@ -1272,11 +1370,11 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, mindmg);
     SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, maxdmg);
 
-    SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, minrangedmg);
-    SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, maxrangedmg);
+    SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, mindmg);
+    SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, maxdmg);
 
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, attackpower);
-    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, attackpower);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, stats->AttackPower);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, stats->RangedAttackPower);
 }
 
 float Creature::_GetHealthMod(int32 Rank)
@@ -1404,7 +1502,12 @@ bool Creature::LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap)
     m_spawnId = guid;
     if (map->GetInstanceId() == 0)
     {
-        if (map->GetCreature(ObjectGuid(HighGuid::Unit, data->id, guid)))
+        // Look the continent spawn up by spawnId (later TrinityCore). The GUID
+        // lookup used HighGuid::Unit, but CreateFromProto gives vehicle creatures HighGuid::Vehicle, so a patrolling
+        // vehicle NPC that had walked out of its spawn grid was loaded a second time when the grid reloaded; the
+        // #104 guard kept the copy out of the world with an uninstalled vehicle kit, and its later grid unload hit
+        // ASSERT(_status == STATUS_UNINSTALLING) in Vehicle::~Vehicle.
+        if (map->GetCreatureBySpawnIdStore().count(guid))
             return false;
     }
     else
@@ -1432,8 +1535,11 @@ bool Creature::LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap)
         m_deathState = DEAD;
         if (CanFly())
         {
-            float tz = map->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ, false);
-            if (data->posZ - tz > 0.1f)
+            // #169 AC parity (AC Creature.cpp:1762-1763): search the vmap too, and only drop the dead flyer to a
+            // valid height. With vmap=false a flyer below the terrain (e.g. the Twilight Buzzards in the cavern
+            // under Mount Hyjal) got INVALID_HEIGHT and was relocated to Z = -200000.
+            float tz = map->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ, true, MAX_FALL_DISTANCE);
+            if (data->posZ - tz > 0.1f && Trinity::IsValidMapCoord(tz))
                 Relocate(data->posX, data->posY, tz);
         }
     }
@@ -2176,8 +2282,21 @@ bool Creature::_IsTargetAcceptable(const Unit* target) const
     ASSERT(target);
 
     // if the target cannot be attacked, the target is not acceptable
+    // #881: AC Creature.cpp:2622 asks isTargetableForAttack(false, this), and AC Unit.cpp:10442 lets UNIT_FLAG_IMMUNE_TO_PC
+    // shield the target only from a player or a player-controlled attacker. This core's Unit::isTargetableForAttack refuses
+    // IMMUNE_TO_PC for every attacker, so an NPC hit by a player-driven vehicle that keeps the flag from its template
+    // (Mechashark 38318, unit_flags 0x8100) put the vehicle offline in its threat list at once and evaded (The Hammer 36682,
+    // quest 24817). AC's rule for a player-controlled creature target; every other target keeps the old check.
+    bool targetable;
+    if (target->GetTypeId() == TYPEID_UNIT && target->IsControlledByPlayer() && !GetCharmerOrOwnerPlayerOrPlayerItself()
+        && target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC))
+        targetable = target->IsAlive() && !target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE)
+            && !target->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION) && !target->HasUnitState(UNIT_STATE_UNATTACKABLE);
+    else
+        targetable = target->isTargetableForAttack(false);
+
     if (IsFriendlyTo(target)
-        || !target->isTargetableForAttack(false)
+        || !targetable
         || (m_vehicle && (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))))
         return false;
 
@@ -2369,7 +2488,7 @@ void Creature::SetInCombatWithZone()
             {
                 this->SetInCombatWith(player);
                 player->SetInCombatWith(this);
-                AddThreat(player, 0.0f);
+                GetThreatManager().AddThreat(player, 0.0f);
             }
         }
     }
@@ -2487,13 +2606,12 @@ void Creature::FixateOnTarget(ObjectGuid targetGUID, uint32 timer)
 {
     if (Unit* target = ObjectAccessor::GetUnit(*this, targetGUID))
     {
-        GetThreatManager().clearReferences();
-        GetThreatManager().addThreat(target, std::numeric_limits<float>::max());
+        GetThreatManager().ClearAllThreat();
+        GetThreatManager().AddThreat(target, std::numeric_limits<float>::max());
+        GetThreatManager().FixateTarget(target);
 
         if (AI())
             AI()->AttackStart(target);
-
-        TauntApply(target);
 
         ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_TAUNT, true);
         ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_THREAT, true);
@@ -2635,6 +2753,30 @@ uint8 Creature::GetLevelForTarget(WorldObject const* target) const
 std::string const& Creature::GetAIName() const
 {
     return sObjectMgr->GetCreatureTemplate(GetEntry())->AIName;
+}
+
+// #72 perf: AC Creature::UpdateMoveInLineOfSightState (AC Creature.cpp:2648-2664), "strictly disabled" part. AC computes it
+// when the faction is set and caches it in a member; here it is computed on first use after InitEntry / AIM_Initialize and
+// cached the same way (it does not depend on the faction). Before, AIRelocationNotifier::Visit evaluated it for every
+// creature pair on every AI relocation notify, with a creature-template map lookup (GetAIName) and a string compare each
+// time - 2.8% of the Pandaria map update and 7-8% of all map-update time in the w15 profile (lane-perf3).
+bool Creature::IsMoveInLineOfSightStrictlyDisabled() const
+{
+    if (m_moveInLineOfSightStrictlyDisabled < 0)
+    {
+        bool disabled = false;
+        // pets, guardians and units with scripts / SmartAI are never skipped
+        if (!IsPet() &&
+            !HasUnitTypeMask(UNIT_MASK_MINION | UNIT_MASK_SUMMON | UNIT_MASK_GUARDIAN | UNIT_MASK_CONTROLABLE_GUARDIAN) &&
+            !GetScriptId() && GetAIName() != "SmartAI")
+        {
+            uint32 const creatureType = GetCreatureType();
+            disabled = IsTrigger() || IsCivilian() || creatureType == CREATURE_TYPE_NON_COMBAT_PET ||
+                creatureType == CREATURE_TYPE_CRITTER || GetAIName() == "NullCreatureAI";
+        }
+        m_moveInLineOfSightStrictlyDisabled = disabled ? 1 : 0;
+    }
+    return m_moveInLineOfSightStrictlyDisabled == 1;
 }
 
 std::string Creature::GetScriptName() const

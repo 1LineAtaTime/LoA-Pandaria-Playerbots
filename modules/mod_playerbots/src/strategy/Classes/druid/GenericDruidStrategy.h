@@ -55,4 +55,16 @@ public:
     std::string const getName() override { return "healer dps"; }
 };
 
+// #408 (AC parity, Ai/Class/Druid/Strategy/GenericDruidStrategy.h:59-66). AC exposes one spec-gated
+// "aoe" strategy for balance/resto/cat. This fork keeps its own "caster aoe"/"cat aoe", so this is
+// the AC-shaped third entry point rather than a replacement for them.
+class DruidAoeStrategy : public Strategy
+{
+public:
+    DruidAoeStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "aoe"; }
+};
+
 #endif

@@ -64,10 +64,15 @@ class boss_beauty : public CreatureScript
                 me->setActive(true);
             }
 
+            // #699: Berserk (82395) is "Triggered by the death of Runty" (Wowpedia "Beauty", 2026-10-12). Runty (40015,
+            // one static spawn behind Beauty) has no script or SmartAI, so nothing ever cast it.
+            bool berserk = false;
+
             void Reset() override
             {
                 _Reset();
                 summons.DespawnAll();
+                berserk = false;
 
                 if (instance)
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
@@ -117,6 +122,12 @@ class boss_beauty : public CreatureScript
                     return;
                 }
 
+                if (!berserk && me->FindNearestCreature(NPC_RUNTY, 100.0f, false))
+                {
+                    berserk = true;
+                    DoCast(me, SPELL_BERSERK, true);
+                }
+
                 events.Update(diff);
 
                 if (me->HasUnitState(UNIT_STATE_CASTING))
@@ -160,7 +171,44 @@ class boss_beauty : public CreatureScript
         }
 };
  
+// Magma Spit - 76031
+// #699: Wowhead Cata tooltip 76031 (read 2026-10-12): "sets them on fire, causing an additional 4000 Fire damage every
+// 3 sec. Explodes when removed." Nothing handled the removal. The four Magma Spit missiles 76058 / 76072 / 76074 / 76076
+// (DBC: one per side, each triggers Magma Blast 76070, damage to the victim's allies at the impact point) are launched
+// by the victim when the burn ends, by expiry or dispel; not when the victim dies.
+class spell_beauty_magma_spit : public SpellScriptLoader
+{
+    public:
+        spell_beauty_magma_spit() : SpellScriptLoader("spell_beauty_magma_spit") { }
+
+        class spell_beauty_magma_spit_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_beauty_magma_spit_AuraScript);
+
+            void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEATH)
+                    return;
+
+                Unit* target = GetTarget();
+                for (uint32 spellId : { 76058, 76072, 76074, 76076 })
+                    target->CastSpell(target, spellId, true, nullptr, nullptr, GetCasterGUID());
+            }
+
+            void Register() override
+            {
+                AfterEffectRemove += AuraEffectRemoveFn(spell_beauty_magma_spit_AuraScript::AfterRemove, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_beauty_magma_spit_AuraScript();
+        }
+};
+
 void AddSC_boss_beauty()
 {
     new boss_beauty();
+    new spell_beauty_magma_spit();
 }

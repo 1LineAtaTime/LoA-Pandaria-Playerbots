@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -21,6 +21,7 @@
 #include "ObjectMgr.h"
 #include "World.h"
 #include "Transport.h"
+#include "Map.h"
 //Flightmaster grid preloading
 #include "MapManager.h"
 //Creature-specific headers
@@ -49,22 +50,24 @@ void WaypointMovementGenerator<Creature>::LoadPath(Creature* creature)
     StartMoveNow(creature);
 }
 
-void WaypointMovementGenerator<Creature>::DoInitialize(Creature* creature)
+bool WaypointMovementGenerator<Creature>::DoInitialize(Creature* creature)
 {
     LoadPath(creature);
     creature->AddUnitState(UNIT_STATE_ROAMING|UNIT_STATE_ROAMING_MOVE);
+    return true;
 }
 
-void WaypointMovementGenerator<Creature>::DoFinalize(Creature* creature)
+void WaypointMovementGenerator<Creature>::DoFinalize(Creature* creature, bool, bool)
 {
     creature->ClearUnitState(UNIT_STATE_ROAMING|UNIT_STATE_ROAMING_MOVE);
     creature->SetWalk(false);
 }
 
-void WaypointMovementGenerator<Creature>::DoReset(Creature* creature)
+bool WaypointMovementGenerator<Creature>::DoReset(Creature* creature)
 {
     creature->AddUnitState(UNIT_STATE_ROAMING|UNIT_STATE_ROAMING_MOVE);
     StartMoveNow(creature);
+    return true;
 }
 
 void WaypointMovementGenerator<Creature>::OnArrived(Creature* creature)
@@ -150,7 +153,16 @@ bool WaypointMovementGenerator<Creature>::StartMove(Creature* creature)
 
     //! Do not use formationDest here, MoveTo requires transport offsets due to DisableTransportPathTransformations() call
     //! but formationDest contains global coordinates
-    init.MoveTo(node->x, node->y, node->z);
+    // #850: patrols updated from the map's updatable list while no player is near (their cell is not marked this tick)
+    // walk straight lines between the DB nodes instead of paying PathGenerator::CalculatePath on every node
+    // (10.5% of the map update at build 94). Near a player the navmesh path is generated as before.
+    bool generatePath = true;
+    if (!transportPath && creature->IsInWorld() && !creature->IsInCombat() && !creature->isActiveObject())
+    {
+        CellCoord const cc = Trinity::ComputeCellCoord(creature->GetPositionX(), creature->GetPositionY());
+        generatePath = creature->GetMap()->isCellMarked(cc.y_coord * TOTAL_NUMBER_OF_CELLS_PER_MAP + cc.x_coord);
+    }
+    init.MoveTo(node->x, node->y, node->z, generatePath);
 
     //! Accepts angles such as 0.00001 and -0.00001, 0 must be ignored, default value in waypoint table
     if (node->orientation && node->delay)
@@ -163,7 +175,7 @@ bool WaypointMovementGenerator<Creature>::StartMove(Creature* creature)
     if (creature->GetFormation() && creature->GetFormation()->GetLeader() == creature)
     {
         creature->SetWalk(!node->run);
-        creature->GetFormation()->LeaderMoveTo(formationDest.x, formationDest.y, formationDest.z);
+        creature->GetFormation()->LeaderStartedMoving();
     }
 
     return true;
@@ -175,12 +187,37 @@ bool WaypointMovementGenerator<Creature>::DoUpdate(Creature* creature, uint32 di
     // This is quite handy for escort quests and other stuff
     if (creature->HasUnitState(UNIT_STATE_NOT_MOVE))
     {
+        // #894: AC WaypointMovementGenerator.cpp:369-375 - stop the running spline and remember the stall so the
+        // patrol is relaunched when the root/stun ends. Without it the cleared ROAMING_MOVE made creature->IsStopped()
+        // true after release and the IsStopped() branch below parked the patroller for STOP_TIME_FOR_PLAYER (3 min).
+        // Only when moving between nodes and not already in a timed stop (gossip pause / waypoint delay).
+        if (!m_isArrivalDone && !Stopped())
+        {
+            if (!creature->movespline->Finalized())
+                creature->StopMoving();
+            m_hasBeenStalled = true;
+        }
         creature->ClearUnitState(UNIT_STATE_ROAMING_MOVE);
         return true;
+    }
+
+    // #894: AC WaypointMovementGenerator.cpp:488-489 - allowed to move again after a stall: relaunch to the same
+    // node (m_isArrivalDone is still false, so StartMove does not advance the path).
+    if (m_hasBeenStalled)
+    {
+        m_hasBeenStalled = false;
+        if (i_path && !i_path->empty() && !Stopped() && !m_isArrivalDone)
+            return StartMove(creature);
     }
     // prevent a crash at empty waypoint path.
     if (!i_path || i_path->empty())
         return false;
+
+    // #486: AC WaypointMovementGenerator.cpp:376-383 - while the spline runs, the home position follows the
+    // creature, so Creature::CanCreatureAttack's home-distance check measures from where a patroller is, not
+    // from its spawn (a 300 yd circle patroller like Mobus 50009 could only aggro within 60 yd of its spawn).
+    if (!creature->movespline->Finalized() && !creature->GetTransport())
+        creature->SetHomePosition(creature->GetPosition());
 
     if (Stopped())
     {
@@ -206,7 +243,7 @@ void WaypointMovementGenerator<Creature>::MovementInform(Creature* creature)
         creature->AI()->MovementInform(WAYPOINT_MOTION_TYPE, i_currentNode);
 }
 
-bool WaypointMovementGenerator<Creature>::GetResetPos(Creature*, float& x, float& y, float& z)
+bool WaypointMovementGenerator<Creature>::GetResetPosition(Unit*, float& x, float& y, float& z)
 {
     // prevent a crash at empty waypoint path.
     if (!i_path || i_path->empty())
@@ -235,13 +272,14 @@ uint32 FlightPathMovementGenerator::GetPathAtMapEnd() const
     return i_path->size();
 }
 
-void FlightPathMovementGenerator::DoInitialize(Player* player)
+bool FlightPathMovementGenerator::DoInitialize(Player* player)
 {
     Reset(player);
     InitEndGridInfo();
+    return true;
 }
 
-void FlightPathMovementGenerator::DoFinalize(Player* player)
+void FlightPathMovementGenerator::DoFinalize(Player* player, bool, bool)
 {
     // remove flag to prevent send object build movement packets for flight state and crash (movement generator already not at top of stack)
     player->ClearUnitState(UNIT_STATE_IN_FLIGHT);
@@ -251,7 +289,7 @@ void FlightPathMovementGenerator::DoFinalize(Player* player)
 
     if (player->m_taxi.empty())
     {
-        player->getHostileRefManager().setOnlineOfflineState(true);
+        player->GetThreatManager().EvaluateSuppressed(true);
         // update z position to ground and orientation for landing point
         // this prevent cheating with landing  point at lags
         // when client side flight end early in comparison server side
@@ -263,9 +301,8 @@ void FlightPathMovementGenerator::DoFinalize(Player* player)
 
 #define PLAYER_FLIGHT_SPEED 32.0f
 
-void FlightPathMovementGenerator::DoReset(Player* player)
+bool FlightPathMovementGenerator::DoReset(Player* player)
 {
-    player->getHostileRefManager().setOnlineOfflineState(false);
     player->AddUnitState(UNIT_STATE_IN_FLIGHT);
     player->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_TAXI_FLIGHT);
 
@@ -284,6 +321,7 @@ void FlightPathMovementGenerator::DoReset(Player* player)
     float speed = PLAYER_FLIGHT_SPEED * player->GetTotalAuraMultiplier(SPELL_AURA_MOD_TAXI_FLIGHT_SPEED);
     init.SetVelocity(speed);
     init.Launch();
+    return true;
 }
 
 bool FlightPathMovementGenerator::DoUpdate(Player* player, uint32 /*diff*/)
@@ -340,7 +378,7 @@ void FlightPathMovementGenerator::DoEventIfAny(Player* player, TaxiPathNodeEntry
     }
 }
 
-bool FlightPathMovementGenerator::GetResetPos(Player*, float& x, float& y, float& z)
+bool FlightPathMovementGenerator::GetResetPosition(Unit*, float& x, float& y, float& z)
 {
     const TaxiPathNodeEntry& node = (*i_path)[i_currentNode];
     x = node.LocX; y = node.LocY; z = node.LocZ;

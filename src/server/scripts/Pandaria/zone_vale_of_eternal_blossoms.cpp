@@ -19,6 +19,7 @@
 #include "ObjectMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
+#include "ScriptedEscortAI.h"
 #include "Group.h"
 
 enum eSpells
@@ -541,7 +542,7 @@ struct npc_milau : public ScriptedAI
         }
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         me->CombatStop();
         me->GetMotionMaster()->MoveTargetedHome();
@@ -659,7 +660,7 @@ struct npc_aetha_tornado : public ScriptedAI
         init.Launch();
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 };
 
 // Thundermaw 58456
@@ -958,7 +959,7 @@ struct npc_dagou : public customCreatureAI
         summons.Summon(summon);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         summons.DespawnAll();
     }
@@ -1019,7 +1020,7 @@ struct npc_mercurial_guardian : public customCreatureAI
             clicker->ToPlayer()->KilledMonsterCredit(NPC_INVESTIGATE_GUARDIAN);
 
         scheduler
-            .Schedule(Milliseconds(2000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(2000), [this](TaskContext context)
         {
             me->SetFaction(14);
 

@@ -38,6 +38,9 @@
 #include <G3D/Box.h>
 #include <G3D/CoordinateFrame.h>
 
+// #736 A/B: defined in Transport.cpp (the Transport.StopFrameClientEncoding mode; no header change)
+int32 TransportStopFrameClientEncoding();
+
 GameObject::GameObject() : WorldObject(false), MapObject(),
     m_model(NULL), m_goValue(), m_AI(NULL), _animKitId(0)
 {
@@ -920,8 +923,11 @@ bool GameObject::LoadGameObjectFromDB(uint32 guid, Map* map, bool addToMap)
 
     if (data->phaseGroup)
     {
-        for (auto ph : GetPhasesForGroup(data->phaseGroup))
-            SetPhased(ph, false, true);
+        std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(data->phaseGroup);
+        for (uint32 phaseId : *phasesInGroup)
+            SetPhased(phaseId, false, true);
+        //for (auto ph : sDBCManager.GetPhasesForGroup(data->phaseGroup))
+            //SetPhased(ph, false, true);
     }
 
     if (data->spawntimesecs >= 0)
@@ -2109,7 +2115,7 @@ bool GameObject::IsAtInteractDistance(Player const* player, SpellInfo const* spe
         if (GetGoType() == GAMEOBJECT_TYPE_SPELL_FOCUS)
             return maxRange * maxRange >= GetExactDistSq(player);
 
-        // Not yet decompiled
+        // Not yet analysed
         if (GetGoType() == GAMEOBJECT_TYPE_DOOR)
             return true;
 
@@ -2284,6 +2290,15 @@ void GameObject::ModifyHealth(int32 change, Unit* attackerOrHealer /*= NULL*/, u
 
     // Set the health bar, value = 255 * healthPct;
     SetGoHealth(m_goValue.Building.Health * 255 / m_goValue.Building.MaxHealth);
+
+    // #736 evidence (temporary): who damages a gate, with what, from how far - SotA/IoC "gate takes damage while the
+    // vehicles are far away / not shooting at it". Enable with Logger.entities.gameobject=1 (debug).
+    if (attackerOrHealer)
+        TC_LOG_DEBUG("entities.gameobject", "[736] building-hp go=%u (%s) change=%d hp=%u/%u spell=%u by=%s entry=%u charmer=%s dist2d=%.1f dz=%.1f",
+            GetEntry(), GetGOInfo()->name.c_str(), change, m_goValue.Building.Health, m_goValue.Building.MaxHealth, spellId,
+            attackerOrHealer->GetName().c_str(), attackerOrHealer->GetEntry(),
+            attackerOrHealer->GetCharmerOrOwnerPlayerOrPlayerItself() ? attackerOrHealer->GetCharmerOrOwnerPlayerOrPlayerItself()->GetName().c_str() : "-",
+            attackerOrHealer->GetExactDist2d(this), GetPositionZ() - attackerOrHealer->GetPositionZ());
 
     Player* player = attackerOrHealer->GetCharmerOrOwnerPlayerOrPlayerItself();
 
@@ -2679,6 +2694,39 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
                     case GAMEOBJECT_TYPE_TRANSPORT:
                     case GAMEOBJECT_TYPE_MO_TRANSPORT:
                     {
+                        // #736: a stop-frame transport (Transport::EnableStopFrames, GO state 25) also sends its
+                        // GO_DYNFLAG_LO_STOPPED, so the client draws it held at the start or at the stop frame
+                        // #851: the elevator encoding (Transport.SotaBoatStopFrames = 2) - TrinityCore type 11: no
+                        // dynamic flags (no GO_DYNFLAG_LO_STOPPED), path progress = PathProgress / period (0 at sea,
+                        // the leg's current progress, the stop frame at the dock); unsigned, as TC writes it
+                        if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && GetGUID().IsMOTransport() &&
+                            static_cast<Transport const*>(this)->GetStopFrameMode() == 2)
+                        {
+                            if (uint32 transportPeriod = GetTransportPeriod())
+                            {
+                                double const pct = double(m_goValue.Transport.PathProgress % transportPeriod) / double(transportPeriod);
+                                pathProgress = int16(uint16(uint32(pct * 65535.0)));
+                            }
+                            break;
+                        }
+
+                        bool const stopFrames = GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && GetGoState() == GOState(25);
+                        // #736 A/B (Transport.cpp TransportStopFrameClientEncoding): modes 1/2 encode it as TrinityCore
+                        // 6.x GameObject::BuildValuesUpdate does - no dynamic flags, pathProgress from its absolute
+                        // PathProgress (= GAMEOBJECT_LEVEL, getMSTime() + time to the stop frame) modulo the period
+                        if (stopFrames && TransportStopFrameClientEncoding() != 0)
+                        {
+                            if (uint32 transportPeriod = GetTransportPeriod())
+                            {
+                                float timer = float(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL) % transportPeriod);
+                                pathProgress = int16(timer / float(transportPeriod) * 65535.0f);
+                            }
+                            break;
+                        }
+
+                        if (stopFrames)
+                            dynFlags = uint16(GetUInt32Value(OBJECT_FIELD_DYNAMIC_FLAGS) & 0xFFFF);
+
                         if (uint32 transportPeriod = GetTransportPeriod())
                         {
                             float timer = float(m_goValue.Transport.PathProgress % transportPeriod);

@@ -321,6 +321,9 @@ namespace MMAP
             // allocate mesh query
             dtNavMeshQuery* query = dtAllocNavMeshQuery();
             ASSERT(query);
+            // #888 (owner 2026-10-22): AC's node budget (AC MMapMgr.cpp:130). #61 had raised it to 2048 for the old
+            // converted mmaps (~2x AC's polys per tile); the current data-mop-extract mesh is AC-density (Ironforge 41_33: 6909
+            // vs 6875 polys, Elwynn 49_32 1.24x), and 2048 made long searches find detours AC never takes (Crystal Lake).
             if (dtStatusFailed(query->init(mmap->navMesh, 1024)))
             {
                 dtFreeNavMeshQuery(query);

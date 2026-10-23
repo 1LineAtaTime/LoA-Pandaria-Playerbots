@@ -19,6 +19,7 @@
 #include "ScriptedCreature.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "ScriptedEscortAI.h"
 #include "CreatureAI.h"
 #include "MoveSplineInit.h"
 #include "SpellScript.h"
@@ -127,9 +128,9 @@ class npc_zanvess_korkron_gunship : public CreatureScript
             EVENT_LAUNCH_GUNSHIP,
         };
 
-        struct npc_zanvess_korkron_gunshipAI : public CreatureAI
+        struct npc_zanvess_korkron_gunshipAI : public ScriptedAI
         {
-            npc_zanvess_korkron_gunshipAI(Creature* creature) : CreatureAI(creature) 
+            npc_zanvess_korkron_gunshipAI(Creature* creature) : ScriptedAI(creature) 
             { 
                 instance = me->GetInstanceScript();
                 nalleyGUID = ObjectGuid::Empty;
@@ -355,7 +356,7 @@ class npc_zanvess_korkron_gunship : public CreatureScript
                                 pInit.Launch();
 
                                 scheduler
-                                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
                                 {
                                     me->StopMoving();
                                     me->GetMotionMaster()->MovePoint(1, MoveToBattle[4]);
@@ -574,7 +575,7 @@ struct npc_zanvess_scorpid_relocator : public zanvess_klaxxi_typeAI
         spawnPos = { me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation() };
 
         scheduler
-            .Schedule(Seconds(2), [this](TaskContext /*context*/)
+            .Schedule(Seconds(2), [this](TaskContext context)
         {
             if (TempSummon* sonicTower = me->SummonCreature(NPC_SONIC_CONTROL_TOWER, *me, TEMPSUMMON_MANUAL_DESPAWN))
             {
@@ -1197,7 +1198,7 @@ struct npc_zanvess_zarthik_guardian : public ScriptedAI
         DoCast(me, SPELL_PROTECTIVE_SHELL);
     }
 
-    void EnterEvadeMode() override 
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override 
     {
         ScriptedAI::EnterEvadeMode();
     }
@@ -1230,7 +1231,7 @@ struct npc_zanvess_strafing_ran_trigger : public ScriptedAI
     void Reset() override
     {
         scheduler
-            .Schedule(Seconds(1), [this](TaskContext /*context*/)
+            .Schedule(Seconds(1), [this](TaskContext context)
         {
             if (Unit* summoner = ObjectAccessor::GetUnit(*me, summonerGUID))
                 summoner->CastSpell(me, SPELL_STRAFING_RAN_MISSLE, true);

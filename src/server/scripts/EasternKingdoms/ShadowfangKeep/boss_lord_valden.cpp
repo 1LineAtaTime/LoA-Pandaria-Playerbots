@@ -42,6 +42,8 @@ enum Spells
 
     SPELL_TOXIC_CATALYST_AURA           = 93573,
     SPELL_TOXIC_CATALYST_DMG            = 93689,
+
+    SPELL_FULLY_COAGULATED              = 93660,
 };
 
 enum Events
@@ -68,6 +70,7 @@ class boss_lord_valden : public CreatureScript
             boss_lord_valdenAI(Creature* creature) : BossAI(creature, DATA_VALDEN) { }
 
             bool bRed;
+            bool bRedPending;
 
             void InitializeAI() override
             {
@@ -94,6 +97,7 @@ class boss_lord_valden : public CreatureScript
 
                 me->HandleEmoteCommand(EMOTE_STATE_USE_STANDING);
                 bRed = false;
+                bRedPending = false;
             }
             
             void JustEngagedWith(Unit* /*who*/) override
@@ -133,10 +137,14 @@ class boss_lord_valden : public CreatureScript
 
             void DamageTaken(Unit* /*attacker*/, uint32& damage) override
             {
-                if (me->HealthBelowPct(30) && !bRed && IsHeroic())
+                // #682: the red cauldron comes at 35% (Wowpedia Lord Walden (tactics); TCPP boss_lord_walden.cpp JustSummoned)
+                if (me->HealthBelowPct(35) && !bRed && IsHeroic())
                 {
+                    // #682 R14: w107 went below 35% with 93563 cast=0: the cast was issued here while the boss was mid-cast
+                    // (Conjure Mixture / Ice Shards) and failed SPELL_IN_PROGRESS, and bRed stopped any retry. Only flag it
+                    // here; UpdateAI casts it (and re-arms the retry if the cast does not go out).
                     bRed = true;
-                    DoCast(me, SPELL_CONJURE_MYSTERY_TOXIN_2);
+                    bRedPending = true;
                 }
             }
 
@@ -149,6 +157,12 @@ class boss_lord_valden : public CreatureScript
 
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
+
+                if (bRedPending)
+                {
+                    bRedPending = false;
+                    DoCast(me, SPELL_CONJURE_MYSTERY_TOXIN_2, true);
+                }
 
                 while (uint32 eventId = events.ExecuteEvent())
                 {
@@ -202,6 +216,8 @@ class npc_valden_mystery_toxin : public CreatureScript
                 SetCombatMovement(false);
             }
 
+            uint32 catalystTimer = 0;
+
             void Reset() override
             {
                 switch (me->GetEntry())
@@ -210,10 +226,38 @@ class npc_valden_mystery_toxin : public CreatureScript
                         DoCast(me, SPELL_TOXIC_COAGULANT_AURA);
                         break;
                     case NPC_MYSTERY_TOXIN_2:
-                        DoCast(me, SPELL_TOXIC_CATALYST_DMG);
+                        // #682: the catalyst hits only players that move (Wowpedia Lord Walden (tactics): "If it appears red,
+                        // everyone must stand still"; TCPP boss_lord_walden.cpp: SPELL_TOXIC_CATALYST_AOE 2.4 s after the
+                        // summon, spell_walden_toxic_catalyst drops every target that is not moving). 93689 is a caster-centred
+                        // area spell (TARGET_UNIT_SRC_AREA_ENEMY), so it is applied to each moving player in UpdateAI instead.
                         DoCast(me, SPELL_TOXIC_CATALYST_AURA);
+                        catalystTimer = 2400;
                         break;
                 }
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (catalystTimer)
+                {
+                    if (catalystTimer > diff)
+                        catalystTimer -= diff;
+                    else
+                    {
+                        catalystTimer = 0;
+                        Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                        {
+                            Player* player = itr->GetSource();
+                            // #682 R14: no IsValidAttackTarget gate (w106 93689 aura+ = 0 with a cauldron out); the toxin is hostile
+                            if (player && player->IsAlive() && !player->IsGameMaster() && player->isMoving() &&
+                                me->IsWithinDistInMap(player, 100.0f))
+                                me->AddAura(SPELL_TOXIC_CATALYST_DMG, player);
+                        }
+                    }
+                }
+
+                ScriptedAI::UpdateAI(diff);
             }
         };
 
@@ -239,6 +283,13 @@ class spell_valden_toxic_coagulant : public SpellScriptLoader
 
                 if (GetTarget()->isMoving())
                     GetTarget()->RemoveAuraFromStack(SPELL_TOXIC_COAGULANT_DMG);
+                else if (GetStackAmount() >= GetSpellInfo()->StackAmount)
+                {
+                    // #682: at full stacks the toxin fully coagulates - a 5 s stun, and the stacks are gone (Wowpedia Lord
+                    // Walden (tactics); TCPP boss_lord_walden.cpp spell_walden_toxic_coagulent casts 93660 and removes it)
+                    GetTarget()->CastSpell(GetTarget(), SPELL_FULLY_COAGULATED, true);
+                    GetTarget()->RemoveAurasDueToSpell(SPELL_TOXIC_COAGULANT_DMG);
+                }
             }
 
             void Register() override

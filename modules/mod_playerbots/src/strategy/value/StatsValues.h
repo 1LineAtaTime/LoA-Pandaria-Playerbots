@@ -33,6 +33,14 @@ public:
     bool Calculate() override;
 };
 
+class PetIsHappyValue : public BoolCalculatedValue
+{
+public:
+    PetIsHappyValue(PlayerbotAI* botAI, std::string const name = "pet happy") : BoolCalculatedValue(botAI, name) {}
+
+    bool Calculate() override;
+};
+
 class RageValue : public Uint8CalculatedValue, public Qualified
 {
 public:
@@ -46,6 +54,17 @@ class EnergyValue : public Uint8CalculatedValue, public Qualified
 {
 public:
     EnergyValue(PlayerbotAI* botAI, std::string const name = "energy") : Uint8CalculatedValue(botAI, name) {}
+
+    Unit* GetTarget();
+    uint8 Calculate() override;
+};
+
+// #194 (S8): Monk Chi (POWER_CHI), read the same way as Rage/Energy above - needed to gate
+// Mistweaver's Uplift-on-party (MonkActions.h) on having Chi banked.
+class ChiValue : public Uint8CalculatedValue, public Qualified
+{
+public:
+    ChiValue(PlayerbotAI* botAI, std::string const name = "chi") : Uint8CalculatedValue(botAI, name) {}
 
     Unit* GetTarget();
     uint8 Calculate() override;

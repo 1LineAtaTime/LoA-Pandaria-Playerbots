@@ -19,6 +19,7 @@
 #define SF_BATTLEGROUNDSA_H
 
 #include "Battleground.h"
+#include <G3D/Vector3.h>
 
 struct BattlegroundSAScore : public BattlegroundScore
 {
@@ -76,10 +77,30 @@ enum BG_SA_SpellIds
 
 enum BG_SA_Timers
 {
+    // #736 (owner 2026-10-08): AC timing (AC BattlegroundSA.cpp:29-30 BG_SA_BOAT_START 1min / BG_SA_WARMUPLENGTH 2min,
+    // Battleground.cpp:515-517 SotA prep time always 120 s): round 1 boats wait at sea for the first minute, sail at
+    // 1:00 and dock (60.1 s TransportAnimation voyage) as the round starts at 2:00. Round 2: 1 min, sail at once.
     BG_SA_BOAT_START    =  60 * IN_MILLISECONDS,
-    BG_SA_WARMUPLENGTH  =  60 * IN_MILLISECONDS, // must be 120, but who cares
+    BG_SA_WARMUPLENGTH  = 120 * IN_MILLISECONDS,
+    BG_SA_SECOND_WARMUPLENGTH = 60 * IN_MILLISECONDS,
     BG_SA_ROUNDLENGTH   = 600 * IN_MILLISECONDS
 };
+
+// #736: x beyond the docks (1598.6 / 1607.6) - an attacker off the boats here is out at sea (the boats start at x 2577 /
+// 2680 and dock at x ~1600), see BattlegroundSA::RescueStrandedAttackers
+float const BG_SA_OPEN_SEA_X = 1700.0f;
+
+// #851: MoP 5.4.8 boats (no stop frames, Transport.SotaBoatStopFrames = 0): the client sails each boat from the sea from the
+// moment it gets the boat's create block (SendTransportInit) and reaches the dock frame (60133 of 60633) ~60.1 s later,
+// then loops back to the sea - the server boat itself never moves. MoP 5.4.8 therefore lands
+// the attackers on the dock just before that: round 1 at 59-60 s (TotalTime >= 59000), round 2 at 53 s
+// after its 5 s wait (53000) = 58 s after the boats were re-created. Here: 59 s after this rider's own
+// create block, the time its client draws the boat at the dock.
+uint32 const BG_SA_BOAT_LANDING_MS = 59 * IN_MILLISECONDS;
+
+// #851: elevator boats (Transport.SotaBoatStopFrames = 2): the boat itself carries the attackers to the dock and holds
+// there; an attacker still aboard this long after the docking is landed by BattlegroundSA::LandDockedBoatRiders.
+uint32 const BG_SA_BOAT_DOCKED_GRACE_MS = 30 * IN_MILLISECONDS;
 
 enum BG_SA_WorldStates
 {
@@ -559,6 +580,10 @@ class BattlegroundSA : public Battleground
         /// Update score board
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true) override;
 
+        /// #736: cut a server-built movement path (G3D points, world coordinates) in front of the first gate that is
+        /// not destroyed and that the path runs through - see BattlegroundSA.cpp; called by MoveSplineInit::MoveTo
+        void ClipPathAtClosedGates(Unit const* mover, std::vector<G3D::Vector3>& path);
+
         // Achievement: Defense of the Ancients
         bool gateDestroyed;
         TeamId GetDefenerTeam() { return Attackers == TEAM_ALLIANCE ? TEAM_HORDE : TEAM_ALLIANCE; };
@@ -576,11 +601,28 @@ class BattlegroundSA : public Battleground
         bool ResetObjs();
         /// Called for start ship movement
         void StartShips();
+        /// #736: sail both boats to their dock in travelTime ms and hold them there
+        void LaunchShips(uint32 travelTime);
+        /// #736: dock the attackers left out at sea off the boats (the riders stay on board), see BattlegroundSA.cpp
+        void RescueStrandedAttackers();
+        /// #851: MoP 5.4.8 boats - put each attacker rider on the dock BG_SA_BOAT_LANDING_MS after its boat create block
+        void LandBoatRiders();
+        /// #851: true = stop-frame boats (Transport.SotaBoatStopFrames = 1 or 2), false = MoP 5.4.8 boats (0)
+        bool BoatsUseStopFrames();
+        /// #851: Transport.SotaBoatStopFrames the current boats were created with (0 MoP 5.4.8, 1 #736, 2 elevator)
+        uint8 BoatsStopFrameMode();
+        /// #851: elevator boats - safety net only: an attacker still aboard BG_SA_BOAT_DOCKED_GRACE_MS after its boat
+        /// docked is put on the dock (the riders normally walk off the docked boat themselves)
+        void LandDockedBoatRiders();
+        /// #736: round-2 warm-up start countdown to one player, or to everyone (nullptr)
+        void SendRoundTwoStartTimer(Player* player);
         /**
          * \brief Called between the two round
          * -Teleport all players to good location
          */
         void TeleportPlayers();
+        /// #736: place one attacker on the next boat (alternating, as AC), see BattlegroundSA.cpp
+        void TeleportAttackerToShip(Player* player);
         /**
          * \brief Called on start and between the two round
          * -Update faction of all vehicle
@@ -628,6 +670,18 @@ class BattlegroundSA : public Battleground
         uint32 EndRoundTimer;
         /// For know if boats has start moving or not yet
         bool ShipsStarted;
+        /// #736: the boats' voyage to the dock was started (set by LaunchShips, which StartShips calls - as AC's DoorOpen)
+        bool ShipsLaunched;
+        /// #736: boat the next attacker is placed on (alternates, AC _nextShipIsEast); true = east ship (y < 0)
+        bool _nextShipIsEast;
+        /// #851: player -> getMSTime() of the last boat create block sent to it (SendTransportInit), MoP 5.4.8 boats only
+        std::map<ObjectGuid, uint32> _boatInitAt;
+        /// #851: elevator boats - round 1 hold at sea (Transport.SotaBoatHoldSeconds, read at ResetObjs)
+        uint32 _boatHoldMs;
+        /// #851: elevator boats - getMSTime() each boat (BG_SA_BOAT_ONE, BG_SA_BOAT_TWO) reached its dock frame, 0 = not yet
+        uint32 _boatDockedAt[2];
+        /// #851: elevator boats - the safety-net landing ran for that boat this round
+        bool _boatSafetyDone[2];
         /// Status of each gate (Destroy/Damage/Intact)
         BG_SA_GateState GateStatus[6];
         /// Statu of battle (Start or not, and what round)

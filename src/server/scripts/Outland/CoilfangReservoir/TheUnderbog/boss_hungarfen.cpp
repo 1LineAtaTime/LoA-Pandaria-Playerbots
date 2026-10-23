@@ -87,9 +87,9 @@ class boss_hungarfen : public CreatureScript
                     {
                         case EVENT_MUSHROOM:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
-                                me->SummonCreature(17990, target->GetPositionX() + (rand() % 8), target->GetPositionY() + (rand() % 8), target->GetPositionZ(), float(rand() % 5), TEMPSUMMON_TIMED_DESPAWN, 22000);
+                                me->SummonCreature(17990, target->GetPositionX() + (rand() % 8), target->GetPositionY() + (rand() % 8), target->GetPositionZ(), float(rand() % 5), TEMPSUMMON_TIMED_DESPAWN, 30000ms); // #549: was 22 s; the mushroom now despawns itself at ~26 s (AC lifetime)
                             else
-                                me->SummonCreature(17990, me->GetPositionX() + (rand() % 8), me->GetPositionY() + (rand() % 8), me->GetPositionZ(), float(rand() % 5), TEMPSUMMON_TIMED_DESPAWN, 22000);
+                                me->SummonCreature(17990, me->GetPositionX() + (rand() % 8), me->GetPositionY() + (rand() % 8), me->GetPositionZ(), float(rand() % 5), TEMPSUMMON_TIMED_DESPAWN, 30000ms); // #549: was 22 s; the mushroom now despawns itself at ~26 s (AC lifetime)
 
                             events.ScheduleEvent(EVENT_MUSHROOM, 10 * IN_MILLISECONDS);
                             break;
@@ -117,22 +117,30 @@ class npc_underbog_mushroom : public CreatureScript
     public:
         npc_underbog_mushroom() : CreatureScript("npc_underbog_mushroom") { }
 
+        // #549: ported from AC boss_hungarfen.cpp npc_underbog_mushroom (InitializeAI scheduler): Grow every 2 s,
+        // Spore Cloud on the 10th Grow (repeat counter 9, ~20 s - Wowpedia "Hungarfen": "explode in a cloud of
+        // spores after 20 seconds"), Grow removed 4 s later, despawn 2 s after that. The old script cast Spore Cloud
+        // at spawn and grew every 3 s for only 20 s (max 7 Grow stacks).
         struct npc_underbog_mushroomAI : public ScriptedAI
         {
             npc_underbog_mushroomAI(Creature* creature) : ScriptedAI(creature) { }
 
+            static constexpr uint32 MAX_GROW_REPEAT = 9; // AC boss_hungarfen.cpp Misc::MAX_GROW_REPEAT
+
             bool Stop;
             uint32 Grow_Timer;
+            uint32 Grow_Count;
             uint32 Shrink_Timer;
 
             void Reset() override
             {
                 Stop = false;
-                Grow_Timer = 0;
-                Shrink_Timer = 20000;
+                Grow_Timer = 2000;
+                Grow_Count = 0;
+                Shrink_Timer = 0;
 
+                // AC casts SPELL_SHRINK 31691 here; 31691 is not in 5.4.8 Spell.dbc, so the fork keeps its visual.
                 DoCast(me, SPELL_PUTRID_MUSHROOM, true);
-                DoCast(me, SPELL_SPORE_CLOUD, true);
             }
 
             void UpdateAI(uint32 diff) override
@@ -140,17 +148,28 @@ class npc_underbog_mushroom : public CreatureScript
                 if (Stop)
                     return;
 
+                if (Shrink_Timer)
+                {
+                    if (Shrink_Timer <= diff)
+                    {
+                        me->RemoveAurasDueToSpell(SPELL_GROW);
+                        me->DespawnOrUnsummon(2000);
+                        Stop = true;
+                    } else Shrink_Timer -= diff;
+                    return;
+                }
+
                 if (Grow_Timer <= diff)
                 {
-                    DoCast(me, SPELL_GROW);
-                    Grow_Timer = 3000;
+                    DoCast(me, SPELL_GROW, true);
+                    if (Grow_Count++ == MAX_GROW_REPEAT)
+                    {
+                        DoCast(me, SPELL_SPORE_CLOUD, true);
+                        Shrink_Timer = 4000;
+                    }
+                    else
+                        Grow_Timer = 2000;
                 } else Grow_Timer -= diff;
-
-                if (Shrink_Timer <= diff)
-                {
-                    me->RemoveAurasDueToSpell(SPELL_GROW);
-                    Stop = true;
-                } else Shrink_Timer -= diff;
             }
         };
 

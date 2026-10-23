@@ -549,7 +549,7 @@ struct npc_undertaker_mordo : public ScriptedAI
         {
             case TirisfalGlades::UNDERTAKER_MORDO_PHASE_00:
                 if (Creature* npc_trigger = me->FindNearestCreature(TirisfalGlades::NPC_DEATHKNELL_GRAVE_TARGET, 20.0f))
-                    if (m_npc = me->SummonCreature(TirisfalGlades::NPC_RISEN_RECRUIT, npc_trigger->GetPositionX(), npc_trigger->GetPositionY(), npc_trigger->GetPositionZ(), 1.0f, TempSummonType::TEMPSUMMON_TIMED_DESPAWN, 46 * TimeConstants::IN_MILLISECONDS))
+                    if (m_npc = me->SummonCreature(TirisfalGlades::NPC_RISEN_RECRUIT, npc_trigger->GetPositionX(), npc_trigger->GetPositionY(), npc_trigger->GetPositionZ(), 1.0f, TempSummonType::TEMPSUMMON_TIMED_DESPAWN, Milliseconds(46 * TimeConstants::IN_MILLISECONDS)))
                         m_npc->GetMotionMaster()->MovePath(TirisfalGlades::RISEN_RECRUIT_PATH_01, false);
 
                 m_timer = 5 * TimeConstants::IN_MILLISECONDS;
@@ -701,17 +701,23 @@ enum class PlaceDescription : uint8
 
 struct npc_darnell : public ScriptedAI
 {
-    npc_darnell(Creature *c) : ScriptedAI(c) { }
+    npc_darnell(Creature *c) : ScriptedAI(c), m_player(nullptr) { }
 
     void Reset() override
     {
         m_timer = urand(30, 45) * TimeConstants::IN_MILLISECONDS;
         m_phase = TirisfalGlades::DARNELL_PHASE_00;
         m_method = TirisfalGlades::DARNELL_METHOD_00;
+        // #825: these were left uninitialised when the owner is not on the quest; MoveInLineOfSight reads m_arrived
+        m_arrived = false;
+        m_counter = TirisfalGlades::COUNTER_0;
+        m_FoundGround = false;
+        m_ItemsFound = false;
 
         if (Unit* npc = me->GetCharmerOrOwner())
         {
             m_player = npc->ToPlayer();
+            m_playerGuid = m_player ? m_player->GetGUID() : ObjectGuid::Empty;
             if (m_player)
             {
                 if (m_player->GetQuestStatus(TirisfalGlades::QUEST_THE_SHADOW_GRAVE) == QuestStatus::QUEST_STATUS_INCOMPLETE)
@@ -734,6 +740,9 @@ struct npc_darnell : public ScriptedAI
 
     void MovementInform(uint32 type, uint32 id) override
     {
+        if (!RefreshPlayer())
+            return;
+
         if (!CheckPlayerValid())
             return;
 
@@ -743,7 +752,11 @@ struct npc_darnell : public ScriptedAI
 
     void MoveInLineOfSight(Unit* who) override
     {
-        if (who->GetGUID() != m_player->GetGUID())
+        // #825: compare guids before touching any Player; only the summoner matters, and it is re-resolved by guid
+        if (m_playerGuid.IsEmpty() || who->GetGUID() != m_playerGuid)
+            return;
+
+        if (!RefreshPlayer())
             return;
 
         m_player_pos = who->GetPositionAlternate();
@@ -757,6 +770,9 @@ struct npc_darnell : public ScriptedAI
 
     void UpdateAI(const uint32 diff) override
     {
+        if (!RefreshPlayer())
+            return;
+
         if (!CheckPlayerValid())
             return;
 
@@ -1023,6 +1039,15 @@ private:
     uint32 m_timer;
     uint32 m_phase;
     Player* m_player;
+    ObjectGuid m_playerGuid;
+
+    // #825: the summoning player is looked up by guid at every entry point; the raw pointer outlived the Player at
+    // shutdown (Map::UnloadAll -> RemoveFromMap -> AIRelocationNotifier -> MoveInLineOfSight read a freed Object).
+    bool RefreshPlayer()
+    {
+        m_player = m_playerGuid.IsEmpty() ? nullptr : ObjectAccessor::GetPlayer(*me, m_playerGuid);
+        return m_player != nullptr;
+    }
     bool m_FoundGround;
     bool m_ItemsFound;
 };
@@ -1052,14 +1077,14 @@ public:
 
         uint32 m_timer;
         uint32 m_phase;
-        Player* m_player;
+        ObjectGuid m_playerGuid; // #825: guid, not Player* - the player may log out during the 4-15 s scene
 
         void Reset() override
         {
             me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
             m_timer = 0;
             m_phase = TirisfalGlades::MARSHAL_REDPATH_PHASE_00;
-            m_player = NULL;
+            m_playerGuid.Clear();
         }
 
         void StartAnimation(Player* player)
@@ -1067,7 +1092,7 @@ public:
             if (!m_phase)
             {
                 me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
-                m_player = player;
+                m_playerGuid = player->GetGUID();
                 m_phase = TirisfalGlades::MARSHAL_REDPATH_PHASE_01;
                 m_timer = 100;
             }
@@ -1085,10 +1110,12 @@ public:
 
         void StartVisual()
         {
+            Player* m_player = ObjectAccessor::GetPlayer(*me, m_playerGuid); // null once logged out / left the map
             switch (m_phase)
             {
                 case TirisfalGlades::MARSHAL_REDPATH_PHASE_01:
-                    me->SetFacingToObject(m_player);
+                    if (m_player)
+                        me->SetFacingToObject(m_player);
                     Talk(MARSHAL_REDPATH_TEXT, m_player);
                     m_timer = 4 * IN_MILLISECONDS;
                     m_phase = TirisfalGlades::MARSHAL_REDPATH_PHASE_02;
@@ -1145,14 +1172,14 @@ public:
 
         uint32 m_timer;
         uint32 m_phase;
-        Player* m_player;
+        ObjectGuid m_playerGuid; // #825: guid, not Player* - the player may log out during the 4-15 s scene
 
         void Reset() override
         {
             me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
             m_timer = 0;
             m_phase = TirisfalGlades::LILIAN_VOSS_PHASE_00;
-            m_player = NULL;
+            m_playerGuid.Clear();
         }
 
         void StartAnimation(Player* player)
@@ -1160,7 +1187,7 @@ public:
             if (!m_phase)
             {
                 me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
-                m_player = player;
+                m_playerGuid = player->GetGUID();
                 m_phase = TirisfalGlades::LILIAN_VOSS_PHASE_01;
                 m_timer = 100;
             }
@@ -1178,6 +1205,7 @@ public:
 
         void StartVisual()
         {
+            Player* m_player = ObjectAccessor::GetPlayer(*me, m_playerGuid); // null once logged out / left the map
             switch (m_phase)
             {
                 case TirisfalGlades::LILIAN_VOSS_PHASE_01:
@@ -1186,7 +1214,8 @@ public:
                     m_phase = TirisfalGlades::LILIAN_VOSS_PHASE_02;
                     break;
                 case TirisfalGlades::LILIAN_VOSS_PHASE_02:
-                    me->SetFacingToObject(m_player);
+                    if (m_player)
+                        me->SetFacingToObject(m_player);
                     Talk(LILIAN_VOSS_TEXT);
                     m_timer = 4 * IN_MILLISECONDS;
                     m_phase = TirisfalGlades::LILIAN_VOSS_PHASE_03;
@@ -1243,14 +1272,14 @@ public:
 
         uint32 m_timer;
         uint32 m_phase;
-        Player* m_player;
+        ObjectGuid m_playerGuid; // #825: guid, not Player* - the player may log out during the 4-15 s scene
 
         void Reset() override
         {
             me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
             m_timer = 0;
             m_phase = TirisfalGlades::VALDRED_MORAY_PHASE_00;
-            m_player = NULL;
+            m_playerGuid.Clear();
         }
 
         void StartAnimation(Player* player)
@@ -1259,7 +1288,7 @@ public:
             {
                 me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
                 me->SetStandState(UNIT_STAND_STATE_STAND);
-                m_player = player;
+                m_playerGuid = player->GetGUID();
                 m_phase = TirisfalGlades::VALDRED_MORAY_PHASE_01;
                 m_timer = 100;
             }
@@ -1277,10 +1306,12 @@ public:
 
         void StartVisual()
         {
+            Player* m_player = ObjectAccessor::GetPlayer(*me, m_playerGuid); // null once logged out / left the map
             switch (m_phase)
             {
                 case TirisfalGlades::VALDRED_MORAY_PHASE_01:
-                    me->SetFacingToObject(m_player);
+                    if (m_player)
+                        me->SetFacingToObject(m_player);
                     Talk(VALDRED_MORAY_TEXT, m_player);
                     m_timer = 4 * IN_MILLISECONDS;
                     m_phase = TirisfalGlades::VALDRED_MORAY_PHASE_02;

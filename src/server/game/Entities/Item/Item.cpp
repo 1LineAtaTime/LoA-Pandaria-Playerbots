@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -17,6 +17,7 @@
 
 #include "Common.h"
 #include "Item.h"
+#include <atomic>
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
 #include "DatabaseEnv.h"
@@ -27,6 +28,8 @@
 #include "ConditionMgr.h"
 #include "Player.h"
 #include "Opcodes.h"
+#include "WorldSession.h"
+#include "DatabaseEnv.h"
 
 void AddItemsSetItem(Player* player, Item* item)
 {
@@ -1867,7 +1870,7 @@ bool Item::IsEyeOfTheBlackPrinceAllowed() const
             if (IsPvPItem())
                 return false;
             if (auto entry = sItemNameDescriptionStore.LookupEntry(GetEntry()))
-                if (entry && strcmp(entry->Description[LOCALE_enUS], "Raid Finder") == 0)   // SoO LFR
+                if (entry && strcmp(entry->Description, "Raid Finder") == 0)   // SoO LFR
                     return false;
             return true;
     }
@@ -1904,23 +1907,30 @@ void Item::AddToUpdate()
     //     return;
     // }
 
-    owner->FindMap()->AddUpdateObject(this);
+    // LoA upstream #436 (6713e60): remember the map - the owner may change maps before the item leaves this update list
+    m_updateMap = owner->FindMap();
+    m_updateMap->AddUpdateObject(this);
     m_objectUpdated = true;
 }
 
 void Item::RemoveFromUpdate()
 {
     Player* owner = ObjectAccessor::FindPlayer(GetOwnerGUID());   // player can be out of world - logout, teleport to cross-server
-    if (!owner)
+    // LoA upstream #436: remove the item from the update list of the map it was ADDED to (m_updateMap); the owner may
+    // have changed maps since, and a stale entry left in the old map's list crashed Map::Update -> BuildUpdate.
+    Map* ownerMap = owner ? owner->FindMap() : nullptr;
+    Map* map = m_updateMap ? m_updateMap : ownerMap;
+    if (m_updateMap && ownerMap && ownerMap != m_updateMap)
     {
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner not found, guid %u, entry %u, owner %u\n",
-            GetGUID().GetCounter(), GetEntry(), GetOwnerGUID().GetCounter());
-        return;
+        static std::atomic<uint32> mismatches{ 0 };
+        uint32 n = ++mismatches;
+        if (n == 1 || n % 100 == 0)
+            TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner is on map %u but the item was queued on map %u (%u times)",
+                ownerMap->GetId(), m_updateMap->GetId(), n);
     }
-
-    if (!owner->FindMap())
+    if (!map)
     {
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner hasn't map, guid %u, entry %u, owner %u\n",
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - no map, guid %u, entry %u, owner %u\n",
             GetGUID().GetCounter(), GetEntry(), GetOwnerGUID().GetCounter());
         return;
     }
@@ -1932,7 +1942,8 @@ void Item::RemoveFromUpdate()
     //     return;
     // }
 
-    owner->FindMap()->RemoveUpdateObject(this);
+    map->RemoveUpdateObject(this);
+    m_updateMap = nullptr;
     m_objectUpdated = false;
 }
 

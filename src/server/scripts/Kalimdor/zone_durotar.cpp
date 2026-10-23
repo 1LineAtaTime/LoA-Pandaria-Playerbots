@@ -20,6 +20,7 @@
 #include "ScriptedGossip.h"
 #include "Vehicle.h"
 #include "ObjectMgr.h"
+#include "ScriptedEscortAI.h"
 #include "CombatAI.h"
 #include "PassiveAI.h"
 #include "Player.h"
@@ -134,6 +135,7 @@ enum eActions
     ACTION_GIFT_OF_HELLSCREAM,
     ACTION_CREAURE_SLAIN,
     ACTION_INIT_TRIAL,
+    ACTION_TRIAL_WON,       // #510: Garrosh -> Ji, the third challenger fell
 };
 
 const Position GarroshHordeWayPath[6]
@@ -342,6 +344,69 @@ class npc_garrosh_horde_way_quest : public CreatureScript
             ObjectGuid summonerGUID;
             uint32 delay, slainCount;
             std::vector<ObjectGuid> challengerGUIDs;
+            bool trialRunning = false;      // #510: Ring of Valor trial in progress (player alive and on this map)
+            uint32 trialCheckTimer = 1000;
+
+            // #510: the arena Ji 62081 that AreaTrigger_at_ring_of_valor_entrance summoned for this Garrosh's player.
+            Creature* FindOwnerJi()
+            {
+                std::list<Creature*> jiList;
+                me->GetCreatureListWithEntryInGrid(jiList, NPC_JI_FIREPAWN_HORDE_WAY, 100.0f);
+                for (Creature* ji : jiList)
+                    if (ji->IsAlive() && ji->IsSummon() && ji->ToTempSummon()->GetSummonerGUID() == summonerGUID)
+                        return ji;
+                return nullptr;
+            }
+
+            // #510: the player died or left the Ring of Valor before the three challengers fell ("Victory, or death!").
+            // Nothing ended the trial: Garrosh, Ji and the challengers (all TEMPSUMMON_MANUAL_DESPAWN) stayed on map 1043,
+            // the player kept the arena aura 132633 (effect 2 = aura 314 PREVENT_RESURRECTION) and phase 6, and the
+            // area trigger refuses a phase-6 player, so the quest could not be retried. End it so the player can.
+            void FailTrial()
+            {
+                trialRunning = false;
+                me->m_Events.KillAllEvents(false);
+
+                for (auto&& itr : challengerGUIDs)
+                    if (Creature* challenger = ObjectAccessor::GetCreature(*me, itr))
+                        challenger->DespawnOrUnsummon();
+                challengerGUIDs.clear();
+
+                if (Creature* ji = FindOwnerJi())
+                    ji->DespawnOrUnsummon();
+
+                // Map-local lookup only (a player who left map 1043 is updated by another map thread; the zone change
+                // there recomputes his phase).
+                if (Player* owner = ObjectAccessor::GetPlayer(*me, summonerGUID))
+                {
+                    owner->RemoveAurasDueToSpell(SPELL_RING_OF_VALOR_IN_THE_ARENA);
+                    if (owner->GetPhaseMask() == 6)
+                        owner->SetPhaseMask(PHASEMASK_NORMAL, true);
+                }
+
+                me->DespawnOrUnsummon();
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (trialRunning)
+                {
+                    if (trialCheckTimer <= diff)
+                    {
+                        trialCheckTimer = 1000;
+                        Unit* owner = ObjectAccessor::GetUnit(*me, summonerGUID);
+                        if (!owner || !owner->IsAlive())
+                        {
+                            FailTrial();
+                            return;
+                        }
+                    }
+                    else
+                        trialCheckTimer -= diff;
+                }
+
+                ScriptedAI::UpdateAI(diff);
+            }
 
             void IsSummonedBy(Unit* summoner) override
             {
@@ -354,12 +419,19 @@ class npc_garrosh_horde_way_quest : public CreatureScript
                     DoAction(ACTION_GIFT_OF_HELLSCREAM);
                     return;
                 }
-                me->SetFacingToObject(summoner);
                 me->SetWalk(true);
                 delay = 0;
                 me->SetPhaseMask(2, true);
-                Talk(SAY_INTRO);
-                me->GetMotionMaster()->MovePoint(0, GarroshHordeWayPath[0]);
+                // #541: 120753 effect 0 is TARGET_DEST_NEARBY_ENTRY with range 0 and no target conditions (none in LoA), so the summon point is whatever object the nearby search returns. In waves 6 and 7 Garrosh
+                // needed ~74 s to reach the first waypoint (11 yd from the throne) and his intro was never heard, while
+                // the rest of the walk ran in normal time - and Ji's 45-s "Yes, warchief." (an answer to "Do you
+                // understand this, pandaren?", Wowpedia "The Horde Way") came before the walk had even started. Start
+                // the walk on the hall floor next to the first waypoint instead of wherever the search put him.
+                me->NearTeleportTo(GarroshHordeWayPath[1].GetPositionX(), GarroshHordeWayPath[1].GetPositionY(), GarroshHordeWayPath[1].GetPositionZ(), GarroshHordeWayPath[1].GetOrientation());
+                me->SetFacingToObject(summoner);
+                // #516: said after spell_summ_garrosh_horde_way's AfterCast has put the player into phase 3.
+                me->m_Events.Schedule(1000, [this]() { Talk(SAY_INTRO); });
+                me->m_Events.Schedule(3000, [this]() { me->GetMotionMaster()->MovePoint(0, GarroshHordeWayPath[0]); });
             }
 
             void DoAction(int32 actionId) override
@@ -369,6 +441,7 @@ class npc_garrosh_horde_way_quest : public CreatureScript
                     case ACTION_GIFT_OF_HELLSCREAM:
                         me->SetPhaseMask(2, true);
                         delay = 0;
+                        trialRunning = true;
 
                         me->m_Events.Schedule(delay += 1000, 1, [this]()
                         {
@@ -387,6 +460,15 @@ class npc_garrosh_horde_way_quest : public CreatureScript
                                     challengerGUIDs.push_back(challenger->GetGUID());
                         });
 
+                        // #510: Ji's yell when the challengers come out (Wowpedia "Hellscream's Gift": "Ji Firepaw yells:
+                        // What is that thing?" between "...prepare to fight." and "This is my gift to you"; BroadcastText
+                        // 61608 = creature_text 62081 group 3, added by 2026_10_06_63_world_hellscreams_gift_ji_yell.sql).
+                        me->m_Events.Schedule(delay + 4000, 2, [this]()
+                        {
+                            if (Creature* ji = FindOwnerJi())
+                                ji->AI()->Talk(SAY_SPECIAL_3);
+                        });
+
                         me->m_Events.Schedule(delay += 11000, 3, [this]()
                         {
                             Talk(SAY_SPECIAL_19);
@@ -401,9 +483,21 @@ class npc_garrosh_horde_way_quest : public CreatureScript
                         {
                             Talk(SAY_SPECIAL_21);
 
+                            // #510: Ji fights at the player's back (Wowpedia "Hellscream's Gift", fetched 2026-10-05: "Well
+                            // fought. I don't think I could have survived that battle without you at my back." = creature_text
+                            // 62081 group 2). The challengers open on him, so a level-10 pandaren is not killed by three elites
+                            // at once (t445 H4 wave 9: dead 7 s after the release, before the first swing).
+                            Creature* ji = FindOwnerJi();
                             for (auto&& itr : challengerGUIDs)
                                 if (Creature* challenger = ObjectAccessor::GetCreature(*me, itr))
+                                {
+                                    if (ji)
+                                        challenger->AI()->SetGUID(ji->GetGUID());
                                     challenger->AI()->DoAction(ACTION_INIT_TRIAL);
+                                }
+
+                            if (ji)
+                                ji->AI()->DoAction(ACTION_INIT_TRIAL);
                         });
 
                         me->m_Events.Schedule(delay += 4500, 6, [this]()
@@ -414,11 +508,26 @@ class npc_garrosh_horde_way_quest : public CreatureScript
                     case ACTION_CREAURE_SLAIN:
                         if (++slainCount >= 3)
                         {
+                            trialRunning = false;
+
+                            // #510: Ji's "Well fought." (Wowpedia "Hellscream's Gift", said after the monsters are
+                            // defeated). It cannot come from Ji's EnterEvadeMode: the last challenger's death ends Ji's
+                            // only combat reference (Unit::CombatStop -> CombatManager::EndAllPvECombat), Ji leaves combat,
+                            // and CreatureAI::UpdateVictim returns at its !IsInCombat() check (CreatureAI.cpp:472) before
+                            // SelectVictim could call EnterEvadeMode - so in wave 12 Ji never spoke (t445 H4 chat=0).
+                            if (Creature* ji = FindOwnerJi())
+                                ji->AI()->DoAction(ACTION_TRIAL_WON);
+
                             delay = 0;
                             me->m_Events.Schedule(delay += 6000, 7, [this]()
                             {
                                 if (Unit* owner = ObjectAccessor::GetUnit(*me, summonerGUID))
                                     owner->CastSpell(owner, SPELL_TELEPORT_OUT_BLACKOUT, true);
+
+                                // #510: the arena Ji (summoned by the owner through AreaTrigger_at_ring_of_valor_entrance,
+                                // TEMPSUMMON_MANUAL_DESPAWN) leaves with the trial instead of staying on map 1043 forever.
+                                if (Creature* ji = FindOwnerJi())
+                                    ji->DespawnOrUnsummon();
 
                                 me->DespawnOrUnsummon();
                             });
@@ -559,6 +668,30 @@ class npc_ji_firepaw_horde_way_quest : public CreatureScript
             ObjectGuid summonerGUID;
             uint32 delay;
             bool allowFollow;
+            bool inTrial = false;           // #510: fighting the Ring of Valor challengers next to the player
+
+            // #510: the nearest released challenger of this player's trial (summoned by the Garrosh this player summoned).
+            Creature* SelectChallenger()
+            {
+                std::list<Creature*> challengers;
+                for (uint32 entry : { NPC_GADOON, NPC_FROZENGORE, NPC_OGGAX })
+                    me->GetCreatureListWithEntryInGridAppend(challengers, entry, 100.0f);
+
+                Creature* nearest = nullptr;
+                for (Creature* challenger : challengers)
+                {
+                    if (!challenger->IsAlive() || !challenger->IsSummon() || challenger->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+                        continue;
+
+                    Unit* garrosh = challenger->ToTempSummon()->GetSummoner();
+                    if (!garrosh || !garrosh->IsSummon() || garrosh->ToTempSummon()->GetSummonerGUID() != summonerGUID)
+                        continue;
+
+                    if (!nearest || me->GetExactDist2d(challenger) < me->GetExactDist2d(nearest))
+                        nearest = challenger;
+                }
+                return nearest;
+            }
 
             void IsSummonedBy(Unit* summoner) override
             {
@@ -586,8 +719,19 @@ class npc_ji_firepaw_horde_way_quest : public CreatureScript
                 });
             }
 
-            void EnterEvadeMode() override 
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override 
             {
+                // #510: a challenger fell and the next one is not on Ji's threat list yet - go on with the trial.
+                if (inTrial)
+                {
+                    if (Creature* challenger = SelectChallenger())
+                    {
+                        AttackStart(challenger);
+                        return;
+                    }
+                    inTrial = false;
+                }
+
                 me->HandleEmoteStateCommand(EMOTE_STATE_NONE);
                 Talk(SAY_SPECIAL_2);
                 me->DespawnOrUnsummon(6 * IN_MILLISECONDS);
@@ -600,13 +744,49 @@ class npc_ji_firepaw_horde_way_quest : public CreatureScript
                     me->SetPhaseMask(2, true);
                     me->HandleEmoteStateCommand(EMOTE_STATE_READY_UNARMED);
                 }
+                else if (actionId == ACTION_INIT_TRIAL)
+                {
+                    // #510: faction 35 cannot attack the faction-16 challengers; fight under the player's faction.
+                    if (Unit* owner = ObjectAccessor::GetUnit(*me, summonerGUID))
+                        me->SetFaction(owner->GetFaction());
+                    me->SetReactState(REACT_AGGRESSIVE);
+                    inTrial = true;
+                }
+                else if (actionId == ACTION_TRIAL_WON)
+                {
+                    // #510: the third challenger fell (npc_garrosh_horde_way_quest, ACTION_CREAURE_SLAIN). Garrosh
+                    // despawns Ji with the teleport out 6 s later.
+                    inTrial = false;
+                    me->AttackStop();
+                    me->SetReactState(REACT_PASSIVE);
+                    me->HandleEmoteStateCommand(EMOTE_STATE_NONE);
+                    if (Unit* owner = ObjectAccessor::GetUnit(*me, summonerGUID))
+                        me->SetFacingToObject(owner);
+                    Talk(SAY_SPECIAL_2);
+                }
             }
 
             void UpdateAI(uint32 diff) override
             {
                 if (allowFollow)
+                {
                     if (Unit* owner = ObjectAccessor::GetUnit(*me, summonerGUID))
                         me->GetMotionMaster()->MoveFollow(owner, 2.5f, me->GetAngle(owner));
+                    return;
+                }
+
+                if (!inTrial)
+                    return;
+
+                if (!UpdateVictim())
+                {
+                    // The challengers are unpacified 2 s after the release (npc_trial_challengers).
+                    if (Creature* challenger = SelectChallenger())
+                        AttackStart(challenger);
+                    return;
+                }
+
+                DoMeleeAttackIfReady();
             }
         };
 
@@ -622,8 +802,14 @@ struct npc_trial_challengers : public ScriptedAI
     npc_trial_challengers(Creature* creature) : ScriptedAI(creature) { }
 
     ObjectGuid ownerGUID;
+    ObjectGuid jiGUID;  // #510: the player's Ji, who takes the challengers' first rush
     uint32 delay;
     float x, y;
+
+    void SetGUID(ObjectGuid guid, int32 /*id*/) override
+    {
+        jiGUID = guid;
+    }
 
     void IsSummonedBy(Unit* summoner) override
     {
@@ -634,8 +820,15 @@ struct npc_trial_challengers : public ScriptedAI
     }
 
     // Idk how it should work? 8.4m HP...
-    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    void DamageTaken(Unit* attacker, uint32& damage) override
     {
+        // #510: Ji is level 90; his swings only wear the challengers down (10% each), the pandaren's blows finish them.
+        if (attacker && attacker->GetTypeId() == TYPEID_UNIT && attacker->GetEntry() == NPC_JI_FIREPAWN_HORDE_WAY)
+        {
+            damage = std::min(damage, me->CountPctFromMaxHealth(10));
+            return;
+        }
+
         damage *= 10000;
     }
 
@@ -652,6 +845,14 @@ struct npc_trial_challengers : public ScriptedAI
                 me->m_Events.Schedule(delay += 2000, 1, [this]()
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_IMMUNE_TO_PC);
+
+                    // #510: open on Ji (see npc_garrosh_horde_way_quest, event 5).
+                    if (Creature* ji = ObjectAccessor::GetCreature(*me, jiGUID))
+                        if (ji->IsAlive())
+                        {
+                            me->GetThreatManager().AddThreat(ji, 100.0f);
+                            AttackStart(ji);
+                        }
                 });
             }
         }
@@ -893,8 +1094,9 @@ class spell_summ_garrosh_horde_way : public SpellScript
     {
         if (Player* pCaster = GetCaster()->ToPlayer())
         {
+            // #516: 120753 effect 1 (SPELL_EFFECT_FORCE_PLAYER_INTERACTION, trigger 120749) already makes the player
+            // cast Summon Ji; casting it again here summoned a second Ji (every Ji line was said twice).
             pCaster->SetPhaseMask(3, true);
-            pCaster->CastSpell(pCaster, SPELL_SUMMON_JI, true);
         }
     }
 
@@ -1037,7 +1239,15 @@ class spell_teleport_out_blackout : public AuraScript
     void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         if (Player* owner = GetOwner()->ToPlayer())
+        {
+            // #510: the trial is over. Drop the arena fight aura (infinite duration, PREVENT_RESURRECTION) the way the
+            // Brawler's Guild does at the end of a fight (brawlers_guild.cpp:521), and the trial phase 6 set by
+            // AreaTrigger_at_ring_of_valor_entrance - otherwise Garrosh 39605 (the quest ender) and every phase-1 NPC
+            // stay invisible until relog. The Alliance twin (npc_varian_wrynn_alliance_way_quest) also resets phase 1.
+            owner->RemoveAurasDueToSpell(SPELL_RING_OF_VALOR_IN_THE_ARENA);
+            owner->SetPhaseMask(PHASEMASK_NORMAL, true);
             owner->TeleportTo(1, LeaveRingOfValor.GetPositionX(), LeaveRingOfValor.GetPositionY(), LeaveRingOfValor.GetPositionZ(), LeaveRingOfValor.GetOrientation(), TELE_TO_NOT_UNSUMMON_PET);
+        }
     }
 
     void Register() override

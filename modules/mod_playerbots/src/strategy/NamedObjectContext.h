@@ -40,7 +40,8 @@ protected:
 template <class T>
 class NamedObjectFactory
 {
-protected:
+public:
+    // #72: public like AC (NamedObjectContext.h:44-47) so NamedObjectFactoryList can merge the creators.
     typedef T* (*ActionCreator)(PlayerbotAI* botAI);
     std::unordered_map<std::string, ActionCreator> creators;
 
@@ -161,17 +162,35 @@ public:
         }
     }
 
-    void Add(NamedObjectContext<T>* context) { contexts.push_back(context); }
+    void Add(NamedObjectContext<T>* context)
+    {
+        contexts.push_back(context);
+        created.clear();  // #72: a new context can answer a name that was a miss so far
+    }
 
+    // #72 perf: AC NamedObjectContextList::GetContextObject (NamedObjectContext.h:204-212) answers from one per-bot
+    // name -> object map. Here every lookup walked all contexts (base + ~44 dungeon contexts + the class context
+    // last), two string hashes per context, on every MultiplyAndPush -> InitializeAction -> GetAction. The objects
+    // stay owned by their contexts (never cleared before the list dies), so this map is a non-owning index of the
+    // first-match result the walk below returns; misses are cached too, as in AC, and Add() drops the index.
     T* GetContextObject(std::string const name, PlayerbotAI* botAI)
     {
+        typename std::unordered_map<std::string, T*>::const_iterator found = created.find(name);
+        if (found != created.end())
+            return found->second;
+
+        T* result = nullptr;
         for (typename std::vector<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
         {
             if (T* object = (*i)->create(name, botAI))
-                return object;
+            {
+                result = object;
+                break;
+            }
         }
 
-        return nullptr;
+        created[name] = result;
+        return result;
     }
 
     void Update()
@@ -240,33 +259,63 @@ public:
 
 private:
     std::vector<NamedObjectContext<T>*> contexts;
+    std::unordered_map<std::string, T*> created;  // #72: non-owning lookup index (AC NamedObjectContextList::created)
 };
 
+// #72 perf: AC NamedObjectFactoryList (NamedObjectContext.h:257-309) - the factories' creators are merged into one map
+// on Add (a later factory overrides an earlier one, the same winner as the old push_front + first-match walk), so a
+// lookup is one hash instead of a walk over every factory. Creators stay plain function pointers here.
 template <class T>
 class NamedObjectFactoryList
 {
 public:
+    typedef typename NamedObjectFactory<T>::ActionCreator ObjectCreator;
+    std::vector<NamedObjectFactory<T>*> factories;
+    std::unordered_map<std::string, ObjectCreator> creators;
+
     virtual ~NamedObjectFactoryList()
     {
-        for (typename std::list<NamedObjectFactory<T>*>::iterator i = factories.begin(); i != factories.end(); i++)
+        for (typename std::vector<NamedObjectFactory<T>*>::const_iterator i = factories.begin(); i != factories.end(); i++)
             delete *i;
     }
 
-    void Add(NamedObjectFactory<T>* context) { factories.push_front(context); }
+    T* create(std::string name, PlayerbotAI* botAI)
+    {
+        size_t found = name.find("::");
+        std::string qualifier;
+        if (found != std::string::npos)
+        {
+            qualifier = name.substr(found + 2);
+            name = name.substr(0, found);
+        }
+
+        typename std::unordered_map<std::string, ObjectCreator>::const_iterator creator = creators.find(name);
+        if (creator == creators.end() || !creator->second)
+            return nullptr;
+
+        T* object = (*creator->second)(botAI);
+        Qualified* q = dynamic_cast<Qualified*>(object);
+        if (q && found != std::string::npos)
+            q->Qualify(qualifier);
+
+        return object;
+    }
+
+    void Add(NamedObjectFactory<T>* context)
+    {
+        factories.push_back(context);
+        for (auto const& iter : context->creators)
+            if (iter.second)  // the old walk fell through a null creator to the next factory
+                creators[iter.first] = iter.second;
+    }
 
     T* GetContextObject(std::string const& name, PlayerbotAI* botAI)
     {
-        for (typename std::list<NamedObjectFactory<T>*>::iterator i = factories.begin(); i != factories.end(); i++)
-        {
-            if (T* object = (*i)->create(name, botAI))
-                return object;
-        }
+        if (T* object = create(name, botAI))
+            return object;
 
         return nullptr;
     }
-
-private:
-    std::list<NamedObjectFactory<T>*> factories;
 };
 
 #endif

@@ -22,6 +22,8 @@
 #include "Optional.h"
 #include "UnitAI.h"
 #include "Common.h"
+#include "Duration.h"
+#include <vector>
 
 class WorldObject;
 class Unit;
@@ -29,7 +31,10 @@ class Creature;
 class Player;
 class PlayerAI;
 class SpellInfo;
+class AreaBoundary;
 enum class QuestGiverStatus : uint32;
+
+typedef std::vector<AreaBoundary const*> CreatureBoundary;
 
 #define TIME_INTERVAL_LOOK   5000
 #define VISIBILITY_RANGE    10000
@@ -75,9 +80,9 @@ class TC_GAME_API CreatureAI : public UnitAI
 
         void SetGazeOn(Unit* target);
 
-        Creature* DoSummon(uint32 entry, Position const& pos, uint32 despawnTime = 30000, TempSummonType summonType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
-        Creature* DoSummon(uint32 entry, WorldObject* obj, float radius = 5.0f, uint32 despawnTime = 30000, TempSummonType summonType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
-        Creature* DoSummonFlyer(uint32 entry, WorldObject* obj, float flightZ, float radius = 5.0f, uint32 despawnTime = 30000, TempSummonType summonType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
+        Creature* DoSummon(uint32 entry, Position const& pos, Milliseconds despawnTime = 30s, TempSummonType summonType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
+        Creature* DoSummon(uint32 entry, WorldObject* obj, float radius = 5.0f, Milliseconds despawnTime = 30s, TempSummonType summonType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
+        Creature* DoSummonFlyer(uint32 entry, WorldObject* obj, float flightZ, float radius = 5.0f, Milliseconds despawnTime = 30s, TempSummonType summonType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
 
     public:
         // EnumUtils: DESCRIBE THIS (in CreatureAI::)
@@ -102,6 +107,9 @@ class TC_GAME_API CreatureAI : public UnitAI
         // Called if IsVisible(Unit* who) is true at each who move, reaction at visibility zone enter
         void MoveInLineOfSight_Safe(Unit* who);
 
+        // Distract creature, if player gets too close while stealthed/prowling
+        void TriggerAlert(Unit const* who) const;
+
         bool CanSeeEvenInPassiveMode() { return m_canSeeEvenInPassiveMode; }
         void SetCanSeeEvenInPassiveMode(bool canSeeEvenInPassiveMode) { m_canSeeEvenInPassiveMode = canSeeEvenInPassiveMode; }
         
@@ -109,10 +117,27 @@ class TC_GAME_API CreatureAI : public UnitAI
         virtual bool CanRespawn() { return true; }
 
         // Called for reaction at stopping attack at no attackers or targets
-        virtual void EnterEvadeMode();
+        virtual void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER);
+
+        // Called for reaction whenever we start being in combat (overridden from base UnitAI)
+        void JustEnteredCombat(Unit* /*who*/) override;
+
+        // Called for reaction whenever a new non-offline unit is added to the threat list
+        virtual void JustStartedThreateningMe(Unit* who) { if (!IsEngaged()) EngagementStart(who); }
+
+        // Called for reaction when initially engaged - this will always happen _after_ JustEnteredCombat
+        // Alias retained for the legacy TC TBC/WotLK hook name; JustEngagedWith forwards to it by default,
+        // so scripts written against either name behave identically.
+        virtual void EnterCombat(Unit* /*victim*/) { }
 
         // Called for reaction at enter to combat if not in combat yet (enemy can be NULL)
-        virtual void JustEngagedWith(Unit* /*victim*/) { }
+        virtual void JustEngagedWith(Unit* victim)
+        {
+            if (!IsEngaged())
+                _isEngaged = true;
+
+            EnterCombat(victim);
+        }
 
         // Called when the creature is killed
         virtual void JustDied(Unit* /*killer*/) { }
@@ -136,7 +161,7 @@ class TC_GAME_API CreatureAI : public UnitAI
         virtual void SpellHitTarget(Unit* /*target*/, SpellInfo const* /*spell*/) { }
 
         // Called after spell is casted
-        virtual void SpellCasted(Spell const* /*spell*/) { }
+        virtual void SpellCasted(Spell const* spell) { }
 
         // Called when spellcast was interrupted for any reason
         virtual void CastInterrupted(SpellInfo const* /*spell*/) {}
@@ -146,12 +171,14 @@ class TC_GAME_API CreatureAI : public UnitAI
         virtual bool IsEscorted() { return false; }
 
         // Called when creature is spawned or respawned (for reseting variables)
-        virtual void JustAppeared() { Reset(); }
+        virtual void JustAppeared();
 
         // Called at waypoint reached or point movement finished
         virtual void MovementInform(uint32 /*type*/, uint32 /*id*/) { }
 
         void OnCharmed(bool apply) override;
+
+        bool IsEngaged() const { return _isEngaged; }
 
         // Called at reaching home after evade
         virtual void JustReachedHome() { }
@@ -218,11 +245,11 @@ class TC_GAME_API CreatureAI : public UnitAI
 
         /// == Fields =======================================
 
-        virtual void PassengerBoarded(Unit* /*passenger*/, int8 /*seatId*/, bool /*apply*/) { }
-        virtual void GetPassengerEnterPosition(Unit* /*passenger*/, int8 /*seatId*/, Position& /*pos*/) { }
-        virtual void GetPassengerExitPosition(Unit* /*passenger*/, int8 /*seatId*/, Position& /*pos*/) { }
-        virtual void BoardedVehicle(Vehicle* /*vehicle*/, int8 /*seatId*/, bool /*apply*/) { }
-        virtual void GetVehicleExitPosition(Vehicle* /*vehicle*/, int8 /*seatId*/, Position& /*pos*/) { }
+        virtual void PassengerBoarded(Unit* passenger, int8 seatId, bool apply) { }
+        virtual void GetPassengerEnterPosition(Unit* passenger, int8 seatId, Position& pos) { }
+        virtual void GetPassengerExitPosition(Unit* passenger, int8 seatId, Position& pos) { }
+        virtual void BoardedVehicle(Vehicle* vehicle, int8 seatId, bool apply) { }
+        virtual void GetVehicleExitPosition(Vehicle* vehicle, int8 seatId, Position& pos) { }
 
         virtual void OnSpellClick(Unit* /*clicker*/, bool& /*result*/) { }
 
@@ -233,20 +260,38 @@ class TC_GAME_API CreatureAI : public UnitAI
         // Object destruction is handled by Unit::RemoveCharmedBy
         virtual PlayerAI* GetAIForCharmedPlayer(Player* /*who*/) { return nullptr; }
 
-        virtual SpellMissInfo SpellHitResult(Unit* /*attacker*/, SpellInfo const* /*spell*/, Spell const* spellInstance = nullptr) { return SPELL_MISS_NONE; }
+        virtual SpellMissInfo SpellHitResult(Unit* /*attacker*/, SpellInfo const* /*spell*/, Spell const* spellInstance = NULL) { return SPELL_MISS_NONE; }
 
         // ONLY FOR PET AI
         virtual void SpellRequiresMovement(Unit* target, Spell* spell);
         virtual void OnPetCommand(CommandStates command) { (void)(command); /* Where our fucking UNUSED macro?...*/ }
 
+        // intended for encounter design/debugging. do not use for other purposes. expensive.
+        int32 VisualizeBoundary(Seconds duration, Unit* owner = nullptr, bool fill = false) const;
+
+        // boundary system methods
+        virtual bool CheckInRoom();
+        CreatureBoundary const* GetBoundary() const { return _boundary; }
+        virtual void SetBoundary(CreatureBoundary const* boundary, bool negateBoundaries = false);
+
+        static bool IsInBounds(CreatureBoundary const& boundary, Position const* who);
+        bool IsInBoundary(Position const* who = nullptr) const;
+
     protected:
         virtual void MoveInLineOfSight(Unit* /*who*/);
 
-        bool _EnterEvadeMode();
+        void EngagementStart(Unit* who);
+        void EngagementOver();
+
+        bool _EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER);
+
+        CreatureBoundary const* _boundary;
+        bool _negateBoundary;
 
     private:
         bool m_MoveInLineOfSight_locked;
         bool m_canSeeEvenInPassiveMode;
+        bool _isEngaged;
 };
 
 enum Permitions
@@ -297,7 +342,7 @@ struct SummonablePremiumNpcAI : public CreatureAI
 {
     SummonablePremiumNpcAI(Creature* creature, uint32 displayId = 0);
 
-    void UpdateAI(uint32 /*diff*/) override { }
+    void UpdateAI(uint32 diff) override { }
 
     // Just pass a Player* or ChatHandler* instead of this, it will implicitly use the appropriate constructor
     struct PlayerOrChatHandler

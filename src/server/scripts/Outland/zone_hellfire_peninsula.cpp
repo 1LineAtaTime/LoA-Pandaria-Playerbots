@@ -90,7 +90,8 @@ public:
                 me->SetFaction(FACTION_FRIENDLY);
                 me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);   // UNIT_NPC_FLAGS
                 me->RemoveAllAuras();
-                me->DeleteThreatList();
+                me->GetThreatManager().RemoveMeFromThreatLists();
+                me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(true);
                 Talk(SAY_FREE);
                 return;
@@ -160,7 +161,7 @@ public:
 //         }
 
 //         // Override Evade Mode event, recast buff that was removed by standard handler
-//         void EnterEvadeMode() override
+//         void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
 //         {
 //             npc_escortAI::EnterEvadeMode();
 //             DoCast(me, SPELL_ANCESTRAL_WOLF_BUFF, true);
@@ -294,8 +295,8 @@ public:
                 case 9:
                     Talk(SAY_ELF_SUMMON1, player);
                     // Spawn two Haal'eshi Talonguard
-                    DoSpawnCreature(NPC_HAALESHI_TALONGUARD, -15, -15, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000);
-                    DoSpawnCreature(NPC_HAALESHI_TALONGUARD, -17, -17, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000);
+                    DoSpawnCreature(NPC_HAALESHI_TALONGUARD, -15, -15, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000ms);
+                    DoSpawnCreature(NPC_HAALESHI_TALONGUARD, -17, -17, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000ms);
                     break;
                 case 13:
                     Talk(SAY_ELF_RESTING, player);
@@ -303,8 +304,8 @@ public:
                 case 14:
                     Talk(SAY_ELF_SUMMON2, player);
                     // Spawn two Haal'eshi Windwalker
-                    DoSpawnCreature(NPC_HAALESHI_WINDWALKER, -15, -15, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000);
-                    DoSpawnCreature(NPC_HAALESHI_WINDWALKER, -17, -17, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000);
+                    DoSpawnCreature(NPC_HAALESHI_WINDWALKER, -15, -15, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000ms);
+                    DoSpawnCreature(NPC_HAALESHI_WINDWALKER, -17, -17, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000ms);
                     break;
                 case 27:
                     Talk(SAY_ELF_COMPLETE, player);
@@ -950,7 +951,8 @@ enum Aledis
 //                 _events.Reset();
 //                 me->RestoreFaction();
 //                 me->RemoveAllAuras();
-//                 me->DeleteThreatList();
+//                 me->GetThreatManager().RemoveMeFromThreatLists();
+//                  me->GetThreatManager().ClearAllThreat();
 //                 me->CombatStop(true);
 //                 //me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
 //                 //me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);

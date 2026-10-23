@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -57,11 +57,24 @@ enum eWhitemaneEvents
     EVENT_HEAL                     = 4,
 };
 
+enum HoodedCrusaderOutroEvents
+{
+    EVENT_MOVE_TO_WHITEMANE_INTRO  = 1,
+    EVENT_JUMP_TO_CORPSE           = 2,
+    EVENT_QUEST_SAY1               = 3,
+    EVENT_QUEST_SAY2               = 4,
+    EVENT_QUEST_SAY3               = 5,
+    EVENT_QUEST_SAY4               = 6,
+    EVENT_QUEST_SAY5               = 7,
+    EVENT_QUEST_SAY6               = 8,
+};
+
 enum eActions
 {
     ACTION_DURAND                  = 1,
     ACTION_INTRO                   = 2,
-    ACTION_LAST_PHASE              = 3
+    ACTION_LAST_PHASE              = 3,
+    ACTION_QUEST_EVENT             = 4
 };
 
 enum Durand_Yells
@@ -87,14 +100,20 @@ class boss_commander_durand : public CreatureScript
 
         struct boss_commander_durandAI : public BossAI
         {
-            boss_commander_durandAI(Creature* creature) : BossAI(creature, BOSS_DURAND) { }
+            boss_commander_durandAI(Creature* creature) : BossAI(creature, BOSS_DURAND) 
+            { 
+                Initialize();
+            }
 
-            ePhases phases;
-            uint32 _flashcount;
-            uint32 _dashingcount;
-            bool _dashingcheck;
-            bool _fakedeath;
-            bool _restore;
+            void Initialize()
+            {
+                phases = PHASE_ONE;
+                _flashcount = 0;
+                _dashingcount = 0;
+                _dashingcheck = false;
+                _fakedeath = false;
+                _restore = false;
+            }
 
             void Reset() override
             {
@@ -113,22 +132,17 @@ class boss_commander_durand : public CreatureScript
                 _restore = false;
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                // instance->HandleGameObject(ObjectGuid::Empty, false, ObjectAccessor::GetGameObject(*me, instance->GetGuidData(GO_WHITEMANE_ENTRANCE)));
             }
 
-            void JustDied(Unit* /*killer*/) override
+            void JustDied(Unit* killer) override
             {
                 _JustDied();
                 if (instance)
                 {
                     instance->SetData(BOSS_DURAND, DONE);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
-
-                    // Quest Ender 
-                    if (Creature* HoodedCrusader = ObjectAccessor::GetCreature(*me, instance->GetGuidData(NPC_HOODED_CRUSADER_OUTRO)))
-                    {
-                        HoodedCrusader->SetVisible(true);
-                        HoodedCrusader->GetMotionMaster()->MovePoint(0, Whitemane_intro);
-                    }
+                    instance->HandleGameObject(ObjectGuid::Empty, true, ObjectAccessor::GetGameObject(*me, instance->GetGuidData(GO_WHITEMANE_ENTRANCE)));
                 }
             }
 
@@ -136,7 +150,7 @@ class boss_commander_durand : public CreatureScript
             {
                 if (me->GetHealth() <= damage && !_fakedeath)
                 {
-
+                    instance->HandleGameObject(ObjectGuid::Empty, true, ObjectAccessor::GetGameObject(*me, instance->GetGuidData(GO_WHITEMANE_ENTRANCE)));
                     //On first death, fake death and open door, as well as initiate whitemane if exist
                     if (Creature* Whitemane = Unit::GetCreature(*me, instance->GetGuidData(BOSS_WHITEMANE)))
                     {
@@ -144,26 +158,24 @@ class boss_commander_durand : public CreatureScript
                         Whitemane->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                         Whitemane->AI()->DoAction(ACTION_INTRO);
                         instance->SetBossState(BOSS_WHITEMANE, IN_PROGRESS);
-
-                        if (me->IsNonMeleeSpellCasted(false))
-                            me->InterruptNonMeleeSpells(false);
-
-                        me->ClearComboPointHolders();
-                        me->RemoveAllAuras();
-                        me->ClearAllReactives();
-                        _fakedeath = true;
-                        _restore = true;
-                        me->SetHealth(IsHeroic() ? 1000000 : 5000);
-                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                        me->SetReactState(REACT_PASSIVE);
-                        me->SetStandState(UNIT_STAND_STATE_DEAD);
-                        me->AttackStop();
-                        events.Reset();
-
-                        if (GameObject* WhiteDoor = GetClosestGameObjectWithEntry(me, GO_WHITEMANE_ENTRANCE, 50.0f))
-                            WhiteDoor->UseDoorOrButton(4500);
+                        DoZoneInCombat(Whitemane);
                     }
+
+                    if (me->IsNonMeleeSpellCasted(false))
+                        me->InterruptNonMeleeSpells(false);
+
+                    me->ClearComboPointHolders();
+                    me->RemoveAllAuras();
+                    me->ClearAllReactives();
+                    _fakedeath = true;
+                    _restore = true;
+                    me->SetHealth(IsHeroic() ? 1000000 : 5000);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    me->SetReactState(REACT_PASSIVE);
+                    me->SetStandState(UNIT_STAND_STATE_DEAD);
+                    me->AttackStop();
+                    events.Reset();
                 }
 
                 if (_dashingcheck)
@@ -176,7 +188,7 @@ class boss_commander_durand : public CreatureScript
                     BossAI::EnterEvadeMode();
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -198,7 +210,11 @@ class boss_commander_durand : public CreatureScript
                 Talk(DURAND_TALK_INTRO);
                 events.ScheduleEvent(EVENT_FLASH_OF_STEEL, 9000);
                 events.ScheduleEvent(EVENT_DASHING_STRIKE, urand(24000, 25000));
-                me->CallForHelp(VISIBLE_RANGE);
+                // #800: no CallForHelp(VISIBLE_RANGE) here. That call (166 yd) pulled every idle friendly in line of sight,
+                // i.e. the 14 Scarlet Judicators of the south transept (faction 67, instance_scarlet_monastery.cpp:105-107),
+                // into the boss fight. Wowpedia "High Inquisitor Whitemane (tactics)" (MediaWiki API, fetched 2026-10-14):
+                // "it is not necessary to clear the room before engaging the boss, as the trash is not linked with Durand".
+                // The core's normal creature assistance (CreatureFamilyAssistanceRadius) still applies.
             }
 
             void UpdateAI(uint32 diff) override
@@ -244,12 +260,12 @@ class boss_commander_durand : public CreatureScript
                         case EVENT_DASHING_STRIKE:
                             if (_dashingcount < 6)
                             {
-                                if (!_dashingcheck) 
-                                { 
-                                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE); 
+                                if (!_dashingcheck)
+                                {
+                                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                                     DoCast(me, SPELL_DASHING_STRIKE_INVISIBLE);
-                                    _dashingcheck = true; 
-                                    Talk(DURAND_TALK_SLAY); 
+                                    _dashingcheck = true;
+                                    Talk(DURAND_TALK_SLAY);
                                 }
                                 _dashingcount++;
                                 if (Unit* player = SelectTarget(SELECT_TARGET_RANDOM))
@@ -275,6 +291,15 @@ class boss_commander_durand : public CreatureScript
 
                 DoMeleeAttackIfReady();
             }
+
+            private:
+                ePhases phases;
+                uint32 _flashcount;
+                uint32 _dashingcount;
+                bool _dashingcheck;
+                bool _fakedeath;
+                bool _restore;
+
         };
 
         CreatureAI* GetAI(Creature* creature) const override
@@ -293,6 +318,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
             boss_high_inqusitior_whitemaneAI(Creature* creature) : BossAI(creature, BOSS_WHITEMANE) { }
 
             bool _switch, InRessurection;
+            bool _resurrectionTalked = false; // #684: the resurrection yell once per resurrection, not once per retry
 
             void InitializeAI() override
             {
@@ -301,6 +327,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                 me->SetPower(POWER_MANA, me->GetMaxPower(POWER_MANA));
                 _switch = false;
                 InRessurection = false;
+                _resurrectionTalked = false;
             }
 
             void DoAction(int32 actionId) override
@@ -313,6 +340,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                         break;
                     case ACTION_LAST_PHASE:
                         InRessurection = false;
+                        SetResurrectionUninterruptible(false);
                         me->SetReactState(REACT_AGGRESSIVE);
                         instance->SetBossState(BOSS_DURAND, SPECIAL);
                         events.ScheduleEvent(EVENT_HEAL, urand(15000, 16000));
@@ -329,7 +357,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                 }
             }
 
-            void DamageTaken(Unit* /*attacker*/, uint32& damage) override  
+            void DamageTaken(Unit* /*attacker*/, uint32& damage) override
             {
                 if (InRessurection && damage >= me->GetHealth())
                     damage = 0;
@@ -346,23 +374,67 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                     DoCastAOE(SPELL_DEEP_SLEEP);
                     DoCast(me, SPELL_POWER_WORD_SHIELD);
                     InRessurection = true;
+                    _resurrectionTalked = false;
+                    // #684: Wowpedia "High Inquisitor Whitemane (tactics)" (MediaWiki API, fetched 2026-10-14): "Scarlet
+                    // Resurrection ... 2 sec cast. Uninterruptible." The 5.4.8 SpellInterrupts row of 9232 has InterruptFlags
+                    // 0x1f (kickable), so she is immune to interrupt effects from here until the resurrection has landed
+                    // (ACTION_LAST_PHASE). Silence / stun are already in her mechanic_immune_mask.
+                    SetResurrectionUninterruptible(true);
 
                     if (Unit* Durand = ObjectAccessor::GetUnit(*me, instance->GetGuidData(BOSS_DURAND)))
                         me->GetMotionMaster()->MovePoint(1, Durand->GetPositionX() + frand(-1.5f, 1.5f), Durand->GetPositionY() + frand(-0.8f, 0.8f), Durand->GetPositionZ(), Durand->GetOrientation());
 
                     // sometimes it stuck, and she doesn`t appear to durand near (stuck on half of path if distance too long, in result MovementInForm not called)
+                    // #684: the old one-shot task never retried, so a resurrection that did not land (interrupted, failed
+                    // cast, stuck path) left her immortal (InRessurection) and Durand fake-dead for good. The task now repeats
+                    // every second until spell_sc_scarlet_ressurection::HandleAfterCast has run ACTION_LAST_PHASE.
                     scheduler
-                        .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/) // blizzlike
+                        .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context) // blizzlike
                     {
-                        Talk(WHITEMANE_TALK_RESSURETION);
+                        if (!InRessurection)
+                            return; // the resurrection landed: ACTION_LAST_PHASE ran
 
-                        if (Unit* Durand = Unit::GetCreature(*me, instance->GetGuidData(BOSS_DURAND)))
+                        Creature* Durand = ObjectAccessor::GetCreature(*me, instance->GetGuidData(BOSS_DURAND));
+                        if (!Durand || !Durand->IsAlive())
                         {
-                            me->SetFacingTo(me->GetAngle(Durand));
-                            DoCast(Durand, SPELL_REVIVE);
+                            // nobody left to resurrect: end her immortality and fight on alone
+                            DoAction(ACTION_LAST_PHASE);
+                            return;
                         }
+
+                        if (me->FindCurrentSpellBySpellId(SPELL_REVIVE))
+                        {
+                            context.Repeat(Seconds(1)); // casting: HandleAfterCast ends the phase
+                            return;
+                        }
+
+                        if (me->GetExactDist2d(Durand) > 25.0f || !me->IsWithinLOSInMap(Durand))
+                        {
+                            if (!me->isMoving())
+                                me->GetMotionMaster()->MovePoint(1, Durand->GetPositionX() + frand(-1.5f, 1.5f), Durand->GetPositionY() + frand(-0.8f, 0.8f), Durand->GetPositionZ(), Durand->GetOrientation());
+                            context.Repeat(Seconds(1));
+                            return;
+                        }
+
+                        if (!_resurrectionTalked)
+                        {
+                            Talk(WHITEMANE_TALK_RESSURETION);
+                            _resurrectionTalked = true;
+                        }
+
+                        me->StopMoving();
+                        me->SetFacingTo(me->GetAngle(Durand));
+                        DoCast(Durand, SPELL_REVIVE);
+                        context.Repeat(Seconds(1));
                     });
                 }
+            }
+
+            // #684: interrupt-effect (kick, pummel, counterspell, ...) and interrupt-mechanic immunity for the resurrection window
+            void SetResurrectionUninterruptible(bool apply)
+            {
+                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, apply);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_INTERRUPT, apply);
             }
 
             void Reset() override
@@ -374,12 +446,14 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                     instance->SetData(BOSS_WHITEMANE, NOT_STARTED);
                 _switch = false;
                 InRessurection = false;
+                _resurrectionTalked = false;
+                SetResurrectionUninterruptible(false);
                 me->SetReactState(REACT_PASSIVE);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
             }
 
-            void JustDied(Unit* /*killer*/) override
+            void JustDied(Unit* killer) override
             {
                 Talk(WHITEMANE_TALK_DEATH);
                 _JustDied();
@@ -387,14 +461,45 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                 {
                     instance->SetData(BOSS_WHITEMANE, DONE);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
-                }
+                    // instance->HandleGameObject(ObjectGuid::Empty, true, ObjectAccessor::GetGameObject(*me, instance->GetGuidData(GO_WHITEMANE_ENTRANCE)));
+               
+                    // Quest Object
+                    DoCast(me, SPELL_WHITEMANE_CORPSE_SPELL_FOCUS);
+                    DoCast(me, SPELL_SUMMON_WHITEMANE_SOUL_TARGET);
+                    DoCast(me, SPELL_SUMMON_UNQUENCHABLE);
+                    DoCast(me, SPELL_SUMMON_HAND_OF_PROVIDENCE);
+                    DoCast(me, SPELL_SUMMON_SOUL_MISSILE);
+                    DoCastAOE(SPELL_WHITEMANE_KILL_CREDIT); // wrong spell
 
-                // Quest Object
-                DoCast(me, SPELL_WHITEMANE_CORPSE_SPELL_FOCUS);
-                DoCastAOE(SPELL_WHITEMANE_KILL_CREDIT);
+                    // Quest Ender
+                    if (Creature* HoodedCrusader = ObjectAccessor::GetCreature(*me, instance->GetGuidData(NPC_HOODED_CRUSADER_OUTRO)))
+                    {
+                        HoodedCrusader->AI()->DoAction(ACTION_QUEST_EVENT);
+                    } 
+
+                    // Hackfix for quest 31514 and 31516
+                    float radius = 50.0f;
+                    std::list<Player*> players;
+                    Trinity::AnyPlayerInObjectRangeCheck checker(me, radius);
+                    Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
+                    me->VisitNearbyWorldObject(radius, searcher);
+
+                    for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    {
+                        if (!IsHeroic() && (*itr)->GetQuestStatus(31514) == QUEST_STATUS_INCOMPLETE)
+                        {
+                            (*itr)->KilledMonsterCredit(NPC_Q31514_KILL_CREDIT, ObjectGuid::Empty);
+                        }
+                        if (IsHeroic() && (*itr)->GetQuestStatus(31516) == QUEST_STATUS_INCOMPLETE)
+                        {
+                            (*itr)->KilledMonsterCredit(NPC_Q31516_KILL_CREDIT, ObjectGuid::Empty);
+                        }                        
+                    }
+
+                }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -415,8 +520,13 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                     DoStartNoMovement(target);
             }
 
-            void CastInterrupted(SpellInfo const* /*spell*/) override
+            void CastInterrupted(SpellInfo const* spell) override
             {
+                // #684: during the resurrection window the repeating task in DamageTaken recasts Scarlet Resurrection;
+                // EVENT_SMITE / MoveChase here would stop her walk to Durand (EVENT_SMITE calls StopMoving).
+                if (InRessurection)
+                    return;
+
                 events.RescheduleEvent(EVENT_SMITE, 6 * IN_MILLISECONDS);
 
                 if (Unit* vict = me->GetVictim())
@@ -450,8 +560,10 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                     else
                     {
                         BossAI::EnterEvadeMode();
-                        if (Unit* Whitemane = Unit::GetCreature(*me, instance->GetGuidData(BOSS_WHITEMANE)))
-                            Whitemane->GetAI()->DoAction(ACTION_DURAND);
+                        // #684: reset DURAND (his DoAction(ACTION_DURAND) = evade). This used to look up Whitemane herself, so
+                        // Durand stayed fake-dead and unattackable after she evaded.
+                        if (Creature* Durand = ObjectAccessor::GetCreature(*me, instance->GetGuidData(BOSS_DURAND)))
+                            Durand->AI()->DoAction(ACTION_DURAND);
                     }
                 }
             }
@@ -473,7 +585,10 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                     {
                         case EVENT_INTRO:
                             events.ScheduleEvent(EVENT_SMITE, 0.5 * IN_MILLISECONDS);
-                            events.ScheduleEvent(EVENT_HEAL, urand(9000, 13000));
+                            // Heal starts only after Durand is resurrected (ACTION_LAST_PHASE). Wowpedia "High Inquisitor
+                            // Whitemane (tactics)" (fetched 2026-10-14): "She start to use it after Durand has been resurrected."
+                            // A heal on the fake-dead Durand could also lift him over 50% and start his _restore branch while
+                            // he is still NOT_SELECTABLE | NON_ATTACKABLE.
                             break;
                         case EVENT_SMITE:
                             me->StopMoving();
@@ -563,7 +678,7 @@ class spell_sc_mass_ressurection : public SpellScript
 
     void FilterTargets(std::list<WorldObject*>& targets)
     {
-        targets.remove_if([this](WorldObject const* target)
+        targets.remove_if([=](WorldObject const* target)
         {
             if (target->GetTypeId() != TYPEID_UNIT)
                 return true;
@@ -599,10 +714,117 @@ class spell_sc_mass_ressurection : public SpellScript
     }
 };
 
+// Quest ender for 31514 and 31516
+// RP event https://wowpedia.fandom.com/wiki/Unto_Dust_Thou_Shalt_Return
+// Hooded Crusader says: It is done. You did it, <name>!
+// The Hooded Crusader leaps from where she appeared to Whitemane's corpse.
+// The Hooded Crusader gazes down upon the high inquisitor's blade-skewered corpse.
+// Hooded Crusader says: And now enough of this deception.
+// The Hooded Crusader sheds her disguise.
+// Lilian Voss says: Hello, my name's Lilian. You don't mind if I take those blades, do you?
+// The blades transform as she pulls them from Whitemane's corpse.
+// Lilian Voss says: Yes, these will do quite nicely. They feel almost as if they were meant for me all along.
+// https://www.wowhead.com/mop-classic/spell=126791/unto-dust-thou-shalt-return-summon-high-inquisitor-whitemanes-soul-target#screenshots
+// https://www.wowhead.com/mop-classic/spell=126802/unto-dust-thou-shalt-return-summon-unquenchable
+// https://www.wowhead.com/mop-classic/spell=126832/unto-dust-thou-shalt-return-summon-hand-of-providence
+// https://www.wowhead.com/mop-classic/spell=126795/unto-dust-thou-shalt-return-soul-missile
+// https://www.wowhead.com/mop-classic/spell=126789/unto-dust-thou-shalt-return-summon-high-inquisitor-whitemanes-corpse-spell-focus
+
+struct npc_hooded_crusader_c64842 : public ScriptedAI
+{
+    npc_hooded_crusader_c64842(Creature* creature) : ScriptedAI(creature), instance(creature->GetInstanceScript()) { }
+
+    void Reset() override
+    {
+        me->SetVisible(false);
+        _events.Reset();
+    }
+
+    void DoAction(int32 actionId) override
+    {
+        switch (actionId)
+        {
+            case ACTION_QUEST_EVENT:
+                me->SetVisible(true);
+                _events.ScheduleEvent(EVENT_MOVE_TO_WHITEMANE_INTRO, 0);
+                break;
+            default:
+                break;
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_MOVE_TO_WHITEMANE_INTRO:
+                    me->GetMotionMaster()->MovePoint(0, Whitemane_intro);
+                    _events.ScheduleEvent(EVENT_QUEST_SAY1, 1s);
+                    break;
+                case EVENT_QUEST_SAY1:
+                    Talk(0);
+                    _events.ScheduleEvent(EVENT_JUMP_TO_CORPSE, 4s);
+                    break;                    
+                case EVENT_JUMP_TO_CORPSE:
+                    // jump to whitemane corpse
+                    // spellid is missing, just use move
+                    float pos_x, pos_y;
+                    if (Creature* Whitemane = Unit::GetCreature(*me, instance->GetGuidData(BOSS_WHITEMANE))) // not work
+                    {
+                        Whitemane->GetPosition(pos_x, pos_y);
+                        const float angle = me->GetAngle(pos_x, pos_y);
+                        const float x = Whitemane->GetPositionX() - 2 * cos(angle);
+                        const float y = Whitemane->GetPositionY() - 2 * sin(angle);
+                        const float z = Whitemane->GetMap()->GetHeight(x, y, Whitemane->GetPositionZ());
+                        // me->GetMotionMaster()->MoveJump(x, y, z, 17.5f, 17.5f);
+                        me->GetMotionMaster()->MovePoint(0, x, y, z);
+                        me->SetFacingTo(me->GetAngle(Whitemane));
+                    }
+                    _events.ScheduleEvent(EVENT_QUEST_SAY2, 1s);
+                    break;
+                case EVENT_QUEST_SAY2:
+                    Talk(1);
+                    _events.ScheduleEvent(EVENT_QUEST_SAY3, 4s);
+                    break;
+                case EVENT_QUEST_SAY3:
+                    Talk(2);
+                    _events.ScheduleEvent(EVENT_QUEST_SAY4, 4s);
+                    break;
+                case EVENT_QUEST_SAY4:
+                    // change model_id or change creatureid here
+
+                    Talk(3);
+                    _events.ScheduleEvent(EVENT_QUEST_SAY5, 4s);
+                    break;
+                case EVENT_QUEST_SAY5:
+                    Talk(4);
+                    _events.ScheduleEvent(EVENT_QUEST_SAY6, 4s);
+                    break;
+                case EVENT_QUEST_SAY6:
+                    Talk(5);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    private:
+        EventMap _events;
+        const InstanceScript* instance;
+
+};
+
 void AddSC_boss_whitemane_and_durand()
 {
     new boss_commander_durand();
     new boss_high_inqusitior_whitemane();
     new spell_script<spell_sc_scarlet_ressurection>("spell_sc_scarlet_ressurection");
     new spell_script<spell_sc_mass_ressurection>("spell_sc_mass_ressurection");
+    RegisterCreatureAI(npc_hooded_crusader_c64842);
 }

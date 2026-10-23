@@ -206,6 +206,10 @@ class npc_neptulon : public CreatureScript
                 }
                 else if (action == ACTION_NEPTULON_START)
                 {
+                    // #700: the at_tott_ozumat intro schedules EVENT_INTRO_2 7 s ahead, and that event clears bActive.
+                    // A group that talks to Neptulon inside those 7 s froze the fight (UpdateAI returns on !bActive, so
+                    // no further summons and no stage 2: the encounter stayed IN_PROGRESS with the gossip removed).
+                    events.CancelEvent(EVENT_INTRO_2);
                     bActive = true;
                     Talk(SAY_INTRO_3_1);
                     events.ScheduleEvent(EVENT_INTRO_3_2, 30000);
@@ -347,14 +351,14 @@ class npc_neptulon : public CreatureScript
                         case EVENT_SUMMON_MINDLASHER:
                             if (Creature* pMindlasher = me->SummonCreature(NPC_VICIOUS_MINDLASHER, spawnPos[urand(0, 1)]))
                             {
-                                pMindlasher->AddThreat(me, 1.0f);
+                                pMindlasher->GetThreatManager().AddThreat(me, 1.0f);
                                 pMindlasher->AI()->AttackStart(me);
                             }
                             break;
                         case EVENT_SUMMON_BEHEMOTH:
                             if (Creature* pBehemoth = me->SummonCreature(NPC_UNYIELDING_BEHEMOTH, spawnPos[urand(0, 1)]))
                             {
-                                pBehemoth->AddThreat(me, 1.0f);
+                                pBehemoth->GetThreatManager().AddThreat(me, 1.0f);
                                 pBehemoth->AI()->AttackStart(me);
                             }
                             break;
@@ -378,7 +382,7 @@ class npc_neptulon : public CreatureScript
                             {
                                 if (Creature* pMurloc = me->SummonCreature(NPC_DEEP_MURLOC_INVADER, spawnPos[urand(0, 1)]))
                                 {
-                                    pMurloc->AddThreat(me, 1.0f);
+                                    pMurloc->GetThreatManager().AddThreat(me, 1.0f);
                                     pMurloc->AI()->AttackStart(me);
                                 }
                             }

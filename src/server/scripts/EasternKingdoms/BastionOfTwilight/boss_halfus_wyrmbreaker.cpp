@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -209,11 +209,11 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                 {
                     switch (urand(0, 9))
                     {
-                        // 10 ��������� ��������
-                        // ���� ���������� ������� ��� �����������
-                        // ���� ������ + ������ ���� �� ��������
+                        // 10 random combinations
+                        // Each combination uses timewarden drake or other drakes
+                        // Each combination uses protodrake and other helper abilities
                     case 0:
-                        // ��������� + ���������� + ������� �������
+                        // Timekeeper + Whelps + Malevolent + Shadow + Frenzied
                         timewarden->CastSpell(timewarden, SPELL_UNRESPONSIVE_DRAKE, true);
                         for (uint8 i = 0; i < 8; i++)
                             whelps[i]->CastSpell(whelps[i], SPELL_UNRESPONSIVE_WHELP, true); 
@@ -222,7 +222,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         DoCast(me, SPELL_FRENZIED_ASSAULT);
                         break;
                     case 1:
-                        // ����� ������� + ���������� + ������� �������
+                        // Slate Drake + Protodrake Dancing + Shadow + Frenzied
                         slatedrake->CastSpell(slatedrake, SPELL_UNRESPONSIVE_DRAKE, true);
                         for (uint8 i = 0; i < 8; i++)
                             whelps[i]->CastSpell(whelps[i], SPELL_UNRESPONSIVE_WHELP, true);
@@ -231,7 +231,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         DoCast(me, SPELL_FRENZIED_ASSAULT);
                         break;
                     case 2:
-                        // ��������� + ������� ������� + ����������
+                        // Timekeeper + Stormrider + Malevolent + Frenzied
                         bWhelps = true;
                         timewarden->CastSpell(timewarden, SPELL_UNRESPONSIVE_DRAKE, true);
                         stormrider->CastSpell(stormrider, SPELL_UNRESPONSIVE_DRAKE, true);
@@ -240,7 +240,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         proto->CastSpell(proto, SPELL_SUPERHEATED_BREATH, true);
                         break;
                     case 3:
-                        // ��������� + ���������� + ����� �������
+                        // Nether Scion + Whelps + Dancing + Malevolent + Shadow
                         netherscion->CastSpell(netherscion, SPELL_UNRESPONSIVE_DRAKE, true);
                         for (uint8 i = 0; i < 8; i++)
                             whelps[i]->CastSpell(whelps[i], SPELL_UNRESPONSIVE_WHELP, true);
@@ -249,7 +249,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         DoCast(me, SPELL_SHADOW_WARPED);
                         break;
                     case 4:
-                        // ������� ������� + ���������� + ����������
+                        // Slate Drake + Timekeeper + Frenzied + Shadow
                         bWhelps = true;
                         slatedrake->CastSpell(slatedrake, SPELL_UNRESPONSIVE_DRAKE, true);
                         timewarden->CastSpell(timewarden, SPELL_UNRESPONSIVE_DRAKE, true);
@@ -258,7 +258,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         proto->CastSpell(proto, SPELL_SUPERHEATED_BREATH, true);
                         break;
                     case 5:
-                        // ��������� + ����� ������� + ������� �������
+                        // Stormrider + Whelps + Dancing + Malevolent + Frenzied
                         stormrider->CastSpell(stormrider, SPELL_UNRESPONSIVE_DRAKE, true);
                         for (uint8 i = 0; i < 8; i++)
                             whelps[i]->CastSpell(whelps[i], SPELL_UNRESPONSIVE_WHELP, true);
@@ -267,7 +267,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         DoCast(me, SPELL_FRENZIED_ASSAULT);
                         break;
                     case 6:
-                        // ���������� + ����� ������� + ����������
+                        // Slate Drake + Nether Scion + Shadow + Dancing + Superheated
                         bWhelps = true;
                         slatedrake->CastSpell(slatedrake, SPELL_UNRESPONSIVE_DRAKE, true);
                         netherscion->CastSpell(netherscion, SPELL_UNRESPONSIVE_DRAKE, true);
@@ -276,7 +276,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         proto->CastSpell(proto, SPELL_SUPERHEATED_BREATH, true);                    
                         break;
                     case 7:
-                        // ��������� + ����� ������� + ����������
+                        // Stormrider + Nether Scion + Malevolent + Dancing + Superheated
                         bWhelps = true;
                         stormrider->CastSpell(stormrider, SPELL_UNRESPONSIVE_DRAKE, true);
                         netherscion->CastSpell(netherscion, SPELL_UNRESPONSIVE_DRAKE, true);
@@ -285,7 +285,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         proto->CastSpell(proto, SPELL_SUPERHEATED_BREATH, true);                    
                         break;
                     case 8:
-                        // ������� ������� + ����� ������� + ����������
+                        // Slate Drake + Stormrider + Frenzied + Dancing + Superheated
                         bWhelps = true;
                         slatedrake->CastSpell(slatedrake, SPELL_UNRESPONSIVE_DRAKE, true);
                         stormrider->CastSpell(stormrider, SPELL_UNRESPONSIVE_DRAKE, true);
@@ -294,7 +294,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         proto->CastSpell(proto, SPELL_SUPERHEATED_BREATH, true);
                         break;
                     case 9:
-                        // ��������� + ���������� + ����������
+                        // Nether Scion + Timekeeper + Malevolent + Shadow + Superheated
                         bWhelps = true;
                         netherscion->CastSpell(netherscion, SPELL_UNRESPONSIVE_DRAKE, true);
                         timewarden->CastSpell(timewarden, SPELL_UNRESPONSIVE_DRAKE, true);
@@ -329,7 +329,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                 if (me->HasAura(SPELL_SHADOW_WARPED))
                     events.ScheduleEvent(EVENT_SHADOW_NOVA, 7000);
                 events.ScheduleEvent(EVENT_BERSERK, 6 * MINUTE * IN_MILLISECONDS);
-                proto->AddThreat(who, 10.0f);
+                proto->GetThreatManager().AddThreat(who, 10.0f);
                 proto->SetInCombatWith(who);
                 Talk(SAY_AGGRO);
                 DoZoneInCombat();
@@ -380,7 +380,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                         hasAchievTimerActive = true;
 
                         scheduler
-                            .Schedule(Seconds(10), [this](TaskContext /*context*/)
+                            .Schedule(Seconds(10), [this](TaskContext context)
                         {
                             dragonsSlain = 0;
                             hasAchievTimerActive = false;
@@ -392,7 +392,7 @@ class boss_halfus_wyrmbreaker : public CreatureScript
             void JustDied(Unit* /*killer*/) override
             {
                 _JustDied();
-                if (Creature* Chogall = me->SummonCreature(NPC_CHOGALL_DLG, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 1, TEMPSUMMON_DEAD_DESPAWN, 0))
+                if (Creature* Chogall = me->SummonCreature(NPC_CHOGALL_DLG, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 1, TEMPSUMMON_DEAD_DESPAWN, 0ms))
                     Chogall->AI()->DoAction(ACTION_AT_HALFUS_END);
             }
 

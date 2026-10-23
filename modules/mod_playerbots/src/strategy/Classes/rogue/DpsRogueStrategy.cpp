@@ -17,18 +17,12 @@ public:
         creators["kick"] = &kick;
         creators["kidney shot"] = &kidney_shot;
         creators["backstab"] = &backstab;
-        creators["melee"] = &melee;
+        // #742 (AC CombatRogueStrategy.cpp:14-19): AC has no "melee" node here. The fork-only melee -> mutilate ->
+        // sinister strike -> melee alternative chain looped through the plain attack and is removed.
         creators["rupture"] = &rupture;
     }
 
 private:
-    static ActionNode* melee(PlayerbotAI* botAI)
-    {
-        return new ActionNode("melee",
-                              /*P*/ nullptr,
-                              /*A*/ NextAction::array(0, new NextAction("mutilate"), nullptr),
-                              /*C*/ nullptr);
-    }
     static ActionNode* mutilate(PlayerbotAI* botAI)
     {
         return new ActionNode("mutilate",
@@ -96,9 +90,11 @@ void DpsRogueStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         "high energy available", NextAction::array(0, new NextAction("sinister strike", ACTION_NORMAL + 3), nullptr)));
 
     triggers.push_back(new TriggerNode(
-        "slice and dice", NextAction::array(0, new NextAction("slice and dice", ACTION_HIGH + 2), nullptr)));
+        "slice and dice", NextAction::array(0, new NextAction("slice and dice", ACTION_HIGH + 5), nullptr)));
 
-    triggers.push_back(new TriggerNode("combo points available",
+    // #386 (AC CombatRogueStrategy.cpp:120 "combo points 5 available" -> rupture, eviscerate): AC's threshold is 5.
+    // AC "riposte" edge left out: Riposte is not a rogue spell in 5.4.8 (cls.py rogue: other-class dk,warrior).
+    triggers.push_back(new TriggerNode("combo points 5 available",
                                        NextAction::array(0, new NextAction("rupture", ACTION_HIGH + 1),
                                                          new NextAction("eviscerate", ACTION_HIGH), nullptr)));
 
@@ -122,15 +118,31 @@ void DpsRogueStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         new TriggerNode("kick on enemy healer",
                         NextAction::array(0, new NextAction("kick on enemy healer", ACTION_INTERRUPT + 1), nullptr)));
 
+    // Rotation port (epic #854 / #859), MoP Combat rows. AC's kit above is kept; these add the MoP rows.
+    // (prio 10/2, 10/1): Kick any casting enemy; BG/arena only (action gate), after AC's kick + healer kick.
+    triggers.push_back(new TriggerNode(
+        "enemy caster in range", NextAction::array(0, new NextAction("kick on enemy caster", ACTION_INTERRUPT), nullptr)));
+    // (prio 0/20) Marked for Death, (0/10) Shadowstep, (0/4) Revealing Strike. Ordered above
+    // AC's sinister strike (ACTION_NORMAL + 3) and below the combo finishers (ACTION_HIGH).
+    triggers.push_back(new TriggerNode(
+        "marked for death", NextAction::array(0, new NextAction("marked for death", ACTION_NORMAL + 7), nullptr)));
+    triggers.push_back(new TriggerNode(
+        "shadowstep", NextAction::array(0, new NextAction("shadowstep", ACTION_NORMAL + 6), nullptr)));
+    triggers.push_back(new TriggerNode(
+        "revealing strike", NextAction::array(0, new NextAction("revealing strike", ACTION_NORMAL + 4), nullptr)));
+    // Preparation (prio 5/1); Smoke Bomb is Assassination-only in the MoP list but any learner may use it
+    // at <= 20% hp in a BG/arena (action gate).
+    triggers.push_back(new TriggerNode(
+        "preparation", NextAction::array(0, new NextAction("preparation", ACTION_HIGH + 1), nullptr)));
+    triggers.push_back(new TriggerNode(
+        "critical health", NextAction::array(0, new NextAction("smoke bomb", ACTION_HIGH + 6), nullptr)));
+
     // triggers.push_back(new TriggerNode(
     //     "behind target",
     //     NextAction::array(0, new NextAction("backstab", ACTION_NORMAL), nullptr)));
 
-    triggers.push_back(
-        new TriggerNode("light aoe", NextAction::array(0, new NextAction("blade flurry", ACTION_HIGH + 3), nullptr)));
-
-    triggers.push_back(new TriggerNode("blade flurry",
-                                       NextAction::array(0, new NextAction("blade flurry", ACTION_HIGH + 2), nullptr)));
+    // #386 (AC CombatRogueStrategy.cpp:77-211): AC's combat strategy has NO "light aoe"/"blade flurry" edges
+    // (Blade Flurry comes from the "aoe" and "boost" strategies only); the fork-only copies are removed.
 
     triggers.push_back(new TriggerNode(
         "enemy out of melee",
@@ -214,7 +226,8 @@ NextAction** StealthedRogueStrategy::getDefaultActions()
 
 void StealthedRogueStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("combo points available",
+    // #386 (AC CombatRogueStrategy.cpp:264): "combo points 5 available" -> eviscerate while stealthed.
+    triggers.push_back(new TriggerNode("combo points 5 available",
                                        NextAction::array(0, new NextAction("eviscerate", ACTION_HIGH), nullptr)));
     triggers.push_back(
         new TriggerNode("kick", NextAction::array(0, new NextAction("cheap shot", ACTION_INTERRUPT), nullptr)));
@@ -245,7 +258,7 @@ void StealthStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 void RogueAoeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(
-        new TriggerNode("light aoe", NextAction::array(0, new NextAction("blade flurry", ACTION_HIGH), nullptr)));
+        new TriggerNode("light aoe", NextAction::array(0, new NextAction("blade flurry", ACTION_HIGH + 4), nullptr)));  // #386 (AC CombatRogueStrategy.cpp:355)
     triggers.push_back(new TriggerNode(
         "medium aoe", NextAction::array(0, new NextAction("fan of knives", ACTION_NORMAL + 5), nullptr)));
 }
@@ -254,6 +267,9 @@ void RogueBoostStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode(
         "adrenaline rush", NextAction::array(0, new NextAction("adrenaline rush", ACTION_HIGH + 2), nullptr)));
+    // #386 (AC CombatRogueStrategy.cpp:365): boost also casts Blade Flurry (13877, spec 260 L10, cls.py).
+    triggers.push_back(new TriggerNode(
+        "blade flurry", NextAction::array(0, new NextAction("blade flurry", ACTION_HIGH + 4), nullptr)));
 }
 
 void RogueCcStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

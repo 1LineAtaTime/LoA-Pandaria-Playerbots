@@ -1,3 +1,20 @@
+/*
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "PositionAction.h"
 
 #include "Event.h"
@@ -14,7 +31,7 @@ void TellPosition(PlayerbotAI* botAI, std::string const name, PositionInfo pos)
     {
         float x = pos.x;
         float y = pos.y;
-        Map2ZoneCoordinates(x, y, botAI->GetBot()->GetZoneId());
+        sDBCManager.Map2ZoneCoordinates(x, y, botAI->GetBot()->GetZoneId());
         out << " is set to " << x << "," << y;
     }
     else
@@ -154,4 +171,27 @@ bool ReturnAction::isUseful()
 {
     PositionInfo pos = context->GetValue<PositionMap&>("position")->Get()[qualifier];
     return pos.isSet() && AI_VALUE2(float, "distance", "position_random") > sPlayerbotAIConfig->followDistance;
+}
+
+// Ported from AC mod-playerbots Ai/Base/Actions/PositionAction.cpp:163-179 (#177).
+bool ReturnToStayPositionAction::isPossible()
+{
+    PositionMap& posMap = AI_VALUE(PositionMap&, "position");
+    PositionInfo stayPosition = posMap["stay"];
+    if (stayPosition.isSet())
+    {
+        float const distance = bot->GetDistance(stayPosition.x, stayPosition.y, stayPosition.z);
+        if (distance > sPlayerbotAIConfig->reactDistance)
+        {
+            botAI->TellMaster("The stay position is too far to return. I am going to stay where I am now");
+
+            // Set the stay position to current position
+            stayPosition.Set(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetMapId());
+            posMap["stay"] = stayPosition;
+        }
+
+        return true;
+    }
+
+    return false;
 }

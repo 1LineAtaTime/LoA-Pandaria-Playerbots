@@ -1,9 +1,24 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
- */
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "GenericSpellActions.h"
+
+#include "BgTacticsIC.h"  // #675: IocBeyondAc::RamTarget
+#include "BgTacticsSA.h"  // #765: SotaBeyondAc::RamTarget
 
 #include "Event.h"
 //#include "ItemTemplate.h"
@@ -11,6 +26,9 @@
 #include "Opcodes.h"
 #include "Player.h"
 #include "Playerbots.h"
+#include "ScriptMgr.h"
+#include "SpellDefines.h"
+#include "SpellHistory.h"  // #604: SpellHistory::IsReady in UseTrinketAction::UseTrinket
 #include "ServerFacade.h"
 #include "WorldPacket.h"
 
@@ -37,7 +55,7 @@ bool CastSpellAction::Execute(Event event)
             if (!spellInfo)
                 continue;
 
-            std::string const namepart = spellInfo->SpellName[0];
+            std::string const namepart = spellInfo->SpellName;
             std::wstring wnamepart;
             if (!Utf8toWStr(namepart, wnamepart))
                 return false;
@@ -65,14 +83,29 @@ bool CastSpellAction::Execute(Event event)
         return botAI->CastSpell(castId, bot);
     }
 
-    return botAI->CastSpell(spell, GetTarget());
+    if (!botAI->CastSpell(spell, GetTarget()))
+    {
+        // issue #98: a failed cast was retried on the very next tick, so an ability that cannot land
+        // (target moved out of range, line of sight, already charging) was re-picked endlessly - one
+        // warrior logged 1715 charge attempts while the rest of its rotation never ran. Put the spell
+        // on a short cooldown on failure so the engine falls through to something else, the way a
+        // player who cannot spam a failed ability behaves.
+        uint32 const failedSpellId = AI_VALUE2(uint32, "spell id", spell);
+        if (failedSpellId)
+            bot->AddSpellCooldown(failedSpellId, 0, 750);
+
+        return false;
+    }
+
+    return true;
 }
 
 bool CastSpellAction::isPossible()
 {
     if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
     {
-        //if (!sPlayerbotAIConfig->logInGroupOnly || (bot->GetGroup() && botAI->HasRealPlayerMaster()))
+        // AC GenericSpellActions.cpp:213 (#530 item 6)
+        if (!sPlayerbotAIConfig->logInGroupOnly || (bot->GetGroup() && botAI->HasRealPlayerMaster()))
         {
             TC_LOG_DEBUG("playerbots", "Can cast spell failed. Vehicle. - bot name: %s", bot->GetName().c_str());
         }
@@ -84,7 +117,8 @@ bool CastSpellAction::isPossible()
 
     if (spell == "mount" && bot->IsInCombat())
     {
-        //if (!sPlayerbotAIConfig->logInGroupOnly || (bot->GetGroup() && botAI->HasRealPlayerMaster()))
+        // AC GenericSpellActions.cpp:224 (#530 item 6)
+        if (!sPlayerbotAIConfig->logInGroupOnly || (bot->GetGroup() && botAI->HasRealPlayerMaster()))
         {
             TC_LOG_DEBUG("playerbots", "Can cast spell failed. Mount. - bot name: %s", bot->GetName().c_str());
         }
@@ -165,11 +199,10 @@ bool CastAuraSpellAction::isUseful()
     if (!GetTarget() || !CastSpellAction::isUseful())
         return false;
     Aura* aura = botAI->GetAura(spell, GetTarget(), isOwner, checkDuration);
+    // #628 (AC GenericSpellActions.cpp:265-272, BuffBelowRefreshTarget): same as the old rule when no pass pends.
     if (!aura)
         return true;
-    if (beforeDuration && aura->GetDuration() < beforeDuration)
-        return true;
-    return false;
+    return botAI->forceRebuff.BuffBelowRefreshTarget(aura->GetDuration(), aura->GetMaxDuration(), beforeDuration);
 }
 
 CastEnchantItemAction::CastEnchantItemAction(PlayerbotAI* botAI, std::string const spell)
@@ -263,9 +296,39 @@ CastBuffSpellAction::CastBuffSpellAction(PlayerbotAI* botAI, std::string const s
     range = botAI->GetRange("spell");
 }
 
+// #628 (AC GenericSpellActions.cpp:285-290). AC calls botAI->CastSpell directly; here the base
+// CastSpellAction::Execute is used so this fork's failed-cast cooldown (#98) is kept for buff spells.
+bool CastBuffSpellAction::Execute(Event event)
+{
+    botAI->forceRebuff.NoteBuffWork();
+
+    return CastAuraSpellAction::Execute(event);
+}
+
 Value<Unit*>* CastSpellOnEnemyHealerAction::GetTargetValue()
 {
     return context->GetValue<Unit*>("enemy healer target", spell);
+}
+
+// #855 (epic #854): see GenericSpellActions.h.
+Value<Unit*>* CastSpellOnEnemyCasterAction::GetTargetValue() { return context->GetValue<Unit*>("enemy caster target"); }
+
+bool CastSpellOnEnemyCasterAction::isUseful()
+{
+    Unit* target = GetTarget();
+    if (!target || !CastSpellAction::isUseful())
+        return false;
+
+    uint32 const spellId = AI_VALUE2(uint32, "spell id", spell);
+    SpellInfo const* spellInfo = spellId ? sSpellMgr->GetSpellInfo(spellId) : nullptr;
+    if (!spellInfo)
+        return false;
+
+    float const maxRange = spellInfo->GetMaxRange(false, bot);
+    if (maxRange <= NOMINAL_MELEE_RANGE)
+        return bot->IsWithinMeleeRange(target);
+
+    return bot->IsWithinDistInMap(target, maxRange);
 }
 
 Value<Unit*>* CastSnareSpellAction::GetTargetValue() { return context->GetValue<Unit*>("snare target", spell); }
@@ -282,20 +345,37 @@ std::string const CastProtectSpellAction::GetTargetName() { return "party member
 
 bool CastProtectSpellAction::isUseful() { return GetTarget() && !botAI->HasAura(spell, GetTarget()); }
 
+// #765 (beyond AC, SotA only): a driven Battleground Demolisher rams the enemy in its Ram cone (SotaBeyondAc::RamTarget,
+// BgTacticsSA.cpp); every other vehicle spell, and Ram anywhere else, keeps AC's "current target".
+static Unit* VehicleSpellTarget(Player* bot, AiObjectContext* context, std::string const& spell, Unit* target)
+{
+    if (spell == "ram")
+    {
+        if (Unit* ram = SotaBeyondAc::RamTarget(bot, context))
+            return ram;
+
+        // #675: the IoC Demolisher's Ram (67441) the same way (map 628 only, BgTacticsIC.cpp)
+        if (Unit* ram = IocBeyondAc::RamTarget(bot, context))
+            return ram;
+    }
+
+    return target;
+}
+
 bool CastVehicleSpellAction::isPossible()
 {
-    return false;
-    //uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", spell);
-    //return botAI->CanCastVehicleSpell(spellId, GetTarget());
+    // #581, AC GenericSpellActions.cpp:483-487.
+    uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", spell);
+    return botAI->CanCastVehicleSpell(spellId, VehicleSpellTarget(bot, context, spell, GetTarget()));
 }
 
 bool CastVehicleSpellAction::isUseful() { return botAI->IsInVehicle(false, true); }
 
 bool CastVehicleSpellAction::Execute(Event event)
 {
-    return false;
-    //uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", spell);
-    //return botAI->CastVehicleSpell(spellId, GetTarget());
+    // #581, AC GenericSpellActions.cpp:491-495.
+    uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", spell);
+    return botAI->CastVehicleSpell(spellId, VehicleSpellTarget(bot, context, spell, GetTarget()));
 }
 
 bool UseTrinketAction::Execute(Event event)
@@ -335,6 +415,43 @@ bool UseTrinketAction::UseTrinket(Item* item)
         if (item->GetTemplate()->Spells[i].SpellId > 0 && item->GetTemplate()->Spells[i].SpellTrigger == ITEM_SPELLTRIGGER_ON_USE)
         {
             spellId = item->GetTemplate()->Spells[i].SpellId;
+
+            // #604/#606 (AC Ai/Base/Actions/GenericSpellActions.cpp:552-616): AC only uses a trinket whose on-use spell
+            // is positive and applies an aura or restores mana, and skips it while the item or its category is on
+            // cooldown. Without these gates a summon / non-aura on-use (e.g. 68270/68271 Brewmaiden) or an item on
+            // category cooldown "succeeded" every tick: CastItemUseSpell failed silently, the action still returned
+            // true and ended the tick, so wave 10's assassination rogue never reached Mutilate (42x "use trinket - OK").
+            // The 5.4.8 core tracks item and category cooldowns in SpellHistory, so IsReady() replaces AC's local
+            // expiry caches. AC's tank-defensive / mixed ON_EQUIP+ON_USE exclusions are not ported (combat-rating
+            // masks differ in 5.x); the aura/mana gate already filters those procs here.
+            SpellInfo const* useSpellInfo = sSpellMgr->GetSpellInfo(spellId);
+            if (!useSpellInfo || !useSpellInfo->IsPositive())
+                return false;
+
+            if (!bot->GetSpellHistory()->IsReady(useSpellInfo, item->GetEntry(), false))
+                return false;
+
+            bool applyAura = false;
+            bool restoresMana = false;
+            for (uint8 e = 0; e < MAX_SPELL_EFFECTS; ++e)
+            {
+                SpellEffectInfo const& effectInfo = useSpellInfo->Effects[e];
+                if (effectInfo.Effect == SPELL_EFFECT_APPLY_AURA)
+                    applyAura = true;
+                if ((effectInfo.Effect == SPELL_EFFECT_ENERGIZE && effectInfo.MiscValue == POWER_MANA) ||
+                    (effectInfo.Effect == SPELL_EFFECT_APPLY_AURA &&
+                     effectInfo.ApplyAuraName == SPELL_AURA_PERIODIC_ENERGIZE && effectInfo.MiscValue == POWER_MANA))
+                    restoresMana = true;
+            }
+
+            if (!applyAura && !restoresMana)
+                return false;
+
+            // AC :599-609: a mana-restore trinket waits for medium mana.
+            if (restoresMana && (!AI_VALUE2(bool, "has mana", "self target") ||
+                                 AI_VALUE2(uint8, "mana", "self target") >= sPlayerbotAIConfig->mediumMana))
+                return false;
+
             if (!botAI->CanCastSpell(spellId, bot, false))
             {
                 return false;
@@ -344,21 +461,19 @@ bool UseTrinketAction::UseTrinket(Item* item)
     }
     if (!spellId)
         return false;
-    WorldPacket packet(CMSG_USE_ITEM);
-    packet << bagIndex << slot << cast_count << spellId << item_guid << glyphIndex << castFlags;
-
     Unit* target = AI_VALUE(Unit*, "current target");
-    if (target)
+    // 5.4.8: CMSG_USE_ITEM is bit-packed on this core. The WotLK-shaped packet AC builds here made
+    // HandleUseItemOpcode read past the end and abort the process (#194 S8, once "use trinket" and
+    // "potions" started firing). Do what the handler does after parsing the packet instead.
+    if (item->GetTemplate()->Bonding == BIND_ON_USE && !item->IsSoulBound())
     {
-        targetFlag = TARGET_FLAG_UNIT;
-        packet << targetFlag << target->GetGUID().WriteAsPacked();
+        item->SetState(ITEM_CHANGED, bot);
+        item->SetBinding(true);
     }
-    else
-    {
-        targetFlag = TARGET_FLAG_NONE;
-        packet << targetFlag << bot->GetPackGUID();
-    }
-    bot->GetSession()->HandleUseItemOpcode(packet);
+    SpellCastTargets targets;
+    targets.SetUnitTarget(target ? target : bot);
+    if (!sScriptMgr->OnItemUse(bot, item, targets))
+        bot->CastItemUseSpell(item, targets, cast_count, glyphIndex);
     return true;
 }
 

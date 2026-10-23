@@ -54,14 +54,16 @@ GuidVector AttackersValue::Calculate()
     if (bot->duel && bot->duel->opponent)
         result.push_back(bot->duel->opponent->GetGUID());
 
-    // workaround for bots of same faction not fighting in arena
-    if (bot->InArena())
+    // players are never on threat lists: add valid enemy players in arenas, and within 40 yd in battlegrounds (the
+    // distance an idle bot picks enemy players from)
+    if (bot->InBattleground())
     {
         GuidVector possibleTargets = AI_VALUE(GuidVector, "possible targets");
         for (ObjectGuid const guid : possibleTargets)
         {
             Unit* unit = botAI->GetUnit(guid);
-            if (unit && unit->IsPlayer() && IsValidTarget(unit, bot))
+            if (unit && unit->IsPlayer() && IsValidTarget(unit, bot) &&
+                (bot->InArena() || bot->IsWithinDist(unit, 40.0f)))
             {
                 result.push_back(unit->GetGUID());
             }
@@ -99,23 +101,17 @@ void AttackersValue::AddAttackersOf(Player* player, std::unordered_set<Unit*>& t
     if (!player || !player->IsInWorld() || player->IsBeingTeleported())
         return;
 
-    HostileRefManager& refManager = player->getHostileRefManager();
-    HostileReference* ref = refManager.getFirst();
-    if (!ref)
-        return;
-
-    while (ref)
+    for (auto const& pair : player->GetThreatManager().GetThreatenedByMeList())
     {
-        ThreatManager* threatMgr = ref->GetSource();
-        Unit* attacker = threatMgr->GetOwner();
-        Unit* victim = attacker->GetVictim();
+        Unit* attacker = pair.second->GetThreatManager().GetOwner();
+        if (!attacker)
+            continue;
 
         if (player->IsValidAttackTarget(attacker) &&
             player->GetDistance2d(attacker) < sPlayerbotAIConfig->sightDistance)
         {
             targets.insert(attacker);
         }
-        ref = ref->next();
     }
 }
 
@@ -140,60 +136,129 @@ bool AttackersValue::hasRealThreat(Unit* attacker)
     return attacker && attacker->IsInWorld() && attacker->IsAlive() && !attacker->IsPolymorphed() &&
         // !attacker->isInRoots() &&
         !attacker->IsFriendlyTo(bot);
-    (attacker->GetThreatManager().getCurrentVictim() || dynamic_cast<Player*>(attacker));
+    (attacker->GetThreatManager().GetCurrentVictim() || dynamic_cast<Player*>(attacker));
 }
 
-bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float range)
+// #72 perf + AC parity: AC AttackersValue::IsPossibleTarget (AC Ai/Base/Value/AttackersValue.cpp:130-244), ported 1:1.
+// This fork still had the old single-expression form: for every candidate unit of "possible targets", "nearest enemy
+// players", "attackers" and "invalid target" it first looked up the raid target icon, the master's threat and the
+// master's PlayerbotAI and ran the PvP-zone check, and only then the cheap rejects. AC rejects with early returns in
+// the order below and only reaches the creature-claim checks for a creature that passed every generic check.
+// Behaviour follows AC: the "attack tagged" strategy is no longer gated by a bot-only group, a creature already in
+// combat with the bot counts as claimed, a creature fighting another player's pet/guardian is that player's, and a
+// unit immune to all damage is skipped. The #397 PvP-prohibited duel exemption is AC's own (AC :174-197).
+bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float /*range*/)
 {
-    Creature* c = attacker->ToCreature();
-    bool rti = false;
-    if (attacker && bot->GetGroup())
-        rti = bot->GetGroup()->GetTargetIcon(7) == attacker->GetGUID();
-
     PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    if (!botAI)
+        return false;
 
-    bool leaderHasThreat = false;
-    if (attacker && bot->GetGroup() && botAI->GetMaster())
-        leaderHasThreat = attacker->GetThreatManager().getThreat(botAI->GetMaster());
-
-    bool isMemberBotGroup = false;
-    if (bot->GetGroup() && botAI->GetMaster())
-    {
-        PlayerbotAI* masterBotAI = GET_PLAYERBOT_AI(botAI->GetMaster());
-        if (masterBotAI && !masterBotAI->IsRealPlayer())
-            isMemberBotGroup = true;
-    }
+    // Basic check
+    if (!attacker)
+        return false;
 
     // bool inCannon = botAI->IsInVehicle(false, true);
     // bool enemy = botAI->GetAiObjectContext()->GetValue<Unit*>("enemy player target")->Get();
 
-    return attacker && attacker->IsVisible() && attacker->IsInWorld() && attacker->GetMapId() == bot->GetMapId() &&
-        !attacker->isDead() &&
-        !attacker->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NON_ATTACKABLE_2) &&
-        // (inCannon || !attacker->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE)) &&
-        // attacker->CanSeeOrDetect(bot) &&
-        // !(attacker->HasUnitState(UNIT_STATE_STUNNED) && botAI->HasAura("shackle undead", attacker)) &&
-        // !((attacker->IsPolymorphed() || botAI->HasAura("sap", attacker) || /*attacker->IsCharmed() ||*/
-        // attacker->isFeared()) && !rti) &&
-        /*!sServerFacade->IsInRoots(attacker) &&*/
-        !attacker->IsFriendlyTo(bot) && !attacker->HasSpiritOfRedemptionAura() &&
-        // !(attacker->GetGUID().IsPet() && enemy) &&
-        !(attacker->GetCreatureType() == CREATURE_TYPE_CRITTER && !attacker->IsInCombat()) &&
-        !attacker->HasUnitFlag(UNIT_FLAG_IMMUNE_TO_PC) && !attacker->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE) &&
-        bot->CanSeeOrDetect(attacker) &&
-        !(sPlayerbotAIConfig->IsPvpProhibited(attacker->GetZoneId(), attacker->GetAreaId()) &&
-            (attacker->GetGUID().IsPlayer() || attacker->GetGUID().IsPet())) &&
-        !(attacker->IsPlayer() && !attacker->IsPvP() && !attacker->IsFFAPvP() &&
-            (!bot->duel || bot->duel->opponent != attacker)) &&
-        (!c ||
-            (!c->IsInEvadeMode() &&
-                ((!isMemberBotGroup && botAI->HasStrategy("attack tagged", BOT_STATE_NON_COMBAT)) || leaderHasThreat ||
-                    (!c->HasLootRecipient() &&
-                        (!c->GetVictim() ||
-                            (c->GetVictim() &&
-                                ((!c->GetVictim()->IsPlayer() || bot->IsInSameGroupWith(c->GetVictim()->ToPlayer())) ||
-                                    (botAI->GetMaster() && c->GetVictim() == botAI->GetMaster()))))) ||
-                    c->IsTappedBy(bot))));
+    // Validity checks
+    if (!attacker->IsVisible() || !attacker->IsInWorld() || attacker->GetMapId() != bot->GetMapId())
+        return false;
+
+    if (attacker->isDead() || attacker->HasSpiritOfRedemptionAura())
+        return false;
+
+    // Flag checks
+    if (attacker->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NON_ATTACKABLE_2))
+        return false;
+
+    if (attacker->HasUnitFlag(UNIT_FLAG_IMMUNE_TO_PC) || attacker->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))
+        return false;
+
+    // Skip targets that are immune to all damage (e.g., Ice Block, Divine Shield)
+    if (attacker->IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL) && attacker->IsImmunedToDamage(SPELL_SCHOOL_MASK_MAGIC))
+        return false;
+
+    // Relationship checks
+    if (attacker->IsFriendlyTo(bot))
+        return false;
+
+    // Critter exception
+    if (attacker->GetCreatureType() == CREATURE_TYPE_CRITTER && !attacker->IsInCombat())
+        return false;
+
+    // Visibility check
+    if (!bot->CanSeeOrDetect(attacker))
+        return false;
+
+    // PvP prohibition checks (skip for duels)
+    if ((attacker->GetGUID().IsPlayer() || attacker->GetGUID().IsPet()) &&
+        (!bot->duel || bot->duel->opponent != attacker) &&
+        (sPlayerbotAIConfig->IsPvpProhibited(attacker->GetZoneId(), attacker->GetAreaId()) ||
+            sPlayerbotAIConfig->IsPvpProhibited(bot->GetZoneId(), bot->GetAreaId())))
+    {
+        // This will stop aggresive pets from starting an attack.
+        // This will stop currently attacking pets from continuing their attack.
+        // This will first require the bot to change from a combat strat. It will
+        // not be reached if the bot only switches targets, including NPC targets.
+        for (Unit::ControlList::const_iterator itr = bot->m_Controlled.begin(); itr != bot->m_Controlled.end(); ++itr)
+        {
+            Creature* creature = dynamic_cast<Creature*>(*itr);
+            if (creature && creature->GetVictim() == attacker)
+            {
+                creature->AttackStop();
+                if (CharmInfo* charmInfo = creature->GetCharmInfo())
+                    charmInfo->SetIsCommandAttack(false);
+            }
+        }
+
+        return false;
+    }
+
+    // Unflagged player check
+    if (attacker->IsPlayer() && !attacker->IsPvP() && !attacker->IsFFAPvP() &&
+        (!bot->duel || bot->duel->opponent != attacker))
+        return false;
+
+    // Creature-specific checks
+    Creature* c = attacker->ToCreature();
+    if (c)
+    {
+        if (c->IsInEvadeMode())
+            return false;
+
+        bool leaderHasThreat = false;
+        if (bot->GetGroup() && botAI->GetMaster())
+            leaderHasThreat = attacker->GetThreatManager().GetThreat(botAI->GetMaster());
+
+        // A player claims a creature by damaging it or landing a hostile spell on it, which is what
+        // sets its loot recipient. The below code covers anti-kill-stealing mechanics.
+        //
+        // (1) Whatever the claim, the bot may attack if it (a) is in a raid/group and has a master
+        //     holding nonzero threat on the creature, (b) has, or has a raid/group member that has,
+        //     already tapped it, or (c) is already in combat with the creature.
+        if (leaderHasThreat || c->IsTappedBy(bot) || c->IsInCombatWith(bot))
+            return true;
+
+        // (2) Nobody has claimed the creature, so ask who it is attacking. If it is not attacking
+        //     anything, or if it is attacking (a) something with no player behind it (e.g., a
+        //     critter), (b) the bot, (c) the bot's master, or (d) a member of the bot's raid/group,
+        //     then the victim is considered to belong to the bot and may be attacked. Clauses (b)
+        //     through (d) also include a player's pets, guardians, totems, and charms.
+        if (!c->HasLootRecipient())
+        {
+            Unit* victim = c->GetVictim();
+            Player* victimOwner = victim ? victim->GetCharmerOrOwnerPlayerOrPlayerItself() : nullptr;
+            if (!victim || !victimOwner || victimOwner == bot || victimOwner == botAI->GetMaster() ||
+                (bot->GetGroup() && bot->GetGroup() == victimOwner->GetGroup()))
+                return true;
+        }
+
+        // (3) Last because it is applied automatically only in battlegrounds and arenas: the
+        //     "attack tagged" strategy always allows for attacking of creatures.
+        return botAI->HasStrategy("attack tagged", BOT_STATE_NON_COMBAT);
+    }
+
+    return true;
 }
 
 bool AttackersValue::IsValidTarget(Unit* attacker, Player* bot)
@@ -216,7 +281,7 @@ bool PossibleAddsValue::Calculate()
 
         if (Unit* add = botAI->GetUnit(guid))
         {
-            if (!add->GetTarget() && !add->GetThreatManager().getCurrentVictim() && add->IsHostileTo(bot))
+            if (!add->GetTarget() && !add->GetThreatManager().GetCurrentVictim() && add->IsHostileTo(bot))
             {
                 for (ObjectGuid const attackerGUID : attackers)
                 {

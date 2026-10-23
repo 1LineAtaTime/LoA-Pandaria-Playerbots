@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
+#include "ScriptedEscortAI.h"
 
 enum eBonobosSpells
 {
@@ -618,7 +619,7 @@ class npc_q29982 : public CreatureScript
                         wei->m_Events.Schedule(delay += 3000, [wei, playerGuid]()
                         {
                             wei->AI()->Talk(1);
-                            if (Creature* creat = wei->SummonCreature(NPC_IKTHIK_AMBUSHER, -318.643f, 2377.642f, 140.410f, 2.3762f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000))
+                            if (Creature* creat = wei->SummonCreature(NPC_IKTHIK_AMBUSHER, -318.643f, 2377.642f, 140.410f, 2.3762f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000ms))
                                 if (Player* player = ObjectAccessor::GetPlayer(*wei, playerGuid))
                                     creat->AI()->AttackStart(player);
                         });
@@ -1830,7 +1831,7 @@ struct npc_vfw_barrel_of_fireworks : public ScriptedAI
     {
         summonerGUID = summoner->GetGUID();
         scheduler
-            .Schedule(Milliseconds(3000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(3000), [this](TaskContext context)
         {
             DoCast(me, SPELL_EXPLOSION_VISUAL);
 
@@ -2030,7 +2031,7 @@ struct npc_vfw_krungko_fingerlicker : public customCreatureAI
     {
         summonerGUID = summoner->GetGUID();
         
-        if (Creature* hozenHunter = me->SummonCreature(NPC_KUNZEN_HUNTER, *me, TEMPSUMMON_TIMED_DESPAWN, 300 * IN_MILLISECONDS))
+        if (Creature* hozenHunter = me->SummonCreature(NPC_KUNZEN_HUNTER, *me, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(300 * IN_MILLISECONDS)))
             helperGUID = hozenHunter->GetGUID();
 
         if (Player* target = ObjectAccessor::GetPlayer(*me, summonerGUID))
@@ -2041,7 +2042,7 @@ struct npc_vfw_krungko_fingerlicker : public customCreatureAI
 
         uint32 delay = 2000;
         scheduler
-            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay), [this](TaskContext context)
         {
             Talk(TALK_FOUND_SHEEP);
 
@@ -2055,7 +2056,7 @@ struct npc_vfw_krungko_fingerlicker : public customCreatureAI
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 6000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 6000), [this](TaskContext context)
         {
             Talk(TALK_SHEEP_TASTE);
 
@@ -2069,7 +2070,7 @@ struct npc_vfw_krungko_fingerlicker : public customCreatureAI
         });
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         ScriptedAI::EnterEvadeMode();
 
@@ -2149,7 +2150,7 @@ struct npc_vfw_unbarreled_pandaren : public customCreatureAI
 
         uint32 delay = 2000;
         scheduler
-            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay), [this](TaskContext context)
         {
             if (Player* target = ObjectAccessor::GetPlayer(*me, summonerGUID))
                 me->SetFacingToObject(target);
@@ -2158,7 +2159,7 @@ struct npc_vfw_unbarreled_pandaren : public customCreatureAI
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 3000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 3000), [this](TaskContext context)
         {
             // Move away!
             Position pos = me->GetNearPosition(15.0f, frand(0.0f, 2 * M_PI));
@@ -2203,7 +2204,7 @@ class spell_vfw_krungko_timer : public AuraScript
             Position pos = owner->GetNearPosition(frand(40.0f, 45.0f), frand(0.0f, 2 * M_PI));
             float z = owner->GetPositionZ();
             owner->UpdateAllowedPositionZ(pos.GetPositionX(), pos.GetPositionY(), z);
-            owner->SummonCreature(NPC_KRUNGKO_FINGERLICKER, pos.GetPositionX(), pos.GetPositionY(), z, 0.0f, TEMPSUMMON_TIMED_DESPAWN, 300 * IN_MILLISECONDS);
+            owner->SummonCreature(NPC_KRUNGKO_FINGERLICKER, pos.GetPositionX(), pos.GetPositionY(), z, 0.0f, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(300 * IN_MILLISECONDS));
         }
     }
 

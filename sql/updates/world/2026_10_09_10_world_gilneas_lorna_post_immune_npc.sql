@@ -1,0 +1,33 @@
+-- Refs #439. cp8 24902 "The Hunt For Sylvanas": the accept at Lorna Crowley is intermittently refused.
+--
+-- Root cause: the spawns at Lorna's post share phase 0x40000 (262144, "after 24676") with the three
+-- Soultethered Banshees 38473 (guids 222310-222312, phaseMask 262144 only, elite, level 12):
+--   * Lorna Crowley 38611  guid 220832  phaseMask 2883584 (0x40000 | 0x80000 | 0x200000)
+--   * Worgen Warrior 38613 guid 220885  phaseMask 2883584  (18.8 yd from banshee 222312)
+--   * Worgen Warrior 38613 guid 221855  phaseMask 2883584
+-- Creature-vs-creature visibility is phaseMask AND != 0, so these three see the banshees in every phase.
+-- The warriors aggro them (equal level, 20 yd aggro radius) and Lorna joins the melee ~18-24 yd from her spawn.
+-- A player in phase 0x200000 (24904 rewarded) cannot see the banshees, but Lorna is out of
+-- INTERACTION_DISTANCE (5 yd). Player::GetNPCIfCanInteractWith (Player.cpp:2634) then fails, so
+-- CMSG_GOSSIP_HELLO is dropped silently (NPCHandler.cpp:469-474) and CMSG_QUESTGIVER_ACCEPT_QUEST is answered
+-- by SMSG_GOSSIP_COMPLETE (QuestHandler.cpp:236-241). 24902 is never added, so her SAI (event 19) never
+-- summons Tobias 38507. The fight runs in cycles (300 s banshee respawn), so the failure is intermittent.
+-- Evidence (w19, state/t439/cp8.log): the decoded SMSG_ATTACKSTART packets show 220832 -> 222310 and 222312,
+-- 220885 -> 222310 and 222312, 221855 -> 222310, 222311 and 222312, plus 36 melee swings from 220832.
+-- During those swings the player stood still 1.4 yd from Lorna's spawn with attackers=0 (PROBE in cp8.server.log).
+--
+-- Fix: give the three static spawns at the post UNIT_FLAG_IMMUNE_TO_NPC (0x200) on top of the template flags
+-- (32768). With the flag set, Creature::CanStartAttack (Creature.cpp:1610) never aggroes an NPC, and
+-- Unit::_IsValidAttackTarget (Unit.cpp:11942/11947) refuses NPC combat in both directions. The quest giver and
+-- her guards stay at their post in every phase she serves (24904 and 24902 giver/ender in 262144, 524288 and
+-- 2097152). Players are unaffected. Per-spawn creature.unit_flags replaces the template value
+-- (ObjectMgr::ChooseCreatureFlags, ObjectMgr.cpp:1528), so the template value is kept in the new number.
+--
+-- Backup (run before applying):
+--   mysqldump -h<host> -P<port> -u<user> -p<password> --no-create-info --skip-extended-insert world creature --where="guid IN (220832,220885,221855)" > creature-lorna-post-before-439.sql
+-- Rollback:
+--   UPDATE `creature` SET `unit_flags` = 0 WHERE `guid` IN (220832, 220885, 221855);
+-- Re-runnable: plain UPDATE.
+
+UPDATE `creature` SET `unit_flags` = 32768 | 512 WHERE `guid` = 220832 AND `id` = 38611;
+UPDATE `creature` SET `unit_flags` = 32768 | 512 WHERE `guid` IN (220885, 221855) AND `id` = 38613;

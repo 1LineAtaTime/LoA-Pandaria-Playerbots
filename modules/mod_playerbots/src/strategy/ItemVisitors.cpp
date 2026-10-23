@@ -7,6 +7,32 @@
 
 #include "Playerbots.h"
 
+// AC Helpers.cpp: case-insensitive substring search. Declared in ItemVisitors.h; this fork has no
+// Helpers.cpp, so it is defined here (#149: the item visitors that use it are now reachable).
+char* strstri(char const* haystack, char const* needle)
+{
+    if (!*needle)
+        return (char*)haystack;
+
+    for (; *haystack; ++haystack)
+    {
+        if (tolower(*haystack) == tolower(*needle))
+        {
+            char const* h = haystack;
+            char const* n = needle;
+
+            for (; *h && *n; ++h, ++n)
+                if (tolower(*h) != tolower(*n))
+                    break;
+
+            if (!*n)
+                return (char*)haystack;
+        }
+    }
+
+    return nullptr;
+}
+
 bool FindUsableItemVisitor::Visit(Item* item)
 {
     if (bot->CanUseItem(item->GetTemplate()) == EQUIP_ERR_OK)

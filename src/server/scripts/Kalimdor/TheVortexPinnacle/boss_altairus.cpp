@@ -68,13 +68,14 @@ class boss_altairus : public CreatureScript
                 me->setActive(true);
             }
 
-            Creature* _aircurrent;
+            ObjectGuid _aircurrentGUID; // w25: was a raw Creature* - dangled after summons.DespawnAll() / its own despawn (crash in EVENT_RESET_WIND)
             uint8 _twisternum;
 
             void Reset() override
             {
                 _Reset();
                 _twisternum = 0;
+                _aircurrentGUID = ObjectGuid::Empty;
 
                 if (instance)
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
@@ -104,12 +105,13 @@ class boss_altairus : public CreatureScript
                 instance->SetBossState(DATA_ALTAIRUS, IN_PROGRESS);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 _EnterEvadeMode();
                 BossAI::EnterEvadeMode();
 
                 summons.DespawnAll();
+                _aircurrentGUID = ObjectGuid::Empty;
 
                 if (instance)
                 {
@@ -172,26 +174,30 @@ class boss_altairus : public CreatureScript
                             events.ScheduleEvent(EVENT_CHILLING_BREATH, urand(10000, 16000));
                             break;
                         case EVENT_RESET_WIND:
-                            if (_aircurrent)
-                                _aircurrent->DespawnOrUnsummon();
+                            if (Creature* aircurrent = ObjectAccessor::GetCreature(*me, _aircurrentGUID))
+                                aircurrent->DespawnOrUnsummon();
+                            _aircurrentGUID = ObjectGuid::Empty;
                             events.DelayEvents(1000);
                             events.ScheduleEvent(EVENT_CALL_OF_WIND, 800);
                             break;
                         case EVENT_CALL_OF_WIND:
-                            _aircurrent = me->SummonCreature(NPC_AIR_CURRENT,
+                            if (Creature* aircurrent = me->SummonCreature(NPC_AIR_CURRENT,
                                 me->GetPositionX(),
                                 me->GetPositionY(),
                                 me->GetPositionZ(),
-                                orientations[urand(0, 3)]);
+                                orientations[urand(0, 3)]))
+                                _aircurrentGUID = aircurrent->GetGUID();
                             events.ScheduleEvent(EVENT_RESET_WIND, 18000);
                             break;
                         case EVENT_CHECK_FACING:
-                            if (me->GetMap()->GetPlayers().isEmpty() || !_aircurrent)
+                        {
+                            Creature* aircurrent = ObjectAccessor::GetCreature(*me, _aircurrentGUID);
+                            if (me->GetMap()->GetPlayers().isEmpty() || !aircurrent)
                                 break;
 
                             for (Map::PlayerList::const_iterator itr = me->GetMap()->GetPlayers().begin(); itr != me->GetMap()->GetPlayers().end(); ++itr) 
                             {
-                                if (CheckOrientation(itr->GetSource()->GetOrientation(), _aircurrent->GetOrientation()))
+                                if (CheckOrientation(itr->GetSource()->GetOrientation(), aircurrent->GetOrientation()))
                                 {
                                     itr->GetSource()->RemoveAurasDueToSpell(SPELL_DOWNWIND_OF_ALTAIRUS);
                                     me->AddAura(SPELL_UPWIND_OF_ALTAIRUS, itr->GetSource());
@@ -204,6 +210,7 @@ class boss_altairus : public CreatureScript
                             }
                             events.ScheduleEvent(EVENT_CHECK_FACING, 3000);
                             break;
+                        }
                         case EVENT_TWISTING_WINDS:
                             HandleTwisting(1);
                             events.ScheduleEvent(EVENT_TWISTING_WINDS, urand(8 * IN_MILLISECONDS, 12 * IN_MILLISECONDS));
@@ -254,7 +261,7 @@ struct npc_altairus_twister : public ScriptedAI
     TaskScheduler scheduler;
     float x, y;
 
-    void IsSummonedBy(Unit* /*summoner*/) override
+    void IsSummonedBy(Unit* summoner) override
     {
         me->OverrideInhabitType(INHABIT_AIR);
         me->SetAnimTier(AnimTier::Fly);

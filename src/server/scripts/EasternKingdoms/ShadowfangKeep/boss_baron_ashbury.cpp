@@ -101,6 +101,9 @@ class boss_baron_ashbury : public CreatureScript
 
                 Talk(SAY_AGGRO);
                 events.ScheduleEvent(EVENT_ASPHYXIATE, 30000);
+                // #682: Pain and Suffering is a recurring channel, not one per Asphyxiate (Wowpedia Baron Ashbury (tactics);
+                // TCPP boss_baron_ashbury.cpp: 6 s after the pull, then every 23 s)
+                events.ScheduleEvent(EVENT_PAIN_AND_SUFFERING, 6000);
                 if (IsHeroic())
                     events.ScheduleEvent(EVENT_WRACKING_PAIN, 15000);
                 DoZoneInCombat();
@@ -161,6 +164,7 @@ class boss_baron_ashbury : public CreatureScript
                         case EVENT_PAIN_AND_SUFFERING:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
                                 DoCast(target, SPELL_PAIN_AND_SUFFERING);
+                            events.ScheduleEvent(EVENT_PAIN_AND_SUFFERING, 23000);
                             break;
                         case EVENT_ASPHYXIATE:
                             bCombo = true;
@@ -168,7 +172,7 @@ class boss_baron_ashbury : public CreatureScript
                             Talk(SAY_ASPHYXIATE);
                             DoCast(SPELL_ASPHYXIATE);
                             events.ScheduleEvent(EVENT_STAY_OF_EXECUTION, 6100);
-                            events.ScheduleEvent(EVENT_PAIN_AND_SUFFERING, urand(8000, 9000));
+                            events.RescheduleEvent(EVENT_PAIN_AND_SUFFERING, urand(8000, 9000));  // #682: keeps one P&S event
                             events.ScheduleEvent(EVENT_ASPHYXIATE, 45000);
                             break;
                         case EVENT_STAY_OF_EXECUTION:

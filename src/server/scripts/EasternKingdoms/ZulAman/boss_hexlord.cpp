@@ -43,10 +43,15 @@ enum Spells
 
     SPELL_VENOM_SPIT                = 43579,
 
+    // #678: the Cataclysm 5-man kit, Wowpedia "Hex Lord Malacrass" (MediaWiki API, 2026-10-23) "Siphon Soul" class lists. Ids:
+    // the 5.4.8 Spell/SpellEffect.dbc (name + effect + base points against Wowpedia's numbers) and the Wowhead tooltip API
+    // (cata / mop-classic, 2026-10-23): 61600 "100% weapon damage plus 500", 61603 "15000 Shadow damage every 2 sec ... 10 sec",
+    // 127734 "150% weapon damage ... 25% for 15 sec", 127735 "46250 to 53750 every 3 sec for 15 sec", 127741 "41625 to 48375".
+
     // Druid
-    SPELL_DR_THORNS                 = 43420,
     SPELL_DR_LIFEBLOOM              = 43421,
     SPELL_DR_MOONFIRE               = 43545,
+    SPELL_DR_TYPHOON                = 97636, // cone in front (DEST_CASTER_FRONT -> 97637 30 yd cone damage + knockback)
 
     // Hunter
     SPELL_HU_EXPLOSIVE_TRAP         = 43444,
@@ -64,17 +69,15 @@ enum Spells
     SPELL_PA_AVENGING_WRATH         = 43430,
     SPELL_PA_HOLY_LIGHT             = 43451,
 
-    // Priest
-    SPELL_PR_HEAL                   = 41372,
-    SPELL_PR_MIND_BLAST             = 41374,
-    SPELL_PR_SW_DEATH               = 41375,
+    // Priest (Cata: Flash Heal 20% of max health on himself, Psychic Scream, Shadow Word: Pain; Leap of Faith 97640 is left out:
+    // SCRIPT_EFFECT on TARGET_UNIT_SRC_AREA_ALLY with radius index 0 and no handler, it would do nothing)
+    SPELL_PR_FLASH_HEAL             = 43431,
     SPELL_PR_PSYCHIC_SCREAM         = 43432,
-    SPELL_PR_MIND_CONTROL           = 43550,
-    SPELL_PR_PAIN_SUPP              = 44416,
+    SPELL_PR_SW_PAIN                = 97642,
 
-    // Rogue
-    SPELL_RO_BLIND                  = 43433,
-    SPELL_RO_SLICE_DICE             = 43457,
+    // Rogue (43457 was "Ball of Energy", not Slice and Dice; 43547 is the 50% attack speed Slice and Dice)
+    SPELL_RO_SMOKE_BOMB             = 97643,
+    SPELL_RO_SLICE_DICE             = 43547,
     SPELL_RO_WOUND_POISON           = 43461,
 
     // Shaman
@@ -90,8 +93,20 @@ enum Spells
 
     // Warrior
     SPELL_WR_MORTAL_STRIKE          = 43441,
-    SPELL_WR_WHIRLWIND              = 43442,
-    SPELL_WR_SPELL_REFLECT          = 43443
+    SPELL_WR_HEROIC_LEAP            = 97521,
+    SPELL_WR_SPELL_REFLECT          = 43443,
+
+    // Death Knight
+    SPELL_DK_PLAGUE_STRIKE          = 61600,
+    SPELL_DK_DEATH_AND_DECAY        = 61603,
+    SPELL_DK_BLOOD_WORMS            = 97628, // aura: 4 x 97627 (summon Blood Worm 52827 within 3 yd), 500 ms ticks for 2 s
+    SPELL_DK_BLOOD_WORMS_HEAL       = 97630, // "Heals the target for 3% of their life"
+
+    // Monk
+    SPELL_MK_RISING_SUN_KICK        = 127734,
+    SPELL_MK_HEX_SPHERE             = 127737, // area trigger 407 within 10 yd of the caster, 30 s
+    SPELL_MK_HEX_SPHERE_DAMAGE      = 127741,
+    SPELL_MK_RENEWING_MIST          = 127735,
 };
 
 enum Events
@@ -109,6 +124,8 @@ enum Adds
     NPC_SLITHER         = 24242, 
     NPC_GAZAKROTH       = 24244, 
     NPC_DARKHEART       = 24246,
+    NPC_BLOOD_WORM      = 52827,
+    NPC_HEX_LORD        = 24239,
 };
 
 const Position addPos[2] = 
@@ -124,7 +141,9 @@ enum AbilityTarget
     ABILITY_TARGET_ENEMY   = 2,
     ABILITY_TARGET_HEAL    = 3,
     ABILITY_TARGET_BUFF    = 4,
-    ABILITY_TARGET_SPECIAL = 5
+    ABILITY_TARGET_SPECIAL = 5,
+    ABILITY_TARGET_FACING  = 6, // #678: turn to a random enemy, then cast on self (frontal cone)
+    ABILITY_TARGET_WORMS   = 7, // #678: Blood Worms at a random player's feet
 };
 
 struct PlayerAbilityStruct
@@ -134,13 +153,20 @@ struct PlayerAbilityStruct
     uint32 cooldown;
 };
 
-static PlayerAbilityStruct PlayerAbility[][3] =
+// #678: indexed by class id (CLASS_WARRIOR 1 .. CLASS_DRUID 11, 5.4.8 SharedDefines.h); row 0 unused. The old TBC table had 10
+// rows indexed by class - 1 with a separate Shadow Priest row (a Druid read past the end), and no Death Knight or Monk kit.
+// Spell 0 = empty slot.
+static PlayerAbilityStruct const PlayerAbility[MAX_CLASSES][3] =
 {
+    // 0 (no class)
+    {
+        { 0, ABILITY_TARGET_SELF, 0 }, { 0, ABILITY_TARGET_SELF, 0 }, { 0, ABILITY_TARGET_SELF, 0 }
+    },
     // 1 Warrior
     {
+        { SPELL_WR_MORTAL_STRIKE,   ABILITY_TARGET_VICTIM,  6000  },
         { SPELL_WR_SPELL_REFLECT,   ABILITY_TARGET_SELF,    10000 },
-        { SPELL_WR_WHIRLWIND,       ABILITY_TARGET_SELF,    10000 },
-        { SPELL_WR_MORTAL_STRIKE,   ABILITY_TARGET_VICTIM,  6000  }
+        { SPELL_WR_HEROIC_LEAP,     ABILITY_TARGET_ENEMY,   10000 }
     },
     // 2 Paladin
     {
@@ -158,31 +184,31 @@ static PlayerAbilityStruct PlayerAbility[][3] =
     {
         { SPELL_RO_WOUND_POISON,    ABILITY_TARGET_VICTIM,  3000  },
         { SPELL_RO_SLICE_DICE,      ABILITY_TARGET_SELF,    10000 },
-        { SPELL_RO_BLIND,           ABILITY_TARGET_ENEMY,   10000 }
+        { SPELL_RO_SMOKE_BOMB,      ABILITY_TARGET_ENEMY,   10000 }
     },
     // 5 Priest
     {
-        { SPELL_PR_PAIN_SUPP,       ABILITY_TARGET_HEAL,    10000 },
-        { SPELL_PR_HEAL,            ABILITY_TARGET_HEAL,    10000 },
-        { SPELL_PR_PSYCHIC_SCREAM,  ABILITY_TARGET_SELF,    10000 }
+        { SPELL_PR_FLASH_HEAL,      ABILITY_TARGET_SELF,    10000 },
+        { SPELL_PR_PSYCHIC_SCREAM,  ABILITY_TARGET_SELF,    10000 },
+        { SPELL_PR_SW_PAIN,         ABILITY_TARGET_ENEMY,   10000 }
     },
-    // 5* Shadow Priest
+    // 6 Death Knight
     {
-        { SPELL_PR_MIND_CONTROL,    ABILITY_TARGET_ENEMY,   15000 },
-        { SPELL_PR_MIND_BLAST,      ABILITY_TARGET_ENEMY,   5000  },
-        { SPELL_PR_SW_DEATH,        ABILITY_TARGET_ENEMY,   10000 }
+        { SPELL_DK_PLAGUE_STRIKE,   ABILITY_TARGET_VICTIM,  6000  },
+        { SPELL_DK_DEATH_AND_DECAY, ABILITY_TARGET_ENEMY,   10000 },
+        { SPELL_DK_BLOOD_WORMS,     ABILITY_TARGET_WORMS,   10000 }
     },
     // 7 Shaman
     {
         { SPELL_SH_FIRE_NOVA,       ABILITY_TARGET_SELF,    10000 },
-        { SPELL_SH_HEALING_WAVE,    ABILITY_TARGET_HEAL,    10000 },
+        { SPELL_SH_HEALING_WAVE,    ABILITY_TARGET_SELF,    10000 },
         { SPELL_SH_CHAIN_LIGHT,     ABILITY_TARGET_ENEMY,   8000  }
     },
     // 8 Mage
     {
-        { SPELL_MG_FIREBALL,        ABILITY_TARGET_ENEMY,   5000  },
+        { SPELL_MG_FROST_NOVA,      ABILITY_TARGET_SELF,    10000 },
         { SPELL_MG_FROSTBOLT,       ABILITY_TARGET_ENEMY,   5000  },
-        { SPELL_MG_ICE_LANCE,       ABILITY_TARGET_SPECIAL, 2000  }
+        { SPELL_MG_ICE_LANCE,       ABILITY_TARGET_ENEMY,   2000  }
     },
     // 9 Warlock
     {
@@ -190,10 +216,16 @@ static PlayerAbilityStruct PlayerAbility[][3] =
         { SPELL_WL_RAIN_OF_FIRE,    ABILITY_TARGET_ENEMY,   10000 },
         { SPELL_WL_UNSTABLE_AFFL,   ABILITY_TARGET_ENEMY,   10000 }
     },
+    // 10 Monk
+    {
+        { SPELL_MK_RISING_SUN_KICK, ABILITY_TARGET_VICTIM,  6000  },
+        { SPELL_MK_HEX_SPHERE,      ABILITY_TARGET_SELF,    10000 },
+        { SPELL_MK_RENEWING_MIST,   ABILITY_TARGET_SELF,    15000 }
+    },
     // 11 Druid
     {
-        { SPELL_DR_LIFEBLOOM,       ABILITY_TARGET_HEAL,    10000 },
-        { SPELL_DR_THORNS,          ABILITY_TARGET_SELF,    10000 },
+        { SPELL_DR_LIFEBLOOM,       ABILITY_TARGET_SELF,    10000 },
+        { SPELL_DR_TYPHOON,         ABILITY_TARGET_FACING,  10000 },
         { SPELL_DR_MOONFIRE,        ABILITY_TARGET_ENEMY,   8000  }
     }
 };
@@ -226,6 +258,8 @@ class boss_hex_lord_malacrass : public CreatureScript
             void Reset() override
             {
                 _Reset();
+
+                PlayerClass = 0; // #678: set before UseAbility can run (it is only scheduled after a Siphon Soul)
 
                 switch (urand(0, 5))
                 {
@@ -311,11 +345,12 @@ class boss_hex_lord_malacrass : public CreatureScript
                         case EVENT_SIPHON_SOUL:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
                             {
-                                PlayerClass = target->GetClass() - 1;
-                                if (PlayerClass == CLASS_DRUID-1)
-                                    PlayerClass = CLASS_DRUID;
-                                else if (PlayerClass == CLASS_PRIEST-1 && target->HasSpell(15473))
-                                    PlayerClass = CLASS_PRIEST; // shadow priest
+                                // #678: one row per class id (the Cata kit table above, Death Knight and Monk included).
+                                PlayerClass = target->GetClass();
+
+                                // #678: never index past the table, whatever class id comes back (row 0 = no ability).
+                                if (PlayerClass >= MAX_CLASSES)
+                                    PlayerClass = 0;
 
                                 DoCast(target, SPELL_SIPHON_SOUL);
                                 me->ClearUnitState(UNIT_STATE_CASTING);
@@ -339,8 +374,12 @@ class boss_hex_lord_malacrass : public CreatureScript
             void UseAbility()
             {
                 uint8 random = urand(0, 2);
+                PlayerAbilityStruct const& ability = PlayerAbility[PlayerClass][random];
+                if (!ability.spell)
+                    return;
+
                 Unit* target = NULL;
-                switch (PlayerAbility[PlayerClass][random].target)
+                switch (ability.target)
                 {
                     case ABILITY_TARGET_SELF:
                         target = me;
@@ -357,14 +396,37 @@ class boss_hex_lord_malacrass : public CreatureScript
                         break;
                     case ABILITY_TARGET_BUFF:
                         {
-                            std::list<Creature*> templist = DoFindFriendlyMissingBuff(50, PlayerAbility[PlayerClass][random].spell);
+                            std::list<Creature*> templist = DoFindFriendlyMissingBuff(50, ability.spell);
                             if (!templist.empty())
                                 target = *(templist.begin());
                         }
                         break;
+                    case ABILITY_TARGET_FACING:
+                        // #678 Typhoon: the cone goes where he faces (97636 effect 0 TARGET_DEST_CASTER_FRONT).
+                        if (Unit* enemy = SelectTarget(SELECT_TARGET_RANDOM, 0, 30.0f, true))
+                        {
+                            me->SetFacingTo(me->GetAngle(enemy));
+                            target = me;
+                        }
+                        break;
+                    case ABILITY_TARGET_WORMS:
+                        // #678 Blood Worms (Wowpedia): "infects a random target with Blood Worms, causing worms to emerge from
+                        // the infected player's location. These worms move towards Malacrass and heal him for 3% of his maximum
+                        // health". 97628 on a player would make the PLAYER cast its 97627 summons (periodic trigger,
+                        // SpellInfo::NeedsToBeTriggeredByCaster false -> the aura target casts), so the worms would not be his
+                        // summons. Same result as his summons: four worms (97628: 2 s of 500 ms ticks) within 3 yd of the target.
+                        if (Unit* infected = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
+                        {
+                            for (uint8 i = 0; i < 4; ++i)
+                            {
+                                Position pos = infected->GetRandomNearPosition(3.0f);
+                                me->SummonCreature(NPC_BLOOD_WORM, pos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms);
+                            }
+                        }
+                        return;
                 }
                 if (target)
-                    DoCast(target, PlayerAbility[PlayerClass][random].spell, false);
+                    DoCast(target, ability.spell, false);
             }
         };
 
@@ -578,8 +640,100 @@ class spell_hexlord_unstable_affliction : public SpellScriptLoader
         }
 };
 
+// #678: Blood Worm 52827 (Death Knight kit). Wowpedia "Hex Lord Malacrass": "These worms move towards Malacrass and heal him for
+// 3% of his maximum health when they reach him." Killable on the way (template faction 14, 5.4.8 run speed 0.43).
+class npc_hexlord_blood_worm : public CreatureScript
+{
+    public:
+        npc_hexlord_blood_worm() : CreatureScript("npc_hexlord_blood_worm") { }
+
+        struct npc_hexlord_blood_wormAI : public ScriptedAI
+        {
+            npc_hexlord_blood_wormAI(Creature* creature) : ScriptedAI(creature) { }
+
+            uint32 checkTimer = 0;
+            bool fed = false;
+
+            void Reset() override
+            {
+                me->SetReactState(REACT_PASSIVE);
+                checkTimer = 0;
+            }
+
+            // It only crawls to Malacrass; it never turns on a player (the zone-in-combat of his summons must not start a chase).
+            void AttackStart(Unit* /*who*/) override { }
+            void MoveInLineOfSight(Unit* /*who*/) override { }
+
+            Creature* GetHexLord()
+            {
+                if (TempSummon* summon = me->ToTempSummon())
+                    if (Unit* summoner = summon->GetSummoner())
+                        if (Creature* hexLord = summoner->ToCreature())
+                            return hexLord;
+                return me->FindNearestCreature(NPC_HEX_LORD, 100.0f);
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (fed)
+                    return;
+
+                if (checkTimer > diff)
+                {
+                    checkTimer -= diff;
+                    return;
+                }
+                checkTimer = 500;
+
+                Creature* hexLord = GetHexLord();
+                if (!hexLord || !hexLord->IsAlive() || !hexLord->IsInCombat())
+                {
+                    me->DespawnOrUnsummon();
+                    return;
+                }
+
+                if (me->IsWithinMeleeRange(hexLord) || me->GetExactDist2d(hexLord) <= 3.0f)
+                {
+                    fed = true;
+                    if (SpellInfo const* heal = sSpellMgr->GetSpellInfo(SPELL_DK_BLOOD_WORMS_HEAL))
+                        me->HealBySpell(hexLord, heal, hexLord->CountPctFromMaxHealth(heal->Effects[EFFECT_0].BasePoints > 0 ? heal->Effects[EFFECT_0].BasePoints : 3));
+                    me->DespawnOrUnsummon();
+                    return;
+                }
+
+                if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE)
+                    me->GetMotionMaster()->MoveFollow(hexLord, 0.0f, 0.0f);
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return GetInstanceAI<npc_hexlord_blood_wormAI>(creature);
+        }
+};
+
+// #678: area trigger 407 from Hex Sphere 127737 (Monk kit). Wowpedia: "a sphere of dark energy on the ground near him that last for
+// 30 sec, dealing 41625 to 48375 Shadow damage to enemies that touch it" = 127741. One touch consumes it (IAreaTriggerOnce, the
+// sat_monk_healing_sphere pattern, spell_monk.cpp:2295).
+class sat_hexlord_hex_sphere : public IAreaTriggerOnce
+{
+    bool CheckTriggering(WorldObject* object) override
+    {
+        Player* player = object ? object->ToPlayer() : nullptr;
+        return player && player->IsAlive() && GetCaster() && GetCaster()->IsAlive() && player->IsHostileTo(GetCaster());
+    }
+
+    void OnTrigger(WorldObject* target) override
+    {
+        if (Unit* unit = target->ToUnit())
+            GetCaster()->CastSpell(unit, SPELL_MK_HEX_SPHERE_DAMAGE, true);
+    }
+};
+
 void AddSC_boss_hex_lord_malacrass()
 {
+    new npc_hexlord_blood_worm();
+    new atrigger_script<sat_hexlord_hex_sphere>("sat_hexlord_hex_sphere");
     new boss_hex_lord_malacrass();
     new npc_gazakroth();
     new npc_darkheart();

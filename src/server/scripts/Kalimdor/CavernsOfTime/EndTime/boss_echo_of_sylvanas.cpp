@@ -222,6 +222,13 @@ class boss_echo_of_sylvanas : public CreatureScript
                     float x = me->GetPositionX() + cosf(angleOffset + spawnAngle * i) * spawnDist;
                     float y = me->GetPositionY() + sinf(angleOffset + spawnAngle * i) * spawnDist;
                     float z = me->GetMap()->GetHeight(x, y, me->GetPositionZ(), false);
+                    // #694: the south slot (3839.42,878.45) is an ADT hole over a WMO floor (players stand there at z 55.9), so
+                    // the terrain-only height is INVALID (-200000) and Creature::Create() refused the ghoul on every Call: the ring
+                    // had 7 ghouls and its two neighbours were linked across the gap. Ask the vmaps there, then keep Sylvanas' z.
+                    if (z <= INVALID_HEIGHT)
+                        z = me->GetMap()->GetHeight(x, y, me->GetPositionZ() + 2.0f, true);
+                    if (z <= INVALID_HEIGHT)
+                        z = me->GetPositionZ();
                     if (Creature* summon = me->SummonCreature(entry, x, y, z, me->GetAngle(x, y) + M_PI))
                     {
                         if (entry == NPC_RISEN_GHOUL)

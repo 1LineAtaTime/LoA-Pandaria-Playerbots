@@ -1,30 +1,31 @@
 /*
- * Copyright (C) 2011-2016 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2016 MaNGOS <http://getmangos.com/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "TerrainBuilder.h"
 #include "PathCommon.h"
 #include "MapBuilder.h"
 #include "MapDefines.h"
 #include "VMapManager2.h"
+#include "MapDefines.h"
 #include "MapTree.h"
 #include "ModelInstance.h"
 #include <vector>
+
+#include "SharedDefines.h"
 
 // ******************************************
 // Map file format defines
@@ -799,14 +800,22 @@ namespace MMAP
                         vertsY = tilesY + 1;
                         uint8* flags = liquid->GetFlagsStorage();
                         float* data = liquid->GetHeightStorage();
-                        uint8 type = NAV_AREA_EMPTY;
+                        uint8 type = NAV_EMPTY;
 
-                        // convert liquid type to NavTerrain
+                        // AC parity (AC TerrainBuilder.cpp:753-765): poly.area == poly.flags == NavTerrain
+                        // at runtime (PathGenerator.cpp CreateFilter), so this must emit the literal
+                        // NAV_WATER/NAV_MAGMA/NAV_SLIME values instead of the old TC-7 "priority" area ids
+                        // (NAV_AREA_WATER=9, NAV_AREA_MAGMA_SLIME=8), which the final area->flags pass in
+                        // MapBuilder.cpp used to reinterpret as the wrong runtime terrain. Water and magma/slime are no longer
+                        // collapsed together, matching the terrain (ADT MH2O) liquid handling a few dozen
+                        // lines above in loadMap(), which already resolves the same way via GetLiquidFlags().
                         uint32 liquidFlags = GetLiquidFlags(liquid->GetType());
                         if ((liquidFlags & (MAP_LIQUID_TYPE_WATER | MAP_LIQUID_TYPE_OCEAN)) != 0)
-                            type = NAV_AREA_WATER;
-                        else if ((liquidFlags & (MAP_LIQUID_TYPE_MAGMA | MAP_LIQUID_TYPE_SLIME)) != 0)
-                            type = NAV_AREA_MAGMA_SLIME;
+                            type = NAV_WATER;
+                        else if ((liquidFlags & MAP_LIQUID_TYPE_MAGMA) != 0)
+                            type = NAV_MAGMA;
+                        else if ((liquidFlags & MAP_LIQUID_TYPE_SLIME) != 0)
+                            type = NAV_SLIME;
 
                         // indexing is weird...
                         // after a lot of trial and error, this is what works:

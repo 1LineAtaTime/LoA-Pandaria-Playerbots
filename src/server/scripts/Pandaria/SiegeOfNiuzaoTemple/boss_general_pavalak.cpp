@@ -230,7 +230,7 @@ class boss_general_pavalak : public CreatureScript
                             if (target)
                             {
                                 events.DelayEvents(15000);
-                                me->SummonCreature(NPC_BLADE_RUSH_STALKER, *target, TEMPSUMMON_TIMED_DESPAWN, 15000);
+                                me->SummonCreature(NPC_BLADE_RUSH_STALKER, *target, TEMPSUMMON_TIMED_DESPAWN, 15000ms);
                                 me->GetMotionMaster()->Clear();
                                 me->GetMotionMaster()->MoveIdle();
                                 me->StopMoving();
@@ -587,6 +587,14 @@ class spell_siege_explosive_detonate : public SpellScriptLoader
 // Summon Proxy - > Trigger JustSummoner in boss script
 class npc_pavalak_reinforcements_summoner : public CreatureScript
 {
+    enum
+    {
+        // periodic (15 s) trigger of 119706 "Summon Mantid Soldier" (effect 28, npc 61448, SummonProperties 64,
+        // target 47 caster front) - spell data from the 5.4.8 Spell/SpellEffect/SpellMisc.dbc; names from the
+        // Wowhead MoP Classic tooltip API (spell=119781 / spell=119706, fetched 2026-10-12)
+        SPELL_SUMMON_MANTID_SOLDIER_PERIODIC = 119781,
+    };
+
     public:
         npc_pavalak_reinforcements_summoner() : CreatureScript("npc_pavalak_reinforcements_summoner") { }
 
@@ -597,9 +605,23 @@ class npc_pavalak_reinforcements_summoner : public CreatureScript
                 summonerGUID = ObjectGuid::Empty;
             }
 
+            void Reset() override
+            {
+                // invisible proxy (flags_extra TRIGGER): BossAI::JustSummoned zones it into combat, it must not chase or melee
+                me->SetReactState(REACT_PASSIVE);
+            }
+
             void IsSummonedBy(Unit* summoner) override
             {
                 summonerGUID = summoner->GetGUID();
+
+                // Ground Assault: "General Pa'valak summons waves of Mantid Soldiers to defend him in battle" while he
+                // holds Bulwark at 65% and 35% (Wowpedia "General Pa'valak", MediaWiki API, fetched 2026-10-12).
+                // The aura is the stalker's creature_template_addon aura, but this core never loads addon auras for
+                // summons (Creature::Create skips IsSummon(); 38c1ea61 removed LoadCreaturesAddon from
+                // TempSummon::InitSummon), so no Sik'thik Soldier ever spawned (#788). Apply it here.
+                if (!me->HasAura(SPELL_SUMMON_MANTID_SOLDIER_PERIODIC))
+                    DoCast(me, SPELL_SUMMON_MANTID_SOLDIER_PERIODIC, true);
             }
 
             void JustSummoned(Creature* summon) override

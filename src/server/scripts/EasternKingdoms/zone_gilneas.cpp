@@ -22,6 +22,11 @@
 #include "Vehicle.h"
 #include "GameObjectAI.h"
 #include "TaskScheduler.h"
+#include "ScriptedGossip.h"
+#include "TemporarySummon.h"
+#include "SmartScriptMgr.h"
+#include "GameObject.h"
+#include "CreatureTextMgr.h"
 
 enum Gilneas
 {
@@ -118,6 +123,14 @@ enum Gilneas
     TEXT_SAVED_KRENNAN_ARANAS               = 0,
 
     SPELL_GUARD_SHOOT                       = 48424,
+
+    EVENT_SEARCH_INVADER                    = 1,
+    EVENT_SEARCH_FOOTSOLDIER                = 2,
+    EVENT_SEARCH_WATCHMAN                   = 3,
+
+    NPC_ENTRY_INVADER                       = 34511,
+    NPC_ENTRY_FOOTSOLDIER                   = 36236,
+    NPC_ENTRY_WATCHMAN                      = 36211,
 
     SPELL_SAVE_CYNTHIA                      = 68597,
     SPELL_SAVE_ASHLEY                       = 68598,
@@ -1142,7 +1155,7 @@ public:
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
         }
 
-        void UpdateAI(uint32 /*diff*/) override
+        void UpdateAI(uint32 diff) override
         {
             if (!UpdateVictim())
                 return;
@@ -1216,7 +1229,7 @@ struct npc_bloodfang_lurker : public ScriptedAI
         who->SetInCombatWith(me);
     }
 
-    void DamageTaken(Unit* attacker, uint32 &/*damage*/) override
+    void DamageTaken(Unit* attacker, uint32 &damage) override
     {
         if (me->HasReactState(REACT_PASSIVE))
             StartAttack(attacker);
@@ -1228,7 +1241,7 @@ struct npc_bloodfang_lurker : public ScriptedAI
             StartAttack(caster);
     }
 
-    void UpdateAI(uint32 /*diff*/) override
+    void UpdateAI(uint32 diff) override
     {
         if (!UpdateVictim())
             return;
@@ -1260,8 +1273,9 @@ class spell_attack_lurker : public SpellScript
 
         if (Creature* target = caster->FindNearestCreature(NPC_BLOODFANG_LURKER, 30.0f))
         {
-            float x,y,z;
+            float x,y,z,o;
             target->GetContactPoint(caster, x, y, z, CONTACT_DISTANCE);
+            o = caster->GetOrientation();
             float speedXY, speedZ;
             speedZ = 10.0f;
             speedXY = caster->GetExactDist2d(x, y) * 30.0f / speedZ;
@@ -1289,7 +1303,7 @@ public:
         if (quest->GetQuestId() == QUEST_SAVE_KRENNAN_ARANAS)
         {
             float x, y;
-            creature->GetNearPoint2D(x, y, 2.0f, player->GetOrientation() + M_PI / 2);
+            creature->GetNearPoint2D(nullptr, x, y, 2.0f, player->GetOrientation() + M_PI / 2);
 
             if (Creature* horse = player->SummonCreature(NPC_KING_GREYMANES_HORSE, x, y, creature->GetPositionZ(), creature->GetOrientation()))
             {
@@ -1398,7 +1412,7 @@ public:
 
         void AttackStart(Unit* /*who*/) override { }
         void JustEngagedWith(Unit* /*who*/) override { }
-        void EnterEvadeMode() override { }
+        void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
         void Reset() override
         {
@@ -1434,16 +1448,18 @@ public:
 
         void WaypointReached(uint32 i) override
         {
+            Player* player = GetPlayerForEscort();
+
             switch(i)
             {
                 case 1:
                 {
-                    if (me->GetVehicleKit()->GetPassenger(0))
+                    if (Unit* passenger = me->GetVehicleKit()->GetPassenger(0))
                     {
                         if (Vehicle* vehicle = me->GetVehicleKit())
                             if (Unit* passenger = vehicle->GetPassenger(0))
                                 if (Player* player = passenger->ToPlayer())
-                                    player->SetClientControl(me, false);
+                                    player->SetClientControl(me, 0);
                     }
                     break;
                 }
@@ -1453,8 +1469,8 @@ public:
                     {
                         if (Creature* aranas = passenger->FindNearestCreature(NPC_KRENNAN_ARANAS, 50.0f))
                             if (Vehicle* vehicle = me->GetVehicleKit())
-                                if (Unit* passenger2 = vehicle->GetPassenger(0))
-                                    if (passenger2->ToPlayer())
+                                if (Unit* passenger = vehicle->GetPassenger(0))
+                                    if (Player* player = passenger->ToPlayer())
                                         aranas->AI()->Talk(TEXT_KRENNAN_ARANAS);
 
                         me->GetMotionMaster()->MoveJump(-1673.04f, 1344.91f, 15.1353f, 25.0f, 15.0f);
@@ -1472,18 +1488,16 @@ public:
                     {
                         if (Unit* passenger = vehicle->GetPassenger(0))
                         {
-                            if (passenger->ToPlayer())
+                            if (Player* player = passenger->ToPlayer())
                             {
                                 std::list<Creature*> guards;
                                 me->GetCreatureListWithEntryInGrid(guards, NPC_GILNEAS_CITY_GUARD, 90.0f);
 
                                 if (!guards.empty())
-                                    for (auto & guard : guards) {
-                                        if (guard->IsAlive()) {
-                                            if (Creature *worgen = guard->FindNearestCreature(NPC_BLOODFANG_RIPPER, 90.0f))
-                                                guard->CastSpell(worgen, SPELL_GUARD_SHOOT, false);
-                                        }
-                                    }
+                                    for (std::list<Creature*>::const_iterator itr = guards.begin(); itr != guards.end(); ++itr)
+                                        if ((*itr)->IsAlive())
+                                            if (Creature* worgen = (*itr)->FindNearestCreature(NPC_BLOODFANG_RIPPER, 90.0f))
+                                                (*itr)->CastSpell(worgen, SPELL_GUARD_SHOOT, false);
                             }
                         }
                     }
@@ -1511,13 +1525,13 @@ public:
                 }
                 case 44:
                 {
-                    if (me->GetVehicleKit()->GetPassenger(0))
+                    if (Unit* passenger = me->GetVehicleKit()->GetPassenger(0))
                     {
                         if (Vehicle* vehicle = me->GetVehicleKit())
                         {
                             if (Unit* passenger = vehicle->GetPassenger(0))
                                 if (Player* player = passenger->ToPlayer())
-                                    player->SetClientControl(me, true);
+                                    player->SetClientControl(me, 1);
 
                             if (Unit* passenger = vehicle->GetPassenger(1))
                                 if (Creature* aranas = passenger->ToCreature())
@@ -1541,7 +1555,7 @@ public:
 
             if (_playerSeated)
             {
-                player->SetClientControl(me, false);
+                player->SetClientControl(me, 0);
                 _playerSeated = false;
             }
         }
@@ -1550,7 +1564,7 @@ public:
 
 struct npc_saved_aranas : public ScriptedAI
 {
-    explicit npc_saved_aranas(Creature* creature) : ScriptedAI(creature)
+    npc_saved_aranas(Creature* creature) : ScriptedAI(creature)
     {
         me->SetReactState(REACT_PASSIVE);
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
@@ -1563,6 +1577,170 @@ struct npc_saved_aranas : public ScriptedAI
             if (Creature* aranas = me->FindNearestCreature(NPC_KRENNAN_ARANAS, 50.0f))
                 aranas->DespawnOrUnsummon();
         }
+    }
+};
+
+// #439 follow-up (t439 cp2/cp2b, builds 6-7): Prince Liam Greymane 34913, the phase-2 Liam of Gilneas City after
+// 14078 "Lockdown!". Rampaging Worgen 34884 (40 spawns in phase 2, faction 2174, hostile to Liam's 2173) kill the
+// level-5 Liam, who has no AI in this fork, so he is dead (respawn 300 s) most of the time: npcguid alive=true found
+// none 57 yd away, also after a relog. The intended script for 34913 is npc_prince_liam_greymane_phase2
+// (mopcore gilneas.cpp:88-205): Liam seeks worgen within 16 yd of his post, fights them for show
+// (after two hits he only plays the attack animation), yells once, and never loses to them. Ported onto the fork's
+// API: worgen cannot take him below half health, his damage to creatures stops at their last 30%, players and pets
+// still get the full fight. SQL 2026_10_04_43 binds the ScriptName.
+struct npc_prince_liam_greymane_phase2 : public ScriptedAI
+{
+    npc_prince_liam_greymane_phase2(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _scheduler.CancelAll();
+        _yelled = false;
+
+        _scheduler.Schedule(1s, 2s, [this](TaskContext context)
+        {
+            if (!me->IsInCombat() && me->GetDistance2d(me->GetHomePosition().GetPositionX(), me->GetHomePosition().GetPositionY()) <= 2.0f)
+                if (Creature* worgen = me->FindNearestCreature(34884, 16.0f, true))
+                    AttackStart(worgen);
+            context.Repeat(1s, 2s);
+        });
+
+        _scheduler.Schedule(10s, 20s, [this](TaskContext /*context*/)
+        {
+            if (!_yelled)
+            {
+                Talk(0);    // "Stand your ground, men!" etc. (creature_text 34913 group 0)
+                _yelled = true;
+            }
+        });
+    }
+
+    void DamageTaken(Unit* attacker, uint32& damage) override
+    {
+        if (attacker && attacker->GetTypeId() == TYPEID_UNIT && !attacker->IsControlledByPlayer() && me->HealthBelowPctDamaged(50, damage))
+            damage = 0;
+    }
+
+    void DamageDealt(Unit* victim, uint32& damage, DamageEffectType /*damageType*/) override
+    {
+        if (victim && victim->GetTypeId() == TYPEID_UNIT && !victim->IsControlledByPlayer() && victim->HealthBelowPctDamaged(30, damage))
+            damage = 0;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    TaskScheduler _scheduler;
+    bool _yelled = false;
+};
+
+// Duskhaven street fight (Refs #439, #473, audit row WQ003). Ported from alexkulya pandaria_5.4.8 commit 24ff2ce
+// ("Undead soldiers vs Watchmans sparring"), src/server/scripts/EasternKingdoms/Zones/zone_gilneas.cpp:1587-1735.
+// Watchmen and Forsaken invaders/footsoldiers seek each other out and fight, but never damage each other,
+// so the staged fight never ends and never steals a player's kill. Changes against the reference: the search
+// is rescheduled every 2-5 s (the reference searched once and stopped when nothing was in range), and the
+// footsoldier search is scheduled (the reference declared EVENT_SEARCH_FOOTSOLDIER but never scheduled it).
+struct npc_duskhaven_watchman : public ScriptedAI
+{
+    npc_duskhaven_watchman(Creature* creature) : ScriptedAI(creature) { }
+
+    EventMap events;
+
+    void Reset() override
+    {
+        events.Reset();
+        events.ScheduleEvent(EVENT_SEARCH_INVADER, 2s);
+        events.ScheduleEvent(EVENT_SEARCH_FOOTSOLDIER, 3s);
+    }
+
+    void DamageTaken(Unit* who, uint32& damage) override
+    {
+        if (who && who->ToCreature() && (who->GetEntry() == NPC_ENTRY_INVADER || who->GetEntry() == NPC_ENTRY_FOOTSOLDIER))
+            damage = 0;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        events.Update(diff);
+
+        while (uint32 eventId = events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SEARCH_INVADER:
+                    if (!me->IsInCombat())
+                        if (Creature* invader = me->FindNearestCreature(NPC_ENTRY_INVADER, 15.5f, true))
+                            AttackStart(invader);
+                    events.ScheduleEvent(EVENT_SEARCH_INVADER, randtime(2s, 5s));
+                    break;
+                case EVENT_SEARCH_FOOTSOLDIER:
+                    if (!me->IsInCombat())
+                        if (Creature* footsoldier = me->FindNearestCreature(NPC_ENTRY_FOOTSOLDIER, 15.5f, true))
+                            AttackStart(footsoldier);
+                    events.ScheduleEvent(EVENT_SEARCH_FOOTSOLDIER, randtime(2s, 5s));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+};
+
+// Shared by Forsaken Invader (34511) and Forsaken Footsoldier (36236): attack the nearest Duskhaven Watchman.
+struct npc_forsaken_invader : public ScriptedAI
+{
+    npc_forsaken_invader(Creature* creature) : ScriptedAI(creature) { }
+
+    EventMap events;
+
+    void Reset() override
+    {
+        events.Reset();
+        events.ScheduleEvent(EVENT_SEARCH_WATCHMAN, 2s);
+    }
+
+    void DamageTaken(Unit* who, uint32& damage) override
+    {
+        if (who && who->ToCreature() && who->GetEntry() == NPC_ENTRY_WATCHMAN)
+            damage = 0;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        events.Update(diff);
+
+        while (uint32 eventId = events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SEARCH_WATCHMAN:
+                    if (!me->IsInCombat())
+                        if (Creature* watchman = me->FindNearestCreature(NPC_ENTRY_WATCHMAN, 15.5f, true))
+                            AttackStart(watchman);
+                    events.ScheduleEvent(EVENT_SEARCH_WATCHMAN, randtime(2s, 5s));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
     }
 };
 
@@ -1582,14 +1760,8 @@ class npc_gilneas_children : public CreatureScript
 
         struct creature_script : public ScriptedAI
         {
-            creature_script(Creature* creature, uint32 spellId, uint8 playerSayId)
-                : ScriptedAI(creature)
-                , _spellId(spellId)
-                , _playerSayId(playerSayId)
-                , activated(false)
-            {
+            creature_script(Creature* creature, uint32 spellId, uint8 playerSayId) : ScriptedAI(creature), _spellId(spellId), _playerSayId(playerSayId) { }
 
-            }
             EventMap events;
             ObjectGuid playerGUID;
             uint32 _spellId;
@@ -1616,12 +1788,10 @@ class npc_gilneas_children : public CreatureScript
                         activated = true;
                         BroadcastText const* bct = sObjectMgr->GetBroadcastText(PlayerText[_playerSayId]);
                         LocaleConstant loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
-                        std::string baseText;
+                        std::string baseText = "";
                         if (bct)
-                        {
                             baseText = bct->GetText(loc_idx, player->GetGender());
                             player->Say(baseText, LANG_UNIVERSAL);
-                        }
                         player->KilledMonsterCredit(me->GetEntry(), ObjectGuid::Empty);
                         me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
                         events.ScheduleEvent(EVENT_TALK_TO_PLAYER, 3s + 500ms);
@@ -1689,7 +1859,6 @@ class npc_gilneas_children : public CreatureScript
                             me->HandleEmoteCommand(EMOTE_ONESHOT_CRY);
                             events.ScheduleEvent(EVENT_CRY, randtime(1s, 1s + 500ms));
                             break;
-                        default: break;
                     }
                 }
             }
@@ -1699,15 +1868,32 @@ class npc_gilneas_children : public CreatureScript
 class npc_wahl : public CreatureScript
 {
 public:
-    explicit npc_wahl(const char* ScriptName) : CreatureScript(ScriptName) { }
+    npc_wahl(const char* ScriptName) : CreatureScript(ScriptName) { }
 
     struct npc_wahlAI : public npc_escortAI
     {
-        explicit npc_wahlAI(Creature* creature) : npc_escortAI(creature)
+        npc_wahlAI(Creature* creature) : npc_escortAI(creature)
         {
             creature->SetReactState(REACT_PASSIVE);
             creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        }
+
+        // #477: Creature::Update calls JustAppeared() on the first tick after the summon, and npc_escortAI::JustAppeared()
+        // resets the escort state (m_uiEscortState = NONE). Lucius used to AddWaypoint()+Start() right after
+        // SummonCreature(), so the reset wiped the escort and Wahl stood still (no yell, no swing). Start it here, after the reset.
+        void JustAppeared() override
+        {
+            npc_escortAI::JustAppeared();
+
+            if (!me->IsSummon())
+                return;
+
+            AddWaypoint(0, -2106.54f, 2342.69f, 6.93668f);
+            AddWaypoint(1, -2106.12f, 2334.90f, 7.36691f);
+            AddWaypoint(2, -2117.80f, 2357.15f, 5.88139f);
+            AddWaypoint(3, -2111.46f, 2366.22f, 7.17151f);
+            Start(false, true);
         }
 
         void DoAction(int32 const action) override
@@ -1734,9 +1920,13 @@ public:
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
 
-                        me->m_Events.AddLambdaEventAtOffset([this, summoner]()
+                        // #477: keep the GUID, not the pointer - the summoner can despawn during the 800 ms delay.
+                        ObjectGuid summonerGuid = summoner->GetGUID();
+                        me->m_Events.AddLambdaEventAtOffset([this, summonerGuid]()
                         {
-                            AttackStart(summoner);
+                            if (Unit* target = ObjectAccessor::GetUnit(*me, summonerGuid))
+                                if (target->IsAlive())
+                                    AttackStart(target);
                         }, 800);
                     }
         }
@@ -1756,11 +1946,11 @@ public:
 class npc_lucius_the_cruel : public CreatureScript
 {
 public:
-    explicit npc_lucius_the_cruel(const char* ScriptName) : CreatureScript(ScriptName) { }
+    npc_lucius_the_cruel(const char* ScriptName) : CreatureScript(ScriptName) { }
 
     struct npc_lucius_the_cruelAI : public ScriptedAI
     {
-        explicit npc_lucius_the_cruelAI(Creature* creature) : ScriptedAI(creature)
+        npc_lucius_the_cruelAI(Creature* creature) : ScriptedAI(creature)
         {
             SetCombatMovement(false);
             Catch = false;
@@ -1781,7 +1971,7 @@ public:
         bool Catch;
         bool Summon;
 
-        void EnterEvadeMode() override
+        void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
         {
             me->DespawnOrUnsummon();
         }
@@ -1803,13 +1993,18 @@ public:
 
                 if (me->IsSummon())
                     if (Unit* summoner = me->ToTempSummon()->GetSummoner())
-                        if (Creature* chance = summoner->ToCreature())
+                        if (summoner->ToCreature())
                         {
-                            me->m_Events.AddLambdaEventAtOffset([this, chance]()
+                            // #477: keep Chance's GUID, not the pointer - the cat can be despawned (or respawn) during
+                            // the 4 s delay, which left a dangling Creature* here (same fix as Wahl's summoner above).
+                            ObjectGuid chanceGuid = summoner->GetGUID();
+                            me->m_Events.AddLambdaEventAtOffset([this, chanceGuid]()
                             {
                                 Catch = true;
                                 Summon = true;
-                                chance->AI()->DoAction(ACTION_CHANCE_DESPAWN);
+                                if (Creature* chance = ObjectAccessor::GetCreature(*me, chanceGuid))
+                                    if (chance->AI())
+                                        chance->AI()->DoAction(ACTION_CHANCE_DESPAWN);
                             }, 4000);
                         }
             }
@@ -1854,17 +2049,8 @@ public:
                     Summon = false;
                     uiSummonTimer = 1500;
 
-                    if (Creature* wahl = me->SummonCreature(NPC_WAHL, -2098.366f, 2352.075f, 7.160643f))
-                    {
-                        if (npc_escortAI* npc_escort = CAST_AI(npc_wahl::npc_wahlAI, wahl->AI()))
-                        {
-                            npc_escort->AddWaypoint(0, -2106.54f, 2342.69f, 6.93668f);
-                            npc_escort->AddWaypoint(1, -2106.12f, 2334.90f, 7.36691f);
-                            npc_escort->AddWaypoint(2, -2117.80f, 2357.15f, 5.88139f);
-                            npc_escort->AddWaypoint(3, -2111.46f, 2366.22f, 7.17151f);
-                            npc_escort->Start(false, true);
-                        }
-                    }
+                    // #477: the escort waypoints are added by npc_wahlAI::JustAppeared (after the escort reset).
+                    me->SummonCreature(NPC_WAHL, -2098.366f, 2352.075f, 7.160643f);
                 }
                 else
                     uiSummonTimer -= diff;
@@ -1895,7 +2081,7 @@ public:
 
 struct npc_chance_the_cat : public ScriptedAI
 {
-    explicit npc_chance_the_cat(Creature* creature) : ScriptedAI(creature)
+    npc_chance_the_cat(Creature* creature) : ScriptedAI(creature)
     {
         Despawn = false;
         uiDespawnTimer = 500;
@@ -1943,7 +2129,7 @@ struct npc_chance_the_cat : public ScriptedAI
 class npc_mountain_horse : public CreatureScript
 {
 public:
-    explicit npc_mountain_horse(const char* ScriptName) : CreatureScript(ScriptName) { }
+    npc_mountain_horse(const char* ScriptName) : CreatureScript(ScriptName) { }
 
     bool OnGossipHello(Player* player, Creature* creature) override
     {
@@ -1959,7 +2145,7 @@ public:
 
     struct npc_mountain_horseAI : public ScriptedAI
     {
-        explicit npc_mountain_horseAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_mountain_horseAI(Creature* creature) : ScriptedAI(creature) { }
 
         EventMap events;
 
@@ -1969,7 +2155,7 @@ public:
                 me->GetMotionMaster()->MoveRandom(8.0f);
         }
 
-        void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
+        void SpellHit(Unit* caster, SpellInfo const* spell) override
         {
             switch (spell->Id)
             {
@@ -1996,7 +2182,7 @@ public:
             }
         }
 
-        void OnCharmed(bool /*apply*/) override { }
+        void OnCharmed(bool apply) override { }
     };
 
     CreatureAI* GetAI(Creature* creature) const override
@@ -2007,13 +2193,40 @@ public:
 
 struct npc_mountain_horse_summoned : public ScriptedAI
 {
-    explicit npc_mountain_horse_summoned(Creature* creature) : ScriptedAI(creature) { }
+    npc_mountain_horse_summoned(Creature* creature) : ScriptedAI(creature) { }
 
     EventMap events;
+    ObjectGuid followTargetGuid;
+
+    Unit* GetFollowTarget()
+    {
+        Unit* owner = me->GetCharmerOrOwner();
+        if (!owner && me->ToTempSummon())
+            owner = me->ToTempSummon()->GetSummoner();
+
+        if (owner)
+        {
+            if (Unit* vehicle = owner->GetVehicleBase())
+            {
+                if (vehicle != me && vehicle->IsInWorld())
+                    return vehicle;
+            }
+            return owner;
+        }
+        return nullptr;
+    }
 
     void IsSummonedBy(Unit* summoner) override
     {
-        me->GetMotionMaster()->MoveFollow(summoner, 6.0f, 0);
+        if (!summoner)
+            return;
+
+        Unit* followTarget = GetFollowTarget();
+        if (!followTarget)
+            followTarget = summoner;
+
+        me->GetMotionMaster()->MoveFollow(followTarget, 6.0f, 0);
+        followTargetGuid = followTarget->GetGUID();
         me->CastSpell(summoner, SPELL_ROPE_CHANNEL, true);
         me->ClearUnitState(UNIT_STATE_CASTING);
         events.ScheduleEvent(EVENT_CHECK_LORNA, 2s);
@@ -2022,9 +2235,32 @@ struct npc_mountain_horse_summoned : public ScriptedAI
         me->SetSpeed(MOVE_RUN, 2.0f, true);
     }
 
+    void JustAppeared() override
+    {
+        ScriptedAI::JustAppeared();
+
+        if (Unit* followTarget = GetFollowTarget())
+        {
+            if (followTarget->IsInWorld())
+            {
+                me->GetMotionMaster()->MoveFollow(followTarget, 6.0f, 0);
+                followTargetGuid = followTarget->GetGUID();
+            }
+        }
+    }
+
     void UpdateAI(uint32 diff) override
     {
         events.Update(diff);
+
+        if (Unit* followTarget = GetFollowTarget())
+        {
+            if (followTarget->IsInWorld() && (followTargetGuid != followTarget->GetGUID() || me->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE))
+            {
+                me->GetMotionMaster()->MoveFollow(followTarget, 6.0f, 0);
+                followTargetGuid = followTarget->GetGUID();
+            }
+        }
 
         while (uint32 eventId = events.ExecuteEvent())
         {
@@ -2032,7 +2268,7 @@ struct npc_mountain_horse_summoned : public ScriptedAI
             {
                 case EVENT_CHECK_LORNA:
                 {
-                    if (me->FindNearestCreature(NPC_LORNA_CROWLEY_2, 8.0f, true))
+                    if (Creature* lornaCrowley = me->FindNearestCreature(NPC_LORNA_CROWLEY_2, 8.0f, true))
                     {
                         if (Unit* owner = me->GetCharmerOrOwner())
                         {
@@ -2050,7 +2286,7 @@ struct npc_mountain_horse_summoned : public ScriptedAI
                 {
                     if (Unit* owner = me->GetCharmerOrOwner())
                     {
-                        if (!owner->IsAlive() || !owner->IsInWorld() || !owner->GetVehicleBase())
+                        if (!owner->IsAlive() || !owner->IsInWorld())
                             me->DespawnOrUnsummon(1);
 
                         events.CancelEvent(EVENT_CHECK_OWNER);
@@ -2091,9 +2327,9 @@ class spell_gilneas_test_telescope : public SpellScript
 class npc_stagecoach_carriage_exodus : public CreatureScript
 {
 public:
-    explicit npc_stagecoach_carriage_exodus(const char* ScriptName) : CreatureScript(ScriptName) { }
+    npc_stagecoach_carriage_exodus(const char* ScriptName) : CreatureScript(ScriptName) { }
 
-    bool OnGossipHello(Player* player, Creature* /*creature*/) override
+    bool OnGossipHello(Player* player, Creature* creature) override
     {
         if (player->GetQuestStatus(QUEST_ENTRY_EXODUS) == QUEST_STATUS_COMPLETE)
         {
@@ -2101,7 +2337,7 @@ public:
                 return true;
 
             if (Creature* harness = player->FindNearestCreature(NPC_STAGECOACH_HARNESS, 30.0f, true))
-                player->SummonCreature(NPC_HARNESS_SUMMONED, harness->GetPositionX(), harness->GetPositionY(), harness->GetPositionZ(), harness->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 600000);
+                player->SummonCreature(NPC_HARNESS_SUMMONED, harness->GetPositionX(), harness->GetPositionY(), harness->GetPositionZ(), harness->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 600000ms);
             return true;
         }
 
@@ -2110,7 +2346,7 @@ public:
 
     struct npc_stagecoach_carriage_exodusAI : public ScriptedAI
     {
-        explicit npc_stagecoach_carriage_exodusAI(Creature* creature) : ScriptedAI(creature)
+        npc_stagecoach_carriage_exodusAI(Creature* creature) : ScriptedAI(creature)
         {
             events.ScheduleEvent(EVENT_BOARD_HARNESS_OWNER, 1ms);
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
@@ -2122,22 +2358,30 @@ public:
         {
             events.Update(diff);
 
-            uint32 eventId = events.ExecuteEvent();
-            if (eventId == EVENT_BOARD_HARNESS_OWNER)
+            while (uint32 eventId = events.ExecuteEvent())
             {
-                if (Unit* harness = me->GetVehicleCreatureBase())
+                switch (eventId)
                 {
-                    if (Unit* harnessOwner = harness->ToTempSummon()->GetSummoner())
+                    case EVENT_BOARD_HARNESS_OWNER:
                     {
-                        if (harnessOwner->IsAlive() && harnessOwner->IsInWorld())
+                        if (Unit* harness = me->GetVehicleCreatureBase())
                         {
-                            harnessOwner->EnterVehicle(me, 1);
-                            events.CancelEvent(EVENT_BOARD_HARNESS_OWNER);
-                            return;
+                            if (Unit* harnessOwner = harness->ToTempSummon()->GetSummoner())
+                            {
+                                if (harnessOwner->IsAlive() && harnessOwner->IsInWorld())
+                                {
+                                    harnessOwner->EnterVehicle(me, 1);
+                                    events.CancelEvent(EVENT_BOARD_HARNESS_OWNER);
+                                    break;
+                                }
+                            }
                         }
+                        events.CancelEvent(EVENT_BOARD_HARNESS_OWNER);
+                        break;
                     }
+                    default:
+                        break;
                 }
-                events.CancelEvent(EVENT_BOARD_HARNESS_OWNER);
             }
         }
     };
@@ -2151,15 +2395,15 @@ public:
 class npc_stagecoach_harness : public CreatureScript
 {
 public:
-    explicit npc_stagecoach_harness(const char* ScriptName) : CreatureScript(ScriptName) { }
+    npc_stagecoach_harness(const char* ScriptName) : CreatureScript(ScriptName) { }
 
     struct npc_stagecoach_harnessAI : public npc_escortAI
     {
         npc_stagecoach_harnessAI(Creature* creature) : npc_escortAI(creature) { }
 
-        void OnCharmed(bool /*apply*/) override { }
+        void OnCharmed(bool apply) override { }
 
-        void IsSummonedBy(Unit* /*owner*/) override
+        void IsSummonedBy(Unit* owner) override
         {
             DoAction(ACTION_START_WP);
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
@@ -2167,16 +2411,22 @@ public:
 
         void DoAction(int32 action) override
         {
-            if (action == ACTION_START_WP)
+            switch (action)
             {
-                Start(false, true, ObjectGuid::Empty, nullptr, false, false, true);
-                SetDespawnAtEnd(true);
+                case ACTION_START_WP:
+                {
+                    Start(false, true, ObjectGuid::Empty, NULL, false, false, true);
+                    SetDespawnAtEnd(true);
 
-                if (GameObject* gate = me->FindNearestGameObject(GO_FIRST_GATE, 80.0f))
-                    gate->UseDoorOrButton(0, false, me);
+                    if (GameObject* gate = me->FindNearestGameObject(GO_FIRST_GATE, 80.0f))
+                        gate->UseDoorOrButton(0, false, me);
 
-                me->SetWalk(false);
-                me->SetSpeed(MOVE_RUN, 1.34f, true);
+                    me->SetWalk(false);
+                    me->SetSpeed(MOVE_RUN, 1.34f, true);
+                    break;
+                }
+                default:
+                    break;
             }
         }
 
@@ -2225,21 +2475,34 @@ public:
 
 struct npc_koroth_the_hillbreaker : public ScriptedAI
 {
-    explicit npc_koroth_the_hillbreaker(Creature* creature) : ScriptedAI(creature) { }
+    npc_koroth_the_hillbreaker(Creature* creature) : ScriptedAI(creature) { }
 
     EventMap m_events;
+    bool m_sceneRunning = false;
 
     void DoAction(int32 const action) override
     {
-        if (action == ACTION_START_KOROTH_EVENT) {
-            Talk(SAY_KOROTH_THE_HILLBREAKER_1);
-            me->GetMotionMaster()->MoveSplinePath(KorothPath[0], KorothPathLenght, false, true, 0.f, false, false);
-            //TalkWithDelay(me->GetSplineDuration(), SAY_KOROTH_THE_HILLBREAKER_2);
-            m_events.ScheduleEvent(EVENT_KOROTH_THE_HILLBREAKER_2, me->GetSplineDuration());
+        switch (action)
+        {
+            case ACTION_START_KOROTH_EVENT:
+                // #476: the banner calls this on both open (GO_ACTIVATED) and loot release (GO_JUST_DEACTIVATED).
+                if (m_sceneRunning)
+                    break;
+                m_sceneRunning = true;
+                Talk(SAY_KOROTH_THE_HILLBREAKER_1);
+				me->GetMotionMaster()->MoveSplinePath(KorothPath[0], KorothPathLenght, false, true, 0.f, false, false);
+                //TalkWithDelay(me->GetSplineDuration(), SAY_KOROTH_THE_HILLBREAKER_2);
+                {
+                    uint32 walk = me->GetSplineDuration() ? me->GetSplineDuration() : 4000;
+                    m_events.ScheduleEvent(EVENT_KOROTH_THE_HILLBREAKER_2, walk);
 
-            me->m_Events.AddLambdaEventAtOffset([this]() {
-                me->GetMotionMaster()->MoveTargetedHome();
-            }, me->GetSplineDuration() + 3500);
+                    me->m_Events.AddLambdaEventAtOffset([this]()
+                    {
+                        me->GetMotionMaster()->MoveTargetedHome();
+                        m_sceneRunning = false;
+                    }, walk + 3500);
+                }
+                break;
         }
     }
 
@@ -2248,10 +2511,17 @@ struct npc_koroth_the_hillbreaker : public ScriptedAI
         
        m_events.Update(diff);
 
-        uint32 eventId = m_events.ExecuteEvent();
-        if (eventId == EVENT_KOROTH_THE_HILLBREAKER_2)
+        while (uint32 eventId = m_events.ExecuteEvent())
         {
-            Talk(SAY_KOROTH_THE_HILLBREAKER_2);
+            switch (eventId)
+            {
+                case EVENT_KOROTH_THE_HILLBREAKER_2:
+                {
+                    Talk(SAY_KOROTH_THE_HILLBREAKER_2);
+                    break;
+                }
+
+            }
         }
 
         if (!UpdateVictim())
@@ -2264,18 +2534,21 @@ struct npc_koroth_the_hillbreaker : public ScriptedAI
 class go_koroth_banner : public GameObjectScript
 {
 public:
-    explicit go_koroth_banner(const char* ScriptName) : GameObjectScript(ScriptName) { }
+    go_koroth_banner(const char* ScriptName) : GameObjectScript(ScriptName) { }
 
     struct go_koroth_bannerAI : public GameObjectAI
     {
-        explicit go_koroth_bannerAI(GameObject* go) : GameObjectAI(go) { }
+        go_koroth_bannerAI(GameObject* go) : GameObjectAI(go) { }
 
         void OnStateChanged(uint32 state, Unit* /*unit*/) override
         {
-            if (state != GO_JUST_DEACTIVATED)
+            // #476: MoP 5.4.8 runs the scene on use; the chest is opened by Opening 3365 (GO_ACTIVATED) and only reaches
+            // GO_JUST_DEACTIVATED once its loot is fully released, so react to both (Koroth ignores the second call).
+            // 80 yd: Koroth (spawn 25 yd from the banner) can stand further out than the old 30 yd search.
+            if (state != GO_ACTIVATED && state != GO_JUST_DEACTIVATED)
                 return;
 
-            if (Creature* koroth = me->FindNearestCreature(NPC_KOROTH_THE_HILLBREAKER, 30.0f))
+            if (Creature* koroth = me->FindNearestCreature(NPC_KOROTH_THE_HILLBREAKER, 80.0f))
             {
                 if (koroth->IsAIEnabled)
                 {
@@ -2288,6 +2561,2088 @@ public:
     GameObjectAI* GetAI(GameObject* go) const override
     {
         return new go_koroth_bannerAI(go);
+    }
+};
+
+// ============================================================================================================
+// #504 - 14375 "Last Chance at Humanity": the pillory scene in Duskhaven.
+// Intended (Wowpedia "Last Chance at Humanity", MediaWiki API 2026-10-09): the player wakes locked in a pillory
+// before Krennan Aranas, Lord Godfrey and King Genn Greymane, who argue (four lines); after the quest the three
+// disappear and the player is released.
+// DBC: 68630 Curse of the Worgen = teleport to the pillory + linked aura 68631 (stun, invisibility) + 69123 (summon
+// Krennan 36331 with SummonProperties 3054 = personal spawn, + 94053 Fade to Black). The 14375 reward 68639 =
+// forcecast 68643 + SCRIPT_EFFECT (value 68630) + teleport to the release point.
+// SQL 2026_10_09_12 casts 68630 through spell_area (area 4786, 14222 rewarded, 14375 not rewarded) and binds the
+// two scripts below.
+// Krennan: port of mopcore npc_trigger_event_first_c3 (the name bound to 36331;
+// mopcore gilneas.cpp:2700-2829), same points and
+// timings. Differences: his Godfrey is the player's private summon too; King Genn is the static 14375 giver
+// (guid 375757, 2.8 yd from the pillory; mopcore summoned a second Genn onto the same spot); the lines go to the
+// player only (TEXT_RANGE_PERSONAL); and he leaves with Godfrey once the curse is gone instead of after 300 s.
+// ============================================================================================================
+namespace GilneasLastChanceAtHumanity
+{
+    enum
+    {
+        NPC_LORD_GODFREY_PILLORY        = 36330,
+        NPC_KING_GENN_GREYMANE_PILLORY  = 36332,
+        SPELL_CURSE_OF_THE_WORGEN       = 68630,
+
+        SAY_KRENNAN_NOT_GIVING_UP       = 0,       // BT 36344
+        SAY_GODFREY_PROTOCOL            = 0,       // BT 36336
+        SAY_GENN_PROTOCOL               = 0,       // BT 36340
+        SAY_GENN_DOUBLE_DOSAGE          = 1,       // BT 36341
+
+        POINT_KRENNAN_WAIT              = 1,
+        POINT_KRENNAN_PILLORY           = 2,
+        POINT_GODFREY_PILLORY           = 1,
+    };
+
+    Position const KrennanWaitPos    = { -1819.72f, 2289.23f, 42.28f, 0.0f };
+    float const    KrennanWaitFacing = 1.75f;
+    Position const KrennanPilloryPos = { -1819.80f, 2290.40f, 42.22f, 0.0f };
+    Position const GodfreySpawnPos   = { -1844.29f, 2290.67f, 42.30f, 0.32f };
+    Position const GodfreyPilloryPos = { -1822.14f, 2295.40f, 42.10f, 0.0f };
+}
+
+struct npc_krennan_aranas_pillory : public ScriptedAI
+{
+    npc_krennan_aranas_pillory(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        using namespace GilneasLastChanceAtHumanity;
+
+        Player* player = summoner->ToPlayer();
+        if (!player)
+            return;
+
+        _playerGuid = player->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+
+        if (TempSummon* godfrey = me->SummonCreature(NPC_LORD_GODFREY_PILLORY, GodfreySpawnPos, TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, me->GetPrivateObjectOwner()))
+        {
+            godfrey->SetReactState(REACT_PASSIVE);
+            _godfreyGuid = godfrey->GetGUID();
+        }
+
+        me->GetMotionMaster()->MovePoint(POINT_KRENNAN_WAIT, KrennanWaitPos);
+
+        // The scene lasts as long as the curse: the 14375 reward (68639) removes 68630, then Krennan and Godfrey go.
+        _scheduler.Schedule(2s, [this](TaskContext context)
+        {
+            Player* cursed = ObjectAccessor::GetPlayer(*me, _playerGuid);
+            if (!cursed || !cursed->HasAura(GilneasLastChanceAtHumanity::SPELL_CURSE_OF_THE_WORGEN))
+            {
+                Leave();
+                return;
+            }
+            context.Repeat(1s);
+        });
+
+        _scheduler.Schedule(12500ms, [this](TaskContext /*context*/)
+        {
+            me->GetMotionMaster()->MovePoint(GilneasLastChanceAtHumanity::POINT_KRENNAN_PILLORY, GilneasLastChanceAtHumanity::KrennanPilloryPos);
+        });
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        using namespace GilneasLastChanceAtHumanity;
+
+        if (type != POINT_MOTION_TYPE)
+            return;
+
+        if (pointId == POINT_KRENNAN_WAIT)
+            me->SetFacingTo(KrennanWaitFacing);
+        else if (pointId == POINT_KRENNAN_PILLORY && !_sceneStarted)
+        {
+            _sceneStarted = true;
+            StartScene();
+        }
+    }
+
+    void StartScene()
+    {
+        using namespace GilneasLastChanceAtHumanity;
+
+        SayToPlayer(me, SAY_KRENNAN_NOT_GIVING_UP);
+        if (Creature* godfrey = ObjectAccessor::GetCreature(*me, _godfreyGuid))
+            godfrey->GetMotionMaster()->MovePoint(POINT_GODFREY_PILLORY, GodfreyPilloryPos);
+
+        _scheduler.Schedule(4s, [this](TaskContext /*context*/)
+        {
+            if (Creature* godfrey = ObjectAccessor::GetCreature(*me, _godfreyGuid))
+            {
+                godfrey->SetFacingToObject(me);
+                SayToPlayer(godfrey, GilneasLastChanceAtHumanity::SAY_GODFREY_PROTOCOL);
+            }
+        });
+        _scheduler.Schedule(12s, [this](TaskContext /*context*/)
+        {
+            if (Creature* genn = me->FindNearestCreature(GilneasLastChanceAtHumanity::NPC_KING_GENN_GREYMANE_PILLORY, 20.0f))
+                SayToPlayer(genn, GilneasLastChanceAtHumanity::SAY_GENN_PROTOCOL);
+        });
+        _scheduler.Schedule(20s, [this](TaskContext /*context*/)
+        {
+            if (Creature* genn = me->FindNearestCreature(GilneasLastChanceAtHumanity::NPC_KING_GENN_GREYMANE_PILLORY, 20.0f))
+                SayToPlayer(genn, GilneasLastChanceAtHumanity::SAY_GENN_DOUBLE_DOSAGE);
+        });
+    }
+
+    void SayToPlayer(Creature* speaker, uint8 group)
+    {
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGuid))
+            sCreatureTextMgr->SendChat(speaker, group, player, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_PERSONAL);
+    }
+
+    void Leave()
+    {
+        _scheduler.CancelAll();
+        if (Creature* godfrey = ObjectAccessor::GetCreature(*me, _godfreyGuid))
+            godfrey->DespawnOrUnsummon();
+        me->DespawnOrUnsummon();
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+    }
+
+private:
+    TaskScheduler _scheduler;
+    ObjectGuid _playerGuid;
+    ObjectGuid _godfreyGuid;
+    bool _sceneStarted = false;
+};
+
+// 68639 Forcecast Worgen Intro Completion (14375 reward): effect 1 is a SCRIPT_EFFECT whose value is the curse 68630.
+// Removing 68630 also removes its linked stun/invisibility 68631 (SPELL_AURA_LINKED), so the player leaves the
+// pillory; effect 2 then teleports him to the release point. Without it the player stayed stunned after the quest.
+class spell_gilneas_forcecast_worgen_intro_completion : public SpellScript
+{
+    PrepareSpellScript(spell_gilneas_forcecast_worgen_intro_completion);
+
+    void HandleScript(SpellEffIndex /*effIndex*/)
+    {
+        if (Unit* target = GetHitUnit())
+            target->RemoveAurasDueToSpell(uint32(GetEffectValue()));
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_gilneas_forcecast_worgen_intro_completion::HandleScript, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+// ============================================================================================================
+// #483 item 2 - 14395 "Gasping for Breath": the watchman rides the player and is saved on the shore.
+// Intended (Wowpedia "Gasping for Breath", MediaWiki API 2026-10-04): pick up a drowning watchman, swim him to
+// shore; he thanks you there. the intended script for 36440 is npc_drowning_watchman (SpellHit 68735 -> remove
+// spellclick flag, remove 68730 Drowning, EnterVehicle(clicker)),
+// and the 4.3.4 reference (CPP gilneas_chapter_2.cpp at_gasping_for_breath / spell 68737) credits on the shore.
+// DBC: 68735 "Rescue Drowning Watchman" gives the clicker vehicle id 520 (aura 296) for 180 s.
+// The fork's SAI gave the credit 5 s after the click wherever the player was; this AI replaces it
+// (SQL 2026_10_04_36 drops the SAI and binds the ScriptName).
+// ============================================================================================================
+namespace GilneasGaspingForBreath
+{
+    enum
+    {
+        NPC_DROWNING_WATCHMAN_CREDIT    = 36450,
+        SPELL_RESCUE_DROWNING_WATCHMAN  = 68735,
+        SPELL_DROWNING                  = 68730,
+        SPELL_RIDE_VEHICLE_HARDCODED    = 46598,
+        SAY_WATCHMAN_SAVED_FIRST        = 0,       // groups 0..2, one line each (BT 36418/36417/36419)
+        SAY_WATCHMAN_SAVED_LAST         = 2,
+    };
+}
+
+struct npc_drowning_watchman : public ScriptedAI
+{
+    npc_drowning_watchman(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _scheduler.CancelAll();
+        _carrierGuid.Clear();
+        _carriedMs = 0;
+        _saved = false;
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spell) override
+    {
+        using namespace GilneasGaspingForBreath;
+
+        if (spell->Id != SPELL_RESCUE_DROWNING_WATCHMAN || !caster || caster->GetTypeId() != TYPEID_PLAYER || !_carrierGuid.IsEmpty())
+            return;
+
+        _carrierGuid = caster->GetGUID();
+        _carriedMs = 0;
+        me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
+        me->RemoveAurasDueToSpell(SPELL_DROWNING);
+
+        // The clicker's vehicle kit (aura 296 of the same spell) is applied in the same cast: board a moment later.
+        _scheduler.Schedule(300ms, [this](TaskContext /*context*/)
+        {
+            Player* carrier = ObjectAccessor::GetPlayer(*me, _carrierGuid);
+            if (!carrier)
+            {
+                me->DespawnOrUnsummon(1000);
+                return;
+            }
+
+            if (carrier->GetVehicleKit())
+                me->EnterVehicle(carrier);
+            else
+                me->CastSpell(carrier, SPELL_RIDE_VEHICLE_HARDCODED, true);
+        });
+
+        _scheduler.Schedule(1s, [this](TaskContext context)
+        {
+            CheckShore();
+            if (!_saved && !_carrierGuid.IsEmpty())
+                context.Repeat(1s);
+        });
+    }
+
+    void CheckShore()
+    {
+        using namespace GilneasGaspingForBreath;
+
+        _carriedMs += 1000;
+        Player* carrier = ObjectAccessor::GetPlayer(*me, _carrierGuid);
+
+        // Dropped (carrier gone, dismounted, rescue aura expired): back into the water.
+        if (!carrier || !carrier->IsAlive() || me->GetVehicleBase() != carrier || !carrier->HasAura(SPELL_RESCUE_DROWNING_WATCHMAN))
+        {
+            if (_carriedMs < 2000 && carrier && carrier->HasAura(SPELL_RESCUE_DROWNING_WATCHMAN))
+                return; // still boarding
+            if (carrier)
+                carrier->RemoveAurasDueToSpell(SPELL_RESCUE_DROWNING_WATCHMAN);
+            if (me->GetVehicleBase())
+                me->ExitVehicle();
+            _carrierGuid.Clear();
+            me->DespawnOrUnsummon(1000);
+            return;
+        }
+
+        // On the shore: the carrier stands out of the water.
+        if (_carriedMs >= 2000 && !carrier->IsInWater())
+        {
+            _saved = true;
+            carrier->KilledMonsterCredit(NPC_DROWNING_WATCHMAN_CREDIT);
+            Talk(uint8(urand(SAY_WATCHMAN_SAVED_FIRST, SAY_WATCHMAN_SAVED_LAST)), carrier);
+            me->ExitVehicle();
+            carrier->RemoveAurasDueToSpell(SPELL_RESCUE_DROWNING_WATCHMAN);
+            _carrierGuid.Clear();
+            me->DespawnOrUnsummon(4000);
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+    }
+
+private:
+    TaskScheduler _scheduler;
+    ObjectGuid _carrierGuid;
+    uint32 _carriedMs = 0;
+    bool _saved = false;
+};
+
+// ============================================================================================================
+// #483 item 5 - 24468 "Stranded at the Marsh": every Crash Survivor is locked in combat with a Swamp Crocolisk;
+// killing the crocolisk saves him and he runs back to the crash site.
+// Intended (Wowpedia "Stranded at the Marsh", MediaWiki API 2026-10-04: "The survivors are locked in combat with
+// Swamp Crocolisks. Kill the crocolisk to save the survivor, who will quickly run back to the crash site").
+// Source: MoP 5.4.8 world data, SAI 37067 (on spawn summon 37078 via 69854, invincible at 50 hp; data set by the crocolisk's
+// death -> say, run to -2149.4 1775.73 6.31862, despawn 7 s) and 37078 (attack summoner, on death set data).
+// Differences: the survivor deals no damage to creatures and cannot drop below 50% to them (mopcore
+// gilneas.cpp:4286-4366 does the same), so only players kill crocolisks - the objective counts 37078 kills.
+// SQL 2026_10_04_36 binds the ScriptName, adds the texts, and drops the 11 static crocolisks MoP 5.4.8 does not spawn.
+// ============================================================================================================
+namespace GilneasStrandedAtTheMarsh
+{
+    enum
+    {
+        NPC_SWAMP_CROCOLISK     = 37078,
+        SAY_SURVIVOR_SAVED      = 0,
+    };
+
+    Position const CrashSitePos = { -2149.4f, 1775.73f, 6.31862f, 0.0f };
+}
+
+struct npc_crash_survivor : public ScriptedAI
+{
+    npc_crash_survivor(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        if (_saved)
+            return;
+
+        _scheduler.CancelAll();
+        _scheduler.Schedule(1s, [this](TaskContext context)
+        {
+            using namespace GilneasStrandedAtTheMarsh;
+
+            if (_saved)
+                return;
+
+            Creature* croc = ObjectAccessor::GetCreature(*me, _crocGuid);
+            if (!croc || !croc->IsAlive())
+            {
+                float x, y, z;
+                me->GetNearPoint(me, x, y, z, 3.0f, me->GetOrientation());
+                if (TempSummon* summon = me->SummonCreature(NPC_SWAMP_CROCOLISK, x, y, z, me->GetAngle(x, y) + float(M_PI), TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10s))
+                {
+                    _crocGuid = summon->GetGUID();
+                    summon->AI()->AttackStart(me);
+                    AttackStart(summon);
+                }
+            }
+            else if (!me->IsInCombat())
+                AttackStart(croc);
+
+            context.Repeat(5s);
+        });
+    }
+
+    void DamageTaken(Unit* attacker, uint32& damage) override
+    {
+        if (attacker && attacker->GetTypeId() == TYPEID_UNIT && me->HealthBelowPctDamaged(50, damage))
+            damage = 0;
+    }
+
+    void DamageDealt(Unit* victim, uint32& damage, DamageEffectType /*damageType*/) override
+    {
+        if (victim && victim->GetTypeId() == TYPEID_UNIT)
+            damage = 0;
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        // Keep the staged fight going while the crocolisk lives; it may be busy with a player.
+        if (!_saved)
+            if (Creature* croc = ObjectAccessor::GetCreature(*me, _crocGuid))
+                if (croc->IsAlive())
+                    return;
+
+        ScriptedAI::EnterEvadeMode(why);
+    }
+
+    void SummonedCreatureDies(Creature* summon, Unit* killer) override
+    {
+        using namespace GilneasStrandedAtTheMarsh;
+
+        if (summon->GetGUID() != _crocGuid || _saved)
+            return;
+
+        _saved = true;
+        _scheduler.CancelAll();
+        me->CombatStop(true);
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        Talk(SAY_SURVIVOR_SAVED, killer && killer->GetTypeId() == TYPEID_PLAYER ? killer : nullptr);
+        me->SetWalk(false);
+        me->GetMotionMaster()->MovePoint(1, CrashSitePos);
+
+        _scheduler.Schedule(7s, [this](TaskContext /*context*/)
+        {
+            // Static spawn: the DB respawn timer brings him back with a new crocolisk.
+            _saved = false;
+            _crocGuid.Clear();
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+            me->SetReactState(REACT_AGGRESSIVE);
+            me->DespawnOrUnsummon();
+        });
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    TaskScheduler _scheduler;
+    ObjectGuid _crocGuid;
+    bool _saved = false;
+};
+
+// ============================================================================================================
+// #479 - 26706 "Endgame": Tobias signals, the player jumps on a hippogryph and destroys the Horde gunship.
+// Intended (Wowhead tooltip API quest=26706, 2026-10-04: "Jump on a Hippogryph when Tobias signals you and destroy
+// the Horde Gunship. Requirements: Gunship destroyed"; Wowpedia "Endgame (quest)": timed event, Tobias' waiting
+// and go lines, the hippogryph flies the player to the gunship). Wowhead MoP Classic quest page: "Requires level
+// 12" - the fork's MinLevel 12 is right and stays.
+// Source: MoP 5.4.8 behaviour (no open-source implementation exists):
+//   npc_hippogryph_endgame (43747) OnGossipHello: quest 26706 incomplete -> summon 43751 at the
+//   hippogryph and cast 46598 on it; npc_hippogryph (43751, escort AI) PassengerBoarded: eject
+//   non-quest players, SetCanFly, Start() over script_waypoint 43751 (6 points: Keel Harbor ->
+//   -1465.44 3254.44 190.39, above the gunship-deck spawns); WaypointReached 5 -> despawn. MoP 5.4.8 gives no credit
+//   (its quest_template Method 0 auto-completes).
+// #506 (owner decision 2026-10-09: follow Wowpedia "Endgame (quest)" Notes, i.e. the ShatterCore static-deck
+// sequence): the hippogryph now drops the rider on the top deck of a static gunship (GO 800100, SQL 2026_10_09_14)
+// instead of crediting the fly-over. Lorna 43566 runs the boarding (npc_lorna_crowley_endgame), killing Korm
+// Bonegrind gives the credit through 81779 (summon + ride the wyvern 43713, KILL_CREDIT 43729), and the wyvern
+// (npc_wyvern_endgame) flies the rider back to Keel Harbor. Port source: ShatterCore (Mr-Scooty/ShatterCore)
+// b2d634ad6c src/server/scripts/EasternKingdoms/Gilneas/gilneas_chapter_4.cpp, cited per block below.
+// ============================================================================================================
+namespace GilneasEndgame
+{
+    enum
+    {
+        QUEST_ENDGAME                   = 26706,
+        NPC_ENDGAME_HIPPOGRYPH_FLIGHT   = 43751,
+        NPC_TOBIAS_MISTMANTLE_ENDGAME   = 43749,
+        NPC_FINALE_CREDIT               = 43729,
+
+        SAY_TOBIAS_WAIT                 = 0,       // random waiting line
+        SAY_TOBIAS_GO                   = 1,       // "Hop on a hippogryph, now's our chance!"
+        SAY_TOBIAS_GO_2                 = 2,       // "Time to go!"
+
+        DATA_TOBIAS_SIGNAL              = 1,
+
+        POINT_OVER_GUNSHIP              = 1,
+        POINT_HIPPOGRYPH_DEPART         = 2,
+
+        // #506 boarding (ShatterCore gilneas_chapter_4.cpp:1474-1497)
+        NPC_KORM_BONEGRIND              = 43567,
+        NPC_GUNSHIP_GRUNT               = 42141,
+        NPC_WORGEN_WARRIOR_SHIP         = 43651,
+        NPC_GILNEAN_SHARPSHOOTER        = 43703,
+        NPC_GUNSHIP_NAVIGATOR           = 43767,
+        SPELL_SUMMON_WYVERN_RIDE        = 81779,   // DBC: summon 43713 (SummonProperties 3038, vehicle) + KILL_CREDIT 43729
+
+        SAY_LORNA_RAFTERS               = 0,       // "Secure the rafters!"
+        SAY_LORNA_RAPPEL                = 1,       // "I want two sharpshooters to stay behind..."
+        SAY_LORNA_HANDS_UP              = 2,       // "Hands up, greenskins!..."
+        SAY_LORNA_DOWNSTAIRS            = 3,       // "The rest of you, follow me downstairs!"
+        SAY_LORNA_FURNACE               = 4,       // "We've got the explosives in the furnace room..."
+        SAY_LORNA_BIG_ORC               = 5,       // "That's... one big orc."
+        SAY_LORNA_WYVERNS               = 6,       // "It's about to blow, jump on the Wyverns!"
+        SAY_LORNA_ATTACK                = 7,       // "Attack!" (SQL 2026_10_09_14)
+        SAY_NAVIGATOR_DABU              = 0,       // "Dabu?" (Orcish, SQL 2026_10_09_14)
+
+        POINT_WYVERN_LOOP               = 1,
+        POINT_WYVERN_ESCAPE             = 2,
+    };
+
+    // script_waypoint 43751; element 0 is replaced by the current position (MoveSplineInit::Launch).
+    Position const OutboundPath[] =
+    {
+        { -1306.0f,  2133.04f,  13.08f  },
+        { -1234.43f, 2227.21f,  46.465f },
+        { -1153.69f, 2390.74f,  79.506f },
+        { -1192.23f, 2675.32f, 121.651f },
+        { -1371.0f,  3040.16f, 165.304f },
+        { -1465.44f, 3254.44f, 190.387f },
+    };
+
+    // ShatterCore gilneas_chapter_4.cpp:1529-1534: drop point over the top deck (~13 yd fall onto z 178.6) and the
+    // hippogryph's departure.
+    Position const HippogryphEjectPos = { -1465.15f, 3256.89f, 191.68f, 2.3074f };
+    Position const HippogryphDepartPath[] =
+    {
+        { -1465.44f, 3254.44f, 190.387f },
+        { -1525.01f, 3322.89f, 105.88f },
+        { -1566.10f, 3316.15f, 105.88f },
+    };
+
+    // ShatterCore gilneas_chapter_4.cpp:1536-1551: wyvern loop around the static ship, then the escape to Keel Harbor.
+    // Element 0 of each path is replaced by the current position (MoveSplineInit::Launch), as for OutboundPath.
+    Position const WyvernLoopPath[] =
+    {
+        { -1508.77f, 3168.55f, 113.94f },
+        { -1508.77f, 3168.55f, 113.94f },
+        { -1528.32f, 3156.63f, 122.52f },
+        { -1544.67f, 3169.84f, 123.02f },
+        { -1586.64f, 3222.29f, 141.24f },
+    };
+    Position const WyvernEscapePath[] =
+    {
+        { -1586.64f, 3222.29f, 141.24f },
+        { -1315.28f, 2030.00f,  63.73f },
+        { -1336.09f, 2097.85f,  14.60f },
+        { -1336.09f, 2097.85f,   5.63f },
+    };
+    Position const WyvernEjectPos = { -1336.10f, 2097.88f, 13.87f, 1.8684f };
+
+    // ShatterCore gilneas_chapter_4.cpp:1554-1560: rope-bottom marks on the mid ("rafters") level.
+    Position const SquadMidLevelPos[] =
+    {
+        { -1454.60f, 3268.34f, 128.70f, 2.14f },
+        { -1459.38f, 3265.42f, 128.49f, 2.14f },
+        { -1483.42f, 3250.66f, 128.58f, 2.14f },
+        { -1485.68f, 3251.26f, 128.67f, 2.14f },
+    };
+}
+
+// Tobias Mistmantle 43749 at Keel Harbor: waits ~60 s (waiting lines), signals, keeps the window open ~60 s.
+struct npc_tobias_mistmantle_endgame : public ScriptedAI
+{
+    npc_tobias_mistmantle_endgame(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _signal = false;
+        _scheduler.CancelAll();
+        ScheduleWait();
+    }
+
+    void ScheduleWait()
+    {
+        using namespace GilneasEndgame;
+
+        _scheduler.Schedule(20s, [this](TaskContext context)
+        {
+            if (AnyQuestPlayerNear())
+                Talk(SAY_TOBIAS_WAIT);
+            if (context.GetRepeatCounter() < 2)
+                context.Repeat(20s);
+            else
+                _scheduler.Schedule(1s, [this](TaskContext /*signal*/) { Signal(); });
+        });
+    }
+
+    void Signal()
+    {
+        using namespace GilneasEndgame;
+
+        _signal = true;
+        Talk(SAY_TOBIAS_GO);
+        _scheduler.Schedule(5s, [this](TaskContext /*context*/) { Talk(SAY_TOBIAS_GO_2); });
+        _scheduler.Schedule(60s, [this](TaskContext /*context*/)
+        {
+            _signal = false;
+            ScheduleWait();
+        });
+    }
+
+    bool AnyQuestPlayerNear() const
+    {
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, 40.0f);
+        for (Player* player : players)
+            if (player->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE)
+                return true;
+        return false;
+    }
+
+    uint32 GetData(uint32 type) const override
+    {
+        return type == GilneasEndgame::DATA_TOBIAS_SIGNAL ? uint32(_signal) : 0;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+    }
+
+private:
+    TaskScheduler _scheduler;
+    bool _signal = false;
+};
+
+// Hippogryph 43747 (gossip): npc_hippogryph_endgame.
+class npc_hippogryph_endgame : public CreatureScript
+{
+public:
+    npc_hippogryph_endgame() : CreatureScript("npc_hippogryph_endgame") { }
+
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        using namespace GilneasEndgame;
+
+        player->PlayerTalkClass->ClearMenus();
+        player->CLOSE_GOSSIP_MENU();
+
+        if (player->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_INCOMPLETE || player->GetVehicle())
+            return true;
+
+        if (Creature* tobias = creature->FindNearestCreature(NPC_TOBIAS_MISTMANTLE_ENDGAME, 60.0f))
+        {
+            if (tobias->IsAIEnabled && !tobias->AI()->GetData(DATA_TOBIAS_SIGNAL))
+            {
+                tobias->AI()->Talk(SAY_TOBIAS_WAIT, player);
+                return true;
+            }
+        }
+
+        if (TempSummon* flight = player->SummonCreature(NPC_ENDGAME_HIPPOGRYPH_FLIGHT, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN))
+            player->EnterVehicle(flight);
+
+        return true;
+    }
+};
+
+// Hippogryph 43751 (vehicle 641): npc_hippogryph; since #506 it drops the rider on the gunship deck.
+struct npc_hippogryph : public ScriptedAI
+{
+    npc_hippogryph(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+    // Vehicle 641 seat 7546 has VEHICLE_SEAT_FLAG_CAN_CONTROL: the rider charms the hippogryph (Vehicle.cpp:604) and the
+    // default CreatureAI::OnCharmed swaps this AI for PossessedAI (t439 build 3/4 cp9: rider parked on the vehicle).
+    void OnCharmed(bool /*apply*/) override { }
+
+    void PassengerBoarded(Unit* who, int8 /*seatId*/, bool apply) override
+    {
+        using namespace GilneasEndgame;
+
+        if (!who || who->GetTypeId() != TYPEID_PLAYER)
+            return;
+
+        if (!apply)
+        {
+            if (!_landed)
+                me->DespawnOrUnsummon(1000);
+            return;
+        }
+
+        if (who->ToPlayer()->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_INCOMPLETE)
+        {
+            _scheduler.Schedule(100ms, [this](TaskContext /*context*/)
+            {
+                if (Vehicle* kit = me->GetVehicleKit())
+                    kit->RemoveAllPassengers();
+                me->DespawnOrUnsummon(1000);
+            });
+            return;
+        }
+
+        _riderGuid = who->GetGUID();
+        who->ToPlayer()->SetClientControl(me, false);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+        me->SetSpeed(MOVE_RUN, 3.0f, true);
+        me->SetSpeed(MOVE_FLIGHT, 3.0f, true);
+
+        _scheduler.Schedule(1500ms, [this](TaskContext /*context*/)
+        {
+            me->GetMotionMaster()->MoveSmoothPath(POINT_OVER_GUNSHIP, OutboundPath, sizeof(OutboundPath) / sizeof(OutboundPath[0]), false, true);
+        });
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        using namespace GilneasEndgame;
+
+        if (type != EFFECT_MOTION_TYPE)
+            return;
+
+        // #506: drop the rider on the gunship deck and leave (ShatterCore gilneas_chapter_4.cpp:1601-1615). The credit
+        // now comes from Korm Bonegrind's death (npc_lorna_crowley_endgame).
+        if (pointId == POINT_OVER_GUNSHIP && !_landed)
+        {
+            _landed = true;
+            // Eject and fly off outside this movement generator's finalize, as the #479 landing did.
+            _scheduler.Schedule(500ms, [this](TaskContext /*context*/)
+            {
+                Player* rider = ObjectAccessor::GetPlayer(*me, _riderGuid);
+                if (Vehicle* kit = me->GetVehicleKit())
+                    kit->RemoveAllPassengers();
+                if (rider)
+                    rider->NearTeleportTo(GilneasEndgame::HippogryphEjectPos.GetPositionX(), GilneasEndgame::HippogryphEjectPos.GetPositionY(),
+                        GilneasEndgame::HippogryphEjectPos.GetPositionZ(), GilneasEndgame::HippogryphEjectPos.GetOrientation());
+            });
+            _scheduler.Schedule(1500ms, [this](TaskContext /*context*/)
+            {
+                me->GetMotionMaster()->MoveSmoothPath(GilneasEndgame::POINT_HIPPOGRYPH_DEPART, GilneasEndgame::HippogryphDepartPath,
+                    sizeof(GilneasEndgame::HippogryphDepartPath) / sizeof(GilneasEndgame::HippogryphDepartPath[0]), false, true);
+            });
+            me->DespawnOrUnsummon(12000);
+        }
+        else if (pointId == POINT_HIPPOGRYPH_DEPART)
+            me->DespawnOrUnsummon(1000);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+    }
+
+private:
+    TaskScheduler _scheduler;
+    ObjectGuid _riderGuid;
+    bool _landed = false;
+};
+
+// #506 - Lorna Crowley 43566 on the static gunship deck: the boarding timeline. Port of ShatterCore
+// npc_gilneas_endgame_controller (gilneas_chapter_4.cpp:1645-1921); offsets from arming (= a 26706 player on the
+// deck), Korm Bonegrind 43567 is released at the furnace beat, his death launches the wyverns (81779 = credit +
+// ride), the event re-arms 123 s later. Differences: Lorna herself stays out of the fight (her template is
+// IMMUNE_TO_NPC here and the timeline lives in her AI, so she must not die); the Navigator answers "Dabu?" after
+// "Hands up, greenskins!" (Wowpedia "Endgame (quest)" Notes, MediaWiki API 2026-10-09; not in ShatterCore).
+struct npc_lorna_crowley_endgame : public ScriptedAI
+{
+    enum
+    {
+        EVENT_ENDGAME_ATTACK = 1,
+        EVENT_ENDGAME_RAFTERS,
+        EVENT_ENDGAME_RAPPEL,
+        EVENT_ENDGAME_DESCEND,
+        EVENT_ENDGAME_HANDS_UP,
+        EVENT_ENDGAME_DABU,
+        EVENT_ENDGAME_DOWNSTAIRS,
+        EVENT_ENDGAME_FURNACE,
+        EVENT_ENDGAME_BIG_ORC,
+        EVENT_ENDGAME_KORM_POLL,
+        EVENT_ENDGAME_WYVERN_YELL,
+        EVENT_ENDGAME_LAUNCH,
+        EVENT_ENDGAME_RESET,
+    };
+
+    npc_lorna_crowley_endgame(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        // An evade must not restart a running boarding.
+        if (_running)
+            return;
+        _events.Reset();
+        _armTimer = 2000;
+        _kormGuid.Clear();
+        _abandonedPolls = 0;
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    // ShatterCore gilneas_chapter_4.cpp:1667-1757 (UpdateAI).
+    void UpdateAI(uint32 diff) override
+    {
+        using namespace GilneasEndgame;
+
+        if (_armTimer <= diff)
+        {
+            _armTimer = 2000;
+            if (!_running && HasEligiblePlayerNearby(40.0f))
+                Arm();
+        }
+        else
+            _armTimer -= diff;
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_ENDGAME_ATTACK:
+                    Talk(SAY_LORNA_ATTACK);
+                    EngageDeckWave(178.0f, 190.0f);
+                    break;
+                case EVENT_ENDGAME_RAFTERS:
+                    Talk(SAY_LORNA_RAFTERS);
+                    break;
+                case EVENT_ENDGAME_RAPPEL:
+                    Talk(SAY_LORNA_RAPPEL);
+                    break;
+                case EVENT_ENDGAME_DESCEND:
+                    SquadDescend();
+                    break;
+                case EVENT_ENDGAME_HANDS_UP:
+                    Talk(SAY_LORNA_HANDS_UP);
+                    break;
+                case EVENT_ENDGAME_DABU:
+                    if (Creature* navigator = me->FindNearestCreature(NPC_GUNSHIP_NAVIGATOR, 100.0f))
+                        SayToBoarders(navigator, SAY_NAVIGATOR_DABU);
+                    break;
+                case EVENT_ENDGAME_DOWNSTAIRS:
+                    Talk(SAY_LORNA_DOWNSTAIRS);
+                    break;
+                case EVENT_ENDGAME_FURNACE:
+                    SayToBoarders(me, SAY_LORNA_FURNACE);
+                    ActivateKorm();
+                    _events.ScheduleEvent(EVENT_ENDGAME_KORM_POLL, 2s);
+                    break;
+                case EVENT_ENDGAME_BIG_ORC:
+                    SayToBoarders(me, SAY_LORNA_BIG_ORC);
+                    break;
+                case EVENT_ENDGAME_KORM_POLL:
+                    if (IsKormDead())
+                    {
+                        _abandonedPolls = 0;
+                        _events.ScheduleEvent(EVENT_ENDGAME_WYVERN_YELL, 750ms);
+                        _events.ScheduleEvent(EVENT_ENDGAME_LAUNCH, 3200ms);
+                        _events.ScheduleEvent(EVENT_ENDGAME_RESET, 123s);
+                    }
+                    else
+                    {
+                        if (++_kormPolls % 10 == 0)
+                            if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                                LogKorm(korm, "alive");
+                        // Nobody left to kill Korm for ~3 minutes: reset (ShatterCore :1733-1742).
+                        if (HasEligiblePlayerNearby(250.0f))
+                            _abandonedPolls = 0;
+                        else if (++_abandonedPolls >= 90)
+                        {
+                            ResetEvent();
+                            break;
+                        }
+                        _events.ScheduleEvent(EVENT_ENDGAME_KORM_POLL, 2s);
+                    }
+                    break;
+                case EVENT_ENDGAME_WYVERN_YELL:
+                    Talk(SAY_LORNA_WYVERNS);
+                    break;
+                case EVENT_ENDGAME_LAUNCH:
+                    LaunchWyverns();
+                    break;
+                case EVENT_ENDGAME_RESET:
+                    ResetEvent();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // ShatterCore gilneas_chapter_4.cpp:1760-1774 (Arm), timeline unchanged; EVENT_ENDGAME_DABU added.
+    void Arm()
+    {
+        _running = true;
+        _kormGuid.Clear();
+        _events.Reset();
+
+        _events.ScheduleEvent(EVENT_ENDGAME_ATTACK, 2100ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_RAFTERS, 63700ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_RAPPEL, 79900ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_DESCEND, 94000ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_HANDS_UP, 115600ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_DABU, 119600ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_DOWNSTAIRS, 126900ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_FURNACE, 172300ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_BIG_ORC, 183600ms);
+    }
+
+    // Wave 27 (t439 cp9): the "say" lines (40 yd) never reached the boarding player while the yells (300 yd) did. The
+    // Navigator sits 72 yd from the top deck, and a player who follows the party down to Korm is ~85 yd below Lorna,
+    // who stays on the top deck in this static version (retail: she leads the party down). So the say-type lines go to
+    // every 26706 player of the boarding (same 150 yd as LaunchWyverns), each as a personal message.
+    void SayToBoarders(Creature* speaker, uint8 group)
+    {
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, 150.0f);
+        for (Player* player : players)
+            if (player->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE)
+                sCreatureTextMgr->SendChat(speaker, group, player, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_PERSONAL);
+    }
+
+    bool HasEligiblePlayerNearby(float range) const
+    {
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, range);
+        for (Player* player : players)
+            if (player->IsAlive() && player->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE)
+                return true;
+        return false;
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1776-1797 (GetSquad, FindNearestGruntInBand).
+    void GetSquad(std::list<Creature*>& squad, float radius) const
+    {
+        me->GetCreatureListWithEntryInGrid(squad, GilneasEndgame::NPC_WORGEN_WARRIOR_SHIP, radius);
+        me->GetCreatureListWithEntryInGridAppend(squad, GilneasEndgame::NPC_GILNEAN_SHARPSHOOTER, radius);
+    }
+
+    Creature* FindNearestGruntInBand(WorldObject* from, float minZ, float maxZ) const
+    {
+        Creature* nearest = nullptr;
+        std::list<Creature*> grunts;
+        me->GetCreatureListWithEntryInGrid(grunts, GilneasEndgame::NPC_GUNSHIP_GRUNT, 120.0f);
+        for (Creature* grunt : grunts)
+        {
+            if (!grunt->IsAlive() || grunt->GetPositionZ() < minZ || grunt->GetPositionZ() > maxZ)
+                continue;
+            if (!nearest || from->GetExactDist(grunt) < from->GetExactDist(nearest))
+                nearest = grunt;
+        }
+        return nearest;
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1799-1814 (EngageDeckWave), without Lorna's own AttackStart.
+    void EngageDeckWave(float minZ, float maxZ)
+    {
+        std::list<Creature*> squad;
+        GetSquad(squad, 50.0f);
+        for (Creature* member : squad)
+        {
+            if (!member->IsAlive() || member->IsInCombat() || member->GetPositionZ() < minZ || !member->IsAIEnabled)
+                continue;
+            if (Creature* grunt = FindNearestGruntInBand(member, minZ, maxZ))
+                member->AI()->AttackStart(grunt);
+        }
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1816-1837 (SquadDescend): cosmetic rappel of up to four warriors.
+    void SquadDescend()
+    {
+        using namespace GilneasEndgame;
+
+        std::list<Creature*> warriors;
+        me->GetCreatureListWithEntryInGrid(warriors, NPC_WORGEN_WARRIOR_SHIP, 60.0f);
+        size_t slot = 0;
+        for (Creature* warrior : warriors)
+        {
+            if (slot >= sizeof(SquadMidLevelPos) / sizeof(SquadMidLevelPos[0]))
+                break;
+            if (!warrior->IsAlive() || warrior->GetPositionZ() < 170.0f)
+                continue;
+
+            warrior->AttackStop();
+            warrior->CombatStop(true);
+            Position const& pos = SquadMidLevelPos[slot];
+            warrior->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation());
+            if (Creature* grunt = FindNearestGruntInBand(warrior, 120.0f, 140.0f))
+                if (warrior->IsAIEnabled)
+                    warrior->AI()->AttackStart(grunt);
+            ++slot;
+        }
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1839-1852 (ActivateKorm). His template (unit_flags 768) keeps him
+    // IMMUNE_TO_PC|IMMUNE_TO_NPC until this beat; a respawn restores it.
+    // Wave 30 (t439 cp9): Korm stayed in the player's attacker list for 3+ min without landing a hit and 18 15-yd
+    // Shock Blasts cast 4.4 yd from his spawn missed him, so he had left the furnace room. ShatterCore also clears
+    // IMMUNE_TO_NPC, which lets the boarding squad (now standing on the deck, 2026_10_09_14) pull him away and leaves
+    // him somewhere on a deck with no navmesh. Only the player is released here: "Korm Bonegrind appears! Finish him
+    // off." (Wowpedia "Endgame (quest)" Notes). He keeps IMMUNE_TO_NPC, so only players engage him, and he
+    // waits at the furnace for one.
+    void ActivateKorm()
+    {
+        if (Creature* korm = me->FindNearestCreature(GilneasEndgame::NPC_KORM_BONEGRIND, 250.0f))
+        {
+            _kormGuid = korm->GetGUID();
+            korm->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+            korm->SetReactState(REACT_AGGRESSIVE);
+            Player* target = korm->SelectNearestPlayer(60.0f);
+            if (target && korm->IsAIEnabled)
+                korm->AI()->AttackStart(target);
+            LogKorm(korm, target ? "released, attacking the nearest player" : "released, no player within 60 yd");
+        }
+        else
+            TC_LOG_ERROR("scripts", "[#506] Endgame: no live Korm Bonegrind 43567 within 250 yd of Lorna at the furnace beat");
+    }
+
+    // Trace of where Korm is and what he does. It was an ERROR-level harness diagnostic for #506 (closed); #540 lowered it to DEBUG.
+    void LogKorm(Creature* korm, char const* what) const
+    {
+        Unit* victim = korm->GetVictim();
+        Position const& home = korm->GetHomePosition();
+        TC_LOG_DEBUG("scripts", "[#506] Endgame Korm %s: pos=%.1f,%.1f,%.1f home=%.1f yd hp=%u/%u flags=0x%X combat=%u evade=%u victim=%s",
+            what, korm->GetPositionX(), korm->GetPositionY(), korm->GetPositionZ(), korm->GetExactDist(&home),
+            korm->GetHealth(), korm->GetMaxHealth(), korm->GetUInt32Value(UNIT_FIELD_FLAGS), uint32(korm->IsInCombat()),
+            uint32(korm->IsInEvadeMode()), victim ? victim->GetName().c_str() : "-");
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1865-1879 (IsKormDead).
+    bool IsKormDead()
+    {
+        if (_kormGuid.IsEmpty())
+        {
+            if (Creature* korm = me->FindNearestCreature(GilneasEndgame::NPC_KORM_BONEGRIND, 250.0f))
+            {
+                _kormGuid = korm->GetGUID();
+                return !korm->IsAlive();
+            }
+            return true; // already killed and not yet respawned
+        }
+
+        Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid);
+        return !korm || !korm->IsAlive();
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1881-1896 (LaunchWyverns): 81779 gives the credit, summons the wyvern and
+    // seats the caster.
+    void LaunchWyverns()
+    {
+        using namespace GilneasEndgame;
+
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, 150.0f);
+        for (Player* player : players)
+        {
+            if (!player->IsAlive() || player->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_INCOMPLETE)
+                continue;
+
+            if (!player->GetVehicle())
+                player->CastSpell(player, SPELL_SUMMON_WYVERN_RIDE, true);
+            else
+                player->KilledMonsterCredit(NPC_FINALE_CREDIT);
+        }
+    }
+
+    // ShatterCore gilneas_chapter_4.cpp:1898-1914 (ResetEvent).
+    void ResetEvent()
+    {
+        std::list<Creature*> squad;
+        GetSquad(squad, 250.0f);
+        for (Creature* member : squad)
+        {
+            if (!member->IsAlive())
+                continue;
+            member->AttackStop();
+            member->CombatStop(true);
+            Position const& home = member->GetHomePosition();
+            member->NearTeleportTo(home.GetPositionX(), home.GetPositionY(), home.GetPositionZ(), home.GetOrientation());
+        }
+
+        _events.Reset();
+        _kormGuid.Clear();
+        _abandonedPolls = 0;
+        _running = false; // grunts and Korm come back through their respawn timers
+    }
+
+    EventMap _events;
+    bool _running = false;
+    uint32 _armTimer = 2000;
+    uint32 _abandonedPolls = 0;
+    uint32 _kormPolls = 0;
+    ObjectGuid _kormGuid;
+};
+
+// #506 - Wyvern 43713 (vehicle 983, summoned and ridden through 81779): loop off the ship, then the escape to Keel
+// Harbor. Port of ShatterCore npc_gilneas_endgame_wyvern (gilneas_chapter_4.cpp:1923-2014), written like the
+// hippogryph above: vehicle 983's seat can control (VEHICLE_SEAT_FLAG_CAN_CONTROL), so OnCharmed is kept and client
+// control is dropped. ShatterCore's "explosion" casts at the loop end (81928/81927) are left out: in this DBC they
+// are "Force Cast Seat 2"/"Seat 2" (a seat change), not an explosion.
+struct npc_wyvern_endgame : public ScriptedAI
+{
+    npc_wyvern_endgame(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+    void OnCharmed(bool /*apply*/) override { }
+
+    void PassengerBoarded(Unit* who, int8 /*seatId*/, bool apply) override
+    {
+        using namespace GilneasEndgame;
+
+        if (!who || who->GetTypeId() != TYPEID_PLAYER)
+            return;
+
+        if (!apply)
+        {
+            if (!_arrived)
+                me->DespawnOrUnsummon(2000);
+            return;
+        }
+
+        if (!_riderGuid.IsEmpty())
+            return;
+
+        _riderGuid = who->GetGUID();
+        who->ToPlayer()->SetClientControl(me, false);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+        me->SetSpeed(MOVE_RUN, 16.0f / 7.0f, true);
+        me->SetSpeed(MOVE_FLIGHT, 16.0f / 7.0f, true);
+
+        _scheduler.Schedule(2s, [this](TaskContext /*context*/)
+        {
+            me->GetMotionMaster()->MoveSmoothPath(POINT_WYVERN_LOOP, WyvernLoopPath, sizeof(WyvernLoopPath) / sizeof(WyvernLoopPath[0]), false, true);
+        });
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        using namespace GilneasEndgame;
+
+        if (type != EFFECT_MOTION_TYPE)
+            return;
+
+        if (pointId == POINT_WYVERN_LOOP)
+        {
+            me->SetSpeed(MOVE_RUN, 24.0f / 7.0f, true);
+            me->SetSpeed(MOVE_FLIGHT, 24.0f / 7.0f, true);
+            // Start the next spline outside this movement generator's finalize (as npc_hippogryph does).
+            _scheduler.Schedule(100ms, [this](TaskContext /*context*/)
+            {
+                me->GetMotionMaster()->MoveSmoothPath(GilneasEndgame::POINT_WYVERN_ESCAPE, GilneasEndgame::WyvernEscapePath,
+                    sizeof(GilneasEndgame::WyvernEscapePath) / sizeof(GilneasEndgame::WyvernEscapePath[0]), false, true);
+            });
+        }
+        else if (pointId == POINT_WYVERN_ESCAPE && !_arrived)
+        {
+            _arrived = true;
+            _scheduler.Schedule(500ms, [this](TaskContext /*context*/)
+            {
+                Player* rider = ObjectAccessor::GetPlayer(*me, _riderGuid);
+                if (Vehicle* kit = me->GetVehicleKit())
+                    kit->RemoveAllPassengers();
+                if (rider)
+                    rider->NearTeleportTo(GilneasEndgame::WyvernEjectPos.GetPositionX(), GilneasEndgame::WyvernEjectPos.GetPositionY(),
+                        GilneasEndgame::WyvernEjectPos.GetPositionZ(), GilneasEndgame::WyvernEjectPos.GetOrientation());
+                me->DespawnOrUnsummon(2000);
+            });
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+    }
+
+private:
+    TaskScheduler _scheduler;
+    ObjectGuid _riderGuid;
+    bool _arrived = false;
+};
+
+// ============================================================================================================
+// #483 item 3 follow-up - Stout Mountain Horse 38765, the scripted rides of 24677 "Flank the Forsaken" (Lord Hewell
+// -> Livery Outpost, path 387650) and 14465 "To Greymane Manor" (Duskhaven, path 38765,
+// alexkulya 2d4b1928 SAI). Both are summoned by 72772 (SummonProperties 161, vehicle) with the summoner seated.
+// t439 run on build 3/4 (cp11): the rider sat on the horse (PROBE vehicle=38765) and the horse never moved, with
+// the SmartAI path rows of 2026_10_04_37 in place. Vehicle 542's seat has VEHICLE_SEAT_FLAG_CAN_CONTROL (0x800,
+// VehicleSeat.dbc), so the rider charms the horse (Vehicle.cpp:604-605). This AI drives the ride itself, the way the
+// working Genn horse in this file does (OnCharmed kept, client control dropped, point-to-point movement), reading
+// the two paths from `waypoints` through SmartWaypointMgr. SQL 2026_10_04_42 binds it and drops the SAI rows.
+// ============================================================================================================
+namespace GilneasStoutMountainHorse
+{
+    enum
+    {
+        PATH_DUSKHAVEN_TO_MANOR     = 38765,    // 14465, gates at points 3 and 13
+        PATH_HEWELL_TO_LIVERY       = 387650,   // 24677
+        GO_DUSKHAVEN_GATE_1         = 196863,
+        GO_DUSKHAVEN_GATE_2         = 196864,
+        POINT_RIDE_BASE             = 1000,
+    };
+
+    Position const LordHewellPos = { -2041.39f, 975.445f, 70.1487f, 0.0f };
+}
+
+struct npc_stout_mountain_horse : public ScriptedAI
+{
+    npc_stout_mountain_horse(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+    void OnCharmed(bool /*apply*/) override { }
+
+    void PassengerBoarded(Unit* who, int8 /*seatId*/, bool apply) override
+    {
+        using namespace GilneasStoutMountainHorse;
+
+        if (!who || who->GetTypeId() != TYPEID_PLAYER)
+            return;
+
+        if (!apply)
+        {
+            if (!_arrived)
+                me->DespawnOrUnsummon(1000);
+            return;
+        }
+
+        if (_started)
+            return;
+
+        _started = true;
+        who->ToPlayer()->SetClientControl(me, false);
+        _pathId = me->GetDistance2d(LordHewellPos.GetPositionX(), LordHewellPos.GetPositionY()) < 60.0f ? PATH_HEWELL_TO_LIVERY : PATH_DUSKHAVEN_TO_MANOR;
+        _path = sSmartWaypointMgr->GetPath(_pathId);
+        if (!_path || _path->empty())
+        {
+            Finish();
+            return;
+        }
+
+        _lastPoint = 0;
+        for (auto const& node : *_path)
+            _lastPoint = std::max(_lastPoint, node.first);
+
+        _point = 1;
+        me->SetWalk(false);
+        _scheduler.Schedule(1s, [this](TaskContext /*context*/) { MoveNext(); });
+    }
+
+    void MoveNext()
+    {
+        using namespace GilneasStoutMountainHorse;
+
+        _legMs = 0;
+        auto itr = _path->find(_point);
+        if (itr == _path->end())
+        {
+            if (++_point > _lastPoint)
+                Finish();
+            else
+                MoveNext();
+            return;
+        }
+
+        WayPoint const* wp = itr->second;
+        me->GetMotionMaster()->MovePoint(POINT_RIDE_BASE + _point, wp->x, wp->y, wp->z, false);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        using namespace GilneasStoutMountainHorse;
+
+        if (type != POINT_MOTION_TYPE || !_started || _arrived || pointId != POINT_RIDE_BASE + _point)
+            return;
+
+        uint32 delayMs = 1;
+        if (_pathId == PATH_DUSKHAVEN_TO_MANOR && (_point == 3 || _point == 13))
+        {
+            if (GameObject* gate = me->FindNearestGameObject(_point == 3 ? GO_DUSKHAVEN_GATE_1 : GO_DUSKHAVEN_GATE_2, 30.0f))
+            {
+                gate->SetLootState(GO_READY);
+                gate->UseDoorOrButton();
+            }
+            delayMs = 1000;
+        }
+
+        if (++_point > _lastPoint)
+        {
+            _scheduler.Schedule(std::chrono::milliseconds(delayMs), [this](TaskContext /*context*/) { Finish(); });
+            return;
+        }
+
+        _scheduler.Schedule(std::chrono::milliseconds(delayMs), [this](TaskContext /*context*/) { MoveNext(); });
+    }
+
+    void Finish()
+    {
+        _arrived = true;
+        if (Vehicle* kit = me->GetVehicleKit())
+            kit->RemoveAllPassengers();
+        me->DespawnOrUnsummon(1500);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+
+        // Stall guard: a leg that does not finish in 20 s is re-issued (blocked spline or lost inform).
+        if (_started && !_arrived && _path)
+        {
+            _legMs += diff;
+            if (_legMs >= 20000)
+                MoveNext();
+        }
+    }
+
+private:
+    TaskScheduler _scheduler;
+    WPPath* _path = nullptr;
+    uint32 _pathId = 0;
+    uint32 _point = 0;
+    uint32 _lastPoint = 0;
+    uint32 _legMs = 0;
+    bool _started = false;
+    bool _arrived = false;
+};
+
+// ============================================================================================================
+// #478 - 24904 "The Battle for Gilneas City".
+// Intended (Wowpedia "The Battle for Gilneas City", MediaWiki API 2026-10-04): talk to Krennan Aranas ("Let us take
+// back our city!") to start the phased battle; Liam gives his speech, then leads the militia over the bridge into
+// the merchant district, on to the military district (abominations; Lorna brings the Emberstone cannons), to the
+// jail where Darius Crowley's worgen fight Gorerot (catapults), then to Greymane Court where Genn leaps at
+// Sylvanas; at 25% she wails (stun), shoots at Genn, Liam takes the arrow and dies in his father's arms. Players
+// near a leader get "Soldier of the Battle for Gilneas City" (72069). Players who accept after the start can ask
+// Krennan for a teleport to the army. Wowhead tooltip API (mop-classic, quest=24904): requirement "Battle for
+// Gilneas City Complete" (credit 38854, quest_objective 265467 in this fork).
+// Sources: mopcore gilneas.cpp:5051-5870 (ScriptNames npc_krennan_aranas,
+// npc_prince_liam_greymane_gilneas, npc_lady_sylvanas_gilneas; speech timings, summon point, finale order, spell
+// ids 72069/72113/72116/86141/68442) and the MoP 5.4.8 behaviour (Krennan
+// OnGossipSelect: 1001 start = summon Liam 38218 at the gate + SetPhaseMask(262144) + start;
+// 1003 = teleport the player to Liam while the battle runs; 1002 GM reset).
+// Liam's route exists in no data set (no script_waypoint 38218 in mopcore or this fork; mopcore's escort
+// had no waypoints), so the march is authored here: checkpoints on static spawn positions of each district
+// (merchant district crossbowmen, military district villagers/abominations, the jail, Greymane Court), walked with
+// pathfinding; each district is held until its Forsaken are cleared or a time cap runs out, so the event never
+// stalls. Credit: every player with the quest within 150 yd of Liam when he dies.
+// The fork's world already shows the battle as a static tableau in phase 262144 (73 militia, 73 crossbowmen,
+// 44 worgen, 23 abominations, Gorerot, Crowley, Sylvanas, Genn); the event runs over it.
+// ============================================================================================================
+namespace GilneasBattle
+{
+    enum
+    {
+        QUEST_THE_BATTLE_FOR_GILNEAS_CITY   = 24904,
+
+        NPC_PRINCE_LIAM_BATTLE              = 38218,
+        NPC_GILNEAN_MILITIA_BATTLE          = 38221,
+        NPC_LORNA_CROWLEY_BATTLE            = 38426,
+        NPC_GOREROT                         = 38331,
+        NPC_DARIUS_CROWLEY_BATTLE           = 38415,
+        NPC_SYLVANAS_BATTLE                 = 38469,
+        NPC_GENN_BATTLE                     = 38470,
+        NPC_BATTLE_CREDIT                   = 38854,
+        NPC_FORSAKEN_CROSSBOWMAN            = 38210,
+        NPC_VILE_ABOMINATION                = 38420,
+
+        GOSSIP_MENU_KRENNAN_BATTLE          = 11061,    // option 0 "Let us take back our city!" (BT 38484)
+        GOSSIP_ACTION_START_BATTLE          = 1001,
+        GOSSIP_ACTION_GM_RESET              = 1002,
+        GOSSIP_ACTION_JOIN_BATTLE           = 1003,
+
+        SPELL_SOLDIER_OF_GILNEAS            = 72069,
+        SPELL_BANSHEE_QUEENS_WAIL           = 72113,
+        SPELL_SHOOT_LIAM                    = 72116,
+        SPELL_GREYMANE_TRANSFORM_FX         = 86141,
+        SPELL_KNEEL                         = 68442,
+
+        PHASEMASK_BATTLE                    = 262144,
+        MILITIA_COUNT                       = 30,
+
+        // creature_text
+        SAY_LIAM_SPEECH_FIRST               = 0,        // 0..6 speech, 6 = "FOR GILNEAS!!!"
+        SAY_LIAM_SPEECH_LAST                = 6,
+        SAY_LIAM_ATTACK                     = 7,
+        SAY_LIAM_PUSH_BACK                  = 8,
+        SAY_LIAM_ABOMINATIONS               = 9,
+        SAY_LIAM_LORNA                      = 10,
+        SAY_LIAM_CROWLEY_AHEAD              = 11,
+        SAY_LIAM_FATHER                     = 12,       // added by SQL 2026_10_04_38 (BT 38369)
+        SAY_LIAM_WE_DID_IT                  = 13,       // BT 38371
+        SAY_LIAM_TOOK_BACK                  = 14,       // BT 38372
+        SAY_LORNA_CANNONS                   = 0,
+        SAY_GOREROT_CRUSH                   = 0,
+        SAY_CROWLEY_CATAPULTS               = 0,
+        SAY_CROWLEY_JOIN_FATHER             = 1,
+        SAY_GENN_BLOCK_RETREAT              = 0,
+        SAY_GENN_SYLVANAS                   = 1,
+        SAY_GENN_LIAM_NO                    = 2,
+        SAY_SYLVANAS_ENOUGH                 = 0,
+        SAY_SYLVANAS_STUBBORN               = 1,
+        SAY_SYLVANAS_WASTE                  = 2,        // added by SQL 2026_10_04_38 (BT 38370)
+
+        ACTION_START_BATTLE                 = 1,
+        ACTION_RESET_BATTLE                 = 2,
+        ACTION_START_FINALE                 = 3,
+
+        DATA_BATTLE_RUNNING                 = 1,
+        GUID_BATTLE_LIAM                    = 1,
+
+        POINT_CHECKPOINT_BASE               = 100,
+        POINT_FINALE_SHIELD                 = 200,
+    };
+
+    Position const LiamStartPos = { -1408.661f, 1260.017f, 36.51123f, 1.79f };   // mopcore gilneas.cpp:5126
+    Position const LornaCannonPos = { -1549.20f, 1285.96f, 10.48f, 3.47f };      // mopcore gilneas.cpp:5236
+    Position const SylvanasFleePos = { -1634.634f, 1631.859f, 21.21159f, 0.0f }; // mopcore gilneas.cpp:5838
+
+    struct BattleCheckpoint
+    {
+        Position Pos;
+        int8 LiamSay;            // on arrival, -1 none
+        uint32 HoldEntry;        // stay until no living creature of this entry is within HoldRadius
+        float HoldRadius;
+        uint32 MaxHoldMs;
+    };
+
+    BattleCheckpoint const Checkpoints[] =
+    {
+        { { -1487.21f, 1338.23f, 35.64f, 0.0f }, SAY_LIAM_ATTACK,        NPC_FORSAKEN_CROSSBOWMAN, 30.0f,  45000 }, // over the bridge
+        { { -1556.00f, 1327.00f, 35.64f, 0.0f }, SAY_LIAM_PUSH_BACK,     NPC_FORSAKEN_CROSSBOWMAN, 35.0f,  60000 }, // merchant district
+        { { -1606.50f, 1309.89f, 18.15f, 0.0f }, SAY_LIAM_ABOMINATIONS,  NPC_VILE_ABOMINATION,     40.0f,  90000 }, // military district
+        { { -1664.23f, 1344.06f, 15.22f, 0.0f }, SAY_LIAM_CROWLEY_AHEAD, NPC_VILE_ABOMINATION,     30.0f,  45000 },
+        { { -1710.65f, 1409.97f, 21.75f, 0.0f }, -1,                     NPC_GOREROT,              80.0f, 180000 }, // the jail
+        { { -1763.86f, 1510.76f, 26.31f, 0.0f }, -1,                     0,                         0.0f,   5000 },
+        { { -1732.65f, 1596.46f, 20.57f, 0.0f }, -1,                     0,                         0.0f,   6000 }, // Greymane Court
+        { { -1690.00f, 1615.00f, 20.50f, 0.0f }, -1,                     NPC_SYLVANAS_BATTLE,     100.0f, 120000 }, // Sylvanas
+    };
+
+    uint8 const CheckpointCount = uint8(sizeof(Checkpoints) / sizeof(Checkpoints[0]));
+    uint8 const CheckpointMilitary = 2;
+    uint8 const CheckpointJail = 4;
+    uint8 const CheckpointCourt = 6;
+    uint8 const CheckpointSylvanas = 7;
+    // t439 build 6: the march stalled in combat between checkpoints (the leg timer only ran out of combat) and the
+    // 25-min cap fired right after the 4th checkpoint. Liam now marches passive, legs are capped in or out of combat,
+    // and the cap runs from the march start: worst case 8 legs x 120 s + holds 551 s = ~25 min < 40 min.
+    uint32 const LegTimeoutMs = 120000;     // a leg that takes longer is finished by a short teleport (stall guard)
+    uint32 const BattleTimeoutMs = 2400000; // 40 min after the march starts: the battle is abandoned without credit
+}
+
+// Prince Liam Greymane 38218: the battle leader when summoned by Krennan; a plain fighter as the static spawn.
+struct npc_prince_liam_greymane_gilneas : public ScriptedAI
+{
+    npc_prince_liam_greymane_gilneas(Creature* creature) : ScriptedAI(creature), _summons(creature) { }
+
+    void Reset() override
+    {
+        if (_started)
+            return;
+        _leader = me->IsSummon();
+    }
+
+    void DoAction(int32 action) override
+    {
+        using namespace GilneasBattle;
+
+        if (action == ACTION_START_BATTLE && _leader && !_started)
+            StartBattle();
+        else if (action == ACTION_START_FINALE && _started && !_finale)
+            StartFinale();
+        else if (action == ACTION_RESET_BATTLE)
+            EndBattle(false);
+    }
+
+    uint32 GetData(uint32 type) const override
+    {
+        return type == GilneasBattle::DATA_BATTLE_RUNNING ? uint32(_started && !_ended) : 0;
+    }
+
+    void StartBattle()
+    {
+        using namespace GilneasBattle;
+
+        _started = true;
+        _battleMs = 0;
+        me->SetReactState(REACT_AGGRESSIVE);
+        DoCast(me, SPELL_SOLDIER_OF_GILNEAS, true);
+
+        // The army gathers around Liam during the speech.
+        for (uint8 i = 0; i < MILITIA_COUNT; ++i)
+        {
+            float x, y, z;
+            me->GetNearPoint(me, x, y, z, frand(3.0f, 12.0f), me->GetOrientation() + float(M_PI) + frand(-1.5f, 1.5f));
+            if (TempSummon* militia = me->SummonCreature(NPC_GILNEAN_MILITIA_BATTLE, x, y, z, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN))
+                militia->SetHomePosition(militia->GetPosition());
+        }
+
+        // Speech (mopcore timings), then the march. Players have about a minute to join.
+        uint32 delayMs = 5000;
+        uint32 const gaps[] = { 10000, 10000, 12000, 10000, 12000, 5500, 1500 };
+        for (uint8 line = SAY_LIAM_SPEECH_FIRST; line <= SAY_LIAM_SPEECH_LAST; ++line)
+        {
+            _scheduler.Schedule(std::chrono::milliseconds(delayMs), [this, line](TaskContext /*context*/) { Talk(line); });
+            delayMs += gaps[line - SAY_LIAM_SPEECH_FIRST];
+        }
+
+        _scheduler.Schedule(std::chrono::milliseconds(delayMs), [this](TaskContext /*context*/)
+        {
+            for (ObjectGuid guid : _summons)
+                if (Creature* militia = ObjectAccessor::GetCreature(*me, guid))
+                    militia->HandleEmoteCommand(EMOTE_ONESHOT_BATTLE_ROAR);
+            _marching = true;
+            _checkpoint = 0;
+            MoveToCheckpoint();
+        });
+
+        // Keep the army together and the morale aura up.
+        _scheduler.Schedule(3s, [this](TaskContext context)
+        {
+            KeepArmyTogether();
+            if (!me->HasAura(SPELL_SOLDIER_OF_GILNEAS))
+                DoCast(me, SPELL_SOLDIER_OF_GILNEAS, true);
+            if (!_ended)
+                context.Repeat(3s);
+        });
+    }
+
+    void KeepArmyTogether()
+    {
+        uint8 index = 0;
+        for (ObjectGuid guid : _summons)
+        {
+            Creature* militia = ObjectAccessor::GetCreature(*me, guid);
+            ++index;
+            if (!militia || !militia->IsAlive() || militia->IsInCombat())
+                continue;
+
+            militia->SetHomePosition(me->GetPosition());
+            if (militia->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE || !militia->IsWithinDistInMap(me, 30.0f))
+                militia->GetMotionMaster()->MoveFollow(me, 2.0f + float(index % 6) * 1.5f, float(M_PI) / 2.0f + float(index) * float(M_PI) / float(GilneasBattle::MILITIA_COUNT));
+        }
+    }
+
+    void MoveToCheckpoint(bool newLeg = true)
+    {
+        using namespace GilneasBattle;
+
+        if (_checkpoint >= CheckpointCount)
+            return;
+
+        if (newLeg)
+            _legMs = 0;
+        _holding = false;
+        // Lead the march: do not stop to duel every Forsaken on the way (the militia fight); fight at the checkpoints.
+        me->SetReactState(REACT_PASSIVE);
+        if (me->IsInCombat())
+            me->CombatStop(true);
+        me->SetWalk(false);
+        me->GetMotionMaster()->MovePoint(POINT_CHECKPOINT_BASE + _checkpoint, Checkpoints[_checkpoint].Pos);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        using namespace GilneasBattle;
+
+        if (type != POINT_MOTION_TYPE || !_marching || _holding)
+            return;
+
+        if (pointId == POINT_CHECKPOINT_BASE + _checkpoint)
+            _scheduler.Schedule(1ms, [this](TaskContext /*context*/) { ReachedCheckpoint(); });
+    }
+
+    void ReachedCheckpoint()
+    {
+        using namespace GilneasBattle;
+
+        if (_holding || _checkpoint >= CheckpointCount)
+            return;
+
+        _holding = true;
+        _holdMs = 0;
+        BattleCheckpoint const& cp = Checkpoints[_checkpoint];
+        me->SetHomePosition(me->GetPosition());
+        me->SetReactState(REACT_AGGRESSIVE);
+
+        if (cp.LiamSay >= 0)
+            Talk(uint8(cp.LiamSay));
+
+        switch (_checkpoint)
+        {
+            case CheckpointMilitary:
+                // Lorna and the Emberstone villagers roll in the cannons.
+                if (TempSummon* lorna = me->SummonCreature(NPC_LORNA_CROWLEY_BATTLE, LornaCannonPos, TEMPSUMMON_TIMED_DESPAWN, 120s))
+                {
+                    lorna->SetWalk(false);
+                    lorna->GetMotionMaster()->MoveFollow(me, 3.0f, float(M_PI) / 2.0f);
+                    ObjectGuid lornaGuid = lorna->GetGUID();
+                    _scheduler.Schedule(8s, [this, lornaGuid](TaskContext /*context*/)
+                    {
+                        if (Creature* lorna = ObjectAccessor::GetCreature(*me, lornaGuid))
+                            lorna->AI()->Talk(SAY_LORNA_CANNONS);
+                    });
+                    _scheduler.Schedule(14s, [this](TaskContext /*context*/) { Talk(SAY_LIAM_LORNA); });
+                }
+                break;
+            case CheckpointJail:
+                if (Creature* gorerot = me->FindNearestCreature(NPC_GOREROT, 80.0f))
+                    gorerot->AI()->Talk(SAY_GOREROT_CRUSH);
+                _scheduler.Schedule(4s, [this](TaskContext /*context*/)
+                {
+                    if (Creature* crowley = me->FindNearestCreature(NPC_DARIUS_CROWLEY_BATTLE, 80.0f))
+                        crowley->AI()->Talk(SAY_CROWLEY_CATAPULTS);
+                });
+                break;
+            case CheckpointCourt:
+                if (Creature* genn = me->FindNearestCreature(NPC_GENN_BATTLE, 100.0f))
+                {
+                    genn->AI()->Talk(SAY_GENN_BLOCK_RETREAT);
+                    ObjectGuid gennGuid = genn->GetGUID();
+                    _scheduler.Schedule(4s, [this, gennGuid](TaskContext /*context*/)
+                    {
+                        Creature* genn = ObjectAccessor::GetCreature(*me, gennGuid);
+                        if (!genn)
+                            return;
+                        genn->AI()->Talk(SAY_GENN_SYLVANAS);
+                        genn->CastSpell(genn, SPELL_GREYMANE_TRANSFORM_FX, true);
+                        if (Creature* sylvanas = me->FindNearestCreature(NPC_SYLVANAS_BATTLE, 120.0f))
+                            genn->AI()->AttackStart(sylvanas);
+                    });
+                }
+                break;
+            case CheckpointSylvanas:
+                if (Creature* sylvanas = me->FindNearestCreature(NPC_SYLVANAS_BATTLE, 120.0f))
+                {
+                    sylvanas->AI()->SetGUID(me->GetGUID(), GUID_BATTLE_LIAM);
+                    AttackStart(sylvanas);
+                    for (ObjectGuid guid : _summons)
+                        if (Creature* militia = ObjectAccessor::GetCreature(*me, guid))
+                            if (militia->IsAlive() && militia->GetEntry() == NPC_GILNEAN_MILITIA_BATTLE)
+                                militia->AI()->AttackStart(sylvanas);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    bool HoldOver() const
+    {
+        using namespace GilneasBattle;
+
+        BattleCheckpoint const& cp = Checkpoints[_checkpoint];
+        if (_holdMs >= cp.MaxHoldMs)
+            return true;
+        if (_holdMs < 3000)
+            return false;
+        if (!cp.HoldEntry)
+            return true;
+        return me->FindNearestCreature(cp.HoldEntry, cp.HoldRadius, true) == nullptr;
+    }
+
+    void AdvanceCheckpoint()
+    {
+        using namespace GilneasBattle;
+
+        if (_checkpoint == CheckpointJail)
+            if (Creature* crowley = me->FindNearestCreature(NPC_DARIUS_CROWLEY_BATTLE, 80.0f))
+                crowley->AI()->Talk(SAY_CROWLEY_JOIN_FATHER);
+
+        if (_checkpoint == CheckpointSylvanas)
+        {
+            // Time cap at Sylvanas: she breaks off the fight herself.
+            StartFinale();
+            return;
+        }
+
+        ++_checkpoint;
+        MoveToCheckpoint();
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        if (!_started || _ended)
+        {
+            ScriptedAI::EnterEvadeMode(why);
+            return;
+        }
+
+        // Back to the march instead of the summon point.
+        me->CombatStop(true);
+        if (_finale)
+            return;
+        if (_marching && !_holding)
+            MoveToCheckpoint(false);  // resume the same leg; its stall timer keeps running
+        else
+            me->GetMotionMaster()->MoveIdle();
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    {
+        // The leader cannot fall before the end of the battle.
+        if (_leader && !_allowDeath && me->HealthBelowPctDamaged(30, damage))
+            damage = 0;
+    }
+
+    void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
+    {
+        if (spell->Id == GilneasBattle::SPELL_SHOOT_LIAM && _finale)
+            me->SetStandState(UNIT_STAND_STATE_KNEEL);
+    }
+
+    void StartFinale()
+    {
+        using namespace GilneasBattle;
+
+        if (_finale)
+            return;
+
+        _finale = true;
+        _marching = false;
+        me->CombatStop(true);
+        me->SetReactState(REACT_PASSIVE);
+
+        Creature* sylvanas = me->FindNearestCreature(NPC_SYLVANAS_BATTLE, 150.0f);
+        Creature* genn = me->FindNearestCreature(NPC_GENN_BATTLE, 150.0f);
+        _sylvanasGuid = sylvanas ? sylvanas->GetGUID() : ObjectGuid::Empty;
+        _gennGuid = genn ? genn->GetGUID() : ObjectGuid::Empty;
+
+        for (ObjectGuid guid : _summons)
+            if (Creature* militia = ObjectAccessor::GetCreature(*me, guid))
+            {
+                militia->CombatStop(true);
+                militia->SetReactState(REACT_PASSIVE);
+            }
+
+        if (sylvanas)
+        {
+            sylvanas->AI()->DoAction(ACTION_START_FINALE);  // "Enough!", Banshee Queen's Wail, untargetable
+            if (genn)
+                genn->CombatStop(true);
+        }
+
+        _scheduler.Schedule(3s, [this](TaskContext /*context*/)
+        {
+            if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, _sylvanasGuid))
+                sylvanas->AI()->Talk(SAY_SYLVANAS_STUBBORN);
+        });
+        _scheduler.Schedule(5s, [this](TaskContext /*context*/)
+        {
+            // Liam throws himself in front of his father.
+            Talk(SAY_LIAM_FATHER);
+            Creature* genn = ObjectAccessor::GetCreature(*me, _gennGuid);
+            Creature* sylvanas = ObjectAccessor::GetCreature(*me, _sylvanasGuid);
+            if (genn && sylvanas)
+            {
+                float x = (genn->GetPositionX() + sylvanas->GetPositionX()) / 2.0f;
+                float y = (genn->GetPositionY() + sylvanas->GetPositionY()) / 2.0f;
+                me->GetMotionMaster()->MovePoint(POINT_FINALE_SHIELD, x, y, genn->GetPositionZ());
+            }
+        });
+        _scheduler.Schedule(8s, [this](TaskContext /*context*/)
+        {
+            if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, _sylvanasGuid))
+            {
+                sylvanas->SetFacingToObject(me);
+                sylvanas->CastSpell(me, SPELL_SHOOT_LIAM, true);
+            }
+            me->SetStandState(UNIT_STAND_STATE_KNEEL);
+        });
+        _scheduler.Schedule(10s, [this](TaskContext /*context*/)
+        {
+            if (Creature* sylvanas = ObjectAccessor::GetCreature(*me, _sylvanasGuid))
+            {
+                sylvanas->AI()->Talk(SAY_SYLVANAS_WASTE);
+                sylvanas->GetMotionMaster()->MovePoint(0, SylvanasFleePos);
+                sylvanas->DespawnOrUnsummon(6000);  // static spawn: back on the DB respawn timer
+            }
+            if (Creature* genn = ObjectAccessor::GetCreature(*me, _gennGuid))
+                genn->AI()->Talk(SAY_GENN_LIAM_NO);
+        });
+        _scheduler.Schedule(13s, [this](TaskContext /*context*/)
+        {
+            if (Creature* genn = ObjectAccessor::GetCreature(*me, _gennGuid))
+            {
+                genn->RemoveAurasDueToSpell(SPELL_GREYMANE_TRANSFORM_FX);
+                genn->GetMotionMaster()->MovePoint(0, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ());
+            }
+        });
+        _scheduler.Schedule(17s, [this](TaskContext /*context*/)
+        {
+            if (Creature* genn = ObjectAccessor::GetCreature(*me, _gennGuid))
+            {
+                genn->SetFacingToObject(me);
+                genn->CastSpell(genn, SPELL_KNEEL, true);
+            }
+            Talk(SAY_LIAM_WE_DID_IT);
+        });
+        _scheduler.Schedule(22s, [this](TaskContext /*context*/) { Talk(SAY_LIAM_TOOK_BACK); });
+        _scheduler.Schedule(27s, [this](TaskContext /*context*/)
+        {
+            EndBattle(true);
+            _allowDeath = true;
+            me->Kill(me);
+        });
+        _scheduler.Schedule(60s, [this](TaskContext /*context*/)
+        {
+            if (Creature* genn = ObjectAccessor::GetCreature(*me, _gennGuid))
+            {
+                genn->RemoveAurasDueToSpell(SPELL_KNEEL);
+                genn->AI()->EnterEvadeMode();
+            }
+        });
+    }
+
+    void EndBattle(bool victory)
+    {
+        using namespace GilneasBattle;
+
+        if (_ended)
+            return;
+        _ended = true;
+        _marching = false;
+
+        if (victory)
+        {
+            std::list<Player*> players;
+            me->GetPlayerListInGrid(players, 150.0f);
+            for (Player* player : players)
+                if (player->GetQuestStatus(QUEST_THE_BATTLE_FOR_GILNEAS_CITY) == QUEST_STATUS_INCOMPLETE)
+                    player->KilledMonsterCredit(NPC_BATTLE_CREDIT);
+        }
+
+        _summons.DespawnAll(victory ? 5000 : 0);
+        me->DespawnOrUnsummon(victory ? 60000 : 0);
+    }
+
+    void JustSummoned(Creature* summon) override
+    {
+        _summons.Summon(summon);
+    }
+
+    void SummonedCreatureDespawn(Creature* summon) override
+    {
+        _summons.Despawn(summon);
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        if (_leader && !_ended)
+            EndBattle(false);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        using namespace GilneasBattle;
+
+        _scheduler.Update(diff);
+
+        if (_started && !_ended)
+        {
+            if (_marching || _finale)
+                _battleMs += diff;
+            if (_battleMs >= BattleTimeoutMs)
+            {
+                EndBattle(false);
+                return;
+            }
+
+            if (_marching && !_finale)
+            {
+                if (_holding)
+                {
+                    _holdMs += diff;
+                    if (HoldOver())
+                        AdvanceCheckpoint();
+                }
+                else
+                {
+                    _legMs += diff;
+                    if (_legMs >= LegTimeoutMs)
+                    {
+                        // Stall guard: path blocked or kept in combat for too long.
+                        me->CombatStop(true);
+                        Position const& pos = Checkpoints[_checkpoint].Pos;
+                        me->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), me->GetOrientation());
+                        _scheduler.Schedule(1s, [this](TaskContext /*context*/) { ReachedCheckpoint(); });
+                        _legMs = 0;
+                    }
+                }
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    TaskScheduler _scheduler;
+    SummonList _summons;
+    ObjectGuid _sylvanasGuid;
+    ObjectGuid _gennGuid;
+    uint32 _battleMs = 0;
+    uint32 _legMs = 0;
+    uint32 _holdMs = 0;
+    uint8 _checkpoint = 0;
+    bool _leader = false;
+    bool _started = false;
+    bool _marching = false;
+    bool _holding = false;
+    bool _finale = false;
+    bool _ended = false;
+    bool _allowDeath = false;
+};
+
+// Lady Sylvanas Windrunner 38469 (static, Greymane Court): cannot be killed; at 25% (or on Liam's time cap) she
+// wails and the finale runs - only while the battle Liam is near, otherwise she just stays above 25%.
+struct npc_lady_sylvanas_gilneas : public ScriptedAI
+{
+    npc_lady_sylvanas_gilneas(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _finale = false;
+        _requestFinale = false;
+        _liamGuid.Clear();
+        me->SetReactState(REACT_AGGRESSIVE);
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+    }
+
+    void SetGUID(ObjectGuid guid, int32 id) override
+    {
+        if (id == GilneasBattle::GUID_BATTLE_LIAM)
+        {
+            _liamGuid = guid;
+            // The fork template has UNIT_FLAG_IMMUNE_TO_PC (MoP 5.4.8: 0); players join the fight once Liam arrives.
+            // The template flags come back with her respawn after the finale despawn.
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+        }
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    {
+        using namespace GilneasBattle;
+
+        if (_finale)
+        {
+            damage = 0;
+            return;
+        }
+
+        if (!me->HealthBelowPctDamaged(25, damage))
+            return;
+
+        damage = 0;
+        _requestFinale = true;  // handled in UpdateAI, not inside the damage callback
+    }
+
+    void DoAction(int32 action) override
+    {
+        using namespace GilneasBattle;
+
+        if (action != ACTION_START_FINALE || _finale)
+            return;
+
+        _finale = true;
+        me->CombatStop(true);
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+        Talk(SAY_SYLVANAS_ENOUGH);
+        DoCastAOE(SPELL_BANSHEE_QUEENS_WAIL, true);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override
+    {
+        if (_requestFinale && !_finale)
+        {
+            _requestFinale = false;
+            if (Creature* liam = ObjectAccessor::GetCreature(*me, _liamGuid))
+                if (liam->IsAlive() && liam->IsAIEnabled)
+                    liam->AI()->DoAction(GilneasBattle::ACTION_START_FINALE);
+        }
+
+        if (_finale || !UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    ObjectGuid _liamGuid;
+    bool _finale = false;
+    bool _requestFinale = false;
+};
+
+// Krennan Aranas 38553 (Livery Outpost): starts the battle, or sends late players to the army.
+class npc_krennan_aranas_battle : public CreatureScript
+{
+public:
+    npc_krennan_aranas_battle() : CreatureScript("npc_krennan_aranas") { }
+
+    struct npc_krennan_aranas_battleAI : public ScriptedAI
+    {
+        npc_krennan_aranas_battleAI(Creature* creature) : ScriptedAI(creature) { }
+
+        Creature* GetBattleLiam() const
+        {
+            Creature* liam = ObjectAccessor::GetCreature(*me, _liamGuid);
+            if (liam && liam->IsAlive() && liam->IsAIEnabled && liam->AI()->GetData(GilneasBattle::DATA_BATTLE_RUNNING))
+                return liam;
+            return nullptr;
+        }
+
+        uint32 GetData(uint32 type) const override
+        {
+            return type == GilneasBattle::DATA_BATTLE_RUNNING ? uint32(GetBattleLiam() != nullptr) : 0;
+        }
+
+        ObjectGuid GetGUID(int32 id) const override
+        {
+            if (id == GilneasBattle::GUID_BATTLE_LIAM)
+                if (Creature* liam = GetBattleLiam())
+                    return liam->GetGUID();
+            return ObjectGuid::Empty;
+        }
+
+        void DoAction(int32 action) override
+        {
+            using namespace GilneasBattle;
+
+            if (action == ACTION_START_BATTLE)
+            {
+                if (GetBattleLiam())
+                    return;
+                if (TempSummon* liam = me->SummonCreature(NPC_PRINCE_LIAM_BATTLE, LiamStartPos, TEMPSUMMON_MANUAL_DESPAWN))
+                {
+                    liam->SetPhaseMask(PHASEMASK_BATTLE, true);
+                    _liamGuid = liam->GetGUID();
+                    liam->AI()->DoAction(ACTION_START_BATTLE);
+                }
+            }
+            else if (action == ACTION_RESET_BATTLE)
+            {
+                if (Creature* liam = ObjectAccessor::GetCreature(*me, _liamGuid))
+                    liam->AI()->DoAction(ACTION_RESET_BATTLE);
+                _liamGuid.Clear();
+            }
+        }
+
+    private:
+        ObjectGuid _liamGuid;
+    };
+
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        using namespace GilneasBattle;
+
+        player->PlayerTalkClass->ClearMenus();
+        if (creature->IsQuestGiver())
+            player->PrepareQuestMenu(creature->GetGUID());
+
+        if (player->GetQuestStatus(QUEST_THE_BATTLE_FOR_GILNEAS_CITY) == QUEST_STATUS_INCOMPLETE)
+        {
+            bool running = creature->AI()->GetData(DATA_BATTLE_RUNNING) != 0;
+            player->ADD_GOSSIP_ITEM_DB(GOSSIP_MENU_KRENNAN_BATTLE, 0, GOSSIP_SENDER_MAIN, running ? GOSSIP_ACTION_JOIN_BATTLE : GOSSIP_ACTION_START_BATTLE);
+        }
+
+        if (player->IsGameMaster())
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "(GM) Reset the Battle for Gilneas City", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_GM_RESET);
+
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
+    {
+        using namespace GilneasBattle;
+
+        player->PlayerTalkClass->ClearMenus();
+        player->CLOSE_GOSSIP_MENU();
+
+        switch (action)
+        {
+            case GOSSIP_ACTION_START_BATTLE:
+                creature->AI()->DoAction(ACTION_START_BATTLE);
+                break;
+            case GOSSIP_ACTION_JOIN_BATTLE:
+                if (Creature* liam = ObjectAccessor::GetCreature(*creature, creature->AI()->GetGUID(GUID_BATTLE_LIAM)))
+                    player->NearTeleportTo(liam->GetPositionX(), liam->GetPositionY(), liam->GetPositionZ(), liam->GetOrientation());
+                break;
+            case GOSSIP_ACTION_GM_RESET:
+                if (player->IsGameMaster())
+                    creature->AI()->DoAction(ACTION_RESET_BATTLE);
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return new npc_krennan_aranas_battleAI(creature);
     }
 };
 
@@ -2308,6 +4663,10 @@ void AddSC_gilneas()
     new npc_king_genn_greymane();
     new npc_vehicle_genn_horse();
     new creature_script<npc_saved_aranas>("npc_saved_aranas");
+    new creature_script<npc_prince_liam_greymane_phase2>("npc_prince_liam_greymane_phase2");
+    new creature_script<npc_duskhaven_watchman>("npc_duskhaven_watchman");
+    new creature_script<npc_forsaken_invader>("npc_forsaken_invader");
+    new creature_script<npc_forsaken_invader>("npc_forsaken_footsoldier");
     new npc_gilneas_children("npc_james", SPELL_SAVE_JAMES, PLAYER_SAY_JAMES);
     new npc_gilneas_children("npc_ashley", SPELL_SAVE_ASHLEY, PLAYER_SAY_ASHLEY);
     new npc_gilneas_children("npc_cynthia", SPELL_SAVE_CYNTHIA, PLAYER_SAY_CYNTHIA);
@@ -2321,4 +4680,17 @@ void AddSC_gilneas()
     new npc_stagecoach_harness("npc_stagecoach_harness");
     new creature_script<npc_koroth_the_hillbreaker>("npc_koroth_the_hillbreaker");
     new go_koroth_banner("go_koroth_banner");
+    new creature_script<npc_krennan_aranas_pillory>("npc_krennan_aranas_pillory");
+    new spell_script<spell_gilneas_forcecast_worgen_intro_completion>("spell_gilneas_forcecast_worgen_intro_completion");
+    new creature_script<npc_drowning_watchman>("npc_drowning_watchman");
+    new creature_script<npc_crash_survivor>("npc_crash_survivor");
+    new creature_script<npc_tobias_mistmantle_endgame>("npc_tobias_mistmantle_endgame");
+    new npc_hippogryph_endgame();
+    new creature_script<npc_hippogryph>("npc_hippogryph");
+    new creature_script<npc_lorna_crowley_endgame>("npc_lorna_crowley_endgame");
+    new creature_script<npc_wyvern_endgame>("npc_wyvern_endgame");
+    new creature_script<npc_stout_mountain_horse>("npc_stout_mountain_horse");
+    new npc_krennan_aranas_battle();
+    new creature_script<npc_prince_liam_greymane_gilneas>("npc_prince_liam_greymane_gilneas");
+    new creature_script<npc_lady_sylvanas_gilneas>("npc_lady_sylvanas_gilneas");
 }

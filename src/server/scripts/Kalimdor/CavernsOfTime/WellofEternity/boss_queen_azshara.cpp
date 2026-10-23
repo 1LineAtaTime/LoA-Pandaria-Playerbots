@@ -148,10 +148,66 @@ class boss_queen_azshara : public CreatureScript
                 memset(addsGUIDs, 0, sizeof(addsGUIDs));
 
                 for (uint8 i = 0; i < 6; ++i)
-                    if (Creature* pAdd = me->SummonCreature(addsEntry[i], addsPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
+                    if (Creature* pAdd = me->SummonCreature(addsEntry[i], addsPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms))
                         addsGUIDs[i] = pAdd->GetGUID();
 
                 addsCount = 0;
+                handGUID.Clear();
+                ReleasePuppets();
+            }
+
+            // #695 "You are mine now!" (Wowpedia "Queen Azshara (tactics)", 2026-10-23): "Periodically, Queen Azshara will charm a
+            // random target, causing them to become a puppet. Players will be released from her control when the puppet strings are
+            // defeated." Servant of the Queen 102334 (DBC: SET_VEHICLE_ID 1745 + AOE_CHARM + immunity to all damage) goes on one
+            // player; the Hand of the Queen (54728) rides the puppet's seat (VehicleSeat 10164) and its death frees the puppet
+            // (npc_queen_azshara_hand_of_the_queen). The spell's own area target (SRC_AREA_ENEMY, 100 yd) would puppet the whole
+            // group, so the aura is added to the chosen player only. One puppet at a time.
+            void ReleasePuppets()
+            {
+                Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->GetSource())
+                        if (player->HasAura(SPELL_SERVANT_OF_THE_QUEEN))
+                            player->RemoveAurasDueToSpell(SPELL_SERVANT_OF_THE_QUEEN);
+            }
+
+            void CastServantOfTheQueen()
+            {
+                if (!handGUID.IsEmpty() && ObjectAccessor::GetCreature(*me, handGUID))
+                    return;
+                handGUID.Clear();
+
+                uint32 alive = 0;
+                Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->GetSource())
+                        if (player->IsAlive() && !player->IsGameMaster() && me->IsWithinDistInMap(player, 100.0f))
+                            ++alive;
+                if (alive < 2)  // puppeting the last player standing ends the fight on the spot
+                    return;
+
+                // not the current victim when anyone else is there (position 1 skips the top of the threat list)
+                Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 100.0f, true, -int32(SPELL_SERVANT_OF_THE_QUEEN));
+                if (!target)
+                    target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, -int32(SPELL_SERVANT_OF_THE_QUEEN));
+                Player* puppet = target ? target->ToPlayer() : nullptr;
+                if (!puppet || puppet->IsCharmed() || puppet->GetVehicle() || puppet->GetVehicleKit())
+                    return;
+
+                if (!me->AddAura(SPELL_SERVANT_OF_THE_QUEEN, puppet))
+                    return;
+
+                Talk(SAY_PUPPET);
+                if (Creature* hand = me->SummonCreature(NPC_HAND_OF_QUEEN, puppet->GetPositionX(), puppet->GetPositionY(), puppet->GetPositionZ(),
+                    puppet->GetOrientation(), TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms))
+                {
+                    handGUID = hand->GetGUID();
+                    hand->AI()->SetGUID(puppet->GetGUID());
+                    if (puppet->GetVehicleKit())
+                        hand->EnterVehicle(puppet, 0);
+                }
+                else
+                    puppet->RemoveAurasDueToSpell(SPELL_SERVANT_OF_THE_QUEEN);
             }
 
             void JustEngagedWith(Unit* /*who*/) override
@@ -170,6 +226,7 @@ class boss_queen_azshara : public CreatureScript
             {
                 Talk(SAY_WIPE);
                 addsCount = 0;
+                ReleasePuppets();
             }
 
             void AttackStart(Unit* target) override
@@ -205,10 +262,19 @@ class boss_queen_azshara : public CreatureScript
                 if (!me->IsInCombat())
                     return;
 
+                // #695: the Hand of the Queen is a summon too; only a magus counts towards the waves and the end
+                if (summon->GetEntry() == NPC_HAND_OF_QUEEN)
+                {
+                    handGUID.Clear();
+                    return;
+                }
+
                 if (summon->GetEntry() == NPC_ENCHANTED_MAGUS_FIRE ||
                     summon->GetEntry() == NPC_ENCHANTED_MAGUS_ARCANE ||
                     summon->GetEntry() == NPC_ENCHANTED_MAGUS_FROST)
                     addsCount++;
+                else
+                    return;
                 
                 if ((addsCount == 2) || (addsCount == 4))
                     events.ScheduleEvent(EVENT_ADDS_1, 6000);
@@ -260,6 +326,12 @@ class boss_queen_azshara : public CreatureScript
                                 }
                             }
                             events.ScheduleEvent(EVENT_TOTAL_OBEDIENCE, urand(10000, 20000));
+                            if (addsCount == 0)   // #695: the puppets start with the first pair of magi
+                                events.ScheduleEvent(EVENT_SERVANT_OF_THE_QUEEN, urand(15000, 25000));
+                            break;
+                        case EVENT_SERVANT_OF_THE_QUEEN:
+                            CastServantOfTheQueen();
+                            events.ScheduleEvent(EVENT_SERVANT_OF_THE_QUEEN, urand(30000, 40000));
                             break;
                         case EVENT_END:
                         {    
@@ -268,6 +340,7 @@ class boss_queen_azshara : public CreatureScript
                             instance->SetBossState(DATA_AZSHARA, DONE);
                             instance->DoRespawnGameObject(instance->GetGuidData(DATA_ROYAL_CACHE), DAY);
                             instance->DoModifyPlayerCurrencies(CURRENCY_TYPE_JUSTICE_POINTS, 7000);
+                            ReleasePuppets();   // #695
                             me->DespawnOrUnsummon();
                             break;
                         }
@@ -282,6 +355,7 @@ class boss_queen_azshara : public CreatureScript
             uint8 phase;
             ObjectGuid addsGUIDs[6];
             uint8 addsCount;
+            ObjectGuid handGUID;   // #695: the live Hand of the Queen (one puppet at a time)
         };
 
         CreatureAI* GetAI(Creature* creature) const override
@@ -373,8 +447,11 @@ class npc_queen_azshara_enchanted_magus : public CreatureScript
                             events.ScheduleEvent(EVENT_BLADES_OF_ICE, urand(12000, 20000));
                             break;
                         case EVENT_COLDFLAME:
-                            //if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
-                                //DoCast(target, SPELL_COLDFLAME);
+                            // #695: Frost Magus Coldflame (Wowpedia "Queen Azshara (tactics)": "Deals 45000 Frost damage in a line");
+                            // 102465 (1.5 s cast) + its periodic aura spell_queen_azshara_coldflame lays 102466 patches in front of
+                            // the magus (spell_script_names 102465). The cast faces the target, so the line runs at that player.
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 30.0f, true))
+                                DoCast(target, SPELL_COLDFLAME);
                             events.ScheduleEvent(EVENT_COLDFLAME, urand(16000, 25000));
                             break;
                         case EVENT_ARCANE_SHOCK:
@@ -386,8 +463,8 @@ class npc_queen_azshara_enchanted_magus : public CreatureScript
                         {
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
                             {
-                                Creature* pStalker1 = me->SummonCreature(NPC_HAMMER_OF_DIVINITY_2, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000);
-                                Creature* pStalker2 = me->SummonCreature(NPC_HAMMER_OF_DIVINITY_1, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ() + 30.0f, target->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000);
+                                Creature* pStalker1 = me->SummonCreature(NPC_HAMMER_OF_DIVINITY_2, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000ms);
+                                Creature* pStalker2 = me->SummonCreature(NPC_HAMMER_OF_DIVINITY_1, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ() + 30.0f, target->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 20000ms);
                                 
                                 if (pStalker1 && pStalker2)
                                     pStalker2->GetMotionMaster()->MovePoint(0, pStalker1->GetPositionX(), pStalker1->GetPositionY(), pStalker1->GetPositionZ()); 
@@ -450,6 +527,70 @@ class npc_queen_azshara_hammer_of_divinity : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const override
         {
             return GetInstanceAI<npc_queen_azshara_hammer_of_divinityAI>(creature);
+        }
+};
+
+// #695: the Hand of the Queen (54728) - holds the puppet's strings while it rides the puppet; killing it frees the puppet.
+class npc_queen_azshara_hand_of_the_queen : public CreatureScript
+{
+    public:
+        npc_queen_azshara_hand_of_the_queen() : CreatureScript("npc_queen_azshara_hand_of_the_queen") { }
+
+        struct npc_queen_azshara_hand_of_the_queenAI : public ScriptedAI
+        {
+            npc_queen_azshara_hand_of_the_queenAI(Creature* creature) : ScriptedAI(creature)
+            {
+                SetCombatMovement(false);
+                me->SetReactState(REACT_PASSIVE);
+                checkTimer = 2000;
+            }
+
+            void Reset() override
+            {
+                me->SetReactState(REACT_PASSIVE);
+                DoCast(me, SPELL_PUPPET_CROSS, true);
+            }
+
+            void SetGUID(ObjectGuid guid, int32 /*type*/) override
+            {
+                puppetGUID = guid;
+            }
+
+            void JustDied(Unit* /*killer*/) override
+            {
+                // setDeathState(JUST_DIED) has already taken the Hand off the puppet's seat; dropping the aura now removes the
+                // puppet's vehicle kit and the charm (HandleAuraSetVehicle / HandleCharmConvert).
+                if (Unit* puppet = ObjectAccessor::GetUnit(*me, puppetGUID))
+                    puppet->RemoveAurasDueToSpell(SPELL_SERVANT_OF_THE_QUEEN);
+                puppetGUID.Clear();
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (checkTimer > diff)
+                {
+                    checkTimer -= diff;
+                    return;
+                }
+                checkTimer = 1000;
+
+                // the puppet died, left or was released some other way (Azshara's reset/end): the strings hold nothing
+                Unit* puppet = ObjectAccessor::GetUnit(*me, puppetGUID);
+                if (!puppet || !puppet->IsAlive() || !puppet->HasAura(SPELL_SERVANT_OF_THE_QUEEN))
+                {
+                    puppetGUID.Clear();
+                    me->DespawnOrUnsummon();
+                }
+            }
+
+        private:
+            ObjectGuid puppetGUID;
+            uint32 checkTimer;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return GetInstanceAI<npc_queen_azshara_hand_of_the_queenAI>(creature);
         }
 };
 
@@ -536,6 +677,7 @@ void AddSC_boss_queen_azshara()
     new boss_queen_azshara();
     new npc_queen_azshara_enchanted_magus();
     new npc_queen_azshara_hammer_of_divinity();
+    new npc_queen_azshara_hand_of_the_queen();   // #695
     new spell_queen_azshara_coldflame();
     //new spell_queen_azshara_arcane_bomb();
 }

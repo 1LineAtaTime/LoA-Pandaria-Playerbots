@@ -1,0 +1,29 @@
+/*
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
+ * and/or modify it under version 2 of the License, or (at your option), any later version.
+ *
+ * Ported from the mod-playerbots module for AzerothCore (Ai/Base/Value/NearestAdsValue.h) into the
+ * Legends of Azeroth Pandaria fork (issue #149).
+ */
+
+#ifndef _PLAYERBOT_NEARESTADDSVALUE_H
+#define _PLAYERBOT_NEARESTADDSVALUE_H
+
+#include "PlayerbotAIConfig.h"
+#include "PossibleTargetsValue.h"
+
+class PlayerbotAI;
+
+class NearestAddsValue : public PossibleTargetsValue
+{
+public:
+    NearestAddsValue(PlayerbotAI* botAI, float range = sPlayerbotAIConfig->tooCloseDistance)
+        : PossibleTargetsValue(botAI, "nearest adds", range, true)
+    {
+    }
+
+protected:
+    bool AcceptUnit(Unit* unit) override;
+};
+
+#endif

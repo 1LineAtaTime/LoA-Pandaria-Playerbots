@@ -216,8 +216,8 @@ class npc_uncle_gao : public CreatureScript
 
             uint32 GetAddToSummonEntry(uint32 type)
             {
-                if (instance) // always uses second value, broken in 24459 FIXME
-                    return instance->GetData(type) ? yanzhuPairs[type - 3].entry_2 : yanzhuPairs[type - 3].entry_1;
+                if (instance) // #690: the dedicated brew slots (type 3..5 used to alias DATA_HOZEN_SLAIN)
+                    return instance->GetData(DATA_YANZHU_BREW + (type - 3)) ? yanzhuPairs[type - 3].entry_2 : yanzhuPairs[type - 3].entry_1;
 
                 return 0;
             }
@@ -245,7 +245,7 @@ class npc_uncle_gao : public CreatureScript
                 if (n < 0)
                     return false;
 
-                if (Creature* creature = me->SummonCreature(addStore[0], smallBrewPos[n], TEMPSUMMON_CORPSE_TIMED_DESPAWN, urand(14000, 24000)))
+                if (Creature* creature = me->SummonCreature(addStore[0], smallBrewPos[n], TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(urand(14000, 24000))))
                 {
                     currentStageGuidList.push_back(creature->GetGUID());
                     creature->CastSpell(creature, SPELL_SMALL_SPAWN);
@@ -259,7 +259,7 @@ class npc_uncle_gao : public CreatureScript
                 if (n < 0)
                     return false;
 
-                if (Creature* creature = me->SummonCreature(addStore[1], middleBrewPos[n], TEMPSUMMON_CORPSE_TIMED_DESPAWN, urand(14000, 24000)))
+                if (Creature* creature = me->SummonCreature(addStore[1], middleBrewPos[n], TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(urand(14000, 24000))))
                 {
                     currentStageGuidList.push_back(creature->GetGUID());
                     creature->CastSpell(creature, SPELL_MEDIUM_SPAWN);
@@ -273,7 +273,7 @@ class npc_uncle_gao : public CreatureScript
                 if (n < 0)
                     return false;
 
-                if (Creature* creature = me->SummonCreature(addStore[2], largeBrewPos[n], TEMPSUMMON_CORPSE_TIMED_DESPAWN, urand(14000, 24000)))
+                if (Creature* creature = me->SummonCreature(addStore[2], largeBrewPos[n], TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(urand(14000, 24000))))
                 {
                     currentStageGuidList.push_back(creature->GetGUID());
                     creature->CastSpell(creature, SPELL_LARGE_SPAWN);
@@ -515,7 +515,7 @@ class npc_uncle_gao : public CreatureScript
                                     events.CancelEvent(EVENT_UPDATE_ENCOUNTER);
 
                                     DoTalk(TALK_SUMMON_BOSS);
-                                    if (Creature* creature = me->SummonCreature(NPC_YAN_ZHU, *yanzhuPos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5 * MINUTE*IN_MILLISECONDS))
+                                    if (Creature* creature = me->SummonCreature(NPC_YAN_ZHU, *yanzhuPos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(5 * MINUTE*IN_MILLISECONDS)))
                                     {
                                         currentStageGuidList.push_back(creature->GetGUID());
                                         creature->CastSpell(creature, SPELL_LARGE_SPAWN);
@@ -749,13 +749,10 @@ class boss_yanzhu : public CreatureScript
 
             std::vector<ObjectGuid> guidsVector;
             float bubleFacing;
-            uint32 largeEventType, lowEventType;
 
             void InitializeAI() override
             {
                 SetCombatMovement(false);
-                largeEventType = EVENT_CARBONATION; // temp while wall and jumps in construction...
-                lowEventType = EVENT_BLACKOUT;
                 Reset();
             }
 
@@ -763,9 +760,24 @@ class boss_yanzhu : public CreatureScript
             {
                 _JustEngagedWith();
 
-                // Disabled until targeting type is fixed
-                /* if (me->HasAura(SPELL_SUDSY_BREW))
-                    events.ScheduleEvent(EVENT_WALL_OF_SUDS, urand(9000,17000)); */
+                // #690: Brewmastery as in retail - Uncle Gao's three picks (instance yanzhuBrew) decide the kit:
+                //   Wheat : Bloating = Bloat, Blackout = Blackout Brew   Ale : Yeasty = adds, Bubbling = Bubble Shield
+                //   Stout : Fizzy = Carbonation, Sudsy = Wall of Suds (+ Sudsy on every player so they can jump it)
+                // (they were forced to Bloat + Blackout + Carbonation, with Wall of Suds off). Wowpedia Yan-Zhu_the_Uncasked 2026-10-22.
+                if (me->HasAura(SPELL_SUDSY_BREW))
+                {
+                    events.ScheduleEvent(EVENT_WALL_OF_SUDS, urand(9000, 17000));
+                    instance->DoAddAuraOnPlayers(SPELL_SUDSY);
+                }
+
+                if (me->HasAura(SPELL_FIZZY_BREW))
+                    events.ScheduleEvent(EVENT_CARBONATION, urand(9000, 17000));
+
+                if (me->HasAura(SPELL_BLOATING_BREW))
+                    events.ScheduleEvent(EVENT_BLOAT, 8000);
+
+                if (me->HasAura(SPELL_BLACKOUT_BREW))
+                    events.ScheduleEvent(EVENT_BLACKOUT, 8000);
 
                 if (me->HasAura(SPELL_YEASTY_BREW))
                     events.ScheduleEvent(EVENT_ADDS, urand(9000, 17000));
@@ -776,12 +788,6 @@ class boss_yanzhu : public CreatureScript
                     events.ScheduleEvent(EVENT_BUBBLE_SHIELD, 6000, 14000);
                 }
 
-                events.ScheduleEvent(lowEventType, 8000);
-                events.ScheduleEvent(EVENT_BLOAT, 8000);
-                events.ScheduleEvent(largeEventType, urand(9000, 17000));
-
-                if (largeEventType == EVENT_WALL_OF_SUDS)
-                    instance->DoAddAuraOnPlayers(SPELL_SUDSY);
             }
 
             void Reset() override
@@ -840,7 +846,7 @@ class boss_yanzhu : public CreatureScript
                 return false;
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 _EnterEvadeMode();
 
@@ -904,7 +910,7 @@ class boss_yanzhu : public CreatureScript
                 Position pos = me->GetRandomNearPosition(20.f);
                 pos.m_positionZ += frand(1.5f, 3.0f);
 
-                me->SummonCreature(NPC_FIZZY_BUBBLE, pos, TEMPSUMMON_TIMED_DESPAWN, 12 * IN_MILLISECONDS);
+                me->SummonCreature(NPC_FIZZY_BUBBLE, pos, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(12 * IN_MILLISECONDS));
 
                 return DoSummonFizzyBubbles(n - 1);
             }
@@ -948,9 +954,9 @@ class boss_yanzhu : public CreatureScript
                                         itr++;
                                 }
 
-                                for (auto&& itr : me->GetThreatManager().getThreatList())
+                                for (auto&& ref : me->GetThreatManager().GetUnsortedThreatList())
                                 {
-                                    if (Unit* unit = ObjectAccessor::GetUnit(*me, (*itr).getUnitGuid()))
+                                    if (Unit* unit = ObjectAccessor::GetUnit(*me, ref->GetVictim()->GetGUID()))
                                     {
                                         if (me->GetDistance(unit) < 70.f)
                                         {
@@ -986,6 +992,19 @@ class boss_yanzhu : public CreatureScript
                         me->AddAura(SPELL_BUBBLE_SHIELD, me);
                         bubleFacing += M_PI / 4;
                         guidsVector.push_back(bubbleShield->GetGUID());
+
+                        // #690: a bubble is in nobody's threat list (it never attacks), so no bot target selection ever listed it
+                        // and the group could not "take out the bubbles" (Wowpedia strategy). Put every player on its threat list
+                        // and in combat with it: it shows up as an attacker, and (npc_bubble_shield::UpdateAI is empty) it never
+                        // evades or strikes back.
+                        for (auto&& ref : me->GetMap()->GetPlayers())
+                            if (Player* player = ref.GetSource())
+                                if (player->IsAlive() && !player->IsGameMaster() && player->GetDistance(me) < 80.0f)
+                                {
+                                    bubbleShield->SetInCombatWith(player);
+                                    player->SetInCombatWith(bubbleShield);
+                                    bubbleShield->GetThreatManager().AddThreat(player, 1.0f);
+                                }
                     }
                 }
             }
@@ -997,7 +1016,7 @@ class boss_yanzhu : public CreatureScript
 
                 Position pos = me->GetRandomNearPosition(frand(5.f, 11.f));
 
-                if (Creature* pAdd = me->SummonCreature(NPC_YEASTY_ALEMENTAL, pos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, urand(6000, 14000)))
+                if (Creature* pAdd = me->SummonCreature(NPC_YEASTY_ALEMENTAL, pos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(urand(6000, 14000))))
                 {
                     if (pAdd->AI())
                         pAdd->AI()->DoZoneInCombat();
@@ -1202,7 +1221,7 @@ class npc_sudsy_alemental : public CreatureScript
                     summon->CastSpell(summon, SPELL_SUDS_AURA, true);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->AttackStop();
                 me->CombatStop(true);
@@ -1283,7 +1302,7 @@ class npc_fizzy_alemental : public CreatureScript
 
             void Reset() override { }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->AttackStop();
                 me->CombatStop(true);
@@ -1366,7 +1385,7 @@ class npc_bloated_alemental : public CreatureScript
 
             void Reset() override { }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->AttackStop();
                 me->CombatStop(true);
@@ -1449,7 +1468,7 @@ class npc_stout_alemental : public CreatureScript
 
             void Reset() override { }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->AttackStop();
                 me->CombatStop(true);
@@ -1576,7 +1595,7 @@ class npc_bubbling_alemental : public CreatureScript
                 cosmeticEvents.ScheduleEvent(EVENT_MOVE, urand(100, 200));
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 for (auto&& guid : guidsVector)
                 {
@@ -1812,6 +1831,8 @@ class npc_bubble_shield : public CreatureScript
                 summonerGUID = summoner->GetGUID();
             }
 
+            void UpdateAI(uint32 /*diff*/) override { } // #690: no victim selection / evade / melee while it sits on a threat list
+
             void DamageTaken(Unit* /*attacker*/, uint32& damage) override
             {
                 if (damage >= me->GetHealth())
@@ -2016,6 +2037,12 @@ class spell_wall_of_suds : public SpellScriptLoader
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_wall_of_suds_SpellScript::SelectTargets, EFFECT_2, 130);
             }
         };
+
+        // #690: this loader never returned its script and was never registered (no AddSC line, no spell_script_names row).
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_wall_of_suds_SpellScript();
+        }
 };
 
 class spell_blackout_brew : public SpellScriptLoader
@@ -2093,7 +2120,7 @@ class spell_bloat_aura : public SpellScriptLoader
                     Position pos = GetOwner()->GetPosition();
                     for (int i = 0; i < 2; ++i)
                     {
-                        if (Creature* stalker = GetOwner()->SummonCreature(NPC_BLOATED_STALKER, GetOwner()->GetPositionX(), GetOwner()->GetPositionY(), GetOwner()->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 30000))
+                        if (Creature* stalker = GetOwner()->SummonCreature(NPC_BLOATED_STALKER, GetOwner()->GetPositionX(), GetOwner()->GetPositionY(), GetOwner()->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 30000ms))
                         {
                             stalker->CastSpell(GetOwner()->ToUnit(), SPELL_FORCE_VEHICLE, true);
                             stalker->CastSpell(stalker, SPELL_GUSHING_BREW, true);
@@ -2228,6 +2255,7 @@ void AddSC_boss_yanzhu()
     new spell_blackout_brew();
     new spell_bloat_aura();
     new spell_carbonation();
+    new spell_wall_of_suds(); // #690 (sql/updates/world/2026_10_23_ssb_wall_of_suds.sql)
     new spell_brew_finale_wheat_effect();
     new spell_fizzi_buble();
 }

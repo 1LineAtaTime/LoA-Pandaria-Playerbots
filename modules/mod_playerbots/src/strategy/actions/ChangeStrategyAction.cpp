@@ -2,8 +2,10 @@
 
 #include "Event.h"
 #include "Helper.h"
+#include "LastMovementValue.h"
 //#include "PlayerbotDbStore.h"
 #include "Playerbots.h"
+#include "ServerFacade.h"
 
 bool ChangeCombatStrategyAction::Execute(Event event)
 {
@@ -74,4 +76,36 @@ bool ChangeDeadStrategyAction::Execute(Event event)
     std::string const text = event.getParam();
     botAI->ChangeStrategy(text, BOT_STATE_DEAD);
     return true;
+}
+
+// Ported from AC mod-playerbots CombatActions.cpp (#149); ammo check dropped, see header comment.
+bool SwitchToMeleeAction::isUseful()
+{
+    if (bot->GetClass() == CLASS_HUNTER)
+    {
+        Unit* target = AI_VALUE(Unit*, "current target");
+        time_t lastFlee = AI_VALUE(LastMovement&, "last movement").lastFlee;
+        return botAI->HasStrategy("ranged", BOT_STATE_COMBAT) &&
+               ((bot->IsInCombat() && target &&
+                 (target->GetVictim() == bot && (!bot->GetGroup() || lastFlee) &&
+                  sServerFacade->IsDistanceLessOrEqualThan(AI_VALUE2(float, "distance", "current target"), 8.0f))) ||
+                (!bot->IsInCombat()));
+    }
+
+    return botAI->HasStrategy("ranged", BOT_STATE_COMBAT);
+}
+
+bool SwitchToRangedAction::isUseful()
+{
+    if (bot->GetClass() == CLASS_HUNTER)
+    {
+        Unit* target = AI_VALUE(Unit*, "current target");
+        return botAI->HasStrategy("close", BOT_STATE_COMBAT) &&
+               ((bot->IsInCombat() && target &&
+                 ((target->GetVictim() != bot || target->GetTarget() != bot->GetGUID()) ||
+                  sServerFacade->IsDistanceGreaterThan(AI_VALUE2(float, "distance", "current target"), 8.0f))) ||
+                (!bot->IsInCombat()));
+    }
+
+    return botAI->HasStrategy("close", BOT_STATE_COMBAT);
 }

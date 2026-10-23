@@ -343,6 +343,19 @@ class BattlegroundEY : public Battleground
         void SetFlagPicker(ObjectGuid guid) { m_FlagKeeper = guid; }
         bool IsFlagPickedup() const { return !m_FlagKeeper.IsEmpty(); }
         uint8 GetFlagState() const          { return m_FlagState; }
+
+        /// Which team currently owns a capture point, and whether it is fully captured.
+        /// Stored as a team id (compare against Player::GetBGTeam()), EY_POINT_NO_OWNER when free.
+        /// Exposed for the playerbot battleground tactics, which need to know whether a flag
+        /// carrier has anywhere to run the flag to.
+        uint32 GetPointOwnedByTeam(uint8 point) const
+        {
+            return point < EY_POINTS_MAX ? m_PointOwnedByTeam[point] : uint32(EY_POINT_NO_OWNER);
+        }
+        uint8 GetPointState(uint8 point) const
+        {
+            return point < EY_POINTS_MAX ? m_PointState[point] : uint8(EY_POINT_NO_OWNER);
+        }
         void RespawnFlag(bool send_message);
         void RespawnFlagAfterDrop();
 

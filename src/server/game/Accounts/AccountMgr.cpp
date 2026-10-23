@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -18,11 +18,21 @@
 #include "AccountMgr.h"
 #include "Config.h"
 #include "DatabaseEnv.h"
+#include "Log.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
+#include "Timer.h"
 #include "Util.h"
+#include "World.h"
 #include "WorldSession.h"
 #include "CryptoHash.h"
+
+AccountMgr::AccountMgr() { }
+
+AccountMgr::~AccountMgr()
+{
+    ClearRBAC();
+}
 
 AccountMgr* AccountMgr::instance()
 {
@@ -30,7 +40,7 @@ AccountMgr* AccountMgr::instance()
     return &instance;
 }
 
-AccountOpResult AccountMgr::CreateAccount(std::string username, std::string password, std::string email /*= ""*/, uint32 /*bnetAccountId*/ /*= 0*/, uint8 /*bnetIndex*/ /*= 0*/)
+AccountOpResult AccountMgr::CreateAccount(std::string username, std::string password, std::string email /*= ""*/, uint32 bnetAccountId /*= 0*/, uint8 bnetIndex /*= 0*/)
 {
     if (utf8length(username) > MAX_ACCOUNT_STR)
         return AccountOpResult::AOR_NAME_TOO_LONG;                           // username's too long
@@ -123,6 +133,36 @@ AccountOpResult AccountMgr::DeleteAccount(uint32 accountId)
     trans->Append(loginStmt);
 
     LoginDatabase.CommitTransaction(trans);
+
+    return AccountOpResult::AOR_OK;
+}
+
+AccountOpResult AccountMgr::ChangeUsername(uint32 accountId, std::string newUsername, std::string newPassword)
+{
+    // Check if accounts exists
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BY_ID);
+    stmt->setUInt32(0, accountId);
+    PreparedQueryResult result = LoginDatabase.Query(stmt);
+
+    if (!result)
+        return AccountOpResult::AOR_NAME_NOT_EXIST;
+
+    if (utf8length(newUsername) > MAX_ACCOUNT_STR)
+        return AccountOpResult::AOR_NAME_TOO_LONG;
+
+    if (utf8length(newPassword) > MAX_ACCOUNT_STR)
+        return AccountOpResult::AOR_PASS_TOO_LONG;
+
+    normalizeString(newUsername);
+    normalizeString(newPassword);
+
+    stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_USERNAME);
+
+    stmt->setString(0, newUsername);
+    stmt->setString(1, CalculateShaPassHash(newUsername, newPassword));
+    stmt->setUInt32(2, accountId);
+
+    LoginDatabase.Execute(stmt);
 
     return AccountOpResult::AOR_OK;
 }
@@ -328,21 +368,25 @@ bool AccountMgr::IsConsoleAccount(uint32 gmlevel)
     return gmlevel == SEC_CONSOLE;
 }
 
-void AccountMgr::UpdateAccountAccess(uint32 accountId, uint8 securityLevel, int32 realmId)
+void AccountMgr::UpdateAccountAccess(rbac::RBACData* rbac, uint32 accountId, uint8 securityLevel, int32 realmId)
 {
+    if (rbac && securityLevel != rbac->GetSecurityLevel())
+        rbac->SetSecurityLevel(securityLevel);
+
+    LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
     // Delete old security level from DB
     if (realmId == -1)
     {
         LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_ACCESS);
         stmt->setUInt32(0, accountId);
-        LoginDatabase.Execute(stmt);
+        trans->Append(stmt);
     }
     else
     {
         LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_ACCESS_BY_REALM);
         stmt->setUInt32(0, accountId);
         stmt->setUInt32(1, realmId);
-        LoginDatabase.Execute(stmt);
+        trans->Append(stmt);
     }
 
     // Add new security level
@@ -352,8 +396,138 @@ void AccountMgr::UpdateAccountAccess(uint32 accountId, uint8 securityLevel, int3
         stmt->setUInt32(0, accountId);
         stmt->setUInt8(1, securityLevel);
         stmt->setInt32(2, realmId);
-        LoginDatabase.Execute(stmt);
+        trans->Append(stmt);
     }
+
+    LoginDatabase.CommitTransaction(trans);
+}
+
+void AccountMgr::LoadRBAC()
+{
+    ClearRBAC();
+
+    TC_LOG_DEBUG("rbac", "AccountMgr::LoadRBAC");
+    uint32 oldMSTime = getMSTime();
+    uint32 count1 = 0;
+    uint32 count2 = 0;
+    uint32 count3 = 0;
+
+    TC_LOG_DEBUG("rbac", "AccountMgr::LoadRBAC: Loading permissions");
+    QueryResult result = LoginDatabase.Query("SELECT id, name FROM rbac_permissions");
+    if (!result)
+    {
+        TC_LOG_INFO("server.loading", ">> Loaded 0 account permission definitions. DB table `rbac_permissions` is empty.");
+        return;
+    }
+
+    do
+    {
+        Field* field = result->Fetch();
+        uint32 id = field[0].GetUInt32();
+        _permissions[id] = new rbac::RBACPermission(id, field[1].GetString());
+        ++count1;
+    }
+    while (result->NextRow());
+
+    TC_LOG_DEBUG("rbac", "AccountMgr::LoadRBAC: Loading linked permissions");
+    result = LoginDatabase.Query("SELECT id, linkedId FROM rbac_linked_permissions ORDER BY id ASC");
+    if (!result)
+    {
+        TC_LOG_INFO("server.loading", ">> Loaded 0 linked permissions. DB table `rbac_linked_permissions` is empty.");
+        return;
+    }
+
+    uint32 permissionId = 0;
+    rbac::RBACPermission* permission = nullptr;
+
+    do
+    {
+        Field* field = result->Fetch();
+        uint32 newId = field[0].GetUInt32();
+        if (permissionId != newId)
+        {
+            permissionId = newId;
+            permission = _permissions[newId];
+        }
+
+        uint32 linkedPermissionId = field[1].GetUInt32();
+        if (linkedPermissionId == permissionId)
+        {
+            TC_LOG_ERROR("sql.sql", "RBAC Permission %u has itself as linked permission. Ignored", permissionId);
+            continue;
+        }
+        permission->AddLinkedPermission(linkedPermissionId);
+        ++count2;
+    }
+    while (result->NextRow());
+
+    TC_LOG_DEBUG("rbac", "AccountMgr::LoadRBAC: Loading default permissions");
+    result = LoginDatabase.PQuery("SELECT secId, permissionId FROM rbac_default_permissions WHERE (realmId = %d OR realmId = -1) ORDER BY secId ASC", int32(realm.Id.Realm));
+    if (!result)
+    {
+        TC_LOG_INFO("server.loading", ">> Loaded 0 default permission definitions. DB table `rbac_default_permissions` is empty.");
+        return;
+    }
+
+    uint8 secId = 255;
+    rbac::RBACPermissionContainer* permissions = nullptr;
+    do
+    {
+        Field* field = result->Fetch();
+        uint32 newId = field[0].GetUInt32();
+        if (secId != newId || permissions == nullptr)
+        {
+            secId = newId;
+            permissions = &_defaultPermissions[secId];
+        }
+
+        permissions->insert(field[1].GetUInt32());
+        ++count3;
+    }
+    while (result->NextRow());
+
+    TC_LOG_INFO("server.loading", ">> Loaded %u permission definitions, %u linked permissions and %u default permissions in %u ms", count1, count2, count3, GetMSTimeDiffToNow(oldMSTime));
+}
+
+void AccountMgr::ClearRBAC()
+{
+    for (auto& permission : _permissions)
+        delete permission.second;
+
+    _permissions.clear();
+    _defaultPermissions.clear();
+}
+
+rbac::RBACPermission const* AccountMgr::GetRBACPermission(uint32 permissionId) const
+{
+    TC_LOG_TRACE("rbac", "AccountMgr::GetRBACPermission: %u", permissionId);
+    rbac::RBACPermissionsContainer::const_iterator it = _permissions.find(permissionId);
+    if (it != _permissions.end())
+        return it->second;
+
+    return nullptr;
+}
+
+rbac::RBACPermissionContainer const& AccountMgr::GetRBACDefaultPermissions(uint8 secLevel)
+{
+    TC_LOG_TRACE("rbac", "AccountMgr::GetRBACDefaultPermissions: secLevel %u - size: %u", secLevel, uint32(_defaultPermissions[secLevel].size()));
+    return _defaultPermissions[secLevel];
+}
+
+bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 realmId)
+{
+    if (!accountId)
+    {
+        TC_LOG_ERROR("rbac", "AccountMgr::HasPermission: Wrong accountId 0");
+        return false;
+    }
+
+    rbac::RBACData rbac(accountId, "", realmId, GetSecurity(accountId, realmId));
+    rbac.LoadFromDB();
+    bool hasPermission = rbac.HasPermission(permissionId);
+
+    TC_LOG_DEBUG("rbac", "AccountMgr::HasPermission [AccountId: %u, PermissionId: %u, realmId: %u]: %d", accountId, permissionId, realmId, hasPermission);
+    return hasPermission;
 }
 
 using GameAccountMgr = AccountMgr;
@@ -405,7 +579,24 @@ AccountOpResult Battlenet::AccountMgr::ChangePassword(uint32 accountId, std::str
     return AccountOpResult::AOR_OK;
 }
 
-AccountOpResult Battlenet::AccountMgr::LinkWithGameAccount(std::string const& /*email*/, std::string const& /*gameAccountName*/)
+bool Battlenet::AccountMgr::CheckPassword(uint32 accountId, std::string password)
+{
+    std::string username;
+
+    if (!GetName(accountId, username))
+        return false;
+
+    Utf8ToUpperOnlyLatin(username);
+    Utf8ToUpperOnlyLatin(password);
+
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_CHECK_PASSWORD);
+    stmt->setUInt32(0, accountId);
+    stmt->setString(1, CalculateShaPassHash(username, password));
+
+    return LoginDatabase.Query(stmt) != nullptr;
+}
+
+AccountOpResult Battlenet::AccountMgr::LinkWithGameAccount(std::string const& email, std::string const& gameAccountName)
 {
     /*uint32 bnetAccountId = GetId(email);
     if (!bnetAccountId)
@@ -426,7 +617,7 @@ AccountOpResult Battlenet::AccountMgr::LinkWithGameAccount(std::string const& /*
     return AccountOpResult::AOR_OK;
 }
 
-AccountOpResult Battlenet::AccountMgr::UnlinkGameAccount(std::string const& /*gameAccountName*/)
+AccountOpResult Battlenet::AccountMgr::UnlinkGameAccount(std::string const& gameAccountName)
 {
     /*uint32 gameAccountId = GameAccountMgr::GetId(gameAccountName);
     if (!gameAccountId)
@@ -466,7 +657,17 @@ bool Battlenet::AccountMgr::GetName(uint32 accountId, std::string& name)
     return false;
 }
 
-uint8 Battlenet::AccountMgr::GetMaxIndex(uint32 /*accountId*/)
+uint32 Battlenet::AccountMgr::GetIdByGameAccount(uint32 gameAccountId)
+{
+    /*PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_ACCOUNT_ID_BY_GAME_ACCOUNT);
+    stmt->setUInt32(0, gameAccountId);
+    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
+    return (*result)[0].GetUInt32();*/
+
+    return 0;
+}
+
+uint8 Battlenet::AccountMgr::GetMaxIndex(uint32 accountId)
 {
     /*PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_MAX_ACCOUNT_INDEX);
     stmt->setUInt32(0, accountId);

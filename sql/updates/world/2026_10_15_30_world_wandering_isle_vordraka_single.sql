@@ -1,0 +1,28 @@
+-- Refs #440, #468, #471 (item 4). Quest 29798 "An Ancient Evil" (Wandering Isle, map 860, area 5833): one Vordraka.
+--
+-- Intended (Wowpedia "An Ancient Evil"): kill Vordraka, the Deep Sea Nightmare
+-- (56009) with Aysa Cloudsinger's help. MoP 5.4.8 runs Jojo Ironbrow 55940 as SmartAI only (on accept: respawn the
+-- static Vordraka) and has ONE static Vordraka (guid 563145, phaseMask 2) next to Aysa (563253, phaseMask 2).
+--
+-- Fork defect: 55940 also carries ScriptName npc_jojo_ironbrow (zone_wandering_island_south.cpp), whose
+-- OnQuestAccept summons a SECOND, personal Vordraka at the same spot (TEMPSUMMON_TIMED_OR_DEAD_DESPAWN 10 min,
+-- SetExplicitSeerGuid(player), phaseMask 12). Phases in area 5833 (spell_area, this fork's quest_end semantics =
+-- "required status mask", SpellMgr.cpp:1061-1070):
+--   29798 incomplete          -> 59073 (phase 2) only: the player sees the static Vordraka; the personal one (4|8)
+--                                is invisible, never fights, never despawns early.
+--   29798 complete / rewarded -> 59074 (phase 4): the static one is phased out and the still-alive personal Vordraka
+--                                (phase 4|8, seer = the player) appears at the same spot, hostile, right after the kill.
+-- So the duplicate is real, just not during the fight: a second Vordraka shows up after the quest objective is done.
+-- Fix = MoP 5.4.8 design: drop the C++ binding, keep Jojo's SmartAI (55940 SAI row 0 already matches it) and the
+-- shared static Vordraka (spawntimesecs 60). boss_vordraka (C++, Deep Sea Rupture fixed in 465a147b) stays on 56009;
+-- its JustDied credits every player within 30 yd with 29798 incomplete, so a shared kill credits everyone.
+-- The npc_jojo_ironbrow class stays registered in the core; ScriptMgr unloads unassigned scripts silently
+-- (ScriptMgr::Initialize -> UnloadUnusedScripts), so no build is needed and no boot error is logged.
+--
+-- Test: t440 leg L7 (cansee 56009 before and after the kill, [SPELLWATCH] 117456/117287, objective 263987).
+--
+-- Rollback:
+--   UPDATE `creature_template` SET `ScriptName` = 'npc_jojo_ironbrow' WHERE `entry` = 55940;
+-- Re-runnable: plain UPDATE.
+
+UPDATE `creature_template` SET `ScriptName` = '' WHERE `entry` = 55940;

@@ -1575,6 +1575,15 @@ class BattlegroundAV : public Battleground
 
         uint32 GetPrematureWinner() override;
 
+        // Read-only accessors for the .botscenario AV adapter
+        // (precedent: 84057e0a's AB/EY accessors). No behaviour change - AC has the same shape
+        // (BattlegroundAV.h:1794-1796) except GetMineOwner returns AC's TeamId, this returns MoP's
+        // Team (ALLIANCE 469 / HORDE 67 / AV_NEUTRAL_TEAM 0).
+        BG_AV_NodeInfo const& GetAVNodeInfo(uint32 node) const { return m_Nodes[node]; }
+        bool IsCaptainAlive(uint8 index) const { return m_CaptainAlive[index]; }
+        uint32 GetMineOwner(uint8 index) const { return m_Mine_Owner[index]; }
+        int32 GetTeamReinforcements(uint8 teamIndex) const { return m_Team_Scores[teamIndex]; }
+
     private:
         void PostUpdateImpl(uint32 diff) override;
 

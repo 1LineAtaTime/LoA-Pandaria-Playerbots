@@ -27,6 +27,7 @@
 #include "ScriptMgr.h"
 #include "SpellAuras.h"
 #include "SpellMgr.h"
+#include "Spell.h"
 #include "SmartAI.h"
 #include "Guild.h"
 
@@ -49,16 +50,20 @@ char const* const ConditionMgr::StaticSourceTypeData[CONDITION_SOURCE_TYPE_MAX] 
     "Gossip Menu",
     "Gossip Menu Option",
     "Creature Vehicle",
-    "Spell Expl. Target",
+    "Spell",
     "Spell Click Event",
     "Quest Accept",
-    "Quest Show Mark",
+    "Unused", // source type 20 is unused (see ConditionSourceType enum)
     "Vehicle Spell",
     "SmartScript",
     "Npc Vendor",
     "Spell Proc",
+    "Phase Definition",
+    "Phase",
+    "Graveyard",
+    "AreaTrigger",
     "Terrain Swap",
-    "Phase"
+    "AreaTrigger Client Triggered"
 };
 
 ConditionMgr::ConditionTypeInfo const ConditionMgr::StaticConditionTypeData[CONDITION_MAX] =
@@ -864,7 +869,7 @@ std::string Condition::ToString(bool ext /*= false*/) const
     ss << "[Condition ";
     ss << "SourceType: " << SourceType;
     if (SourceType < CONDITION_SOURCE_TYPE_MAX)
-        ss << " (" << ConditionMgr::StaticSourceTypeData[SourceType] << ")";
+        ss << " (" << (ConditionMgr::StaticSourceTypeData[SourceType] ? ConditionMgr::StaticSourceTypeData[SourceType] : "Unknown") << ")";
     else
         ss << " (Unknown)";
     if (ConditionMgr::CanHaveSourceGroupSet(SourceType))
@@ -877,7 +882,7 @@ std::string Condition::ToString(bool ext /*= false*/) const
     {
         ss << ", ConditionType: " << ConditionType;
         if (ConditionType < CONDITION_MAX)
-            ss << " (" << ConditionMgr::StaticConditionTypeData[ConditionType].Name << ")";
+            ss << " (" << (ConditionMgr::StaticConditionTypeData[ConditionType].Name ? ConditionMgr::StaticConditionTypeData[ConditionType].Name : "Unknown") << ")";
         else
             ss << " (Unknown)";
     }

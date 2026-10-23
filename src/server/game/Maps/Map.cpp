@@ -16,9 +16,11 @@
 */
 
 #include "Map.h"
+#include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
 #include "Battleground.h"
 #include "BattlePetSpawnMgr.h"
 #include "CellImpl.h"
+#include "DB2Stores.h"
 #include "DisableMgr.h"
 #include "DynamicTree.h"
 #include "GridNotifiers.h"
@@ -43,6 +45,53 @@
 #include "Weather.h"
 #include "WeatherMgr.h"
 #include "G3D/Plane.h"
+#include "Config.h"
+#include "TemporarySummon.h"
+#include <mutex>
+#include <unordered_map>
+
+// #850 perf gate (build 95): the AC updatable-object list costs ~400 ms/tick on this core with 1000 bots (build 94,
+// AI relocation + visibility + waypoint pathing of ~7k patrols per old-world continent). Off by default until the
+// AC-side cost savings are ported (lag first); Map.UpdatableObjectList = 1 turns it on.
+static bool UpdatableObjectListEnabled()
+{
+    static bool const enabled = sConfigMgr->GetBoolDefault("Map.UpdatableObjectList", false);
+    return enabled;
+}
+
+// #850 cost savings for list creatures outside the cells players visit this tick ("unmarked cells"):
+//  - relocation of a same-cell move skips the AI notify / visibility task and the full terrain status (AC Map.cpp:847-865
+//    lazy status; here the next relocation inside a marked cell, or any cell change, refreshes it)
+//  - Map::UpdateNonPlayerObjects updates them every ~400 ms with the accumulated diff (staggered by guid)
+// Combat, evade, temp summons, active objects and transport passengers always keep the full per-tick path.
+static bool Map850NeedsFullRate(Creature* c)
+{
+    return c->IsInCombat() || c->HasUnitState(UNIT_STATE_EVADE) || c->ToTempSummon() || c->isActiveObject() || c->GetTransport();
+}
+
+static bool Map850InMarkedCell(Map* map, float x, float y)
+{
+    CellCoord const cc = Trinity::ComputeCellCoord(x, y);
+    return map->isCellMarked(cc.y_coord * TOTAL_NUMBER_OF_CELLS_PER_MAP + cc.x_coord);
+}
+
+static uint32 const MAP850_THROTTLE_MS = 400;
+static std::mutex sMap850ThrottleLock;
+static std::unordered_map<Map const*, std::unordered_map<ObjectGuid, uint32>> sMap850Throttle;
+
+static std::unordered_map<ObjectGuid, uint32>& Map850ThrottleOf(Map const* map)
+{
+    std::lock_guard<std::mutex> guard(sMap850ThrottleLock); // outer table only; the inner one is touched by the map's own thread
+    return sMap850Throttle[map];
+}
+
+static void Map850ThrottleErase(Map const* map, ObjectGuid guid)
+{
+    std::lock_guard<std::mutex> guard(sMap850ThrottleLock);
+    auto itr = sMap850Throttle.find(map);
+    if (itr != sMap850Throttle.end())
+        itr->second.erase(guid);
+}
 
 u_map_magic MapMagic        = { {'M','A','P','S'} };
 uint32 MapVersionMagic      = 10;
@@ -68,7 +117,22 @@ Map::~Map()
 
     sScriptMgr->OnDestroyMap(this);
 
-    UnloadAll();
+    {
+        std::lock_guard<std::mutex> guard(sMap850ThrottleLock); // #850
+        sMap850Throttle.erase(this);
+    }
+
+    // Do NOT unload here: UnloadAll() must be called (explicitly) before
+    // deleting a map. Calling it from the destructor as well leads to a
+    // double unload, where a second pass may still touch grids/ngrid
+    // references that the (already executed) parent teardown invalidated
+    // (see issue #13). All deletion sites unload explicitly first:
+    //  - MapInstanced::UnloadAll       (child maps + parent placeholder grids)
+    //  - MapInstanced::DestroyInstance (child UnloadAll + parent Map::UnloadAll)
+    //  - MapManager::UnloadAll         (base maps)
+    if (getFirst())
+        TC_LOG_ERROR("maps", "Map::~Map: map %u (instance %u) still has %u loaded grids at destruction - unloading was missed before delete",
+            GetId(), i_InstanceId, getSize());
 
     while (!i_worldObjects.empty())
     {
@@ -250,9 +314,10 @@ m_unloadTimer(0), m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
 m_VisibilityNotifyPeriod(DEFAULT_VISIBILITY_NOTIFY_PERIOD),
 m_activeNonPlayersIter(m_activeNonPlayers.end()), _transportsUpdateIter(_transports.end()),
 i_gridExpiry(expiry), debugFlexPlayersCount(0),
-i_scriptLock(false), _defaultLight(GetDefaultMapLight(id))
+i_scriptLock(false), _defaultLight(sDBCManager.GetDefaultMapLight(id))
 {
     m_parentMap = (_parent ? _parent : this);
+    _updatableObjectListRecheckTimer.SetInterval(UPDATABLE_OBJECT_LIST_RECHECK_TIMER); // #850: AC Map.cpp:77
     for (unsigned int idx=0; idx < MAX_NUMBER_OF_GRIDS; ++idx)
     {
         for (unsigned int j=0; j < MAX_NUMBER_OF_GRIDS; ++j)
@@ -319,6 +384,25 @@ void Map::AddToGrid(DynamicObject* obj, Cell const& cell)
     grid->GetGridType(cell.CellX(), cell.CellY()).AddGridObject(obj);
 
     obj->SetCurrentCell(cell);
+}
+
+// #775: corpses and bones are owned by _corpsesByCell (Map::AddCorpse) and ObjectWorldLoader::Visit(CorpseMapType&)
+// links every one of them into the grid when the grid's object data is loaded. Map::AddToMap only creates (not loads)
+// the grid of a non-active object, so a corpse/bones added to a created-but-unloaded grid was linked here AND again by
+// the loader later (GridObject::AddToGrid ASSERT). Link it here only when the grid is already loaded; otherwise the
+// loader links it exactly once. RemoveCorpse already handles a corpse that is in world but not in a grid.
+// TrinityCore 8c9ea7782a (#15684) + ec1583df67 (#15808, bones); AC Map.cpp:154-165.
+template<>
+void Map::AddToGrid(Corpse* obj, Cell const& cell)
+{
+    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
+    if (grid->isGridObjectDataLoaded())
+    {
+        if (obj->IsWorldObject())
+            grid->GetGridType(cell.CellX(), cell.CellY()).AddWorldObject(obj);
+        else
+            grid->GetGridType(cell.CellX(), cell.CellY()).AddGridObject(obj);
+    }
 }
 
 template<class T>
@@ -465,24 +549,54 @@ void Map::EnsureGridLoadedForActiveObject(Cell const& cell, WorldObject const* o
 //Create NGrid and load the object data in it
 bool Map::EnsureGridLoaded(const Cell &cell)
 {
+    // #72 perf fast path: Map::Visit (Map.h) calls this for every visited cell of an already loaded grid - every grid
+    // search, AI relocation notify, visibility pass and VisitNearbyCellsOf - and the two GridLock round trips below cost
+    // 2.1% of the Pandaria map update in the w15 profile (AC 0.5%: AC Map::Visit, Map.h:778-788, only tests
+    // IsGridLoaded and never locks on that path). Once a grid is created and its object data is claimed, nothing below
+    // can change, so return before locking. The flag only goes false -> true under GridLock (claim below), and a caller
+    // that sees it set is in the same state as one that took the lock after the claim (issue #104 race unchanged).
+    if (NGridType* loaded = getNGrid(cell.GridX(), cell.GridY()))
+        if (loaded->isGridObjectDataLoaded())
+            return false;
+
     EnsureGridCreated(GridCoord(cell.GridX(), cell.GridY()));
     NGridType *grid = getNGrid(cell.GridX(), cell.GridY());
 
     ASSERT(grid != NULL);
-    if (!isGridObjectDataLoaded(cell.GridX(), cell.GridY()))
+
+    // issue #104: two threads can reach this function for the same cell at once - a MapUpdater
+    // worker thread inside Map::Update (Player::UpdateVisibilityForPlayer -> Map::Visit -> here)
+    // and the main world thread handling a synchronous teleport/login (Map::AddToMap ->
+    // EnsureGridLoadedForActiveObject -> here, e.g. a GM using .appear). The check-then-act on
+    // isGridObjectDataLoaded/setGridObjectDataLoaded used to run unprotected, so both threads could
+    // observe "not loaded yet" and both call ObjectGridLoader::LoadN(), spawning the same creature
+    // GUID twice (see Creature::AddToWorld's [DUP] guard, which stops the crash but not the
+    // duplicate load). Claim the load atomically under GridLock, the same mutex EnsureGridCreated
+    // already uses for grid creation - setGridObjectDataLoaded has no other writer (grep-verified),
+    // so this fully closes the race. The lock is released before LoadN() runs: a creature's AI
+    // summoning another creature during LoadN() (Map::AddToMap -> EnsureGridCreated/
+    // EnsureGridLoadedForActiveObject on the same thread) would otherwise deadlock, since GridLock
+    // is a plain, non-recursive std::mutex.
+    bool needsLoad = false;
     {
-        TC_LOG_DEBUG("maps", "Loading grid[%u, %u] for map %u instance %u", cell.GridX(), cell.GridY(), GetId(), i_InstanceId);
-
-        setGridObjectDataLoaded(true, cell.GridX(), cell.GridY());
-
-        ObjectGridLoader loader(*grid, this, cell);
-        loader.LoadN();
-
-        Balance();
-        return true;
+        std::lock_guard<std::mutex> guard(GridLock);
+        if (!isGridObjectDataLoaded(cell.GridX(), cell.GridY()))
+        {
+            setGridObjectDataLoaded(true, cell.GridX(), cell.GridY());
+            needsLoad = true;
+        }
     }
 
-    return false;
+    if (!needsLoad)
+        return false;
+
+    TC_LOG_DEBUG("maps", "Loading grid[%u, %u] for map %u instance %u", cell.GridX(), cell.GridY(), GetId(), i_InstanceId);
+
+    ObjectGridLoader loader(*grid, this, cell);
+    loader.LoadN();
+
+    Balance();
+    return true;
 }
 
 void Map::LoadGrid(float x, float y)
@@ -684,6 +798,163 @@ void Map::VisitNearbyCellsOf(WorldObject* obj, TypeContainerVisitor<Trinity::Obj
     }
 }
 
+// #850: AC Map.cpp:540-581 UpdateNonPlayerObjects. AC replaced the per-cell creature visit with this list; this core keeps
+// the cell visit (VisitNearbyCellsOf, runs first) and uses the list for objects that must update outside the visited
+// cells (waypoint patrols, combat, evade, summons, formation followers, active objects). Double-update guard: an object
+// whose current cell was visited (marked) this tick was already updated by ObjectUpdater, so the list skips its Update.
+// The marked-cell set is the one VisitNearbyCellsOf/markCell built this tick; it stands in for AC's MarkNearbyCellsOf
+// pass (AC marks only on the recheck tick, here every visited cell is marked every tick).
+bool Map::WasUpdatedByCellVisit(WorldObject* obj)
+{
+    Creature* creature = obj->ToCreature();
+    if (!creature || !creature->IsInGrid())
+        return false;
+
+    CellCoord const cellCoord = creature->GetCurrentCell().GetCellCoord();
+    return isCellMarked(cellCoord.y_coord * TOTAL_NUMBER_OF_CELLS_PER_MAP + cellCoord.x_coord);
+}
+
+void Map::UpdateNonPlayerObjects(uint32 const diff)
+{
+    std::unordered_map<ObjectGuid, uint32>& throttle = Map850ThrottleOf(this);
+    // #850: update one list object. Creatures in unmarked cells that need no full rate run every MAP850_THROTTLE_MS with
+    // the accumulated diff (the accumulator starts staggered by guid so the 7k patrols do not all fall on one tick).
+    auto updateListObject = [&](WorldObject* obj)
+    {
+        if (WasUpdatedByCellVisit(obj))
+            return;
+
+        Creature* creature = obj->ToCreature();
+        if (creature && !Map850NeedsFullRate(creature))
+        {
+            auto itr = throttle.find(creature->GetGUID());
+            if (itr == throttle.end())
+                itr = throttle.emplace(creature->GetGUID(), uint32((creature->GetGUID().GetCounter() % 8) * (MAP850_THROTTLE_MS / 8))).first;
+            itr->second += diff;
+            if (itr->second < MAP850_THROTTLE_MS)
+                return;
+            uint32 const accumulated = itr->second;
+            itr->second = 0;
+            obj->Update(accumulated);
+            return;
+        }
+
+        obj->Update(diff);
+    };
+
+    for (WorldObject* obj : _pendingAddUpdatableObjectList)
+        _AddObjectToUpdateList(obj);
+    _pendingAddUpdatableObjectList.clear();
+
+    if (_updatableObjectListRecheckTimer.Passed())
+    {
+        for (uint32 i = 0; i < _updatableObjectList.size();)
+        {
+            WorldObject* obj = _updatableObjectList[i];
+            if (!obj->IsInWorld())
+            {
+                ++i;
+                continue;
+            }
+
+            updateListObject(obj);
+
+            // Update() removed obj from the world (and so from the list, swap-remove): the element now at i is
+            // a different, not yet updated object - look at the same index again (AC does not guard this).
+            if (i >= _updatableObjectList.size() || _updatableObjectList[i] != obj)
+                continue;
+
+            if (!obj->IsUpdateNeeded())
+            {
+                _RemoveObjectFromUpdateList(obj);
+                // Intentional no iteration here, obj is swapped with last element in
+                // _updatableObjectList so next loop will update that object at the same index
+            }
+            else
+                ++i;
+        }
+        _updatableObjectListRecheckTimer.Reset();
+    }
+    else
+    {
+        for (uint32 i = 0; i < _updatableObjectList.size();)
+        {
+            WorldObject* obj = _updatableObjectList[i];
+            if (!obj->IsInWorld())
+            {
+                ++i;
+                continue;
+            }
+
+            updateListObject(obj);
+
+            if (i < _updatableObjectList.size() && _updatableObjectList[i] == obj)
+                ++i;
+        }
+    }
+}
+
+// #850: AC Map.cpp:583-593
+void Map::AddObjectToPendingUpdateList(WorldObject* obj)
+{
+    if (!UpdatableObjectListEnabled())
+        return;
+
+    if (!obj->CanBeAddedToMapUpdateList())
+        return;
+
+    UpdatableMapObject* mapUpdatableObject = dynamic_cast<UpdatableMapObject*>(obj);
+    if (!mapUpdatableObject || mapUpdatableObject->GetUpdateState() != UpdatableMapObject::UpdateState::NotUpdating)
+        return;
+
+    _pendingAddUpdatableObjectList.insert(obj);
+    mapUpdatableObject->SetUpdateState(UpdatableMapObject::UpdateState::PendingAdd);
+}
+
+// Internal use only. #850: AC Map.cpp:596-605
+void Map::_AddObjectToUpdateList(WorldObject* obj)
+{
+    UpdatableMapObject* mapUpdatableObject = dynamic_cast<UpdatableMapObject*>(obj);
+    ASSERT(mapUpdatableObject && mapUpdatableObject->GetUpdateState() == UpdatableMapObject::UpdateState::PendingAdd);
+
+    mapUpdatableObject->SetUpdateState(UpdatableMapObject::UpdateState::Updating);
+    mapUpdatableObject->SetMapUpdateListOffset(_updatableObjectList.size());
+    _updatableObjectList.push_back(obj);
+}
+
+// Internal use only. #850: AC Map.cpp:607-621
+void Map::_RemoveObjectFromUpdateList(WorldObject* obj)
+{
+    UpdatableMapObject* mapUpdatableObject = dynamic_cast<UpdatableMapObject*>(obj);
+    ASSERT(mapUpdatableObject && mapUpdatableObject->GetUpdateState() == UpdatableMapObject::UpdateState::Updating);
+
+    if (obj != _updatableObjectList.back())
+    {
+        dynamic_cast<UpdatableMapObject*>(_updatableObjectList.back())->SetMapUpdateListOffset(mapUpdatableObject->GetMapUpdateListOffset());
+        std::swap(_updatableObjectList[mapUpdatableObject->GetMapUpdateListOffset()], _updatableObjectList.back());
+    }
+
+    _updatableObjectList.pop_back();
+    mapUpdatableObject->SetUpdateState(UpdatableMapObject::UpdateState::NotUpdating);
+    Map850ThrottleErase(this, obj->GetGUID()); // #850: drop the throttle accumulator
+}
+
+// #850: AC Map.cpp:623-632
+void Map::RemoveObjectFromMapUpdateList(WorldObject* obj)
+{
+    if (!obj->CanBeAddedToMapUpdateList())
+        return;
+
+    UpdatableMapObject* mapUpdatableObject = dynamic_cast<UpdatableMapObject*>(obj);
+    if (!mapUpdatableObject)
+        return;
+
+    if (mapUpdatableObject->GetUpdateState() == UpdatableMapObject::UpdateState::PendingAdd)
+        _pendingAddUpdatableObjectList.erase(obj);
+    else if (mapUpdatableObject->GetUpdateState() == UpdatableMapObject::UpdateState::Updating)
+        _RemoveObjectFromUpdateList(obj);
+}
+
 void Map::Update(const uint32 t_diff)
 {
     uint32 updateTimeMark;
@@ -704,6 +975,7 @@ void Map::Update(const uint32 t_diff)
         }
     }
     /// update active cells around players and active objects
+    _updatableObjectListRecheckTimer.Update(t_diff); // #850: AC Map.cpp:478
     resetMarkedCells();
 
     Trinity::ObjectUpdater updater(t_diff);
@@ -742,6 +1014,10 @@ void Map::Update(const uint32 t_diff)
 
         VisitNearbyCellsOf(obj, grid_object_update, world_object_update);
     }
+
+    // #850: AC Map.cpp:507 UpdateNonPlayerObjects - runs after the cell visits so it can skip what they already updated
+    if (UpdatableObjectListEnabled())
+        UpdateNonPlayerObjects(t_diff);
 
     for (_transportsUpdateIter = _transports.begin(); _transportsUpdateIter != _transports.end();)
     {
@@ -812,6 +1088,11 @@ void Map::RemovePlayerFromMap(Player* player, bool remove)
     sScriptMgr->OnPlayerLeaveMap(this, player);
 
     player->CombatStop();
+    // LoA upstream #454 (ab1a77b): CombatStop() only suppresses PvP combat. A PvP reference that survives a far teleport
+    // times out later in CombatManager::Update on the thread of the NEW map and then modifies the other player (combat,
+    // threat, auras) while that player is being updated by the thread of the OLD map. End it here, while both are still
+    // on this map.
+    player->GetCombatManager().EndAllPvPCombat();
 
     bool const inWorld = player->IsInWorld();
     player->RemoveFromWorld();
@@ -948,8 +1229,14 @@ void Map::CreatureRelocation(Creature* creature, float x, float y, float z, floa
         creature->Relocate(x, y, z, ang);
         if (creature->IsVehicle())
             creature->GetVehicleKit()->RelocatePassengers();
-        creature->OnRelocated();
-        creature->UpdatePositionData();
+        // #850 (item 2/3): a same-cell move of a creature in an unmarked cell (no player visit this tick) out of combat skips
+        // the AI relocation notify / visibility task and the full terrain status (AC lazy status, Map.cpp:847-865). Only
+        // list creatures reach here in unmarked cells (cell visits mark theirs), so with the list off nothing changes.
+        if (!UpdatableObjectListEnabled() || Map850NeedsFullRate(creature) || Map850InMarkedCell(this, x, y))
+        {
+            creature->OnRelocated();
+            creature->UpdatePositionData();
+        }
         RemoveCreatureFromMoveList(creature);
     }
 
@@ -1163,7 +1450,9 @@ void Map::MoveAllCreaturesInMoveList()
                 c->GetVehicleKit()->RelocatePassengers();
             //CreatureRelocationNotify(c, new_cell, new_cell.cellCoord());
             c->UpdatePositionData();
-            c->UpdateObjectVisibility(false);
+            // #850: unmarked destination cell, out of combat: no player can see it, skip the visibility/AI notify task
+            if (!UpdatableObjectListEnabled() || Map850NeedsFullRate(c) || Map850InMarkedCell(this, c->GetPositionX(), c->GetPositionY()))
+                c->UpdateObjectVisibility(false);
         }
         else
         {
@@ -1701,6 +1990,23 @@ void Map::UnloadAll()
 
         RemoveFromMap<Transport>(transport, true);
     }
+
+    // #776: corpses and bones are owned by the map, not the grids (ObjectGridUnloader skips CorpseMapType, "corpses are
+    // deleted with Map"), and nothing freed them here, so every unloaded instance leaked its Corpse objects.
+    // TC / AC Map::UnloadAll (AC iterates _corpsesByGrid; this core keys them by cell).
+    for (auto& cellCorpsePair : _corpsesByCell)
+    {
+        for (Corpse* corpse : cellCorpsePair.second)
+        {
+            corpse->RemoveFromWorld();
+            corpse->ResetMap();
+            delete corpse;
+        }
+    }
+
+    _corpsesByCell.clear();
+    _corpsesByPlayer.clear();
+    _corpseBones.clear();
 }
 
 Group* Map::GetInstanceGroup() const
@@ -2431,6 +2737,26 @@ ZLiquidStatus GridMap::GetLiquidStatus(float x, float y, float z, uint8 ReqLiqui
 
 inline GridMap* Map::GetGrid(float x, float y)
 {
+    // issue #105: a position outside the world (corrupt quest POI data, a random offset computed near
+    // a map edge, a bad teleport target) used to produce a grid coordinate outside the array and trip
+    // the ASSERT in Map::getNGrid, taking the worldserver down. Refuse it instead and name it once so
+    // the caller can be found; the callers of GetGrid already handle a null grid.
+    // issue #435: the plain range test let NaN through (every comparison with NaN is false), so a
+    // NaN position still reached the array and tripped the same ASSERT. Trinity::IsValidMapCoord is
+    // "finite and |c| <= MAP_HALFSIZE - 0.5", which also closes the x == -limit edge (grid index 64).
+    // AC equivalent: Map::GetGridTerrainData refuses invalid grid coordinates
+    // (MapGridManager::IsValidGridCoordinates) before EnsureGridCreated.
+    constexpr float worldLimit = MAP_HALFSIZE - 0.5f;   // +-17066.17
+    if (!Trinity::IsValidMapCoord(x, y))
+    {
+        static std::atomic<uint32> refused{0};
+        uint32 const seen = refused.fetch_add(1);
+        if (seen < 25)
+            TC_LOG_ERROR("maps", "[GRID] refused an out-of-world grid lookup on map %u at (%.1f, %.1f, limit %.1f)",
+                         GetId(), x, y, worldLimit);
+        return nullptr;
+    }
+
     // half opt method
     int gx=(int)(32-x/SIZE_OF_GRIDS);                       //grid x
     int gy=(int)(32-y/SIZE_OF_GRIDS);                       //grid y
@@ -2465,6 +2791,37 @@ float Map::GetWaterOrGroundLevel(uint32 phaseMask, float x, float y, float z, fl
     }
 
     return VMAP_INVALID_HEIGHT_VALUE;
+}
+
+/// Ported from the mod-playerbots AzerothCore fork (Map.cpp). Finds the boat/zeppelin whose model is
+/// under the given position: first the moving transports the map keeps, then a static transport GO.
+/// Playerbots call this to decide whether a bot is standing on a transport (issue #86).
+Transport* Map::GetTransportForPos(uint32 phase, float x, float y, float z, WorldObject* worldobject)
+{
+    G3D::Vector3 v(x, y, z + 2.0f);
+    G3D::Ray r(v, G3D::Vector3(0, 0, -1));
+
+    for (TransportsContainer::const_iterator itr = _transports.begin(); itr != _transports.end(); ++itr)
+        if ((*itr)->IsInWorld() && (*itr)->GetExactDist(x, y, z) < 75.0f && (*itr)->m_model)
+        {
+            float dist = 30.0f;
+            bool hit = (*itr)->m_model->intersectRay(r, dist, false, phase, VMAP::ModelIgnoreFlags::Nothing);
+            if (hit)
+                return *itr;
+        }
+
+    if (worldobject)
+        if (GameObject* staticTrans = worldobject->FindNearestGameObjectOfType(GAMEOBJECT_TYPE_TRANSPORT, 75.0f))
+            if (staticTrans->m_model)
+            {
+                float dist = 10.0f;
+                bool hit = staticTrans->m_model->intersectRay(r, dist, false, phase, VMAP::ModelIgnoreFlags::Nothing);
+                if (hit)
+                    if (GetHeight(phase, x, y, z, true, 30.0f) < (v.z - dist + 1.0f))
+                        return staticTrans->ToTransport();
+            }
+
+    return nullptr;
 }
 
 float Map::GetHeight(float x, float y, float z, bool checkVMap /*= true*/, float maxSearchDist /*= DEFAULT_HEIGHT_SEARCH*/) const
@@ -2560,7 +2917,7 @@ bool Map::IsOutdoors(float x, float y, float z) const
         return true;
 
     AreaTableEntry const* atEntry = 0;
-    WMOAreaTableEntry const* wmoEntry= GetWMOAreaTableEntryByTripple(rootId, adtId, groupId);
+    WMOAreaTableEntry const* wmoEntry = sDBCManager.GetWMOAreaTableEntryByTripple(rootId, adtId, groupId);
     if (wmoEntry)
     {
         TC_LOG_DEBUG("maps", "Got WMOAreaTableEntry! flag %u, areaid %u", wmoEntry->Flags, wmoEntry->AreaTableID);
@@ -2637,7 +2994,7 @@ uint32 Map::GetAreaId(uint32 phaseMask, float x, float y, float z) const
     if (hasVmapArea && G3D::fuzzyGe(z, vmapZ - GROUND_HEIGHT_TOLERANCE) && (G3D::fuzzyLt(z, gridMapHeight - GROUND_HEIGHT_TOLERANCE) || vmapZ > gridMapHeight))
     {
         // wmo found
-        if (WMOAreaTableEntry const* wmoEntry = GetWMOAreaTableEntryByTripple(rootId, adtId, groupId))
+        if (WMOAreaTableEntry const* wmoEntry = sDBCManager.GetWMOAreaTableEntryByTripple(rootId, adtId, groupId))
             areaId = wmoEntry->AreaTableID;
 
         if (!areaId)
@@ -2810,7 +3167,7 @@ void Map::GetFullTerrainStatusForPosition(uint32 phaseMask, float x, float y, fl
         {
             data.areaInfo.emplace(wmoData->areaInfo->adtId, wmoData->areaInfo->rootId, wmoData->areaInfo->groupId, wmoData->areaInfo->mogpFlags);
             // wmo found
-            WMOAreaTableEntry const* wmoEntry = GetWMOAreaTableEntryByTripple(wmoData->areaInfo->rootId, wmoData->areaInfo->adtId, wmoData->areaInfo->groupId);
+            WMOAreaTableEntry const* wmoEntry = sDBCManager.GetWMOAreaTableEntryByTripple(wmoData->areaInfo->rootId, wmoData->areaInfo->adtId, wmoData->areaInfo->groupId);
             data.outdoors = (wmoData->areaInfo->mogpFlags & 0x8) != 0;
             if (wmoEntry)
             {
@@ -2964,7 +3321,7 @@ bool Map::CheckGridIntegrity(T* c, bool moved) const
 
 char const* Map::GetMapName() const
 {
-    return i_mapEntry ? i_mapEntry->name[sObjectMgr->GetDBCLocaleIndex()] : "UNNAMEDMAP\x0";
+    return i_mapEntry ? i_mapEntry->name : "UNNAMEDMAP\x0";
 }
 
 void Map::UpdateObjectVisibility(WorldObject* obj, Cell cell, CellCoord cellpair)
@@ -3376,6 +3733,8 @@ InstanceMap::~InstanceMap()
 {
     delete i_data;
     i_data = NULL;
+
+    AutoBalance::OnInstanceDestroyed(GetInstanceId());  // #702: drop the instance's level-scaling state (no-op when unused)
 }
 
 void InstanceMap::InitVisibilityDistance()
@@ -3581,6 +3940,9 @@ bool InstanceMap::AddPlayerToMap(Player* player)
     // this will acquire the same mutex so it cannot be in the previous block
     Map::AddPlayerToMap(player);
 
+    // #702: AutoBalance tracks the highest player level of the instance (returns at once when the feature is off)
+    AutoBalance::OnPlayerEnterInstance(this, player);
+
     if (i_data)
         i_data->OnPlayerEnter(player);
 
@@ -3610,6 +3972,9 @@ void InstanceMap::RemovePlayerFromMap(Player* player, bool remove)
 
     if (i_data)
         i_data->OnPlayerLeave(player);
+
+    // #702: AutoBalance tracks the highest player level of the instance (returns at once when the feature is off)
+    AutoBalance::OnPlayerLeaveInstance(this, player);
 
     m_stillInMapPlayers.erase(player->GetGUID());
 
@@ -3784,7 +4149,7 @@ void InstanceMap::SetResetSchedule(bool on)
 
 MapDifficulty const* Map::GetMapDifficulty() const
 {
-    return GetMapDifficultyData(GetId(), GetDifficulty());
+    return sDBCManager.GetMapDifficultyData(GetId(), GetDifficulty());
 }
 
 uint32 InstanceMap::GetMaxPlayers() const
@@ -3795,7 +4160,7 @@ uint32 InstanceMap::GetMaxPlayers() const
             return mapDiff->maxPlayers;
         else                                                // DBC have 0 maxplayers for heroic instances with expansion < 2
         {                                                   // The heroic entry exists, so we don't have to check anything, simply return normal max players
-            MapDifficulty const* normalDiff = GetMapDifficultyData(GetId(), REGULAR_DIFFICULTY);
+            MapDifficulty const* normalDiff = sDBCManager.GetMapDifficultyData(GetId(), REGULAR_DIFFICULTY);
             return normalDiff ? normalDiff->maxPlayers : 0;
         }
     }
@@ -4382,9 +4747,12 @@ void Map::SetZoneOverrideLight(uint32 zoneId, uint32 areaLightId, uint32 overrid
 
 bool Map::HasEnoughWater(WorldObject const* searcher, float x, float y, float z) const
 {
-    LiquidData* liquidData = nullptr;
-    ZLiquidStatus status = GetLiquidStatus(searcher->GetPhaseMask(), x, y, z, MAP_ALL_LIQUIDS, liquidData, searcher->GetCollisionHeight());
-    return (status & LIQUID_MAP_UNDER_WATER) != 0 && HasEnoughWater(searcher, liquidData);
+    // GetLiquidStatus only fills `data` when it is non-null, so pass a real
+    // LiquidData here. The previous null pointer was dereferenced by the
+    // overload below whenever the position was underwater (ACCESS_VIOLATION).
+    LiquidData liquidData;
+    ZLiquidStatus status = GetLiquidStatus(searcher->GetPhaseMask(), x, y, z, MAP_ALL_LIQUIDS, &liquidData, searcher->GetCollisionHeight());
+    return (status & LIQUID_MAP_UNDER_WATER) != 0 && HasEnoughWater(searcher, &liquidData);
 }
 
 bool Map::HasEnoughWater(WorldObject const* searcher, const LiquidData* liquidData) const
@@ -4511,7 +4879,12 @@ bool Map::CheckCollisionAndGetValidCoords(WorldObject const* source, float start
 
     // Use a detour raycast to get our first collision point
     path.SetUseRaycast(true);
-    bool result = path.CalculatePath(destX, destY, destZ, false);
+    // issue #61: this used to always ray from source->GetPosition() regardless of the startX/Y/Z
+    // this function was given, so a caller checking a specific path segment (e.g. waypoint N ->
+    // N+1, with startX/Y/Z being waypoint N, not the bot's current position) got the ray from the
+    // wrong point - crossing walls/corners the real segment never goes near in city geometry, and
+    // returning a bogus "blocked" stop point near the bot itself that made it reverse direction.
+    bool result = path.CalculatePath(startX, startY, startZ, destX, destY, destZ, false);
 
     Unit const* unit = source->ToUnit();
     bool notOnGround = path.GetPathType() & PATHFIND_NOT_USING_PATH

@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -363,8 +363,8 @@ private:
         Member(uint32 guildId, ObjectGuid guid, uint8 rankId):
             m_guildId(guildId),
             m_guid(guid),
-            m_logoutTime(::time(nullptr)),
-            m_rankId(rankId)
+            m_rankId(rankId),
+            m_logoutTime(::time(nullptr))
         {
             memset(m_bankWithdraw, 0, (GUILD_BANK_MAX_TABS + 1) * sizeof(int32));
         }
@@ -907,6 +907,8 @@ public:
     // Guild leveling
     uint8 GetLevel() const { return _level; }
     void GiveXP(uint32 xp, Player* source);
+    // applies the guild XP queued by GiveXP(); world thread only (World::Update, after the maps) - LoA upstream #455
+    static void ProcessPendingXP();
     uint64 GetExperience() const { return _experience; }
 
     void AddGuildNews(uint8 type, ObjectGuid guid, uint32 flags, uint32 value);
@@ -929,6 +931,7 @@ public:
     uint64 GetBankMoney() const { return m_bankMoney; }
 
     void LevelUp(uint32 oldLevel, Player *source);
+    void ApplyXP(uint32 xp, Player* source);
 
 protected:
     ObjectGuid::LowType m_id;

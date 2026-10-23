@@ -10,6 +10,7 @@
 
 #include "AiObject.h"
 
+#include "PerformanceMonitor.h"  // AC Value.h:13 (#72 pmon "Value" category)
 #include "Timer.h"
 #include "Unit.h"
 
@@ -69,13 +70,11 @@ public:
 
     T Get() override
     {
+        // #72: AC Value.h:69-84 / 95-110 - PerfMonitorScope on the cached PerformanceData.
         if (checkInterval < 2)
         {
-            // PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_VALUE, this->getName(),
-            // this->context ? &this->context->performanceStack : nullptr);
+            PerfMonitorScope scope(GetPerfData());
             value = Calculate();
-            // if (pmo)
-            //     pmo->finish();
         }
         else
         {
@@ -83,11 +82,8 @@ public:
             if (!lastCheckTime || now - lastCheckTime >= checkInterval)
             {
                 lastCheckTime = now;
-                // PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_VALUE, this->getName(),
-                // this->context ? &this->context->performanceStack : nullptr);
+                PerfMonitorScope scope(GetPerfData());
                 value = Calculate();
-                // if (pmo)
-                //     pmo->finish();
             }
         }
         return value;
@@ -102,13 +98,11 @@ public:
     }
     T& RefGet() override
     {
+        // #72: AC Value.h:69-84 / 95-110 - PerfMonitorScope on the cached PerformanceData.
         if (checkInterval < 2)
         {
-            // PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_VALUE, this->getName(),
-            // this->context ? &this->context->performanceStack : nullptr);
+            PerfMonitorScope scope(GetPerfData());
             value = Calculate();
-            // if (pmo)
-            //     pmo->finish();
         }
         else
         {
@@ -116,11 +110,8 @@ public:
             if (!lastCheckTime || now - lastCheckTime >= checkInterval)
             {
                 lastCheckTime = now;
-                // PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_VALUE, this->getName(),
-                // this->context ? &this->context->performanceStack : nullptr);
+                PerfMonitorScope scope(GetPerfData());
                 value = Calculate();
-                // if (pmo)
-                //     pmo->finish();
             }
         }
         return value;
@@ -132,9 +123,22 @@ public:
 protected:
     virtual T Calculate() = 0;
 
+    // AC Value.h:126-134
+    PerformanceData* GetPerfData()
+    {
+        if (!PerformanceMonitor::IsEnabled())
+            return nullptr;
+
+        if (!perfData)
+            perfData = sPerformanceMonitor->acquire(PERF_MON_VALUE, getName());
+
+        return perfData;
+    }
+
     uint32 checkInterval;
     uint32 lastCheckTime;
     T value;
+    PerformanceData* perfData = nullptr;
 };
 
 template <class T>
@@ -152,6 +156,7 @@ public:
         if (!this->lastCheckTime)
         {
             this->lastCheckTime = now;
+            PerfMonitorScope scope(this->GetPerfData());  // AC Value.h:155
             this->value = this->Calculate();
         }
 

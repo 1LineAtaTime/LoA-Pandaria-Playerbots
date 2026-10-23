@@ -6,11 +6,14 @@
 #ifndef _PLAYERBOT_ITEMVISITORS_H
 #define _PLAYERBOT_ITEMVISITORS_H
 
+// #335. ItemIds used to be typedef'd here as well as in ChatHelper.h; both were `std::set<uint32>`, so
+// it was legal but a trap - if either copy ever changed, callers would silently keep the other meaning.
+// Retired in AC's favour: AC declares ItemIds only at Bot/Cmd/ChatHelper.h:25 and gets it here by
+// including that header (AC Mgr/Item/ItemVisitors.h:10), which is exactly what this include does.
+// #341: SpellIds followed ItemIds - it is declared only in ChatHelper.h now (AC Bot/Cmd/ChatHelper.h:26).
+#include "ChatHelper.h"
 #include "Common.h"
 #include "Item.h"
-
-typedef std::set<uint32> ItemIds;
-typedef std::set<uint32> SpellIds;
 
 class AiObjectContext;
 class Player;

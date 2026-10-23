@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ObjectMgr.h"
+#include "ScriptMgr.h"
 #include "MapManager.h"
 #include "timeless_isle.h"
 
@@ -156,7 +157,8 @@ class boss_chi_ji : public CreatureScript
                     me->SetHealth(391000000/*me->GetMaxHealth()*/);
 
                     me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                    me->DeleteThreatList();
+                    me->GetThreatManager().RemoveMeFromThreatLists();
+                    me->GetThreatManager().ClearAllThreat();
 
                     events.Reset();
                     summons.DespawnAll();
@@ -183,7 +185,7 @@ class boss_chi_ji : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->AddUnitState(UNIT_STATE_EVADE);
 
@@ -362,7 +364,7 @@ struct npc_child_of_chi_ji : public ScriptedAI
         me->setActive(true);
 
         scheduler
-            .Schedule(Milliseconds(500), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(500), [this](TaskContext context)
         {
             DoCast(me, SPELL_BLAZING_NOVA);
 
@@ -375,7 +377,7 @@ struct npc_child_of_chi_ji : public ScriptedAI
         });
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void UpdateAI(uint32 diff) override
     {

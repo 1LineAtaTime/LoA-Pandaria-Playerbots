@@ -19,6 +19,7 @@
 #include "ScriptedCreature.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "ScriptedEscortAI.h"
 #include "CreatureAI.h"
 #include "MoveSplineInit.h"
 #include "SpellScript.h"
@@ -548,9 +549,9 @@ class npc_arena_of_annihiliation_flamecoaxing_spirit : public CreatureScript
             EVENT_PUSH_WAVE = 2,
         };
 
-        struct npc_arena_of_annihiliation_flamecoaxing_spiritAI : public CreatureAI
+        struct npc_arena_of_annihiliation_flamecoaxing_spiritAI : public ScriptedAI
         {
-            npc_arena_of_annihiliation_flamecoaxing_spiritAI(Creature* creature) : CreatureAI(creature) { }
+            npc_arena_of_annihiliation_flamecoaxing_spiritAI(Creature* creature) : ScriptedAI(creature) { }
 
             EventMap events;
             InstanceScript* instance;
@@ -667,9 +668,9 @@ class npc_arena_of_annihiliation_flame_wall : public CreatureScript
             EVENT_MOVE = 1,
         };
 
-        struct npc_arena_of_annihiliation_flame_wallAI : public CreatureAI
+        struct npc_arena_of_annihiliation_flame_wallAI : public ScriptedAI
         {
-            npc_arena_of_annihiliation_flame_wallAI(Creature* creature) : CreatureAI(creature) { }
+            npc_arena_of_annihiliation_flame_wallAI(Creature* creature) : ScriptedAI(creature) { }
 
             EventMap events;
             InstanceScript* instance;
@@ -1220,8 +1221,8 @@ class spell_arena_of_annihiliation_headbutt : public SpellScript
                 // We should select new target as victim after headbutt current
                 if (Player* itr = Trinity::Containers::SelectRandomContainerElement(PlayersInArea))
                 {
-                    caster->GetThreatManager().resetAllAggro();
-                    caster->GetThreatManager().addThreat(itr, 100.0f);
+                    caster->GetThreatManager().ResetAllThreat();
+                    caster->GetThreatManager().AddThreat(itr, 100.0f);
                     caster->AI()->AttackStart(itr);
                 }
             }

@@ -216,7 +216,7 @@ class boss_dark_animus : public CreatureScript
 
                     scheduler
                         .SetValidator([this] { return instance && instance->GetBossState(DATA_DARK_ANIMUS) == IN_PROGRESS; })
-                        .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                        .Schedule(Seconds(2), [this](TaskContext context)
                     {
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                         me->SetReactState(REACT_AGGRESSIVE);
@@ -257,7 +257,7 @@ class boss_dark_animus : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (atEvade)
                     return;
@@ -450,14 +450,15 @@ class npc_anima_orb : public CreatureScript
                 me->DisappearAndDie();
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (atEvade)
                     return;
 
                 atEvade = true;
 
-                me->DeleteThreatList();
+                me->GetThreatManager().RemoveMeFromThreatLists();
+                me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(true);
 
                 summons.DespawnAll();
@@ -674,7 +675,7 @@ struct golemsBaseAI : public ScriptedAI
 
             scheduler
                 .SetValidator([this] { return instance && instance->GetBossState(DATA_DARK_ANIMUS) == IN_PROGRESS; })
-                .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                .Schedule(Seconds(2), [this](TaskContext context)
             {
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED);
                 me->SetReactState(REACT_AGGRESSIVE);
@@ -699,7 +700,7 @@ struct golemsBaseAI : public ScriptedAI
         }
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         if (atEvade)
             return;
@@ -712,7 +713,8 @@ struct golemsBaseAI : public ScriptedAI
         if (!me->IsAlive())
             me->Respawn();
 
-        me->DeleteThreatList();
+        me->GetThreatManager().RemoveMeFromThreatLists();
+        me->GetThreatManager().ClearAllThreat();
         me->CombatStop(true);
 
         uint32 corpseDelay = me->GetCorpseDelay();
@@ -1563,7 +1565,7 @@ class spell_threat_proc_eff : public SpellScript
     {
         if (Unit* caster = GetCaster())
             if (Unit* target = GetHitUnit())
-                target->AddThreat(caster, 1000000.0f);
+                target->GetThreatManager().AddThreat(caster, 1000000.0f);
     }
 
     void Register() override

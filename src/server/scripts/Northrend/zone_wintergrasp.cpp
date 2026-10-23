@@ -19,6 +19,7 @@
 #include "BattlefieldWG.h"
 #include "Battlefield.h"
 #include "ScriptSystem.h"
+#include "WorldSession.h"
 #include "ObjectMgr.h"
 #include "Vehicle.h"
 #include "GameObjectAI.h"
@@ -470,6 +471,17 @@ class spell_wintergrasp_force_building : public SpellScriptLoader
         }
 };
 
+// #207: Kezan's Hot Rod (quest 14071 "Rolling with my Homies"). File-local so no shared
+// header - and therefore no core-wide rebuild - is needed for the two-file contract below.
+namespace
+{
+    uint32 const HOT_ROD_CREATURE = 34840;
+
+    // CreatureAI::DoAction carries no arguments, so the wire format is the number itself.
+    // Must stay equal to ACTION_GRAB_PASSENGER in src/server/scripts/Maelstrom/zone_kezan.cpp.
+    int32 const ACTION_GRAB_PASSENGER = 2;
+}
+
 class spell_wintergrasp_grab_passenger : public SpellScriptLoader
 {
     public:
@@ -479,10 +491,42 @@ class spell_wintergrasp_grab_passenger : public SpellScriptLoader
         {
             PrepareSpellScript(spell_wintergrasp_grab_passenger_SpellScript);
 
-            void HandleScript(SpellEffIndex /*effIndex*/)
+            void HandleScript(SpellEffIndex effIndex)
             {
-                if (Player* target = GetHitPlayer())
-                    target->CastSpell(GetCaster(), SPELL_RIDE_WG_VEHICLE, false);
+                Unit* hit = GetHitUnit();
+                Unit* caster = GetCaster();
+
+                if (!hit)
+                    return;
+
+                // Wintergrasp siege vehicles grab a player. Unchanged.
+                if (Player* target = hit->ToPlayer())
+                {
+                    target->CastSpell(caster, SPELL_RIDE_WG_VEHICLE, false);
+                    return;
+                }
+
+                // #207: Kezan's Hot Rod (34840, quest 14071) carries this spell on the
+                // driver's vehicle bar as "Grab a passenger and pull them inside"
+                // (creature_template.spell2 -> Player::SendVehicleSpellInitialize). The
+                // old `GetCaster()->GetEntry() == 34840` early return played a horn sound
+                // and swallowed the cast, and the generic path tested GetHitPlayer(), which
+                // can never match a homie: Ace 34892 / Izzy 34890 / Gobber 34954 are
+                // Creatures. Hand the grab to the homie's own script instead - the in-world
+                // homie must not be seated itself, because the objective is credited by its
+                // SUMMON-flagged copy (npc_homies -> npc_homies_summon, zone_kezan.cpp),
+                // and that copy is what takes a rear seat.
+                // The car's real horn is 66298, a plain creature spell needing no script.
+                // spell_script_names allows one script per spell and 61178 is bound here, so
+                // the stale `spell_klaxon` row is a DB fix, not a code fix.
+                Unit* source = caster->IsVehicle() ? caster : caster->GetVehicleBase();
+                if (source && source->GetEntry() == HOT_ROD_CREATURE)
+                {
+                    Creature* homie = hit->ToCreature();
+                    CreatureAI* ai = homie ? homie->AI() : nullptr;
+                    if (ai)
+                        ai->DoAction(ACTION_GRAB_PASSENGER);
+                }
             }
 
             void Register() override

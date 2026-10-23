@@ -53,6 +53,11 @@ void GenericMageNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& trigg
     NonCombatStrategy::InitTriggers(triggers);
 
     triggers.push_back(new TriggerNode("arcane brilliance", NextAction::array(0, new NextAction("arcane brilliance", 21.0f), nullptr)));
+    // #385 (AC GenericMageNonCombatStrategy.cpp:41): no mana gem -> conjure mana gem (5.4.8: Conjure
+    // Mana Gem 759, single gem item 36799; see MageTriggers.cpp NoManaGemTrigger).
+    triggers.push_back(new TriggerNode("no mana gem", NextAction::array(0, new NextAction("conjure mana gem", 20.0f), nullptr)));
+    // #434 (AC GenericMageNonCombatStrategy.cpp:40): wizard oil on the main-hand weapon, 1:1.
+    triggers.push_back(new TriggerNode("often", NextAction::array(0, new NextAction("apply oil", 1.0f), nullptr)));
 }
 
 void MageBuffManaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
@@ -71,5 +76,7 @@ void MageBuffDpsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
 void MageBuffStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    //triggers.push_back(new TriggerNode("arcane brilliance on party", NextAction::array(0, new NextAction("arcane intellect on party", 20.0f), nullptr)));
+    // 5.4.8: MoP has no "Arcane Intellect" separate from the raid buff; both the trigger and action are
+    // "arcane brilliance on party" (see MageTriggers.h / MageActions.h / MageAiObjectContext.cpp).
+    triggers.push_back(new TriggerNode("arcane brilliance on party", NextAction::array(0, new NextAction("arcane brilliance on party", 20.0f), nullptr)));
 }

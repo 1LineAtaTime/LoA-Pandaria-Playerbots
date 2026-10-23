@@ -1,0 +1,21 @@
+-- Refs #475. cp8 24902 "The Hunt For Sylvanas": Tobias Mistmantle 38507 never walks his path.
+--
+-- Evidence (wave 25, build 25, state/t439/cp8.log + cp8.server.log): after the accept Lorna summons Tobias, who repeats
+-- Talk 0 ("Let us go at once...") every ~5 s, and the server logs
+--   "SmartAI::StartPath: Creature entry 38507 wanted to start waypoint movement while in combat, ignoring." (x5).
+-- In combat, passive -> evade -> home -> SmartAI::JustReachedHome -> SmartScript::OnReset, so his not-repeatable
+-- update timers re-arm and the 5 s WP start (385073) is refused again. The quest never completes.
+--
+-- Cause: a summon takes its summoner's phaseMask. Lorna's post spawn is 2883584 (0x40000 | 0x80000 | 0x200000) and
+-- shares 0x40000 with the three elite Soultethered Banshees 38473 (guids 222310-222312, 20-28 yd away), the same
+-- overlap that 2026_10_09_10 fixed for Lorna and her two guards. Tobias' own SAI sets IMMUNE_TO_PC|IMMUNE_TO_NPC only
+-- on SMART_EVENT_JUST_SUMMONED (smart_scripts 38507 id 19 -> link 20), after he is already in the world.
+--
+-- Fix: IMMUNE_TO_PC|IMMUNE_TO_NPC (0x100|0x200) in the template, so he is immune from creation. He is a quest-only
+-- summon (no creature spawns) and his SAI already intends this ("he sneaks, nothing may engage him").
+--
+-- Backup: unit_flags was 32768 before this file
+-- Rollback: UPDATE `creature_template` SET `unit_flags` = 32768 WHERE `entry` = 38507;
+-- Re-runnable: plain UPDATE.
+
+UPDATE `creature_template` SET `unit_flags` = 32768 | 256 | 512 WHERE `entry` = 38507;

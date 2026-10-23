@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ObjectMgr.h"
+#include "ScriptMgr.h"
 #include "Group.h"
 #include "timeless_isle.h"
 
@@ -85,7 +86,7 @@ class boss_ordos : public CreatureScript
                 me->SetReactState(REACT_AGGRESSIVE);
 
                 scheduler
-                    .Schedule(Seconds(1), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(1), [this](TaskContext context)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
@@ -136,7 +137,7 @@ class boss_ordos : public CreatureScript
                 HandleDoor(me, GO_HEATET_DOOR, false);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 ScriptedAI::EnterEvadeMode();
                 summons.DespawnAll();
@@ -246,7 +247,7 @@ struct npc_ordos_ancient_flame : public ScriptedAI
         DoCast(me, SPELL_ANCIENT_FLAME);
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 };
 
 // Magma Crush - 144688

@@ -42,6 +42,22 @@ private:
     std::chrono::microseconds started;
 };
 
+// #72: AC Bot/Debug/PerfMonitor.h:56-68. Scope timer on a cached PerformanceData (no stack string, no global lock);
+// CalculatedValue uses it so the pmon "Value" category covers every value as on AC.
+class PerfMonitorScope
+{
+public:
+    explicit PerfMonitorScope(PerformanceData* data);
+    ~PerfMonitorScope();
+
+    PerfMonitorScope(PerfMonitorScope const&) = delete;
+    PerfMonitorScope& operator=(PerfMonitorScope const&) = delete;
+
+private:
+    PerformanceData* data;
+    std::chrono::microseconds started{};
+};
+
 class PerformanceMonitor
 {
 public:
@@ -54,12 +70,20 @@ public:
     }
 
 public:
+    static bool IsEnabled();  // AC PerfMonitor.h:78
+
     PerformanceMonitorOperation* start(PerformanceMetric metric, std::string const name,
                                        PerformanceStack* stack = nullptr);
+    PerformanceData* acquire(PerformanceMetric metric, std::string const& name);  // AC PerfMonitor.h:82
     void PrintStats(bool perTick = false, bool fullStack = false);
+    // AC Bot/Debug/PerfMonitor.cpp:353 DumpJson: writes <LogsDir>/pmon_tick.json or pmon_total.json, so a sampler
+    // can read the window without scraping the log (#650).
+    void DumpJson(bool perTick = false);
     void Reset();
 
 private:
+    PerformanceData* GetOrCreate(PerformanceMetric metric, std::string const& name);  // AC PerfMonitor.h:96
+
     std::map<PerformanceMetric, std::map<std::string, PerformanceData*> > data;
     std::mutex lock;
 };

@@ -179,8 +179,8 @@ class boss_commander_springvale : public CreatureScript
                             break;
                         case EVENT_ADDS:
                             Talk(SAY_ADDS);
-                            me->SummonCreature(NPC_SPRINGVALE_OFFICER, addSpawnPos[0],TEMPSUMMON_CORPSE_DESPAWN, 10000);
-                            me->SummonCreature(NPC_SPRINGVALE_GUARD, addSpawnPos[1],TEMPSUMMON_CORPSE_DESPAWN, 10000);
+                            me->SummonCreature(NPC_SPRINGVALE_OFFICER, addSpawnPos[0],TEMPSUMMON_CORPSE_DESPAWN, 10000ms);
+                            me->SummonCreature(NPC_SPRINGVALE_GUARD, addSpawnPos[1],TEMPSUMMON_CORPSE_DESPAWN, 10000ms);
                             events.ScheduleEvent(EVENT_ADDS, 45000);
                             break;
                         case EVENT_WORD_OF_SHAME:
@@ -314,7 +314,9 @@ class npc_springvale_tormented_officer : public CreatureScript
             void JustEngagedWith(Unit* /*who*/) override
             {
                 events.ScheduleEvent(EVENT_UNHOLY_EMPOWERMENT, 15000);
-                events.ScheduleEvent(EVENT_FORSAKEN_ABILITY, urand(10000, 30000));
+                // #682 R14: first curse 5-8 s after the engage (was 10-30 s, a guess: Wowpedia gives no timer; w107 [PROBE] shows the
+                // officers live 2-28 s under attack, many under 10 s); the curse lasts 30 s (Wowpedia Tormented Officer), re-armed every 30 s
+                events.ScheduleEvent(EVENT_FORSAKEN_ABILITY, urand(5000, 8000));
                 events.ScheduleEvent(EVENT_SHIELD_WALL, urand(20000, 25000));
             }
             
@@ -336,7 +338,10 @@ class npc_springvale_tormented_officer : public CreatureScript
                             DoCast(SPELL_SHIELD_WALL);
                             break;
                         case EVENT_FORSAKEN_ABILITY:
-                            //todo: ����������� �����
+                            // #682 R14: SpellEffect.dbc 7054 = APPLY_AURA PERIODIC_DUMMY (10 s), TargetA 6 = UNIT_TARGET_ENEMY, so the
+                            // self-cast (DoCast(me, ..)) failed bad-targets and 7054 was never cast; curse the current victim instead
+                            DoCastVictim(SPELL_FORSAKEN_ABILITY);
+                            events.ScheduleEvent(EVENT_FORSAKEN_ABILITY, 30000);
                             break;
                         case EVENT_UNHOLY_EMPOWERMENT:
                             if (Creature* springvale = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_SPRINGVALE)))

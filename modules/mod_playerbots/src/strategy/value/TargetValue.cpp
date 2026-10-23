@@ -11,20 +11,59 @@
 #include "PlayerbotSpec.h"
 #include "RtiTargetValue.h"
 #include "ScriptedCreature.h"
+#include "Strategy.h"
 #include "ThreatManager.h"
+
+// #149 (AC TargetValue.cpp): AC reads lastMove.lastPath.getBack(); this fork's LastMovement has no
+// lastPath (see LastMovementValue.h), so the closest equivalent it tracks is lastMoveShort.
+WorldPosition LastLongMoveValue::Calculate()
+{
+    LastMovement& lastMove = botAI->GetAiObjectContext()->GetValue<LastMovement&>("last movement")->Get();
+    return lastMove.lastMoveShort;
+}
+
+// #272 (AC TargetValue.cpp:154-157). 5.4.8 core: Player::m_homebindMapId/X/Y/Z (Player.h:2860-2864), same names as
+// AC; WorldPosition(uint32 mapid, float x, float y, float z, float o) at Travel/WorldPosition.h:93.
+WorldPosition HomeBindValue::Calculate()
+{
+    return WorldPosition(bot->m_homebindMapId, bot->m_homebindX, bot->m_homebindY, bot->m_homebindZ, 0.f);
+}
+
+// #413 (AC TargetValue.cpp:17-32)
+GuidSet GatherStrategyTargetExclusions(PlayerbotAI* botAI, TargetValueExclusionType type)
+{
+    GuidSet exclusions;
+    if (!botAI || type == TargetValueExclusionType::None || !botAI->HasTargetExclusions())
+        return exclusions;
+
+    for (std::string const& strategyName : botAI->GetStrategies(BOT_STATE_COMBAT))
+    {
+        Strategy* strategy = botAI->GetStrategy(strategyName, BOT_STATE_COMBAT);
+        if (!strategy)
+            continue;
+
+        strategy->AppendTargetExclusions(exclusions, type);
+    }
+
+    return exclusions;
+}
 
 Unit* FindTargetStrategy::GetResult()
 {
     return result;
 }
 
+TargetValueExclusionType FindTargetStrategy::GetExclusionType() { return TargetValueExclusionType::None; }
+
 Unit* TargetValue::FindTarget(FindTargetStrategy* strategy)
 {
     GuidVector attackers = botAI->GetAiObjectContext()->GetValue<GuidVector>("attackers")->Get();
+    // AC TargetValue.cpp:42-47 (#413)
+    GuidSet const dynamicExclusions = GatherStrategyTargetExclusions(botAI, strategy->GetExclusionType());
     for (ObjectGuid const guid : attackers)
     {
         Unit* unit = botAI->GetUnit(guid);
-        if (!unit)
+        if (!unit || dynamicExclusions.find(guid) != dynamicExclusions.end())
             continue;
 
         ThreatManager& ThreatMgr = unit->GetThreatManager();
@@ -121,4 +160,33 @@ bool FindNonCcTargetStrategy::IsCcTarget(Unit* attacker)
     }
 
     return false;
+}
+
+// AC Ai/Base/Value/TargetValue.cpp:159-184 (#545). Same threat-list walk: this core's ThreatManager has the same
+// GetThreatenedByMeList() / ThreatReference::GetOwner() API (src/server/game/Combat/ThreatManager.h:137,267).
+Unit* FindTargetValue::Calculate()
+{
+    if (qualifier == "")
+    {
+        return nullptr;
+    }
+    Group* group = bot->GetGroup();
+    if (!group)
+    {
+        return nullptr;
+    }
+    for (auto const& [guid, ref] : bot->GetThreatManager().GetThreatenedByMeList())
+    {
+        Unit* unit = ref->GetOwner();
+        if (!unit)
+            continue;
+
+        std::wstring wnamepart;
+        Utf8toWStr(unit->GetName(), wnamepart);
+        wstrToLower(wnamepart);
+        if (!qualifier.empty() && qualifier.length() == wnamepart.length() && Utf8FitTo(qualifier, wnamepart))
+            return unit;
+    }
+
+    return nullptr;
 }

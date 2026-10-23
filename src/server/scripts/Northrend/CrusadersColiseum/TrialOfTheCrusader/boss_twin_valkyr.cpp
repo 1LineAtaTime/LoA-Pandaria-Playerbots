@@ -25,6 +25,7 @@
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "Cell.h"
 #include "CellImpl.h"
 #include "trial_of_the_crusader.h"
@@ -424,7 +425,7 @@ class boss_fjola : public CreatureScript
                 boss_twin_baseAI::JustEngagedWith(who);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 instance->DoUseDoorOrButton(instance->GetGuidData(GO_MAIN_GATE_DOOR));
                 boss_twin_baseAI::EnterEvadeMode();

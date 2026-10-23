@@ -21,6 +21,8 @@
 #include "DatabaseEnv.h"
 #include "Common.h"
 
+#include <memory>
+
 class SocialMgr;
 class PlayerSocial;
 class Player;
@@ -60,7 +62,7 @@ struct FriendInfo
 };
 
 typedef std::map<ObjectGuid, FriendInfo> PlayerSocialMap;
-typedef std::map<ObjectGuid, PlayerSocial> SocialMap;
+typedef std::map<ObjectGuid, std::shared_ptr<PlayerSocial>> SocialMap;
 
 /// Results of friend related commands
 enum FriendsResult
@@ -142,7 +144,7 @@ class SocialMgr
         void SendFriendStatus(Player* player, FriendsResult result, ObjectGuid friendGuid, bool broadcast);
         void BroadcastToFriendListers(Player* player, WorldPacket* packet);
         // Loading
-        PlayerSocial* LoadFromDB(PreparedQueryResult result, ObjectGuid guid);
+        std::shared_ptr<PlayerSocial> LoadFromDB(PreparedQueryResult result, ObjectGuid guid);
     private:
         SocialMap m_socialMap;
 };

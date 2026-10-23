@@ -42,6 +42,7 @@ enum Events
     EVENT_ROCK_BORER              = 7,
     EVENT_ROCK_BORE               = 8,
     EVENT_CRYSTAL_SHARD_MOVE      = 9,
+    EVENT_THRASHING_ERUPT         = 10,
 };
 
 enum Adds
@@ -78,6 +79,7 @@ class boss_corborus : public CreatureScript
             SummonList summons;
             uint8 stage;
             Position barragePos;
+            ObjectGuid chargeTargetGUID, chargeSpotGUID;
 
             void Reset() override
             {
@@ -113,11 +115,14 @@ class boss_corborus : public CreatureScript
                 {
                     case NPC_THRASHING_CHARGE:
                         summon->CastSpell(summon, SPELL_THRASHING_CHARGE_DUM, false);
+                        // #701: the disturbed ground (43743, 81801 3.5 s) only telegraphed; nothing cast the damage.
+                        chargeSpotGUID = summon->GetGUID();
+                        events.ScheduleEvent(EVENT_THRASHING_ERUPT, 600);
                         break;
                     case NPC_ROCK_BORER:
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                         {
-                            summon->AddThreat(target, 10.0f);
+                            summon->GetThreatManager().AddThreat(target, 10.0f);
                             summon->Attack(target, true);
                             summon->GetMotionMaster()->MoveChase(target);
                         }
@@ -125,7 +130,7 @@ class boss_corborus : public CreatureScript
                     case NPC_CRYSTAL_SHARD:
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                         {
-                            summon->AddThreat(target, 10.0f);
+                            summon->GetThreatManager().AddThreat(target, 10.0f);
                             summon->Attack(target, true);
                             summon->GetMotionMaster()->MoveChase(target);
                         }
@@ -218,9 +223,32 @@ class boss_corborus : public CreatureScript
                             break;
                         case EVENT_THRASHING_CHARGE:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
+                            {
+                                chargeTargetGUID = target->GetGUID();
                                 me->CastSpell(target, SPELL_THRASHING_CHARGE_SUM, true);
+                            }
                             events.ScheduleEvent(EVENT_THRASHING_CHARGE, 4000);
                             break;
+                        case EVENT_THRASHING_ERUPT:
+                        {
+                            // #701: Wowpedia "Corborus" (2026-10-12): "the ground where he erupts will be disturbed.
+                            // Corborus then leaps out of the ground and quickly dives back underground. Any player caught
+                            // in the path of this movement is dealt 23562 to 26437 Physical damage and knocked back."
+                            // Wowhead Cata 81828: 2.9 s cast, "Leaps out of the ground" (40 yd cone, damage + knockback).
+                            // He comes up at the disturbed ground facing the player the charge was aimed at; the cast
+                            // ends with the 81801 telegraph (0.6 + 2.9 = 3.5 s).
+                            Creature* spot = ObjectAccessor::GetCreature(*me, chargeSpotGUID);
+                            if (!spot)
+                                break;
+                            float orientation = me->GetOrientation();
+                            if (Unit* target = ObjectAccessor::GetUnit(*me, chargeTargetGUID))
+                                orientation = spot->GetAngle(target);
+                            me->NearTeleportTo(spot->GetPositionX(), spot->GetPositionY(), spot->GetPositionZ(), orientation);
+                            me->SetFacingTo(orientation);
+                            // Submerge (53421) is a stun aura: ignore caster auras, keep the 2.9 s cast as the telegraph.
+                            me->CastSpell(me, SPELL_THRASHING_CHARGE_DMG, TRIGGERED_IGNORE_CASTER_AURAS);
+                            break;
+                        }
                         case EVENT_ROCK_BORER:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                             {

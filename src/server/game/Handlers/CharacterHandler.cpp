@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "AccountMgr.h"
 #include "ArenaTeam.h"
 #include "Battleground.h"
 #include "BattlePayMgr.h"
@@ -32,14 +33,17 @@
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
+#include "RBAC.h"
 #include "Opcodes.h"
 #include "Pet.h"
 #include "PlayerDump.h"
 #include "Player.h"
+#include "Realm.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
 #include "SharedDefines.h"
 #include "SocialMgr.h"
+#include "SystemConfig.h"
 #include "UpdateMask.h"
 #include "Util.h"
 #include "World.h"
@@ -374,7 +378,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
     WorldPacket data(SMSG_CHAR_CREATE, 1);                  // returned with diff.values in all cases
 
-    if (GetSecurity() == SEC_PLAYER)
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_TEAMMASK))
     {
         if (uint32 mask = sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED))
         {
@@ -436,7 +440,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
     return;
     }*/
 
-    if (GetSecurity() == SEC_PLAYER)
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RACEMASK))
     {
         uint32 raceMaskDisabled = sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_RACEMASK);
         if ((1 << (race_ - 1)) & raceMaskDisabled)
@@ -445,7 +449,10 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             SendPacket(&data);
             return;
         }
+    }
 
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_CLASSMASK))
+    {
         uint32 classMaskDisabled = sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_CLASSMASK);
         if ((1 << (class_ - 1)) & classMaskDisabled)
         {
@@ -473,14 +480,14 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
         return;
     }
 
-    if (GetSecurity() == SEC_PLAYER && sObjectMgr->IsReservedName(name))
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RESERVEDNAME) && sObjectMgr->IsReservedName(name))
     {
         data << uint8(CHAR_NAME_RESERVED);
         SendPacket(&data);
         return;
     }
 
-    if (class_ == CLASS_DEATH_KNIGHT && GetSecurity() == SEC_PLAYER)
+    if (class_ == CLASS_DEATH_KNIGHT && !HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_DEATH_KNIGHT))
     {
         // speedup check for heroic class disabled case
         uint32 heroic_free_slots = sWorld->getIntConfig(CONFIG_HEROIC_CHARACTERS_PER_REALM);
@@ -569,7 +576,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             }
         }
 
-        bool allowTwoSideAccounts = !sWorld->IsPvPRealm() || sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ACCOUNTS) || GetSecurity() > SEC_PLAYER;
+        bool allowTwoSideAccounts = !sWorld->IsPvPRealm() || HasPermission(rbac::RBAC_PERM_TWO_SIDE_CHARACTER_CREATION);
         uint32 skipCinematics = sWorld->getIntConfig(CONFIG_SKIP_CINEMATICS);
 
 
@@ -579,9 +586,9 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             bool haveSameRace = false;
             uint32 heroicReqLevel = sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_MIN_LEVEL_FOR_HEROIC_CHARACTER);
             bool hasHeroicReqLevel = (heroicReqLevel == 0);
-            bool allowTwoSideAccounts = !sWorld->IsPvPRealm() || sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ACCOUNTS) || GetSecurity() > SEC_PLAYER;
+            bool allowTwoSideAccounts = !sWorld->IsPvPRealm() || HasPermission(rbac::RBAC_PERM_TWO_SIDE_CHARACTER_CREATION);
             uint32 skipCinematics = sWorld->getIntConfig(CONFIG_SKIP_CINEMATICS);
-            bool checkHeroicReqs = createInfo->Class == CLASS_DEATH_KNIGHT;
+            bool checkHeroicReqs = createInfo->Class == CLASS_DEATH_KNIGHT && !HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_DEATH_KNIGHT);
 
             if (result)
             {
@@ -855,8 +862,6 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin&
         return;
     }
 
-    m_playerLoading = true;
-
     TC_LOG_DEBUG("network", "WORLD: Recvd Player Logon Message");
 
     TC_LOG_DEBUG("network", "Character (Guid: %u) logging in", packet.Guid.GetCounter());
@@ -867,6 +872,22 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin&
         KickPlayer();
         return;
     }
+
+    // #181: session parking came without a re-bind. Do what TC does: log out (and save)
+    // the parked Player before this login loads the character again.
+    if (WorldSession* parked = sWorld->FindOfflineSessionForCharacterGUID(packet.Guid.GetCounter()))
+    {
+        if (parked->GetAccountId() != GetAccountId())
+        {
+            KickPlayer();
+            return;
+        }
+    }
+    if (WorldSession* parked = sWorld->FindOfflineSession(GetAccountId()))
+        if (parked->GetPlayer())
+            parked->LogoutPlayer(true); // World::UpdateSessions deletes the empty parked session
+
+    m_playerLoading = true;
 
     std::shared_ptr<LoginQueryHolder> holder = std::make_shared<LoginQueryHolder>(GetAccountId(), packet.Guid);
     if (!holder->Initialize())
@@ -883,9 +904,9 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin&
 
 void WorldSession::HandleLoadScreenOpcode(WorldPacket& recvPacket)
 {
-    TC_LOG_INFO("general", "WORLD: Recvd CMSG_LOAD_SCREEN %u", recvPacket.GetOpcode());
-    //uint32 mapID = recvPacket.read<uint32>();
-    //bool loading = recvPacket.ReadBit();
+    TC_LOG_INFO("general", "WORLD: Recvd CMSG_LOAD_SCREEN");
+    uint32 mapID = recvPacket.read<uint32>();
+    bool loading = recvPacket.ReadBit();
 }
 
 void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
@@ -1022,7 +1043,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
     {
         data << uint32(hotfix[i].Timestamp);
         data << uint32(hotfix[i].Entry);
-        data << uint32(hotfix[i].Type);
+        data << uint32(hotfix[i].TableHash);
     }
 
     SendPacket(&data);
@@ -1300,7 +1321,7 @@ void WorldSession::HandleSetFactionInactiveOpcode(WorldPacket& recvData)
     _player->GetReputationMgr().SetInactive(FactionIndex, Status);
 }
 
-void WorldSession::HandleRequestForcedReactionsOpcode(WorldPacket& /*recvData*/)
+void WorldSession::HandleRequestForcedReactionsOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_REQUEST_FORCED_REACTIONS");
 
@@ -1406,7 +1427,7 @@ void WorldSession::HandleCharRenameOpcode(WorldPacket& recvData)
     }
 
     // check name limitations
-    if (GetSecurity() == SEC_PLAYER && sObjectMgr->IsReservedName(newName))
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RESERVEDNAME) && sObjectMgr->IsReservedName(newName))
     {
         SendRenameResult(CHAR_NAME_RESERVED);
         return;
@@ -1686,7 +1707,7 @@ void WorldSession::HandleRemoveGlyph(WorldPacket& recvData)
 
     if (uint32 glyph = _player->GetGlyph(_player->GetActiveSpec(), slot))
     {
-        if (sGlyphPropertiesStore.LookupEntry(glyph))
+        if (GlyphPropertiesEntry const* gp = sGlyphPropertiesStore.LookupEntry(glyph))
         {
             _player->SetGlyph(slot, 0);
             _player->SendTalentsInfoData();
@@ -1770,7 +1791,7 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     }
 
     // check name limitations
-    if (GetSecurity() == SEC_PLAYER && sObjectMgr->IsReservedName(newName))
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RESERVEDNAME) && sObjectMgr->IsReservedName(newName))
     {
         WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
         data << uint8(CHAR_NAME_RESERVED);
@@ -2223,7 +2244,7 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
         return;
     }
 
-    if (GetSecurity() == SEC_PLAYER)
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RACEMASK))
     {
         uint32 raceMaskDisabled = sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_RACEMASK);
         if ((1 << (race - 1)) & raceMaskDisabled)
@@ -2254,7 +2275,7 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
     }
 
     // check name limitations
-    if (GetSecurity() == SEC_PLAYER && sObjectMgr->IsReservedName(newName))
+    if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RESERVEDNAME) && sObjectMgr->IsReservedName(newName))
     {
         WorldPacket data(SMSG_CHAR_FACTION_CHANGE_RESULT, 1);
         data << uint8(CHAR_NAME_RESERVED);
@@ -2441,7 +2462,7 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
                         guild->DeleteMember(guid);
             }
 
-            if (!sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ADD_FRIEND))
+            if (!HasPermission(rbac::RBAC_PERM_TWO_SIDE_ADD_FRIEND))
             {
                 // Delete Friend List
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SOCIAL_BY_GUID);
@@ -2695,7 +2716,7 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
                 do
                 {
                     uint32 skillId = (*result)[0].GetUInt16();
-                    auto info = GetSkillRaceClassInfo(skillId, race, playerClass);
+                    auto info = sDBCManager.GetSkillRaceClassInfo(skillId, race, playerClass);
                     if (!info)
                     {
                         CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_SKILL);
@@ -2746,12 +2767,12 @@ void WorldSession::HandleRandomizeCharNameOpcode(WorldPacket& recvData)
         return;
     }
 
-    std::string const* name = GetRandomCharacterName(race, gender);
-    WorldPacket data(SMSG_RANDOMIZE_CHAR_NAME, 1 + name->size());
+    std::string name = sDBCManager.GetRandomCharacterName(race, gender);
+    WorldPacket data(SMSG_RANDOMIZE_CHAR_NAME, 1 + name.size());
     data.WriteBit(true); // result
-    data.WriteBits(name->size(), 6);
+    data.WriteBits(name.size(), 6);
     data.FlushBits();
-    data.WriteString(*name);
+    data.WriteString(name);
     SendPacket(&data);
 }
 

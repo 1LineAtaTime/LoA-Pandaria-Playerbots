@@ -321,19 +321,10 @@ class npc_slad_ran_constrictor : public CreatureScript
                         case EVENT_GRIP_OF_SLADRAN:
                             if (Unit* target = me->GetVictim())
                             {
+                                // AC pattern: the constrictor only stacks Grip of Slad'ran; the aura script
+                                // spell_sladran_grip_of_sladran casts Snake Wrap (55126) at 5 stacks.
                                 if (!target->HasAura(SPELL_SNAKE_WRAP_SUMMON))
-                                {
                                     DoCast(target, SPELL_GRIP_OF_SLAD_RAN);
-
-                                    if (target->GetAuraCount(SPELL_GRIP_OF_SLAD_RAN) == 5)
-                                    {
-                                        target->RemoveAurasDueToSpell(SPELL_GRIP_OF_SLAD_RAN);
-                                        target->CastSpell(target, SPELL_SNAKE_WRAP, true);
-
-                                        if (Creature* sladran = me->FindNearestCreature(NPC_SLAD_RAN, 200.0f))
-                                            sladran->AI()->SetGUID(target->GetGUID(), DATA_SNAKES_WHYD_IT_HAVE_TO_BE_SNAKES);
-                                    }
-                                }
                             }
                             events.ScheduleEvent(EVENT_GRIP_OF_SLADRAN, 5000);
                             break;
@@ -451,6 +442,52 @@ class npc_snake_wrap : public CreatureScript
         }
 };
 
+// AC boss_slad_ran.cpp spell_sladran_grip_of_sladran_aura (55093, PERIODIC_DUMMY effect 0): at >= 5 stacks
+// the owner gets Snake Wrap (55126: stun + snake form + summons Snake Wrap 29742) and the grip is dropped.
+class spell_sladran_grip_of_sladran : public SpellScriptLoader
+{
+    public:
+        spell_sladran_grip_of_sladran() : SpellScriptLoader("spell_sladran_grip_of_sladran") { }
+
+        class spell_sladran_grip_of_sladran_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_sladran_grip_of_sladran_AuraScript);
+
+            void HandlePeriodic(AuraEffect const* /*aurEff*/)
+            {
+                PreventDefaultAction();
+
+                if (GetStackAmount() < 5)
+                    return;
+
+                Unit* owner = GetUnitOwner();
+                if (!owner)
+                    return;
+
+                SetDuration(0);
+
+                if (owner->HasAura(SPELL_SNAKE_WRAP_SUMMON))
+                    return;
+
+                owner->CastSpell(owner, SPELL_SNAKE_WRAP_SUMMON, true);
+
+                if (Creature* sladran = owner->FindNearestCreature(NPC_SLAD_RAN, 200.0f))
+                    if (sladran->AI())
+                        sladran->AI()->SetGUID(owner->GetGUID(), DATA_SNAKES_WHYD_IT_HAVE_TO_BE_SNAKES);
+            }
+
+            void Register() override
+            {
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_sladran_grip_of_sladran_AuraScript::HandlePeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_sladran_grip_of_sladran_AuraScript();
+        }
+};
+
 class spell_snake_wrap : public SpellScriptLoader
 {
     public:
@@ -501,6 +538,7 @@ void AddSC_boss_slad_ran()
     new npc_slad_ran_constrictor();
     new npc_slad_ran_viper();
     new npc_snake_wrap();
+    new spell_sladran_grip_of_sladran();
     new spell_snake_wrap();
     new achievement_snakes_whyd_it_have_to_be_snakes();
 }

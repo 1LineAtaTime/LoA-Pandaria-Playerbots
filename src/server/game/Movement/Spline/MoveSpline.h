@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -20,6 +20,8 @@
 
 #include "Spline.h"
 #include "MoveSplineInitArgs.h"
+
+class Unit;
 
 namespace Movement
 {
@@ -67,6 +69,7 @@ namespace Movement
         int32           effect_start_time;
         int32           point_Idx;
         int32           point_Idx_offset;
+        float           velocity;
 
         void init_spline(const MoveSplineInitArgs& args);
 
@@ -122,10 +125,22 @@ namespace Movement
         AnimTier GetAnimation() const { return (AnimTier)splineflags.getAnimationId(); }
         Vector3 FinalDestination() const { return Initialized() ? spline.getPoint(spline.last()) : Vector3(); }
         Vector3 CurrentDestination() const { return Initialized() ? spline.getPoint(point_Idx + 1) : Vector3(); }
+        float Velocity() const { return velocity; }
         int32 currentPathIdx() const;
 
         bool onTransport;
         std::string ToString() const;
+
+        // #747: this spline is announced to observers as client movement status (SMSG_PLAYER_MOVE start / turn /
+        // heartbeat / stop) instead of SMSG_MONSTER_MOVE - see Movement::SendBotMoveStatus (MoveSplineInit.cpp).
+        // statusTimer = ms since the last status packet, statusO = the heading that packet carried.
+        bool statusMode = false;
+        int32 statusTimer = 0;
+        float statusO = 0.0f;
     };
+
+    // #747 (MoveSplineInit.cpp): one SMSG_PLAYER_MOVE with the unit's current movement status, sent to the real
+    // clients that see the unit (a 5.4.8 client draws a player from these packets, as it draws real players).
+    void SendBotMoveStatus(Unit* unit);
 }
 #endif // TRINITYSERVER_MOVEPLINE_H

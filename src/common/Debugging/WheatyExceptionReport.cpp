@@ -29,7 +29,9 @@
 #pragma warning(disable:4311)
 #include <windows.h>
 #include <tlhelp32.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <tchar.h>
 
 #include "WheatyExceptionReport.h"
@@ -70,10 +72,65 @@ HANDLE WheatyExceptionReport::m_hProcess;
 // Declare global instance of class
 WheatyExceptionReport g_WheatyExceptionReport;
 
+//============================== Bounded formatting (#327) ====================
+//
+// FormatSymbolValue -> DumpTypeIndex -> FormatOutputValue used to advance a raw cursor with unbounded
+// `sprintf` into EnumerateSymbolsCallback's `char szBuffer[2048]` (the cbBuffer argument was ignored). A
+// large or nested type ran past the end, smashed the /GS cookie and the process died in
+// __report_gsfailure (0xC0000409) before the original fault was written. Every write into that buffer now
+// goes through AppendFormat, which never writes past the end FormatSymbolValue records here. The end is
+// kept file-local (per thread) so the private signatures in WheatyExceptionReport.h stay unchanged.
+namespace
+{
+    // DumpTypeIndex recursion cap - the same depth AC uses (WER_MAX_NESTING_LEVEL = 4). Each level also
+    // holds a FINDCHILDREN array of several KB on the stack, so this bounds the stack use too.
+    unsigned const WheatyMaxNestingLevel = 4;
+
+    // One past the last byte of the symbol buffer FormatSymbolValue is filling; null = nothing to write to.
+    thread_local char* tl_pszSymbolBufferEnd = nullptr;
+
+    // Bytes left in the symbol buffer at pszCurrBuffer, terminator slot included (0 = no valid buffer).
+    size_t SymbolBufferRemaining(char const* pszCurrBuffer)
+    {
+        if (!pszCurrBuffer || !tl_pszSymbolBufferEnd || pszCurrBuffer >= tl_pszSymbolBufferEnd)
+            return 0;
+        return size_t(tl_pszSymbolBufferEnd - pszCurrBuffer);
+    }
+
+    // Bounded replacement for `pszCurrBuffer = AppendFormat(pszCurrBuffer, ...)`: writes at most the space left,
+    // always NUL-terminates, truncates silently, and returns the new cursor, which never moves past the
+    // terminator slot.
+    char* AppendFormat(char* pszCurrBuffer, char const* pszFormat, ...)
+    {
+        size_t cbRemaining = SymbolBufferRemaining(pszCurrBuffer);
+        if (cbRemaining <= 1)                               // full: only the terminator slot is left
+            return pszCurrBuffer;
+
+        pszCurrBuffer[0] = '\0';
+        va_list args;
+        va_start(args, pszFormat);
+        _vsnprintf_s(pszCurrBuffer, cbRemaining, _TRUNCATE, pszFormat, args);
+        va_end(args);
+        pszCurrBuffer[cbRemaining - 1] = '\0';              // terminated whatever the return value was
+
+        return pszCurrBuffer + strlen(pszCurrBuffer);
+    }
+
+    // rgBaseType has 32 entries (btNoType..btHresult); newer DIA base types (char8_t/char16_t/char32_t,
+    // 32..34) would index past its end.
+    char const* BaseTypeName(BasicType basicType)
+    {
+        return unsigned(basicType) < sizeof(rgBaseType) / sizeof(rgBaseType[0]) ? rgBaseType[basicType] : " <unknown type> ";
+    }
+}
+
 //============================== Class Methods =============================
 
 WheatyExceptionReport::WheatyExceptionReport()             // Constructor
 {
+    // #327: installed in every build again. #323/#326 had gated this behind _DEBUG because the reporter
+    // overflowed its own symbol buffer; every write into a fixed buffer is now bounded (AppendFormat,
+    // _tprintf, the file-name snprintf) and DumpTypeIndex recursion is capped.
     // Install the unhandled exception filter function
     m_previousFilter = SetUnhandledExceptionFilter(WheatyUnhandledExceptionFilter);
     m_hProcess = GetCurrentProcess();
@@ -114,10 +171,10 @@ PEXCEPTION_POINTERS pExceptionInfo)
 
     SYSTEMTIME systime;
     GetLocalTime(&systime);
-    sprintf(m_szDumpFileName, "%s\\%s_%s_[%u-%u_%u-%u-%u].dmp",
+    snprintf(m_szDumpFileName, MAX_PATH, "%s\\%s_%s_[%u-%u_%u-%u-%u].dmp",
         crash_folder_path, _HASH, pos, systime.wDay, systime.wMonth, systime.wHour, systime.wMinute, systime.wSecond);
 
-    sprintf(m_szLogFileName, "%s\\%s_%s_[%u-%u_%u-%u-%u].txt",
+    snprintf(m_szLogFileName, MAX_PATH, "%s\\%s_%s_[%u-%u_%u-%u-%u].txt",
         crash_folder_path, _HASH, pos, systime.wDay, systime.wMonth, systime.wHour, systime.wMinute, systime.wSecond);
 
     m_hDumpFile = CreateFile(m_szDumpFileName,
@@ -189,6 +246,8 @@ BOOL WheatyExceptionReport::_GetProcessorName(TCHAR* sProcessorName, DWORD maxco
     while (iswspace(*psz))
         ++psz;
     _tcsncpy(sProcessorName, psz, maxcount);
+    if (maxcount)
+        sProcessorName[maxcount - 1] = _T('\0');           // #327: _tcsncpy does not terminate on a long value
     return TRUE;
 }
 
@@ -207,7 +266,7 @@ BOOL WheatyExceptionReport::_GetWindowsVersion(TCHAR* szVersion, DWORD cntMax)
             return FALSE;
     }
     *szVersion = _T('\0');
-    TCHAR wszTmp[128];
+    TCHAR wszTmp[256];                                      // #327: szCSDVersion alone can be 127 chars
     switch (osvi.dwPlatformId)
     {
         // Windows NT product family.
@@ -788,18 +847,29 @@ bool WheatyExceptionReport::FormatSymbolValue(
 PSYMBOL_INFO pSym,
 STACKFRAME * sf,
 char * pszBuffer,
-unsigned /*cbBuffer*/)
+unsigned cbBuffer)
 {
+    // #327: every write below (and in DumpTypeIndex/FormatOutputValue) is bounded by cbBuffer.
+    if (!pszBuffer || cbBuffer == 0)
+        return false;
+    pszBuffer[0] = '\0';
+    tl_pszSymbolBufferEnd = pszBuffer + cbBuffer;
+
     char * pszCurrBuffer = pszBuffer;
 
     // Indicate if the variable is a local or parameter
     if (pSym->Flags & IMAGEHLP_SYMBOL_INFO_PARAMETER)
-        pszCurrBuffer += sprintf(pszCurrBuffer, "Parameter ");
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, "Parameter ");
     else if (pSym->Flags & IMAGEHLP_SYMBOL_INFO_LOCAL)
-        pszCurrBuffer += sprintf(pszCurrBuffer, "Local ");
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, "Local ");
 
     // If it's a function, don't do anything.
     if (pSym->Tag == 5)                                   // SymTagFunction from CVCONST.H from the DIA SDK
+        return false;
+
+    // #436: a thread_local's Address is an offset into the thread's TLS block, not a pointer, so reading it
+    // faulted and printed "punting on symbol" (t_lootRefDepth, sfmtRand, tl_pszSymbolBufferEnd, dtor_list, ...).
+    if (pSym->Flags & 0x00004000)                         // SYMFLAG_TLSREL (dbghelp.h)
         return false;
 
     DWORD_PTR pVariable = 0;                                // Will point to the variable's data in memory
@@ -808,7 +878,13 @@ unsigned /*cbBuffer*/)
     {
         // if (pSym->Register == 8)   // EBP is the value 8 (in DBGHELP 5.1)
         {                                                   //  This may change!!!
+            // #436 (AC WheatyExceptionReport.cpp FormatSymbolValue): x64 locals are RSP-relative, so the
+            // base is AddrStack there; AddrFrame (RBP) is only right on x86 (EBP frames).
+#ifdef _M_X64
+            pVariable = sf->AddrStack.Offset;
+#else
             pVariable = sf->AddrFrame.Offset;
+#endif
             pVariable += (DWORD_PTR)pSym->Address;
         }
         // else
@@ -835,14 +911,18 @@ unsigned /*cbBuffer*/)
         // variable.  Based on the size, we're assuming it's a char, WORD, or
         // DWORD.
         BasicType basicType = GetBasicType(pSym->TypeIndex, pSym->ModBase);
-        pszCurrBuffer += sprintf(pszCurrBuffer, rgBaseType[basicType]);
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, "%s", BaseTypeName(basicType));
 
         // Emit the variable name
-        pszCurrBuffer += sprintf(pszCurrBuffer, "\'%s\'", pSym->Name);
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, "\'%s\'", pSym->Name);
 
         pszCurrBuffer = FormatOutputValue(pszCurrBuffer, basicType, pSym->Size,
             (PVOID)pVariable);
     }
+
+    // The buffer filled up: mark the clipped line so a reader knows the output (not the value) was cut.
+    if (cbBuffer > 4 && SymbolBufferRemaining(pszCurrBuffer) <= 1)
+        memcpy(pszBuffer + cbBuffer - 4, "...", 4);
 
     return true;
 }
@@ -869,7 +949,7 @@ char* Name)
     if (SymGetTypeInfo(m_hProcess, modBase, dwTypeIndex, TI_GET_SYMNAME,
         &pwszTypeName))
     {
-        pszCurrBuffer += sprintf(pszCurrBuffer, " %ls", pwszTypeName);
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, " %ls", pwszTypeName);
         LocalFree(pwszTypeName);
     }
 
@@ -881,14 +961,32 @@ char* Name)
     if (!dwChildrenCount)                                 // If no children, we're done
         return pszCurrBuffer;
 
+    // #327: cap the recursion depth (AC: WER_MAX_NESTING_LEVEL = 4). Reported as handled, with its own line
+    // end, so the caller does not try to format the UDT as a scalar.
+    if (nestingLevel >= WheatyMaxNestingLevel)
+    {
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, " {...}\r\n");
+        bHandled = true;
+        return pszCurrBuffer;
+    }
+
     // Prepare to get an array of "TypeIds", representing each of the children.
     // SymGetTypeInfo(TI_FINDCHILDREN) expects more memory than just a
     // TI_FINDCHILDREN_PARAMS struct has.  Use derivation to accomplish this.
     struct FINDCHILDREN : TI_FINDCHILDREN_PARAMS
     {
-        ULONG   MoreChildIds[1024];
+        ULONG   MoreChildIds[1024 * 2];                     // AC's size
         FINDCHILDREN(){Count = sizeof(MoreChildIds) / sizeof(MoreChildIds[0]);}
     } children;
+
+    // #327: never ask dbghelp for more child ids than `children` can hold - it writes Count ids into the
+    // array, so an oversized Count is a stack overflow of its own.
+    if (dwChildrenCount > sizeof(children.MoreChildIds) / sizeof(children.MoreChildIds[0]))
+    {
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, " <%lu children, not expanded>\r\n", dwChildrenCount);
+        bHandled = true;
+        return pszCurrBuffer;
+    }
 
     children.Count = dwChildrenCount;
     children.Start= 0;
@@ -901,32 +999,52 @@ char* Name)
     }
 
     // Append a line feed
-    pszCurrBuffer += sprintf(pszCurrBuffer, "\r\n");
+    pszCurrBuffer = AppendFormat(pszCurrBuffer, "\r\n");
 
     // Iterate through each of the children
     for (unsigned i = 0; i < dwChildrenCount; i++)
     {
+        // #327: the symbol buffer is full - nothing more can be shown, stop walking the children.
+        if (SymbolBufferRemaining(pszCurrBuffer) <= 1)
+            break;
+
+        // #436 (AC DumpTypeIndex): skip member functions, nested enums/typedefs and vtables, and static
+        // fields - they are not part of the object's memory and only use up the line buffer.
+        DWORD symTag = 0;
+        SymGetTypeInfo(m_hProcess, modBase, children.ChildId[i], TI_GET_SYMTAG, &symTag);
+        if (symTag == SymTagFunction || symTag == SymTagEnum || symTag == SymTagTypedef || symTag == SymTagVTable)
+            continue;
+
+        DWORD dataKind = 0;                                 // DataKind from CVCONST.H (DIA SDK)
+        SymGetTypeInfo(m_hProcess, modBase, children.ChildId[i], TI_GET_DATAKIND, &dataKind);
+        if (dataKind == 2 /*DataIsStaticLocal*/ || dataKind == 6 /*DataIsGlobal*/ || dataKind == 8 /*DataIsStaticMember*/)
+            continue;
+
+        // Get the offset of the child member, relative to its parent. #436: a nested UDT is dumped at its
+        // own address (AC passes dwFinalOffset to the recursion), not at the parent's.
+        DWORD dwMemberOffset = 0;
+        SymGetTypeInfo(m_hProcess, modBase, children.ChildId[i],
+            TI_GET_OFFSET, &dwMemberOffset);
+
+        // Calculate the address of the member
+        DWORD_PTR dwFinalOffset = offset + dwMemberOffset;
+
         // Add appropriate indentation level (since this routine is recursive)
         for (unsigned j = 0; j <= nestingLevel+1; j++)
-            pszCurrBuffer += sprintf(pszCurrBuffer, "\t");
+            pszCurrBuffer = AppendFormat(pszCurrBuffer, "\t");
 
         // Recurse for each of the child types
         bool bHandled2;
         BasicType basicType = GetBasicType(children.ChildId[i], modBase);
-        pszCurrBuffer += sprintf(pszCurrBuffer, rgBaseType[basicType]);
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, "%s", BaseTypeName(basicType));
 
         pszCurrBuffer = DumpTypeIndex(pszCurrBuffer, modBase,
             children.ChildId[i], nestingLevel+1,
-            offset, bHandled2, Name);
+            dwFinalOffset, bHandled2, Name);
 
         // If the child wasn't a UDT, format it appropriately
         if (!bHandled2)
         {
-            // Get the offset of the child member, relative to its parent
-            DWORD dwMemberOffset;
-            SymGetTypeInfo(m_hProcess, modBase, children.ChildId[i],
-                TI_GET_OFFSET, &dwMemberOffset);
-
             // Get the real "TypeId" of the child.  We need this for the
             // SymGetTypeInfo(TI_GET_TYPEID) call below.
             DWORD typeId;
@@ -937,20 +1055,17 @@ char* Name)
             ULONG64 length;
             SymGetTypeInfo(m_hProcess, modBase, typeId, TI_GET_LENGTH, &length);
 
-            // Calculate the address of the member
-            DWORD_PTR dwFinalOffset = offset + dwMemberOffset;
-
             //             BasicType basicType = GetBasicType(children.ChildId[i], modBase);
             //
-            //          pszCurrBuffer += sprintf(pszCurrBuffer, rgBaseType[basicType]);
+            //          pszCurrBuffer = AppendFormat(pszCurrBuffer, rgBaseType[basicType]);
             //
             // Emit the variable name
-            //          pszCurrBuffer += sprintf(pszCurrBuffer, "\'%s\'", Name);
+            //          pszCurrBuffer = AppendFormat(pszCurrBuffer, "\'%s\'", Name);
 
             pszCurrBuffer = FormatOutputValue(pszCurrBuffer, basicType,
                 length, (PVOID)dwFinalOffset);
 
-            pszCurrBuffer += sprintf(pszCurrBuffer, "\r\n");
+            pszCurrBuffer = AppendFormat(pszCurrBuffer, "\r\n");
         }
     }
 
@@ -965,38 +1080,38 @@ PVOID pAddress)
 {
     // Format appropriately (assuming it's a 1, 2, or 4 bytes (!!!)
     if (length == 1)
-        pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PBYTE)pAddress);
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %X", *(PBYTE)pAddress);
     else if (length == 2)
-        pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PWORD)pAddress);
+        pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %X", *(PWORD)pAddress);
     else if (length == 4)
     {
         if (basicType == btFloat)
         {
-            pszCurrBuffer += sprintf(pszCurrBuffer, " = %f", *(PFLOAT)pAddress);
+            pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %f", *(PFLOAT)pAddress);
         }
         else if (basicType == btChar)
         {
             if (!IsBadStringPtr(*(PSTR*)pAddress, 32))
             {
-                pszCurrBuffer += sprintf(pszCurrBuffer, " = \"%.31s\"",
+                pszCurrBuffer = AppendFormat(pszCurrBuffer, " = \"%.31s\"",
                     *(PSTR*)pAddress);
             }
             else
-                pszCurrBuffer += sprintf(pszCurrBuffer, " = %X",
+                pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %X",
                     *(PDWORD)pAddress);
         }
         else
-            pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PDWORD)pAddress);
+            pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %X", *(PDWORD)pAddress);
     }
     else if (length == 8)
     {
         if (basicType == btFloat)
         {
-            pszCurrBuffer += sprintf(pszCurrBuffer, " = %lf",
+            pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %lf",
                 *(double *)pAddress);
         }
         else
-            pszCurrBuffer += sprintf(pszCurrBuffer, " = %I64X",
+            pszCurrBuffer = AppendFormat(pszCurrBuffer, " = %I64X",
                 *(DWORD64*)pAddress);
     }
 
@@ -1034,18 +1149,28 @@ WheatyExceptionReport::GetBasicType(DWORD typeIndex, DWORD64 modBase)
 //============================================================================
 int __cdecl WheatyExceptionReport::_tprintf(const TCHAR * format, ...)
 {
-    TCHAR szBuff[1024];
-    int retValue;
+    // #327: bounded. The old `vsprintf` into szBuff[1024] overflowed on a long symbol name (up to
+    // MAX_SYM_NAME), a long source path, or a full 2048-byte symbol line from EnumerateSymbolsCallback.
+    TCHAR szBuff[4096];
     DWORD cbWritten;
     va_list argptr;
 
+    szBuff[0] = _T('\0');
     va_start(argptr, format);
-    retValue = vsprintf(szBuff, format, argptr);
+    int retValue = _vsntprintf_s(szBuff, countof(szBuff), _TRUNCATE, format, argptr);
     va_end(argptr);
+    szBuff[countof(szBuff) - 1] = _T('\0');                 // terminated whatever the return value was
 
-    WriteFile(m_hReportFile, szBuff, retValue * sizeof(TCHAR), &cbWritten, 0);
+    size_t length = _tcslen(szBuff);
+    WriteFile(m_hReportFile, szBuff, DWORD(length * sizeof(TCHAR)), &cbWritten, 0);
 
-    return retValue;
+    if (retValue < 0)                                       // truncated (or a conversion error): say so
+    {
+        static TCHAR const szTruncated[] = _T(" ...[truncated]\r\n");
+        WriteFile(m_hReportFile, szTruncated, DWORD((countof(szTruncated) - 1) * sizeof(TCHAR)), &cbWritten, 0);
+    }
+
+    return int(length);
 }
 
 #endif  // _WIN32

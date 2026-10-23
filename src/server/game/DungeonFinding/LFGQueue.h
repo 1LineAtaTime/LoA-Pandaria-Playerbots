@@ -237,6 +237,8 @@ public:
     bool IsRaid() const { return m_raid; }
 
 private:
+    bool TryCompleteBucket(BucketList::iterator destItr);
+
     QueueManager* m_manager;
     uint32 m_dungeonID;
     uint32 m_tankSlots, m_healerSlots, m_damageSlots;

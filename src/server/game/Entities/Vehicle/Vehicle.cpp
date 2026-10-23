@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -15,11 +15,13 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "Common.h"
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "Vehicle.h"
 #include "Unit.h"
 #include "Util.h"
+#include "WorldPacket.h"
 #include "ScriptMgr.h"
 #include "CreatureAI.h"
 #include "ZoneScript.h"
@@ -32,7 +34,7 @@
 #include "Battleground.h"
 
 Vehicle::Vehicle(Unit* unit, VehicleEntry const* vehInfo, uint32 creatureEntry) :
-UsableSeatNum(0), _me(unit), _vehicleInfo(vehInfo), _creatureEntry(creatureEntry), _status(STATUS_NONE)
+UsableSeatNum(0), _me(unit), _vehicleInfo(vehInfo), _creatureEntry(creatureEntry), _status(STATUS_NONE), _accessoriesInstalled(false)
 {
     for (uint32 i = 0; i < MAX_VEHICLE_SEATS; ++i)
     {
@@ -178,8 +180,14 @@ void Vehicle::Install()
 
 void Vehicle::InstallAllAccessories(bool evading)
 {
-    if (GetBase()->GetTypeId() == TYPEID_PLAYER || !evading)
+    // AC parity (#216): clear stale control-vehicle auras only on the first non-evade reset; a
+    // re-Reset would otherwise eject a just-seated passenger (e.g. a summon-and-ride vehicle such as
+    // the Kezan Hot Rod, seated synchronously by its summon spell before its first Creature::Update).
+    if (GetBase()->GetTypeId() == TYPEID_PLAYER || (!evading && !_accessoriesInstalled))
         RemoveAllPassengers();   // We might have aura's saved in the DB with now invalid casters - remove
+
+    // Mark the initial reset as done even if this vehicle has no accessory list.
+    _accessoriesInstalled = true;
 
     VehicleAccessoryList const* accessories = sObjectMgr->GetVehicleAccessoryList(this);
     if (!accessories)
@@ -213,6 +221,7 @@ void Vehicle::Uninstall()
     _status = STATUS_UNINSTALLING;
     TC_LOG_DEBUG("entities.vehicle", "Vehicle::Uninstall Entry: %u, GuidLow: %u", _creatureEntry, _me->GetGUID().GetCounter());
     RemoveAllPassengers();
+    _accessoriesInstalled = false;
 }
 
 /**
@@ -234,7 +243,11 @@ void Vehicle::Reset(bool evading /*= false*/)
     TC_LOG_DEBUG("entities.vehicle", "Vehicle::Reset (Entry: %u, GuidLow: %u, DBGuid: %u)", GetCreatureEntry(), _me->GetGUID().GetCounter(), _me->ToCreature()->GetDBTableGUIDLow());
 
     ApplyAllImmunities();
-    InstallAllAccessories(evading);
+    // #170: AC parity (AC Vehicle.cpp:154-156). Dead spawns waiting out a respawn timer must not seat live
+    // accessories; they are seated on revival - Creature::Respawn sets m_triggerJustAppeared and the next
+    // Creature::Update calls Reset() again on the live vehicle (Creature.cpp, #216 block).
+    if (_me->IsAlive())
+        InstallAllAccessories(evading);
 }
 
 /**
@@ -469,16 +482,91 @@ void Vehicle::InstallAccessory(uint32 entry, int8 seatId, bool minion, uint8 typ
         _me->GetGUID().GetCounter(), (_me->GetTypeId() == TYPEID_UNIT ? _me->ToCreature()->GetDBTableGUIDLow() : _me->GetGUID().GetCounter()), GetCreatureEntry(),
         entry, (int32)seatId);
 
-    TempSummon* accessory = _me->SummonCreature(entry, *_me, TempSummonType(type), summonTime);
-    ASSERT(accessory);
+    // #170: AC parity (AC Vehicle.cpp:310-325). A spawned vehicle runs Reset() twice (Creature::AIM_Initialize from AddToWorld,
+    // then the first Creature::Update); without this guard the second install summoned a second accessory, AddPassenger
+    // ejected the first one and a non-minion accessory (e.g. 40942 on the Warsong War Rider 34832) stood forever at the spawn.
+    if (Unit* passenger = GetPassenger(seatId))
+    {
+        // already installed
+        if (passenger->GetEntry() == entry)
+        {
+            ASSERT(passenger->GetTypeId() == TYPEID_UNIT);
+            if (_me->GetTypeId() == TYPEID_UNIT)
+            {
+                if (_me->ToCreature()->IsInEvadeMode() && passenger->IsAIEnabled)
+                    passenger->ToCreature()->AI()->EnterEvadeMode();
+                return;
+            }
+        }
+        else
+            passenger->ExitVehicle(); // this should not happen
+    }
+
+    TempSummon* accessory = _me->SummonCreature(entry, *_me, TempSummonType(type), Milliseconds(summonTime));
+    // #169: a vehicle standing at an invalid position (e.g. Z = INVALID_HEIGHT over a map hole) cannot summon
+    // its accessory; log it instead of aborting the whole server.
+    if (!accessory)
+    {
+        TC_LOG_ERROR("entities.vehicle", "Vehicle (GuidLow: %u, Entry: %u) at (%.1f, %.1f, %.1f) map %u failed to summon accessory %u on seat %d",
+            _me->GetGUID().GetCounter(), GetCreatureEntry(), _me->GetPositionX(), _me->GetPositionY(), _me->GetPositionZ(),
+            _me->GetMapId(), entry, (int32)seatId);
+        return;
+    }
 
     if (minion)
         accessory->AddUnitTypeMask(UNIT_MASK_ACCESSORY);
 
-    (void)_me->HandleSpellClick(accessory, seatId);
+    // #170: AC parity (AC Vehicle.cpp:335-342): an accessory that cannot board is unsummoned, not left standing.
+    if (!_me->HandleSpellClick(accessory, seatId))
+    {
+        TC_LOG_DEBUG("playerbots", "#170 vehicle accessory: vehicle %u (entry %u, dbguid %u) could not install accessory %u on seat %d: "
+            "no usable npc_spellclick_spells row for entry %u (missing, or its requirements/conditions failed) - unsummoned",
+            _me->GetGUID().GetCounter(), _me->GetEntry(), (_me->GetTypeId() == TYPEID_UNIT ? _me->ToCreature()->GetDBTableGUIDLow() : 0),
+            entry, (int32)seatId, GetCreatureEntry());
+        accessory->UnSummon();
+        return;
+    }
 
-    /// If for some reason adding accessory to vehicle fails it will unsummon in
-    /// @VehicleJoinEvent::Abort
+    // MoP boards synchronously (no AC VehicleJoinEvent): an instant ride spell has seated the accessory by now. If it has not,
+    // the cast or AddPassenger failed silently; do what AC's VehicleJoinEvent::Abort does and unsummon it. A ride spell with a
+    // travel speed (e.g. 64779) seats it on its delayed hit, so only log there.
+    if (accessory->GetVehicle() != this)
+    {
+        bool delayed = false;
+        SpellClickInfoMapBounds clickPair = sObjectMgr->GetSpellClickInfoMapBounds(GetCreatureEntry());
+        for (SpellClickInfoContainer::const_iterator itr = clickPair.first; itr != clickPair.second; ++itr)
+            if (SpellInfo const* clickSpell = sSpellMgr->GetSpellInfo(itr->second.spellId))
+                if (clickSpell->Speed > 0.0f)
+                    delayed = true;
+
+        char const* reason = "the ride spell cast failed or its aura did not apply";
+        SeatMap::const_iterator seat = Seats.find(seatId);
+        if (seatId >= 0 && seat == Seats.end())
+            reason = "the seat does not exist in this VehicleId";
+        else if (seatId >= 0 && !seat->second.IsEmpty())
+            reason = "the seat is taken by another unit";
+        else if (!accessory->IsAlive() || !accessory->IsInWorld())
+            reason = "the accessory is dead or not in the world";
+        else if (!_me->IsAlive() || !_me->IsInWorld())
+            reason = "the vehicle is dead or not in the world";
+        else if (accessory->GetVehicle())
+            reason = "the accessory boarded another vehicle";
+
+        TC_LOG_DEBUG("playerbots", "#170 vehicle accessory: vehicle %u (entry %u, VehicleId %u, dbguid %u) at (%.1f, %.1f, %.1f) map %u: accessory %u "
+            "(guid %u) not seated on seat %d after the spellclick: %s - %s",
+            _me->GetGUID().GetCounter(), _me->GetEntry(), _vehicleInfo->m_ID, (_me->GetTypeId() == TYPEID_UNIT ? _me->ToCreature()->GetDBTableGUIDLow() : 0),
+            _me->GetPositionX(), _me->GetPositionY(), _me->GetPositionZ(), _me->GetMapId(), entry, accessory->GetGUID().GetCounter(), (int32)seatId,
+            delayed ? "ride spell has a travel time, boarding pending" : reason, delayed ? "kept" : "unsummoned");
+
+        if (!delayed)
+        {
+            accessory->UnSummon();
+            return;
+        }
+    }
+
+    if (GetBase()->GetTypeId() == TYPEID_UNIT)
+        sScriptMgr->OnInstallAccessory(this, accessory);
 }
 
 /**
@@ -699,6 +787,9 @@ void Vehicle::RelocatePassengers()
 {
     ASSERT(_me->GetMap());
 
+    std::vector<std::pair<Unit*, Position>> seatRelocation;
+    seatRelocation.reserve(Seats.size());
+
     // not sure that absolute position calculation is correct, it must depend on vehicle pitch angle
     for (SeatMap::const_iterator itr = Seats.begin(); itr != Seats.end(); ++itr)
     {
@@ -709,10 +800,12 @@ void Vehicle::RelocatePassengers()
             float px, py, pz, po;
             passenger->m_movementInfo.transport.pos.GetPosition(px, py, pz, po);
             CalculatePassengerPosition(px, py, pz, &po);
-
-            passenger->UpdatePosition(px, py, pz, po);
+            seatRelocation.emplace_back(passenger, Position(px, py, pz, po));
         }
     }
+
+    for (auto const& pair : seatRelocation)
+        pair.first->UpdatePosition(pair.second);
 }
 
 /**

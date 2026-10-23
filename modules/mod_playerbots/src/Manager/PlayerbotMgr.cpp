@@ -1,9 +1,22 @@
 ﻿/*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
- */
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "PlayerbotMgr.h"
+#include "RBAC.h"
 
 #include <cstdio>
 #include <cstring>
@@ -11,6 +24,8 @@
 #include <string>
 
 #include "BotFactory.h"
+#include <map>
+#include <mutex>
 #include "Helper.h"
 #include "PlayerbotAIConfig.h"
 #include "CharacterCache.h"
@@ -29,6 +44,13 @@
 #include "WorldSession.h"
 #include "ChannelMgr.h"
 #include "Log.h"
+
+
+// #161: ".npcbot addclass" used to randomize and equip the added bot from a detached std::thread, off the
+// world thread. Record the request here and apply it in PlayerbotMgr::OnBotLoginInternal, which runs on the
+// world thread once the bot is in the world (AC queues the same work onto its world-thread processor).
+static std::mutex sAddclassMutex;
+static std::map<ObjectGuid, uint32> sAddclassPending; // bot guid -> master level at the time of the command
 
 PlayerbotHolder::PlayerbotHolder() : PlayerbotAIBase(false) {}
 class PlayerbotLoginQueryHolder : public LoginQueryHolder
@@ -54,7 +76,7 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
     // bot is loading
     if (botLoading.find(playerGuid) != botLoading.end())
     {
-        TC_LOG_DEBUG("playerbots", "Bot %u is already loading", playerGuid);
+        TC_LOG_DEBUG("playerbots", "Bot %u is already loading", playerGuid.GetCounter());
         return;
     }
 
@@ -62,14 +84,14 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
     Player* bot = ObjectAccessor::FindPlayer(playerGuid);
     if (bot && bot->IsInWorld())
     {
-        TC_LOG_DEBUG("playerbots", "Bot %u is already in game", playerGuid);
+        TC_LOG_DEBUG("playerbots", "Bot %u is already in game", playerGuid.GetCounter());
         return;
     }
 
     uint32 accountId = sCharacterCache->GetCharacterAccountIdByGuid(playerGuid);
     if (!accountId)
     {
-        TC_LOG_DEBUG("playerbots", "Bot %u has invalid accountid", playerGuid);
+        TC_LOG_DEBUG("playerbots", "Bot %u has invalid accountid", playerGuid.GetCounter());
         return;
     }
 
@@ -97,7 +119,7 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
     // At login DBC locale should be what the server is set to use by default (as spells etc are hardcoded to ENUS this
     // allows channels to work as intended)
     // Créer une session WorldSession pour le bot
-    WorldSession* botSession = new WorldSession(botAccountId, nullptr, AccountTypes::SEC_PLAYER, Expansions::EXPANSION_MISTS_OF_PANDARIA, 0, LOCALE_frFR, 0, false, false, true);
+    WorldSession* botSession = new WorldSession(botAccountId, "", nullptr, AccountTypes::SEC_PLAYER, Expansions::EXPANSION_MISTS_OF_PANDARIA, 0, LOCALE_frFR, 0, false, false, true, true /*isBot, as AC*/);
 
     botSession->HandlePlayerLogin(holder);  // will delete lqh
     Player* bot = botSession->GetPlayer();
@@ -146,7 +168,7 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
         PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(masterPlayer);
         if (!mgr)
         {
-            TC_LOG_DEBUG("playerbots", "PlayerbotMgr not found for master player with GUID: %u", masterPlayer->GetGUID());
+            TC_LOG_DEBUG("playerbots", "PlayerbotMgr not found for master player with GUID: %u", masterPlayer->GetGUID().GetCounter());
         }
 
         uint32 count = mgr->GetPlayerbotsCount();
@@ -178,6 +200,19 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
     }
 
     botLoading.erase(botGUID);
+}
+
+std::vector<Player*> PlayerbotHolder::GetPlayerBotsSnapshot() const
+{
+    std::shared_lock<std::shared_mutex> guard(playerBotsMutex);
+
+    std::vector<Player*> bots;
+    bots.reserve(playerBots.size());
+    for (auto const& itr : playerBots)
+        if (itr.second)
+            bots.push_back(itr.second);
+
+    return bots;
 }
 
 void PlayerbotHolder::UpdateSessions()
@@ -239,6 +274,24 @@ void PlayerbotHolder::LogoutAllBots()
             continue;
 
         LogoutPlayerBot(bot->GetGUID());
+    }
+
+    // #503: a selfbot's AI dies with its player. AC deletes it from MiscScript::OnDestructPlayer (AC Script/Playerbots.cpp:
+    // 400-406) and its ~PlayerbotAI erases the map entry; this core has no player-destruct hook, so it is done here, from the
+    // WorldSession::LogoutPlayer -> OnPlayerbotLogout call (m_playerLogout is already set there; a CMSG_LOGOUT_REQUEST that can
+    // still be cancelled does not set it). Without this the next login of the same character would find the freed player's AI.
+    if (PlayerbotMgr* mgr = dynamic_cast<PlayerbotMgr*>(this))
+    {
+        Player* master = mgr->GetMaster();
+        if (master && master->GetSession() && master->GetSession()->PlayerLogout())
+        {
+            PlayerbotAI* selfAI = GET_PLAYERBOT_AI(master);
+            if (selfAI && selfAI->IsRealPlayer())
+            {
+                sPlayerbotsMgr->RemovePlayerBotData(master->GetGUID(), true);
+                delete selfAI;
+            }
+        }
     }
 }
 
@@ -353,7 +406,7 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
                 botWorldSessionPtr->HandleLogoutRequestOpcode(data);
                 if (!bot)
                 {
-                    playerBots.erase(guid);
+                    { std::unique_lock<std::shared_mutex> guard(playerBotsMutex); playerBots.erase(guid); }
                     delete botWorldSessionPtr;
                     if (target)
                         delete target;
@@ -362,7 +415,7 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
             }
             else
             {
-                playerBots.erase(guid);     // deletes bot player ptr inside this WorldSession PlayerBotMap
+                { std::unique_lock<std::shared_mutex> guard(playerBotsMutex); playerBots.erase(guid); }     // deletes bot player ptr inside this WorldSession PlayerBotMap
                 delete botWorldSessionPtr;  // finally delete the bot's WorldSession
                 //if (target)
                     //delete target;
@@ -372,7 +425,7 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
         else if (bot && (logout || !botWorldSessionPtr->isLogingOut()))
         {
             botAI->TellMaster("Goodbye!");
-            playerBots.erase(guid);                  // deletes bot player ptr inside this WorldSession PlayerBotMap
+            { std::unique_lock<std::shared_mutex> guard(playerBotsMutex); playerBots.erase(guid); }                  // deletes bot player ptr inside this WorldSession PlayerBotMap
             botWorldSessionPtr->LogoutPlayer(true);  // this will delete the bot Player object and PlayerbotAI object
             delete botWorldSessionPtr;               // finally delete the bot's WorldSession
         }
@@ -409,7 +462,7 @@ void PlayerbotHolder::DisablePlayerBot(ObjectGuid guid)
         //        delete target;
         //}
 
-        playerBots.erase(guid);  // deletes bot player ptr inside this WorldSession PlayerBotMap
+        { std::unique_lock<std::shared_mutex> guard(playerBotsMutex); playerBots.erase(guid); }  // deletes bot player ptr inside this WorldSession PlayerBotMap
 
         delete botAI;
     }
@@ -437,7 +490,10 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     }
 
     sPlayerbotsMgr->AddPlayerbotData(bot, true);
-    playerBots[bot->GetGUID()] = bot;
+    {
+        std::unique_lock<std::shared_mutex> guard(playerBotsMutex);
+        playerBots[bot->GetGUID()] = bot;
+    }
     OnBotLoginInternal(bot);
 
     PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
@@ -632,9 +688,107 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     }*/
 }
 
-std::string const PlayerbotHolder::ProcessBotCommand(std::string const /*cmd*/, ObjectGuid /*guid*/, ObjectGuid /*masterguid*/,
-    bool /*admin*/, uint32 /*masterAccountId*/, uint32 /*masterGuildId*/)
+// Ported from AC mod-playerbots Bot/PlayerbotMgr.cpp:675-708,721-822 (#177), the ".playerbots bot
+// add|remove|login|logout|list|init" family (aliased to ".npcbot" on this fork, cs_playerbots.cpp).
+// Trimmed from AC's version:
+//  - "addaccount"'s security gate (AiPlayerbot.AllowAccountBots/AllowTrustedAccountBots) is kept;
+//    the "linked accounts" half of it (IsAccountLinked) is dropped - this fork has no account-linking
+//    feature (group-functionality-parity.md section 5.2 calls it out as optional/not built).
+//  - "init=auto" (gearscore-matched init) needs a BotInitGuard concurrency lock and a
+//    resetInstanceIdForAltBots/autoInitEquipLevelLimitRatio config pair that do not exist on this
+//    fork; left out rather than guessed at (falls through to "unknown command").
+//  - "refresh=raid"/"levelup"/"refresh"/"random"/"quests" are out of #177's scope (add/remove/login/
+//    logout/list/init only) and are not ported here.
+//  - the "addclass"-only restriction AC applies before init= (IsAddclassBot()) has no equivalent
+//    tracking on this fork; init works on any of the master's own logged-in bots instead.
+//  - the "bot not found" fallback that AC gets from sRandomPlayerbotMgr.GetPlayerBot(guid) (a lookup
+//    this fork's RandomPlayerbotMgr does not expose) is replaced with ObjectAccessor::
+//    FindConnectedPlayer(guid), equivalent for an already-logged-in bot.
+std::string const PlayerbotHolder::ProcessBotCommand(std::string const cmd, ObjectGuid guid, ObjectGuid /*masterguid*/,
+    bool /*admin*/, uint32 masterAccountId, uint32 /*masterGuildId*/)
 {
+    if (!sPlayerbotAIConfig->enabled || guid.IsEmpty())
+        return "bot system is disabled";
+
+    if (cmd == "add" || cmd == "addaccount" || cmd == "login")
+    {
+        if (ObjectAccessor::FindPlayer(guid))
+            return "player already logged in";
+
+        if (cmd == "addaccount")
+        {
+            uint32 accountId = sCharacterCache->GetCharacterAccountIdByGuid(guid);
+            if (!accountId)
+                return "character not found";
+
+            if (!sPlayerbotAIConfig->allowAccountBots && accountId != masterAccountId)
+                return "you can only add bots from your own account";
+        }
+
+        AddPlayerBot(guid, masterAccountId);
+        return "ok";
+    }
+    else if (cmd == "remove" || cmd == "logout" || cmd == "rm")
+    {
+        if (!ObjectAccessor::FindPlayer(guid))
+            return "player is offline";
+
+        if (!GetPlayerBot(guid))
+            return "not your bot";
+
+        LogoutPlayerBot(guid);
+        return "ok";
+    }
+
+    Player* bot = GetPlayerBot(guid);
+    if (!bot)
+        bot = ObjectAccessor::FindConnectedPlayer(guid);
+
+    if (!bot)
+        return "bot not found";
+
+    if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot))
+    {
+        if (Player* master = botAI->GetMaster())
+        {
+            if (cmd == "init=white" || cmd == "init=common")
+            {
+                BotFactory(bot, master->GetLevel(), ITEM_QUALITY_NORMAL).Randomize(false);
+                return "ok";
+            }
+            else if (cmd == "init=green" || cmd == "init=uncommon")
+            {
+                BotFactory(bot, master->GetLevel(), ITEM_QUALITY_UNCOMMON).Randomize(false);
+                return "ok";
+            }
+            else if (cmd == "init=blue" || cmd == "init=rare")
+            {
+                BotFactory(bot, master->GetLevel(), ITEM_QUALITY_RARE).Randomize(false);
+                return "ok";
+            }
+            else if (cmd == "init=epic" || cmd == "init=purple")
+            {
+                BotFactory(bot, master->GetLevel(), ITEM_QUALITY_EPIC).Randomize(false);
+                return "ok";
+            }
+            else if (cmd == "init=legendary" || cmd == "init=yellow")
+            {
+                BotFactory(bot, master->GetLevel(), ITEM_QUALITY_LEGENDARY).Randomize(false);
+                return "ok";
+            }
+            else
+            {
+                int gs;
+                if (sscanf(cmd.c_str(), "init=%d", &gs) == 1)
+                {
+                    BotFactory(bot, master->GetLevel(), ITEM_QUALITY_LEGENDARY, gs).Randomize(false);
+                    // AC PlayerbotMgr.cpp:807-811 reports the limit divided by the epic multiplier.
+                    return "ok, gear score limit: " + std::to_string(gs / PlayerbotAI::GetItemScoreMultiplier(ItemQualities(ITEM_QUALITY_EPIC))) + "(for epic)";
+                }
+            }
+        }
+    }
+
     return "unknown command";
 }
 
@@ -720,6 +874,7 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
             bot->ActivateSpec(0);
             BotFactory factory(bot, bot->GetLevel());
             factory.InitTalentsTree(false);
+            factory.InitGlyphs(false);  // #734, AC ChangeTalentsAction.cpp:149 (InitGlyphs after a spec change)
             factory.InitEquipment(true);
             GET_PLAYERBOT_AI(bot)->ResetStrategies();
             GET_PLAYERBOT_AI(bot)->Reset(true);
@@ -798,26 +953,11 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
             if (ObjectAccessor::FindConnectedPlayer(guid))
                 continue;
 
-            AddPlayerBot(guid, master->GetSession()->GetAccountId());
-            // ugly
-            std::thread([this, master, guid]
             {
-                Player* bot = nullptr;
-                int max_try = 100;
-                do
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(120));
-                    bot = ObjectAccessor::FindConnectedPlayer(guid);
-                    if (bot) break;
-                    --max_try;
-                } while (bot == nullptr && max_try > 0);
-                if (!bot) return;
-                sRandomPlayerbotMgr->SetValue(bot, "level", master->GetLevel());
-                sRandomPlayerbotMgr->Randomize(bot);
-                BotFactory factory(bot, bot->GetLevel());
-                factory.InitTalentsTree(true);
-                factory.InitEquipment(true);
-            }).detach();
+                std::lock_guard<std::mutex> lock(sAddclassMutex);
+                sAddclassPending[guid] = master->GetLevel();
+            }
+            AddPlayerBot(guid, master->GetSession()->GetAccountId());
             
             messages.push_back("Add class " + std::string(charname));
             return messages;
@@ -826,7 +966,92 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
         return messages;
     }
 
-    return {};
+    // #177 (AC PlayerbotMgr.cpp:1022-1025,1181-1320): "list", then the generic add/remove/login/
+    // logout/init dispatch onto ProcessBotCommand() above. Trimmed from AC's version: no "*" (whole
+    // group) / "!" (GM: every logged-in bot) / comma-separated multi-target expansion - one bot name
+    // (or the master's current target, same fallback AC itself falls back to) per command. The
+    // "addaccount"-lists-every-character-on-that-account expansion is dropped for the same reason.
+    if (!strcmp(cmd, "list"))
+    {
+        messages.push_back(ListBots(master));
+        return messages;
+    }
+
+    // #503 (AC Bot/PlayerbotMgr.cpp:1053-1072): "self" hands the player's own character to the bot AI, or takes it back.
+    // Fork mappings:
+    //  - AC CanBeGameMaster() -> HasPermission(rbac::RBAC_PERM_COMMAND_GM), the mapping PlayerbotAI.cpp/PlayerbotSecurity.cpp use.
+    //  - AC's ~PlayerbotAI erases the AI-map entry (AC PlayerbotAI.cpp:357-358). This fork's destructor does not, so the
+    //    entry is erased here before the delete; otherwise GET_PLAYERBOT_AI(master) would return a freed AI.
+    //  - AC PlayerbotRepository::Load (saved strategies) is skipped: this fork's bot DB store is disabled
+    //    (PlayerbotOperations.h:11).
+    if (!strcmp(cmd, "self") && master)
+    {
+        if (PlayerbotAI* selfAI = GET_PLAYERBOT_AI(master))
+        {
+            messages.push_back("Disable player botAI");
+            sPlayerbotsMgr->RemovePlayerBotData(master->GetGUID(), true);
+            delete selfAI;
+        }
+        else if (sPlayerbotAIConfig->selfBotLevel == 0)
+            messages.push_back("Self-bot is disabled");
+        else if (sPlayerbotAIConfig->selfBotLevel == 1 && !master->GetSession()->HasPermission(rbac::RBAC_PERM_COMMAND_GM))
+            messages.push_back("You do not have permission to enable player botAI");
+        else
+        {
+            messages.push_back("Enable player botAI");
+            sPlayerbotsMgr->AddPlayerbotData(master, true);
+            if (PlayerbotAI* newAI = GET_PLAYERBOT_AI(master))
+                newAI->SetMaster(master);
+        }
+
+        return messages;
+    }
+
+    if (!master)
+    {
+        messages.push_back("usage: list/reload/tweak/self or add/init/remove PLAYERNAME");
+        return messages;
+    }
+
+    std::string charnameStr;
+    if (!charname)
+    {
+        std::string name;
+        if (master && sCharacterCache->GetCharacterNameByGuid(master->GetTarget(), name))
+            charnameStr = name;
+        else
+        {
+            messages.push_back("usage: list/reload/tweak/self or add/init/remove PLAYERNAME");
+            return messages;
+        }
+    }
+    else
+        charnameStr = charname;
+
+    if (!normalizePlayerName(charnameStr))
+    {
+        messages.push_back("Character '" + charnameStr + "' not found");
+        return messages;
+    }
+
+    ObjectGuid member = sCharacterCache->GetCharacterGuidByName(charnameStr);
+    if (!member)
+    {
+        messages.push_back("Character '" + charnameStr + "' not found");
+        return messages;
+    }
+
+    std::string const cmdStr = cmd;
+    std::ostringstream out;
+    out << cmdStr << ": " << charnameStr << " - ";
+    if (member == master->GetGUID())
+        out << "cannot target yourself";
+    else
+        out << ProcessBotCommand(cmdStr, member, master->GetGUID(), master->GetSession()->HasPermission(rbac::RBAC_PERM_COMMAND_GM),
+                                 master->GetSession()->GetAccountId(), master->GetGuildId());
+
+    messages.push_back(out.str());
+    return messages;
 }
 
 uint32 PlayerbotHolder::GetAccountId(std::string const name) { return AccountMgr::GetId(name); }
@@ -998,10 +1223,10 @@ void PlayerbotMgr::HandleCommand(uint32 type, std::string const text)
     if (!master)
         return;
 
-    if (text.find(":"/*sPlayerbotAIConfig->commandSeparator*/) != std::string::npos)
+    if (text.find(sPlayerbotAIConfig->commandSeparator) != std::string::npos)
     {
         std::vector<std::string> commands;
-        split(commands, text, ":"/*sPlayerbotAIConfig->commandSeparator.c_str()*/);
+        split(commands, text, sPlayerbotAIConfig->commandSeparator.c_str());
         for (std::vector<std::string>::iterator i = commands.begin(); i != commands.end(); ++i)
         {
             HandleCommand(type, *i);
@@ -1014,8 +1239,8 @@ void PlayerbotMgr::HandleCommand(uint32 type, std::string const text)
     {
         Player* const bot = it->second;
         PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
-        //if (botAI)
-            //botAI->HandleCommand(type, text, master);
+        if (botAI)
+            botAI->HandleCommand(type, text, master);
     }
 
     for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr->GetPlayerBotsBegin();
@@ -1023,8 +1248,8 @@ void PlayerbotMgr::HandleCommand(uint32 type, std::string const text)
     {
         Player* const bot = it->second;
         PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
-        //if (botAI && botAI->GetMaster() == master)
-            //botAI->HandleCommand(type, text, master);
+        if (botAI && botAI->GetMaster() == master)
+            botAI->HandleCommand(type, text, master);
     }
 }
 
@@ -1040,10 +1265,11 @@ void PlayerbotMgr::HandleMasterIncomingPacket(WorldPacket const& packet)
             botAI->HandleMasterIncomingPacket(packet);
     }
 
-    for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr->GetPlayerBotsBegin();
-        it != sRandomPlayerbotMgr->GetPlayerBotsEnd(); ++it)
+    // Snapshot rather than walking sRandomPlayerbotMgr's live map, for the same reason as the
+    // outgoing path below. This one is defensive - the proven hang was on the outgoing hook - but
+    // the map is shared and mutated as bots log in and out, so iterating it directly is unsound.
+    for (Player* const bot : sRandomPlayerbotMgr->GetPlayerBotsSnapshot())
     {
-        Player* const bot = it->second;
         PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
         if (botAI && botAI->GetMaster() == GetMaster())
             botAI->HandleMasterIncomingPacket(packet);
@@ -1076,10 +1302,12 @@ void PlayerbotMgr::HandleMasterOutgoingPacket(WorldPacket const& packet)
             botAI->HandleMasterOutgoingPacket(packet);
     }
 
-    for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr->GetPlayerBotsBegin();
-        it != sRandomPlayerbotMgr->GetPlayerBotsEnd(); ++it)
+    // Iterate a snapshot, not the live map. This runs from WorldSession::SendPacket, which the
+    // map-update worker calls while the world/session thread is still logging random bots in and
+    // out; walking sRandomPlayerbotMgr's std::map directly races with those inserts and can leave
+    // the worker spinning in ++it forever (see GetPlayerBotsSnapshot).
+    for (Player* const bot : sRandomPlayerbotMgr->GetPlayerBotsSnapshot())
     {
-        Player* const bot = it->second;
         PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
         if (botAI && botAI->GetMaster() == GetMaster())
             botAI->HandleMasterOutgoingPacket(packet);
@@ -1113,11 +1341,40 @@ void PlayerbotMgr::OnBotLoginInternal(Player* const bot)
     botAI->SetMaster(master);
     //botAI->ResetStrategies();
 
+    // #161: apply a pending ".npcbot addclass" init here, on the world thread
+    uint32 addclassLevel = 0;
+    {
+        std::lock_guard<std::mutex> lock(sAddclassMutex);
+        auto it = sAddclassPending.find(bot->GetGUID());
+        if (it != sAddclassPending.end())
+        {
+            addclassLevel = it->second;
+            sAddclassPending.erase(it);
+        }
+    }
+    if (addclassLevel)
+    {
+        sRandomPlayerbotMgr->SetValue(bot, "level", addclassLevel);
+        sRandomPlayerbotMgr->Randomize(bot);
+        BotFactory factory(bot, bot->GetLevel());
+        factory.InitTalentsTree(true);
+        factory.InitGlyphs(false);  // #734, AC PlayerbotFactory::Randomize order (talents, then glyphs)
+        factory.InitEquipment(true);
+    }
+
     TC_LOG_INFO("playerbots", "Bot %s logged in - Active spec tab: %u Spec: %u ", bot->GetName().c_str(), (uint32)bot->GetActiveSpec(), (uint32)bot->GetSpecialization());
 }
 
 void PlayerbotMgr::OnPlayerLogin(Player* player)
 {
+    // #503 (AC Bot/PlayerbotMgr.cpp:1660-1661): SelfBotLevel 3 turns every real player into a selfbot at login.
+    // HandlePlayerbotCommand strtok()s its argument, so it gets a writable copy.
+    if (sPlayerbotAIConfig->selfBotLevel > 2)
+    {
+        char selfCmd[] = "self";
+        HandlePlayerbotCommand(selfCmd, player);
+    }
+
     /*
     // set locale priority for bot texts
     sPlayerbotTextMgr->AddLocalePriority(player->GetSession()->GetSessionDbcLocale());

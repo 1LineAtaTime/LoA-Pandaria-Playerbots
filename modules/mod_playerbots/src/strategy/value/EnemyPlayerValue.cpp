@@ -1,20 +1,59 @@
 #include "EnemyPlayerValue.h"
 
+#include "CombatManager.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 #include "Vehicle.h"
 
+namespace
+{
+    // #572 (MoP-only, beyond AC): with Battleground.IgnoreFaction = 1 (the 5.4.8 dist default,
+    // BattlegroundQueue.cpp:190-240) a bot can play for the other faction's side, and the core gives it
+    // that side's faction (Battleground.cpp:1605/1682). Inside a battleground "opposing" therefore means
+    // the other BG team - the rule BGTactics::BgTeamIdOf already applies to the tactics layer. Outside a
+    // battleground this is AC's race rule (PlayerbotAI::IsOpposing) unchanged.
+    bool IsOpposingSide(PlayerbotAI* botAI, Player* bot, Player* other)
+    {
+        if (bot->InBattleground() && other->InBattleground() &&
+            bot->GetBattlegroundId() == other->GetBattlegroundId())
+            return bot->GetBGTeam() != other->GetBGTeam();
+
+        return botAI->IsOpposing(other);
+    }
+
+    // #572: AC tests the flag aura against the race team (EnemyPlayerValue.cpp:66-67): a Horde bot hunts
+    // the holder of 23333 (the Horde flag), an Alliance bot the holder of 23335. Same test, side taken
+    // from the BG team inside a battleground.
+    bool CarriesOurFlag(Player* bot, Unit* target)
+    {
+        bool const hordeSide = bot->InBattleground() ? bot->GetBGTeam() == HORDE : bot->GetTeamId() == TEAM_HORDE;
+        return hordeSide ? target->HasAura(23333) : target->HasAura(23335);
+    }
+}
+
 bool NearestEnemyPlayersValue::AcceptUnit(Unit* unit)
 {
+    // #571, AC EnemyPlayerValue.cpp:15-17: apply the parent's filtering first (hostility, visibility,
+    // PvP-prohibited zones, unflagged players - AttackersValue::IsPossibleTarget).
+    if (!PossibleTargetsValue::AcceptUnit(unit))
+        return false;
+
     bool inCannon = botAI->IsInVehicle(false, true);
     Player* enemy = dynamic_cast<Player*>(unit);
-    if (enemy && botAI->IsOpposing(enemy) && enemy->IsPvP() &&
+    if (enemy && IsOpposingSide(botAI, bot, enemy) && enemy->IsPvP() &&
         !sPlayerbotAIConfig->IsPvpProhibited(enemy->GetZoneId(), enemy->GetAreaId()) &&
         !enemy->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NON_ATTACKABLE_2) &&
         ((inCannon || !enemy->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))) &&
-        /*!enemy->HasStealthAura() && !enemy->HasInvisibilityAura()*/ enemy->CanSeeOrDetect(bot) &&
+        /*!enemy->HasStealthAura() && !enemy->HasInvisibilityAura()*/ (bot->InBattleground() ? bot->CanSeeOrDetect(enemy) : enemy->CanSeeOrDetect(bot)) &&
         !(enemy->HasSpiritOfRedemptionAura()))
+    {
+        // #571, AC EnemyPlayerValue.cpp:27-31: with a master, only attack if the master is PvP flagged.
+        Player* master = botAI->GetMaster();
+        if (master && !master->IsPvP() && !master->IsFFAPvP())
+            return false;
+
         return true;
+    }
 
     return false;
 }
@@ -23,46 +62,40 @@ Unit* EnemyPlayerValue::Calculate()
 {
     bool controllingCannon = false;
     bool controllingVehicle = false;
+    bool passenger = false;
     if (Vehicle* vehicle = bot->GetVehicle())
     {
+        // #693, AC mod-playerbots#2855 (EnemyPlayerValue.cpp:43-55): a passenger in an attack seat fights too.
         VehicleSeatEntry const* seat = vehicle->GetSeatForPassenger(bot);
-        if (!seat || !seat->CanControl())  // not in control of vehicle so cant attack anyone
-            return nullptr;
+        if (!seat || (!seat->CanControl() && !(seat->m_flags & VEHICLE_SEAT_FLAG_CAN_ATTACK)))
+            return nullptr;  // a passenger seat that can't attack
         VehicleEntry const* vi = vehicle->GetVehicleInfo();
-        if (vi && vi->m_flags & VEHICLE_FLAG_FIXED_POSITION)
+        if (!seat->CanControl())
+            passenger = true;  // fights from its seat: it can't close in
+        else if (vi && vi->m_flags & VEHICLE_FLAG_FIXED_POSITION)
             controllingCannon = true;
         else
             controllingVehicle = true;
     }
 
-    // 1. Check units we are currently in combat with.
+    // 1. Check units we are currently in PvP combat with.
+    // #571, AC EnemyPlayerValue.cpp:55-70: AC walks the PvP combat references. This fork walked
+    // GetThreatenedByMeList(), which only holds the threat lists of creatures (players have none), so
+    // after the IsPlayer() filter this step could never return a player that was already fighting the bot.
     std::vector<Unit*> targets;
     Unit* pVictim = bot->GetVictim();
-    HostileReference* pReference = bot->getHostileRefManager().getFirst();
-    while (pReference)
+    for (auto const& [guid, combatRef] : bot->GetCombatManager().GetPvPCombatRefs())
     {
-        ThreatManager* threatMgr = pReference->GetSource();
-        if (Unit* pTarget = threatMgr->GetOwner())
-        {
-            if (pTarget != pVictim && pTarget->IsPlayer() && pTarget->CanSeeOrDetect(bot) &&
-                bot->IsWithinDist(pTarget, VISIBILITY_DISTANCE_NORMAL))
-            {
-                if (bot->GetTeamId() == TEAM_HORDE)
-                {
-                    if (pTarget->HasAura(23333))
-                        return pTarget;
-                }
-                else
-                {
-                    if (pTarget->HasAura(23335))
-                        return pTarget;
-                }
+        Unit* pTarget = combatRef->GetOther(bot);
+        if (!pTarget || pTarget == pVictim || !pTarget->IsPlayer() ||
+            !(bot->InBattleground() ? bot->CanSeeOrDetect(pTarget) : pTarget->CanSeeOrDetect(bot)) ||
+            !bot->IsWithinDist(pTarget, VISIBILITY_DISTANCE_NORMAL))
+            continue;
 
-                targets.push_back(pTarget);
-            }
-        }
+        if (CarriesOurFlag(bot, pTarget))  // #572: BG side, not race
+            return pTarget;
 
-        pReference = pReference->next();
+        targets.push_back(pTarget);
     }
 
     if (!targets.empty())
@@ -91,20 +124,13 @@ Unit* EnemyPlayerValue::Calculate()
         if (pTarget == pVictim)
             continue;
 
-        if (bot->GetTeamId() == TEAM_HORDE)
-        {
-            if (pTarget->HasAura(23333))
-                return pTarget;
-        }
-        else
-        {
-            if (pTarget->HasAura(23335))
-                return pTarget;
-        }
+        if (CarriesOurFlag(bot, pTarget))  // #572: BG side, not race (AC EnemyPlayerValue.cpp:98-107)
+            return pTarget;
 
         // Aggro weak enemies from further away.
         // If controlling mobile vehicle only agro close enemies (otherwise will never reach objective)
-        uint32 const aggroDistance = controllingVehicle ? 5.0f
+        uint32 const aggroDistance = passenger ? 30.0f
+            : controllingVehicle ? 5.0f
             : (controllingCannon || bot->GetHealth() > pTarget->GetHealth()) ? maxAggroDistance
             : 20.0f;
         if (!bot->IsWithinDist(pTarget, aggroDistance))
@@ -131,7 +157,8 @@ Unit* EnemyPlayerValue::Calculate()
 
                 if (Unit* pAttacker = pMember->getAttackerForHelper())
                     if (pAttacker->IsPlayer() && bot->IsWithinDist(pAttacker, maxAggroDistance * 2.0f) &&
-                        bot->IsWithinLOSInMap(pAttacker) && pAttacker != pVictim && pAttacker->CanSeeOrDetect(bot))
+                        bot->IsWithinLOSInMap(pAttacker) && pAttacker != pVictim &&
+                        (bot->InBattleground() ? bot->CanSeeOrDetect(pAttacker) : pAttacker->CanSeeOrDetect(bot)))
                         return pAttacker;
             }
         }

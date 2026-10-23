@@ -242,7 +242,7 @@ public:
 
         if (player->GetQuestStatus(QUEST_REPORTS_FROM_THE_FIELD) == QUEST_STATUS_INCOMPLETE)
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             switch (creature->GetEntry())
             {
@@ -372,7 +372,7 @@ public:
 
         void SummonGladiator(uint32 uiEntry)
         {
-            me->SummonCreature(uiEntry, afSummon[0], afSummon[1], afSummon[2], 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30*IN_MILLISECONDS);
+            me->SummonCreature(uiEntry, afSummon[0], afSummon[1], afSummon[2], 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(30*IN_MILLISECONDS));
         }
 
         void SummonedCreatureDies(Creature* summoned, Unit* /*killer*/) override

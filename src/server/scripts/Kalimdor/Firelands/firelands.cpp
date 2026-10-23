@@ -20,6 +20,7 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "firelands.h"
 #include "PassiveAI.h"
 
@@ -1147,7 +1148,7 @@ class npc_blazing_monstrosity : public CreatureScript
         {
             npc_blazing_monstrosityAI(Creature* creature) : PassiveAI(creature), _summons(creature) { }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 _summons.DespawnAll();
                 _events.Reset();
@@ -1281,9 +1282,9 @@ class npc_egg_pile : public CreatureScript
     public:
         npc_egg_pile() : CreatureScript("npc_egg_pile") { }
 
-        struct npc_egg_pileAI : public CreatureAI
+        struct npc_egg_pileAI : public ScriptedAI
         {
-            npc_egg_pileAI(Creature* creature) : CreatureAI(creature) { }
+            npc_egg_pileAI(Creature* creature) : ScriptedAI(creature) { }
 
             void AttackStart(Unit* /*target*/) override { }
 
@@ -1449,9 +1450,9 @@ class npc_firelands_volcanus : public CreatureScript
     public:
         npc_firelands_volcanus() : CreatureScript("npc_firelands_volcanus") { }
 
-        struct npc_firelands_volcanusAI : public CreatureAI
+        struct npc_firelands_volcanusAI : public ScriptedAI
         {
-            npc_firelands_volcanusAI(Creature* creature) : CreatureAI(creature)
+            npc_firelands_volcanusAI(Creature* creature) : ScriptedAI(creature)
             {
                 me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);
                 me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_GRIP, true);
@@ -1481,7 +1482,7 @@ class npc_firelands_volcanus : public CreatureScript
 
             void JustDied(Unit* /*killer*/) override
             {
-                if (Creature* pStalker = me->SummonCreature(NPC_STALKER, me->GetHomePosition(), TEMPSUMMON_TIMED_DESPAWN, 10000))
+                if (Creature* pStalker = me->SummonCreature(NPC_STALKER, me->GetHomePosition(), TEMPSUMMON_TIMED_DESPAWN, 10000ms))
                 {
                     pStalker->RemoveAllAuras();
                     pStalker->CastSpell(pStalker, SPELL_BRANCH_OF_NORDRASSIL_WIN_COSMETIC);
@@ -1670,8 +1671,8 @@ class spell_alysrazor_aggro_closest : public SpellScriptLoader
             void HandleEffect(SpellEffIndex effIndex)
             {
                 PreventHitDefaultEffect(effIndex);
-                float curThreat = GetCaster()->GetThreatManager().getThreat(GetHitUnit(), true);
-                GetCaster()->GetThreatManager().addThreat(GetHitUnit(), -curThreat + 50000.0f / std::min(1.0f, GetCaster()->GetDistance(GetHitUnit())));
+                float curThreat = GetCaster()->GetThreatManager().GetThreat(GetHitUnit(), true);
+                GetCaster()->GetThreatManager().AddThreat(GetHitUnit(), -curThreat + 50000.0f / std::min(1.0f, GetCaster()->GetDistance(GetHitUnit())));
             }
 
             void UpdateThreat()
@@ -1702,7 +1703,7 @@ class spell_firelands_siphon_essence : public SpellScriptLoader
         {
             PrepareSpellScript(spell_firelands_siphon_essence_SpellScript);
 
-            void HandleScript(SpellEffIndex /*effIndex*/)
+            void HandleScript(SpellEffIndex effIndex)
             {
                 if (!GetCaster())
                     return;
@@ -1727,11 +1728,11 @@ class npc_firelands_instance_portal : public CreatureScript
     public:
         npc_firelands_instance_portal() : CreatureScript("npc_firelands_instance_portal") { }
 
-        struct npc_firelands_instance_portalAI : public CreatureAI
+        struct npc_firelands_instance_portalAI : public ScriptedAI
         {
-            npc_firelands_instance_portalAI(Creature* creature) : CreatureAI(creature) { }
+            npc_firelands_instance_portalAI(Creature* creature) : ScriptedAI(creature) { }
 
-            void OnSpellClick(Unit* clicker, bool& /*result*/) override
+            void OnSpellClick(Unit* clicker, bool& result) override
             {
                 if (InstanceScript* instance = me->GetInstanceScript())
                     if (instance->GetBossState(DATA_BALEROC) != DONE)
@@ -1743,7 +1744,7 @@ class npc_firelands_instance_portal : public CreatureScript
                     clicker->NearTeleportTo(-359.944f, 206.012f, 52.32f, 3.64774f, false);
             }
 
-            void UpdateAI(uint32 /*diff*/) override { }
+            void UpdateAI(uint32 diff) override { }
         };
 
         CreatureAI* GetAI(Creature* creature) const override
@@ -1753,9 +1754,9 @@ class npc_firelands_instance_portal : public CreatureScript
 };
 
 // Majordomo Stagheim Event 54015
-struct npc_firelands_majordomo_stagheim_event : public CreatureAI
+struct npc_firelands_majordomo_stagheim_event : public ScriptedAI
 {
-    npc_firelands_majordomo_stagheim_event(Creature* creature) : CreatureAI(creature) { }
+    npc_firelands_majordomo_stagheim_event(Creature* creature) : ScriptedAI(creature) { }
 
     TaskScheduler scheduler;
     bool hasInitialize;
@@ -1778,32 +1779,32 @@ struct npc_firelands_majordomo_stagheim_event : public CreatureAI
 
         uint32 delay = 3500;
         scheduler
-            .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay), [this](TaskContext context)
         {
             DoCast(me, SPELL_SMOULDERING_ROOT);
             me->GetMotionMaster()->MovePoint(0, majordomoEventPos);
         });
 
         scheduler
-            .Schedule(Milliseconds(delay+=6700), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay+=6700), [this](TaskContext context)
         {
             Talk(TALK_SPECIAL_1);
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 9000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 9000), [this](TaskContext context)
         {
             DoCast(me, SPELL_SACRIFICE_TO_THE_FLAME);
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 6400), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 6400), [this](TaskContext context)
         {
             Talk(TALK_SPECIAL_2);
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 3700), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 3700), [this](TaskContext context)
         {
             DoCast(me, SPELL_FANDRAL_TRANSFORM);
 
@@ -1814,7 +1815,7 @@ struct npc_firelands_majordomo_stagheim_event : public CreatureAI
         });
 
         scheduler
-            .Schedule(Milliseconds(delay += 5500), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(delay += 5500), [this](TaskContext context)
         {
             // Summon Alysrazor
             if (Creature* firelandsEventBunny = ObjectAccessor::GetCreature(*me, me->GetInstanceScript() ? me->GetInstanceScript()->GetGuidData(DATA_FIRELANDS_EVENT_BUNNY) : ObjectGuid::Empty))
@@ -1886,11 +1887,11 @@ class spell_firelands_object_channel : public AuraScript
 {
     PrepareAuraScript(spell_firelands_object_channel);
 
-    void HandleAuraEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    void HandleAuraEffectRemove(AuraEffect const* aurEff, AuraEffectHandleModes mode)
     {
         if (Unit* owner = GetOwner()->ToUnit())
         {
-            if (owner->FindNearestGameObject(GO_RITUAL_OF_FLAMES_2, 10.0f))
+            if (GameObject* orb = owner->FindNearestGameObject(GO_RITUAL_OF_FLAMES_2, 10.0f))
                 owner->CastSpell(owner, SPELL_ORB_EVENT_2, true);
             else
                 owner->CastSpell(owner, SPELL_ORB_EVENT_1, true);

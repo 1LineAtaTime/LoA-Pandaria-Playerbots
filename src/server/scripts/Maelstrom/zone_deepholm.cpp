@@ -111,9 +111,9 @@ const Position wyvernDeepholmPath[8] =
 };
 
 // Aronus 45005
-struct npc_deepholm_wyvern : public CreatureAI
+struct npc_deepholm_wyvern : public ScriptedAI
 {
-    npc_deepholm_wyvern(Creature* creature) : CreatureAI(creature)
+    npc_deepholm_wyvern(Creature* creature) : ScriptedAI(creature)
     {
         me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
     }
@@ -128,9 +128,9 @@ struct npc_deepholm_wyvern : public CreatureAI
 };
 
 // Wyvern 45024
-struct npc_deepholm_wyvern_ride : public CreatureAI
+struct npc_deepholm_wyvern_ride : public ScriptedAI
 {
-    npc_deepholm_wyvern_ride(Creature* creature) : CreatureAI(creature) { }
+    npc_deepholm_wyvern_ride(Creature* creature) : ScriptedAI(creature) { }
 
     TaskScheduler scheduler;
     ObjectGuid targetGUID;
@@ -165,7 +165,7 @@ struct npc_deepholm_wyvern_ride : public CreatureAI
             init.Launch();
 
             scheduler
-                .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
             {
                 if (Player* target = ObjectAccessor::GetPlayer(*me, targetGUID))
                 {
@@ -184,7 +184,7 @@ struct npc_deepholm_wyvern_ride : public CreatureAI
             me->SetSpeed(MOVE_FLIGHT, 2.6f);
 
             scheduler
-                .Schedule(Milliseconds(4000), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(4000), [this](TaskContext context)
             {
                 if (Creature* aggra = me->SummonCreature(NPC_AGGRA, *me, TEMPSUMMON_MANUAL_DESPAWN))
                 {
@@ -202,7 +202,7 @@ struct npc_deepholm_wyvern_ride : public CreatureAI
                 init.Launch();
 
                 scheduler
-                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
                 {
                     if (Player* target = ObjectAccessor::GetPlayer(*me, targetGUID))
                         target->ExitVehicle();
@@ -226,9 +226,9 @@ struct npc_deepholm_wyvern_ride : public CreatureAI
 };
 
 // Aggra 45006
-struct npc_maelstorm_aggra : public CreatureAI
+struct npc_maelstorm_aggra : public ScriptedAI
 {
-    npc_maelstorm_aggra(Creature* creature) : CreatureAI(creature) { }
+    npc_maelstorm_aggra(Creature* creature) : ScriptedAI(creature) { }
 
     TaskScheduler scheduler;
     ObjectGuid summonerGUID;
@@ -242,25 +242,25 @@ struct npc_maelstorm_aggra : public CreatureAI
         {
             delay = 3200;
             scheduler
-                .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay), [this](TaskContext context)
             {
                 Talk(TALK_INTRO);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 10000), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 10000), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_1);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 10500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 10500), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_2);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 8500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 8500), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_3);
             });
@@ -269,37 +269,37 @@ struct npc_maelstorm_aggra : public CreatureAI
         {
             delay = 1250;
             scheduler
-                .Schedule(Milliseconds(delay), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_4);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 3900), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 3900), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_5);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 6000), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 6000), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_6);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 14400), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 14400), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_7);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 14600), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 14600), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_8);
             });
 
             scheduler
-                .Schedule(Milliseconds(delay += 9800), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(delay += 9800), [this](TaskContext context)
             {
                 Talk(TALK_SPECIAL_9);
             });

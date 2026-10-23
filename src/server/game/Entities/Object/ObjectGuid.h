@@ -21,6 +21,7 @@
 #include "Define.h"
 #include <array>
 #include <deque>
+#include <atomic>
 #include <functional>
 #include <list>
 #include <set>
@@ -328,15 +329,17 @@ class TC_GAME_API ObjectGuidGeneratorBase
     public:
         ObjectGuidGeneratorBase(ObjectGuid::LowType start = 1) : _nextGuid(start) { }
 
-        virtual void Set(ObjectGuid::LowType val) { _nextGuid = val; }
+        virtual void Set(ObjectGuid::LowType val) { _nextGuid.store(val); }
         virtual ObjectGuid::LowType Generate() = 0;
-        ObjectGuid::LowType GetNextAfterMaxUsed() const { return _nextGuid; }
+        ObjectGuid::LowType GetNextAfterMaxUsed() const { return _nextGuid.load(); }
         virtual ~ObjectGuidGeneratorBase() { }
 
     protected:
         static void HandleCounterOverflow(HighGuid high);
         static void CheckGuidTrigger(ObjectGuid::LowType guid);
-        ObjectGuid::LowType _nextGuid;
+        // LoA upstream #439 (201ba3d): global generators (items, ...) are used by several map-update threads
+        // at once with MapUpdate.Threads > 1; atomic so two threads never hand out the same guid.
+        std::atomic<ObjectGuid::LowType> _nextGuid;
 };
 
 template<HighGuid high>
@@ -347,13 +350,14 @@ class ObjectGuidGenerator : public ObjectGuidGeneratorBase
 
         ObjectGuid::LowType Generate() override
         {
-            if (_nextGuid >= ObjectGuid::GetMaxCounter(high) - 1)
+            ObjectGuid::LowType guid = _nextGuid.fetch_add(1);
+            if (guid >= ObjectGuid::GetMaxCounter(high) - 1)
                 HandleCounterOverflow(high);
 
             if (high == HighGuid::Unit || high == HighGuid::GameObject)
-                CheckGuidTrigger(_nextGuid);
+                CheckGuidTrigger(guid);
 
-            return _nextGuid++;
+            return guid;
         }
 };
 

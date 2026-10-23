@@ -31,6 +31,7 @@
 #include "MapManager.h"
 #include "MiscPackets.h"
 #include "MovementPacketBuilder.h"
+#include "MoveSpline.h"
 #include "ObjectAccessor.h"
 #include "ObjectDefines.h"
 #include "ObjectMgr.h"
@@ -38,7 +39,7 @@
 #include "OutdoorPvPMgr.h"
 #include "Player.h"
 #include "SharedDefines.h"
-#include "TargetedMovementGenerator.h"
+#include "SpellAuraEffects.h"
 #include "TemporarySummon.h"
 #include "Totem.h"
 #include "Transport.h"
@@ -50,10 +51,14 @@
 #include "Vehicle.h"
 #include "VMapFactory.h"
 #include "VMapManager2.h"
+#include "WaypointMovementGenerator.h"
 #include "World.h"
 #include "WorldPacket.h"
 
 #include "Physics.h"
+
+// #736 A/B: defined in Transport.cpp (the Transport.StopFrameClientEncoding mode; no header change)
+int32 TransportStopFrameClientEncoding();
 
 #define STEALTH_VISIBILITY_UPDATE_TIMER 500
 
@@ -451,12 +456,19 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     uint32 movementFlags = 0;
     uint32 movementFlagsExtra = 0;
 
+    // #736: a local transport in stop-frame mode (the SotA boats) lists its stop frames - the 5.4.8 field after
+    // the 22-bit count (SkyFire_548 694499de5 "TRANSPORT_FRAME_COUNT", TrinityCore 6.x "PauseTimes")
+    std::vector<uint32> const* transportStopFrames = nullptr;
+    if (GameObject const* go = ToGameObject())
+        if (go->GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && go->GetGUID().IsMOTransport())
+            transportStopFrames = static_cast<Transport const*>(go)->GetStopFrames();
+
     data->WriteBit(0);
     data->WriteBit(hasAnimKits);
     data->WriteBit(hasLiving);
     data->WriteBit(0);
     data->WriteBit(0);
-    data->WriteBits(0, 22);
+    data->WriteBits(transportStopFrames ? uint32(transportStopFrames->size()) : 0u, 22);
     data->WriteBit(hasVehicle);
     data->WriteBit(0);
     data->WriteBit(0);
@@ -482,7 +494,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         hasFallData = hasFallDirection || self->m_movementInfo.jump.fallTime != 0;
         movementFlags = self->GetUnitMovementFlags();
         movementFlagsExtra = self->GetExtraUnitMovementFlags();
-        hasSpline = self->IsSplineEnabled() && self->GetTypeId() != TYPEID_PLAYER;
+        // #126: AC Object.cpp:369-371 writes the spline for ANY unit with SPLINE_ENABLED, so an observer who arrives late sees
+        // a server-moved player (taxi, bot walks) moving. Only the player's own client (UPDATEFLAG_SELF) gets no spline here.
+        // #747: a playerbot moving by client status (Movement::SendBotMoveStatus) is shown like a running real player -
+        // FORWARD, facing and position below, no spline; its next 500 ms heartbeat refreshes it.
+        hasSpline = self->IsSplineEnabled() && !self->movespline->statusMode &&
+            (self->GetTypeId() != TYPEID_PLAYER || !(flags & UPDATEFLAG_SELF));
         hasPitch = self->HasUnitMovementFlag(MovementFlags(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING)) || self->HasExtraUnitMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING);
         hasSplineElevation = self->HasUnitMovementFlag(MOVEMENTFLAG_SPLINE_ELEVATION);
         hasUnitTransport = self->m_movementInfo.transport.guid;
@@ -609,6 +626,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     }
 
     data->FlushBits();
+
+    if (transportStopFrames)
+        for (uint32 stopFrame : *transportStopFrames)
+            *data << uint32(stopFrame);
 
     if (hasLiving)
     {
@@ -792,7 +813,18 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     {
         GameObject const* go = ToGameObject();
 
-        if (go && go->ToTransport())
+        // #736 A/B (Transport.cpp TransportStopFrameClientEncoding): modes 1/2 give a stop-frame transport (type 11 in
+        // GO state 25, Transport::EnableStopFrames) the absolute server clock, as TrinityCore 6.x does for type 11
+        // (TC6 Object.cpp: a type 11 GO is no Transport there, so ServerTime = getMSTime()). The state test, not a
+        // Transport cast: ToTransport() is a reinterpret_cast for any type 11 GO.
+        // #851: the elevator encoding (Transport.SotaBoatStopFrames = 2, GO state 24 or 25) always sends the absolute
+        // clock - TrinityCore 6.x/master write getMSTime() / GameTime for type 11; LEVEL is an absolute arrival time
+        if (transportStopFrames && static_cast<Transport const*>(go)->GetStopFrameMode() == 2)
+            *data << uint32(getMSTime());
+        else if (go && go->GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && go->GetGoState() == GOState(25) &&
+            TransportStopFrameClientEncoding() != 0)
+            *data << uint32(getMSTime());
+        else if (go && go->ToTransport())
             *data << uint32(go->GetGOValue()->Transport.PathProgress);
         else
             *data << uint32(getMSTime());
@@ -1459,6 +1491,10 @@ void WorldObject::setActive(bool on, ActiveFlags flag)
             map->AddToActive((GameObject*)this);
         else if (GetTypeId() == TYPEID_DYNAMICOBJECT)
             map->AddToActive((DynamicObject*)this);
+
+        // #850: AC Object.cpp:1108 - an active object must be on the map's updatable list
+        if (IsInWorld())
+            map->AddObjectToPendingUpdateList(this);
     }
     else
     {
@@ -1526,7 +1562,8 @@ void WorldObject::ProcessPositionDataChanged(PositionFullTerrainStatus const& da
 void WorldObject::AddToWorld()
 {
     Object::AddToWorld();
-    GetMap()->GetZoneAndAreaId(GetPhaseMask(), m_zoneId, m_areaId, GetPositionX(), GetPositionY(), GetPositionZ()); 
+    GetMap()->GetZoneAndAreaId(GetPhaseMask(), m_zoneId, m_areaId, GetPositionX(), GetPositionY(), GetPositionZ());
+    GetMap()->AddObjectToPendingUpdateList(this); // #850: AC Object.cpp:1227
 }
 
 void WorldObject::RemoveFromWorld()
@@ -1536,21 +1573,61 @@ void WorldObject::RemoveFromWorld()
 
     DestroyForNearbyPlayers();
 
+    // #850: AC removes in GridObjectLoader.cpp:149 (grid unload) only; here every path that deletes an object
+    // (RemoveFromMap, grid unload CleanupsBeforeDelete, Map::~Map) goes through RemoveFromWorld first.
+    if (Map* map = FindMap())
+        map->RemoveObjectFromMapUpdateList(this);
+
     Object::RemoveFromWorld();
 }
 
+// #850: AC Object.cpp:3247-3253
+bool WorldObject::IsUpdateNeeded()
+{
+    if (isActiveObject())
+        return true;
+
+    return false;
+}
+
+// #850: AC Object.cpp:3255-3269. Creatures only: GameObject/DynamicObject are not put on the list in this port.
+bool WorldObject::CanBeAddedToMapUpdateList()
+{
+    return GetTypeId() == TYPEID_UNIT && IsCreature();
+}
+
+// #72 perf: AC returns the cached ids (Object.cpp:3171-3194, refreshed by UpdatePositionData from the map relocation
+// paths); so does the TC 4.3.4 lineage (Cataclysm Preservation Object.h:373-375). This core already keeps m_zoneId /
+// m_areaId (with m_outdoors / m_liquidStatus, which it does read from the cache) current for every in-world unit:
+// AddToWorld, Map::PlayerRelocation, Map::CreatureRelocation, Map::MoveAllCreaturesInMoveList and
+// Transport::UpdatePassengerPositions all refresh them. A fresh lookup is a VMAP area query + grid read per call, and
+// the playerbot AI makes several per candidate unit (AttackersValue::IsPossibleTarget: 4). Units out of world (login,
+// teleport) and every other object type keep the fresh lookup exactly as before.
 uint32 WorldObject::GetZoneId() const
 {
+    if (IsInWorld() && isType(TYPEMASK_UNIT))
+        return m_zoneId;
+
     return GetBaseMap()->GetZoneId(GetPhaseMask(), m_positionX, m_positionY, m_positionZ);
 }
 
 uint32 WorldObject::GetAreaId() const
 {
+    if (IsInWorld() && isType(TYPEMASK_UNIT))
+        return m_areaId;
+
     return GetBaseMap()->GetAreaId(GetPhaseMask(), m_positionX, m_positionY, m_positionZ);
 }
 
 void WorldObject::GetZoneAndAreaId(uint32& zoneid, uint32& areaid) const
 {
+    if (IsInWorld() && isType(TYPEMASK_UNIT))
+    {
+        zoneid = m_zoneId;
+        areaid = m_areaId;
+        return;
+    }
+
     GetBaseMap()->GetZoneAndAreaId(GetPhaseMask(), zoneid, areaid, m_positionX, m_positionY, m_positionZ);
 }
 
@@ -2018,7 +2095,6 @@ void WorldObject::GetRandomPoint(const Position &pos, float distance, float &ran
     // angle to face `obj` to `this`
     float angle = (float)rand_norm()*static_cast<float>(2*M_PI);
     float new_dist = (float)rand_norm()*static_cast<float>(distance);
-    new_dist = distance * (new_dist > 1 ? new_dist - 2 : new_dist);
 
     rand_x = pos.m_positionX + new_dist * std::cos(angle);
     rand_y = pos.m_positionY + new_dist * std::sin(angle);
@@ -2235,12 +2311,12 @@ bool WorldObject::CheckPrivateObjectOwnerVisibility(WorldObject const* seer) con
     return false;
 }
 
-bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth, bool distanceCheck) const
+bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool implicitDetect, bool distanceCheck, bool checkAlert) const
 {
     if (this == obj)
         return true;
 
-    if (obj->IsNeverVisibleFor(this, ignoreStealth) || CanNeverSee(obj))
+    if (obj->IsNeverVisibleFor(this, implicitDetect) || CanNeverSee(obj))
         return false;
 
     if (obj->IsAlwaysVisibleFor(this) || CanAlwaysSee(obj))
@@ -2322,7 +2398,7 @@ bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth, boo
     if (obj->IsInvisibleDueToDespawn())
         return false;
 
-    if (!CanDetect(obj, ignoreStealth))
+    if (!CanDetect(obj, implicitDetect, checkAlert))
         return false;
 
     if (obj->GetTypeId() == TYPEID_DYNAMICOBJECT) // Update raid marker visibility.
@@ -2366,7 +2442,7 @@ bool WorldObject::CanNeverSee(WorldObject const* obj) const
     return m_explicitSeerGuid != obj->m_explicitSeerGuid;
 }
 
-bool WorldObject::CanDetect(WorldObject const* obj, bool ignoreStealth) const
+bool WorldObject::CanDetect(WorldObject const* obj, bool implicitDetect, bool checkAlert) const
 {
     const WorldObject* seer = this;
 
@@ -2378,10 +2454,10 @@ bool WorldObject::CanDetect(WorldObject const* obj, bool ignoreStealth) const
     if (obj->IsAlwaysDetectableFor(seer))
         return true;
 
-    if (!ignoreStealth && !seer->CanDetectInvisibilityOf(obj))
+    if (!implicitDetect && !seer->CanDetectInvisibilityOf(obj))
         return false;
 
-    if (!ignoreStealth && !seer->CanDetectStealthOf(obj))
+    if (!implicitDetect && !seer->CanDetectStealthOf(obj, checkAlert))
         return false;
 
     return true;
@@ -2389,6 +2465,11 @@ bool WorldObject::CanDetect(WorldObject const* obj, bool ignoreStealth) const
 
 bool WorldObject::CanDetectInvisibilityOf(WorldObject const* obj) const
 {
+    // Invisibility can only be detected by units
+    if (obj->ToUnit())
+        if ((m_invisibility.GetFlags() & obj->m_invisibilityDetect.GetFlags()) != m_invisibility.GetFlags())
+            return false;
+
     uint32 mask = obj->m_invisibility.GetFlags() & m_invisibilityDetect.GetFlags();
 
     // Check for not detected types
@@ -2411,7 +2492,7 @@ bool WorldObject::CanDetectInvisibilityOf(WorldObject const* obj) const
     return true;
 }
 
-bool WorldObject::CanDetectStealthOf(WorldObject const* obj) const
+bool WorldObject::CanDetectStealthOf(WorldObject const* obj, bool checkAlert) const
 {
     // Combat reach is the minimal distance (both in front and behind),
     //   and it is also used in the range calculation.
@@ -2430,17 +2511,16 @@ bool WorldObject::CanDetectStealthOf(WorldObject const* obj) const
     if (distance < combatReach)
         return true;
 
-    // Hack for Subterfuge. When rogue opens and Subterfuge triggered - player is still invisible and mob just goes to evade.
-    if (Player const* player = obj->ToPlayer())
-        if (GetTypeId() == TYPEID_UNIT && player->IsInCombat() && player->HasAura(115192))
-            if (const_cast<Unit*>(unit)->GetThreatManager().getThreatList().size() == 1)
-                if (const_cast<Unit*>(unit)->GetThreatManager().getThreat(const_cast<Player*>(player)) > 0.0f)
-                    return true;
-
-    if (!HasInArc(M_PI, obj))
+    // Only check back for units, it does not make sense for gameobjects
+    if (unit && !HasInArc(M_PI, obj))
         return false;
 
-    GameObject const* go = ToGameObject();
+    // Traps should detect stealth always
+    if (GameObject const* go = ToGameObject())
+        if (go->GetGoType() == GAMEOBJECT_TYPE_TRAP)
+            return true;
+
+    GameObject const* go = obj->ToGameObject();
     for (uint32 i = 0; i < TOTAL_STEALTH_TYPES; ++i)
     {
         if (!(obj->m_stealth.GetFlags() & (1 << i)))
@@ -2468,8 +2548,18 @@ bool WorldObject::CanDetectStealthOf(WorldObject const* obj) const
         // Calculate max distance
         float visibilityRange = float(detectionValue) * 0.3f + combatReach;
 
-        if (visibilityRange > MAX_PLAYER_STEALTH_DETECT_RANGE)
+        // If this unit is an NPC then player detect range doesn't apply
+        if (unit && unit->GetTypeId() == TYPEID_PLAYER && visibilityRange > MAX_PLAYER_STEALTH_DETECT_RANGE)
             visibilityRange = MAX_PLAYER_STEALTH_DETECT_RANGE;
+
+        // When checking for alert state, look 8% further, and then 1.5 yards more than that.
+        if (checkAlert)
+            visibilityRange += (visibilityRange * 0.08f) + 1.5f;
+
+        // If checking for alert, and creature's visibility range is greater than aggro distance, No alert
+        Unit const* tunit = obj->ToUnit();
+        if (checkAlert && unit && unit->ToCreature() && visibilityRange >= unit->ToCreature()->GetAttackDistance(tunit) + unit->ToCreature()->m_CombatDistance)
+            return false;
 
         if (distance > visibilityRange)
             return false;
@@ -2630,7 +2720,7 @@ void WorldObject::AddObjectToRemoveList()
     map->AddObjectToRemoveList(this);
 }
 
-TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropertiesEntry const* properties /*= NULL*/, uint32 duration /*= 0*/, Unit* summoner /*= NULL*/, uint32 spellId /*= 0*/, uint32 vehId /*= 0*/, ObjectGuid privateObjectOwner /*= ObjectGuid::Empty*/)
+TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropertiesEntry const* properties /*= NULL*/, Milliseconds duration /*= 0ms*/, Unit* summoner /*= NULL*/, uint32 spellId /*= 0*/, uint32 vehId /*= 0*/, ObjectGuid privateObjectOwner /*= ObjectGuid::Empty*/)
 {
     if (!Trinity::IsValidMapCoord(pos.GetPositionX(), pos.GetPositionY()))
     {
@@ -2741,7 +2831,7 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropert
     summon->SetHomePosition(pos);
     summon->AddToTransportIfNeeded(summoner ? summoner->GetTransport() : nullptr, true);
 
-    summon->InitStats(duration);
+    summon->InitStats(duration.count());
 
     summon->SetPrivateObjectOwner(privateObjectOwner);
 
@@ -2779,7 +2869,7 @@ void Map::SummonCreatureGroup(uint8 group, std::list<TempSummon*>* list /*= NULL
         return;
 
     for (std::vector<TempSummonData>::const_iterator itr = data->begin(); itr != data->end(); ++itr)
-        if (TempSummon* summon = SummonCreature(itr->entry, itr->pos, NULL, itr->time))
+        if (TempSummon* summon = SummonCreature(itr->entry, itr->pos, NULL, Milliseconds(itr->time)))
             if (list)
                 list->push_back(summon);
 }
@@ -2802,7 +2892,7 @@ void WorldObject::SetZoneScript()
     }
 }
 
-TempSummon* WorldObject::SummonCreature(uint32 entry, const Position &pos, TempSummonType spwtype, uint32 duration, uint32 vehId, ObjectGuid privateObjectOwner /*= ObjectGuid::Empty*/)
+TempSummon* WorldObject::SummonCreature(uint32 entry, const Position &pos, TempSummonType spwtype, Milliseconds duration, uint32 vehId, ObjectGuid privateObjectOwner /*= ObjectGuid::Empty*/)
 {
     if (Map* map = FindMap())
     {
@@ -2816,7 +2906,7 @@ TempSummon* WorldObject::SummonCreature(uint32 entry, const Position &pos, TempS
     return NULL;
 }
 
-TempSummon* WorldObject::SummonCreature(uint32 id, float x, float y, float z, float ang /*= 0*/, TempSummonType spwtype /*= TEMPSUMMON_MANUAL_DESPAWN*/, uint32 despwtime /*= 0*/, ObjectGuid privateObjectOwner /*= ObjectGuid::Empty*/)
+TempSummon* WorldObject::SummonCreature(uint32 id, float x, float y, float z, float ang /*= 0*/, TempSummonType spwtype /*= TEMPSUMMON_MANUAL_DESPAWN*/, Milliseconds despawntime /*= 0ms*/, ObjectGuid privateObjectOwner /*= ObjectGuid::Empty*/)
 {
     if (!x && !y && !z)
     {
@@ -2825,7 +2915,7 @@ TempSummon* WorldObject::SummonCreature(uint32 id, float x, float y, float z, fl
     }
     Position pos;
     pos.Relocate(x, y, z, ang);
-    return SummonCreature(id, pos, spwtype, despwtime, 0, privateObjectOwner);
+    return SummonCreature(id, pos, spwtype, despawntime, 0, privateObjectOwner);
 }
 
 GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime, GOSummonType summonType)
@@ -2866,7 +2956,7 @@ GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float 
 Creature* WorldObject::SummonTrigger(float x, float y, float z, float ang, uint32 duration, CreatureAI* (*GetAI)(Creature*))
 {
     TempSummonType summonType = (duration == 0) ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_DESPAWN;
-    Creature* summon = SummonCreature(WORLD_TRIGGER, x, y, z, ang, summonType, duration);
+    Creature* summon = SummonCreature(WORLD_TRIGGER, x, y, z, ang, summonType, Milliseconds(duration));
     if (!summon)
         return NULL;
 
@@ -2897,7 +2987,7 @@ void WorldObject::SummonCreatureGroup(uint8 group, std::list<TempSummon*>* list 
         return;
 
     for (std::vector<TempSummonData>::const_iterator itr = data->begin(); itr != data->end(); ++itr)
-        if (TempSummon* summon = SummonCreature(itr->entry, itr->pos, itr->type, itr->time))
+        if (TempSummon* summon = SummonCreature(itr->entry, itr->pos, itr->type, Milliseconds(itr->time)))
             if (list)
                 list->push_back(summon);
 }
@@ -3136,30 +3226,74 @@ static float NormalizeZforCollision(WorldObject* obj, float x, float y, float z)
     return helper;
 }
 
-void WorldObject::GetNearPoint2D(float &x, float &y, float distance2d, float absAngle) const
+void WorldObject::GetNearPoint2D(WorldObject const* searcher, float &x, float &y, float distance2d, float absAngle) const
 {
-    x = GetPositionX() + (GetObjectSize() + distance2d) * std::cos(absAngle);
-    y = GetPositionY() + (GetObjectSize() + distance2d) * std::sin(absAngle);
+    float effectiveReach = GetCombatReach();
+
+    if (searcher)
+    {
+        effectiveReach += searcher->GetCombatReach();
+
+        if (this != searcher)
+        {
+            float myHover = 0.0f, searcherHover = 0.0f;
+            if (Unit const* unit = ToUnit())
+                myHover = unit->GetHoverOffset();
+            if (Unit const* searchUnit = searcher->ToUnit())
+                searcherHover = searchUnit->GetHoverOffset();
+
+            float hoverDelta = myHover - searcherHover;
+            if (hoverDelta != 0.0f)
+                effectiveReach = std::sqrt(std::max(effectiveReach * effectiveReach - hoverDelta * hoverDelta, 0.0f));
+        }
+    }
+
+    x = GetPositionX() + (effectiveReach + distance2d) * std::cos(absAngle);
+    y = GetPositionY() + (effectiveReach + distance2d) * std::sin(absAngle);
 
     Trinity::NormalizeMapCoord(x);
     Trinity::NormalizeMapCoord(y);
 }
 
-void WorldObject::GetNearPoint(WorldObject const* /*searcher*/, float &x, float &y, float &z, float searcher_size, float distance2d, float absAngle) const
+void WorldObject::GetNearPoint(WorldObject const* searcher, float &x, float &y, float &z, float distance2d, float absAngle) const
 {
-    Position pos = GetPosition();
-    const_cast<WorldObject*>(this)->MovePositionToFirstCollision(pos, distance2d + searcher_size, absAngle - GetOrientation());
-    pos.GetPosition(x, y);
-    //GetNearPoint2D(x,y,distance2d+searcher_size,absAngle);
+    GetNearPoint2D(searcher, x, y, distance2d, absAngle);
     z = GetPositionZ();
+    (searcher ? searcher : this)->UpdateAllowedPositionZ(x, y, z);
 
-    UpdateAllowedPositionZ(x, y, z);
+    // if detection disabled, return first point
+    if (!sWorld->getBoolConfig(CONFIG_DETECT_POS_COLLISION))
+        return;
+
+    // return if the point is already in LoS
+    if (IsWithinLOS(x, y, z))
+        return;
+
+    // remember first point
+    float first_x = x;
+    float first_y = y;
+    float first_z = z;
+
+    // loop in a circle to look for a point in LoS using small steps
+    for (float angle = float(M_PI) / 8; angle < float(M_PI) * 2; angle += float(M_PI) / 8)
+    {
+        GetNearPoint2D(searcher, x, y, distance2d, absAngle + angle);
+        z = GetPositionZ();
+        (searcher ? searcher : this)->UpdateAllowedPositionZ(x, y, z);
+        if (IsWithinLOS(x, y, z))
+            return;
+    }
+
+    // still not in LoS, give up and return first position found
+    x = first_x;
+    y = first_y;
+    z = first_z;
 }
 
 void WorldObject::GetClosePoint(float &x, float &y, float &z, float size, float distance2d /*= 0*/, float angle /*= 0*/) const
 {
     // angle calculated from current orientation
-    GetNearPoint(NULL, x, y, z, size, distance2d, GetOrientation() + angle);
+    GetNearPoint(nullptr, x, y, z, distance2d + size, GetOrientation() + angle);
 }
 
 Position WorldObject::GetNearPosition(float dist, float angle)
@@ -3186,7 +3320,7 @@ Position WorldObject::GetRandomNearPosition(float radius)
 void WorldObject::GetContactPoint(const WorldObject* obj, float &x, float &y, float &z, float distance2d /*= CONTACT_DISTANCE*/) const
 {
     // angle to face `obj` to `this` using distance includes size of `obj`
-    GetNearPoint(obj, x, y, z, obj->GetObjectSize(), distance2d, GetAngle(obj));
+    GetNearPoint(obj, x, y, z, distance2d, GetAngle(obj));
 }
 
 void WorldObject::MovePositionToFirstCollosionBySteps(Position& pos, float dist, float angle, float heightCheckInterval, bool allowInAir)
@@ -3514,11 +3648,43 @@ void WorldObject::UpdateAreaAndZonePhase()
     PhaseAreaInfo const& allAreasPhases = sObjectMgr->GetAreaAndZonePhases();
     uint32 zoneAndArea[] = { GetZoneId(), GetAreaId() };
 
+    // #72 perf (MoP-only, AC has no phase IDs): phase 169 is this core's default phase - Player::Update forces it back
+    // on every player at the end of each update. phase_area also lists it for Highbank (5140) and Obsidian Breakers
+    // (5424), so every area/zone change or quest update of a player anywhere else removed it here (Unit::SetPhased:
+    // its summons too, each with a visibility pass, plus the player's own phase-shift packet and visibility pass) and
+    // the next Player::Update re-added it (another visibility pass for the player and each summon); objects only in
+    // phase 169 also blinked out for players that have other phases. For a player that has 169 when this starts, the
+    // removal / re-add of 169 is now only tracked (virtual169) and never applied to the server-side phase set.
+    // Client side nothing changes: updateNeeded keeps its old value, so the same phase-shift packets go out, and until
+    // the next Player::Update (where the old code re-added 169) every SMSG_SET_PHASE_SHIFT built from the player's own
+    // phase set leaves 169 out exactly as before (Player::m_hidePhase169FromClient, WorldSession::SendSetPhaseShift).
+    Player* player = GetTypeId() == TYPEID_PLAYER ? ToPlayer() : nullptr;
+    bool const track169 = player && IsPhased(169);
+    bool virtual169 = track169 && !player->m_hidePhase169FromClient;  // what the old code's phase set would hold now
+    bool realUpdateNeeded = false;                                    // updateNeeded without the 169 flap
+    auto setPhased = [&](uint32 id, bool apply, bool& real) -> bool
+    {
+        if (track169 && id == 169)
+        {
+            bool const changed = virtual169 != apply;
+            virtual169 = apply;
+            real = false;
+            return changed;
+        }
+
+        real = SetPhased(id, false, apply);
+        return real;
+    };
+
     // We first remove all phases from other areas & zones
     for (auto itr = allAreasPhases.begin(); itr != allAreasPhases.end(); ++itr)
         for (PhaseInfoStruct const& phase : itr->second)
-            if (!IsInArea(GetAreaId(), itr->first))
-                updateNeeded = SetPhased(phase.id, false, false) || updateNeeded; // not in area, remove phase, true if there was something removed
+            if (!sDBCManager.IsInArea(GetAreaId(), itr->first))
+            {
+                bool real;
+                updateNeeded = setPhased(phase.id, false, real) || updateNeeded; // not in area, remove phase, true if there was something removed
+                realUpdateNeeded = real || realUpdateNeeded;
+            }
 
     // Then we add the phases from this area and zone if conditions are met
     // Zone is done before Area, so if Area does not meet condition, the phase will be removed
@@ -3531,7 +3697,9 @@ void WorldObject::UpdateAreaAndZonePhase()
                 bool apply = sConditionMgr->IsObjectMeetToConditions(this, phaseInfoStruct.Conditions);
 
                 // add or remove phase depending of condition
-                updateNeeded = SetPhased(phaseInfoStruct.id, false, apply) || updateNeeded;
+                bool real;
+                updateNeeded = setPhased(phaseInfoStruct.id, apply, real) || updateNeeded;
+                realUpdateNeeded = real || realUpdateNeeded;
             }
         }
     }
@@ -3543,29 +3711,40 @@ void WorldObject::UpdateAreaAndZonePhase()
         for (Unit::AuraEffectList::const_iterator itr = auraPhaseList.begin(); itr != auraPhaseList.end(); ++itr)
         {
             uint32 phase = uint32((*itr)->GetMiscValueB());
-            bool up = SetPhased(phase, false, true);
+            bool real;
+            bool up = setPhased(phase, true, real);
             if (!updateNeeded && up)
                 updateNeeded = true;
+            if (!realUpdateNeeded && real)
+                realUpdateNeeded = true;
         }
         Unit::AuraEffectList const& auraPhaseGroupList = unit->GetAuraEffectsByType(SPELL_AURA_PHASE_GROUP);
         for (Unit::AuraEffectList::const_iterator itr = auraPhaseGroupList.begin(); itr != auraPhaseGroupList.end(); ++itr)
         {
             bool up = false;
+            bool real = false;
             uint32 phaseGroup = uint32((*itr)->GetMiscValueB());
-            std::set<uint32> const& phases = GetPhasesForGroup(phaseGroup);
-            for (uint32 phase : phases)
-                up = SetPhased(phase, false, true);
+            std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(phaseGroup);
+            for (uint32 phaseId : *phasesInGroup)
+                up = setPhased(phaseId, true, real);
             if (!updateNeeded && up)
                 updateNeeded = true;
+            if (!realUpdateNeeded && real)
+                realUpdateNeeded = true;
         }
     }
+
+    // #72: the client-facing phase set lacks 169 now iff the old code's server-side set would (see above)
+    if (track169)
+        player->m_hidePhase169FromClient = !virtual169;
 
     // only update visibility and send packets if there was a change in the phase list
     if (updateNeeded && GetTypeId() == TYPEID_PLAYER && IsInWorld())
         ToPlayer()->GetSession()->SendSetPhaseShift(GetPhases(), GetTerrainSwaps(), GetWorldMapSwaps());
 
     // only update visibilty once, to prevent objects appearing for a moment while adding in multiple phases
-    if (updateNeeded && IsInWorld())
+    // #72: not for the tracked 169 flap - the server-side phase set did not change, so visibility did not either
+    if (realUpdateNeeded && IsInWorld())
         UpdateObjectVisibility();
 }
 
@@ -3859,6 +4038,11 @@ struct WorldObjectChangeAccumulator
     template<class SKIP> void Visit(GridRefManager<SKIP> &) { }
 };
 
+// #72 perf: Unit.cpp - the per-pass values-update cache of Unit::BuildValuesUpdate (AC Unit.cpp:16339-16473).
+// Free functions so no header changes.
+void BeginUnitValuesUpdateCache(Unit const* unit);
+void EndUnitValuesUpdateCache();
+
 void WorldObject::BuildUpdate(UpdateDataMapType& data_map)
 {
     CellCoord p = Trinity::ComputeCellCoord(GetPositionX(), GetPositionY());
@@ -3867,8 +4051,18 @@ void WorldObject::BuildUpdate(UpdateDataMapType& data_map)
     WorldObjectChangeAccumulator notifier(*this, data_map);
     TypeContainerVisitor<WorldObjectChangeAccumulator, WorldTypeMapContainer > player_notifier(notifier);
     Map& map = *GetMap();
+
+    // #72 perf: a unit's VALUES block is built once per distinct viewer visibility and copied (with the viewer-dependent
+    // fields patched) for the other players that see it in this pass. Nothing changes the unit inside the pass.
+    Unit const* unit = ToUnit();
+    if (unit)
+        BeginUnitValuesUpdateCache(unit);
+
     //we must build packets for all visible players
     cell.Visit(p, player_notifier, map, *this, GetVisibilityRange() + 2 * World::Visibility_RelocationLowerLimit, true);
+
+    if (unit)
+        EndUnitValuesUpdateCache();
 
     ClearUpdateMask(false);
 }
@@ -3951,7 +4145,7 @@ WMOAreaTableEntry const* WorldObject::GetWMOArea() const
 
     if (map->GetAreaInfo(m_phaseMask, GetPositionX(), GetPositionY(), GetPositionZ(), mogpFlags, adtId, rootId, groupId))
     {
-        const WMOAreaTableEntry * wmoEntry = GetWMOAreaTableEntryByTripple(rootId, adtId, groupId);
+        const WMOAreaTableEntry * wmoEntry = sDBCManager.GetWMOAreaTableEntryByTripple(rootId, adtId, groupId);
         if (wmoEntry)
             return wmoEntry;
     }
@@ -3962,7 +4156,7 @@ WMOAreaTableEntry const* WorldObject::GetWMOArea() const
 uint32 WorldObject::GetWMOAreaId() const
 {
     if (WMOAreaTableEntry const * wmoEntry = GetWMOArea())
-        return wmoEntry->Id;
+        return wmoEntry->ID;
     return 0;
 }
 

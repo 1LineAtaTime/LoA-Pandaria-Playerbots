@@ -27,6 +27,7 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "CreatureTextMgr.h"
 #include "Unit.h"
 #include "Player.h"
@@ -393,7 +394,8 @@ class boss_norushen : public CreatureScript
                     case ACTION_FINISHED_EVENT:
                         events.Reset();
                         scheduler.CancelAll();
-                        me->DeleteThreatList();
+                        me->GetThreatManager().RemoveMeFromThreatLists();
+                        me->GetThreatManager().ClearAllThreat();
                         me->CombatStop(true);
 
                         if (instance)
@@ -415,14 +417,15 @@ class boss_norushen : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 Talk(SAY_NORUSHEN_WIPE);
 
                 me->RemoveAllAuras();
 
                 Reset();
-                me->DeleteThreatList();
+                me->GetThreatManager().RemoveMeFromThreatLists();
+                me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(true);
 
                 me->GetMotionMaster()->MovementExpired();
@@ -435,7 +438,7 @@ class boss_norushen : public CreatureScript
                 init.Launch();
 
                 scheduler
-                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
                 {
                     me->SetFacingTo(Position::NormalizeOrientation(me->GetOrientation() - M_PI));
                     me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
@@ -716,13 +719,14 @@ class boss_amalgam_of_corruption : public CreatureScript
 
             void KilledUnit(Unit* victim) override { }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->RemoveAllAuras();
                 me->RemoveAllAreasTrigger();
 
                 berserkerEvents.Reset();
-                me->DeleteThreatList();
+                me->GetThreatManager().RemoveMeFromThreatLists();
+                me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(true);
                 summons.DespawnAll();
 
@@ -745,7 +749,8 @@ class boss_amalgam_of_corruption : public CreatureScript
 
                     if (Creature* quarantinMeasure = ObjectAccessor::GetCreature(*me, instance->GetGuidData(NPC_QUARANTINE_MEASURES)))
                     {
-                        quarantinMeasure->DeleteThreatList();
+                        quarantinMeasure->GetThreatManager().RemoveMeFromThreatLists();
+                        quarantinMeasure->GetThreatManager().ClearAllThreat();
                         quarantinMeasure->CombatStop(true);
                     }
 
@@ -785,7 +790,8 @@ class boss_amalgam_of_corruption : public CreatureScript
 
                     if (Creature* quarantinMeasure = ObjectAccessor::GetCreature(*me, instance->GetGuidData(NPC_QUARANTINE_MEASURES)))
                     {
-                        quarantinMeasure->DeleteThreatList();
+                        quarantinMeasure->GetThreatManager().RemoveMeFromThreatLists();
+                        quarantinMeasure->GetThreatManager().ClearAllThreat();
                         quarantinMeasure->CombatStop(true);
                     }
 
@@ -967,7 +973,7 @@ struct npc_manifestation_of_corruption : public ScriptedAI
             DoCast(me, SPELL_FOUL_LINK_TRIGGER, true);
 
             scheduler
-                .Schedule(Milliseconds(1000), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(1000), [this](TaskContext context)
             {
                 me->RemoveAurasDueToSpell(SPELL_MANIFEST_SPAWN_VIS);
             });
@@ -981,7 +987,7 @@ struct npc_manifestation_of_corruption : public ScriptedAI
                     me->PrepareChanneledCast(me->GetAngle(target), SPELL_TEAR_REALITY);
 
                     scheduler
-                        .Schedule(Milliseconds(3500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(3500), [this](TaskContext context)
                     {
                         me->RemoveChanneledCast(targetGUID);
                     });
@@ -1014,14 +1020,15 @@ struct npc_manifestation_of_corruption : public ScriptedAI
         return targetGUID;
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         // fake death, vanish etc.
         if (Unit* target = ObjectAccessor::GetUnit(*me, targetGUID))
             if (target->IsAlive())
                 return;
 
-        me->DeleteThreatList();
+        me->GetThreatManager().RemoveMeFromThreatLists();
+        me->GetThreatManager().ClearAllThreat();
         me->CombatStop(true);
     }
 
@@ -1128,14 +1135,15 @@ struct npc_essence_of_corruption : public ScriptedAI
         return targetGUID;
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         // fake death, vanish etc.
         if (Unit* target = ObjectAccessor::GetUnit(*me, targetGUID))
             if (target->IsAlive())
                 return;
 
-        me->DeleteThreatList();
+        me->GetThreatManager().RemoveMeFromThreatLists();
+        me->GetThreatManager().ClearAllThreat();
         me->CombatStop(true);
     }
 
@@ -1241,7 +1249,7 @@ struct npc_greater_corruption : public ScriptedAI
         events.ScheduleEvent(EVENT_BOTTOMLESS_PIT, 20000);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         // fake death, vanish etc.
         if (Unit* target = ObjectAccessor::GetUnit(*me, targetGUID))
@@ -1250,7 +1258,8 @@ struct npc_greater_corruption : public ScriptedAI
 
         Reset();
         me->RemoveAllAreasTrigger();
-        me->DeleteThreatList();
+        me->GetThreatManager().RemoveMeFromThreatLists();
+        me->GetThreatManager().ClearAllThreat();
         me->CombatStop(true);
     }
 
@@ -1389,7 +1398,7 @@ struct npc_titanic_corruption : public ScriptedAI
         events.ScheduleEvent(EVENT_TITANIC_SMASH, 7000);
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         // fake death, vanish etc.
         if (Unit* target = ObjectAccessor::GetUnit(*me, targetGUID))
@@ -1397,7 +1406,8 @@ struct npc_titanic_corruption : public ScriptedAI
                 return;
 
         Reset();
-        me->DeleteThreatList();
+        me->GetThreatManager().RemoveMeFromThreatLists();
+        me->GetThreatManager().ClearAllThreat();
         me->CombatStop(true);
     }
 
@@ -1460,7 +1470,7 @@ struct npc_titanic_corruption : public ScriptedAI
                         me->PrepareChanneledCast(me->GetAngle(target), SPELL_TITANIC_SMASH);
 
                     scheduler
-                        .Schedule(Milliseconds(2500), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(2500), [this](TaskContext context)
                     {
                         me->RemoveChanneledCast(targetGUID);
                     });
@@ -1503,7 +1513,7 @@ struct npc_blind_hatred : public ScriptedAI
         me->SetSpeed(MOVE_WALK, 0.72f);
 
         scheduler
-            .Schedule(Seconds(3), [this](TaskContext /*context*/)
+            .Schedule(Seconds(3), [this](TaskContext context)
         {
             hasMoving = 1;
 

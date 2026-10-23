@@ -37,4 +37,15 @@ protected:
     Unit* Calculate() override;
 };
 
+// #163 S8 (AC parity, Ai/Base/Value/PartyMemberToHeal.h:41-48): the group's healer with the lowest
+// mana percent, for HealerLowManaTrigger below.
+class HealerLowMana : public PartyMemberValue
+{
+public:
+    HealerLowMana(PlayerbotAI* botAI, std::string const name = "healer low mana") : PartyMemberValue(botAI, name) {}
+
+protected:
+    Unit* Calculate() override;
+};
+
 #endif

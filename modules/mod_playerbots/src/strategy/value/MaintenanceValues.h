@@ -6,6 +6,7 @@
 #ifndef _PLAYERBOT_MAINTANCEVALUE_H
 #define _PLAYERBOT_MAINTANCEVALUE_H
 
+#include "NamedObjectContext.h"
 #include "Value.h"
 
 class PlayerbotAI;
@@ -78,6 +79,14 @@ class CanFightBossValue : public BoolCalculatedValue
 {
 public:
     CanFightBossValue(PlayerbotAI* botAI) : BoolCalculatedValue(botAI, "can fight boss") {}
+
+    bool Calculate() override;
+};
+
+class CanTrainValue : public BoolCalculatedValue
+{
+public:
+    CanTrainValue(PlayerbotAI* botAI) : BoolCalculatedValue(botAI, "can train", 2 * 2000) {}
 
     bool Calculate() override;
 };

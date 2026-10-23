@@ -514,9 +514,9 @@ class npc_well_of_eternity_stalker : public CreatureScript
             return GetInstanceAI<npc_well_of_eternity_stalkerAI>(creature);
         }
 
-        struct npc_well_of_eternity_stalkerAI : public CreatureAI
+        struct npc_well_of_eternity_stalkerAI : public ScriptedAI
         {
-            npc_well_of_eternity_stalkerAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_stalkerAI(Creature* creature) : ScriptedAI(creature) { }
 
             void UpdateAI(uint32 /*diff*/) override { }
         };
@@ -931,7 +931,7 @@ class npc_well_of_eternity_illidan_1 : public CreatureScript
                 events.ScheduleEvent(EVENT_ILLIDAN_1_INITIAL_CLOAK, 1000);
             }
 
-            void EnterEvadeMode() override { }
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
             void DamageTaken(Unit* /*attacker*/, uint32& damage) override
             {
@@ -1317,12 +1317,28 @@ class npc_well_of_eternity_illidan_1 : public CreatureScript
                 if (timerSpawnLegionDemon <= diff)
                 {
                     timerSpawnLegionDemon += 2500;
+                    // #905: cap the live pre-event demons. Unblocked paths (a harness skipping the release, or players
+                    // standing aside) let this add 6 every 2.5 s forever; w104 had ~1100 alive around Peroth'arn's spot,
+                    // which made his Drain Essence an N^2 knockback fan-out and hung the map thread.
+                    preEventDemons.remove_if([this](ObjectGuid const& guid)
+                    {
+                        Creature* d = ObjectAccessor::GetCreature(*me, guid);
+                        return !d || !d->IsAlive();
+                    });
+                    if (preEventDemons.size() >= 48)
+                        return;
+                    // #905 (W1 lane): the third Portal Energy Focus sets DATA_EVENT_ILLIDAN_1 DONE (go_npc_well_of_eternity_portal_
+                    // energy_focus, GO 209448): the portals are shut and no more demons march. The path-block datas below say the
+                    // same on the real escort; this also holds when the event is completed any other way (GM skip, a harness).
+                    if (instance && instance->GetData(DATA_EVENT_ILLIDAN_1) == DONE)
+                        return;
                     if (instance && (!instance->GetData(DATA_LEGION_DEMON_BLOCKED_PATH_LEFT) || !instance->GetData(DATA_LEGION_DEMON_BLOCKED_PATH_RIGHT) || !instance->GetData(DATA_LEGION_DEMON_BLOCKED_PATH_FORWARD)))
                     {
                         for (LegionDemonFormationPosition pos = FORMATION_LEGION_DEMON_FORE_LEFT; pos <= FORMATION_LEGION_DEMON_BACK_RIGHT; pos = LegionDemonFormationPosition(pos + 1))
                         {
                             if (Creature* demon = me->SummonCreature(NPC_LEGION_DEMON_PREEVENT, legionDemonScenePathForward[0], TEMPSUMMON_MANUAL_DESPAWN))
                             {
+                                preEventDemons.push_back(demon->GetGUID());
                                 LegionDemonPathDirection dir;
                                 switch (pos)
                                 {
@@ -1380,13 +1396,13 @@ class npc_well_of_eternity_illidan_1 : public CreatureScript
                         if (player->IsInCombat())
                         {
                             player->CombatStop();
-                            player->getHostileRefManager().deleteReferences();
+                            player->GetThreatManager().RemoveMeFromThreatLists();
                             if (Guardian* pet = player->GetGuardianPet())
                             {
                                 if (pet->IsInCombat())
                                 {
                                     pet->CombatStop();
-                                    pet->getHostileRefManager().deleteReferences();
+                                    pet->GetThreatManager().RemoveMeFromThreatLists();
                                 }
                             }
                         }
@@ -1439,6 +1455,7 @@ class npc_well_of_eternity_illidan_1 : public CreatureScript
             uint32 waypointMovementDelay;
             int32 waypointIndex;
             uint32 timerSpawnLegionDemon;
+            GuidList preEventDemons;   // #905: live pre-event Legion Demons summoned here (capped, see SpawnDemons)
             uint32 aggroTalkCooldown;
             uint32 victimCheckTimer;
             EventMap events;
@@ -1456,9 +1473,9 @@ class npc_well_of_eternity_legion_demon_preevent : CreatureScript
     public:
         npc_well_of_eternity_legion_demon_preevent() : CreatureScript("npc_well_of_eternity_legion_demon_preevent") { }
 
-        struct npc_well_of_eternity_legion_demon_preeventAI : public CreatureAI
+        struct npc_well_of_eternity_legion_demon_preeventAI : public ScriptedAI
         {
-            npc_well_of_eternity_legion_demon_preeventAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_legion_demon_preeventAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -1481,7 +1498,7 @@ class npc_well_of_eternity_legion_demon_preevent : CreatureScript
             void JustEngagedWith(Unit* /*who*/) override
             {
                 me->CombatStop(true);
-                me->getHostileRefManager().deleteReferences();
+                me->GetThreatManager().RemoveMeFromThreatLists();
             }
 
             void MoveInLineOfSight(Unit* who) override
@@ -1506,7 +1523,7 @@ class npc_well_of_eternity_legion_demon_preevent : CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 CreatureAI::EnterEvadeMode();
                 waypointIndex = 5;
@@ -1673,9 +1690,9 @@ class npc_well_of_eternity_guardian_demon : CreatureScript
     public:
         npc_well_of_eternity_guardian_demon() : CreatureScript("npc_well_of_eternity_guardian_demon") { }
 
-        struct npc_well_of_eternity_guardian_demonAI : public CreatureAI
+        struct npc_well_of_eternity_guardian_demonAI : public ScriptedAI
         {
-            npc_well_of_eternity_guardian_demonAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_guardian_demonAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -1691,7 +1708,7 @@ class npc_well_of_eternity_guardian_demon : CreatureScript
                 if (who->HasAura(SPELL_SHADOW_WALK_AURA) || who->HasAura(SPELL_SHADOWCLOAK_PETS))
                 {
                     me->CombatStop(true);
-                    me->getHostileRefManager().deleteReferences();
+                    me->GetThreatManager().RemoveMeFromThreatLists();
                 }
                 else
                     SetGUID(who->GetGUID(), 0);
@@ -1811,9 +1828,9 @@ class npc_well_of_eternity_fel_crystal_stalker : public CreatureScript
     public:
         npc_well_of_eternity_fel_crystal_stalker() : CreatureScript("npc_well_of_eternity_fel_crystal_stalker") { }
 
-        struct npc_well_of_eternity_fel_crystal_stalkerAI : public CreatureAI
+        struct npc_well_of_eternity_fel_crystal_stalkerAI : public ScriptedAI
         {
-            npc_well_of_eternity_fel_crystal_stalkerAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_fel_crystal_stalkerAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -1921,9 +1938,9 @@ class npc_well_of_eternity_portal_connector : CreatureScript
     public:
         npc_well_of_eternity_portal_connector() : CreatureScript("npc_well_of_eternity_portal_connector") { }
 
-        struct npc_well_of_eternity_portal_connectorAI : public CreatureAI
+        struct npc_well_of_eternity_portal_connectorAI : public ScriptedAI
         {
-            npc_well_of_eternity_portal_connectorAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_portal_connectorAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -2055,9 +2072,9 @@ class npc_well_of_eternity_legion_portal : CreatureScript
     public:
         npc_well_of_eternity_legion_portal() : CreatureScript("npc_well_of_eternity_legion_portal") { }
 
-        struct npc_well_of_eternity_legion_portalAI : public CreatureAI
+        struct npc_well_of_eternity_legion_portalAI : public ScriptedAI
         {
-            npc_well_of_eternity_legion_portalAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_legion_portalAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -2112,9 +2129,9 @@ class npc_well_of_eternity_portal_trash : public CreatureScript
     public:
         npc_well_of_eternity_portal_trash() : CreatureScript("npc_well_of_eternity_portal_trash") { }
 
-        struct npc_well_of_eternity_portal_trashAI : public CreatureAI
+        struct npc_well_of_eternity_portal_trashAI : public ScriptedAI
         {
-            npc_well_of_eternity_portal_trashAI(Creature* creature) : CreatureAI(creature)
+            npc_well_of_eternity_portal_trashAI(Creature* creature) : ScriptedAI(creature)
             {
                 isArcanist = me->GetEntry() == NPC_CORRUPTED_ARCANIST;
                 me->SetReactState(REACT_PASSIVE);
@@ -2139,7 +2156,7 @@ class npc_well_of_eternity_portal_trash : public CreatureScript
                 if (who->HasAura(SPELL_SHADOW_WALK_AURA) || who->HasAura(SPELL_SHADOWCLOAK_PETS))
                 {
                     me->CombatStop(true);
-                    me->getHostileRefManager().deleteReferences();
+                    me->GetThreatManager().RemoveMeFromThreatLists();
                     return;
                 }
 
@@ -2279,9 +2296,9 @@ class npc_well_of_eternity_fire_wall_stalker : public CreatureScript
     public:
         npc_well_of_eternity_fire_wall_stalker() : CreatureScript("npc_well_of_eternity_fire_wall_stalker") { }
 
-        struct npc_well_of_eternity_fire_wall_stalkerAI : public CreatureAI
+        struct npc_well_of_eternity_fire_wall_stalkerAI : public ScriptedAI
         {
-            npc_well_of_eternity_fire_wall_stalkerAI(Creature* creature) : CreatureAI(creature) { }
+            npc_well_of_eternity_fire_wall_stalkerAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() override
             {
@@ -2386,9 +2403,9 @@ class npc_well_of_eternity_shadowcloak_stalker : public CreatureScript
     public:
         npc_well_of_eternity_shadowcloak_stalker() : CreatureScript("npc_well_of_eternity_shadowcloak_stalker") { }
 
-        struct npc_well_of_eternity_shadowcloak_stalkerAI : public CreatureAI
+        struct npc_well_of_eternity_shadowcloak_stalkerAI : public ScriptedAI
         {
-            npc_well_of_eternity_shadowcloak_stalkerAI(Creature* creature) : CreatureAI(creature)
+            npc_well_of_eternity_shadowcloak_stalkerAI(Creature* creature) : ScriptedAI(creature)
             {
                 enterVehicleTimer = 1000;
             }
@@ -2592,7 +2609,7 @@ class spell_well_of_eternity_shadow_walk : public SpellScriptLoader
                 Unit* target = GetTarget();
 
                 target->CombatStop(true);
-                target->getHostileRefManager().deleteReferences();
+                target->GetThreatManager().RemoveMeFromThreatLists();
 
                 target->CastSpell(target, SPELL_SHADOWCLOAK_PLAYERS);
                 target->CastSpell(target, SPELL_SHADOWCLOAK_AGGRO);
@@ -3080,7 +3097,7 @@ class npc_well_of_eternity_illidan_2 : public CreatureScript
                 events.Reset();
             }
 
-            void EnterEvadeMode() override { }
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
             void DamageTaken(Unit* attacker, uint32& damage) override
             {
@@ -3333,7 +3350,7 @@ class npc_well_of_eternity_tyrande : public CreatureScript
                 uiDebilitatingCount = 0;
             }
 
-            void EnterEvadeMode() override { }
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
             void SpellHit(Unit* /*caster*/, const SpellInfo* spell) override
             {
@@ -3491,7 +3508,7 @@ class npc_well_of_eternity_malfurion : public CreatureScript
 
             void Reset() override { }
 
-            void EnterEvadeMode() override { }
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
         };
 
         CreatureAI* GetAI(Creature* creature) const override

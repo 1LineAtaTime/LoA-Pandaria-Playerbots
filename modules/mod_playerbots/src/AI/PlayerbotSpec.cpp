@@ -35,7 +35,7 @@ unsigned int PlayerBotSpec::GetSpectab(Player* player)
         case SPEC_ROGUE_COMBAT:
         case SPEC_SHAMAN_ENHANCEMENT:
         case SPEC_WARLOCK_DEMONOLOGY:
-        case SPEC_MONK_WINDWALKER:
+        case SPEC_MONK_MISTWEAVER:  // #740: ChrSpecialization TabPage - Brewmaster 0, Mistweaver 1, Windwalker 2
         {
             return static_cast<unsigned int>(1);
         }
@@ -50,7 +50,7 @@ unsigned int PlayerBotSpec::GetSpectab(Player* player)
         case SPEC_ROGUE_SUBTLETY:
         case SPEC_SHAMAN_RESTORATION:
         case SPEC_WARLOCK_DESTRUCTION:
-        case SPEC_MONK_MISTWEAVER:
+        case SPEC_MONK_WINDWALKER:
         {
             return static_cast<unsigned int>(2);
         }
@@ -88,7 +88,7 @@ bool PlayerBotSpec::IsRanged(Player* player, bool bySpec)
         }
         case CLASS_PALADIN:
         {
-            if (spec != Specializations::SPEC_DEATH_KNIGHT_UNHOLY)
+            if (spec != Specializations::SPEC_PALADIN_HOLY) // #598: AC tab 0 (holy) is ranged
             {
                 return false;
             }
@@ -166,7 +166,7 @@ bool PlayerBotSpec::IsDps(Player* player, bool bySpec)
     if (!bySpec && botAi)
         return botAi->ContainsStrategy(STRATEGY_TYPE_DPS);
 
-    return (!IsTank(player) && !IsHeal(player));
+    return (!IsTank(player, bySpec) && !IsHeal(player, bySpec)); // #598: AC passes bySpec through
 }
 
 uint32 PlayerBotSpec::GetGroupTankNum(Player* player)

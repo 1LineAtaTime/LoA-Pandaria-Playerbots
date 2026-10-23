@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -19,11 +19,14 @@
 #include "Map.h"
 #include "Creature.h"
 #include "DisableMgr.h"
+#include "GameObject.h"
 #include "Transport.h"
 #include "MapDefines.h"
 #include "MMapFactory.h"
 #include "MMapManager.h"
 #include "Log.h"
+#include "Player.h"
+#include "WorldSession.h"
 #include "World.h"
 
 #include "DetourCommon.h"
@@ -63,6 +66,15 @@ bool PathGenerator::CalculatePath(float destX, float destY, float destZ, bool fo
     float x, y, z;
     _source->GetPosition(x, y, z);
 
+    return CalculatePath(x, y, z, destX, destY, destZ, forceDest, straightLine, assumeSourceOnGround);
+}
+
+// issue #61: split out of the single-destination overload above so a caller can check a specific
+// path segment (an explicit start point) instead of always starting from the source's live
+// position. The single-destination overload is now a thin wrapper that forwards the source's own
+// position here - all the actual pathfinding logic lives in this version, unchanged from before.
+bool PathGenerator::CalculatePath(float x, float y, float z, float destX, float destY, float destZ, bool forceDest, bool straightLine, bool assumeSourceOnGround)
+{
     if (assumeSourceOnGround)
         _source->UpdateAllowedPositionZ(x, y, z);
 
@@ -672,6 +684,7 @@ void PathGenerator::CreateFilter()
 {
     uint16 includeFlags = 0;
     uint16 excludeFlags = 0;
+    bool isBot = false;
 
     if (_source->GetTypeId() == TYPEID_UNIT)
     {
@@ -685,12 +698,29 @@ void PathGenerator::CreateFilter()
     }
     else // assume Player
     {
-        // perfect support not possible, just stay 'safe'
-        includeFlags |= (NAV_GROUND | NAV_WATER | NAV_MAGMA | NAV_SLIME);
+        // AC parity (AC core PathGenerator.cpp:773-801, MOD_PLAYERBOTS): bots include ground + water but
+        // exclude lava/slime; real players are unchanged.
+        Player const* player = _source->ToPlayer();
+        if (player && player->GetSession() && player->GetSession()->IsBot())
+        {
+            includeFlags |= (NAV_GROUND | NAV_WATER);
+            excludeFlags |= (NAV_MAGMA | NAV_SLIME);
+            isBot = true;
+        }
+        else
+        {
+            // perfect support not possible, just stay 'safe'
+            includeFlags |= (NAV_GROUND | NAV_WATER | NAV_MAGMA | NAV_SLIME);
+        }
     }
 
     _filter.setIncludeFlags(includeFlags);
     _filter.setExcludeFlags(excludeFlags);
+
+    // AC parity: bots bias routes away from deep water (swim only when necessary). With AC-convention mmaps
+    // poly.area == poly.flags == NavTerrain, so NAV_WATER is also the water area index.
+    if (isBot)
+        _filter.setAreaCost(NAV_WATER, 20.0f);
 
     UpdateFilter();
 }
@@ -1099,8 +1129,6 @@ void PathGenerator::VisualizePath(uint32 duration)
             waypoint->SetTempSummonType(TEMPSUMMON_TIMED_DESPAWN);
             return waypoint->GetGUID();
         }
-
-        return ObjectGuid::Empty;
     };
     static auto const UpdateWaypoint = [](Unit const* source, ObjectGuid prevGUID, G3D::Vector3 const& pos, uint32 duration, ObjectGuid guid)
     {
@@ -1174,8 +1202,6 @@ void PathGenerator::VisualizeNavmesh(uint32 duration)
             waypoint->SetTempSummonType(TEMPSUMMON_TIMED_DESPAWN);
             return waypoint->GetGUID();
         }
-
-        return ObjectGuid::Empty;
     };
     static auto const UpdateWaypoint = [](Unit const* source, ObjectGuid prevGUID, G3D::Vector3 const& pos, uint32 duration, ObjectGuid guid)
     {

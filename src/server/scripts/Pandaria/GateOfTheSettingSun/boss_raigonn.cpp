@@ -158,7 +158,7 @@ class boss_raigonn : public CreatureScript
                     damage = 0;
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (instance)
                 {
@@ -218,7 +218,7 @@ class boss_raigonn : public CreatureScript
 
                         // client-side issue
                         scheduler
-                            .Schedule(Milliseconds(500), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(500), [this](TaskContext context)
                         {
                             if (Creature* wPoint = instance->instance->GetCreature(instance->GetGuidData(NPC_WEAK_SPOT)))
                                 me->CastSpell(wPoint->GetPositionX(), wPoint->GetPositionY(), wPoint->GetPositionZ(), SPELL_BATTERING_HEADBUTT, true);
@@ -240,7 +240,10 @@ class boss_raigonn : public CreatureScript
                             uint32 eventBrasierProgress = instance->GetBossState(DATA_RIMOK);
                             uint8 baseMovement = eventBrasierProgress != DONE ? 0 : 2;
                             Movement::MoveSplineInit init(me);
-                            init.MoveTo(chargePos[baseMovement + 1].GetPositionX(), chargePos[baseMovement + 1].GetPositionY(), chargePos[baseMovement + 1].GetPositionZ());
+                            // #655 w57: no path generation - the 0962 navmesh has the great gate closed (chargePos[0] -> [3] is a
+                            // 760 yd detour round the wall), so Raigonn wandered off (npcpos 823.8,2171.5) and never reached the
+                            // courtyard lane; the charge is a straight run through the gate, whose doors Ri'mok's DONE removes
+                            init.MoveTo(chargePos[baseMovement + 1].GetPositionX(), chargePos[baseMovement + 1].GetPositionY(), chargePos[baseMovement + 1].GetPositionZ(), false);
                             init.SetVelocity(5.0f);
                             init.SetOrientationInversed();
                             init.Launch();
@@ -258,7 +261,7 @@ class boss_raigonn : public CreatureScript
                             uint32 eventBrasierProgress = instance->GetBossState(DATA_RIMOK);
                             uint8 baseMovement = eventBrasierProgress != DONE ? 0 : 2;
                             Movement::MoveSplineInit init(me);
-                            init.MoveTo(chargePos[baseMovement].GetPositionX(), chargePos[baseMovement].GetPositionY(), chargePos[baseMovement].GetPositionZ());
+                            init.MoveTo(chargePos[baseMovement].GetPositionX(), chargePos[baseMovement].GetPositionY(), chargePos[baseMovement].GetPositionZ(), false);   // #655 w57: straight, see above
                             init.SetVelocity(37.0f);
                             init.Launch();
 
@@ -277,7 +280,11 @@ class boss_raigonn : public CreatureScript
                                     weakSpot->EnterVehicle(me, 0);
 
                                     if (instance)
-                                        instance->SetData64(NPC_WEAK_SPOT, weakSpot->GetGUID());
+                                        // #655 w58: was SetData64, which this instance does not override (ZoneScript.h:51 is a
+                                        // no-op; it overrides SetGuidData :533), so GetGuidData(NPC_WEAK_SPOT) stayed empty: the
+                                        // Weak Spot never turned hostile (:143-149), the Artillery found no Weak Spot (:592), the
+                                        // headbutt never threw riders off - phase 1 could not end (w58 Raigonn 100% for 420 s)
+                                        instance->SetGuidData(NPC_WEAK_SPOT, weakSpot->GetGUID());
                                 }
                             }
                             break;
@@ -300,7 +307,7 @@ class boss_raigonn : public CreatureScript
                         case EVENT_SUMMON_PROTECTORAT:
                             Talk(TALK_PROTECT);
                             for (uint8 i = 0; i < 8; ++i)
-                                 if (Creature* summon = me->SummonCreature(NPC_KRIKTHIK_PROTECTORAT, frand(941.0f, 974.0f), 2374.85f, 296.67f, 4.73f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
+                                 if (Creature* summon = me->SummonCreature(NPC_KRIKTHIK_PROTECTORAT, frand(941.0f, 974.0f), 2374.85f, 296.67f, 4.73f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms))
                                      if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                                          if (summon->IsAIEnabled)
                                              summon->AI()->AttackStart(target);
@@ -310,18 +317,20 @@ class boss_raigonn : public CreatureScript
                         case EVENT_SUMMON_ENGULFER:
                             Talk(TALK_ENGULFER);
                             for (uint8 i = 0; i < 3; ++i)
-                                me->SummonCreature(NPC_KRIKTHIK_ENGULFER, frand(941.0f, 974.0f), me->GetPositionY(), me->GetPositionZ() + 30.0f, 4.73f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000);
+                                me->SummonCreature(NPC_KRIKTHIK_ENGULFER, frand(941.0f, 974.0f), me->GetPositionY(), me->GetPositionZ() + 30.0f, 4.73f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms);
 
                             events.ScheduleEvent(EVENT_SUMMON_ENGULFER, urand(95, 105) * IN_MILLISECONDS);
                             break;
                         case EVENT_SUMMON_SWARM_BRINGER:
                             Talk(TALK_SWARM);
-                            if (Creature* summon = me->SummonCreature(NPC_KRIKTHIK_SWARM_BRINGER, frand(941.0f, 974.0f), 2374.85f, 296.67f, 4.73f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
+                            if (Creature* summon = me->SummonCreature(NPC_KRIKTHIK_SWARM_BRINGER, frand(941.0f, 974.0f), 2374.85f, 296.67f, 4.73f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms))
                                 if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                                    if (summon->IsAIEnabled)
                                        summon->AI()->AttackStart(target);
 
-                            events.ScheduleEvent(EVENT_SUMMON_ENGULFER, urand(35, 50) * IN_MILLISECONDS);
+                            // #686: rescheduled EVENT_SUMMON_ENGULFER (copy/paste), so one Swarm Bringer per fight and a
+                            // second Engulfer chain; Wowpedia (Raigonn, 2026-10-14) has the Swarm Bringers keep coming
+                            events.ScheduleEvent(EVENT_SUMMON_SWARM_BRINGER, urand(35, 50) * IN_MILLISECONDS);
                             break;
                         case EVENT_FIXATE:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true))
@@ -709,11 +718,14 @@ class BatteringHeadbuttEffectTargetSelector
     public:
         BatteringHeadbuttEffectTargetSelector() { }
 
+        // remove_if predicate: true = NOT stunned. #686: keep only the players standing on the gate (Wowhead 130772, 2026-10-14:
+        // "knocking down anyone walking atop it"). The old test (Y > 2372 && Y < 2360 && X > 997 && X < 919) could never be
+        // true, so nobody was removed and every player within 100 yd who was not falling got the stun.
         bool operator()(Player* object)
         {
-            return object
-                && object->GetPositionY() > 2372.0f && object->GetPositionY() < 2360.0f
-                && object->GetPositionX() > 997.0f  && object->GetPositionX() < 919.0f;
+            return !object
+                || !(object->GetPositionY() > 2360.0f && object->GetPositionY() < 2372.0f
+                     && object->GetPositionX() > 919.0f && object->GetPositionX() < 997.0f);
         }
 };
 

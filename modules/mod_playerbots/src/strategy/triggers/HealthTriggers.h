@@ -138,6 +138,16 @@ public:
     TargetCriticalHealthTrigger(PlayerbotAI* botAI) : TargetLowHealthTrigger(botAI, 20) {}
 };
 
+// #163 S8 (AC parity, Ai/Base/Trigger/HealthTriggers.h:145-152): the group's healer is low on mana.
+class HealerLowManaTrigger : public Trigger
+{
+public:
+    HealerLowManaTrigger(PlayerbotAI* botAI) : Trigger(botAI, "healer low mana") {}
+
+    std::string const GetTargetName() override { return "healer low mana"; }
+    bool IsActive() override;
+};
+
 class PartyMemberDeadTrigger : public Trigger
 {
 public:

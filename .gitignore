@@ -3,5 +3,21 @@
 /out/build
 /.vs
 build/
+build-ninja/
 .DS_Store
 .idea/
+/bin-clang
+/bin
+bin/
+obj/
+# local isolated test server runtime state (issue #1) - never commit
+/testserver/runtime/
+# Python bytecode caches (testserver/headless.py tooling)
+__pycache__/
+*.pyc
+
+# local backups of test confs
+testserver/confs/*.bak-*
+
+# private local defaults for the headless client (credentials; never commit)
+headless.local.json

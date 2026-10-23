@@ -69,6 +69,11 @@ class boss_commander_rimok : public CreatureScript
 
             void InitializeAI() override
             {
+                // #655 w58: this override skipped CreatureAI::InitializeAI's Reset(), so _Reset() never set his boss state
+                // NOT_STARTED and it stayed TO_BE_DECIDED (instinfo bosses=3,0,5,0). InstanceScript::SetBossState treats the
+                // first change from TO_BE_DECIDED as a load and returns false, so on the pull the instance's IN_PROGRESS case
+                // (instance_gate_of_the_setting_sun.cpp:298-315: the 4th add generator's Saboteurs) never ran.
+                Reset();
                 me->SetReactState(REACT_PASSIVE);
                 me->SetVisible(false);
                 getType = 4;
@@ -93,7 +98,7 @@ class boss_commander_rimok : public CreatureScript
                     Talk(SAY_SLAY);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)

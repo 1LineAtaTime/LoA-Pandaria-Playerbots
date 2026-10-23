@@ -244,7 +244,7 @@ typedef std::map<uint32, time_t> CreatureSpellCooldowns;
 typedef std::vector<uint8> CreatureTextRepeatIds;
 typedef std::unordered_map<uint8, CreatureTextRepeatIds> CreatureTextRepeatGroup;
 
-class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public MapObject
+class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public MapObject, public UpdatableMapObject
 {
     public:
 
@@ -269,6 +269,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         ObjectGuid::LowType GetSpawnId() const { return m_spawnId; }
 
         void Update(uint32 time) override;         // overwrited Unit::Update
+        bool IsUpdateNeeded() override;            // #850: AC Creature.h:460
         void GetRespawnPosition(float &x, float &y, float &z, float* ori = NULL, float* dist =NULL) const;
 
         void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
@@ -383,6 +384,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         std::string const& GetAIName() const;
         std::string GetScriptName() const;
         uint32 GetScriptId() const;
+        // #72 perf: AC Creature::IsMoveInLineOfSightStrictlyDisabled (AC Creature.h:283), cached per creature
+        bool IsMoveInLineOfSightStrictlyDisabled() const;
 
         // override WorldObject function for proper name localization
         std::string const& GetNameForLocaleIdx(LocaleConstant locale_idx) const override;
@@ -608,6 +611,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         bool m_regenMana = true;
         bool m_AI_locked;
         bool m_hasNormalLootMode = true;
+        mutable int8 m_moveInLineOfSightStrictlyDisabled = -1;  // #72: -1 = not computed yet (AC m_moveInLineOfSightStrictlyDisabled)
         bool _isMissingSwimmingFlagOutOfCombat;
 
         SpellSchoolMask m_meleeDamageSchoolMask;

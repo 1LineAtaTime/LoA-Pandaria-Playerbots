@@ -274,7 +274,7 @@ class npc_apothecary_hummel : public CreatureScript
                     case SPAWN_CRAZED:
                     {
                         uint8 i = urand(0, 3);
-                        if (Creature* crazed = me->SummonCreature(NPC_CRAZED_APOTHECARY, Loc[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3*IN_MILLISECONDS))
+                        if (Creature* crazed = me->SummonCreature(NPC_CRAZED_APOTHECARY, Loc[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(3*IN_MILLISECONDS)))
                         {
                             crazed->SetFaction(FACTION_HOSTILE);
                             crazed->SetReactState(REACT_PASSIVE);
@@ -573,7 +573,7 @@ class npc_apothecary_frye : public CreatureScript
                 if (!target)
                     return;
 
-                if (Creature* bunny = me->SummonCreature(NPC_VIAL_BUNNY, *target, TEMPSUMMON_TIMED_DESPAWN, 25*IN_MILLISECONDS))
+                if (Creature* bunny = me->SummonCreature(NPC_VIAL_BUNNY, *target, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(25*IN_MILLISECONDS)))
                 {
                     bunny->SetFaction(FACTION_HOSTILE);
                     bunny->SetReactState(REACT_PASSIVE);
@@ -624,8 +624,8 @@ class npc_apothecary_frye : public CreatureScript
                     {
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 100, true))
                         {
-                            me->GetThreatManager().modifyThreatPercent(me->GetVictim(), -100);
-                            me->AddThreat(target, 9999999.9f);
+                            me->GetThreatManager().ModifyThreatByPercent(me->GetVictim(), -100);
+                            me->GetThreatManager().AddThreat(target, 9999999.9f);
                         }
                         _targetSwitchTimer = urand(5000, 10000);
                     }
@@ -1512,7 +1512,7 @@ class npc_haunted_stable_hand_portal : public CreatureScript
 
         bool OnGossipHello(Player* player, Creature* creature) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             if (InstanceScript* instance = creature->GetInstanceScript())
             {

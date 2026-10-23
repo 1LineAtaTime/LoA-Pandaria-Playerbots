@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -17,11 +17,14 @@
 
 #include "UnitAI.h"
 #include "Player.h"
+#include "Creature.h"
 #include "SpellAuras.h"
+#include "SpellAuraEffects.h"
 #include "SpellMgr.h"
 #include "SpellInfo.h"
 #include "Spell.h"
 #include "CreatureAIImpl.h"
+#include "Player.h"
 
 void UnitAI::AttackStart(Unit* victim)
 {
@@ -103,10 +106,10 @@ void UnitAI::DoAddAuraToAllHostilePlayers(uint32 spellid)
 {
     if (me->IsInCombat())
     {
-        ThreatContainer::StorageType threatlist = me->GetThreatManager().getThreatList();
-        for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
+        auto threatlist = me->GetThreatManager().GetUnsortedThreatList();
+        for (ThreatReference const* ref : threatlist)
         {
-            if (Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
+            if (Unit* unit = Unit::GetUnit(*me, ref->GetVictim()->GetGUID()))
                 if (unit->GetTypeId() == TYPEID_PLAYER)
                     me->AddAura(spellid, unit);
         }
@@ -117,10 +120,10 @@ void UnitAI::DoCastToAllHostilePlayers(uint32 spellid, bool triggered)
 {
     if (me->IsInCombat())
     {
-        ThreatContainer::StorageType threatlist = me->GetThreatManager().getThreatList();
-        for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
+        auto threatlist = me->GetThreatManager().GetUnsortedThreatList();
+        for (ThreatReference const* ref : threatlist)
         {
-            if (Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
+            if (Unit* unit = Unit::GetUnit(*me, ref->GetVictim()->GetGUID()))
                 if (unit->GetTypeId() == TYPEID_PLAYER)
                     me->CastSpell(unit, spellid, triggered);
         }

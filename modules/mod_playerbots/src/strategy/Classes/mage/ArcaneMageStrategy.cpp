@@ -59,26 +59,35 @@ ArcaneMageStrategy::ArcaneMageStrategy(PlayerbotAI* botAI) : GenericMageStrategy
 
 NextAction** ArcaneMageStrategy::getDefaultActions()
 {
+    // #602 (AC ArcaneMageStrategy.cpp:37-46): AC defaults, same order and 5.x-band numbers. Fork-only
+    // "frostjaw" / "nether tempest" defaults removed (they sat above the band and AC has neither; Nether Tempest
+    // keeps its own "nether tempest" DebuffTrigger edge below). 5.4.8 ids (cls.py mage): Arcane Blast 30451,
+    // Arcane Missiles 5143 (proc-gated by "Arcane Missiles!" 79683, a failed cast falls through as in AC),
+    // Arcane Barrage 44425, Fire Blast 2136, Frostbolt 116, Shoot 5019.
     return NextAction::array(0,
-        new NextAction("frostjaw", ACTION_DEFAULT + 0.10f),
-        new NextAction("nether tempest", ACTION_DEFAULT + 0.3f),
-        new NextAction("arcane blast", ACTION_DEFAULT + 0.3f),
-        new NextAction("fire blast", ACTION_DEFAULT + 0.1f), // cast during movement
-        new NextAction("shoot", ACTION_DEFAULT), nullptr);
+        new NextAction("arcane blast", 5.6f),
+        new NextAction("arcane missiles", 5.5f),
+        new NextAction("arcane barrage", 5.4f),   // cast while moving
+        new NextAction("fire blast", 5.3f),       // cast while moving if arcane barrage isn't available/learned
+        new NextAction("frostbolt", 5.2f),        // for arcane immune targets
+        new NextAction("shoot", 5.1f), nullptr);
 }
 
 void ArcaneMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     GenericMageStrategy::InitTriggers(triggers);
 
-    triggers.push_back(new TriggerNode("arcane blast stack", NextAction::array(0, new NextAction("arcane missiles", 15.0f), nullptr)));
-    triggers.push_back(new TriggerNode("arcane missiles", NextAction::array(0, new NextAction("arcane missiles", 15.0f), nullptr)));
-    triggers.push_back(new TriggerNode("arcane charge", NextAction::array(0, new NextAction("arcane missiles", 15.0f), nullptr)));
-    triggers.push_back(new TriggerNode("arcane charge", NextAction::array(0, new NextAction("arcane barrage", 15.0f), nullptr)));
-    triggers.push_back(new TriggerNode("slow not on target", NextAction::array(0, new NextAction("slow", ACTION_NORMAL + 1), nullptr)));
+    // #602 (AC ArcaneMageStrategy.cpp:55-64): the only AC spec edge - 4 charges + missiles proc -> Arcane Missiles.
+    // 5.4.8: charges = Arcane Charge 36032, proc = "Arcane Missiles!" 79683 (see MageTriggers.h).
+    // Removed fork-only edges (AC has none): "slow not on target" -> slow ACTION_NORMAL+1 (Slow 31589 "succeeded"
+    // every tick on a snare-immune target and ended the tick, starving Arcane Blast), the "arcane charge" /
+    // "arcane missiles" / "arcane blast stack" -> missiles/barrage 15.0 edges (fired at 1 charge and starved the
+    // default Arcane Blast) and the spec-level "arcane power" 19.0 edge (AC casts it from the "boost" strategy).
+    triggers.push_back(new TriggerNode("arcane blast 4 stacks and missile barrage", NextAction::array(0, new NextAction("arcane missiles", 15.0f), nullptr)));
+    // Lane 10 (#865): Arcane Barrage at >= 4 Arcane Charges, just below Missiles.
+    triggers.push_back(new TriggerNode("arcane blast stack", NextAction::array(0, new NextAction("arcane barrage", 14.5f), nullptr)));
     triggers.push_back(new TriggerNode("medium health", NextAction::array(0, new NextAction("ice barrier", ACTION_NORMAL), nullptr)));
     triggers.push_back(new TriggerNode("nether tempest", NextAction::array(0, new NextAction("nether tempest", 19.0f), nullptr)));
-    triggers.push_back(new TriggerNode("arcane power", NextAction::array(0, new NextAction("arcane power", 19.0f), nullptr)));
 }
 
 void ArcaneMageAoeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

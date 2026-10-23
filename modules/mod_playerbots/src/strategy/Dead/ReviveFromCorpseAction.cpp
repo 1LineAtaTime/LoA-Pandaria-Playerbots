@@ -1,7 +1,19 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
- */
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "ReviveFromCorpseAction.h"
 
@@ -12,6 +24,11 @@
 #include "ServerFacade.h"
 #include "Corpse.h"
 #include "WorldPosition.h"
+#include "Battlefield.h"
+#include "BattlefieldMgr.h"
+#include "Battleground.h"
+#include "Group.h"
+#include "FleeManager.h"
 
 bool ReviveFromCorpseAction::Execute(Event event)
 {
@@ -146,7 +163,14 @@ bool FindCorpseAction::Execute(Event event)
             moveToPos = masterPos;
         else
         {
-            /*FleeManager manager(bot, reclaimDist, 0.0, urand(0, 1), moveToPos);
+            // #721: AC ReviveFromCorpseAction.cpp:143-155 - with mobs in aggro range of the corpse, pick a
+            // safe spot inside the reclaim radius. This block was commented out at the module import
+            // (dbcb9e52, before FleeManager existed; ported in #177). Without it a MoP ghost whose corpse
+            // lies among the mobs that killed it walked onto the corpse, MoveTo had nowhere to go, it fell
+            // through to "spirit healer" and shuttled corpse <-> graveyard until the 8-minute rule, or
+            // revived at 50% health next to the same pack and died again (escalating the 30/60/120 s
+            // reclaim delay, hence the revive retries).
+            FleeManager manager(bot, reclaimDist, 0.0, urand(0, 1), moveToPos);
 
             if (manager.isUseful())
             {
@@ -155,7 +179,7 @@ bool FindCorpseAction::Execute(Event event)
                     moveToPos = WorldPosition(moveToPos.getMapId(), rx, ry, rz, 0.0);
                 else if (!moveToPos.GetReachableRandomPointOnGround(bot, reclaimDist, urand(0, 1)))
                     moveToPos = corpsePos;
-            }*/
+            }
         }
     }
 
@@ -205,12 +229,33 @@ bool FindCorpseAction::isUseful()
     return bot->GetCorpse();
 }
 
+static bool InGroupWithRealPlayer(Player* bot)
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        if (Player* member = ref->GetSource())
+            if (member != bot && !GET_PLAYERBOT_AI(member))
+                return true;
+
+    return false;
+}
+
 WorldSafeLocsEntry const* SpiritHealerAction::GetGrave(bool startZone)
 {
     WorldSafeLocsEntry const* ClosestGrave = nullptr;
     WorldSafeLocsEntry const* NewGrave = nullptr;
 
-    ClosestGrave = sObjectMgr->GetClosestGraveYard(bot->GetWorldLocation(), bot->GetTeam(), bot);
+    // AC finds BG graveyards in game_graveyard_zone; this core keeps the newer BGs' graveyards
+    // (EotS, IoC, ...) in the BG class, so look up the way Player::RepopAtGraveyard does
+    if (Battleground* bg = bot->GetBattleground())
+        ClosestGrave = bg->GetClosestGraveYard(bot);
+    else if (Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(bot->GetZoneId()))
+        ClosestGrave = bf->GetClosestGraveYard(bot);
+    else
+        ClosestGrave = sObjectMgr->GetClosestGraveYard(bot->GetWorldLocation(), bot->GetTeam(), bot);
 
     if (!startZone && ClosestGrave)
         return ClosestGrave;
@@ -220,7 +265,7 @@ WorldSafeLocsEntry const* SpiritHealerAction::GetGrave(bool startZone)
         Player* master = botAI->GetGroupMaster();
         if (master && master != bot)
         {
-            ClosestGrave = sObjectMgr->GetClosestGraveYard(master->GetWorldLocation(), bot->GetTeamId(), bot);
+            ClosestGrave = sObjectMgr->GetClosestGraveYard(master->GetWorldLocation(), bot->GetTeam(), bot);
 
             if (ClosestGrave)
                 return ClosestGrave;
@@ -249,7 +294,54 @@ WorldSafeLocsEntry const* SpiritHealerAction::GetGrave(bool startZone)
         }
     }*/
 
-    TC_LOG_ERROR("playerbots", "Graveyard nullptr");
+    // Owner decision 2026-09-27, a deliberate deviation from AC: a bot is never sent to a starting-zone
+    // graveyard out of a battleground, arena, dungeon or raid, or while grouped with a real player (AC's loop
+    // below teleports BG ghosts off the map once the per-tick death count passes 10).
+    if (bot->GetMap()->Instanceable() || InGroupWithRealPlayer(bot))
+    {
+        if (!ClosestGrave)
+            TC_LOG_ERROR("playerbots", "Graveyard nullptr");
+        return ClosestGrave;
+    }
+
+    // AC parity (AC ReviveFromCorpseAction.cpp:250-291): with startZone (many deaths, a long ghost run or
+    // broken gear) take the nearest starting-zone graveyard of the bot's faction. AC's race list, plus the
+    // Cata/MoP races.
+    std::vector<uint32> races;
+    if (bot->GetTeamId() == TEAM_ALLIANCE)
+        races = {RACE_HUMAN, RACE_DWARF, RACE_GNOME, RACE_NIGHTELF, RACE_DRAENEI, RACE_WORGEN, RACE_PANDAREN_ALLIANCE};
+    else
+        races = {RACE_ORC, RACE_TROLL, RACE_TAUREN, RACE_UNDEAD_PLAYER, RACE_BLOODELF, RACE_GOBLIN, RACE_PANDAREN_HORDE};
+
+    float graveDistance = -1;
+    WorldPosition botPos(bot);
+
+    for (uint32 race : races)
+    {
+        for (uint32 cls = 0; cls < MAX_CLASSES; cls++)
+        {
+            PlayerInfo const* info = sObjectMgr->GetPlayerInfo(race, cls);
+            if (!info)
+                continue;
+
+            NewGrave = sObjectMgr->GetClosestGraveYard(
+                WorldLocation(info->mapId, info->positionX, info->positionY, info->positionZ), bot->GetTeam(), bot);
+            if (!NewGrave)
+                continue;
+
+            WorldPosition gravePos(NewGrave->map_id, NewGrave->x, NewGrave->y, NewGrave->z);
+            float newDist = botPos.fDist(gravePos);
+
+            if (graveDistance < 0 || newDist < graveDistance)
+            {
+                ClosestGrave = NewGrave;
+                graveDistance = newDist;
+            }
+        }
+    }
+
+    if (!ClosestGrave)
+        TC_LOG_ERROR("playerbots", "Graveyard nullptr");
     return ClosestGrave;
 }
 
@@ -258,7 +350,7 @@ bool SpiritHealerAction::Execute(Event event)
     Corpse* corpse = bot->GetCorpse();
     if (!corpse)
     {
-        //botAI->TellError("I am not a spirit");
+        botAI->TellError("I am not a spirit");
         return false;
     }
 
@@ -266,6 +358,9 @@ bool SpiritHealerAction::Execute(Event event)
     int64 deadTime = time(nullptr) - corpse->GetGhostTime();
 
     WorldSafeLocsEntry const* ClosestGrave = GetGrave(dCount > 10 || deadTime > 15 * MINUTE || AI_VALUE(uint8, "durability") < 10);
+
+    if (!ClosestGrave)
+        return false;
 
     if (bot->GetDistance2d(ClosestGrave->x, ClosestGrave->y) < sPlayerbotAIConfig->sightDistance)
     {
@@ -275,7 +370,7 @@ bool SpiritHealerAction::Execute(Event event)
             Unit* unit = botAI->GetUnit(*i);
             if (unit && unit->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER))
             {
-                TC_LOG_DEBUG("playerbots", "Bot %s %s:%u <%s> revives at spirit healer", bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(), bot->GetName());
+                TC_LOG_DEBUG("playerbots", "Bot %s %s:%u <%s> revives at spirit healer", bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(), bot->GetName().c_str());
                 //PlayerbotChatHandler ch(bot);
                 bot->ResurrectPlayer(0.5f);
                 bot->SpawnCorpseBones();

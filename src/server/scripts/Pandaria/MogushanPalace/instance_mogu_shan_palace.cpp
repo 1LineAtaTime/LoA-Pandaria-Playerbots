@@ -57,6 +57,12 @@ class instance_mogu_shan_palace : public InstanceMapScript
             uint32 m_uiBossCount;
             uint32 m_auiBossNumber[3];
 
+            // #805: restart of the Trial after a wipe. Armed by TYPE_WIPE_FIRST_BOSS, fired when a living player is back in
+            // the arena for a few seconds (the Xin trigger's intro speech only runs once and is not replayed).
+            bool m_bTrialRetry = false;
+            uint32 m_uiRetryCheck = 0;
+            int32 m_iRetryCountdown = -1;
+
             // m_uiGekkanGuid.
             ObjectGuid m_uiGekkanGuid;
             ObjectGuid m_uiAncientTreasureGuid;
@@ -105,6 +111,9 @@ class instance_mogu_shan_palace : public InstanceMapScript
             void InitializeTrialOfKing()
             {
                 m_uiBossCount = 0;
+                m_bTrialRetry = false;
+                m_uiRetryCheck = 0;
+                m_iRetryCountdown = -1;
 
                 std::iota(std::begin(m_auiBossNumber), std::end(m_auiBossNumber), 0);
                 std::random_device rd;
@@ -392,6 +401,16 @@ class instance_mogu_shan_palace : public InstanceMapScript
                                 }
                                 break;
                         }
+
+                        // #805: a wipe is not the end of the Trial. Defeated champions stay retired (m_uiBossCount is only
+                        // raised by *_RETIRED), the current one is reset passive at home by its EnterEvadeMode, and the
+                        // Update() watcher re-runs the shuffle step for the same champion once the group is back.
+                        if (GetBossState(DATA_TRIAL_OF_THE_KING) != DONE && m_uiBossCount < 3)
+                        {
+                            m_bTrialRetry = true;
+                            m_uiRetryCheck = 1000;
+                            m_iRetryCountdown = -1;
+                        }
                         break;
                     }
                     case TYPE_MING:
@@ -420,6 +439,11 @@ class instance_mogu_shan_palace : public InstanceMapScript
                             if (Creature* Ming = instance->GetCreature(tempGUID))
                             {
                                 Ming->StopMoving();
+                                // #654: DB faction 1683 is neutral to players. A neutral creature engaged only by
+                                // SetInCombatWithZone (0 threat) has no acceptable victim (Creature::_IsTargetAcceptable),
+                                // so SelectVictim evades it on the spot (w43/w45: Haiyan yelled, never attacked). Kuai's
+                                // DB faction 14 engages; Wowpedia "Trial of the King": faction Boss, aggro yell on entry.
+                                Ming->SetFaction(14);
                                 Ming->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                                 Ming->SetReactState(REACT_AGGRESSIVE);
                                 Ming->SetInCombatWithZone();
@@ -493,6 +517,11 @@ class instance_mogu_shan_palace : public InstanceMapScript
                             if (Creature* Haiyan = instance->GetCreature(tempGUID))
                             {
                                 Haiyan->StopMoving();
+                                // #654: DB faction 1683 is neutral to players. A neutral creature engaged only by
+                                // SetInCombatWithZone (0 threat) has no acceptable victim (Creature::_IsTargetAcceptable),
+                                // so SelectVictim evades it on the spot (w43/w45: Haiyan yelled, never attacked). Kuai's
+                                // DB faction 14 engages; Wowpedia "Trial of the King": faction Boss, aggro yell on entry.
+                                Haiyan->SetFaction(14);
                                 Haiyan->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                                 Haiyan->SetReactState(REACT_AGGRESSIVE);
                                 Haiyan->SetInCombatWithZone();
@@ -624,7 +653,7 @@ class instance_mogu_shan_palace : public InstanceMapScript
                             SetBossState(DATA_TRIAL_OF_THE_KING, DONE);
 
                             if (GameObject* go = GetGameObjectFromStorage(GO_TRIAL_CHEST))
-                                SetData64(TYPE_TRIAL_ENDED, go->GetGUID());
+                                SetGuidData(TYPE_TRIAL_ENDED, go->GetGUID());
 
                             if (Creature* pScout = instance->GetCreature(m_uiScoutGuid))
                             {
@@ -678,17 +707,17 @@ class instance_mogu_shan_palace : public InstanceMapScript
                         break;
                     case CREATURE_KUAI_THE_BRUTE:
                         m_uiKuaiGuid = creature->GetGUID();
-                        SetData64(TYPE_KUAI, m_uiKuaiGuid);
+                        SetGuidData(TYPE_KUAI, m_uiKuaiGuid); // #805: SetData64 is a no-op in this core (ZoneScript.h:51)
                         creature->SetReactState(REACT_PASSIVE);
                         break;
                     case CREATURE_MING_THE_CUNNING:
                         m_uiMingGuid = creature->GetGUID();
-                        SetData64(TYPE_MING, m_uiMingGuid);
+                        SetGuidData(TYPE_MING, m_uiMingGuid);
                         creature->SetReactState(REACT_PASSIVE);
                         break;
                     case CREATURE_HAIYAN_THE_UNSTOPPABLE:
                         m_uiHaiyanGuid = creature->GetGUID();
-                        SetData64(TYPE_HAIYAN, m_uiHaiyanGuid);
+                        SetGuidData(TYPE_HAIYAN, m_uiHaiyanGuid);
                         creature->SetReactState(REACT_PASSIVE);
                         break;
                     case CREATURE_XIN_THE_WEAPONMASTER_TRIGGER:
@@ -700,9 +729,51 @@ class instance_mogu_shan_palace : public InstanceMapScript
                 }
             }
 
+            // Trial arena centre (mean of pTrialHomePositions in boss_trial_of_the_king.cpp), radius that covers the floor.
+            bool TrialArenaHasLivePlayer() const
+            {
+                for (auto const& ref : instance->GetPlayers())
+                    if (Player* plr = ref.GetSource())
+                        if (plr->IsAlive() && !plr->IsGameMaster() && plr->GetExactDist2d(-4229.5f, -2613.6f) < 45.0f)
+                            return true;
+                return false;
+            }
+
+            void UpdateTrialRetry(uint32 diff)
+            {
+                if (!m_bTrialRetry)
+                    return;
+                if (m_uiRetryCheck > diff)
+                {
+                    m_uiRetryCheck -= diff;
+                    return;
+                }
+                m_uiRetryCheck = 1000;
+
+                if (GetBossState(DATA_TRIAL_OF_THE_KING) == DONE || m_uiBossCount >= 3)
+                {
+                    m_bTrialRetry = false;
+                    return;
+                }
+                if (!TrialArenaHasLivePlayer())
+                {
+                    m_iRetryCountdown = -1;
+                    return;
+                }
+                if (m_iRetryCountdown < 0)
+                    m_iRetryCountdown = 8000; // let the group gather
+                else if ((m_iRetryCountdown -= 1000) <= 0)
+                {
+                    m_bTrialRetry = false;
+                    m_iRetryCountdown = -1;
+                    SetData(TYPE_SHUFFLE_ORDER, 0); // same champion again: m_uiBossCount did not move
+                }
+            }
+
             void Update(uint32 diff) override
             {
                 m_mEvents.Update(diff);
+                UpdateTrialRetry(diff);
 
                 while (uint32 eventId = m_mEvents.ExecuteEvent())
                 {

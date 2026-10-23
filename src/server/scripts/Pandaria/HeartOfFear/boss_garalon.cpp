@@ -250,7 +250,7 @@ class boss_garalon : public CreatureScript
                 me->GetMap()->SetWorldState(WORLD_STATE_LIKE_AN_ARROR_TO_THE_FACE, 1);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 DespawnCreatures(NPC_PHEROMONE_TRAIL);
 
@@ -779,7 +779,7 @@ class spell_garalon_damaged : public SpellScript
 
     void Register() override
     {
-        OnEffectHitTarget += SpellEffectFn(spell_garalon_damaged::HandleScript, EFFECT_0, SPELL_EFFECT_REMOVE_AURA);
+        OnEffectHitTarget += SpellEffectFn(spell_garalon_damaged::HandleScript, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
     }
 };
 

@@ -30,8 +30,9 @@ HunterBuffDpsStrategy::HunterBuffDpsStrategy(PlayerbotAI* botAI) : NonCombatStra
 void HunterBuffDpsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(
-        new TriggerNode("aspect of the hawk", NextAction::array(0, new NextAction("aspect of the dragonhawk", 20.1f),
-                                                                new NextAction("aspect of the hawk", 20.0f), nullptr)));
+        new TriggerNode("aspect of the hawk", NextAction::array(0, new NextAction("aspect of the hawk", 20.0f), nullptr)));
+    // #521: AC's aspect of the dragonhawk edge (AC HunterBuffStrategies.cpp:45) is not ported: Aspect of the Dragonhawk
+    // does not exist in 5.4.8 (cls.py hunter 2026-10-04: NO-SUCH-NAME); Aspect of the Hawk 13165 (L12) is its 5.x form.
 }
 
 void HunterNatureResistanceStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
@@ -48,6 +49,6 @@ void HunterBuffSpeedStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
 void HunterBuffManaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("aspect of the viper",
-                                       NextAction::array(0, new NextAction("aspect of the viper", 20.0f), nullptr)));
+    // #521: the "aspect of the viper" edge (bmana) is removed: Aspect of the Viper does not exist in the 5.4.8 DBC
+    // (cls.py hunter 2026-10-04: NO-SUCH-NAME). Strategy name kept so existing `+bmana` commands still resolve.
 }

@@ -166,8 +166,11 @@ class boss_wase_mari : public CreatureScript
                 Talk(TALK_BOSS_EMOTE_AGGRO);
                 me->SetInCombatWithZone();
                 me->CastSpell(me, SPELL_WATER_BUBBLE_WISE, true);
-                events.ScheduleEvent(EVENT_CALL_WATER, 8 * IN_MILLISECONDS);
-                events.ScheduleEvent(EVENT_HYDROLANCE_START, TIMER_HYDROLANCE_START);
+                // #796: this core calls JustEngagedWith twice on the same tick (Unit.cpp:11807 and
+                // CreatureAI::EngagementStart, CreatureAI.cpp:361; every wave logs the aggro yell twice), so plain
+                // ScheduleEvent queued two Call Waters and two Hydrolances. Keep one of each.
+                events.RescheduleEvent(EVENT_CALL_WATER, 8 * IN_MILLISECONDS);
+                events.RescheduleEvent(EVENT_HYDROLANCE_START, TIMER_HYDROLANCE_START);
 
                 if (instance)
                 {
@@ -227,7 +230,7 @@ class boss_wase_mari : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -259,8 +262,8 @@ class boss_wase_mari : public CreatureScript
 
                         if (foutainCount == 4)
                             cosmeticEvents.ScheduleEvent(EVENT_BUBBLE_BRUST, urand(4, 6) * IN_MILLISECONDS);
-                        else
-                            events.ScheduleEvent(EVENT_CALL_WATER, urand(12, 16) * IN_MILLISECONDS);
+                        else if (foutainCount < 4) // #796: one pending Call Water at most (one Living Water at a time)
+                            events.RescheduleEvent(EVENT_CALL_WATER, urand(12, 16) * IN_MILLISECONDS);
                         break;
                     case ACTION_HYDROLANCE:
                         events.ScheduleEvent(EVENT_HYDROLANCE, 0.25 * IN_MILLISECONDS);
@@ -312,6 +315,17 @@ class boss_wase_mari : public CreatureScript
                             break;
                         }
                         case EVENT_BUBBLE_BRUST:
+                            // #785: Bubble Burst (106612, 4 s cast) is the only way into phase 2 (its AfterCast sends
+                            // ACTION_WASH_AWAY, spell_wise_bubble_brust). Spell::prepare rejects a non-triggered cast with
+                            // SPELL_FAILED_SPELL_IN_PROGRESS while another generic spell is being cast (Spell.cpp:3463-3466),
+                            // and this one-shot event fired regardless, so a 4th Living Water dying during a Hydrolance (106055,
+                            // 4 s) or Call Water (106526, 2 s) cast left Mari bubbled and immune for good. Wait for the cast.
+                            // Wowpedia "Wise Mari" (2026-10-12): after four Corrupt Living Waters he bursts the bubble (phase 2).
+                            if (me->IsNonMeleeSpellCasted(false, true, true))
+                            {
+                                cosmeticEvents.ScheduleEvent(EVENT_BUBBLE_BRUST, 500);
+                                break;
+                            }
                             me->CastSpell(me, SPELL_BUBBLE_BRUST, false);
                             break;
                     }
@@ -334,10 +348,24 @@ class boss_wase_mari : public CreatureScript
                     {
                         case EVENT_CALL_WATER:
                         {
-                            Talk(TALK_CALL_WATER);
+                            // #796: Call Water (106526, 2 s cast) is a one-shot: nothing else summons the next Living
+                            // Water, so a cast that fails leaves foutainCount short of 4 and Mari bubbled for good
+                            // (w41: "Spring to life!" with no 4th add). Retry until the cast is really under way, and
+                            // never index past the 4 fountains. Wowpedia "Wise Mari" (2026-10-13): four Corrupt
+                            // Living Waters, one from each of the four smaller fountains, then phase 2.
+                            if (foutainCount >= 4)
+                                break;
+
                             if (Creature* trigger = Unit::GetCreature(*me, foutainTrigger[foutainCount]))
                             {
                                 me->CastSpell(trigger, SPELL_CALL_WATER, false);
+                                if (!me->FindCurrentSpellBySpellId(SPELL_CALL_WATER))
+                                {
+                                    events.ScheduleEvent(EVENT_CALL_WATER, 1 * IN_MILLISECONDS);
+                                    break;
+                                }
+
+                                Talk(TALK_CALL_WATER);
                                 trigger->AddAura(SPELL_CORRUPTED_FOUTAIN, trigger);
                             }
                             break;
@@ -421,6 +449,14 @@ class boss_wase_mari : public CreatureScript
                             break;
                         }
                     }
+
+                    // #796: an event that started a cast (Hydrolance 106055 4 s, Call Water 106526 2 s) holds the
+                    // rest of the due events until it ends. Without this a Call Water due on the same tick as a
+                    // Hydrolance start ran right after it and failed with SPELL_FAILED_SPELL_IN_PROGRESS
+                    // (Spell.cpp:3463-3466): w41 EVT 254200, five Hydrolance precast SPELL_GOs then "Spring to life!"
+                    // and no 4th Corrupt Living Water.
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
             }
         };
@@ -593,11 +629,11 @@ class spell_wise_hydrolance_pulse : public SpellScriptLoader
                 switch (tickCnt)
                 {
                     case 0:
-                        owner->GetNearPoint2D(x, y, 0.0f, owner->GetOrientation());
+                        owner->GetNearPoint2D(nullptr, x, y, 0.0f, owner->GetOrientation());
                         owner->CastSpell(x, y, z, SPELL_HYDROLANCE_PULSE, false);
                         break;
                     default:
-                        owner->GetNearPoint2D(x, y, tickCnt * 2, owner->GetOrientation());
+                        owner->GetNearPoint2D(nullptr, x, y, tickCnt * 2, owner->GetOrientation());
                         owner->CastSpell(x, y, z, SPELL_HYDROLANCE_PULSE, false);
                         break;
                 }

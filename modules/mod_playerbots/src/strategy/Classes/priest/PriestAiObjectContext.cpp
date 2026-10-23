@@ -9,6 +9,7 @@
 #include "HolyPriestStrategy.h"
 #include "NamedObjectContext.h"
 #include "Playerbots.h"
+#include "PullStrategy.h"
 #include "PriestActions.h"
 #include "PriestNonCombatStrategy.h"
 #include "PriestTriggers.h"
@@ -20,7 +21,7 @@ public:
     PriestStrategyFactoryInternal()
     {
         creators["nc"] = &PriestStrategyFactoryInternal::nc;
-        //creators["pull"] = &PriestStrategyFactoryInternal::pull;
+        creators["pull"] = &PriestStrategyFactoryInternal::pull;
         creators["aoe"] = &PriestStrategyFactoryInternal::shadow_aoe;
         creators["shadow aoe"] = &PriestStrategyFactoryInternal::shadow_aoe;
         creators["dps debuff"] = &PriestStrategyFactoryInternal::shadow_debuff;
@@ -40,7 +41,7 @@ private:
     static Strategy* buff(PlayerbotAI* botAI) { return new PriestBuffStrategy(botAI); }
     static Strategy* nc(PlayerbotAI* botAI) { return new PriestNonCombatStrategy(botAI); }
     static Strategy* shadow_aoe(PlayerbotAI* botAI) { return new ShadowPriestAoeStrategy(botAI); }
-    //static Strategy* pull(PlayerbotAI* botAI) { return new PullStrategy(botAI, "shoot"); }
+    static Strategy* pull(PlayerbotAI* botAI) { return new PullStrategy(botAI, "shoot"); }
     static Strategy* shadow_debuff(PlayerbotAI* botAI) { return new ShadowPriestDebuffStrategy(botAI); }
     static Strategy* cure(PlayerbotAI* botAI) { return new PriestCureStrategy(botAI); }
     static Strategy* healer_dps(PlayerbotAI* botAI) { return new PriestHealerDpsStrategy(botAI); }
@@ -70,9 +71,131 @@ class PriestTriggerFactoryInternal : public NamedObjectContext<Trigger>
 public:
     PriestTriggerFactoryInternal()
     {
+        // #357 slice 1: full AC parity surface. Names and factory shapes are copied verbatim from
+        // AC Ai/Class/Priest/PriestAiObjectContext.cpp:74-106 / 110-148 (WotLK mod-playerbots).
+        creators["devouring plague"] = &PriestTriggerFactoryInternal::devouring_plague;
+        // #735: the Devouring Plague gate, AC's "combo points N available" pattern (AC TriggerContext.h:120-122)
+        creators["shadow orbs 3 available"] = &PriestTriggerFactoryInternal::shadow_orbs_3_available;
+        creators["shadow word: pain"] = &PriestTriggerFactoryInternal::shadow_word_pain;
+        creators["shadow word: pain on attacker"] = &PriestTriggerFactoryInternal::shadow_word_pain_on_attacker;
+        creators["dispel magic"] = &PriestTriggerFactoryInternal::dispel_magic;
+        creators["dispel magic on party"] = &PriestTriggerFactoryInternal::dispel_magic_party_member;
+        creators["cure disease"] = &PriestTriggerFactoryInternal::cure_disease;
+        creators["party member cure disease"] = &PriestTriggerFactoryInternal::party_member_cure_disease;
+        creators["power word: fortitude"] = &PriestTriggerFactoryInternal::power_word_fortitude;
+        creators["power word: fortitude on party"] = &PriestTriggerFactoryInternal::power_word_fortitude_on_party;
+        creators["divine spirit"] = &PriestTriggerFactoryInternal::divine_spirit;
+        creators["divine spirit on party"] = &PriestTriggerFactoryInternal::divine_spirit_on_party;
+        creators["inner fire"] = &PriestTriggerFactoryInternal::inner_fire;
+        creators["vampiric touch"] = &PriestTriggerFactoryInternal::vampiric_touch;
+        creators["vampiric touch on attacker"] = &PriestTriggerFactoryInternal::vampiric_touch_on_attacker;
+        creators["shadowform"] = &PriestTriggerFactoryInternal::shadowform;
+        creators["vampiric embrace"] = &PriestTriggerFactoryInternal::vampiric_embrace;
+        creators["power infusion"] = &PriestTriggerFactoryInternal::power_infusion;
+        creators["inner focus"] = &PriestTriggerFactoryInternal::inner_focus;
+        creators["shadow protection"] = &PriestTriggerFactoryInternal::shadow_protection;
+        creators["shadow protection on party"] = &PriestTriggerFactoryInternal::shadow_protection_on_party;
+        creators["shackle undead"] = &PriestTriggerFactoryInternal::shackle_undead;
+        creators["holy fire"] = &PriestTriggerFactoryInternal::holy_fire;
+        creators["touch of weakness"] = &PriestTriggerFactoryInternal::touch_of_weakness;
+        creators["hex of weakness"] = &PriestTriggerFactoryInternal::hex_of_weakness;
+        creators["shadowguard"] = &PriestTriggerFactoryInternal::shadowguard;
+        creators["fear ward on main tank"] = &PriestTriggerFactoryInternal::fear_ward_on_main_tank;
+        creators["feedback"] = &PriestTriggerFactoryInternal::feedback;
+        creators["binding heal"] = &PriestTriggerFactoryInternal::binding_heal;
+        creators["chastise"] = &PriestTriggerFactoryInternal::chastise;
+        creators["silence"] = &PriestTriggerFactoryInternal::silence;
+        creators["silence on enemy healer"] = &PriestTriggerFactoryInternal::silence_on_enemy_healer;
+        creators["shadowfiend"] = &PriestTriggerFactoryInternal::shadowfiend;
+        creators["mind sear channel check"] = &PriestTriggerFactoryInternal::mind_sear_channel_check;
+        // #812 MoP-only (no AC counterpart): Holy's Chakra: Serenity stance.
+        creators["chakra: serenity"] = &PriestTriggerFactoryInternal::chakra_serenity;
+        // Lane 8 / #863 (MoP priest rotations)
+        creators["chakra: sanctuary"] = &PriestTriggerFactoryInternal::chakra_sanctuary;
+        creators["surge of light proc"] = &PriestTriggerFactoryInternal::surge_of_light_proc;
+        creators["lightwell can cast"] = &PriestTriggerFactoryInternal::lightwell_can_cast;
+        creators["chakra: sanctuary missing"] = &PriestTriggerFactoryInternal::chakra_sanctuary_missing;
+        creators["void tendrils target close"] = &PriestTriggerFactoryInternal::void_tendrils_target_close;
+        creators["priest self health 30"] = &PriestTriggerFactoryInternal::self_health_30;
+        creators["priest self health 40"] = &PriestTriggerFactoryInternal::self_health_40;
+        creators["priest self health 60"] = &PriestTriggerFactoryInternal::self_health_60;
+        // MoP-only, BEYOND AC PARITY (#357 slice 1): AC has neither spell nor trigger name.
+        creators["prayer of fortitude on party"] = &PriestTriggerFactoryInternal::prayer_of_fortitude_on_party;
+        creators["prayer of spirit on party"] = &PriestTriggerFactoryInternal::prayer_of_spirit_on_party;
+        // #524: "being attacked" comes from the shared TriggerContext (#521, AC TriggerContext.h:127).
+        // NOT registered: "boost" - AC registers no Trigger under that name either (AC TriggerContext.h has
+        // only "generic boost"; AC PriestAiObjectContext.cpp:31 registers "boost" as a *Strategy*), and
+        // trigger "fear ward" - AC registers the trigger "fear ward on main tank" only (that one IS registered
+        // above, and #524 registers its action "fear ward on main tank" - AC PriestAiObjectContext.cpp).
     }
 
 private:
+    static Trigger* vampiric_embrace(PlayerbotAI* botAI) { return new VampiricEmbraceTrigger(botAI); }
+    static Trigger* shadowform(PlayerbotAI* botAI) { return new ShadowformTrigger(botAI); }
+    static Trigger* vampiric_touch(PlayerbotAI* botAI) { return new VampiricTouchTrigger(botAI); }
+    static Trigger* vampiric_touch_on_attacker(PlayerbotAI* botAI)
+    {
+        return new VampiricTouchOnAttackerTrigger(botAI);
+    }
+    static Trigger* devouring_plague(PlayerbotAI* botAI) { return new DevouringPlagueTrigger(botAI); }
+    static Trigger* shadow_orbs_3_available(PlayerbotAI* botAI) { return new ShadowOrbsAvailableTrigger(botAI, 3); }
+    static Trigger* shadow_word_pain(PlayerbotAI* botAI) { return new ShadowWordPainTrigger(botAI); }
+    static Trigger* shadow_word_pain_on_attacker(PlayerbotAI* botAI)
+    {
+        return new ShadowWordPainOnAttackerTrigger(botAI);
+    }
+    static Trigger* dispel_magic(PlayerbotAI* botAI) { return new DispelMagicTrigger(botAI); }
+    static Trigger* dispel_magic_party_member(PlayerbotAI* botAI) { return new DispelMagicPartyMemberTrigger(botAI); }
+    static Trigger* cure_disease(PlayerbotAI* botAI) { return new CureDiseaseTrigger(botAI); }
+    static Trigger* party_member_cure_disease(PlayerbotAI* botAI) { return new PartyMemberCureDiseaseTrigger(botAI); }
+    static Trigger* power_word_fortitude(PlayerbotAI* botAI) { return new PowerWordFortitudeTrigger(botAI); }
+    static Trigger* power_word_fortitude_on_party(PlayerbotAI* botAI)
+    {
+        return new PowerWordFortitudeOnPartyTrigger(botAI);
+    }
+    static Trigger* divine_spirit(PlayerbotAI* botAI) { return new DivineSpiritTrigger(botAI); }
+    static Trigger* divine_spirit_on_party(PlayerbotAI* botAI) { return new DivineSpiritOnPartyTrigger(botAI); }
+    static Trigger* inner_fire(PlayerbotAI* botAI) { return new InnerFireTrigger(botAI); }
+    static Trigger* power_infusion(PlayerbotAI* botAI) { return new PowerInfusionTrigger(botAI); }
+    static Trigger* inner_focus(PlayerbotAI* botAI) { return new InnerFocusTrigger(botAI); }
+    static Trigger* shadow_protection_on_party(PlayerbotAI* botAI) { return new ShadowProtectionOnPartyTrigger(botAI); }
+    static Trigger* shadow_protection(PlayerbotAI* botAI) { return new ShadowProtectionTrigger(botAI); }
+    static Trigger* shackle_undead(PlayerbotAI* botAI) { return new ShackleUndeadTrigger(botAI); }
+    static Trigger* feedback(PlayerbotAI* botAI) { return new FeedbackTrigger(botAI); }
+    static Trigger* fear_ward_on_main_tank(PlayerbotAI* botAI) { return new FearWardOnMainTankTrigger(botAI); }
+    static Trigger* shadowguard(PlayerbotAI* botAI) { return new ShadowguardTrigger(botAI); }
+    static Trigger* hex_of_weakness(PlayerbotAI* botAI) { return new HexOfWeaknessTrigger(botAI); }
+    static Trigger* touch_of_weakness(PlayerbotAI* botAI) { return new TouchOfWeaknessTrigger(botAI); }
+    static Trigger* holy_fire(PlayerbotAI* botAI) { return new HolyFireTrigger(botAI); }
+    static Trigger* shadowfiend(PlayerbotAI* botAI) { return new ShadowfiendTrigger(botAI); }
+    static Trigger* silence_on_enemy_healer(PlayerbotAI* botAI) { return new SilenceEnemyHealerTrigger(botAI); }
+    static Trigger* silence(PlayerbotAI* botAI) { return new SilenceTrigger(botAI); }
+    static Trigger* chastise(PlayerbotAI* botAI) { return new ChastiseTrigger(botAI); }
+    static Trigger* binding_heal(PlayerbotAI* botAI) { return new BindingHealTrigger(botAI); }
+    static Trigger* mind_sear_channel_check(PlayerbotAI* botAI) { return new MindSearChannelCheckTrigger(botAI); }
+    static Trigger* chakra_serenity(PlayerbotAI* botAI) { return new ChakraSerenityTrigger(botAI); }
+    static Trigger* chakra_sanctuary(PlayerbotAI* botAI) { return new ChakraSanctuaryTrigger(botAI); }
+    static Trigger* surge_of_light_proc(PlayerbotAI* botAI) { return new SurgeOfLightProcTrigger(botAI); }
+    static Trigger* lightwell_can_cast(PlayerbotAI* botAI) { return new LightwellCanCastTrigger(botAI); }
+    static Trigger* chakra_sanctuary_missing(PlayerbotAI* botAI) { return new ChakraSanctuaryMissingTrigger(botAI); }
+    static Trigger* void_tendrils_target_close(PlayerbotAI* botAI) { return new VoidTendrilsTargetCloseTrigger(botAI); }
+    static Trigger* self_health_30(PlayerbotAI* botAI)
+    {
+        return new PriestSelfHealthTrigger(botAI, "priest self health 30", 30.0f);
+    }
+    static Trigger* self_health_40(PlayerbotAI* botAI)
+    {
+        return new PriestSelfHealthTrigger(botAI, "priest self health 40", 40.0f);
+    }
+    static Trigger* self_health_60(PlayerbotAI* botAI)
+    {
+        return new PriestSelfHealthTrigger(botAI, "priest self health 60", 60.0f);
+    }
+    static Trigger* prayer_of_fortitude_on_party(PlayerbotAI* botAI)
+    {
+        return new PrayerOfFortitudeOnPartyTrigger(botAI);
+    }
+    static Trigger* prayer_of_spirit_on_party(PlayerbotAI* botAI) { return new PrayerOfSpiritOnPartyTrigger(botAI); }
 };
 
 class PriestAiObjectContextInternal : public NamedObjectContext<Action>
@@ -147,6 +270,10 @@ public:
         creators["desperate prayer"] = &PriestAiObjectContextInternal::desperate_prayer;
         creators["fear ward"] = &PriestAiObjectContextInternal::fear_ward;
         creators["fear ward on party"] = &PriestAiObjectContextInternal::fear_ward_on_party;
+        creators["fear ward on main tank"] = &PriestAiObjectContextInternal::fear_ward_on_main_tank;
+        creators["purify"] = &PriestAiObjectContextInternal::purify;
+        creators["purify on party"] = &PriestAiObjectContextInternal::purify_on_party;
+        creators["purify magic on party"] = &PriestAiObjectContextInternal::purify_magic_on_party;  // #524
         creators["starshards"] = &PriestAiObjectContextInternal::starshards;
         creators["elune's grace"] = &PriestAiObjectContextInternal::elunes_grace;
         creators["feedback"] = &PriestAiObjectContextInternal::feedback;
@@ -165,6 +292,17 @@ public:
         creators["divine hymn"] = &PriestAiObjectContextInternal::divine_hymn;
         creators["mind sear"] = &PriestAiObjectContextInternal::mind_sear;
         creators["guardian spirit on party"] = &PriestAiObjectContextInternal::guardian_spirit_on_party;
+        // #812 MoP-only (no AC counterpart): Holy's Chakra: Serenity stance and Holy Word: Serenity.
+        creators["chakra: serenity"] = &PriestAiObjectContextInternal::chakra_serenity;
+        // Lane 8 / #863 (MoP priest rotations)
+        creators["chakra: sanctuary"] = &PriestAiObjectContextInternal::chakra_sanctuary;
+        creators["holy word: sanctuary on party"] = &PriestAiObjectContextInternal::holy_word_sanctuary_on_party;
+        creators["halo"] = &PriestAiObjectContextInternal::halo;
+        creators["cascade"] = &PriestAiObjectContextInternal::cascade;
+        creators["void tendrils"] = &PriestAiObjectContextInternal::void_tendrils;
+        creators["penance"] = &PriestAiObjectContextInternal::penance;
+        creators["silence on enemy caster"] = &PriestAiObjectContextInternal::silence_on_enemy_caster;
+        creators["holy word: serenity on party"] = &PriestAiObjectContextInternal::holy_word_serenity_on_party;
     }
 
 private:
@@ -248,6 +386,10 @@ private:
     static Action* starshards(PlayerbotAI* botAI) { return new CastStarshardsAction(botAI); }
     static Action* fear_ward_on_party(PlayerbotAI* botAI) { return new CastFearWardOnPartyAction(botAI); }
     static Action* fear_ward(PlayerbotAI* botAI) { return new CastFearWardAction(botAI); }
+    static Action* fear_ward_on_main_tank(PlayerbotAI* botAI) { return new CastFearWardOnMainTankAction(botAI); }
+    static Action* purify(PlayerbotAI* botAI) { return new CastPurifyAction(botAI); }
+    static Action* purify_on_party(PlayerbotAI* botAI) { return new CastPurifyOnPartyAction(botAI); }
+    static Action* purify_magic_on_party(PlayerbotAI* botAI) { return new CastPurifyMagicOnPartyAction(botAI); }
     static Action* desperate_prayer(PlayerbotAI* botAI) { return new CastDesperatePrayerAction(botAI); }
     static Action* shadowguard(PlayerbotAI* botAI) { return new CastShadowguardAction(botAI); }
     static Action* hex_of_weakness(PlayerbotAI* botAI) { return new CastHexOfWeaknessAction(botAI); }
@@ -275,6 +417,15 @@ private:
     static Action* divine_hymn(PlayerbotAI* ai) { return new CastDivineHymnAction(ai); }
     static Action* mind_sear(PlayerbotAI* ai) { return new CastMindSearAction(ai); }
     static Action* guardian_spirit_on_party(PlayerbotAI* ai) { return new CastGuardianSpiritOnPartyAction(ai); }
+    static Action* chakra_serenity(PlayerbotAI* ai) { return new CastChakraSerenityAction(ai); }
+    static Action* chakra_sanctuary(PlayerbotAI* ai) { return new CastChakraSanctuaryAction(ai); }
+    static Action* holy_word_sanctuary_on_party(PlayerbotAI* ai) { return new CastHolyWordSanctuaryOnPartyAction(ai); }
+    static Action* halo(PlayerbotAI* ai) { return new CastHaloAction(ai); }
+    static Action* cascade(PlayerbotAI* ai) { return new CastCascadeAction(ai); }
+    static Action* void_tendrils(PlayerbotAI* ai) { return new CastVoidTendrilsAction(ai); }
+    static Action* penance(PlayerbotAI* ai) { return new CastPenanceAction(ai); }
+    static Action* silence_on_enemy_caster(PlayerbotAI* ai) { return new CastSilenceOnEnemyCasterAction(ai); }
+    static Action* holy_word_serenity_on_party(PlayerbotAI* ai) { return new CastHolyWordSerenityOnPartyAction(ai); }
 };
 
 PriestAiObjectContext::PriestAiObjectContext(PlayerbotAI* botAI) : AiObjectContext(botAI)

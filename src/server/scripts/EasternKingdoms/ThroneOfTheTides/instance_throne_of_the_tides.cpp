@@ -95,15 +95,12 @@ class instance_throne_of_the_tides : public InstanceMapScript
                         break;
                     case NPC_COMMANDER_ULTHOK:
                         uiCommanderUlthokGUID = creature->GetGUID();
-                        TC_LOG_ERROR("scripts", "ulthok1");
                         if (GetData(DATA_COMMANDER_ULTHOK_EVENT) == DONE)
                         {
-                            TC_LOG_ERROR("scripts", "ulthok2");
                             creature->SetPhaseMask(PHASEMASK_NORMAL, true);
                         }
                         else
                         {
-                            TC_LOG_ERROR("scripts", "ulthok3");
                             creature->SetPhaseMask(2, true);
                         }
                         break;

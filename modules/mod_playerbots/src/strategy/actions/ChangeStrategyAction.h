@@ -29,4 +29,23 @@ public:
     bool Execute(Event event) override;
 };
 
+/// Ported from AC mod-playerbots CombatActions.h/.cpp (#149). AC's isUseful() also has a
+/// CLASS_HUNTER branch gated on "item count"::"ammo" (ammo does not exist on 5.4.8, removed in
+/// Cataclysm) - dropped here, so hunters fall through to the same rule as every other ranged class.
+class SwitchToMeleeAction : public ChangeCombatStrategyAction
+{
+public:
+    SwitchToMeleeAction(PlayerbotAI* botAI) : ChangeCombatStrategyAction(botAI, "-ranged,+close") {}
+
+    bool isUseful() override;
+};
+
+class SwitchToRangedAction : public ChangeCombatStrategyAction
+{
+public:
+    SwitchToRangedAction(PlayerbotAI* botAI) : ChangeCombatStrategyAction(botAI, "-close,+ranged") {}
+
+    bool isUseful() override;
+};
+
 #endif

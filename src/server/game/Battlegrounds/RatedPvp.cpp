@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -379,13 +379,13 @@ static std::ostream& operator<<(std::ostream& stream, Reward const& reward)
     stream << std::endl << "Titles:";
     for (auto&& it : reward.Titles)
     {
-        std::string str = it->name[LOCALE_ruRU];
+        std::string str = it->name;
         size_t sp = str.find('%');
         stream << " " << str.substr(0, sp) << "(" << it->ID << ")";
     }
     stream << std::endl << "Achievements:";
     for (auto&& it : reward.Achievs)
-        stream << " " << it->Name[LOCALE_ruRU] << "(" << it->ID << ")";
+        stream << " " << it->Name << "(" << it->ID << ")";
 
     stream << std::endl << "Items:";
     for (auto&& it : reward.Items)
@@ -712,8 +712,8 @@ bool RatedPvpMgr::SendRewards(std::ostream& log, RewardMap& map, CharacterDataba
             trans->PAppend(str.c_str());
         }
 
-        MailDraft mail("PvP награда за завершение сезона арены",
-            Format("Уважаемый %s, поздравляем вас завершением сезона арены, с вашими успехами на PvP поприще и вручаем заслуженную награду.", name.c_str()));
+        MailDraft mail("PvP Arena Season Completion Reward",
+            Format("Dear %s, we congratulate you on completing the arena season with your achievements in PvP and present you with a well-deserved reward.", name.c_str()));
         for (auto&& it : playerIter.second.Items)
         {
             Item* item = Item::CreateItem(it->ItemId, 1);

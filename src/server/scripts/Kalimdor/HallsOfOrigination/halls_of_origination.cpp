@@ -471,7 +471,7 @@ class npc_halls_of_origination_brann_bronzebeard : public CreatureScript
 
         bool OnGossipHello(Player* player, Creature* creature) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             if (creature->IsQuestGiver())
                 player->PrepareQuestMenu(creature->GetGUID());
@@ -588,7 +588,7 @@ class go_halls_of_origination_transit_device : public GameObjectScript
 
         bool OnGossipHello(Player* player, GameObject* go) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             if (InstanceScript* instance = go->GetInstanceScript())
             {

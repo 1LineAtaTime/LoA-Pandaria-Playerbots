@@ -1,0 +1,16 @@
+-- #822 ZG Zanzil: the Frostburn Formula cauldron must be able to freeze the Zanzili Berserker (52054).
+-- Wowpedia 'Zanzil (tactics)' (MediaWiki API, fetched 2026-10-14): 'Zanzil's Cauldron of Frostburn Formula: Drinking from this
+-- cauldron causes the player's next attack to inflict damage equal to 65% of the target's maximum health and stun the target for
+-- 15 sec. Zanzil, Jin'do, and their most powerful allies ignore the effects of this mixture.' and, for the Berserker: 'one member of
+-- the raid with a ranged ability should use the frost cauldron and freeze the berserker. All DPS should focus on the berserker'.
+-- Chain (5.4.8 DBC + core): GO 208314 (type 22) casts 96325 on the user (aura PROC_TRIGGER_SPELL -> 96331, Unit.cpp:8211 skips victims
+-- above level 85 = Zanzil/Jin'do) -> 96331 = MOD_STUN + DAMAGE_FROM_MAX_HEALTH_PCT 65, SpellCategories.Mechanic 27 (DAZE) on the spell AND
+-- on both effects, script spell_frostburn_formula then casts 96332 (Hypothermia, effect mechanic 27 too) on the target.
+-- Creature::IsImmunedToSpell (Creature.cpp:1836) / IsImmunedToSpellEffect (:1860) test template.mechanic_immune_mask & (1 << (mechanic-1)).
+-- 52054 has mask 617299967 (mechanics 1-14, 17, 18, 20, 23, 24, 27, 30) which includes mechanic 27 (1<<26 = 67108864): the whole spell is
+-- immune, so even a real player's cauldron does nothing. The same mask is in the MoP 5.4.8 data (creature_template, identical).
+-- Heroic health_mod is NOT changed: the MoP 5.4.8 creature_difficulty data has DUNGEON_HEROIC 52054 health_mod 30 / damage_mod 35
+-- (normal template Health_mod 15), identical to creature_template_difficulty here (DUNGEON_NORMAL 15, DUNGEON_HEROIC 30).
+-- Before: creature_template 52054 mechanic_immune_mask = 617299967. After: 550191103 (617299967 & ~67108864).
+-- Undo: UPDATE `creature_template` SET `mechanic_immune_mask` = 617299967 WHERE `entry` = 52054;
+UPDATE `creature_template` SET `mechanic_immune_mask` = 550191103 WHERE `entry` = 52054 AND `mechanic_immune_mask` = 617299967;

@@ -41,6 +41,8 @@ class CastDarkCommandAction : public CastSpellAction
 {
 public:
     CastDarkCommandAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "dark command") {}
+    // #835: never taunt a player (BG lose-aggro edge can see the old target, then dps assist switches to a player).
+    bool isUseful() override { Unit* t = GetTarget(); return t && !t->IsPlayer() && CastSpellAction::isUseful(); }
 };
 
 BEGIN_RANGED_SPELL_ACTION(CastDeathGripAction, "death grip")
@@ -138,17 +140,7 @@ public:
     }
 };
 
-// debuff
-BEGIN_DEBUFF_ACTION(CastMarkOfBloodAction, "mark of blood")
-END_SPELL_ACTION()
-
-class CastMarkOfBloodOnAttackerAction : public CastDebuffSpellOnAttackerAction
-{
-public:
-    CastMarkOfBloodOnAttackerAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "mark of blood", true)
-    {
-    }
-};
+// rot-lane-2 (#857): Mark of Blood is NOT-LEARNABLE on 5.4.8 (forkonly_verdicts.txt) and had no other reference, removed.
 
 class CastUnholyBlightAction : public CastBuffSpellAction
 {
@@ -165,15 +157,23 @@ public:
 class CastGhoulFrenzyAction : public CastBuffSpellAction
 {
 public:
-    CastGhoulFrenzyAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "ghoul frenzy", false, 5000) {}
+    // #601: Ghoul Frenzy was removed in 4.0.1 (Wowpedia "Ghoul Frenzy"); its spell id 63560 is Dark Transformation in
+    // 5.4.8 (cls.py dk: YES 63560/spec252/L70; Wowhead mop-classic tooltip 63560, read 2026-10-05). The action key
+    // stays "ghoul frenzy" (AC parity), the spell name is the 5.x one.
+    CastGhoulFrenzyAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "dark transformation", false, 5000) {}
     std::string const GetTargetName() override { return "pet target"; }
 };
 
 BEGIN_MELEE_SPELL_ACTION(CastCorpseExplosionAction, "corpse explosion")
 END_SPELL_ACTION()
 
-BEGIN_MELEE_SPELL_ACTION(CastAntiMagicShellAction, "anti magic shell")
-END_SPELL_ACTION()
+// rot-lane-2 (#857): the 5.4.8 spell name is "Anti-Magic Shell" (hyphen); SpellIdValue matches names exactly, so the
+// old "anti magic shell" string never resolved (silent no-op). Self buff, MoP rotation row 25014/25117/25218.
+class CastAntiMagicShellAction : public CastBuffSpellAction
+{
+public:
+    CastAntiMagicShellAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "anti-magic shell") {}
+};
 
 BEGIN_MELEE_SPELL_ACTION(CastAntiMagicZoneAction, "anti magic zone")
 END_SPELL_ACTION()
@@ -182,12 +182,6 @@ class CastChainsOfIceAction : public CastSpellAction
 {
 public:
     CastChainsOfIceAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "chains of ice") {}
-};
-
-class CastHungeringColdAction : public CastMeleeSpellAction
-{
-public:
-    CastHungeringColdAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "hungering cold") {}
 };
 
 class CastHeartStrikeAction : public CastMeleeSpellAction
@@ -251,12 +245,6 @@ public:
     CastHornOfWinterAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "horn of winter") {}
 };
 
-class CastImprovedIcyTalonsAction : public CastBuffSpellAction
-{
-public:
-    CastImprovedIcyTalonsAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "improved icy talons") {}
-};
-
 class CastBoneShieldAction : public CastBuffSpellAction
 {
 public:
@@ -267,12 +255,6 @@ class CastDeathPactAction : public CastBuffSpellAction
 {
 public:
     CastDeathPactAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "death pact") {}
-};
-
-class CastDeathRuneMasteryAction : public CastBuffSpellAction
-{
-public:
-    CastDeathRuneMasteryAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "death rune mastery") {}
 };
 
 class CastDancingRuneWeaponAction : public CastSpellAction
@@ -312,10 +294,11 @@ public:
     CastIceboundFortitudeAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "icebound fortitude") {}
 };
 
-class CastUnbreakableArmorAction : public CastBuffSpellAction
+// #601: Pillar of Frost 51271, the 5.x successor of Unbreakable Armor (Wowhead mop-classic tooltip, 2026-10-05).
+class CastPillarOfFrostAction : public CastBuffSpellAction
 {
 public:
-    CastUnbreakableArmorAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "unbreakable armor") {}
+    CastPillarOfFrostAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "pillar of frost") {}
 };
 
 class CastVampiricBloodAction : public CastBuffSpellAction
@@ -330,10 +313,56 @@ public:
     CastMindFreezeAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "mind freeze") {}
 };
 
-class CastStrangulateAction : public CastMeleeSpellAction
+// rot-lane-2 (#857): Strangulate 47476 has a 30 yd range (MoP rotation row 10/11), so it is a plain
+// CastSpellAction (range check by the spell), not a melee-range action.
+class CastStrangulateAction : public CastSpellAction
 {
 public:
-    CastStrangulateAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "strangulate") {}
+    CastStrangulateAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "strangulate") {}
+};
+
+// rot-lane-2 (#857): MoP rotation row 9 / 11 (prio group 10, "each valid enemy around") - interrupt ANY
+// casting enemy in range, not only the current target / enemy healer. Targets the lane-0 value "enemy caster target".
+class CastMindFreezeOnEnemyCasterAction : public CastSpellOnEnemyCasterAction
+{
+public:
+    CastMindFreezeOnEnemyCasterAction(PlayerbotAI* botAI) : CastSpellOnEnemyCasterAction(botAI, "mind freeze") {}
+};
+
+class CastStrangulateOnEnemyCasterAction : public CastSpellOnEnemyCasterAction
+{
+public:
+    CastStrangulateOnEnemyCasterAction(PlayerbotAI* botAI) : CastSpellOnEnemyCasterAction(botAI, "strangulate") {}
+};
+
+// rot-lane-2 (#857): MoP-only rotation spells from the MoP 5.4.8 data (AC WotLK has none of them).
+// Festering Strike 85948 (Unholy, MoP rotation row 25207/25208/25212).
+class CastFesteringStrikeAction : public CastMeleeSpellAction
+{
+public:
+    CastFesteringStrikeAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "festering strike") {}
+};
+
+// Outbreak 77575 (all specs, 30 yd, applies Blood Plague + Frost Fever; MoP rotation row 25203/25204/25003/25004).
+class CastOutbreakAction : public CastSpellAction
+{
+public:
+    CastOutbreakAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "outbreak") {}
+};
+
+// Soul Reaper (spec ids 114866 Blood / 130735 Frost / 130736 Unholy; the name resolves to the one the bot knows;
+// MoP rotation row 25009/25105/25213).
+class CastSoulReaperAction : public CastMeleeSpellAction
+{
+public:
+    CastSoulReaperAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "soul reaper") {}
+};
+
+// Unholy Frenzy 49016 (Unholy, MoP rotation row 25219, cast on self).
+class CastUnholyFrenzyAction : public CastBuffSpellAction
+{
+public:
+    CastUnholyFrenzyAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "unholy frenzy") {}
 };
 
 class CastMindFreezeOnEnemyHealerAction : public CastSpellOnEnemyHealerAction

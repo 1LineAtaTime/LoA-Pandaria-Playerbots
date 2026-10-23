@@ -139,6 +139,13 @@ class boss_asira_dawnslayer : public CreatureScript
             {
                 _JustDied();
                 Talk(SAY_DEATH);
+
+                // Refs #696: Thrall's "Well done. Let's see to our friend." (Wowpedia "Asira Dawnslayer") - he revives the Life Warden
+                // and flies ahead, which summons Thrall 54634 for the Benedictus escort. That sequence started only from his Reset()
+                // (npc_thrall_asira, boss state DONE), and a fight that ends in the boss's death is no evade, so nothing ran it.
+                if (Creature* thrall = me->FindNearestCreature(NPC_THRALL_3, 200.0f))
+                    if (thrall->AI())
+                        thrall->AI()->DoAction(ACTION_ASIRA_DEATH);
             }
 
             void CheckCast()

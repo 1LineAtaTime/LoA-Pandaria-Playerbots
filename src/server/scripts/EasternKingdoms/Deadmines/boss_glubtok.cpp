@@ -22,6 +22,8 @@
 
 enum ScriptTexts
 {
+    // #681: creature_text 47162 group 6 is the Fire Wall boss emote (MoP test world DB)
+    SAY_ANNOUNCE_FIRE_WALL = 6,
     SAY_DEATH        = 0,
     SAY_ARCANE_POWER = 1,
     SAY_AGGRO        = 2,
@@ -48,6 +50,11 @@ enum Spells
     SPELL_FROST_BLOSSOM_VISUAL = 88165, // casted by bunny
     SPELL_FIRE_BEAM_VISUAL     = 45576, 
     SPELL_FROST_BEAM_VISUAL    = 99490,
+
+    // #681 heroic Fire Wall (Wowpedia "Glubtok", MediaWiki API 2026-10-23: "After casting Arcane Power, Glubtok creates a single
+    // wall of fire that begins to slowly rotate around him"). 91398 = periodic trigger every 1 s of 91397 (5.4.8 SpellEffect.dbc:
+    // 46250 Fire, radius index 15 = 3 yd around the dummy).
+    SPELL_FIRE_WALL            = 91398,
 };
 
 enum Events
@@ -59,6 +66,8 @@ enum Events
     EVENT_ARCANE_POWER1 = 5,
     EVENT_ARCANE_POWER2 = 6,
     EVENT_ARCANE_POWER3 = 7,
+    EVENT_FIRE_WALL     = 8,   // #681
+    EVENT_FIRE_WALL_BURN = 9,  // #681 w106: the wall burns 1.4 s after the announce (CPP boss_glubtok.cpp:303-316)
 };
 
 enum Adds
@@ -134,7 +143,9 @@ class boss_glubtok : public CreatureScript
             {
                 summons.Summon(summon);
 
-                summon->CastSpell(summon, summon->GetEntry() == NPC_FIRE_BLOSSOM ? SPELL_FIRE_BLOSSOM_VISUAL : SPELL_FROST_BLOSSOM_VISUAL, false);
+                // #681: only the blossoms get a visual (the Fire Wall dummies are summons too)
+                if (summon->GetEntry() == NPC_FIRE_BLOSSOM || summon->GetEntry() == NPC_FROST_BLOSSOM)
+                    summon->CastSpell(summon, summon->GetEntry() == NPC_FIRE_BLOSSOM ? SPELL_FIRE_BLOSSOM_VISUAL : SPELL_FROST_BLOSSOM_VISUAL, false);
             }
 
             void JustDied(Unit* /*killer*/) override
@@ -191,7 +202,32 @@ class boss_glubtok : public CreatureScript
                             DoCast(me, SPELL_ARCANE_POWER, true);
                             Talk(SAY_ARCANE_POWER);
                             events.ScheduleEvent(EVENT_BLOSSOM, 5000);
+                            // #681: CPP boss_glubtok.cpp:297-316 - Stun Self 2.2 s after Arcane Power, the announce 1.5 s later and
+                            // the wall 1.4 s after that, heroic only. w106: the announce, the dummies and their burn all came at 5.1 s, so
+                            // the wall lit up under whoever stood on its line (Frannor took 48557 + 50713 from two neighbouring dummies in
+                            // the wall's first second and died). Now the announce and the (not yet burning) dummies at 3.7 s, the burn at
+                            // 5.1 s: the bots see the line 1.4 s early (CataDmShared.cpp FireWallHalves counts unlit dummies).
+                            if (IsHeroic())
+                                events.ScheduleEvent(EVENT_FIRE_WALL, 3700);
                             break;
+                        case EVENT_FIRE_WALL:
+                            Talk(SAY_ANNOUNCE_FIRE_WALL);
+                            SummonFireWall();
+                            events.ScheduleEvent(EVENT_FIRE_WALL_BURN, 1400);
+                            break;
+                        case EVENT_FIRE_WALL_BURN:
+                        {
+                            uint32 lit = 0;
+                            for (ObjectGuid const& guid : summons)
+                                if (Creature* dummy = ObjectAccessor::GetCreature(*me, guid))
+                                    if (dummy->GetEntry() == NPC_FIREWALL_PLATTER_2A && !dummy->HasAura(SPELL_FIRE_WALL))
+                                    {
+                                        dummy->CastSpell(dummy, SPELL_FIRE_WALL, true);
+                                        ++lit;
+                                    }
+                            TC_LOG_INFO("scripts", "[DM-GLUBTOK] fire wall burns: %u dummies", lit);
+                            break;
+                        }
                         case EVENT_BLOSSOM:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
                                     DoCast(target, urand(0, 1) ? SPELL_FIRE_BLOSSOM : SPELL_FROST_BLOSSOM);
@@ -224,6 +260,42 @@ class boss_glubtok : public CreatureScript
             }
 
             private:
+                // #681: the Fire Wall. One dummy (48976, unselectable, faction 14) on every seat of the CPP platter (deadmines.h
+                // fireWallPivotPos), all turning clockwise around the pivot at one rate (FIRE_WALL_PERIOD), each casting 91398.
+                // A dummy never enters combat (it would evade home and stop turning) and flies (MoveCirclePath keeps a flier's z).
+                void SummonFireWall()
+                {
+                    static float const level1[] = { 6.0f, 18.0f, 30.0f, 42.0f, -6.0f, -18.0f, -30.0f };
+                    static float const level2[] = { 1.5f, 4.5f, -1.5f, -4.5f };
+                    float const lateral = fireWallPivotPos.GetOrientation() + float(M_PI) / 2.0f;  // seat +y = left of the facing
+                    float const omega = 2.0f * float(M_PI) / FIRE_WALL_PERIOD;
+                    uint32 count = 0;
+                    for (float const l1 : level1)
+                    {
+                        for (float const l2 : level2)
+                        {
+                            float const d = l1 + l2;
+                            Position const pos = { fireWallPivotPos.GetPositionX() + d * std::cos(lateral),
+                                                   fireWallPivotPos.GetPositionY() + d * std::sin(lateral),
+                                                   fireWallPivotPos.GetPositionZ(), 0.0f };
+                            Creature* dummy = me->SummonCreature(NPC_FIREWALL_PLATTER_2A, pos, TEMPSUMMON_MANUAL_DESPAWN);
+                            if (!dummy)
+                                continue;
+
+                            dummy->SetIsCombatDisallowed(true);
+                            dummy->SetReactState(REACT_PASSIVE);
+                            // 91397 is TARGET_UNIT_DEST_AREA_ENTRY (any unit without a conditions row): its neighbours stand 3 yd apart
+                            dummy->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_ALL, true);
+                            dummy->SetDisableGravity(true);
+                            // #681 w106: 91398 is cast 1.4 s later (EVENT_FIRE_WALL_BURN); the wall already turns
+                            dummy->GetMotionMaster()->MoveCirclePath(fireWallPivotPos.GetPositionX(), fireWallPivotPos.GetPositionY(),
+                                fireWallPivotPos.GetPositionZ(), std::fabs(d), true, 36, std::fabs(d) * omega);
+                            ++count;
+                        }
+                    }
+                    TC_LOG_INFO("scripts", "[DM-GLUBTOK] fire wall: %u dummies, period %.0f s", count, FIRE_WALL_PERIOD);
+                }
+
                 void InitHandleBeamEvent()
                 {
                     std::list<Creature*> FireList;

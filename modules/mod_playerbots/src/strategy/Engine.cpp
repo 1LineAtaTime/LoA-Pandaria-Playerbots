@@ -6,6 +6,7 @@
 #include "Engine.h"
 
 #include "Action.h"
+#include "BotScenario.h"
 #include "Event.h"
 #include "Helper.h"
 #include "Playerbots.h"
@@ -114,21 +115,28 @@ void Engine::Reset()
     }
 
     multipliers.clear();
+
+    actionNodeFactories.creators.clear();  // #72: AC Engine.cpp:115
 }
 
 void Engine::Init()
 {
     Reset();
 
+    hasTargetExclusions = false;  // AC Engine.cpp:122
     for (std::map<std::string, Strategy*>::iterator i = strategies.begin(); i != strategies.end(); i++)
     {
         Strategy* strategy = i->second;
         strategyTypeMask |= strategy->GetType();
+        hasTargetExclusions |= strategy->HasTargetExclusions();  // AC Engine.cpp:127
         strategy->InitMultipliers(multipliers);
         strategy->InitTriggers(triggers);
 
-        Event emptyEvent;
-        MultiplyAndPush(strategy->getDefaultActions(), 0.0f, false, emptyEvent, "default");
+        // #72 perf: AC Engine.cpp:130-133 - one engine-level action-node map, built here. CreateActionNode walked
+        // every active strategy's factories with a string lookup each, on every push. As in AC, a later strategy
+        // (std::map order) overrides an earlier one for a node name several strategies define.
+        for (auto const& iter : strategy->actionNodeFactories.creators)
+            actionNodeFactories.creators[iter.first] = iter.second;
     }
 
     if (testMode)
@@ -143,12 +151,16 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
 {
     LogAction("--- AI Tick ---");
 
-    //if (sPlayerbotAIConfig->logValuesPerTick)
-        //LogValues();
+    if (sPlayerbotAIConfig->logValuesPerTick)
+        LogValues();
 
     bool actionExecuted = false;
     ActionBasket* basket = nullptr;
     time_t currentTime = time(nullptr);
+
+    // #628 (AC Engine.cpp:155-156)
+    if (!minimal)
+        botAI->forceRebuff.RollBuffPendingCycle();
 
     // Update triggers and push default actions
     ProcessTriggers(minimal);
@@ -213,6 +225,7 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
                 if (actionExecuted)
                 {
                     LogAction("A:%s - OK", action->getName().c_str());
+                    BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "OK");
                     MultiplyAndPush(actionNode->getContinuers(), relevance, false, event, "cont");
                     lastRelevance = relevance;
                     delete actionNode;  // Safe memory management
@@ -221,18 +234,21 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
                 else
                 {
                     LogAction("A:%s - FAILED", action->getName().c_str());
+                    BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "FAILED");
                     MultiplyAndPush(actionNode->getAlternatives(), relevance + 0.003f, false, event, "alt");
                 }
             }
             else
             {
                 LogAction("A:%s - IMPOSSIBLE", action->getName().c_str());
+                BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "IMPOSSIBLE");
                 MultiplyAndPush(actionNode->getAlternatives(), relevance + 0.003f, false, event, "alt");
             }
         }
         else
         {
             LogAction("A:%s - USELESS", action->getName().c_str());
+            BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "USELESS");
             lastRelevance = relevance;
         }
 
@@ -253,11 +269,9 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
 
 ActionNode* Engine::CreateActionNode(std::string const name)
 {
-    for (std::map<std::string, Strategy*>::iterator i = strategies.begin(); i != strategies.end(); i++)
-    {
-        if (ActionNode* node = i->second->GetAction(name))
-            return node;
-    }
+    // #72 perf: AC Engine.cpp:264-269
+    if (ActionNode* node = actionNodeFactories.GetContextObject(name, botAI))
+        return node;
 
     return new ActionNode(name,
                           /*P*/ nullptr,
@@ -434,6 +448,12 @@ void Engine::toggleStrategy(std::string const name)
 
 bool Engine::HasStrategy(std::string const name) { return strategies.find(name) != strategies.end(); }
 
+Strategy* Engine::GetStrategy(std::string const name)
+{
+    std::map<std::string, Strategy*>::iterator i = strategies.find(name);
+    return i == strategies.end() ? nullptr : i->second;
+}
+
 void Engine::ProcessTriggers(bool minimal)
 {
     std::unordered_map<Trigger*, Event> fires;
@@ -461,14 +481,19 @@ void Engine::ProcessTriggers(bool minimal)
             if (minimal && node->getFirstRelevance() < 100)
                 continue;
 
-            /*PerformanceMonitorOperation* pmo =
-                sPerformanceMonitor->start(PERF_MON_TRIGGER, trigger->getName(), &aiObjectContext->performanceStack);*/
+            // #72: AC Engine.cpp:475-479 instruments every trigger check (pmon "Trigger" category).
+            PerformanceMonitorOperation* pmo =
+                sPerformanceMonitor->start(PERF_MON_TRIGGER, trigger->getName(), &aiObjectContext->performanceStack);
             Event event = trigger->Check();
-            /*if (pmo)
-                pmo->finish();*/
+            if (pmo)
+                pmo->finish();
 
             if (!event)
                 continue;
+
+            // #628 (AC Engine.cpp:484-485)
+            if (trigger->IsBuffTrigger() && !trigger->IsDebuffTrigger())
+                botAI->forceRebuff.NoteBuffProposed();
 
             fires[trigger] = event;
             LogAction("T:%s", trigger->getName().c_str());
@@ -586,7 +611,7 @@ bool Engine::ListenAndExecute(Action* action, Event event)
         if (!event.GetSource().empty())
             out << " [" << event.GetSource() << "]";
 
-        //botAI->TellMasterNoFacing(out);
+        botAI->TellMasterNoFacing(out);
     }
 
     actionExecuted = actionExecutionListeners.OverrideResult(action, actionExecuted, event);
@@ -596,32 +621,49 @@ bool Engine::ListenAndExecute(Action* action, Event event)
 
 void Engine::LogAction(char const* format, ...)
 {
+    Player* bot = botAI->GetBot();
+    // AC Engine.cpp:621 (#530 item 6). Bots named in AiPlayerbot.DebugBotNames or traced by the .botscenario harness
+    // (BotScenario::WantsTrail) keep their trail regardless - that is this fork's own diagnostic path (#98).
+    if (sPlayerbotAIConfig->logInGroupOnly && (!bot->GetGroup() || !botAI->HasRealPlayerMaster()) && !testMode &&
+        !(!sPlayerbotAIConfig->debugBotNames.empty() && sPlayerbotAIConfig->debugBotNames.count(bot->GetName())) &&
+        !BotScenario::WantsTrail(bot))
+        return;
+
+    char buf[1024];
+
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, sizeof(buf), format, ap);
+    va_end(ap);
+
+    lastAction += "|";
+    lastAction += buf;
+    if (lastAction.size() > 512)
+    {
+        lastAction = lastAction.substr(512);
+        size_t pos = lastAction.find("|");
+        lastAction = (pos == std::string::npos ? "" : lastAction.substr(pos));
+    }
+
     if (testMode)
     {
-        Player* bot = botAI->GetBot();
-        //if (sPlayerbotAIConfig->logInGroupOnly && (!bot->GetGroup() || !botAI->HasRealPlayerMaster()) && !testMode)
-            //return;
-
-        char buf[1024];
-
-        va_list ap;
-        va_start(ap, format);
-        vsprintf(buf, format, ap);
-        va_end(ap);
-
-        lastAction += "|";
-        lastAction += buf;
-        if (lastAction.size() > 512)
-        {
-            lastAction = lastAction.substr(512);
-            size_t pos = lastAction.find("|");
-            lastAction = (pos == std::string::npos ? "" : lastAction.substr(pos));
-        }
-    
         FILE* file = fopen("test.log", "a");
         fprintf(file, "'%s'", buf);
         fprintf(file, "\n");
         fclose(file);
+    }
+    // issue #98 follow-up: this fork's LogAction never routed the per-tick action-decision trail
+    // (PUSH/A:...-OK/FAILED/IMPOSSIBLE/USELESS/"no actions executed"/PREREQ - the WotLK reference's
+    // equivalent line) to the server log at all outside testMode, unlike the reference this was
+    // ported from. Restoring it unconditionally for 100+ bots would flood the log and hurt
+    // performance, so gate it the same way every other per-bot diagnostic in this module already
+    // does (grep sPlayerbotAIConfig->debugBotNames): only emit it for bots explicitly named in
+    // AiPlayerbot.DebugBotNames. Put a bot's name in that list to get its full action-decision
+    // trail without affecting the rest of the population.
+    else if ((!sPlayerbotAIConfig->debugBotNames.empty() && sPlayerbotAIConfig->debugBotNames.count(bot->GetName())) ||
+             BotScenario::WantsTrail(bot))
+    {
+        TC_LOG_DEBUG("playerbots", "%s %s", bot->GetName().c_str(), buf);
     }
 }
 
@@ -651,7 +693,8 @@ void Engine::ChangeStrategy(std::string const names)
 
 void Engine::LogValues()
 {
-    /*if (testMode)
+    // AC Engine.cpp:677-688 (#530 item 6); was commented out. FormatValues exists (AiObjectContext.cpp:144).
+    if (testMode)
         return;
 
     Player* bot = botAI->GetBot();
@@ -659,5 +702,5 @@ void Engine::LogValues()
         return;
 
     std::string const text = botAI->GetAiObjectContext()->FormatValues();
-    SF_LOG_DEBUG("playerbots", "Values for %s: %s", bot->GetName().c_str(), text.c_str());*/
+    TC_LOG_DEBUG("playerbots", "Values for %s: %s", bot->GetName().c_str(), text.c_str());
 }

@@ -28,6 +28,7 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "CreatureTextMgr.h"
 #include "Unit.h"
 #include "Player.h"
@@ -265,7 +266,7 @@ class boss_jikun : public CreatureScript
                 }
 
                 scheduler
-                    .Schedule(Seconds(2), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(2), [this](TaskContext context)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
@@ -329,7 +330,7 @@ class boss_jikun : public CreatureScript
                 additionalEvents.ScheduleEvent(EVENT_DROP_GOLDEN_EGG, 20 * IN_MILLISECONDS);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (instance)
                 {
@@ -855,7 +856,7 @@ struct npc_fall_catcher_jikun : public ScriptedAI
         init.Launch();
 
         scheduler
-            .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(me->GetSplineDuration()), [this](TaskContext context)
         {
             if (Unit* passenger = ObjectAccessor::GetUnit(*me, summonerGUID))
             {
@@ -1075,7 +1076,7 @@ struct npc_nest_guardian : public ScriptedAI
         events.ScheduleEvent(EVENT_TALON_RAKE, urand(2.5 * IN_MILLISECONDS, 8 * IN_MILLISECONDS));
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         // Periodic AOE at evade
         scheduler
@@ -1111,7 +1112,7 @@ struct npc_nest_guardian : public ScriptedAI
 
                     scheduler
                         .SetValidator([this] { return me->GetInstanceScript() && me->GetInstanceScript()->GetBossState(DATA_JI_KUN) == IN_PROGRESS; })
-                        .Schedule(Milliseconds(1000), [this](TaskContext /*context*/)
+                        .Schedule(Milliseconds(1000), [this](TaskContext context)
                     {
                         me->RemoveChanneledCast(targetGUID);
                     });
@@ -1467,7 +1468,7 @@ class spell_regurgitate : public SpellScript
                 // Not Used Feed
                 for (uint8 i = 0; i < 3; ++i)
                 {
-                    if (Creature* unusedFeed = caster->SummonCreature(NPC_FEED_POOL, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ() + 6.0f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN, 12000))
+                    if (Creature* unusedFeed = caster->SummonCreature(NPC_FEED_POOL, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ() + 6.0f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN, 12000ms))
                     {
                         relocateFeed = unusedFeed->GetRandomPoint(jiKunCenter, 40.0f);
                         unusedFeed->GetMotionMaster()->MoveJump(relocateFeed.GetPositionX(), relocateFeed.GetPositionY(), 6.0f, 35.0f, 20.0f, POINT_GREEN_FEED_AIR/*, 10.0f*/);
@@ -1490,7 +1491,7 @@ class spell_regurgitate : public SpellScript
                     // Feed for hatchlings
                     for (uint32 i = 0; i < 3; i++)
                     {
-                        if (Creature* Feed = caster->SummonCreature(NPC_FEED_HATCHLINGS, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ() + 6.0f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN, 12000))
+                        if (Creature* Feed = caster->SummonCreature(NPC_FEED_HATCHLINGS, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ() + 6.0f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN, 12000ms))
                         {
                             relocateFeed = Feed->GetRandomPoint(nestPos[nestEntry - 1], 5.5f);
                             Feed->GetMotionMaster()->MoveJump(relocateFeed.GetPositionX(), relocateFeed.GetPositionY(), relocateFeed.GetPositionZ() + 1.0f, 15.0f, 50.0f, POINT_FEED_CAME_TO_HATCHLING/*, 10.0f*/);
@@ -1501,7 +1502,7 @@ class spell_regurgitate : public SpellScript
                 {
                     for (uint8 i = 0; i < 3; ++i)
                     {
-                        if (Creature* unusedFeed = caster->SummonCreature(NPC_FEED_POOL, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ() + 6.0f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN, 12000))
+                        if (Creature* unusedFeed = caster->SummonCreature(NPC_FEED_POOL, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ() + 6.0f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN, 12000ms))
                         {
                             relocateFeed = unusedFeed->GetRandomPoint(jiKunCenter, 40.0f);
                             unusedFeed->GetMotionMaster()->MoveJump(relocateFeed.GetPositionX(), relocateFeed.GetPositionY(), 6.0f, 35.0f, 20.0f, POINT_GREEN_FEED_AIR/*, 10.0f*/);

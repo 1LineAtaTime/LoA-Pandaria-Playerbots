@@ -289,13 +289,13 @@ class npc_aysa_in_wind_temple : public CreatureScript
         {
             if (quest->GetQuestId() == 29786) // Bataille Pyrotechnique
             {
-                if (Creature* aysa = player->SummonCreature(64543, 543.94f, 4317.31f, 212.24f, 1.675520f, TEMPSUMMON_TIMED_DESPAWN, 10000))
+                if (Creature* aysa = player->SummonCreature(64543, 543.94f, 4317.31f, 212.24f, 1.675520f, TEMPSUMMON_TIMED_DESPAWN, 10000ms))
                 {
                     aysa->SetExplicitSeerGuid(player->GetGUID());
                     aysa->GetMotionMaster()->MovePoint(1, 643.45f, 4228.66f, 202.90f);
                 }
 
-                if (Creature* dafeng = player->SummonCreature(64532, 543.56f, 4320.97f, 212.24f, 5.445430f, TEMPSUMMON_TIMED_DESPAWN, 10000))
+                if (Creature* dafeng = player->SummonCreature(64532, 543.56f, 4320.97f, 212.24f, 5.445430f, TEMPSUMMON_TIMED_DESPAWN, 10000ms))
                 {
                     dafeng->SetExplicitSeerGuid(player->GetGUID());
                     dafeng->GetMotionMaster()->MovePoint(1, 643.45f, 4228.66f, 202.90f);
@@ -570,7 +570,7 @@ class npc_master_shang_xi_after_zhao : public CreatureScript
         {
             if (quest->GetQuestId() == 29787) // Worthy of Passing
             {
-                if (Creature* master = player->SummonCreature(56159, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 0))
+                if (Creature* master = player->SummonCreature(56159, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 0ms))
                 {
                     master->SetExplicitSeerGuid(player->GetGUID());
                     master->AI()->SetGUID(player->GetGUID());
@@ -629,7 +629,7 @@ class npc_master_shang_xi_after_zhao_escort : public CreatureScript
                         Talk(3);
                         break;
                     case 10:
-                        if (Creature* creature = me->SummonCreature(56274, 845.89f, 4372.62f, 223.98f, 4.78f, TEMPSUMMON_CORPSE_DESPAWN, 0))
+                        if (Creature* creature = me->SummonCreature(56274, 845.89f, 4372.62f, 223.98f, 4.78f, TEMPSUMMON_CORPSE_DESPAWN, 0ms))
                         {
                             creature->SetExplicitSeerGuid(playerGuid);
                             summonGUID = creature->GetGUID();
@@ -704,7 +704,7 @@ class npc_master_shang_xi_thousand_staff : public CreatureScript
         {
             if (quest->GetQuestId() == 29790) // Passing Wisdom
             {
-                if (Creature* master = player->SummonCreature(56686, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 0))
+                if (Creature* master = player->SummonCreature(56686, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN, 0ms))
                 {
                     master->SetExplicitSeerGuid(player->GetGUID());
                     master->AI()->SetGUID(player->GetGUID());
@@ -754,7 +754,7 @@ class npc_master_shang_xi_thousand_staff_escort : public CreatureScript
 
                     if (phase == 7)
                     {
-                        auto const creature = me->SummonCreature(57874, 873.09f, 4462.25f, 241.27f, 3.80f, TEMPSUMMON_TIMED_DESPAWN, 60000);
+                        auto const creature = me->SummonCreature(57874, 873.09f, 4462.25f, 241.27f, 3.80f, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
                         creature->SetExplicitSeerGuid(playerGuid);
 
                         me->DespawnOrUnsummon();
@@ -786,18 +786,65 @@ class spell_grab_air_balloon: public SpellScriptLoader
             void HandleScriptEffect(SpellEffIndex /*effIndex*/)
             {
                 PreventHitAura();
+            }
 
-                if (Unit* caster = GetCaster())
-                    if (Creature* balloon = caster->SummonCreature(55649, 915.55f, 4563.66f, 230.68f, 2.298090f, TEMPSUMMON_MANUAL_DESPAWN, 0))
+            // 95247 effect 1 is SPELL_AURA_PHASE (MiscValueB 399, SpellEffect.dbc). The balloon must be summoned
+            // AFTER that phase is on the player: a summon copies its summoner's phase ids at creation
+            // (WorldObject::SummonCreature, Object.cpp ~2751), so a balloon summoned at effect launch stayed
+            // outside phase 399 and the player fell off it the moment the phase aura landed (t440 r2: board
+            // credit given, player left standing at the balloon spawn, no ride). The old code only worked
+            // because Aysa also cast 95247 on the player first, which put the phase on before the player's cast.
+            void HandleAfterHit()
+            {
+                if (GetSpellInfo()->Id != 95247)
+                    return;
+
+                Unit* caster = GetCaster();
+                if (!caster || caster != GetHitUnit() || caster->GetVehicle())
+                    return;
+
+                if (Creature* balloon = caster->SummonCreature(55649, 915.55f, 4563.66f, 230.68f, 2.298090f, TEMPSUMMON_MANUAL_DESPAWN, 0ms))
+                {
+                    balloon->SetExplicitSeerGuid(caster->GetGUID());
+
+                    // Seat the riders BEFORE the player. Vehicle 1820 has exactly one "usable" seat (seat 0:
+                    // VehicleSeat 10373 flags 0x40112413 has VEHICLE_SEAT_FLAG_UNCONTROLLED; seats 1-4 have neither
+                    // that nor CAN_ENTER_OR_EXIT). Once the player sits in seat 0, GetAvailableSeatCount() is 0, so
+                    // any later 46598 ride aura on the balloon fails Aura::CanStackWith (SpellAuras.cpp, vehicle
+                    // branch) and _RemoveNoStackAurasDueToAura strips the player's ride aura instead: the player was
+                    // ejected the moment the old PassengerBoarded hook put Ji/Aysa on (t440 r2-r4).
+                    // vehicle_template_accessory 55649: seat 1 Aysa 56661, seat 2 Ji 56660 (normally already
+                    // installed; only fill a seat that is empty).
+                    if (Vehicle* kit = balloon->GetVehicleKit())
                     {
-                        balloon->SetExplicitSeerGuid(caster->GetGUID());
-                        caster->EnterVehicle(balloon, 0);
+                        static uint32 const riders[2][2] = { { 1, 56661 }, { 2, 56660 } };
+                        for (auto const& rider : riders)
+                        {
+                            int8 const seat = int8(rider[0]);
+                            if (kit->GetPassenger(seat))
+                                continue;
+                            if (TempSummon* npc = balloon->SummonCreature(rider[1], *balloon, TEMPSUMMON_MANUAL_DESPAWN, 0ms))
+                            {
+                                npc->SetExplicitSeerGuid(caster->GetGUID());
+                                npc->EnterVehicle(balloon, seat, true);
+                            }
+                        }
                     }
+
+                    // fullTriggered: board in this call. A non-full-triggered ride spell is queued as the player's
+                    // current spell and lands a tick later (t440 r3 PROBE: cast=46598).
+                    caster->EnterVehicle(balloon, 0, true);
+
+                    if (caster->GetVehicleBase() != balloon)
+                        TC_LOG_ERROR("scripts", "spell_grab_air_balloon: %s did not board balloon %s",
+                            caster->GetName().c_str(), balloon->GetGUID().ToString().c_str());
+                }
             }
 
             void Register() override
             {
                 OnEffectLaunchTarget += SpellEffectFn(spell_grab_air_balloon_SpellScript::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
+                AfterHit += SpellHitFn(spell_grab_air_balloon_SpellScript::HandleAfterHit);
             }
         };
 
@@ -819,23 +866,50 @@ class npc_shang_xi_air_balloon : public CreatureScript
             ObjectGuid playerGUID;
             uint32 eventTimer;
             uint32 phase;
+            uint32 boardGraceTimer = 5000;  // time a fresh balloon waits for its rider before despawning
+            bool hadRider = false;
+            bool rideEnded = false;
 
             void Reset() override
             {
+                me->setActive(true);
+                me->SetReactState(REACT_PASSIVE);
+
+                // #465 root cause: spell_grab_air_balloon seats the player BEFORE the balloon's first
+                // Creature::Update, and that first update calls AI()->JustAppeared() (Creature.cpp:568), which for
+                // npc_escortAI calls Reset() (ScriptedEscortAI.cpp:172). Clearing playerGUID there made the same
+                // update's UpdateAI despawn the balloon with the player on it (build-8 balloon-eject stack). Keep
+                // the rider and the ride state when a player is already in seat 0.
+                if (Vehicle* kit = me->GetVehicleKit())
+                    if (Unit* rider = kit->GetPassenger(0))
+                        if (rider->GetTypeId() == TYPEID_PLAYER)
+                        {
+                            playerGUID = rider->GetGUID();
+                            return;
+                        }
+
                 playerGUID = ObjectGuid::Empty;
                 eventTimer = 250;
                 phase = 0;
-
-                me->setActive(true);
-                me->SetReactState(REACT_PASSIVE);
             }
+
+            enum
+            {
+                NPC_BALLOON_JI          = 56660,
+                NPC_BALLOON_AYSA        = 56661,
+                WAYPOINT_MANDORI_INN    = 21,   // last script_waypoint of 55649
+            };
 
             void RemoveNpcPassengers()
             {
-                for (auto i = 1; i != 3; ++i)
+                Vehicle* const kit = me->GetVehicleKit();
+                if (!kit)
+                    return;
+
+                for (int8 i = 1; i < MAX_VEHICLE_SEATS; ++i)
                 {
-                    auto const passenger = me->GetVehicleKit()->GetPassenger(i);
-                    if (!passenger)
+                    auto const passenger = kit->GetPassenger(i);
+                    if (!passenger || passenger->GetTypeId() != TYPEID_UNIT)
                         continue;
 
                     passenger->ExitVehicle();
@@ -843,38 +917,63 @@ class npc_shang_xi_air_balloon : public CreatureScript
                 }
             }
 
+            // Ji and Aysa ride as vehicle accessories (vehicle_template_accessory 55649: seat 1 = 56661,
+            // seat 2 = 56660), so find them by entry instead of assuming a seat.
+            Creature* GetNpcPassenger(uint32 entry)
+            {
+                Vehicle* const kit = me->GetVehicleKit();
+                if (!kit)
+                    return nullptr;
+
+                for (int8 i = 1; i < MAX_VEHICLE_SEATS; ++i)
+                    if (Unit* passenger = kit->GetPassenger(i))
+                        if (passenger->GetEntry() == entry)
+                            return passenger->ToCreature();
+
+                return nullptr;
+            }
+
             void WaypointReached(uint32 waypointId) override
             {
-                switch (waypointId)
-                {
-                    case 11:
-                        RemoveNpcPassengers();
-                        break;
-                    case 12:
-                    {
-                        auto const passenger = me->GetVehicleKit()->GetPassenger(0);
-                        if (passenger && passenger->GetTypeId() == TYPEID_PLAYER)
-                        {
-                            passenger->ToPlayer()->KilledMonsterCredit(55939);
-                            passenger->AddAura(50550, passenger);
-                        }
+                // Wowpedia "The Suffering of Shen-zin Su" (29791): the balloon flies past Shen-zin Su's head and
+                // over the crashed Skyseeker, then "You land at the inn of Mandori Village". The ride used to
+                // drop everyone at waypoint 12, over the sea, before the Skyseeker part (upstream LoA issue #200).
+                if (waypointId != WAYPOINT_MANDORI_INN)
+                    return;
 
-                        me->GetVehicleKit()->RemoveAllPassengers();
-                        break;
+                rideEnded = true;
+
+                if (Vehicle* const kit = me->GetVehicleKit())
+                {
+                    auto const passenger = kit->GetPassenger(0);
+                    if (passenger && passenger->GetTypeId() == TYPEID_PLAYER)
+                    {
+                        passenger->ToPlayer()->KilledMonsterCredit(55939);
+                        passenger->AddAura(50550, passenger); // Parachute, in case the drop point is above ground
                     }
+
+                    RemoveNpcPassengers();
+                    kit->RemoveAllPassengers();
                 }
             }
 
             /*
                 seat 0 = player
-                seat 1 = Ji Firepaw
-                seat 2 = Aysa Cloudsinger
+                Ji Firepaw (56660) and Aysa Cloudsinger (56661): vehicle accessories, looked up by entry
             */
 
             void UpdateAI(uint32 diff) override final
             {
                 if (playerGUID == 0)
                 {
+                    // The rider boards right after the summon; give it a moment instead of despawning on the
+                    // very first update (that despawn ejected the player at the spawn point, t440 r2/r3).
+                    if (!hadRider && boardGraceTimer > diff)
+                    {
+                        boardGraceTimer -= diff;
+                        return;
+                    }
+
                     RemoveNpcPassengers();
                     me->DespawnOrUnsummon();
                     return;
@@ -1023,10 +1122,11 @@ class npc_shang_xi_air_balloon : public CreatureScript
                 npc_escortAI::UpdateAI(diff);
             }
 
-            void PassengerTalk(uint32 talkId, uint32 seatId)
+            // speaker 1 = Ji Firepaw (56660 creature_text), speaker 2 = Aysa Cloudsinger (56661 creature_text)
+            void PassengerTalk(uint32 talkId, uint32 speaker)
             {
-                if (Unit* unit = me->GetVehicleKit()->GetPassenger(seatId))
-                    if (Creature* creature = unit->ToCreature())
+                if (Creature* creature = GetNpcPassenger(speaker == 1 ? NPC_BALLOON_JI : NPC_BALLOON_AYSA))
+                    if (creature->AI())
                         creature->AI()->Talk(talkId, ObjectAccessor::GetPlayer(*me, playerGUID));
             }
 
@@ -1039,18 +1139,27 @@ class npc_shang_xi_air_balloon : public CreatureScript
                 {
                     auto const player = passenger->ToPlayer();
 
-                    if (auto const firepaw = player->SummonCreature(56660, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), 0.f, TEMPSUMMON_TIMED_DESPAWN, 300000))
-                        firepaw->EnterVehicle(me, 1);
-
-                    if (auto const aysa = player->SummonCreature(56662, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), 0.f, TEMPSUMMON_TIMED_DESPAWN, 300000))
-                        aysa->EnterVehicle(me, 2);
+                    // Do NOT put anyone else on the balloon from here: with the player in seat 0 there is no
+                    // usable seat left, and a new ride aura would evict the player's (see spell_grab_air_balloon).
+                    // The riders are seated by spell_grab_air_balloon before the player boards.
+                    if (!GetNpcPassenger(NPC_BALLOON_JI) || !GetNpcPassenger(NPC_BALLOON_AYSA))
+                        TC_LOG_ERROR("scripts", "npc_shang_xi_air_balloon: %s boarded without Ji/Aysa on the balloon (ji=%u aysa=%u)",
+                            player->GetName().c_str(), uint32(GetNpcPassenger(NPC_BALLOON_JI) != nullptr), uint32(GetNpcPassenger(NPC_BALLOON_AYSA) != nullptr));
 
                     playerGUID = player->GetGUID();
 
                     player->KilledMonsterCredit(56378);
+                    hadRider = true;
                 }
                 else
+                {
+                    if (!rideEnded)
+                    {
+                        TC_LOG_ERROR("scripts", "npc_shang_xi_air_balloon: %s left the balloon before the end of the ride",
+                            passenger->GetName().c_str());
+                    }
                     playerGUID = ObjectGuid::Empty;
+                }
             }
         };
 
@@ -1115,10 +1224,13 @@ public:
 
     bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
     {
-        if (quest->GetQuestId() == 29791)
-            sCreatureTextMgr->SendChat(creature, 1);
+        if (quest->GetQuestId() != 29791)
+            return true;
 
-        creature->CastSpell(player, 95247, true);
+        sCreatureTextMgr->SendChat(creature, 1); // "Hop in."
+
+        // Only the player summons and boards the balloon. Aysa also casting 95247 made spell_grab_air_balloon
+        // summon a second balloon with Aysa herself in the player seat.
         player->CastSpell(player, 95247, true);
         return true;
     }

@@ -22,6 +22,7 @@
 #include "ObjectGuid.h"
 #include <atomic>
 
+#include "ChatCommand.h"
 #include "DBCStores.h"
 #include "ObjectMgr.h"
 #include "SharedDefines.h"
@@ -32,11 +33,12 @@
 
 class AreaTrigger;
 class AuctionHouseObject;
+class Aura;
+class AuraApplication;
 class AuraScript;
 class Battleground;
 class BattlegroundMap;
 class Channel;
-class ChatCommand;
 class Creature;
 class CreatureAI;
 class DynamicObject;
@@ -167,7 +169,7 @@ public:
 
 protected:
 
-        explicit ScriptObject(char const* name);
+        ScriptObject(char const* name);
         virtual ~ScriptObject();
 
 private:
@@ -179,7 +181,9 @@ template<class TObject> class UpdatableScript
 {
 protected:
 
-        UpdatableScript() = default;
+        UpdatableScript()
+        {
+        }
 
 public:
 
@@ -190,22 +194,22 @@ class SpellScriptLoader : public ScriptObject
 {
 protected:
 
-        explicit SpellScriptLoader(const char* name);
+        SpellScriptLoader(const char* name);
 
 public:
 
         // Should return a fully valid SpellScript pointer.
-        virtual SpellScript* GetSpellScript() const { return nullptr; }
+        virtual SpellScript* GetSpellScript() const { return NULL; }
 
         // Should return a fully valid AuraScript pointer.
-        virtual AuraScript* GetAuraScript() const { return nullptr; }
+        virtual AuraScript* GetAuraScript() const { return NULL; }
 };
 
 class ServerScript : public ScriptObject
 {
 protected:
 
-        explicit ServerScript(const char* name);
+        ServerScript(const char* name);
 
 public:
 
@@ -239,7 +243,7 @@ class WorldScript : public ScriptObject
 {
 protected:
 
-        explicit WorldScript(const char* name);
+        WorldScript(const char* name);
 
 public:
 
@@ -278,7 +282,7 @@ class FormulaScript : public ScriptObject
 {
 protected:
 
-        explicit FormulaScript(const char* name);
+        FormulaScript(const char* name);
 
 public:
 
@@ -310,7 +314,7 @@ template<class TMap> class MapScript : public UpdatableScript<TMap>
 
 protected:
 
-        explicit MapScript(uint32 mapId)
+        MapScript(uint32 mapId)
             : _mapEntry(sMapStore.LookupEntry(mapId))
         {
             if (!_mapEntry)
@@ -371,7 +375,7 @@ class ItemScript : public ScriptObject
 {
 protected:
 
-        explicit ItemScript(const char* name);
+        ItemScript(const char* name);
 
 public:
 
@@ -401,7 +405,7 @@ class UnitScript : public ScriptObject
 {
 protected:
 
-        explicit UnitScript(const char* name, bool addToScripts = true);
+        UnitScript(const char* name, bool addToScripts = true);
 
 public:
     // Called when a unit deals healing to another unit
@@ -411,20 +415,37 @@ public:
     virtual void OnDamage(Unit* /*attacker*/, Unit* /*victim*/, uint32& /*damage*/) { }
 
     // Called when DoT's Tick Damage is being Dealt
-    virtual void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* /*attacker*/, int32& /*damage*/) { }
+    // #793: SpellInfo added, same signature as AC's UnitScript::ModifyPeriodicDamageAurasTick (also called for periodic heal ticks, like AC)
+    virtual void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* /*attacker*/, int32& /*damage*/, SpellInfo const* /*spellInfo*/) { }
 
     // Called when Melee Damage is being Dealt
     virtual void ModifyMeleeDamage(Unit* /*target*/, Unit* /*attacker*/, uint32& /*damage*/) { }
 
     // Called when Spell Damage is being Dealt
-    virtual void ModifySpellDamageTaken(Unit* /*target*/, Unit* /*attacker*/, int32& /*damage*/) { }
+    // #793: SpellInfo added, same signature as AC's UnitScript::ModifySpellDamageTaken
+    virtual void ModifySpellDamageTaken(Unit* /*target*/, Unit* /*attacker*/, int32& /*damage*/, SpellInfo const* /*spellInfo*/) { }
+
+    // #793: the AC UnitScript hooks below, mirrored at AC's call sites (Unit::HealBySpell, periodic heal tick,
+    // Unit::_ApplyAura + the stack/refresh path of Unit::_TryStackingOrRefreshingExistingAura, Unit::_UnapplyAura).
+    // Called when Heal is Received (AC passes the healer first from Unit::HealBySpell; this core does the same)
+    virtual void ModifyHealReceived(Unit* /*target*/, Unit* /*healer*/, uint32& /*heal*/, SpellInfo const* /*spellInfo*/) { }
+
+    // Called when an aura is applied (or its stack refreshed) on a unit
+    virtual void OnAuraApply(Unit* /*unit*/, Aura* /*aura*/) { }
+
+    // Called when an aura application is removed from a unit
+    virtual void OnAuraRemove(Unit* /*unit*/, AuraApplication* /*aurApp*/, AuraRemoveMode /*mode*/) { }
+
+    // #793: AC's AllSpellScript::OnSpellCast (Spell::_cast, after the spell was executed), hosted here on UnitScript instead of a
+    // new script type. Named OnUnitSpellCast so it does not hide/overload PlayerScript::OnSpellCast(Player*, Spell*, bool).
+    virtual void OnUnitSpellCast(Spell* /*spell*/, Unit* /*caster*/, SpellInfo const* /*spellInfo*/, bool /*skipCheck*/) { }
 };
 
 class CreatureScript : public ScriptObject
 {
 protected:
 
-        explicit CreatureScript(const char* name);
+        CreatureScript(const char* name);
 
 public:
 
@@ -463,7 +484,7 @@ class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
 {
 protected:
 
-        explicit GameObjectScript(const char* name);
+        GameObjectScript(const char* name);
 
 public:
 
@@ -511,7 +532,7 @@ class AreaTriggerScript : public ScriptObject
 {
 protected:
 
-        explicit AreaTriggerScript(const char* name);
+        AreaTriggerScript(const char* name);
 
 public:
 
@@ -519,26 +540,26 @@ public:
     virtual bool OnTrigger(Player* /*player*/, AreaTriggerEntry const* /*trigger*/) { return false; }
 
         // Called when the area trigger is left by a player.
-        virtual bool OnExit(Player* /*player*/, AreaTriggerEntry const* /*trigger*/) { return false; }
+        virtual bool OnExit(Player* player, AreaTriggerEntry const* trigger) { return false; }
 };
 
 class SpellAreaTriggerScript : public ScriptObject
 {
 protected:
 
-        explicit SpellAreaTriggerScript(const char* name);
+        SpellAreaTriggerScript(const char* name);
 
 public:
 
         // Called when the area trigger is created
-        virtual IAreaTrigger* GetInterface() const { return nullptr; }
+        virtual IAreaTrigger* GetInterface() const { return NULL; }
 };
 
 class BattlegroundScript : public ScriptObject
 {
 protected:
 
-        explicit BattlegroundScript(const char* name);
+        BattlegroundScript(const char* name);
 
 public:
 
@@ -550,7 +571,7 @@ class OutdoorPvPScript : public ScriptObject
 {
 protected:
 
-        explicit OutdoorPvPScript(const char* name);
+        OutdoorPvPScript(const char* name);
 
 public:
 
@@ -562,19 +583,19 @@ class CommandScript : public ScriptObject
 {
 protected:
 
-        explicit CommandScript(const char* name);
+        CommandScript(const char* name);
 
 public:
 
     // Should return a pointer to a valid command table (ChatCommand array) to be used by ChatHandler.
-    virtual std::vector<ChatCommand> GetCommands() const = 0;
+    virtual ChatCommandTable GetCommands() const = 0;
 };
 
 class WeatherScript : public ScriptObject, public UpdatableScript<Weather>
 {
 protected:
 
-        explicit WeatherScript(const char* name);
+        WeatherScript(const char* name);
 
 public:
 
@@ -586,7 +607,7 @@ class AuctionHouseScript : public ScriptObject
 {
 protected:
 
-        explicit AuctionHouseScript(const char* name);
+        AuctionHouseScript(const char* name);
 
 public:
 
@@ -607,7 +628,7 @@ class ConditionScript : public ScriptObject
 {
 protected:
 
-        explicit ConditionScript(const char* name);
+        ConditionScript(const char* name);
 
 public:
 
@@ -619,7 +640,7 @@ class VehicleScript : public ScriptObject
 {
 protected:
 
-        explicit VehicleScript(const char* name);
+        VehicleScript(const char* name);
 
 public:
 
@@ -651,19 +672,19 @@ class DynamicObjectScript : public ScriptObject, public UpdatableScript<DynamicO
 {
 protected:
 
-        explicit DynamicObjectScript(const char* name);
+        DynamicObjectScript(const char* name);
 };
 
 class TransportScript : public ScriptObject, public UpdatableScript<Transport>
 {
 protected:
 
-        explicit TransportScript(const char* name);
+        TransportScript(const char* name);
 
 public:
 
         // Called when the transport is first created, before being added to map.
-        virtual void OnCreate(Transport* /*transport*/) { }
+        virtual void OnCreate(Transport* transport) { }
 
     // Called when a player boards the transport.
     virtual void OnAddPassenger(Transport* /*transport*/, Player* /*player*/) { }
@@ -682,7 +703,7 @@ class AchievementCriteriaScript : public ScriptObject
 {
 protected:
 
-        explicit AchievementCriteriaScript(const char* name);
+        AchievementCriteriaScript(const char* name);
 
 public:
 
@@ -694,7 +715,7 @@ class PlayerScript : public UnitScript
 {
 protected:
 
-        explicit PlayerScript(const char* name);
+        PlayerScript(const char* name);
 
 public:
 
@@ -828,7 +849,7 @@ class GuildScript : public ScriptObject
 {
 protected:
 
-        explicit GuildScript(const char* name);
+        GuildScript(const char* name);
 
 public:
 
@@ -869,7 +890,7 @@ class GroupScript : public ScriptObject
 {
 protected:
 
-        explicit GroupScript(const char* name);
+        GroupScript(const char* name);
 
 public:
 
@@ -893,7 +914,7 @@ class SceneScript : public ScriptObject
 {
 protected:
 
-        explicit SceneScript(const char* name);
+        SceneScript(const char* name);
 
 public:
 
@@ -914,7 +935,7 @@ class QuestScript : public ScriptObject
 {
 protected:
 
-        explicit QuestScript(const char* name);
+        QuestScript(const char* name);
 
 public:
 
@@ -928,7 +949,7 @@ public:
 class GameEventScript : public ScriptObject
 {
     protected:
-        explicit GameEventScript(const char* name);
+        GameEventScript(const char* name);
 
 public:
 
@@ -957,10 +978,10 @@ public:
 
         // Called periodically if GetUpdateInterval is overriden and returns non-zero values.
         // Refer to GetUpdateInterval comment to read notes on when OnUpdate is called.
-        virtual void OnUpdate(uint32 /*diff*/) { }
+        virtual void OnUpdate(uint32 diff) { }
 
         // Called when WorldStates need to be sent to a player, the implementation should append state-value uint32 pairs to the packet if necessary.
-        virtual void FillWorldStates(Player* /*player*/, WorldStateBuilder& /*builder*/) { }
+        virtual void FillWorldStates(Player* player, WorldStateBuilder& builder) { }
 };
 
 // following hooks can be used anywhere and are not db bounded
@@ -968,7 +989,7 @@ class GlobalScript : public ScriptObject
 {
 protected:
 
-    explicit GlobalScript(const char* name);
+    GlobalScript(const char* name);
 
 public:
 
@@ -1127,7 +1148,7 @@ public: /* OutdoorPvPScript */
 
 public: /* CommandScript */
 
-    std::vector<ChatCommand> GetChatCommands();
+    ChatCommandTable GetChatCommands();
 
 public: /* WeatherScript */
 
@@ -1255,9 +1276,13 @@ public: /* UnitScript */
 
     void OnHeal(Unit* healer, Unit* reciever, uint32& gain);
     void OnDamage(Unit* attacker, Unit* victim, uint32& damage);
-    void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, int32& damage);
+    void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo);
     void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage);
-    void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage);
+    void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo);
+    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo);
+    void OnAuraApply(Unit* unit, Aura* aura);
+    void OnAuraRemove(Unit* unit, AuraApplication* aurApp, AuraRemoveMode mode);
+    void OnUnitSpellCast(Spell* spell, Unit* caster, SpellInfo const* spellInfo, bool skipCheck);
 
 public: /* Scheduled scripts */
 

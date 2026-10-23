@@ -1,0 +1,22 @@
+-- #509 (epic #445): Hellscream's Gift (31014, Horde pandaren, Garrosh 62092 -> Garrosh 39605).
+-- The three trial challengers summoned by npc_garrosh_horde_way_quest in the Ring of Valor (map 1043) - Gadoon 62100,
+-- Frozengore 62097, Oggax 62102 (ScriptName npc_trial_challengers, src/server/scripts/Kalimdor/zone_durotar.cpp:621) -
+-- are level 90 elites in LoA (Health_mod 11/11/22), so the level-10 pandaren the quest is for cannot finish the trial.
+--
+-- Intended design:
+--   Wowhead MoP-classic tooltip API (fetched 2026-10-04): nether.wowhead.com/mop-classic/tooltip/npc/62100 "Gadoon -
+--   Level 10 Giant (Elite)", .../npc/62097 "Frozengore - Level 10 Humanoid (Elite)", .../npc/62102 "Oggax - Level 10
+--   Giant (Elite)".
+--   Wowpedia MediaWiki API, page "Hellscream's Gift" ({{Removed|patch=7.0.3}}, i.e. live in 5.4.8): "Complete Garrosh's
+--   test by defeating Oggax, Gadoon, and Frozengore."
+-- Source of the values: MoP 5.4.8 world data: 62097/62100/62102 minlevel 10, maxlevel 10,
+--   Health_mod 6 (rank 1, exp 4 unchanged).
+-- Not changed: npc_trial_challengers' damage-taken multiplier (zone_durotar.cpp:640) stays - Ji 62081 does not fight
+--   in this script, and the 3-vs-1 is only survivable for a level-10 player with it.
+-- Re-runnable: plain UPDATEs.
+--
+-- Rollback:
+--   UPDATE `creature_template` SET `minlevel` = 90, `maxlevel` = 90, `Health_mod` = 11 WHERE `entry` IN (62097, 62100);
+--   UPDATE `creature_template` SET `minlevel` = 90, `maxlevel` = 90, `Health_mod` = 22 WHERE `entry` = 62102;
+
+UPDATE `creature_template` SET `minlevel` = 10, `maxlevel` = 10, `Health_mod` = 6 WHERE `entry` IN (62097, 62100, 62102);

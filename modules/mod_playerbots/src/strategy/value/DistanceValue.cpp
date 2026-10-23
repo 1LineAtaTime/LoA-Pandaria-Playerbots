@@ -1,15 +1,19 @@
 #include "DistanceValue.h"
 
 //#include "Formations.h"
-//#include "LootObjectStack.h"
+#include "LootObjectStack.h"
 #include "Playerbots.h"
 #include "PositionValue.h"
 #include "ServerFacade.h"
+#include "TravelMgr.h"  // #272: complete GuidPosition/TravelTarget types for the restored branches
 //#include "Stances.h"
 
 float DistanceValue::Calculate()
 {
-    /*if (qualifier == "loot target")
+    // #151 (AC DistanceValue.cpp:17-28): re-enabled now that LootObject/LootObjectStack are real
+    // (loot-stack-port.md section 2 step 2.8). Feeds CanLootValue/LootAvailableTrigger/
+    // FarFromCurrentLootTrigger's "distance","loot target" reads.
+    if (qualifier == "loot target")
     {
         LootObject loot = AI_VALUE(LootObject, qualifier);
         if (loot.IsEmpty())
@@ -20,7 +24,7 @@ float DistanceValue::Calculate()
             return 0.0f;
 
         return sServerFacade->GetDistance2d(botAI->GetBot(), obj);
-    }*/
+    }
 
     if (qualifier.find("position_") == 0)
     {
@@ -36,7 +40,11 @@ float DistanceValue::Calculate()
     }
 
     Unit* target = nullptr;
-    /*if (qualifier == "rpg target")
+    // #272 (AC DistanceValue.cpp:44-67): the four Travel qualifier branches are live again, verbatim. They were
+    // commented out while WorldPosition/TravelTarget were stubs; both are real now (Travel/WorldPosition.h:154,
+    // Travel/TravelMgr.h:419). Nothing live reads these qualifiers today (rpg/travel strategies are not added by
+    // default, same as AC).
+    if (qualifier == "rpg target")
     {
         GuidPosition rpgTarget = AI_VALUE(GuidPosition, qualifier);
         return rpgTarget.distance(bot);
@@ -56,7 +64,7 @@ float DistanceValue::Calculate()
         WorldPosition target = AI_VALUE(WorldPosition, qualifier);
         return target.distance(botAI->GetBot());
     }
-    else */if (qualifier == "current target")
+    else if (qualifier == "current target")
     {
         Unit* target = AI_VALUE(Unit*, qualifier);
         if (!target || !target->IsInWorld())

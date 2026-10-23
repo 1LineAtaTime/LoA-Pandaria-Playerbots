@@ -70,6 +70,9 @@ public:
     void addStrategiesNoInit(std::string first, ...);
     bool removeStrategy(std::string const name, bool init = true);
     bool HasStrategy(std::string const name);
+    // AC Engine.h:89 (#413)
+    bool HasTargetExclusions() const { return hasTargetExclusions; }
+    Strategy* GetStrategy(std::string const name);
     void removeAllStrategies();
     void toggleStrategy(std::string const name);
     std::string const ListStrategies();
@@ -114,6 +117,8 @@ protected:
     float lastRelevance;
     std::string lastAction;
     uint32 strategyTypeMask;
+    bool hasTargetExclusions = false;  // AC Engine.h:119
+    NamedObjectFactoryList<ActionNode> actionNodeFactories;  // #72: AC Engine.h:120 (merged in Init)
 };
 
 #endif

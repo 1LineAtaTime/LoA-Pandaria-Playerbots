@@ -109,6 +109,12 @@ class BattlegroundMgr
         void ScheduleQueueUpdate(uint32 arenaMatchmakerRating, uint8 arenaType, BattlegroundQueueTypeId bgQueueTypeId, BattlegroundTypeId bgTypeId, BattlegroundBracketId bracket_id);
         uint32 GetPrematureFinishTime() const;
 
+        // #305: AC BattlegroundUtils.cpp:4-36. Bracket-aware per-team start threshold, and the
+        // Battleground.Override.LowLevels.MinPlayers[.AV|.WS|.AB|.EY|.SA|.IC] override (0 = off, the default).
+        uint32 GetMinPlayersPerTeam(Battleground* bg, PvPDifficultyEntry const* bracketEntry) const;
+        uint32 GetLowLevelsMinPlayersOverride(BattlegroundTypeId bgTypeId) const;
+        void LoadLowLevelsMinPlayersOverrides();
+
         void ToggleArenaTesting();
         void ToggleTesting();
         void ToggleRatedBgTesting();
@@ -171,6 +177,15 @@ class BattlegroundMgr
         bool   m_testing = false;
         bool   m_ratedBgTetsing = false;
         BattleMastersMap mBattleMastersMap;
+
+        // #305: AC CONFIG_BATTLEGROUND_OVERRIDE_LOWLEVELS_MINPLAYERS[_AV|_WS|_AB|_EY|_SA|_IC] (AC WorldConfig.cpp:433-439)
+        uint32 m_lowLevelsMinPlayers = 0;
+        uint32 m_lowLevelsMinPlayersAV = 0;
+        uint32 m_lowLevelsMinPlayersWS = 0;
+        uint32 m_lowLevelsMinPlayersAB = 0;
+        uint32 m_lowLevelsMinPlayersEY = 0;
+        uint32 m_lowLevelsMinPlayersSA = 0;
+        uint32 m_lowLevelsMinPlayersIC = 0;
 
         std::unique_ptr<BattlegroundQueue> m_battlegroundQueues[MAX_BATTLEGROUND_QUEUE_TYPES];
 

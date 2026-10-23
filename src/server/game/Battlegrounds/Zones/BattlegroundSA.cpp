@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -21,7 +21,12 @@
 #include "GameObject.h"
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
+#include "WorldSession.h"
 #include "Chat.h"
+#include "Transport.h"
+
+// #851: defined in Transport.cpp (Transport.SotaBoatHoldSeconds, no header change)
+uint32 TransportSotaBoatHoldMs();
 
 // Achievements
 enum
@@ -36,10 +41,12 @@ enum
 
 BattlegroundSA::BattlegroundSA()
 {
-    // temp hack for ships
-    StartDelayTimes[BG_STARTING_EVENT_FIRST]  = BG_START_DELAY_1M;
-    StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
-    StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
+    // #736 (owner 2026-10-08): the 2 min preparation of AC (Battleground.cpp:199-202 defaults 2M/1M/30S/NONE, :515-517
+    // "Strand of the Ancients - always use 120 seconds due to boat timing mechanics"); was a 1 min "temp hack for ships".
+    // The messages below already said 2 min / 1 min / 30 s.
+    StartDelayTimes[BG_STARTING_EVENT_FIRST]  = BG_START_DELAY_2M;
+    StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_1M;
+    StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
 
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_BG_SA_START_TWO_MINUTES;
@@ -54,6 +61,9 @@ BattlegroundSA::BattlegroundSA()
     SignaledRoundTwo = false;
     SignaledRoundTwoHalfMin = false;
     InitSecondRound = false;
+    _boatHoldMs = BG_SA_BOAT_START;
+    _boatDockedAt[0] = _boatDockedAt[1] = 0;
+    _boatSafetyDone[0] = _boatSafetyDone[1] = false;
 
     //! This is here to prevent an uninitialised variable warning
     //! The warning only occurs when SetUpBattleGround fails though.
@@ -70,6 +80,11 @@ void BattlegroundSA::Reset()
     for (uint8 i = 0; i <= 5; i++)
         GateStatus[i] = BG_SA_GATE_OK;
     ShipsStarted = false;
+    ShipsLaunched = false;
+    _nextShipIsEast = true;
+    _boatInitAt.clear();
+    _boatDockedAt[0] = _boatDockedAt[1] = 0;
+    _boatSafetyDone[0] = _boatSafetyDone[1] = false;
     gateDestroyed = false;
     _allVehiclesAlive[TEAM_ALLIANCE] = true;
     _allVehiclesAlive[TEAM_HORDE] = true;
@@ -142,6 +157,31 @@ bool BattlegroundSA::ResetObjs()
     GetBGObject(BG_SA_BOAT_ONE)->SetParentRotation({ 0.0f, 0.0f, 1.0f, 0.0002f });
     GetBGObject(BG_SA_BOAT_TWO)->SetParentRotation({ 0.0f, 0.0f, 1.0f, 0.00001f });
 
+    // #851 evidence (t736 driver): what the clients get for each boat - MoP 5.4.8 encoding: stopframes=0 state=1 (READY)
+    // level=60133 progress=period-1; #736 stop-frame mode: stopframes=1 state=25; elevator mode (Transport.
+    // SotaBoatStopFrames = 2): stopframes=1 state=24 level=<now> progress=0, held at sea for hold= ms (round 1)
+    _boatHoldMs = std::min<uint32>(TransportSotaBoatHoldMs(), BG_SA_WARMUPLENGTH);
+    _boatDockedAt[0] = _boatDockedAt[1] = 0;
+    _boatSafetyDone[0] = _boatSafetyDone[1] = false;
+    for (uint8 i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; ++i)
+        if (GameObject* boat = GetBGObject(i))
+        {
+            Transport* transport = boat->ToTransport();
+            std::vector<uint32> const* stops = transport ? transport->GetStopFrames() : nullptr;
+            uint8 const mode = transport ? transport->GetStopFrameMode() : 0;
+            bool const round2 = Status == BG_SA_SECOND_WARMUP;
+            TC_LOG_DEBUG("entities.gameobject", "[851] boat-spawn entry=%u guid=%u mode=%s stopframes=%u state=%u level=%u progress=%u round=%u hold=%u now=%u",
+                boat->GetEntry(), boat->GetGUID().GetCounter(), mode == 2 ? "elevator" : (stops ? "stopframe" : "default"),
+                stops ? uint32(stops->size()) : 0u, uint32(boat->GetGoState()), boat->GetUInt32Value(GAMEOBJECT_FIELD_LEVEL),
+                boat->GetGOValue()->Transport.PathProgress, round2 ? 2u : 1u, mode == 2 ? (round2 ? 0u : _boatHoldMs) : uint32(BG_SA_BOAT_START),
+                getMSTime());
+        }
+
+    // #736: the boats wait at their ocean spot (stop-frame mode) until LaunchShips, instead of the client looping
+    // their TransportAnimation path (ocean -> dock -> back to the ocean) for the whole battle. The stop frames are set
+    // in Transport::CreateLocal (with the path rotation above): AddObject's Map::AddToMap already sent the create
+    // block to the players on the map, so enabling them here was too late for those players (the round-2 loop).
+
     //Cannons and demolishers - NPCs are spawned
     //By capturing GYs.
     for (uint8 i = 0; i < BG_SA_DEMOLISHER_5; i++)
@@ -174,6 +214,8 @@ bool BattlegroundSA::ResetObjs()
 
     TotalTime = 0;
     ShipsStarted = false;
+    ShipsLaunched = false;
+    _nextShipIsEast = true;
 
     //Graveyards
     for (uint8 i = 0; i < BG_SA_MAX_GY; i++)
@@ -272,24 +314,265 @@ void BattlegroundSA::StartShips()
     if (ShipsStarted)
         return;
 
-    //DoorOpen(BG_SA_BOAT_ONE);
-    //DoorOpen(BG_SA_BOAT_TWO);
-    //
-    //for (int i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; i++)
-    //{
-    //    for (BattlegroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-    //    {
-    //        if (Player* p = ObjectAccessor::FindPlayer(itr->first))
-    //        {
-    //            UpdateData data(p->GetMapId());
-    //            WorldPacket pkt;
-    //            GetBGObject(i)->BuildValuesUpdateBlockForPlayer(&data, p);
-    //            data.BuildPacket(&pkt);
-    //            p->SendDirectMessage(&pkt);
-    //        }
-    //    }
-    //}
+    // #736: AC StartShips (BattlegroundSA.cpp:297-317) = DoorOpen on both boats (StaticTransport sails to pauseAtTime
+    // and holds there) + a values update to every player. Here: the stop-frame voyage (LaunchShips), timed to end as
+    // the warm-up ends - round 1 at 1:00 of 2:00 (~60 s, the TransportAnimation voyage is 60.1 s), round 2 at once.
+    // #851: MoP 5.4.8 boats (the default) - the original StartShips only sets ShipsStarted: no DoorOpen, no values update. The client already sails each boat from its
+    // create block; LandBoatRiders puts the riders on the dock.
+    // #851 elevator boats (Transport.SotaBoatStopFrames = 2): Transport::StartToFirstStopFrame ignores the travel time
+    // asked for here and sails at the path's own speed (60133 ms, as the client draws it).
+    if (BoatsUseStopFrames())
+    {
+        uint32 const warmup = Status == BG_SA_SECOND_WARMUP ? uint32(BG_SA_SECOND_WARMUPLENGTH) : uint32(BG_SA_WARMUPLENGTH);
+        LaunchShips(TotalTime < warmup ? warmup - TotalTime : 0);
+    }
     ShipsStarted = true;
+}
+
+// #851: the boats were created in #736 stop-frame mode (Transport::CreateLocal, Transport.SotaBoatStopFrames = 1)
+bool BattlegroundSA::BoatsUseStopFrames()
+{
+    for (uint8 i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; ++i)
+        if (GameObject* boat = GetBGObject(i))
+            if (Transport* transport = boat->ToTransport())
+                if (transport->GetStopFrames())
+                    return true;
+
+    return false;
+}
+
+// #851: the stop-frame mode the boats were created with (Transport::GetStopFrameMode: 0 MoP 5.4.8, 1 #736, 2 elevator)
+uint8 BattlegroundSA::BoatsStopFrameMode()
+{
+    for (uint8 i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; ++i)
+        if (GameObject* boat = GetBGObject(i))
+            if (Transport* transport = boat->ToTransport())
+                if (uint8 mode = transport->GetStopFrameMode())
+                    return mode;
+
+    return 0;
+}
+
+// #851 elevator boats: the boat docks for real (server and client), so the riders walk off by themselves (players;
+// bots: BgTacticsSA BoatStep). Safety net only: an attacker still aboard BG_SA_BOAT_DOCKED_GRACE_MS after its boat
+// reached the dock frame is put on that dock once (the MoP dock spots); "[851] boat-safety" shows how many.
+void BattlegroundSA::LandDockedBoatRiders()
+{
+    uint32 const now = getMSTime();
+    for (uint8 i = 0; i < 2; ++i)
+    {
+        if (_boatSafetyDone[i] || BgObjects[BG_SA_BOAT_ONE + i].IsEmpty())
+            continue;
+
+        GameObject* boat = GetBGObject(BG_SA_BOAT_ONE + i);
+        Transport* transport = boat ? boat->ToTransport() : nullptr;
+        std::vector<uint32> const* stops = transport ? transport->GetStopFrames() : nullptr;
+        if (!stops || boat->GetGOValue()->Transport.PathProgress < stops->front())
+            continue;
+
+        if (!_boatDockedAt[i])
+        {
+            _boatDockedAt[i] = now ? now : 1;
+            continue;
+        }
+
+        uint32 const docked = getMSTimeDiff(_boatDockedAt[i], now);
+        if (docked < BG_SA_BOAT_DOCKED_GRACE_MS)
+            continue;
+
+        _boatSafetyDone[i] = true;
+        uint32 landed = 0;
+        for (auto&& itr : GetPlayers())
+        {
+            Player* player = ObjectAccessor::FindPlayer(itr.first);
+            if (!player || !player->IsInWorld() || player->GetMapId() != GetMapId() || player->GetBGTeamId() != Attackers ||
+                !player->IsAlive() || player->GetTransport() != transport)
+                continue;
+
+            // w75: real players (and headless clients) walk off a docked boat themselves; only stuck bots are landed.
+            if (!player->GetSession() || !player->GetSession()->IsBot())
+                continue;
+
+            if (player->GetPositionY() < 0) // east dock
+                player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
+            else // west dock
+                player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
+            ++landed;
+            TC_LOG_DEBUG("entities.gameobject", "[851] boat-safety-land player=%s entry=%u docked_for=%u status=%u",
+                player->GetName().c_str(), boat->GetEntry(), docked, uint32(Status));
+        }
+
+        TC_LOG_DEBUG("entities.gameobject", "[851] boat-safety entry=%u docked_for=%u landed=%u status=%u",
+            boat->GetEntry(), docked, landed, uint32(Status));
+    }
+}
+
+// #851 (owner 2026-10-20: "the 2 boats/ships are not even sailing anymore to the deck"): MoP 5.4.8 boats. The client sails
+// the boat from the sea from its create block and draws it at the dock ~60 s later (then loops back to the sea); the
+// server boat never moves. So, as in MoP 5.4.8 (round 1 TotalTime 59-60 s, round 2 53-60 s:
+// every attacker on a transport or in the water -> TeleportTo(607, dock), the two spots below), each
+// attacker still on a boat or out at sea is put on the dock BG_SA_BOAT_LANDING_MS after the create block it got -
+// per rider instead of one round clock, because SendTransportInit restarts that rider's client boat when
+// it joins. Bots ride the same clock (their BoatStep holds aboard until then; the server boat never "docks").
+void BattlegroundSA::LandBoatRiders()
+{
+    if (BoatsStopFrameMode() == 2)
+    {
+        LandDockedBoatRiders();     // #851 elevator boats: safety net only
+        return;
+    }
+
+    if (_boatInitAt.empty() || BoatsUseStopFrames())
+        return;
+
+    uint32 const now = getMSTime();
+    for (auto itr = _boatInitAt.begin(); itr != _boatInitAt.end();)
+    {
+        uint32 const age = getMSTimeDiff(itr->second, now);
+        if (age < BG_SA_BOAT_LANDING_MS)
+        {
+            ++itr;
+            continue;
+        }
+
+        ObjectGuid const guid = itr->first;
+        itr = _boatInitAt.erase(itr);
+
+        if (GetPlayers().find(guid) == GetPlayers().end())
+            continue;
+
+        Player* player = ObjectAccessor::FindPlayer(guid);
+        if (!player || !player->IsInWorld() || player->GetMapId() != GetMapId() || player->GetBGTeamId() != Attackers)
+            continue;
+
+        Transport* transport = player->GetTransport();
+        bool const onBoat = transport && (transport->GetGUID() == BgObjects[BG_SA_BOAT_ONE] ||
+                                          transport->GetGUID() == BgObjects[BG_SA_BOAT_TWO]);
+        if (!onBoat && (!player->IsAlive() || player->GetPositionX() < BG_SA_OPEN_SEA_X))
+            continue;   // already on the beach side, or dead
+
+        float const x = player->GetPositionX();
+        float const y = player->GetPositionY();
+        if (y < 0) // east dock
+            player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
+        else // west dock
+            player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
+
+        TC_LOG_DEBUG("entities.gameobject", "[851] boat-land player=%s age=%u aboard=%u from=%.1f,%.1f status=%u totaltime=%u",
+            player->GetName().c_str(), age, uint32(onBoat), x, y, uint32(Status), TotalTime);
+    }
+}
+
+// #736: AC drives the boats with DoorOpen (StaticTransport: GO_STATE_ACTIVE runs the path to pauseAtTime and holds -
+// AC Transport.cpp StaticTransport::Update). On 5.4.8 the client needs the stop frame instead (Transport::
+// StartToFirstStopFrame), so the boats leave the ocean spot here and arrive at the dock as the warm-up ends.
+void BattlegroundSA::LaunchShips(uint32 travelTime)
+{
+    if (ShipsLaunched)
+        return;
+
+    for (uint8 i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; ++i)
+        if (GameObject* boat = GetBGObject(i))
+            if (Transport* transport = boat->ToTransport())
+                transport->StartToFirstStopFrame(travelTime);
+
+    ShipsLaunched = true;
+}
+
+// #736 (owner 2026-10-08, build 21: "attackers are teleported to the dock the moment the BG starts, instead of riding
+// the ship"): the old "temp hack for ships" (also in MoP 5.4.8: 59000 / 53000)
+// teleported every attacker who was on a transport OR in the water to the dock at 59 s / 53 s of the warm-up - the
+// riders included. AC has no such teleport (BattlegroundSA::PostUpdateImpl only calls StartShips): the boats carry
+// the attackers to the dock. Kept only as a rescue for an attacker who is NOT on a boat and still out at sea (fell
+// off, or a bot that never boarded) - the beach is 1000 yd away. Riders are never touched.
+void BattlegroundSA::RescueStrandedAttackers()
+{
+    for (auto&& itr : GetPlayers())
+    {
+        Player* player = ObjectAccessor::FindPlayer(itr.first);
+        if (!player || player->GetBGTeamId() != Attackers || player->GetTransport() || !player->IsAlive())
+            continue;
+
+        if (player->GetPositionX() < BG_SA_OPEN_SEA_X)  // on the beach / at the docks already
+            continue;
+
+        if (player->GetPositionY() < 0) // east dock
+            player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
+        else // west dock
+            player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
+    }
+}
+
+// #736 (owner 2026-10-08: "closed gates can be passed through by bots"): the 607 navmesh has walkable ground under
+// every gate - the gates are destructible GOs, present only in the dynamic vmap tree (mmtile probe, data-mop-extract:
+// polys 3755/5099/3965/1332/1261/3360 at the six gate centres) - so a path the server builds (MotionMaster::MovePoint
+// -> MoveSplineInit::MoveTo: playerbots, the demolishers they drive, pets) ran straight through a closed gate, which a
+// client cannot do (it collides with the gate model). Wave 27 probes: 24 walks through an intact gate in 6 rounds.
+// A segment crossing a gate's plane (the GO faces the sea) within the width of the intact gate model
+// (GameObjectDisplayInfo bounds) at ground height (not the wall walk above) is cut 1 yd in front of the gate on the
+// mover's side, until the gate is destroyed; a damaged gate still blocks.
+void BattlegroundSA::ClipPathAtClosedGates(Unit const* mover, std::vector<G3D::Vector3>& path)
+{
+    for (uint8 gate = BG_SA_GREEN_GATE; gate <= BG_SA_ANCIENT_GATE && path.size() >= 2; ++gate)
+    {
+        if (GateStatus[gate] == BG_SA_GATE_DESTROYED)
+            continue;
+
+        GameObject* go = GetBgMap()->GetGameObject(BgObjects[gate]);
+        if (!go || go->HasFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_DESTROYED))
+            continue;
+
+        GameObjectDisplayInfoEntry const* info = sGameObjectDisplayInfoStore.LookupEntry(go->GetGOInfo()->displayId);
+        if (!info)
+            continue;
+
+        float const cosO = std::cos(go->GetOrientation());
+        float const sinO = std::sin(go->GetOrientation());
+        float const scale = go->GetObjectScale();
+        float const bottom = go->GetPositionZ() + info->minZ * scale;
+        for (size_t i = 1; i < path.size(); ++i)
+        {
+            G3D::Vector3 const a = path[i - 1];
+            G3D::Vector3 const b = path[i];
+            float const ax = (a.x - go->GetPositionX()) * cosO + (a.y - go->GetPositionY()) * sinO;
+            float const bx = (b.x - go->GetPositionX()) * cosO + (b.y - go->GetPositionY()) * sinO;
+            if (ax * bx >= 0.0f)
+                continue;
+
+            G3D::Vector3 const hit = a + (b - a) * (ax / (ax - bx));
+            float const hy = (hit.y - go->GetPositionY()) * cosO - (hit.x - go->GetPositionX()) * sinO;
+            if (hy < info->minY * scale || hy > info->maxY * scale || hit.z < bottom - 2.0f || hit.z > bottom + 10.0f)
+                continue;
+
+            float const face = (ax > 0.0f ? info->maxX : -info->minX) * scale + 1.0f;
+            float const stop = std::max(0.0f, (std::fabs(ax) - face) / std::fabs(ax - bx));
+            path[i] = a + (b - a) * stop;
+            path.resize(i + 1);
+            TC_LOG_DEBUG("entities.gameobject", "[736] gate-clip mover=%s entry=%u gate=%u status=%u at=%.1f,%.1f,%.1f",
+                mover->GetName().c_str(), mover->GetEntry(), uint32(gate), uint32(GateStatus[gate]), path[i].x, path[i].y, path[i].z);
+            break;
+        }
+    }
+}
+
+// #736: the client's start countdown for the round-2 warm-up (SMSG_START_TIMER, as Battleground::ProcessJoin sends it
+// for round 1), to one player or to everyone (player = nullptr)
+void BattlegroundSA::SendRoundTwoStartTimer(Player* player)
+{
+    if (Status != BG_SA_SECOND_WARMUP || InitSecondRound || TotalTime >= BG_SA_SECOND_WARMUPLENGTH)
+        return;
+
+    uint32 const maxSecs = BG_SA_SECOND_WARMUPLENGTH / IN_MILLISECONDS;
+    uint32 const secs = (BG_SA_SECOND_WARMUPLENGTH - TotalTime) / IN_MILLISECONDS;
+    if (player)
+    {
+        player->SendStartTimer(secs, maxSecs, TIMER_PVP);
+        return;
+    }
+
+    for (auto&& itr : GetPlayers())
+        if (Player* member = ObjectAccessor::FindPlayer(itr.first))
+            member->SendStartTimer(secs, maxSecs, TIMER_PVP);
 }
 
 void BattlegroundSA::PostUpdateImpl(uint32 diff)
@@ -303,6 +586,8 @@ void BattlegroundSA::PostUpdateImpl(uint32 diff)
                 SignaledRoundTwo = true;
                 InitSecondRound = false;
                 SendMessageToAll(LANG_BG_SA_ROUND_TWO_ONE_MINUTE, CHAT_MSG_BG_SYSTEM_NEUTRAL);
+                // #736: the round-2 start countdown (Battleground::ProcessJoin's countdown only covers round 1)
+                SendRoundTwoStartTimer(nullptr);
             }
         }
         else
@@ -315,6 +600,11 @@ void BattlegroundSA::PostUpdateImpl(uint32 diff)
 
     if (Status == BG_SA_WARMUP)
     {
+        // AC PostUpdateImpl (BattlegroundSA.cpp:338-353): the boats wait at sea, StartShips at BG_SA_BOAT_START (1:00)
+        // #851 elevator boats: after Transport.SotaBoatHoldSeconds (default 60 = BG_SA_BOAT_START, capped at the warm-up)
+        if (TotalTime >= (BoatsStopFrameMode() == 2 ? _boatHoldMs : uint32(BG_SA_BOAT_START)))
+            StartShips();
+
         EndRoundTimer = BG_SA_ROUNDLENGTH;
         if (TotalTime >= BG_SA_WARMUPLENGTH)
         {
@@ -328,22 +618,9 @@ void BattlegroundSA::PostUpdateImpl(uint32 diff)
             UpdateWorldState(BG_SA_ENABLE_TIMER, 1);
             UpdateWorldState(BG_SA_TIMER, EndTimestamp);
         }
-        if (TotalTime >= BG_SA_BOAT_START)
-            StartShips();
-        if (TotalTime >= 59000) // temp hack for ships
-        {
-            for (auto&& itr : GetPlayers())
-            {
-                if (Player* player = ObjectAccessor::FindPlayer(itr.first))
-                    if (player->GetBGTeamId() == Attackers && (player->IsInWater() || player->IsUnderWater() || player->GetTransport()))
-                    {
-                        if (player->GetPositionY() < 0) // left
-                            player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
-                        else // right
-                            player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
-                    }
-            }
-        }
+        LandBoatRiders();   // #851 MoP 5.4.8 boats
+        if (TotalTime >= BG_SA_WARMUPLENGTH - 1000)  // was 59 s of the old 60 s warm-up
+            RescueStrandedAttackers();
         return;
     }
     else if (Status == BG_SA_SECOND_WARMUP)
@@ -353,7 +630,7 @@ void BattlegroundSA::PostUpdateImpl(uint32 diff)
         else
             EndRoundTimer = BG_SA_ROUNDLENGTH;
 
-        if (TotalTime >= 60000)
+        if (TotalTime >= BG_SA_SECOND_WARMUPLENGTH)
         {
             SendWarningToAll(LANG_BG_SA_HAS_BEGUN);
             TotalTime = 0;
@@ -381,25 +658,18 @@ void BattlegroundSA::PostUpdateImpl(uint32 diff)
                 SendMessageToAll(LANG_BG_SA_ROUND_TWO_START_HALF_MINUTE, CHAT_MSG_BG_SYSTEM_NEUTRAL);
             }
         }
+        // round 2: every attacker was put on a boat by ResetObjs -> TeleportPlayers, so the boats sail at once (AC
+        // calls StartShips on every SECOND_WARMUP tick, BattlegroundSA.cpp:388) and dock as round 2 starts
         StartShips();
-        if (TotalTime >= 53000) // temp hack for ships
-        {
-            for (auto&& itr : GetPlayers())
-            {
-                if (Player* player = ObjectAccessor::FindPlayer(itr.first))
-                    if (player->GetBGTeamId() == Attackers && (player->IsInWater() || player->IsUnderWater() || player->GetTransport()))
-                    {
-                        if (player->GetPositionY() < 0) // left
-                            player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
-                        else // right
-                            player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
-                    }
-            }
-        }
+        LandBoatRiders();   // #851 MoP 5.4.8 boats
+        if (TotalTime >= 53000)
+            RescueStrandedAttackers();
         return;
     }
     else if (GetStatus() == STATUS_IN_PROGRESS)
     {
+        if (BoatsStopFrameMode() == 2)
+            LandDockedBoatRiders();   // #851 elevator boats dock after the round started: the safety net runs here
         if (Status == BG_SA_ROUND_ONE)
         {
             if (TotalTime >= BG_SA_ROUNDLENGTH)
@@ -518,6 +788,33 @@ void BattlegroundSA::FillInitialWorldStates(WorldStateBuilder& builder)
     }
 }
 
+// #736: spread the attackers over both boats. AC alternates the boat for every attacker it places
+// (BattlegroundSA::TeleportToEntrancePosition, BattlegroundSA.cpp:569-590, _nextShipIsEast toggled at :585), so the
+// round start (TeleportPlayers) and every late joiner (AddPlayer) split evenly. The old code sent late joiners to
+// "the nearest mate" - always the first attacker found - so they all landed on one ship.
+// East ship = y < 0 (2682.9, -830.4), west ship = y > 0 (2577.0, 980.3).
+// As AC TeleportToEntrancePosition (BattlegroundSA.cpp:569-590): on a boat until the boats leave (!ShipsStarted -
+// StartShips = the voyage), the toggle only when a boat is used; after that the one dock spot of AC (:588). A boat under
+// way (~22 yd/s) would sail out from under a player dropped onto it with slow fall.
+void BattlegroundSA::TeleportAttackerToShip(Player* player)
+{
+    if (ShipsStarted)
+    {
+        player->TeleportTo(607, 1600.381f, -106.263f, 8.8745f, 3.78f, 0);
+        return;
+    }
+
+    player->CastSpell(player, 12438, true); // Without this player falls before boat loads...
+
+    // boats still waiting at their ocean spot
+    if (_nextShipIsEast)
+        player->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f, 0);
+    else
+        player->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f, 0);
+
+    _nextShipIsEast = !_nextShipIsEast;
+}
+
 void BattlegroundSA::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
@@ -526,44 +823,12 @@ void BattlegroundSA::AddPlayer(Player* player)
     sc->Team = player->GetBGTeam();
 
     if (player->GetBGTeamId() == Attackers)
-    {
-        if (TotalTime <= 5000 || GetPlayers().size() <= 2)
-        {
-            player->CastSpell(player, 12438, true);//Without this player falls before boat loads...
-
-            if (urand(0, 1)) // left ship
-                player->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f, 0);
-            else  // right ship
-                player->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f, 0);
-        }
-        else if (!ShipsStarted) // ship not arrived yet, but already deported
-        {
-            player->CastSpell(player, 12438, true);//Without this player falls before boat loads...
-
-            // teleport to nearest mate
-            for (auto&& itr : GetPlayers())
-            {
-                if (Player* mate = ObjectAccessor::FindPlayer(itr.first))
-                    if (mate->GetBGTeamId() == Attackers)
-                        if (player != mate)
-                        {
-                            player->TeleportTo(607, mate->GetPositionX(), mate->GetPositionY(), mate->GetPositionZ() + 5.0f, 0.0f, 0);
-                            continue;
-                        }
-            }
-        }
-        else
-        {
-            if (urand(0, 1))
-                player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
-            else
-                player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
-        }
-    }
+        TeleportAttackerToShip(player);
     else
         player->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f, 0);
 
     SendTransportInit(player);
+    SendRoundTwoStartTimer(player);  // #736: a late joiner in the round-2 warm-up gets its countdown too
     PlayerScores[player->GetGUID()] = sc;
 }
 
@@ -637,40 +902,7 @@ void BattlegroundSA::TeleportPlayers()
             player->CastSpell(player, SPELL_PREPARATION, true);
 
             if (player->GetBGTeamId() == Attackers)
-            {
-                if (TotalTime <= 5000 || GetPlayers().size() <= 2)
-                {
-                    player->CastSpell(player, 12438, true);//Without this player falls before boat loads...
-
-                    if (urand(0, 1)) // left ship
-                        player->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f, 0);
-                    else  // right ship
-                        player->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f, 0);
-                }
-                else if (!ShipsStarted) // ship not arrived yet, but already deported
-                {
-                    player->CastSpell(player, 12438, true);//Without this player falls before boat loads...
-
-                    // teleport to nearest mate
-                    for (auto&& itr : GetPlayers())
-                    {
-                        if (Player* mate = ObjectAccessor::FindPlayer(itr.first))
-                            if (mate->GetBGTeamId() == Attackers)
-                                if (player != mate)
-                                {
-                                    player->TeleportTo(607, mate->GetPositionX(), mate->GetPositionY(), mate->GetPositionZ() + 5.0f, 0.0f, 0);
-                                    continue;
-                                }
-                    }
-                }
-                else
-                {
-                    if (urand(0, 1))
-                        player->TeleportTo(607, 1598.571f, -106.671f, 8.873f, 4.1359f, 0);
-                    else
-                        player->TeleportTo(607, 1607.596f, 49.766f, 7.5795f, 2.31865f, 0);
-                }
-            }
+                TeleportAttackerToShip(player);
             else
                 player->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f, 0);
         }
@@ -1196,6 +1428,10 @@ void BattlegroundSA::SendTransportInit(Player* player)
         WorldPacket packet;
         transData.BuildPacket(&packet);
         player->SendDirectMessage(&packet);
+
+        // #851: this player's client (re)starts both boats from the sea now (MoP 5.4.8 boats, see LandBoatRiders)
+        if (!BoatsUseStopFrames())
+            _boatInitAt[player->GetGUID()] = getMSTime();
     }
 }
 

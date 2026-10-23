@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -22,8 +22,10 @@
 #include "Group.h"
 #include "LFGQueue.h"
 #include "LFGMgr.h"
+#include "Log.h"
 #include "ObjectMgr.h"
 #include "World.h"
+#include "GroupMgr.h"
 #include "Player.h"
 #include "SocialMgr.h"
 #include "Config.h"
@@ -246,14 +248,17 @@ void DungeonQueue::Enqueue(Queuer const& queuer, bool inFront)
         }
     }
 
-    for (auto&& bucket : m_buckets)
+    for (auto itr = m_buckets.begin(); itr != m_buckets.end(); ++itr)
     {
+        Bucket& bucket = *itr;
         if (bucket.CanAdd(queuer))
         {
             bucket.Add(queuer);
 
             if (inFront && bucket.IsDirty() && bucket.IsFull()) // Can happen in a full group has been added to front
                 bucket.SetClean();
+            else if (!inFront)
+                TryCompleteBucket(itr);
 
             return;
         }
@@ -261,6 +266,61 @@ void DungeonQueue::Enqueue(Queuer const& queuer, bool inFront)
 
     m_buckets.emplace_back(this);
     m_buckets.back().Add(queuer);
+    if (!inFront)
+        TryCompleteBucket(std::prev(m_buckets.end()));
+}
+
+// #142: buckets only receive queuers by first-fit Enqueue or by PerformBackfill, and backfill only pulls
+// from LATER buckets into an EARLIER bucket that lost a member. A queuer parked in an older bucket that can
+// never complete (e.g. a DPS next to a tank and a healer, with no third DPS in the queue) is therefore never
+// offered to a newer bucket it would complete (e.g. a leader+3 premade one DPS short): neither bucket
+// changes again and no proposal forms, although the queue holds a full group. AzerothCore checks every new
+// queuer against every compatible partial combination (LFGQueue::FindNewGroups / CheckCompatibility), so
+// the same queue pops there. This gives the same outcome: when the bucket that just took a queuer can be
+// filled to a complete group from queuers sitting in OTHER buckets (oldest bucket first), move them in so
+// MakeProposals pops it; when it cannot be completed, nothing moves. inFront (re-queue after a failed
+// proposal) keeps its own front-bucket + PerformBackfill handling.
+bool DungeonQueue::TryCompleteBucket(BucketList::iterator destItr)
+{
+    Bucket& dest = *destItr;
+    if (dest.IsFull())
+        return true;
+
+    // Dry run on a copy, so a bucket that cannot be completed never reshuffles the queue.
+    Bucket trial = dest;
+    std::vector<std::pair<Bucket*, Queuer>> moves;
+    for (auto itr = m_buckets.begin(); itr != m_buckets.end() && !trial.IsFull(); ++itr)
+    {
+        if (itr == destItr)
+            continue;
+
+        for (auto&& sourceQueuer : itr->GetQueuers())
+        {
+            if (trial.IsFull())
+                break;
+
+            if (trial.CanAdd(sourceQueuer))
+            {
+                trial.Add(sourceQueuer);
+                moves.emplace_back(&*itr, sourceQueuer);
+            }
+        }
+    }
+
+    if (!trial.IsFull())
+        return false;
+
+    // Same adds in the same order as the dry run, so every Bucket::Add assertion holds.
+    for (auto&& move : moves)
+    {
+        move.first->Remove(move.second); // marks the source bucket dirty
+        dest.Add(move.second);
+    }
+    dest.SetClean(); // full now; PerformBackfill asserts that a dirty bucket is not full
+
+    m_buckets.remove_if([](Bucket const& bucket) { return bucket.IsEmpty(); });
+    PerformBackfill(); // the source buckets lost members, exactly as after a Dequeue
+    return true;
 }
 
 bool DungeonQueue::Dequeue(Queuer const& queuer)
@@ -299,6 +359,15 @@ void DungeonQueue::PerformBackfill()
         for (++itr2; itr2 != m_buckets.end();)
         {
             Bucket& bucketSource = *itr2;
+
+            // #142: never take queuers out of a complete bucket - it is a proposal waiting for MakeProposals.
+            // TryCompleteBucket fills a newer bucket from an older one and then backfills the older one (now
+            // dirty); without this the backfill pulled the moved queuer straight back and the group never popped.
+            if (bucketSource.IsFull())
+            {
+                ++itr2;
+                continue;
+            }
 
             // Queuers in buckets are also stored in oldest-first layout, thus they should have preference when backfilling
             // Copy queuers, as we'll be modifying buckets, invalidating the iteration
@@ -428,7 +497,7 @@ void DungeonQueue::OutDebug(std::ostringstream& ss, bool client) const
         return;
 
     LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(m_dungeonID);
-    ss << "   --- DUNGEON QUEUE --- Dungeon: " << GetDungeonID() << " (" << (dungeon ? dungeon->name[DEFAULT_LOCALE] : "???") << ")" << (dungeon && dungeon->difficulty ? " (Heroic)" : "") << "\n";
+    ss << "   --- DUNGEON QUEUE --- Dungeon: " << GetDungeonID() << " (" << (dungeon ? dungeon->name : "???") << ")" << (dungeon && dungeon->DifficultyID ? " (Heroic)" : "") << "\n";
     for (auto&& bucket : m_buckets)
         bucket.OutDebug(ss, client);
 }
@@ -472,7 +541,7 @@ QueueManager::QueueManager()
         if (!dungeon)
             continue;
 
-        MapEntry const* map = sMapStore.LookupEntry(dungeon->map);
+        MapEntry const* map = sMapStore.LookupEntry(dungeon->MapID);
 
         uint32 tank = dungeon->tankNeeded;
         uint32 heal = dungeon->healerNeeded;
@@ -648,6 +717,17 @@ void QueueManager::UpdateQueueTimers(time_t time)
         for (auto&& role : data.second.Roles)
             queuerRoles = (LfgRoles)(queuerRoles | (role.second & ~PLAYER_ROLE_LEADER));
 
+        // #539: never dereference a queuer whose roster or player queue data is already gone (a dangling
+        // entry - see LFGMgr::RemoveGroupData). Roles.begin() on an empty map, or GetSelectedDungeons()
+        // for a player without this queueId (LfgDataOwner::GetQueueData const returns end()->second),
+        // was the 2026-10-04 21:47:51 ACCESS_VIOLATION here. Skip it; the entry is removed with its group.
+        if (data.second.Roles.empty() || !sLFGMgr->HasQueueId(data.second.Roles.begin()->first, data.second.QueueId))
+        {
+            TC_LOG_ERROR("lfg", "QueueManager::UpdateQueueTimers: dangling queuer [" UI64FMTD "] queueId %u (roles=%u) - skipped (#539)",
+                data.first.GetRawValue(), data.second.QueueId, uint32(data.second.Roles.size()));
+            continue;
+        }
+
         // We can just pick the first player in the group as the source for selected dungeon, since all members adopt the group leader's choice when queuing
         auto& dungeons = sLFGMgr->GetSelectedDungeons(data.second.Roles.begin()->first, data.second.QueueId);
         for (auto&& dungeonID : dungeons)
@@ -788,7 +868,7 @@ void QueueManager::UpdateShortageData()
 
         bool raid = false;
         if (auto lfg_dungeon = sLFGDungeonStore.LookupEntry(randomDungeonId))
-            raid = lfg_dungeon->difficulty == RAID_DIFFICULTY_25MAN_LFR;
+            raid = lfg_dungeon->DifficultyID == RAID_DIFFICULTY_25MAN_LFR;
 
         // Queue exists for more than 90 seconds and we have "enough" people in queue
         uint32 total = tanksCount + healersCount + dpsCount;

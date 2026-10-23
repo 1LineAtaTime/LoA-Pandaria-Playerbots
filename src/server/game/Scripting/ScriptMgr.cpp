@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -193,6 +193,7 @@ void ScriptMgr::UnloadUnusedScripts()
 void ScriptMgr::LoadDatabase()
 {
     sScriptSystemMgr->LoadScriptWaypoints();
+    sScriptSystemMgr->LoadScriptSplineChains();
 }
 
 void ScriptMgr::FillSpellSummary()
@@ -1848,9 +1849,9 @@ void ScriptMgr::OnDamage(Unit* attacker, Unit* victim, uint32& damage)
     FOREACH_SCRIPT(UnitScript)->OnDamage(attacker, victim, damage);
 }
 
-void ScriptMgr::ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, int32& damage)
+void ScriptMgr::ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo)
 {
-    FOREACH_SCRIPT(UnitScript)->ModifyPeriodicDamageAurasTick(target, attacker, damage);
+    FOREACH_SCRIPT(UnitScript)->ModifyPeriodicDamageAurasTick(target, attacker, damage, spellInfo);
 }
 
 void ScriptMgr::ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage)
@@ -1858,9 +1859,30 @@ void ScriptMgr::ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage)
     FOREACH_SCRIPT(UnitScript)->ModifyMeleeDamage(target, attacker, damage);
 }
 
-void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage)
+void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo)
 {
-    FOREACH_SCRIPT(UnitScript)->ModifySpellDamageTaken(target, attacker, damage);
+    FOREACH_SCRIPT(UnitScript)->ModifySpellDamageTaken(target, attacker, damage, spellInfo);
+}
+
+// #793: mirrors of AC's UnitScript / AllSpellScript hooks (see ScriptMgr.h)
+void ScriptMgr::ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo)
+{
+    FOREACH_SCRIPT(UnitScript)->ModifyHealReceived(target, healer, heal, spellInfo);
+}
+
+void ScriptMgr::OnAuraApply(Unit* unit, Aura* aura)
+{
+    FOREACH_SCRIPT(UnitScript)->OnAuraApply(unit, aura);
+}
+
+void ScriptMgr::OnAuraRemove(Unit* unit, AuraApplication* aurApp, AuraRemoveMode mode)
+{
+    FOREACH_SCRIPT(UnitScript)->OnAuraRemove(unit, aurApp, mode);
+}
+
+void ScriptMgr::OnUnitSpellCast(Spell* spell, Unit* caster, SpellInfo const* spellInfo, bool skipCheck)
+{
+    FOREACH_SCRIPT(UnitScript)->OnUnitSpellCast(spell, caster, spellInfo, skipCheck);
 }
 
 // Scene

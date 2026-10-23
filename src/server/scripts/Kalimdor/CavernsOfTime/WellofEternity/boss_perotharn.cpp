@@ -74,10 +74,14 @@ enum Spells
     SPELL_RETURN_TO_THE_SHADOWS     = 105635,
     SPELL_CONSUME_ESSENCE           = 104738,
     SPELL_REGENERATION              = 105547,
+
+    // players (well_of_eternity.cpp:144): the stealth half of the Shadowcloak, given by Return to the Shadows (105635 -> 102994)
+    SPELL_SHADOW_WALK               = 102994,
 };
 
 enum Adds
 {
+    NPC_LEGION_DEMON_PREEVENT   = 54500,    // well_of_eternity.cpp:323 (Illidan's marching demons, #905)
     NPC_FEL_FLAMES              = 57329,
     NPC_HUNTING_SUMMON_STALKER  = 56248,
     NPC_HUNTING_SUMMON_CIRCLE   = 56182,
@@ -238,6 +242,38 @@ class boss_perotharn : public CreatureScript
                 instance->SetBossState(DATA_PEROTHARN, IN_PROGRESS);
 
                 DoCastAOE(SPELL_AGGRO_ILLIDAN);
+
+                // #905 (W1 lane): the pre-event Legion Demons Illidan sent marching (54500, faction 1620, hostile to Peroth'arn's
+                // 2387) walk through his centre on their way to the portals. Retail clears them with the portals; any still alive
+                // at the pull would fight him, and Drain Essence once fanned out over ~1100 of them (w104 hang). Gone at the pull.
+                std::list<Creature*> demons;
+                GetCreatureListWithEntryInGrid(demons, me, NPC_LEGION_DEMON_PREEVENT, 250.0f);
+                for (Creature* demon : demons)
+                    if (demon->IsAlive())
+                        demon->DespawnOrUnsummon(500);
+            }
+
+            // #695: the hunt phase. Players are cloaked (Shadow Walk drops their combat, spell_well_of_eternity_shadow_walk) while
+            // Peroth'arn is passive and unselectable, so the stock UpdateVictim would find no online threat and evade mid-fight.
+            bool AnyPlayerAlive() const
+            {
+                Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->GetSource())
+                        if (player->IsAlive() && !player->IsGameMaster() && me->IsWithinDistInMap(player, 200.0f))
+                            return true;
+                return false;
+            }
+
+            // #695: end of the hunt (Easy Prey or Enfeebled): the cloak drops and every player is back in the fight.
+            void UncloakPlayers()
+            {
+                Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->GetSource())
+                        if (player->IsAlive() && me->IsWithinDistInMap(player, 200.0f))
+                            player->RemoveAurasDueToSpell(SPELL_SHADOW_WALK);
+                DoZoneInCombat();
             }
 
             void JustDied(Unit* /*killer*/) override
@@ -285,7 +321,17 @@ class boss_perotharn : public CreatureScript
                     else preeventDisapperTimer -= diff;
                 }
 
-                if (!UpdateVictim())
+                if (phase == 1 || phase == 3)
+                {
+                    // #695: Drain Essence and the hunt - keep the events running while the players are cloaked; a real wipe
+                    // (nobody alive near him) still resets the encounter.
+                    if (!AnyPlayerAlive())
+                    {
+                        EnterEvadeMode();
+                        return;
+                    }
+                }
+                else if (!UpdateVictim())
                     return;
 
                 events.Update(diff);
@@ -356,7 +402,13 @@ class boss_perotharn : public CreatureScript
                             break;
                         case EVENT_ILLIDAN_HIDE:
                             if (Creature* pIllidan = me->FindNearestCreature(NPC_ILLIDAN_1, 100.0f))
+                            {
                                 pIllidan->AI()->Talk(0); // SAY_ILLIDAN_1_BOSS_HIDES
+                                // #695: "Return to the shadows!" (Wowpedia "Peroth'arn", 2026-10-23): "Players gain the protection of
+                                // their Shadowcloaks to help them avoid the detection range of the Eyes." Same cast as the escort
+                                // (well_of_eternity.cpp ACTION_ILLIDAN_1_PRESTART): 105635 force-casts Shadow Walk 102994 on the allies.
+                                pIllidan->CastSpell(pIllidan, SPELL_RETURN_TO_THE_SHADOWS, true);
+                            }
                             events.ScheduleEvent(EVENT_HUNTING, 2000);
                             break;
                         case EVENT_HIDING:
@@ -370,7 +422,10 @@ class boss_perotharn : public CreatureScript
                             {
                                 Position pos = me->GetNearPosition(5.0f, i);
                                 me->SummonCreature(NPC_HUNTING_SUMMON_CIRCLE, pos);
-                                me->SummonCreature(NPC_EYE_OF_PEROTHARN_1, pos);
+                                // #695: the cloak dropped the players' combat, so BossAI::JustSummoned may not zone the Eyes in; an
+                                // Eye out of combat never moves or searches (npc_perotharn_eye_of_perotharn::UpdateAI -> UpdateVictim).
+                                if (Creature* eye = me->SummonCreature(NPC_EYE_OF_PEROTHARN_1, pos))
+                                    DoZoneInCombat(eye);
                             }
                             DoCast(me, SPELL_HUNTING_CHANNEL);
                             break;
@@ -382,6 +437,7 @@ class boss_perotharn : public CreatureScript
                             DoCast(me, SPELL_CAMOUFLAGE_REMOVE, true);
                             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
                             me->InterruptNonMeleeSpells(false);
+                            UncloakPlayers();   // #695: Easy Prey strips the prey's cloak; the fight resumes for everyone
                             if (targetGUID)
                                 if (Player* player = ObjectAccessor::GetPlayer(*me, targetGUID))
                                 {
@@ -403,6 +459,7 @@ class boss_perotharn : public CreatureScript
                             me->SetReactState(REACT_AGGRESSIVE);
                             DoCast(me, SPELL_CAMOUFLAGE_REMOVE, true);
                             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+                            UncloakPlayers();   // #695: Enfeebled - he cannot stay hidden, the players step out and attack
                             Talk(SAY_ACHIEVE);
                             me->GetMap()->SetWorldState(WORLDSTATE_LAZY_EYE, 1);
                             DoCast(me, SPELL_ENFEEBLED, true);

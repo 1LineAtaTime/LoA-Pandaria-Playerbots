@@ -19,8 +19,8 @@
 #include "Spell.h"
 #include "bastion_of_twilight.h"
 
-// ����������� � �������� electric instability, lava seed, liquid ice
-// ����� �������� ��� avity crash
+// implement electric instability, lava seed, liquid ice abilities
+// also implement gravity crash ability
 
 enum FeludiusScriptText
 {
@@ -167,10 +167,10 @@ enum Events
     EVENT_LIGHTNING_ROD                 = 17,
     EVENT_CHAIN_LIGHTNING               = 18,
     EVENT_THUNDERSHOCK                  = 19,
-    EVENT_PHASE_3_1                     = 20, // �������
-    EVENT_PHASE_3_2                     = 21, // �������
-    EVENT_PHASE_3_3                     = 22, // �������
-    EVENT_PHASE_3_4                     = 23, // �������
+    EVENT_PHASE_3_1                     = 20, // Feludius
+    EVENT_PHASE_3_2                     = 21, // Ignacious
+    EVENT_PHASE_3_3                     = 22, // Arion
+    EVENT_PHASE_3_4                     = 23, // Terrastra
     EVENT_CRYOGENIC_AURA                = 24,
     EVENT_LAVA_SEED                     = 25,
     EVENT_GRAVITY_CRUSH                 = 26,
@@ -200,7 +200,7 @@ enum Adds
     NPC_VIOLENT_CYCLONE                     = 44747,
     NPC_LIQUID_ICE                          = 45452,
     NPC_ASCENDANT_COUNCIL_PLUME_STALKER     = 45420,
-    NPC_ASCENDANT_COUNCIL_TARGET_STALKER    = 44553,    //���������, ������ ���
+    NPC_ASCENDANT_COUNCIL_TARGET_STALKER    = 44553,    // Stalker, does not attack
     NPC_ASCENDANT_COUNCIL_CONTROLLER        = 43691,
     NPC_GRAVITY_CRUSH                       = 45476,
     NPC_FLAME_STRIKE                        = 49432,
@@ -218,23 +218,23 @@ enum Actions
     ACTION_ELEMENTARY_ACHIEV,
 };
 
-const Position councilPos[4] = 
+const Position councilPos[4] =
 {
-    { -1053.54f, -564.38f, 835.02f, 5.81f }, // ��������
-    { -1054.04f, -600.60f, 835.03f, 0.42f }, // �����
-    { -1057.89f, -653.51f, 877.70f, 0.79f }, // �����
-    { -1057.93f, -533.38f, 877.68f, 5.47f }, // ���������
+    { -1053.54f, -564.38f, 835.02f, 5.81f }, // Feludius
+    { -1054.04f, -600.60f, 835.03f, 0.42f }, // Ignacious
+    { -1057.89f, -653.51f, 877.70f, 0.79f }, // Arion
+    { -1057.93f, -533.38f, 877.68f, 5.47f }, // Terrastra
 };
 
-const Position groundPos[7] = 
+const Position groundPos[7] =
 {
-    { -1038.45f, -590.60f, 831.98f, 6.04f }, // �� 2� ���� ���� ������� �����
-    { -1034.61f, -571.70f, 831.90f, 6.04f }, // �� 2� ���� ���� ������� ���������
-    { -1008.42f, -571.32f, 831.90f, 4.71f }, // �� 3� ���� �������� ����� ���������
-    { -995.92f, -582.68f, 831.90f, 3.18f  }, // �� 3� ���� �������� ����� ������
-    { -1008.75f, -594.82f, 831.90f, 1.52f }, // �� 3� ���� �������� ����� ������
-    { -1020.88f, -582.67f, 831.90f, 0.0f  }, // �� 3� ���� �������� ����� ���������
-    { -1008.58f, -582.97f, 831.90f, 6.23f }, // �� 3� ���� ����� ������ �����������
+    { -1038.45f, -590.60f, 831.98f, 6.04f }, // Level 2 right side of platform
+    { -1034.61f, -571.70f, 831.90f, 6.04f }, // Level 2 left side of platform
+    { -1008.42f, -571.32f, 831.90f, 4.71f }, // Level 3 up right side back
+    { -995.92f, -582.68f, 831.90f, 3.18f  }, // Level 3 up left side front
+    { -1008.75f, -594.82f, 831.90f, 1.52f }, // Level 3 up left side back
+    { -1020.88f, -582.67f, 831.90f, 0.0f  }, // Level 3 up right side front
+    { -1008.58f, -582.97f, 831.90f, 6.23f }, // Level 3 up center back platform
 };
 
 const Position randomPos[34] = 
@@ -458,7 +458,7 @@ class boss_feludius : public CreatureScript
                                 }
                             }
                             for (std::set<uint8>::const_iterator itr = rPos.begin(); itr != rPos.end(); ++itr)
-                                me->SummonCreature(NPC_WATER_BOMB2, randomPos[(*itr)], TEMPSUMMON_TIMED_DESPAWN, 20000);
+                                me->SummonCreature(NPC_WATER_BOMB2, randomPos[(*itr)], TEMPSUMMON_TIMED_DESPAWN, 20000ms);
                             DoCast(me, SPELL_WATER_BOMB);
                             events.ScheduleEvent(EVENT_WATER_BOMB, urand(32000, 35000));
                             events.ScheduleEvent(EVENT_GLACIATE, 15000);
@@ -1234,7 +1234,7 @@ class boss_elementium_monstrosity : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 summons.DespawnAll();
                 if (Creature* _feludius = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_FELUDIUS)))
@@ -1284,7 +1284,7 @@ class boss_elementium_monstrosity : public CreatureScript
                                     target->GetPositionX(),
                                     target->GetPositionY(),
                                     target->GetPositionZ(),
-                                    0.0f, TEMPSUMMON_TIMED_DESPAWN, 6000);
+                                    0.0f, TEMPSUMMON_TIMED_DESPAWN, 6000ms);
                             }
                             events.ScheduleEvent(EVENT_LAVA_SEED, urand(20000, 24000));
                             break;
@@ -1406,7 +1406,7 @@ class npc_ignacious_inferno_leap : public CreatureScript
             {
                 if (!me->FindNearestCreature(NPC_INFERNO_RUSH, 5.0f))
                     if (Creature* pIgnacious = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_IGNACIOUS)))
-                        pIgnacious->SummonCreature(NPC_INFERNO_RUSH, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 20000);
+                        pIgnacious->SummonCreature(NPC_INFERNO_RUSH, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 20000ms);
             }
 
             void MovementInform(uint32 type, uint32 pointId) override

@@ -136,7 +136,7 @@ class boss_liu_flameheart : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 summons.DespawnAll();
                 me->RemoveAllAuras();
@@ -221,7 +221,7 @@ class boss_liu_flameheart : public CreatureScript
                                  {
                                      float x, y, z;
                                      z = me->GetPositionZ();
-                                     me->GetNearPoint2D(x, y, 7.5f, Position::NormalizeOrientation(wAngle + i * (M_PI / 2)));
+                                     me->GetNearPoint2D(nullptr, x, y, 7.5f, Position::NormalizeOrientation(wAngle + i * (M_PI / 2)));
                                      if (Creature* trigger = me->SummonCreature(NPC_TRIGGER_WAVE, x, y, z, me->GetAngle(x, y)))
                                          trigger->AI()->DoAction(ACTION_SERPENT);
                                   }
@@ -250,7 +250,7 @@ class boss_liu_flameheart : public CreatureScript
                                  {
                                      float x, y, z;
                                      z = me->GetPositionZ();
-                                     me->GetNearPoint2D(x, y, 7.5f, Position::NormalizeOrientation(wAngle + i * (M_PI / 2)));
+                                     me->GetNearPoint2D(nullptr, x, y, 7.5f, Position::NormalizeOrientation(wAngle + i * (M_PI / 2)));
                                      if (Creature* trigger = me->SummonCreature(NPC_TRIGGER_WAVE, x, y, z, me->GetAngle(x, y)))
                                          trigger->AI()->DoAction(ACTION_JADE);
                                  }
@@ -345,8 +345,9 @@ class boss_yu_lon_tjs : public CreatureScript
 
                         me->SetReactState(REACT_PASSIVE);
                         me->CombatStop(true);
-                        me->DeleteThreatList();
-                        me->GetThreatManager().resetAllAggro();
+                        me->GetThreatManager().RemoveMeFromThreatLists();
+                        me->GetThreatManager().ClearAllThreat();
+                        me->GetThreatManager().ResetAllThreat();
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                         events.Reset();
 
@@ -541,7 +542,7 @@ class npc_minion_of_doubt : public CreatureScript
                     if (me->GetHealth() < me->GetMaxHealth() || me->GetHealth() <= damage)
                     {
                         damage = 0;
-                        me->GetThreatManager().addThreat(attacker, 0.f);
+                        me->GetThreatManager().AddThreat(attacker, 0.f);
                     }
                 }
 
@@ -569,8 +570,8 @@ class npc_minion_of_doubt : public CreatureScript
                            return;
 
                        targeted = true;
-                       me->GetThreatManager().resetAllAggro();
-                       me->GetThreatManager().addThreat(who, 100.0f);
+                       me->GetThreatManager().ResetAllThreat();
+                       me->GetThreatManager().AddThreat(who, 100.0f);
                        AttackStart(who);
                    }
             }
@@ -649,7 +650,7 @@ class npc_lesser_sha : public CreatureScript
                     if (me->GetHealth() < me->GetMaxHealth() || me->GetHealth() <= damage)
                     {
                         damage = 0;
-                        me->GetThreatManager().addThreat(attacker, 0.f);
+                        me->GetThreatManager().AddThreat(attacker, 0.f);
                     }
                 }
             }
@@ -664,8 +665,8 @@ class npc_lesser_sha : public CreatureScript
                         return;
 
                     targeted = true;
-                    me->GetThreatManager().resetAllAggro();
-                    me->GetThreatManager().addThreat(who, 100.0f);
+                    me->GetThreatManager().ResetAllThreat();
+                    me->GetThreatManager().AddThreat(who, 100.0f);
                     AttackStart(who);
                 }
             }
@@ -746,12 +747,12 @@ class npc_lie_flameheart_trash_base_ai : public CreatureScript
                     if (me->GetHealth() < me->GetMaxHealth() || me->GetHealth() <= damage)
                     {
                         damage = 0;
-                        me->GetThreatManager().addThreat(attacker, 0.f);
+                        me->GetThreatManager().AddThreat(attacker, 0.f);
                     }
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (!talked)
                 {
@@ -837,16 +838,30 @@ class spell_yu_lon_tjs_jade_fire : public SpellScriptLoader
         {
             PrepareSpellScript(spell_yu_lon_tjs_jade_fire_SpellScript);
 
+            // #689: Wowhead MoP 107045 "Fires a missile towards a random target", Wowpedia "Liu Flameheart" (Jade Fire:
+            // "Yu'lon breathes a ball of flames at a random player, creating a pool of Jade Fire at their location"), both
+            // read 2026-10-12. The DBC dummy hits every enemy in 50000 yd (radius 28), so keep one random player.
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                targets.remove_if([](WorldObject* target) { return target->GetTypeId() != TYPEID_PLAYER; });
+                if (targets.size() > 1)
+                    Trinity::Containers::RandomResizeList(targets, 1);
+            }
+
             void HandleScript(SpellEffIndex effIndex)
             {
                 if (!GetCaster() || !GetHitUnit())
                     return;
 
-                GetCaster()->CastSpell(GetHitUnit(), SPELL_JADE_FIRE_MISSLE, false);
+                // #689: cast from inside 107045's own effect (0.5 s cast, still the current generic spell), so a
+                // non-triggered cast failed SPELL_FAILED_SPELL_IN_PROGRESS (Spell.cpp:3463-3466) and the missile
+                // 107098 -> Jade Fire Summon 107103 -> pool 56893 (107108 -> 107110) never came: the breath was cosmetic.
+                GetCaster()->CastSpell(GetHitUnit(), SPELL_JADE_FIRE_MISSLE, true);
             }
 
             void Register() override
             {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yu_lon_tjs_jade_fire_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
                 OnEffectHitTarget += SpellEffectFn(spell_yu_lon_tjs_jade_fire_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_DUMMY);
             }
         };

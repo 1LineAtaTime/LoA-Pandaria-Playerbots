@@ -118,6 +118,7 @@ LogsDir = "Logs"
 #    LoginDatabaseInfo
 #    WorldDatabaseInfo
 #    CharacterDatabaseInfo
+#    PlayerbotsDatabaseInfo
 #        Description: Database connection settings for the world server.
 #        Example:     "hostname;port;username;password;database"
 #                     ".;somenumber;username;password;database" - (Use named pipes on Windows
@@ -128,10 +129,13 @@ LogsDir = "Logs"
 #        Default:     "127.0.0.1;3306;skyfire;skyfire;auth"       - (LoginDatabaseInfo)
 #                     "127.0.0.1;3306;skyfire;skyfire;world"      - (WorldDatabaseInfo)
 #                     "127.0.0.1;3306;skyfire;skyfire;characters" - (CharacterDatabaseInfo)
+#                     "127.0.0.1;3306;skyfire;skyfire;playerbots" - (PlayerbotsDatabaseInfo, the
+#                                                                   playerbots module; required)
 
 LoginDatabaseInfo     = "127.0.0.1;3306;root;root;auth"
 WorldDatabaseInfo     = "127.0.0.1;3306;root;root;world"
 CharacterDatabaseInfo = "127.0.0.1;3306;root;root;characters"
+PlayerbotsDatabaseInfo = "127.0.0.1;3306;root;root;playerbots"
 
 #
 #    LoginDatabase.WorkerThreads
@@ -147,6 +151,7 @@ CharacterDatabaseInfo = "127.0.0.1;3306;root;root;characters"
 LoginDatabase.WorkerThreads     = 1
 WorldDatabase.WorkerThreads     = 1
 CharacterDatabase.WorkerThreads = 1
+PlayerbotsDatabase.WorkerThreads = 1
 
 #
 #    LoginDatabase.SynchThreads
@@ -158,6 +163,7 @@ CharacterDatabase.WorkerThreads = 1
 #                     2 - (CharacterDatabase.WorkerThreads)
 
 LoginDatabase.SynchThreads     = 1
+PlayerbotsDatabase.SynchThreads = 1
 WorldDatabase.SynchThreads     = 1
 CharacterDatabase.SynchThreads = 2
 
@@ -470,6 +476,15 @@ LogDB.Opt.ClearTime = 1209600
 MaxCoreStuckTime = 0
 
 #
+#    WorldUpdateTimeLogInterval
+#        Description: Interval (in seconds) at which the world loop logs its achieved loop
+#                     rate and the average/worst loop time to the "perf" logger. Useful for
+#                     measuring tick performance under a heavy playerbot population.
+#        Default:     0 - (Disabled)
+
+WorldUpdateTimeLogInterval = 0
+
+#
 #    AddonChannel
 #        Description: Configure the use of the addon channel through the server (some client side
 #                     addons will not work correctly with disabled addon channel)
@@ -521,6 +536,16 @@ Auction.GetAllScanDelay = 900
 #        Default:     300 - (Time delay between auction searches set to 0.3secs)
 
 Auction.SearchDelay = 300
+
+#
+#     DontCacheRandomMovementPaths
+#        Description: Random movement paths (calculated using MoveMaps) can be cached to save cpu time,
+#                     but this may use up considerable amount of memory and can be prevented by setting this option to 1.
+#                     Recommended setting for populated servers is having enough RAM and setting this to 0.
+#        Default:     0 - (cache paths, uses more memory)
+#                     1 - (don't cache, uses more cpu)
+
+DontCacheRandomMovementPaths = 0
 
 #
 ###################################################################################################
@@ -1487,7 +1512,7 @@ ThreatRadius = 60
 #                     1.5 - (Enabled, 150%)
 #                     0   - (Disabled, 0%)
 
-Rate.Creature.Aggro = 0.5
+Rate.Creature.Aggro = 1
 
 #
 #    CreatureFamilyFleeAssistanceRadius
@@ -2287,7 +2312,7 @@ Battleground.CastDeserter = 1
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 
-Battleground.QueueAnnouncer.Enable = 1
+Battleground.QueueAnnouncer.Enable = 0
 
 #
 #    Battleground.QueueAnnouncer.PlayerOnly
@@ -2315,6 +2340,38 @@ Battleground.InvitationType = 0
 #                     0      - (Disabled, Not recommended)
 
 Battleground.PrematureFinishTimer = 300000
+
+#
+#    Battleground.Override.LowLevels.MinPlayers
+#        Description: Overrides the minimum number of required players per team for all levels < MaxPlayerLevel
+#                     Used as fallback for any battleground without a per-battleground override (see below)
+#        Default:     0 (Disabled)
+
+Battleground.Override.LowLevels.MinPlayers = 0
+
+#
+#    Battleground.Override.LowLevels.MinPlayers.AV
+#    Battleground.Override.LowLevels.MinPlayers.WS
+#    Battleground.Override.LowLevels.MinPlayers.AB
+#    Battleground.Override.LowLevels.MinPlayers.EY
+#    Battleground.Override.LowLevels.MinPlayers.SA
+#    Battleground.Override.LowLevels.MinPlayers.IC
+#        Description: Per-battleground overrides of the minimum number of required players per team
+#                     for all levels < MaxPlayerLevel.
+#                     AV = Alterac Valley, WS = Warsong Gulch, AB = Arathi Basin,
+#                     EY = Eye of the Storm, SA = Strand of the Ancients, IC = Isle of Conquest
+#                     Resolution order: per-battleground key, then Battleground.Override.LowLevels.MinPlayers,
+#                     then the battleground_template DB value.
+#                     Matches entered through the Random Battleground queue always use the global
+#                     Battleground.Override.LowLevels.MinPlayers, never the per-battleground keys.
+#        Default:     0 (Disabled, use Battleground.Override.LowLevels.MinPlayers)
+
+Battleground.Override.LowLevels.MinPlayers.AV = 0
+Battleground.Override.LowLevels.MinPlayers.WS = 0
+Battleground.Override.LowLevels.MinPlayers.AB = 0
+Battleground.Override.LowLevels.MinPlayers.EY = 0
+Battleground.Override.LowLevels.MinPlayers.SA = 0
+Battleground.Override.LowLevels.MinPlayers.IC = 0
 
 #
 #    BattleGround.PremadeGroupWaitForMatch
@@ -2421,6 +2478,64 @@ Wintergrasp.NoBattleTimer = 150
 Wintergrasp.CrashRestartTimer = 10
 
 #
+#     TolBarad.Enable
+#         Description: Enable the Tol Barad battlefield.
+#         Default:     0 - (Disabled)
+#                      1 - (Enabled, Experimental)
+
+TolBarad.Enable = 0
+
+#
+#     TolBarad.PlayerMax
+#         Description: Maximum number of players per team allowed in Tol Barad.
+#         Default:     100
+
+TolBarad.PlayerMax = 100
+
+#
+#     TolBarad.PlayerMin
+#         Description: Minimum number of players required for Tol Barad.
+#         Default:     0
+
+TolBarad.PlayerMin = 0
+
+#
+#     TolBarad.PlayerMinLvl
+#         Description: Required character level for the Tol Barad battle.
+#         Default:     85
+
+TolBarad.PlayerMinLvl = 85
+
+#
+#     TolBarad.BattleTimer
+#         Description: Time (in minutes) for the Tol Barad battle to last.
+#         Default:     15
+
+TolBarad.BattleTimer = 15
+
+#
+#     TolBarad.BonusTimer
+#         Description: Time (in minutes) added to the battle for every destroyed spire.
+#         Default:     5
+
+TolBarad.BonusTimer = 5
+
+#
+#     TolBarad.NoBattleTimer
+#         Description: Time (in minutes) between Tol Barad battles.
+#         Default:     150
+
+TolBarad.NoBattleTimer = 150
+
+#
+#     TolBarad.CrashRestartTimer
+#         Description: Time (in minutes) to delay the restart of Tol Barad if the world server
+#                      crashed during a running battle.
+#         Default:     10
+
+TolBarad.CrashRestartTimer = 10
+
+#
 ###################################################################################################
 
 ###################################################################################################
@@ -2471,7 +2586,7 @@ Arena.AutoDistributeInterval = 7
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 
-Arena.QueueAnnouncer.Enable = 1
+Arena.QueueAnnouncer.Enable = 0
 
 #
 #    Arena.QueueAnnouncer.PlayerOnly
@@ -3490,7 +3605,7 @@ AuctionHouseBot.Buyer.Recheck.Interval = 20
 Appender.Console=1,3,0,13 11 9 5 3 1
 Appender.Server=2,2,0,Server.log,w
 Appender.GM=2,2,15,gm/gm_%s.log
-Appender.DBErrors=2,2,0,DBErrors.log
+Appender.DBErrors=2,2,0,DBErrors.log,w
 
 #  Logger config values: Given a logger "name"
 #    Logger.name
@@ -3548,6 +3663,8 @@ Logger.sql.sql=5,Console DBErrors
 #Logger.network.opcode=3,Console Server
 #Logger.network.soap=3,Console Server
 #Logger.outdoorpvp=3,Console Server
+#Logger.perf=3,Server
+#Logger.diff=2,Server
 #Logger.pool=3,Console Server
 #Logger.rbac=3,Console Server
 #Logger.scripts=3,Console Server
@@ -4380,6 +4497,531 @@ Solocraft.ArgentTournamentRaidH25 = 25.0
 ################################################################################################
 
 ###################################################################################################
+# ANY-LEVEL CONTENT (#702) - LFG ANY LEVEL + AUTOBALANCE
+#
+#    Lets a player use the dungeon finder for any 5-man dungeon from LFG.AnyLevel.MinLevel up and
+#    scales the creatures of the instance to the group's level and size (port of
+#    azerothcore/mod-autobalance @ 1d707cb6; the keys below are its own). Random bots that fill the
+#    group are picked around the requester's level by AiPlayerbot.LfgAnyLevel.* in playerbots.conf.
+#    Everything here is off by default; with LFG.AnyLevel.Enable = 0 and AutoBalance.Enable.Global = 0
+#    the server behaves exactly as without this section.
+#
+#    LFG.AnyLevel.Enable
+#        Description: Dungeon finder accepts a player outside the dungeon's level range (5-man normal and
+#                     heroic dungeons; random dungeons, Raid Finder and scenarios only with the keys below),
+#                     and a dungeon-finder group may enter that instance whatever its access_requirement level.
+#                     Also adds the player command .lfgjoin <id> [tank|healer|dps] / .lfgjoin list [kind]:
+#                     the 5.4.8 client lists out-of-range specific dungeons (no lock sent) but hides
+#                     out-of-range random dungeons and disables its Scenario / Raid Finder tabs below their
+#                     level, so those are queued with the command (registered while this key is on).
+#                     A player's lock list is rebuilt at login, level-up or gear change, so a change of
+#                     this value reaches an online player at the next rebuild.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+LFG.AnyLevel.Enable = 0
+
+#
+#    LFG.AnyLevel.MinLevel
+#        Description: Lowest character level that may use LFG.AnyLevel.
+#        Default:     10
+
+LFG.AnyLevel.MinLevel = 10
+
+#
+#    LFG.AnyLevel.IgnoreItemLevel
+#        Description: With LFG.AnyLevel.Enable, also ignore the dungeon's item-level requirement.
+#        Default:     1 - (Ignore it)
+#                     0 - (Keep the item-level lock)
+
+LFG.AnyLevel.IgnoreItemLevel = 1
+
+#
+#    LFG.AnyLevel.Random
+#        Description: With LFG.AnyLevel.Enable, a player outside a random 5-man entry's own level range
+#                     (e.g. a level-20 player and Random Cataclysm Dungeon, id 300) may queue it, and the
+#                     dungeon is picked from that entry's whole set (one expansion, as Blizzard's later
+#                     Timewalking queues); AutoBalance scales it. A player inside the random entry's range,
+#                     and everyone while this is 0, gets the stock random pool (the dungeons of the player's
+#                     own level range), also with LFG.AnyLevel.Enable on.
+#        Default:     0 - (Disabled: stock random pools)
+#                     1 - (Enabled)
+
+LFG.AnyLevel.Random = 0
+
+#
+#    LFG.AnyLevel.Raids
+#        Description: With LFG.AnyLevel.Enable, Raid Finder wings (LFR) any level: no level lock, the
+#                     wings are listed in the Raid Finder whatever the level, and the group may enter.
+#                     Flexible raids are never opened. Normal/heroic raids are not dungeon-finder content.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+LFG.AnyLevel.Raids = 0
+
+#
+#    LFG.AnyLevel.Scenarios
+#        Description: With LFG.AnyLevel.Enable, scenarios (normal and heroic, specific and random) any
+#                     level. Retired / test entries (level 99 in the client data) stay locked.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+LFG.AnyLevel.Scenarios = 0
+
+#
+#    LFG.AnyLevel.Loot
+#        Description: Reward of an any-level dungeon-finder run (needs LFG.AnyLevel.Enable).
+#                     A random queue or a Raid Finder wing completed by a player outside the entry's
+#                     level range gives, with 1, the random 5-man reward of the player's OWN level
+#                     (e.g. level 20: the Random Classic reward for levels 16-25) instead of the queued
+#                     entry's (Cataclysm Justice Points). Creature drops are not changed.
+#        Default:     0 - (Native rewards)
+#                     1 - (Level-appropriate random-dungeon reward)
+#                     2 - (Reserved: a modernWoW-style drop-chance boost; not implemented, read as 0)
+
+LFG.AnyLevel.Loot = 0
+
+#
+#    AutoBalance.Enable.Global
+#        Description: Master switch of everything AutoBalance does (level scaling, player-count scaling,
+#                     reward/heal/CC scaling, the .autobalance command). If this setting is off, none of the
+#                     AutoBalance.* settings take effect. A .reload config applies every AutoBalance.* change
+#                     to the open instances (their creatures re-scale once out of combat), and turning it on
+#                     by .reload config registers the hooks then.
+#        Default:     0 - (Disabled; mod-autobalance's own default is 1)
+#                     1 - (Enabled)
+
+AutoBalance.Enable.Global = 0
+
+#
+#    AutoBalance.Enable.*
+#        Description: Per instance size and difficulty (as mod-autobalance). 0 = never scale that kind.
+#        Default:     1
+
+AutoBalance.Enable.5M = 1
+AutoBalance.Enable.10M = 1
+AutoBalance.Enable.15M = 1
+AutoBalance.Enable.20M = 1
+AutoBalance.Enable.25M = 1
+AutoBalance.Enable.40M = 1
+AutoBalance.Enable.OtherNormal = 1
+AutoBalance.Enable.5MHeroic = 1
+AutoBalance.Enable.10MHeroic = 1
+AutoBalance.Enable.25MHeroic = 1
+AutoBalance.Enable.OtherHeroic = 1
+
+#
+#    AutoBalance.Disable.PerInstance
+#        Description: Map ids that are never scaled, e.g. "33, 43, 129".
+#        Default:     ""
+
+AutoBalance.Disable.PerInstance = ""
+
+#
+#    AutoBalance.DisabledID
+#        Description: Creature entries that are never scaled, e.g. "12345, 23456".
+#        Default:     ""
+
+AutoBalance.DisabledID = ""
+
+#
+#    AutoBalance.ForcedID40 / ForcedID25 / ForcedID10 / ForcedID5 / ForcedID2
+#        Description: Creature entries that are never scaled for more players than the list's number,
+#                     e.g. AutoBalance.ForcedID5 = "12345, 23456". (mod-autobalance's conf also has a
+#                     ForcedID20 that its code never reads; it is not read here either.)
+#        Default:     ""
+
+AutoBalance.ForcedID40 = ""
+AutoBalance.ForcedID25 = ""
+AutoBalance.ForcedID10 = ""
+AutoBalance.ForcedID5 = ""
+AutoBalance.ForcedID2 = ""
+
+#
+#    AutoBalance.LevelScaling
+#        Description: Scale creatures in instances to the highest-level player inside.
+#        Default:     1 - (Enabled, only takes effect with AutoBalance.Enable.Global = 1)
+#                     0 - (Disabled)
+
+AutoBalance.LevelScaling = 1
+
+#
+#    AutoBalance.LevelScaling.Method
+#        Description: "fixed"   - every scaled creature gets the highest player level.
+#                     "dynamic" - creatures keep their spread: the strongest creature of the instance gets
+#                                 highest player level + Ceiling, the others as many levels below as they
+#                                 were below it, never more than Floor levels under the players.
+#        Default:     "dynamic"
+
+AutoBalance.LevelScaling.Method = "dynamic"
+
+#
+#    AutoBalance.LevelScaling.SkipHigherLevels / SkipLowerLevels
+#        Description: No scaling down when the instance's average creature level is at most SkipHigherLevels
+#                     above the highest player level; no scaling up when it is at most SkipLowerLevels below.
+#                     0 = always scale in that direction.
+#        Default:     3 / 5
+
+AutoBalance.LevelScaling.SkipHigherLevels = 3
+AutoBalance.LevelScaling.SkipLowerLevels = 5
+
+#
+#    AutoBalance.LevelScaling.DynamicLevel.Ceiling.* / Floor.*
+#        Description: "dynamic" method: levels above (Ceiling) and below (Floor) the highest player level.
+#        Default:     Dungeons 1/5, HeroicDungeons 2/5, Raids 3/5, HeroicRaids 3/5
+
+AutoBalance.LevelScaling.DynamicLevel.Ceiling.Dungeons = 1
+AutoBalance.LevelScaling.DynamicLevel.Floor.Dungeons = 5
+AutoBalance.LevelScaling.DynamicLevel.Ceiling.HeroicDungeons = 2
+AutoBalance.LevelScaling.DynamicLevel.Floor.HeroicDungeons = 5
+AutoBalance.LevelScaling.DynamicLevel.Ceiling.Raids = 3
+AutoBalance.LevelScaling.DynamicLevel.Floor.Raids = 5
+AutoBalance.LevelScaling.DynamicLevel.Ceiling.HeroicRaids = 3
+AutoBalance.LevelScaling.DynamicLevel.Floor.HeroicRaids = 5
+
+#
+#    AutoBalance.LevelScaling.DynamicLevel.PerInstance
+#        Description: "[MapId] [SkipHigherLevels] [SkipLowerLevels] [Ceiling] [Floor], ..." (-1 = keep the
+#                     global value; trailing values may be left out).
+#        Default:     "229 -1 -1 1, 230 0 0" (mod-autobalance's recommendation: Blackrock Spire, Blackrock Depths)
+
+AutoBalance.LevelScaling.DynamicLevel.PerInstance = "229 -1 -1 1, 230 0 0"
+
+#
+#    AutoBalance.MinPlayers / MinPlayers.Heroic / MinPlayers.Raid / MinPlayers.RaidHeroic
+#        Description: Player-count scaling: the smallest number of players an instance is scaled down to.
+#                     With fewer players inside, the creatures are scaled for this many. MinPlayers affects
+#                     5-man normal dungeons, .Heroic 5-man heroics, .Raid normal raids, .RaidHeroic heroic
+#                     raids. The difficulty offset below is added AFTER this minimum. Game masters do not count.
+#        Default:     1 (.Raid defaults to MinPlayers, .RaidHeroic to MinPlayers.Heroic)
+
+AutoBalance.MinPlayers = 1
+AutoBalance.MinPlayers.Heroic = 1
+AutoBalance.MinPlayers.Raid = 1
+AutoBalance.MinPlayers.RaidHeroic = 1
+
+#
+#    AutoBalance.MinPlayers.PerInstance / MinPlayers.Heroic.PerInstance
+#        Description: Minimum number of players per map id, "[MapId] [MinPlayers], ...", e.g. "33 2, 43 5".
+#                     Maps not listed use the settings above. Never above the instance size.
+#        Default:     ""
+
+AutoBalance.MinPlayers.PerInstance = ""
+AutoBalance.MinPlayers.Heroic.PerInstance = ""
+
+#
+#    AutoBalance.playerCountDifficultyOffset
+#        Description: Added to the number of players of every instance (after MinPlayers), e.g. 1 = scale
+#                     every instance as if one more player were inside. Also set live with
+#                     .autobalance setoffset <n>.
+#        Default:     0
+
+AutoBalance.playerCountDifficultyOffset = 0
+
+#
+#    AutoBalance.InflectionPoint* series
+#        Description: The creature multiplier for a player count follows a hyperbolic tangent curve
+#                     (mod-autobalance getDefaultMultiplier): full stats with a full group, less with fewer
+#                     players. With the defaults a 5-man creature has x0.12 / 0.35 / 0.68 / 0.91 / 1.00 of its
+#                     health, mana, armor and damage with 1 / 2 / 3 / 4 / 5 players.
+#          InflectionPoint  The point of the curve, as a share of the instance size (0.5 = a 40-player raid
+#                           creature has half its stats with 20 players). Lower = difficulty rises faster.
+#          .CurveFloor      Start the curve at this value (stats with very few players; may be negative).
+#          .CurveCeiling    End the curve at this value (stats with a full group; above 1.0 = harder than stock).
+#          .BossModifier    InflectionPoint is multiplied by this for dungeon/raid bosses (and their summons).
+#                     Interactive sheet: https://docs.google.com/spreadsheets/d/100cmKIJIjCZ-ncWd0K9ykO8KUgwFTcwg4h2nfE_UeCc/copy
+#                     The size-specific keys (Raid10M, Raid10MHeroic, Raid15M, Raid20M, Raid25M, Raid25MHeroic,
+#                     Raid40M) are blank by default: blank = the Raid / RaidHeroic value.
+#        Default:     0.5 / 0.0 / 1.0 / 1.0
+
+AutoBalance.InflectionPoint = 0.5
+AutoBalance.InflectionPoint.CurveFloor = 0.0
+AutoBalance.InflectionPoint.CurveCeiling = 1.0
+AutoBalance.InflectionPoint.BossModifier = 1.0
+
+AutoBalance.InflectionPointHeroic = 0.5
+AutoBalance.InflectionPointHeroic.CurveFloor = 0.0
+AutoBalance.InflectionPointHeroic.CurveCeiling = 1.0
+AutoBalance.InflectionPointHeroic.BossModifier = 1.0
+
+AutoBalance.InflectionPointRaid = 0.5
+AutoBalance.InflectionPointRaid.CurveFloor = 0.0
+AutoBalance.InflectionPointRaid.CurveCeiling = 1.0
+AutoBalance.InflectionPointRaid.BossModifier = 1.0
+
+AutoBalance.InflectionPointRaidHeroic = 0.5
+AutoBalance.InflectionPointRaidHeroic.CurveFloor = 0.0
+AutoBalance.InflectionPointRaidHeroic.CurveCeiling = 1.0
+AutoBalance.InflectionPointRaidHeroic.BossModifier = 1.0
+
+AutoBalance.InflectionPointRaid10M =
+AutoBalance.InflectionPointRaid10M.CurveFloor =
+AutoBalance.InflectionPointRaid10M.CurveCeiling =
+AutoBalance.InflectionPointRaid10M.BossModifier =
+AutoBalance.InflectionPointRaid10MHeroic =
+AutoBalance.InflectionPointRaid10MHeroic.CurveFloor =
+AutoBalance.InflectionPointRaid10MHeroic.CurveCeiling =
+AutoBalance.InflectionPointRaid10MHeroic.BossModifier =
+AutoBalance.InflectionPointRaid15M =
+AutoBalance.InflectionPointRaid15M.CurveFloor =
+AutoBalance.InflectionPointRaid15M.CurveCeiling =
+AutoBalance.InflectionPointRaid15M.BossModifier =
+AutoBalance.InflectionPointRaid20M =
+AutoBalance.InflectionPointRaid20M.CurveFloor =
+AutoBalance.InflectionPointRaid20M.CurveCeiling =
+AutoBalance.InflectionPointRaid20M.BossModifier =
+AutoBalance.InflectionPointRaid25M =
+AutoBalance.InflectionPointRaid25M.CurveFloor =
+AutoBalance.InflectionPointRaid25M.CurveCeiling =
+AutoBalance.InflectionPointRaid25M.BossModifier =
+AutoBalance.InflectionPointRaid25MHeroic =
+AutoBalance.InflectionPointRaid25MHeroic.CurveFloor =
+AutoBalance.InflectionPointRaid25MHeroic.CurveCeiling =
+AutoBalance.InflectionPointRaid25MHeroic.BossModifier =
+AutoBalance.InflectionPointRaid40M =
+AutoBalance.InflectionPointRaid40M.CurveFloor =
+AutoBalance.InflectionPointRaid40M.CurveCeiling =
+AutoBalance.InflectionPointRaid40M.BossModifier =
+
+#
+#    AutoBalance.InflectionPoint.PerInstance
+#        Description: Inflection point settings per map id, "[MapId] [InflectionPoint] [CurveFloor]
+#                     [CurveCeiling], ...", -1 = keep, trailing values may be left out,
+#                     e.g. "229 0.4 0.0 1.5, 309 -1 0.0 1.1, 48 0.3".
+#        Default:     ""
+
+AutoBalance.InflectionPoint.PerInstance = ""
+
+#
+#    AutoBalance.InflectionPoint.Boss.PerInstance
+#        Description: Boss inflection multiplier per map id (works like BossModifier),
+#                     "[MapId] [InflectionPointMultiplier], ...", e.g. "229 1.2, 309 1.5".
+#        Default:     ""
+
+AutoBalance.InflectionPoint.Boss.PerInstance = ""
+
+#
+#    AutoBalance.StatModifier* series
+#        Description: The curve above gives the base multiplier; it is then multiplied by these per stat.
+#          .Global                            multiplies the four below (health, mana, armor, damage)
+#          .Health / .Mana / .Armor / .Damage  per stat ("Damage" also scales the world damage/healing:
+#                                             a player hurting itself or a friend, a friendly NPC healing)
+#          .Boss.*                            the same for dungeon/raid bosses (NOT affected by the non-boss values)
+#          .CCDuration / .Boss.CCDuration     duration of crowd control (charm, confuse, disarm, fear, pacify,
+#                                             possess, silence, stun, slow) cast on players: curve x this value,
+#                                             not affected by .Global, kept within Min/MaxCCDurationModifier.
+#                                             Blank = CC durations unchanged.
+#                     StatModifier = 5-man normal, StatModifierHeroic = 5-man heroic, StatModifierRaid /
+#                     StatModifierRaidHeroic = every raid; the size-specific prefixes (StatModifierRaid10M,
+#                     StatModifierRaid10MHeroic, StatModifierRaid15M, StatModifierRaid20M, StatModifierRaid25M,
+#                     StatModifierRaid25MHeroic, StatModifierRaid40M) may be added with the same suffixes; when
+#                     not set they use the Raid / RaidHeroic value.
+#        Default:     1.0 (CCDuration: blank)
+
+AutoBalance.StatModifier.Global = 1.0
+AutoBalance.StatModifier.Health = 1.0
+AutoBalance.StatModifier.Mana = 1.0
+AutoBalance.StatModifier.Armor = 1.0
+AutoBalance.StatModifier.Damage = 1.0
+AutoBalance.StatModifier.CCDuration =
+AutoBalance.StatModifier.Boss.Global = 1.0
+AutoBalance.StatModifier.Boss.Health = 1.0
+AutoBalance.StatModifier.Boss.Mana = 1.0
+AutoBalance.StatModifier.Boss.Armor = 1.0
+AutoBalance.StatModifier.Boss.Damage = 1.0
+AutoBalance.StatModifier.Boss.CCDuration =
+
+AutoBalance.StatModifierHeroic.Global = 1.0
+AutoBalance.StatModifierHeroic.Health = 1.0
+AutoBalance.StatModifierHeroic.Mana = 1.0
+AutoBalance.StatModifierHeroic.Armor = 1.0
+AutoBalance.StatModifierHeroic.Damage = 1.0
+AutoBalance.StatModifierHeroic.CCDuration =
+AutoBalance.StatModifierHeroic.Boss.Global = 1.0
+AutoBalance.StatModifierHeroic.Boss.Health = 1.0
+AutoBalance.StatModifierHeroic.Boss.Mana = 1.0
+AutoBalance.StatModifierHeroic.Boss.Armor = 1.0
+AutoBalance.StatModifierHeroic.Boss.Damage = 1.0
+AutoBalance.StatModifierHeroic.Boss.CCDuration =
+
+AutoBalance.StatModifierRaid.Global = 1.0
+AutoBalance.StatModifierRaid.Health = 1.0
+AutoBalance.StatModifierRaid.Mana = 1.0
+AutoBalance.StatModifierRaid.Armor = 1.0
+AutoBalance.StatModifierRaid.Damage = 1.0
+AutoBalance.StatModifierRaid.CCDuration =
+AutoBalance.StatModifierRaid.Boss.Global = 1.0
+AutoBalance.StatModifierRaid.Boss.Health = 1.0
+AutoBalance.StatModifierRaid.Boss.Mana = 1.0
+AutoBalance.StatModifierRaid.Boss.Armor = 1.0
+AutoBalance.StatModifierRaid.Boss.Damage = 1.0
+AutoBalance.StatModifierRaid.Boss.CCDuration =
+
+AutoBalance.StatModifierRaidHeroic.Global = 1.0
+AutoBalance.StatModifierRaidHeroic.Health = 1.0
+AutoBalance.StatModifierRaidHeroic.Mana = 1.0
+AutoBalance.StatModifierRaidHeroic.Armor = 1.0
+AutoBalance.StatModifierRaidHeroic.Damage = 1.0
+AutoBalance.StatModifierRaidHeroic.CCDuration =
+AutoBalance.StatModifierRaidHeroic.Boss.Global = 1.0
+AutoBalance.StatModifierRaidHeroic.Boss.Health = 1.0
+AutoBalance.StatModifierRaidHeroic.Boss.Mana = 1.0
+AutoBalance.StatModifierRaidHeroic.Boss.Armor = 1.0
+AutoBalance.StatModifierRaidHeroic.Boss.Damage = 1.0
+AutoBalance.StatModifierRaidHeroic.Boss.CCDuration =
+
+#
+#    AutoBalance.StatModifier.PerInstance / StatModifier.Boss.PerInstance / StatModifier.PerCreature
+#        Description: Overrides, more specific REPLACES less specific: size/difficulty value <
+#                     Boss.PerInstance (bosses) or PerInstance (non-bosses) < PerCreature.
+#                     "[MapId or CreatureId] [Global] [Health] [Mana] [Armor] [Damage] [CCDuration], ...",
+#                     -1 = keep the less specific value, trailing values may be left out,
+#                     e.g. AutoBalance.StatModifier.PerInstance = "409 1.0 0.8 0.8 1.0 1.2 1.0, 568 -1 -1 -1 -1 1.35"
+#        Default:     ""
+
+AutoBalance.StatModifier.PerInstance = ""
+AutoBalance.StatModifier.Boss.PerInstance = ""
+AutoBalance.StatModifier.PerCreature = ""
+
+#
+#    AutoBalance.MinHPModifier / MinManaModifier / MinDamageModifier
+#        Description: A creature's health / mana / damage is never multiplied by less than this
+#                     (player-count part; the level part is not limited).
+#        Default:     0.01 / 0.01 / 0.01 (mod-autobalance's code default for MinHPModifier is 0.1, its conf 0.01)
+
+AutoBalance.MinHPModifier = 0.01
+AutoBalance.MinManaModifier = 0.01
+AutoBalance.MinDamageModifier = 0.01
+
+#
+#    AutoBalance.MinCCDurationModifier / MaxCCDurationModifier
+#        Description: Limits of the crowd-control duration multiplier.
+#        Default:     0.25 / 1.0
+
+AutoBalance.MinCCDurationModifier = 0.25
+AutoBalance.MaxCCDurationModifier = 1.0
+
+#
+#    AutoBalance.RewardScaling.Method
+#        Description: How XP and money from creatures in a scaled instance are scaled.
+#                     "fixed"   - XP and money x (players inside / instance size) x the Modifier below.
+#                     "dynamic" - XP and money x the mean of the creature's scaled health and damage
+#                                 multipliers (player count AND level scaling: a creature scaled down from
+#                                 level 85 to 20 gives a small share of a level-20 creature's XP) x the Modifier.
+#                     Money from chests (not creatures) is always x (players inside / instance size).
+#        Default:     "dynamic"
+
+AutoBalance.RewardScaling.Method = "dynamic"
+
+#
+#    AutoBalance.RewardScaling.XP / RewardScaling.XP.Modifier
+#    AutoBalance.RewardScaling.Money / RewardScaling.Money.Modifier
+#        Description: Scale XP / money (1) or give the full amount (0); the Modifier multiplies the result.
+#        Default:     1 / 1.0
+
+AutoBalance.RewardScaling.XP = 1
+AutoBalance.RewardScaling.XP.Modifier = 1.0
+AutoBalance.RewardScaling.Money = 1
+AutoBalance.RewardScaling.Money.Modifier = 1.0
+
+#
+#    AutoBalance.PlayerChangeNotify
+#        Description: Tell the players of a scaled instance when someone enters or leaves and the new
+#                     difficulty (system message).
+#        Default:     1
+
+AutoBalance.PlayerChangeNotify = 1
+
+#
+#    AutoBalanceAnnounce.enable
+#        Description: Tell every player at login that the server runs AutoBalance (only with
+#                     AutoBalance.Enable.Global = 1).
+#        Default:     1
+
+AutoBalanceAnnounce.enable = 1
+
+#
+###################################################################################################
+
+###################################################################################################
+# ANY-LEVEL BATTLEGROUNDS (#702 phase 4, #831)
+#
+#    Lets a player queue a battleground that has no bracket for its level (Silvershard Mines, Temple
+#    of Kotmogu and Deepwind Gorge are level 90 only, Twin Peaks and Battle for Gilneas start at 85):
+#    the join takes a fallback bracket of that battleground instead of being dropped. A level that
+#    already has a bracket keeps it, arenas / rated battlegrounds / solo queue are never changed.
+#    Random bots that fill such a queue are picked around the requester's level by
+#    AiPlayerbot.BgAnyLevel.* in playerbots.conf. Everything here is off by default; with
+#    Battleground.AnyLevel.Enable = 0 the server behaves exactly as without this section.
+#
+#    Battleground.AnyLevel.Enable
+#        Description: A player of at least Battleground.AnyLevel.MinLevel whose level is below every
+#                     bracket of a battleground may queue it (battlemaster, PvP UI join, group join)
+#                     and is filed under the fallback bracket below. Read at startup and by .reload config.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Battleground.AnyLevel.Enable = 0
+
+#
+#    Battleground.AnyLevel.MinLevel
+#        Description: Lowest character level that may use Battleground.AnyLevel.
+#        Default:     10
+
+Battleground.AnyLevel.MinLevel = 10
+
+#
+#    Battleground.AnyLevel.Mode
+#        Description: Which bracket a level without a bracket is filed under.
+#        Default:     0 - (The battleground's lowest bracket, e.g. Twin Peaks 85-89, Silvershard 90)
+#                     1 - (The battleground's highest bracket, e.g. Twin Peaks 90)
+
+Battleground.AnyLevel.Mode = 0
+
+#
+#    Battleground.AnyLevel.PvPScaling
+#        Description: Inside a battleground, damage and healing between two units of different levels
+#                     (players, pets or NPCs; one of them below the battleground's own range) are
+#                     multiplied by baseHP(target level) / baseHP(source level) from
+#                     creature_classlevelstats (mod-modernWoW's "Equal TTK" scaling), so a level-20 and a
+#                     level-90 player kill each other in about the same number of hits. Needs
+#                     Battleground.AnyLevel.Enable = 1. Read at startup (turning it on needs a restart).
+#        Default:     0 - (Disabled: stock numbers)
+#                     1 - (Equal time-to-kill)
+
+Battleground.AnyLevel.PvPScaling = 0
+
+#
+###################################################################################################
+
+###################################################################################################
+# ANY-LEVEL ARENAS (#702 phase 5, #832)
+#
+#    5.4.8 has no arena skirmish: every arena join is a rated match of an exact-size party, and a
+#    player without a party cannot queue at all. With Arena.AnyLevel.Enable = 1 an arena join
+#    (PvP UI, CMSG_BATTLEMASTER_JOIN_ARENA) from a character BELOW MaxPlayerLevel is an unrated
+#    skirmish instead: alone, or as the leader of a party of at most the bracket size, in the
+#    "All Arenas" bracket of its level (every level 10-90 has one). A max-level join stays the
+#    stock rated join - rated arena stays max-level and is not changed. Skirmishes may also be
+#    drawn on Tol'viron and the Tiger's Peak (level 90 only arenas), which every lower match skips.
+#    Random bots that fill a skirmish are picked around the requester's level by
+#    AiPlayerbot.ArenaAnyLevel.* in playerbots.conf. With Arena.AnyLevel.Enable = 0 the server
+#    behaves exactly as without this section. No bracket mode and no PvP scaling key: every level
+#    already has an arena bracket, and the bot window keeps the level gap within one bracket's width
+#    (Battleground.AnyLevel.PvPScaling does not apply in arenas).
+#
+#    Arena.AnyLevel.Enable
+#        Description: Below MaxPlayerLevel, arena joins are unrated skirmishes (solo or party) and
+#                     skirmishes may be drawn on every arena. Read at startup and by .reload config.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Arena.AnyLevel.Enable = 0
+
+#
+###################################################################################################
+
+###################################################################################################
 # DAMAGE CONFIG BALANCE SYSTEM
 #
 
@@ -4538,6 +5180,47 @@ Transport.DisableMapObjPrespawn = 0
 Transport.DisableLocalPrespawn = 0
 Transport.PreferServerWorldPosition = 1
 Transport.LoadGrids = 1
+
+#    Transport.StopFrameClientEncoding
+#        Description: Clock encoding sent to the 5.4.8 client for local (type 11) transports held at a stop frame
+#                     (GO state 25, the Strand of the Ancients boats). 1 = TrinityCore 6.x encoding: the client sails
+#                     the boats in and docks them. 0 = old encoding: the client shows the boats frozen at sea (#851).
+#        Default:     1
+
+Transport.StopFrameClientEncoding = 1
+
+#    Transport.SotaBoatStopFrames
+#        Description: Strand of the Ancients boats. 0 = MoP 5.4.8 encoding: the boats spawn with their full
+#                     animation (GO state 1, no stop frames), the client sails them in, and the server lands attackers on the
+#                     docks 59 s after their boat create block (BattlegroundSA::LandBoatRiders). 1 = the #736 stop-frame mode
+#                     (state 25 + Transport.StopFrameClientEncoding), kept for rollback only (#851).
+#                     2 = elevator encoding (#851, owner 2026-10-20: "hold at sea, sail, then stay docked - no loop"):
+#                     the boats are sent as a two-floor stoppable elevator (TrinityCore type-11 stop frames: stop
+#                     frame list [60133], absolute ServerTime, GO state 24 = held at sea with LEVEL in the past, then
+#                     state 25 + LEVEL = now + 60133 ms = sail to the dock and hold there). The server boat sails with
+#                     them, the riders walk off the docked boat; attackers still aboard 30 s after the docking are put
+#                     on the dock (safety net). Logs "[851] boat-pos" every 1 s while sailing.
+#        Default:     0 (code default; this file ships 2)
+
+Transport.SotaBoatStopFrames = 2
+
+#    Transport.SotaBoatHoldSeconds
+#        Description: Transport.SotaBoatStopFrames = 2 only: seconds the round-1 boats hold at sea after the battleground
+#                     is set up before they sail (the 60.1 s voyage). 60 = AC (boats leave at 1:00 of the 2:00 warm-up and
+#                     dock as round 1 starts). Capped at the 120 s warm-up. Round 2 boats sail at once, as AC.
+#        Default:     60
+
+Transport.SotaBoatHoldSeconds = 60
+
+#    Movement.BotStatusMovement
+#        Description: How real clients are told about a playerbot walking a ground path (#747). The server always moves
+#                     the bot by spline; this only changes the packets. 0 = SMSG_MONSTER_MOVE splines (a 5.4.8 client
+#                     draws bots that fly, snap and race around on them). 1 = client movement status (SMSG_PLAYER_MOVE
+#                     start / turn / 500 ms heartbeat / stop, as a real player and as MoP 5.4.8 bots) on battleground
+#                     and arena maps. 2 = the same on every map. Read once at the first bot move (restart to change).
+#        Default:     1
+
+Movement.BotStatusMovement = 1
 
 BonusRoll.MoneyMin = 285000
 BonusRoll.MoneyMax = 1285000

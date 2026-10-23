@@ -258,6 +258,14 @@ class BattlegroundAB : public Battleground
         void EndBattleground(uint32 winner);
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player) override;
 
+        /// Capture state of a dynamic node, as a BG_AB_NodeStatus value.
+        /// Exposed for the playerbot battleground tactics, which need to know which nodes are
+        /// worth attacking or defending.
+        uint8 GetNodeStatus(uint8 node) const
+        {
+            return node < BG_AB_DYNAMIC_NODES_COUNT ? m_Nodes[node] : uint8(BG_AB_NODE_TYPE_NEUTRAL);
+        }
+
         /* Scorekeeping */
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true) override;
 

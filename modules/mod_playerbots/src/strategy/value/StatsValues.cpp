@@ -35,20 +35,36 @@ bool IsDeadValue::Calculate()
 
 bool PetIsDeadValue::Calculate()
 {
+    if ((bot->GetLevel() < 10 && bot->GetClass() == CLASS_HUNTER) || bot->IsMounted())
+        return false;
+
     if (!bot->GetPet())
     {
-        uint32 ownerid = bot->GetGUID().GetCounter();
-        QueryResult result = CharacterDatabase.PQuery("SELECT id FROM character_pet WHERE owner = %u", ownerid);
+        // MoP has several active pet slots: "dead" = the CURRENT pet's stored row has 0 health,
+        // not merely "some character_pet row exists" (that looped Revive Pet forever, #202).
+        uint32 currentPetId = bot->GetCurrentPetId();
+        if (!currentPetId)
+            return false;
+
+        QueryResult result = CharacterDatabase.PQuery("SELECT curhealth FROM character_pet WHERE owner = %u AND id = %u", bot->GetGUID().GetCounter(), currentPetId);
         if (!result)
             return false;
 
-        return true;
+        return (*result)[0].GetUInt32() == 0;
     }
 
     if (bot->GetPetGUID() && !bot->GetPet())
         return true;
 
     return bot->GetPet() && bot->GetPet()->getDeathState() != DeathState::ALIVE;
+}
+
+bool PetIsHappyValue::Calculate()
+{
+    // MoP removed pet happiness entirely (GetHappinessState / HAPPY enum absent from 5.4.8 core).
+    // Returning true so that !AI_VALUE("pet happy") in HunterPetLowHealthTrigger evaluates to false,
+    // preventing the trigger from permanently firing on every pet tick.
+    return true;
 }
 
 Unit* RageValue::GetTarget()
@@ -79,6 +95,22 @@ uint8 EnergyValue::Calculate()
         return 0;
 
     return (static_cast<float>(target->GetPower(POWER_ENERGY)));
+}
+
+Unit* ChiValue::GetTarget()
+{
+    AiObjectContext* ctx = AiObject::context;
+    return ctx->GetValue<Unit*>(qualifier)->Get();
+}
+
+uint8 ChiValue::Calculate()
+{
+    Unit* target = GetTarget();
+    if (!target)
+        return 0;
+
+    // Chi is a small integer resource (0-5ish), unlike rage's x10 internal scale - no divisor needed.
+    return static_cast<uint8>(target->GetPower(POWER_CHI));
 }
 
 Unit* ManaValue::GetTarget()

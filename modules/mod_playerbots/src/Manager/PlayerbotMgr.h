@@ -12,7 +12,9 @@
 #include "QueryHolder.h"
 #include "QueryResult.h"
 
+#include <shared_mutex>
 #include <unordered_set>
+#include <vector>
 
 class ChatHandler;
 class PlayerbotAI;
@@ -39,6 +41,15 @@ public:
     PlayerBotMap::const_iterator GetPlayerBotsBegin() const { return playerBots.begin(); }
     PlayerBotMap::const_iterator GetPlayerBotsEnd() const { return playerBots.end(); }
 
+    /// Thread-safe copy of the bot list, for callers on a map-update thread.
+    ///
+    /// playerBots is a std::map mutated on the world/session thread as bots log in and out.
+    /// Walking it directly with the Begin()/End() iterators from a map-update worker - which is
+    /// what the outgoing-packet hook used to do - races with those inserts, and a tree rebalance
+    /// under an active traversal can leave ++it never reaching end(): the worker then spins
+    /// forever and the world thread blocks in MapUpdater::wait(), hanging the whole server.
+    std::vector<Player*> GetPlayerBotsSnapshot() const;
+
     void UpdateAIInternal([[maybe_unused]] uint32 elapsed, [[maybe_unused]] bool minimal = false) override {};
     void UpdateSessions();
     void HandleBotPackets(WorldSession* session);
@@ -61,6 +72,9 @@ protected:
 
     PlayerBotMap playerBots;
     std::unordered_set<ObjectGuid> botLoading;
+
+    /// Guards playerBots. Held exclusively for insert/erase, shared for the snapshot above.
+    mutable std::shared_mutex playerBotsMutex;
 };
 
 class PlayerbotMgr : public PlayerbotHolder

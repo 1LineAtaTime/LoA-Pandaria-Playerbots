@@ -1,7 +1,10 @@
 ﻿#include "RandomItemManager.h"
 
 #include "Player.h"
+#include "PlayerbotAI.h"
 #include "PlayerbotSpec.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 
 #include <bitset>
 #include <map>
@@ -31,6 +34,18 @@ std::vector<uint32> RandomItemManager::GetCachedEquipments(uint32 requiredLevel,
     return _equipCacheNew[requiredLevel][inventoryType];
 }
 
+std::vector<uint32> const& RandomItemManager::GetEquipmentNew(uint32 requiredLevel, uint32 inventoryType) const
+{
+    static std::vector<uint32> const empty;
+    auto const lvlIt = _equipCacheNew.find(requiredLevel);
+    if (lvlIt == _equipCacheNew.end())
+        return empty;
+    auto const typeIt = lvlIt->second.find(inventoryType);
+    if (typeIt == lvlIt->second.end())
+        return empty;
+    return typeIt->second;
+}
+
 void RandomItemManager::Init()
 {
     _viable_slots[EQUIPMENT_SLOT_HEAD].insert(INVTYPE_HEAD);
@@ -52,10 +67,17 @@ void RandomItemManager::Init()
     _viable_slots[EQUIPMENT_SLOT_MAINHAND].insert(INVTYPE_2HWEAPON);
     _viable_slots[EQUIPMENT_SLOT_MAINHAND].insert(INVTYPE_WEAPONMAINHAND);
     _viable_slots[EQUIPMENT_SLOT_MAINHAND].insert(INVTYPE_RANGED);
+    // #621, AC RandomItemMgr.cpp:1645-1647 maps INVTYPE_RANGEDRIGHT next to INVTYPE_RANGED. In 5.4.8 there is no ranged
+    // slot: Player::FindEquipSlot (Player.cpp:10849) sends RANGED (15, bows) and RANGEDRIGHT (26, every gun and
+    // crossbow) to the main hand, so a hunter that only knew type 15 could never be given a gun or crossbow.
+    _viable_slots[EQUIPMENT_SLOT_MAINHAND].insert(INVTYPE_RANGEDRIGHT);
     _viable_slots[EQUIPMENT_SLOT_OFFHAND].insert(INVTYPE_WEAPON);
     _viable_slots[EQUIPMENT_SLOT_OFFHAND].insert(INVTYPE_2HWEAPON);
     _viable_slots[EQUIPMENT_SLOT_OFFHAND].insert(INVTYPE_SHIELD);
-    _viable_slots[EQUIPMENT_SLOT_OFFHAND].insert(INVTYPE_WEAPONMAINHAND);
+    // #622, AC RandomItemMgr.cpp:1641 addEquipmentSlot(INVTYPE_WEAPONOFFHAND, EQUIPMENT_SLOT_OFFHAND): this was
+    // INVTYPE_WEAPONMAINHAND (a main-hand-only type that can never be equipped in the off hand), so every off-hand-only
+    // weapon (type 22, e.g. the rogue off-hand daggers) failed ShouldEquipWeaponForSpec for both slots.
+    _viable_slots[EQUIPMENT_SLOT_OFFHAND].insert(INVTYPE_WEAPONOFFHAND);
     _viable_slots[EQUIPMENT_SLOT_OFFHAND].insert(INVTYPE_HOLDABLE);
     _viable_slots[EQUIPMENT_SLOT_TABARD].insert(INVTYPE_TABARD);
     _viable_slots[EQUIPMENT_SLOT_BACK].insert(INVTYPE_CLOAK);
@@ -138,6 +160,108 @@ void RandomItemManager::Init()
             continue;
         }
         _equipCacheNew[proto->RequiredLevel][proto->InventoryType].push_back(itemId);
+    }
+}
+
+// #534: AC RandomItemMgr::GetRandomPotion (Mgr/Item/RandomItemMgr.cpp:989-1003); the level is capped like AC's
+// NormalizeLevel (:3040-3045, min(level, DEFAULT_MAX_LEVEL)).
+uint32 RandomItemManager::GetRandomPotion(uint32 level, uint32 effect)
+{
+    std::call_once(_potionCacheOnce, [this] { BuildCachePotion(); });
+
+    level = std::min<uint32>(level, DEFAULT_MAX_LEVEL);
+
+    auto const levelItr = _potionCache.find(level);
+    if (levelItr == _potionCache.end())
+        return 0;
+
+    auto const effectItr = levelItr->second.find(effect);
+    if (effectItr == levelItr->second.end() || effectItr->second.empty())
+        return 0;
+
+    return effectItr->second[urand(0, effectItr->second.size() - 1)];
+}
+
+// #534: AC RandomItemMgr::BuildCachePotion (Mgr/Item/RandomItemMgr.cpp:2632-2705), with AC's IsValidItem (:1391-1441)
+// and IsInternalItem (:1368-1389) inlined. Every consumable potion / flask (subclass 1 / 3) that is not bound, needs
+// no profession, and whose use spell has exactly one effect - heal or energize - is cached for the levels from its
+// RequiredLevel up to 13 levels above it (always from level 1 to 13). `unobtainableItems` (AC :1437) has no
+// counterpart on this fork. 5.4.8 result, e.g. level 10: Minor / Lesser Healing Potion (118, 858) and Minor Mana
+// Potion (2455); level 85-90: Master Healing Potion (76097) and Master Mana Potion (76098).
+void RandomItemManager::BuildCachePotion()
+{
+    constexpr uint32 MAX_POTION_LEVEL_DELTA = 13;
+
+    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
+    for (auto const& itr : *itemTemplates)
+    {
+        ItemTemplate const* proto = &itr.second;
+
+        // skip non-consumable items
+        if (proto->Class != ITEM_CLASS_CONSUMABLE)
+            continue;
+
+        // skip non-potion and non-flask subclasses
+        if (proto->SubClass != ITEM_SUBCLASS_POTION && proto->SubClass != ITEM_SUBCLASS_FLASK)
+            continue;
+
+        // skip bound items
+        if (proto->Bonding != BIND_NONE)
+            continue;
+
+        // IsValidItem: no item level, temporary items, area / map / rank restricted, not for a playable class or race
+        if (proto->ItemLevel == 0 || proto->Duration || proto->Area || proto->Map || proto->RequiredCityRank ||
+            proto->RequiredHonorRank || (proto->AllowableClass & CLASSMASK_ALL_PLAYABLE) == 0 ||
+            (proto->AllowableRace & RACEMASK_ALL_PLAYABLE) == 0)
+            continue;
+
+        // IsInternalItem: deprecated flag and the test / placeholder name patterns
+        if (proto->Flags & ITEM_PROTO_FLAG_DEPRECATED)
+            continue;
+
+        char const* name = proto->Name1.c_str();
+        if (strstr(name, "NPC ") || strstr(name, "Monster ") || strstr(name, "Test") || strstr(name, "Deprecated ") ||
+            strstr(name, "[PH]") || strstr(name, "TEST") || strstr(name, "Unused ") || strstr(name, "zzOLD") ||
+            strstr(name, "(test)") || strstr(name, "(OLD)") || strstr(name, "QR") || strstr(name, "2200 "))
+            continue;
+
+        // skip items requiring a profession skill
+        if (proto->RequiredSkill)
+            continue;
+
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(proto->Spells[0].SpellId);
+        if (!spellInfo)
+            continue;
+
+        // skip potions whose primary effect is not heal or energize
+        if (spellInfo->Effects[EFFECT_0].Effect != SPELL_EFFECT_HEAL &&
+            spellInfo->Effects[EFFECT_0].Effect != SPELL_EFFECT_ENERGIZE)
+            continue;
+
+        // do not accept potions / flasks with more than one spell effect, only the first one (EFFECT_0)
+        bool hasOtherEffects = false;
+        for (uint8 i = EFFECT_1; i < MAX_SPELL_EFFECTS; ++i)
+        {
+            if (spellInfo->Effects[i].Effect != 0)
+            {
+                hasOtherEffects = true;
+                break;
+            }
+        }
+
+        if (hasOtherEffects)
+            continue;
+
+        uint32 requiredLevel = proto->RequiredLevel;
+        uint32 effect = spellInfo->Effects[EFFECT_0].Effect;
+        for (uint32 level = std::max(1u, requiredLevel); level <= DEFAULT_MAX_LEVEL; ++level)
+        {
+            // skip levels outside the potion relevance window
+            if (level > MAX_POTION_LEVEL_DELTA && level - requiredLevel > MAX_POTION_LEVEL_DELTA)
+                break;
+
+            _potionCache[level][effect].push_back(itr.first);
+        }
     }
 }
 
@@ -319,6 +443,12 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
 
     std::unordered_set<uint32> mh_weapons;
     std::unordered_set<uint32> oh_weapons;
+    // #626: only weapon subclasses belong in these sets - this function is reached only for ITEM_CLASS_WEAPON
+    // (CanEquipWeapon). Shields and holdables are armor and are handled by CanEquipSubArmor. The old off-hand entries
+    // ITEM_SUBCLASS_ARMOR_SHIELD (6) and ITEM_SUBCLASS_ARMOR_MISCELLANEOUS (0) matched ITEM_SUBCLASS_WEAPON_POLEARM (6)
+    // and ITEM_SUBCLASS_WEAPON_AXE (0): a two-hand polearm (INVTYPE_2HWEAPON is viable for the off hand) passed for
+    // protection warriors/paladins, went into the main hand and blocked the shield (Shield Slam etc. result=31).
+    // AC StatsWeightCalculator::CalculateItemTypePenalty gives a tank's two-hander 0.5*0.1 weight (Mgr/Item/StatsWeightCalculator.cpp:631-643).
 
     switch (playerclass)
     {
@@ -328,7 +458,6 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
             {
                 mh_weapons = { ITEM_SUBCLASS_WEAPON_SWORD, ITEM_SUBCLASS_WEAPON_AXE, ITEM_SUBCLASS_WEAPON_MACE,
                               ITEM_SUBCLASS_WEAPON_DAGGER, ITEM_SUBCLASS_WEAPON_FIST_WEAPON };
-                oh_weapons = { ITEM_SUBCLASS_ARMOR_SHIELD };
             }
             else
             {
@@ -342,12 +471,29 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
             if (spec == Specializations::SPEC_PALADIN_PROTECTION)
             {
                 mh_weapons = { ITEM_SUBCLASS_WEAPON_SWORD, ITEM_SUBCLASS_WEAPON_AXE, ITEM_SUBCLASS_WEAPON_MACE };
-                oh_weapons = { ITEM_SUBCLASS_ARMOR_SHIELD };
             }
             else if (spec == Specializations::SPEC_PALADIN_HOLY)
             {
                 mh_weapons = { ITEM_SUBCLASS_WEAPON_SWORD, ITEM_SUBCLASS_WEAPON_AXE, ITEM_SUBCLASS_WEAPON_MACE };
-                oh_weapons = { ITEM_SUBCLASS_ARMOR_SHIELD, ITEM_SUBCLASS_ARMOR_MISCELLANEOUS };
+            }
+            else
+            {
+                mh_weapons = { ITEM_SUBCLASS_WEAPON_SWORD2, ITEM_SUBCLASS_WEAPON_AXE2, ITEM_SUBCLASS_WEAPON_MACE2,
+                              ITEM_SUBCLASS_WEAPON_POLEARM };
+            }
+            break;
+        }
+        case CLASS_DEATH_KNIGHT:
+        {
+            // #619: this switch had no death knight case, so mh_weapons/oh_weapons stayed empty and every weapon
+            // failed CanEquipWeapon - DK bots were left with empty main/off hand (193/200 on the test DB) and every
+            // rune strike failed with EQUIPPED_ITEM_CLASS. Spec split per AC StatsWeightCalculator::CalculateItemTypePenalty
+            // (Mgr/Item/StatsWeightCalculator.cpp:637,655): frost dual-wields one-handers, blood takes a two-hander;
+            // unholy is a two-hand spec on 5.4.8 (AC leaves it neutral), and a bot without a spec gets a two-hander too.
+            if (spec == Specializations::SPEC_DEATH_KNIGHT_FROST)
+            {
+                mh_weapons = { ITEM_SUBCLASS_WEAPON_SWORD, ITEM_SUBCLASS_WEAPON_AXE, ITEM_SUBCLASS_WEAPON_MACE };
+                oh_weapons = { ITEM_SUBCLASS_WEAPON_SWORD, ITEM_SUBCLASS_WEAPON_AXE, ITEM_SUBCLASS_WEAPON_MACE };
             }
             else
             {
@@ -370,7 +516,6 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
         case CLASS_PRIEST:
         {
             mh_weapons = { ITEM_SUBCLASS_WEAPON_STAFF, ITEM_SUBCLASS_WEAPON_DAGGER, ITEM_SUBCLASS_WEAPON_MACE };
-            oh_weapons = { ITEM_SUBCLASS_ARMOR_MISCELLANEOUS };
             break;
         }
         case CLASS_SHAMAN:
@@ -379,13 +524,11 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
             {
                 mh_weapons = { ITEM_SUBCLASS_WEAPON_DAGGER, ITEM_SUBCLASS_WEAPON_AXE, ITEM_SUBCLASS_WEAPON_MACE,
                               ITEM_SUBCLASS_WEAPON_FIST_WEAPON };
-                oh_weapons = { ITEM_SUBCLASS_ARMOR_MISCELLANEOUS, ITEM_SUBCLASS_ARMOR_SHIELD };
             }
             else if (spec == Specializations::SPEC_SHAMAN_ENHANCEMENT)
             {
                 mh_weapons = { ITEM_SUBCLASS_WEAPON_MACE2, ITEM_SUBCLASS_WEAPON_AXE2, ITEM_SUBCLASS_WEAPON_DAGGER,
                               ITEM_SUBCLASS_WEAPON_AXE,   ITEM_SUBCLASS_WEAPON_MACE, ITEM_SUBCLASS_WEAPON_FIST_WEAPON };
-                oh_weapons = { ITEM_SUBCLASS_ARMOR_SHIELD };
             }
             else
             {
@@ -397,7 +540,6 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
         case CLASS_WARLOCK:
         {
             mh_weapons = { ITEM_SUBCLASS_WEAPON_STAFF, ITEM_SUBCLASS_WEAPON_DAGGER, ITEM_SUBCLASS_WEAPON_SWORD };
-            oh_weapons = { ITEM_SUBCLASS_ARMOR_MISCELLANEOUS };
             break;
         }
         case CLASS_DRUID:
@@ -410,7 +552,6 @@ bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializa
             {
                 mh_weapons = { ITEM_SUBCLASS_WEAPON_STAFF, ITEM_SUBCLASS_WEAPON_DAGGER, ITEM_SUBCLASS_WEAPON_FIST_WEAPON,
                               ITEM_SUBCLASS_WEAPON_MACE };
-                oh_weapons = { ITEM_SUBCLASS_ARMOR_MISCELLANEOUS };
             }
             else if (spec == Specializations::SPEC_DRUID_FERAL)
             {
@@ -686,6 +827,56 @@ static const std::map<uint32, std::tuple<ItemQualities, ItemQualities, uint32, u
     {90,  std::make_tuple(ItemQualities::ITEM_QUALITY_EPIC,     ItemQualities::ITEM_QUALITY_RARE,       40, 15)}    
 };
 
+// #626: the item checks FindBestItemForLevelAndEquip ran inline, moved here unchanged so BotFactory::InitEquipment can
+// filter every cached item the same way (AC PlayerbotFactory::InitEquipment walks the whole list, :2417-2479).
+bool RandomItemManager::IsEquipCandidate(Player* bot, ItemTemplate const* proto)
+{
+    if (!proto)
+        return false;
+
+    uint32 level = (uint32)bot->GetLevel();
+    uint32 bot_class = bot->GetClass();
+
+    if (IsTestItem(proto->ItemId)) return false;
+
+    if (proto->RequiredLevel > level) return false;
+    if ((proto->AllowableClass & bot->GetClassMask()) == 0 || (proto->AllowableRace & bot->GetRaceMask()) == 0) return false;
+    if (level < 10 && proto->ItemLevel > 100) return false;
+
+    if (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR &&
+        proto->Class != ITEM_CLASS_CONTAINER && proto->Class != ITEM_CLASS_PROJECTILE)
+        return false;
+
+    // #730, AC PlayerbotFactory::InitEquipment (Bot/Factory/PlayerbotFactory.cpp:2457-2466) filters the candidates with
+    // CanEquipArmor (body-armor slots) and CanEquipWeapon only. AC's CanEquipArmor is the armor-type check alone (its
+    // CheckItemStats call is commented out, :1950-1977) and CheckItemStats is used for enchants only (:2885). The stat
+    // gate here (CheckItemStats inside CanEquipArmor and in the final else, which every weapon reached) rejected every
+    // item without stats: no level 1-6 two-hander in world.item_template has one, so a randomized level-6 Retribution
+    // paladin got no main hand (t537 w16b Omascon: ilvl avg 4.6 = 74/16, Crusader Strike result=31
+    // EQUIPPED_ITEM_CLASS, melee FAILED x1661), and a level-1 bot got nothing at all (ilvl 0.0). The best candidate is
+    // chosen by StatsWeightCalculator in BotFactory::InitEquipment (AC :2481-2518). CanEquipArmor keeps its stat check
+    // for ItemUsageValue.
+    if (proto->Class == ITEM_CLASS_ARMOR &&
+        (proto->InventoryType == InventoryType::INVTYPE_HEAD || proto->InventoryType == InventoryType::INVTYPE_SHOULDERS ||
+            proto->InventoryType == InventoryType::INVTYPE_CHEST || proto->InventoryType == InventoryType::INVTYPE_WAIST ||
+            proto->InventoryType == InventoryType::INVTYPE_LEGS || proto->InventoryType == InventoryType::INVTYPE_FEET ||
+            proto->InventoryType == InventoryType::INVTYPE_WRISTS || proto->InventoryType == InventoryType::INVTYPE_HANDS ||
+            proto->InventoryType == InventoryType::INVTYPE_ROBE) &&
+        !ShouldEquipArmorForSpec(level, (Classes)bot_class, bot->GetSpecialization(), proto))
+        return false;
+
+    if (proto->Class == ITEM_CLASS_ARMOR &&
+        (proto->SubClass == ItemSubclassArmor::ITEM_SUBCLASS_ARMOR_MISCELLANEOUS ||
+        proto->SubClass == ItemSubclassArmor::ITEM_SUBCLASS_ARMOR_SHIELD) &&
+        !CanEquipSubArmor(bot, proto)) return false;
+
+    if ((proto->Class == ITEM_CLASS_WEAPON) &&
+        !CanEquipWeapon(bot, proto))
+        return false;
+
+    return true;
+}
+
 /*
 * Know issues:
 * Not always wear wearable (plate / mail etc)
@@ -693,17 +884,23 @@ static const std::map<uint32, std::tuple<ItemQualities, ItemQualities, uint32, u
 * Random items stat not supposed to be assigned (ex shaman enhance with intellect spell power etc)
 */
 
-uint32 RandomItemManager::FindBestItemForLevelAndEquip(Player* bot, InventoryType invType)
+uint32 RandomItemManager::FindBestItemForLevelAndEquip(Player* bot, InventoryType invType, int32 desiredQuality, uint32 gearScoreLimit)
 {
     uint32 level = (uint32)bot->GetLevel();
-    uint32 bot_class = bot->GetClass();
-    uint32 bot_race = bot->GetRace();
     int32 delta = std::min(level, 10u);
 
     for (uint32 requiredLevel = bot->GetLevel(); requiredLevel > std::max((int32)bot->GetLevel() - delta, 0); requiredLevel--)
     {
         std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
-        auto& items = _equipCacheNew[requiredLevel][invType];
+        // #620: never mutate the shared cache from map threads - look it up read-only (no operator[] insert)
+        // and shuffle a local copy.
+        auto const lvlIt = _equipCacheNew.find(requiredLevel);
+        if (lvlIt == _equipCacheNew.end())
+            continue;
+        auto const typeIt = lvlIt->second.find(invType);
+        if (typeIt == lvlIt->second.end())
+            continue;
+        std::vector<uint32> items = typeIt->second;
         std::shuffle(items.begin(), items.end(), gen);
 
         for (auto it = items.end(); it != items.begin(); )
@@ -712,14 +909,22 @@ uint32 RandomItemManager::FindBestItemForLevelAndEquip(Player* bot, InventoryTyp
 
             uint32 itemID = *it;
 
-            if (IsTestItem(itemID)) continue;
-
             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemID);
-            if (proto->RequiredLevel > level) continue;
-            if ((proto->AllowableClass & bot->GetClassMask()) == 0 || (proto->AllowableRace & bot->GetRaceMask()) == 0) continue;
-            if (level < 10 && proto->ItemLevel > 100) continue;
+            // #626: test item, level, class/race and the spec armor/weapon/shield/stat checks, shared with
+            // BotFactory::InitEquipment.
+            if (!IsEquipCandidate(bot, proto)) continue;
 
-            // Item Quality
+            // #629, AC PlayerbotFactory.cpp:2446-2454: gear-score cap (ilvl * quality multiplier) and the exact requested quality.
+            if (desiredQuality >= 0)
+            {
+                if (gearScoreLimit != 0 &&
+                    uint32(proto->ItemLevel * PlayerbotAI::GetItemScoreMultiplier(ItemQualities(proto->Quality))) > gearScoreLimit)
+                    continue;
+                if (proto->Quality != uint32(desiredQuality))
+                    continue;
+            }
+            // Item Quality (legacy per-level table, only when no quality was requested)
+            else
             {
                 auto quality_iterator = qualityRules.upper_bound(bot->GetLevel());
                 if (quality_iterator != qualityRules.begin()) --quality_iterator; // Récupérer la tranche correcte
@@ -744,43 +949,6 @@ uint32 RandomItemManager::FindBestItemForLevelAndEquip(Player* bot, InventoryTyp
                 else {
                     continue; // Sinon, ignorer l'objet
                 }
-            }
-
-            if (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR &&
-                proto->Class != ITEM_CLASS_CONTAINER && proto->Class != ITEM_CLASS_PROJECTILE)
-                continue;
-
-            if (proto->Class == ITEM_CLASS_ARMOR &&
-                (proto->InventoryType == InventoryType::INVTYPE_HEAD || proto->InventoryType == InventoryType::INVTYPE_SHOULDERS ||
-                    proto->InventoryType == InventoryType::INVTYPE_CHEST || proto->InventoryType == InventoryType::INVTYPE_WAIST ||
-                    proto->InventoryType == InventoryType::INVTYPE_LEGS || proto->InventoryType == InventoryType::INVTYPE_FEET ||
-                    proto->InventoryType == InventoryType::INVTYPE_WRISTS || proto->InventoryType == InventoryType::INVTYPE_HANDS ||
-                    proto->InventoryType == InventoryType::INVTYPE_ROBE) &&
-                !CanEquipArmor(bot, proto))
-                continue;
-
-            else if (proto->Class == ITEM_CLASS_ARMOR &&
-                (proto->SubClass == ItemSubclassArmor::ITEM_SUBCLASS_ARMOR_MISCELLANEOUS ||
-                proto->SubClass == ItemSubclassArmor::ITEM_SUBCLASS_ARMOR_SHIELD) &&
-                !CanEquipSubArmor(bot, proto)) continue;
-
-            else if ((proto->Class == ITEM_CLASS_WEAPON) &&
-                !CanEquipWeapon(bot, proto))
-                continue;
-
-            else
-            {
-                uint8 sp = 0, ap = 0, tank = 0;
-                for (uint8 j = 0; j < MAX_ITEM_PROTO_STATS; ++j)
-                {
-                    // for ItemStatValue != 0
-                    if (!proto->ItemStat[j].ItemStatValue)
-                        continue;
-
-                    AddItemStats(proto->ItemStat[j].ItemStatType, sp, ap, tank);
-                }
-
-                if (!CheckItemStats((Classes)bot_class, sp, ap, tank)) continue;
             }
 
             // ok ?

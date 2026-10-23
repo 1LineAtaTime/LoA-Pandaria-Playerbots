@@ -407,7 +407,14 @@ int WMOGroup::ConvertToVMAPGroupWmo(FILE *output, bool preciseVectorData)
         {
             // Skip no collision triangles
             bool isRenderFace = (MOPY[2 * i] & WMO_MATERIAL_RENDER) && !(MOPY[2 * i] & WMO_MATERIAL_DETAIL);
-            bool isCollision = MOPY[2 * i] & WMO_MATERIAL_COLLISION || isRenderFace;
+            // P2b (TrinityCore PR #20822, ported by AC; mirrors AC's own
+            // src/tools/vmap4_extractor/wmo.cpp:404-406): a material id of 255 marks a
+            // collision-only face (no render material at all), so it must still be kept even
+            // though WMO_MATERIAL_COLLISION/RENDER are not set on it. AC says it makes no
+            // difference for Blizzard WMOs up to WotLK, and it was already ruled out as the WSG
+            // island cause (mmaps-pipeline.md 2(a)), but it is a correctness gap vs AC either way.
+            bool isCollisionOnlyFace = static_cast<unsigned char>(MOPY[(2 * i) + 1]) == 0xFF; // 255 is a collision-only material id
+            bool isCollision = MOPY[2 * i] & WMO_MATERIAL_COLLISION || isRenderFace || isCollisionOnlyFace;
             if (!isCollision)
                 continue;
             

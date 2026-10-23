@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -26,6 +26,7 @@
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "Config.h"
+#include <numeric>
 
 namespace Trinity
 {
@@ -305,11 +306,11 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
         {
             if (Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(ginfo->BgTypeId))
             {
-                uint32 MinPlayers = bg->GetMinPlayersPerTeam();
+                uint32 MinPlayers = sBattlegroundMgr->GetMinPlayersPerTeam(bg, bracketEntry); // #305, AC BattlegroundQueue.cpp:1134
                 uint32 qHorde = 0;
                 uint32 qAlliance = 0;
-                uint32 q_min_level = bracketEntry->minLevel;
-                uint32 q_max_level = bracketEntry->maxLevel;
+                uint32 q_min_level = bracketEntry->MinLevel;
+                uint32 q_max_level = bracketEntry->MaxLevel;
                 GroupsQueueType::const_iterator itr;
                 for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); ++itr)
                     if (!(*itr)->IsInvitedToBGInstanceGUID)
@@ -514,7 +515,7 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount,
     {
         // remove next player, this is recursive
         // first send removal information
-        if (Player* plr2 = ObjectAccessor::FindPlayer(group->Players.begin()->first))
+        if (Player* plr2 = ObjectAccessor::FindConnectedPlayer(group->Players.begin()->first)) // #630 AC :365
         {
             Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(group->BgTypeId);
             BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(group->BgTypeId, group->ArenaType);
@@ -575,7 +576,7 @@ bool BattlegroundQueue::InviteGroupToBG(GroupQueueInfo* ginfo, Battleground* bg,
         for (std::map<ObjectGuid, PlayerQueueInfo*>::iterator itr = ginfo->Players.begin(); itr != ginfo->Players.end(); ++itr)
         {
             // get the player
-            Player* player = ObjectAccessor::FindPlayer(itr->first);
+            Player* player = ObjectAccessor::FindConnectedPlayer(itr->first); // #630 AC :1331: a member mid-teleport is still invited
             // if offline, skip him, this should not happen - player is removed from queue when he logs out
             if (!player)
                 continue;
@@ -644,7 +645,7 @@ void BattlegroundQueue::FillPlayersToBG(Battleground* bg, BattlegroundBracketId 
         ++Horde_itr;
 
     //if ofc like BG queue invitation is set in config, then we are happy
-    if (sWorld->getIntConfig(CONFIG_BATTLEGROUND_INVITATION_TYPE) == 0)
+    if (sWorld->getIntConfig(CONFIG_BATTLEGROUND_INVITATION_TYPE) == BG_QUEUE_INVITATION_TYPE_NO_BALANCE)
         return;
 
     /*
@@ -779,7 +780,7 @@ bool BattlegroundQueue::CheckNormalMatch(Battleground* /*bg_template*/, Battlegr
     uint32 j = TEAM_ALLIANCE;
     if (m_SelectionPools[TEAM_HORDE].GetPlayerCount() < m_SelectionPools[TEAM_ALLIANCE].GetPlayerCount())
         j = TEAM_HORDE;
-    if (sWorld->getIntConfig(CONFIG_BATTLEGROUND_INVITATION_TYPE) != 0
+    if (sWorld->getIntConfig(CONFIG_BATTLEGROUND_INVITATION_TYPE) != BG_QUEUE_INVITATION_TYPE_NO_BALANCE
         && m_SelectionPools[TEAM_HORDE].GetPlayerCount() >= minPlayers && m_SelectionPools[TEAM_ALLIANCE].GetPlayerCount() >= minPlayers)
     {
         //we will try to invite more groups to team with less players indexed by j
@@ -917,7 +918,7 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
         return;
     }
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketById(bgTemplate->GetMapId(), bracket_id);
+    PvPDifficultyEntry const* bracketEntry = sDBCManager.GetBattlegroundBracketById(bgTemplate->GetMapId(), bracket_id);
     if (!bracketEntry)
     {
         TC_LOG_ERROR("bg.battleground", "Battleground: Update: bg bracket entry not found for map %u bracket id %u", bgTemplate->GetMapId(), bracket_id);
@@ -925,7 +926,8 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
     }
 
     // get the min. players per team, properly for larger arenas as well. (must have full teams for arena matches!)
-    uint32 MinPlayersPerTeam = bgTemplate->GetMinPlayersPerTeam();
+    // #305: bracket-aware, AC BattlegroundQueue.cpp:847 (low-levels override; 0 = template value, the default)
+    uint32 MinPlayersPerTeam = sBattlegroundMgr->GetMinPlayersPerTeam(bgTemplate, bracketEntry);
     uint32 MaxPlayersPerTeam = bgTemplate->GetMaxPlayersPerTeam();
 
     if (bgTemplate->IsArena())
@@ -944,7 +946,7 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
     m_SelectionPools[TEAM_ALLIANCE].Init();
     m_SelectionPools[TEAM_HORDE].Init();
 
-    if (bgTemplate->IsBattleground() && !bgTemplate->IsRatedBG())
+    if (bgTemplate->IsBattleground() && bgTypeId != BATTLEGROUND_RB && !bgTemplate->IsRatedBG())
     {
         if (CheckPremadeMatch(bracket_id, MinPlayersPerTeam, MaxPlayersPerTeam))
         {
@@ -1442,7 +1444,7 @@ void SoloQueue::DoMatchmaking(GroupQueueInfo* ginfo, uint32 extraDiff, bool stro
         return;
 
     Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(BATTLEGROUND_AA);
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketById(bg->GetMapId(), bracketId);
+    PvPDifficultyEntry const* bracketEntry = sDBCManager.GetBattlegroundBracketById(bg->GetMapId(), bracketId);
     if (!bracketEntry)
     {
         TC_LOG_ERROR("server", "SoloQueue::DoMatchmaking: bg bracket entry not found for map %u bracket id %u", bg->GetMapId(), bracketId);
@@ -1817,11 +1819,11 @@ BattlegroundBracketId SoloQueue::GetSoloQueueBracketId()
     if (!bg)
         return BG_BRACKET_ID_FIRST;
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), DEFAULT_MAX_LEVEL);
+    PvPDifficultyEntry const* bracketEntry = sDBCManager.GetBattlegroundBracketByLevel(bg->GetMapId(), DEFAULT_MAX_LEVEL);
     if (!bracketEntry)
         return BG_BRACKET_ID_FIRST;
 
-    return BattlegroundBracketId(bracketEntry->bracketId);
+    return BattlegroundBracketId(bracketEntry->RangeIndex);
 }
 
 /*********************************************************/
@@ -1830,7 +1832,7 @@ BattlegroundBracketId SoloQueue::GetSoloQueueBracketId()
 
 bool BGQueueInviteEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
-    Player* player = ObjectAccessor::FindPlayer(m_PlayerGuid);
+    Player* player = ObjectAccessor::FindConnectedPlayer(m_PlayerGuid); // #630 AC :1375/:1413
     // player logged off (we should do nothing, he is correctly removed from queue in another procedure)
     if (!player)
         return true;
@@ -1873,7 +1875,7 @@ void BGQueueInviteEvent::Abort(uint64 /*e_time*/)
 */
 bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
-    Player* player = ObjectAccessor::FindPlayer(m_PlayerGuid);
+    Player* player = ObjectAccessor::FindConnectedPlayer(m_PlayerGuid); // #630 AC :1375/:1413
     if (!player)
         // player logged off (we should do nothing, he is correctly removed from queue in another procedure)
         return true;

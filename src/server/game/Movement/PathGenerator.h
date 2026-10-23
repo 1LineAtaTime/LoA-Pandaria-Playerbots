@@ -61,6 +61,11 @@ class TC_GAME_API PathGenerator
         // Calculate the path from owner to given destination
         // return: true if new path was calculated, false otherwise (no change needed)
         bool CalculatePath(float destX, float destY, float destZ, bool forceDest = false, bool straightLine = false, bool assumeSourceOnGround = false);
+        // issue #61: overload that takes an explicit start point instead of always using the
+        // source's live position - needed by callers that must check a specific path SEGMENT
+        // (e.g. Map::CheckCollisionAndGetValidCoords checking waypoint N -> N+1), not "from here
+        // to there". Mirrors the WotLK reference's two-point CalculatePath overload.
+        bool CalculatePath(float x, float y, float z, float destX, float destY, float destZ, bool forceDest = false, bool straightLine = false, bool assumeSourceOnGround = false);
         bool IsInvalidDestinationZ(Unit const* target) const;
         static bool IsWalkableClimb(float x, float y, float z, float destX, float destY, float destZ, float sourceHeight);
         static float GetRequiredHeightToClimb(float x, float y, float z, float destX, float destY, float destZ, float sourceHeight);

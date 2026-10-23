@@ -19,6 +19,7 @@
 #include "ScriptedCreature.h"
 #include "hyjal.h"
 #include "hyjal_trash.h"
+#include "hyjalAI.h"
 
 enum Spells
 {
@@ -452,7 +453,7 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
         }
@@ -470,7 +471,7 @@ public:
             {
                 float x, y, z;
                 me->GetPosition(x, y, z);
-                Creature* trigger = me->SummonCreature(NPC_TRIGGER, x+8, y+8, z+25+rand()%10, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 1000);
+                Creature* trigger = me->SummonCreature(NPC_TRIGGER, x+8, y+8, z+25+rand()%10, me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 1000ms);
                 if (trigger)
                 {
                     trigger->SetVisible(false);
@@ -493,7 +494,7 @@ public:
                         {
                             Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                             if (target && target->IsAlive())
-                                me->AddThreat(target, 0.0f);
+                                me->GetThreatManager().AddThreat(target, 0.0f);
                         } else if (instance->GetData(DATA_ALLIANCE_RETREAT) && instance->GetData(DATA_HORDE_RETREAT)){
                             //do overrun
                         }
@@ -574,13 +575,13 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
                 else
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_JAINAPROUDMOORE));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
             if (waypointId == LastOverronPos && IsOverrun)
@@ -676,13 +677,13 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
                 else
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_JAINAPROUDMOORE));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
             if (waypointId == LastOverronPos && IsOverrun)
@@ -790,13 +791,13 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
                 else
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_JAINAPROUDMOORE));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
         }
@@ -806,15 +807,15 @@ public:
             switch (urand(0, 2))
             {
                 case 0:
-                    DoSpawnCreature(17902, 3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000);
-                    DoSpawnCreature(17902, -3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000);
+                    DoSpawnCreature(17902, 3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
+                    DoSpawnCreature(17902, -3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
                     break;
                 case 1:
-                    DoSpawnCreature(17903, 3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000);
-                    DoSpawnCreature(17903, -3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000);
+                    DoSpawnCreature(17903, 3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
+                    DoSpawnCreature(17903, -3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
                     break;
                 case 2:
-                    DoSpawnCreature(RAND(17902, 17903), 3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000);
+                    DoSpawnCreature(RAND(17902, 17903), 3, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
                     break;
             }
         }
@@ -906,13 +907,13 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
                 else
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_JAINAPROUDMOORE));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
         }
@@ -1005,13 +1006,13 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
                 else
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_JAINAPROUDMOORE));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
         }
@@ -1095,13 +1096,13 @@ public:
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
                 else
                 {
                     Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_JAINAPROUDMOORE));
                     if (target && target->IsAlive())
-                        me->AddThreat(target, 0.0f);
+                        me->GetThreatManager().AddThreat(target, 0.0f);
                 }
             }
         }
@@ -1187,7 +1188,7 @@ public:
                 Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                 if (target && target->IsAlive())
                 {
-                    me->AddThreat(target, 0.0f);
+                    me->GetThreatManager().AddThreat(target, 0.0f);
                     DoCast(target, SPELL_FROST_BREATH, true);
                 }
             }
@@ -1304,7 +1305,7 @@ public:
                 Unit* target = Unit::GetUnit(*me, instance->GetGuidData(DATA_THRALL));
                 if (target && target->IsAlive())
                 {
-                    me->AddThreat(target, 0.0f);
+                    me->GetThreatManager().AddThreat(target, 0.0f);
                     DoCast(target, SPELL_GARGOYLE_STRIKE, true);
                 }
             }

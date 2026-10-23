@@ -20,12 +20,14 @@
 #include "ScriptedCreature.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 #include "MapManager.h"
 #include "Spell.h"
 #include "Vehicle.h"
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "CreatureTextMgr.h"
 #include "Unit.h"
 #include "Player.h"
@@ -314,7 +316,7 @@ class boss_rook_stonetoe : public CreatureScript
                 _Reset();
 
                 scheduler
-                    .Schedule(Seconds(1), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(1), [this](TaskContext context)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
@@ -445,7 +447,7 @@ class boss_rook_stonetoe : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (hasEvade)
                     return;
@@ -589,7 +591,7 @@ class boss_rook_stonetoe : public CreatureScript
                             DoCast(me, SPELL_MISSERY_SORROW_GLOOM);
 
                             for (auto&& itr : invRookDespairType)
-                                if (Creature* rookSpirits = me->SummonCreature(itr.first, fallenProtectorsCenterPos.GetPositionX() + frand(-2.0f, 2.0f), fallenProtectorsCenterPos.GetPositionY() + frand(-2.0f, 2.0f), 450.5f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                                if (Creature* rookSpirits = me->SummonCreature(itr.first, fallenProtectorsCenterPos.GetPositionX() + frand(-2.0f, 2.0f), fallenProtectorsCenterPos.GetPositionY() + frand(-2.0f, 2.0f), 450.5f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000ms))
                                     rookSpirits->GetMotionMaster()->MoveJump(itr.second.GetPositionX(), itr.second.GetPositionY(), itr.second.GetPositionZ(), 15.0f, 15.0f, EVENT_JUMP);
 
 
@@ -731,7 +733,7 @@ class boss_he_softfoot : public CreatureScript
                 _Reset();
 
                 scheduler
-                    .Schedule(Seconds(1), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(1), [this](TaskContext context)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
@@ -868,7 +870,7 @@ class boss_he_softfoot : public CreatureScript
                 return 0;
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (hasEvade)
                     return;
@@ -1012,7 +1014,7 @@ class boss_he_softfoot : public CreatureScript
                             if (Creature* rook = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_ROOK_STONETOE) : ObjectGuid::Empty))
                                 rook->AI()->SetData(TYPE_GO_LONG_CLEAR, 1);
 
-                            if (Creature* anguish = me->SummonCreature(NPC_EMBODIED_ANGUISH, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                            if (Creature* anguish = me->SummonCreature(NPC_EMBODIED_ANGUISH, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000ms))
                                 anguish->CastSpell(anguish, SPELL_MARK_OF_ANGUISH, false);
 
                             scheduler
@@ -1093,7 +1095,7 @@ class boss_sun_tenderheart : public CreatureScript
                 _Reset();
 
                 scheduler
-                    .Schedule(Seconds(1), [this](TaskContext /*context*/)
+                    .Schedule(Seconds(1), [this](TaskContext context)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
                 });
@@ -1228,7 +1230,7 @@ class boss_sun_tenderheart : public CreatureScript
                 }
             };
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (hasEvade)
                     return;
@@ -1367,13 +1369,13 @@ class boss_sun_tenderheart : public CreatureScript
                             GetPositionWithDistInOrientation(me, 26.5f, sOri, x, y);
 
                             // Despair
-                            if (Creature* despair = me->SummonCreature(NPC_EMBODIED_DESPAIR, fallenProtectorsCenterPos.GetPositionX() + frand(-2.0f, 2.0f), fallenProtectorsCenterPos.GetPositionY() + frand(-2.0f, 2.0f), 450.5f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                            if (Creature* despair = me->SummonCreature(NPC_EMBODIED_DESPAIR, fallenProtectorsCenterPos.GetPositionX() + frand(-2.0f, 2.0f), fallenProtectorsCenterPos.GetPositionY() + frand(-2.0f, 2.0f), 450.5f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000ms))
                                 despair->GetMotionMaster()->MoveJump(x, y, 418.1f, 15.0f, 15.0f, EVENT_JUMP);
 
                             // Desperation always in inverse side
                             GetPositionWithDistInOrientation(me, 26.5f, Position::NormalizeOrientation(sOri - M_PI), x, y);
 
-                            if (Creature* despair = me->SummonCreature(NPC_EMBODIED_DESPERATION, fallenProtectorsCenterPos.GetPositionX() + frand(-2.0f, 2.0f), fallenProtectorsCenterPos.GetPositionY() + frand(-2.0f, 2.0f), 450.5f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                            if (Creature* despair = me->SummonCreature(NPC_EMBODIED_DESPERATION, fallenProtectorsCenterPos.GetPositionX() + frand(-2.0f, 2.0f), fallenProtectorsCenterPos.GetPositionY() + frand(-2.0f, 2.0f), 450.5f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000ms))
                                 despair->GetMotionMaster()->MoveJump(x, y, 418.1f, 15.0f, 15.0f, EVENT_JUMP);
 
                             scheduler
@@ -1460,7 +1462,7 @@ struct npc_embodied_misery : public ScriptedAI
 
         // On Heroic they share health.
         scheduler
-            .Schedule(Seconds(1), [this](TaskContext /*context*/)
+            .Schedule(Seconds(1), [this](TaskContext context)
         {
             if (summonerEntry == NPC_ROOK_STONETOE)
                 DoCast(me, SPELL_SHARED_TORMENT);
@@ -1499,7 +1501,7 @@ struct npc_embodied_misery : public ScriptedAI
                     {
                         me->SetInCombatState(player);
                         player->SetInCombatWith(me);
-                        me->AddThreat(player, 0.0f);
+                        me->GetThreatManager().AddThreat(player, 0.0f);
                     }
                 }
             }
@@ -1570,7 +1572,7 @@ struct npc_embodied_sorrow : public ScriptedAI
 
         // On Heroic they share health.
         scheduler
-            .Schedule(Seconds(1), [this](TaskContext /*context*/)
+            .Schedule(Seconds(1), [this](TaskContext context)
         {
             if (summonerEntry == NPC_ROOK_STONETOE)
                 DoCast(me, SPELL_SHARED_TORMENT);
@@ -1609,7 +1611,7 @@ struct npc_embodied_sorrow : public ScriptedAI
                     {
                         me->SetInCombatState(player);
                         player->SetInCombatWith(me);
-                        me->AddThreat(player, 0.0f);
+                        me->GetThreatManager().AddThreat(player, 0.0f);
                     }
                 }
             }
@@ -1679,7 +1681,7 @@ struct npc_embodied_gloom : public ScriptedAI
 
         // On Heroic they share health.
         scheduler
-            .Schedule(Seconds(1), [this](TaskContext /*context*/)
+            .Schedule(Seconds(1), [this](TaskContext context)
         {
             if (summonerEntry == NPC_ROOK_STONETOE)
                 DoCast(me, SPELL_SHARED_TORMENT);
@@ -1718,7 +1720,7 @@ struct npc_embodied_gloom : public ScriptedAI
                     {
                         me->SetInCombatState(player);
                         player->SetInCombatWith(me);
-                        me->AddThreat(player, 0.0f);
+                        me->GetThreatManager().AddThreat(player, 0.0f);
                     }
                 }
             }
@@ -1847,7 +1849,7 @@ struct npc_embodied_anguish : public ScriptedAI
             DoCast(me, SPELL_SHADOW_WEAKNESS_TRANSFER, true);
 
             scheduler
-                .Schedule(Milliseconds(500), [this](TaskContext /*context*/)
+                .Schedule(Milliseconds(500), [this](TaskContext context)
             {
                 DoCast(me, SPELL_MARK_OF_ANGUISH, true);
             });
@@ -2084,7 +2086,7 @@ struct npc_golden_lotus_trigger : public ScriptedAI
         me->SetDisplayFromModel(1);
 
         scheduler
-            .Schedule(Milliseconds(2500), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(2500), [this](TaskContext context)
         {
             if (Creature* embodiedSpirit = me->SummonCreature(goldenLotusCorrupedType.find(me->GetEntry())->second, *me, TEMPSUMMON_MANUAL_DESPAWN))
                 embodiedSpirit->CastSpell(me, VEHICLE_SPELL_RIDE_HARDCODED, true);

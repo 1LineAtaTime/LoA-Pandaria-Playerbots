@@ -59,8 +59,7 @@ void DpsHunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     triggers.push_back(
         new TriggerNode("black arrow", NextAction::array(0, new NextAction("black arrow", 19.0f), nullptr)));
-    triggers.push_back(
-        new TriggerNode("low mana", NextAction::array(0, new NextAction("viper sting", 23.0f), nullptr)));
+    // #521: "low mana -> viper sting" removed: Viper Sting is not learnable in 5.4.8 (cls.py hunter 2026-10-04).
     triggers.push_back(
         new TriggerNode("hunter's mark", NextAction::array(0, new NextAction("hunter's mark", 31.0f), nullptr)));
     triggers.push_back(new TriggerNode("concussive shot on snare target",
@@ -71,9 +70,12 @@ void DpsHunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
 void DpsAoeHunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
+    // #380 (AC GenericHunterStrategy.cpp:89 AoEHunterStrategy): light aoe -> multi-shot at AC's 21.0 (was 20.0).
     triggers.push_back(
-        new TriggerNode("light aoe", NextAction::array(0, new NextAction("multi-shot", 20.0f), nullptr)));
-    triggers.push_back(new TriggerNode("medium aoe", NextAction::array(0, new NextAction("volley", 21.0f), nullptr)));
+        new TriggerNode("light aoe", NextAction::array(0, new NextAction("multi-shot", 21.0f), nullptr)));
+    // #521 (AC GenericHunterStrategy.cpp:175-176): AC's "volley channel check -> cancel channel" and
+    // "medium aoe -> volley" are removed: Volley is not learnable in 5.4.8 (cls.py hunter 2026-10-04:
+    // NOT-LEARNABLE); no AC-documented replacement exists, so no AoE edge is invented in its place.
     triggers.push_back(
         new TriggerNode("serpent sting on attacker",
                         NextAction::array(0, new NextAction("serpent sting on attacker", 17.0f), nullptr)));

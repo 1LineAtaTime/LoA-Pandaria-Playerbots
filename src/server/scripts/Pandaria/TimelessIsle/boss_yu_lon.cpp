@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ObjectMgr.h"
+#include "ScriptMgr.h"
 #include "timeless_isle.h"
 
 #define BOSS_YU_LON 0
@@ -170,7 +171,8 @@ class boss_yu_lon : public CreatureScript
                     me->SetHealth(391000000/*me->GetMaxHealth()*/);
 
                     me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                    me->DeleteThreatList();
+                    me->GetThreatManager().RemoveMeFromThreatLists();
+                    me->GetThreatManager().ClearAllThreat();
 
                     summons.DespawnAll();
                     me->RemoveAllAreasTrigger();
@@ -206,7 +208,7 @@ class boss_yu_lon : public CreatureScript
                     summon->CastSpell(summon, SPELL_JADEFIRE_BLAZE, true);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 me->AddUnitState(UNIT_STATE_EVADE);
 
@@ -374,7 +376,7 @@ struct npc_jadefire_wall : public ScriptedAI
         me->SetFacingTo(MIDDLE_FACING_ANGLE);
 
         scheduler
-            .Schedule(Milliseconds(2000), [this](TaskContext /*context*/)
+            .Schedule(Milliseconds(2000), [this](TaskContext context)
         {
             GetPositionWithDistInOrientation(me, 146.0f, me->GetOrientation(), x, y);
             me->GetMotionMaster()->MovePoint(0, x, y, me->GetPositionZ(), me->GetOrientation());
@@ -382,7 +384,7 @@ struct npc_jadefire_wall : public ScriptedAI
         });
     }
 
-    void EnterEvadeMode() override { }
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override { }
 
     void UpdateAI(uint32 diff) override
     {

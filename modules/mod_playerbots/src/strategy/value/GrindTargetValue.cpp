@@ -1,8 +1,13 @@
 #include "GrindTargetValue.h"
 
+#include "LootMgr.h"
+#include "ObjectMgr.h"
 #include "Playerbots.h"
 #include "SharedDefines.h"
 #include "ServerFacade.h"
+
+#include <cmath>
+#include <unordered_map>
 
 Unit* GrindTargetValue::Calculate()
 {
@@ -41,12 +46,37 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
     }
 
     GuidVector targets = *context->GetValue<GuidVector>("possible targets");
+
+    // issue #62: "no grind target" was the dominant reason bots never fought, which starves quest
+    // objectives. Record why candidates are rejected, for the watched bots, at most every 10 s.
+    bool const debugBot =
+        !sPlayerbotAIConfig->debugBotNames.empty() && sPlayerbotAIConfig->debugBotNames.count(bot->GetName());
+    uint32 candidates = 0;
+    char const* lastReject = "none";
+
+    auto debugReport = [&]()
+    {
+        if (!debugBot)
+            return;
+        static thread_local std::map<ObjectGuid, uint32> lastLog;
+        uint32 const now = getMSTime();
+        uint32& last = lastLog[bot->GetGUID()];
+        if (last && getMSTimeDiff(last, now) < 10000)
+            return;
+        last = now;
+        TC_LOG_DEBUG("playerbots", "[GRIND] %s grind targets: possible=%zu candidates=%u lastReject=%s",
+                     bot->GetName().c_str(), targets.size(), candidates, lastReject);
+    };
+
     if (targets.empty())
+    {
+        debugReport();
         return nullptr;
+    }
 
     float distance = 0;
     Unit* result = nullptr;
-    // std::unordered_map<uint32, bool> needForQuestMap;
+    std::unordered_map<uint32, bool> needForQuestMap;
 
     for (ObjectGuid const guid : targets)
     {
@@ -55,30 +85,49 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
         if (!unit)
             continue;
 
+        ++candidates;
+
         if (unit->isDead()) continue;
+        // #843 (AC GrindTargetValue.cpp:64-65): a unit that is leaving the world is no grind target.
+        if (!unit->IsInWorld() || unit->IsDuringRemoveFromWorld())
+            continue;
 
         auto& rep = bot->ToPlayer()->GetReputationMgr();
         if (unit->ToCreature() && !unit->ToCreature()->GetCreatureTemplate()->lootid &&
             bot->GetReactionTo(unit) >= REP_NEUTRAL)
         {
+            lastReject = "no lootid + not hostile";
             continue;
         }
 
         if (!bot->IsHostileTo(unit) && unit->GetNpcFlags() != UNIT_NPC_FLAG_NONE)
         {
+            lastReject = "friendly npc with npc flags";
             continue;
         }
 
-        /*if (!bot->isHonorOrXPTarget(unit))
+        if (!bot->IsHonorOrXPTarget(unit))
         {
+            lastReject = "gray (no honor/xp)";
             continue;
-        }*/
+        }
 
-        if (abs(bot->GetPositionZ() - unit->GetPositionZ()) > INTERACTION_DISTANCE)
+        // AC parity (#62/owner rule): AC filters on INTERACTION_DISTANCE vertical offset (AC GrindTargetValue.cpp:77).
+        // #843: AC's INTERACTION_DISTANCE is 5.5 yd (AC ObjectDefines.h:24), this core's is 5.0 (ObjectDefines.h:24), so
+        // the same check rejected every mob 5.0-5.5 yd above or below the bot here (the last reject reason in 140 of the
+        // 192 w54 [GRIND] lines). Use AC's value so the grind pick matches AC on the same slope.
+        constexpr float AC_INTERACTION_DISTANCE = 5.5f;
+        if (std::fabs(bot->GetPositionZ() - unit->GetPositionZ()) > AC_INTERACTION_DISTANCE)
+        {
+            lastReject = "z difference over 5.5 yd";
             continue;
+        }
 
         if (!bot->InBattleground() && GetTargetingPlayerCount(unit) > assistCount)
+        {
+            lastReject = "already targeted by another player";
             continue;
+        }
 
         // if (!bot->InBattleground() && master && master->GetDistance(unit) >= sPlayerbotAIConfig->grindDistance &&
         // !sRandomPlayerbotMgr->IsRandomBot(bot)) continue;
@@ -93,29 +142,44 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
         }
 
         if (!bot->InBattleground() && (int)unit->GetLevel() - (int)bot->GetLevel() > 4 && !unit->GetGUID().IsPlayer())
+        {
+            lastReject = "more than 4 levels above the bot";
             continue;
-
-        // if (needForQuestMap.find(unit->GetEntry()) == needForQuestMap.end())
-        //     needForQuestMap[unit->GetEntry()] = needForQuest(unit);
-
-        // if (!needForQuestMap[unit->GetEntry()])
-        // {
-        //     Creature* creature = dynamic_cast<Creature*>(unit);
-        //     if ((urand(0, 100) < 60 || (context->GetValue<TravelTarget*>("travel target")->Get()->isWorking() &&
-        //         context->GetValue<TravelTarget*>("travel target")->Get()->getDestination()->getName() != "GrindTravelDestination")))
-        //     {
-        //         continue;
-        //     }
-        // }
+        }
 
         if (Creature* creature = unit->ToCreature())
             if (CreatureTemplate const* CreatureTemplate = creature->GetCreatureTemplate())
                 if (CreatureTemplate->rank > CREATURE_ELITE_NORMAL && !AI_VALUE(bool, "can fight elite"))
+                {
+                    lastReject = "elite and cannot fight elite";
                     continue;
+                }
 
         if (!bot->IsWithinLOSInMap(unit))
         {
+            lastReject = "no line of sight";
             continue;
+        }
+
+        // AC parity (GrindTargetValue.cpp:108-121): while actively travelling (not just wandering/idle),
+        // only accept mobs within their aggro range (+10, capped at 30 yd) unless a quest needs them.
+        bool inactiveGrindStatus =
+            botAI->GetRpgInfo().GetStatus() != RPG_WANDER_RANDOM && botAI->GetRpgInfo().GetStatus() != RPG_IDLE;
+
+        float aggroRange = 30.0f;
+        if (unit->ToCreature())
+            aggroRange = std::min(30.0f, unit->ToCreature()->GetAttackDistance(bot) + 10.0f);
+        bool outOfAggro = unit->ToCreature() && bot->GetDistance(unit) > aggroRange;
+        if (inactiveGrindStatus && outOfAggro)
+        {
+            if (needForQuestMap.find(unit->GetEntry()) == needForQuestMap.end())
+                needForQuestMap[unit->GetEntry()] = needForQuest(unit);
+
+            if (!needForQuestMap[unit->GetEntry()])
+            {
+                lastReject = "out of aggro range while travelling and not needed for quest";
+                continue;
+            }
         }
 
         if (group)
@@ -146,13 +210,15 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
         }
     }
 
+    debugReport();
     return result;
 }
 
 bool GrindTargetValue::needForQuest(Unit* target)
 {
-    /*bool justCheck = (bot->GetGUID() == target->GetGUID());
-
+    // AC parity port: AC's needForQuest walked RequiredNpcOrGo[]/CreatureOrGOCount[] (WotLK quest
+    // layout). MoP's Quest class replaced that with QuestObjective + per-slot storage indices, so
+    // this is a QUEST_OBJECTIVE_MONSTER port of the same check, not a literal copy.
     QuestStatusMap& questMap = bot->getQuestStatusMap();
     for (auto& quest : questMap)
     {
@@ -164,63 +230,37 @@ bool GrindTargetValue::needForQuest(Unit* target)
         if (!questId)
             continue;
 
-        QuestStatus status = bot->GetQuestStatus(questId);
+        if (bot->GetQuestStatus(questId) != QUEST_STATUS_INCOMPLETE)
+            continue;
 
-        if ((status == QUEST_STATUS_COMPLETE && !bot->GetQuestRewardStatus(questId)))
+        if (questTemplate->GetQuestLevel() > bot->GetLevel() + 5)
+            continue;
+
+        uint16 logSlot = bot->FindQuestSlot(questId);
+        if (logSlot >= MAX_QUEST_LOG_SIZE)
+            continue;
+
+        for (QuestObjective const& objective : questTemplate->GetObjectives())
         {
-            if (!justCheck && !target->hasInvolvedQuest(questId))
+            if (objective.Type != QUEST_OBJECTIVE_MONSTER)
                 continue;
 
-            return true;
-        }
-        else if (status == QUEST_STATUS_INCOMPLETE)
-        {
-            QuestStatusData* questStatus = sTravelMgr->getQuestStatus(bot, questId);
-
-            if (questTemplate->GetQuestLevel() > bot->GetLevel() + 5)
+            if (uint32(objective.ObjectID) != target->GetEntry())
                 continue;
 
-            for (int j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
-            {
-                int32 entry = questTemplate->RequiredNpcOrGo[j];
-
-                if (entry && entry > 0)
-                {
-                    int required = questTemplate->RequiredNpcOrGoCount[j];
-                    int available = questStatus->CreatureOrGOCount[j];
-
-                    if (required && available < required && (target->GetEntry() == entry || justCheck))
-                        return true;
-                }
-
-                if (justCheck)
-                {
-                    int32 itemId = questTemplate->RequiredItemId[j];
-
-                    if (itemId && itemId > 0)
-                    {
-                        uint32 required = questTemplate->RequiredItemCount[j];
-                        uint32 available = questStatus->ItemCount[j];
-
-                        if (required && available < required)
-                            return true;
-                    }
-                }
-            }
-
-            if (!justCheck)
-            {
-                if (CreatureTemplate const* data = sObjectMgr->GetCreatureTemplate(target->GetEntry()))
-                {
-                    if (uint32 lootId = data->lootid)
-                    {
-                        if (LootTemplates_Creature.HaveQuestLootForPlayer(lootId, bot))
-                            return true;
-                    }
-                }
-            }
+            if (bot->GetQuestSlotCounter(logSlot, objective.StorageIndex) < objective.Amount)
+                return true;
         }
-    }*/
+    }
+
+    if (CreatureTemplate const* data = sObjectMgr->GetCreatureTemplate(target->GetEntry()))
+    {
+        if (uint32 lootId = data->lootid)
+        {
+            if (LootTemplates_Creature.HaveQuestLootForPlayer(lootId, bot))
+                return true;
+        }
+    }
 
     return false;
 }

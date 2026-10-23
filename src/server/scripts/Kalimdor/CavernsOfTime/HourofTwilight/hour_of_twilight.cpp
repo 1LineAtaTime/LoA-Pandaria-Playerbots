@@ -23,6 +23,7 @@
 #include "VehicleDefines.h"
 #include "hour_of_twilight.h"
 #include "Player.h"
+#include "Log.h"
 
 enum Adds
 {
@@ -73,6 +74,7 @@ enum eEvents
     EVENT_WATER_SHIELD                 = 29,
     EVENT_ESCORT_TO_WALL               = 30,
     EVENT_GALAKROND_REACH              = 31,
+    EVENT_CORRUPTED_SLIME              = 32, // Refs #696: Thrall 54634's slime drip during the Benedictus escort
 };
 
 enum eSpells
@@ -88,6 +90,9 @@ enum eSpells
     SPELL_RESSURECTION                 = 145728,
     SPELL_WATER_SHIELD                 = 103688,
     SPELL_MOLTEN_FURY                  = 103905,
+    SPELL_THRALL_BLOODLUST             = 103834, // Thrall 55779 spell1 (creature_template); party haste +50%, 45 s, no Sated
+    SPELL_THRALL_ICY_TOMB              = 103252, // boss_arcurion.cpp SPELL_ICY_TOMB (cast + AddAura on Thrall)
+    SPELL_THRALL_ICY_TOMB_EFF          = 103251, // boss_arcurion.cpp SPELL_ICY_TOMB_EFF
 
     // Arcurion 
     SPELL_APPEARS                      = 104767, // for spawn 
@@ -228,6 +233,30 @@ uint32 GetCurrentPlayersCount(Creature* me, ObjectGuid ownerGUID)
 const Position GenerateMovement(Position pos)
 {
     return { pos.GetPositionX() + frand(-2.5f, 2.5f), pos.GetPositionY() + frand(-3.0f, 3.0f), pos.GetPositionZ(), pos.GetOrientation() };
+}
+
+// Refs #673 (w68): the escort Thralls only advance through MovementInform(POINT_MOTION_TYPE) -> EVENT_ESCORT. An ambush
+// that engages Thrall while he walks to a waypoint replaces the point generator with MoveChase (both MOTION_SLOT_ACTIVE,
+// MotionMaster::MoveChase/MovePoint), and PointMovementGenerator::DoFinalize never informs, so no MovementInform comes.
+// When the last ambusher dies, Thrall's combat just ends (Unit::setDeathState -> CombatStop, no evade, no Reset()), and no
+// EVENT_ESCORT is left scheduled: he stands there for good (w62-w64, w68: Thrall 54548 at the canyon-entrance ambush for
+// the whole 600 s cap; w65/w67 worked when the ambush ended through an evade, whose Reset() reschedules the escort).
+// True when an escort that has started and is not finished has nothing driving it: out of combat, not evading (UpdateAI
+// does not run then anyway), not walking to a point, and no EVENT_ESCORT pending.
+static bool HotEscortNeedsResume(Creature* me, EventMap const& nonCombatEvents, uint32 eventId)
+{
+    return !me->IsInCombat() && !me->IsInEvadeMode() &&
+        me->GetMotionMaster()->GetCurrentMovementGeneratorType() != POINT_MOTION_TYPE &&
+        !nonCombatEvents.IsScheduled(eventId);
+}
+
+// Refs #673: escort state lines for the stage drivers (Server.log; the playerbots logger is the one the test conf enables).
+static void HotEscortLog(Creature* me, char const* what, uint32 wp)
+{
+    Unit* victim = me->GetVictim();
+    TC_LOG_DEBUG("playerbots", "[HOTESCORT] %u %s wp=%u pos=(%.1f, %.1f, %.1f) combat=%u evade=%u victim=%u mgen=%u",
+        me->GetEntry(), what, wp, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), uint32(me->IsInCombat()),
+        uint32(me->IsInEvadeMode()), victim ? victim->GetEntry() : 0u, uint32(me->GetMotionMaster()->GetCurrentMovementGeneratorType()));
 }
 
 // Life warden 55549
@@ -431,6 +460,9 @@ class npc_hour_of_twilight_life_warden_thrall : public CreatureScript
             {
                 if (action == ACTION_FLY_TO_DRAGON_SOUL)
                 {
+                    // Refs #696: active for the flight (see npc_thrall_asira ACTION_ASIRA_DEATH); point 6 summons Thrall 54634 and
+                    // despawns the warden, which drops the flag.
+                    me->setActive(true, ActiveFlags::Script);
                     me->SetCanFly(true);
                     me->GetMotionMaster()->MovementExpired();
                     me->GetMotionMaster()->Clear();
@@ -586,6 +618,8 @@ class npc_thrall_intro : public CreatureScript
             EventMap events, nonCombatEvents;
             uint32 timer;
             uint32 wp;
+            bool escortStarted = false; // Refs #673: the first EVENT_ESCORT move ran (see HotEscortNeedsResume)
+            bool escortHeld = false;    // Refs #673: an in-combat hold is being logged
 
             void Reset() override
             {
@@ -620,6 +654,8 @@ class npc_thrall_intro : public CreatureScript
             void InitializeAI() override
             {
                 wp = 0;
+                escortStarted = false;
+                escortHeld = false;
             }
 
             void MovementInform(uint32 type, uint32 pointId) override
@@ -627,8 +663,13 @@ class npc_thrall_intro : public CreatureScript
                 if (type != POINT_MOTION_TYPE)
                     return;
 
+                HotEscortLog(me, "reached", pointId);
                 wp++;
                 nonCombatEvents.ScheduleEvent(EVENT_ESCORT, urand(100, 200));
+                // Refs #673: an evade after an ambush walks Thrall home, and CreatureAI is not updated while evading
+                // (Creature::Update skips UpdateAI in evade mode), so with the DB spawn as home every later ambush
+                // cost a run back to the canyon entrance first. Home is the last waypoint reached instead.
+                me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
 
                 switch (pointId)
                 {
@@ -676,18 +717,41 @@ class npc_thrall_intro : public CreatureScript
                         }
                         case EVENT_ESCORT:
                         {
+                            // Refs #673: hold while an ambush is up, but keep the escort event alive. The old `return`
+                            // consumed EVENT_ESCORT; when the last ambusher then died its death ended Thrall's combat
+                            // (Unit::setDeathState -> CombatStop -> CombatReference::EndCombat) without an evade
+                            // (UnitAI::JustExitedCombat is empty, CreatureAI::UpdateVictim returns early out of combat),
+                            // so Reset() never rescheduled the escort and Thrall stood at the ambush for good (w64:
+                            // stuck at wp 2 from 610 s to the 1240 s cap after the bots killed the wp 2 ambush).
                             if (me->IsInCombat())
-                                return;
+                            {
+                                if (!escortHeld)
+                                    HotEscortLog(me, "hold (in combat)", wp);
+                                escortHeld = true;
+                                nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
+                                break;
+                            }
+                            escortHeld = false;
+                            escortStarted = true;
                             me->GetMotionMaster()->MovementExpired();
                             me->GetMotionMaster()->Clear();
                             if (me->GetUnitMovementFlags() == MOVEMENTFLAG_WALKING)
                                 me->RemoveUnitMovementFlag(MOVEMENTFLAG_WALKING);
                             me->GetMotionMaster()->MovePoint(wp, ThrallWaypoints_Arcurion[wp]);
+                            HotEscortLog(me, "move", wp);
                         }
                             break;
                         default:
                             break;
                     }
+                }
+
+                // Refs #673 (w68): an ambush that interrupted the walk to a waypoint and ended without an evade left no
+                // EVENT_ESCORT behind (HotEscortNeedsResume). Pick the escort up again at the same waypoint.
+                if (escortStarted && wp < MAX_POINT_ACURION && HotEscortNeedsResume(me, nonCombatEvents, EVENT_ESCORT))
+                {
+                    HotEscortLog(me, "resume (walk interrupted, combat over)", wp);
+                    nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
                 }
 
                 if (!UpdateVictim())
@@ -768,12 +832,16 @@ class npc_thrall_arcurion : public CreatureScript
             uint32 timer;
             uint32 wp;
             bool phase;
+            bool wallEvent = false;
+            bool escortToArcurion = false; // Refs #673: walking to ThrallWaypoints_ArcurionPrepare (point 20), not yet there
 
             void InitializeAI() override
             {
                 SetEquipmentSlots(true, DoomHammer, 0, EQUIP_NO_CHANGE);
                 wp           = 0;
                 phase        = false;
+                wallEvent    = false;
+                escortToArcurion = false;
             }
 
             void JustEngagedWith(Unit* /*who*/) override
@@ -785,11 +853,42 @@ class npc_thrall_arcurion : public CreatureScript
             void Reset() override
             {
                 if (instance && instance->GetBossState(DATA_ARCURION) == DONE)
+                    StartWallEvent();
+            }
+
+            // Refs #673 (w67: Arcurion killed through the real escort, encounter DONE, Thrall said TALK_ARCURION_4, but no
+            // Thrall 54972 within 240 s). The wall break + ghost-wolf ride to Galakrond's Rest (~640 yd) is a raw spline and
+            // nonCombatEvents timers, both advanced only by Creature::Update. Map::Update (Map.cpp:777-806) updates only the
+            // cells within the grid activation range (170 yd in an instance) of a player or of an active object, so a Thrall
+            // who rides out of every player's range freezes mid-route and never reaches EVENT_GALAKROND_REACH (the group was
+            // still at Arcurion, then teleported ~350 yd past him). Wowpedia "Hour of Twilight" (MediaWiki API, 2026-10-15):
+            // "When Arcurion falls, the party heads to Galakrond's Rest" - Thrall goes ahead and waits there, so he is made
+            // an active object for the sequence; he despawns at the end (EVENT_GALAKROND_REACH), which drops the flag.
+            // Run once: a later evade must not restart it (see EnterEvadeMode).
+            void StartWallEvent()
+            {
+                if (wallEvent)
+                    return;
+
+                wallEvent = true;
+                me->setActive(true, ActiveFlags::Script);
+                MovementFlagWithoutWalking();
+                me->GetMotionMaster()->MovePoint(21, BreakTheWall);
+                nonCombatEvents.ScheduleEvent(EVENT_ESCORT_TO_WALL, me->GetSplineDuration() + 500);
+            }
+
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
+            {
+                // Refs #673: once the wall/ride sequence runs, an evade (a straggler dropping Thrall's threat) only leaves
+                // combat. The default path (MoveTargetedHome + Reset) would replace the ride spline, and
+                // EVENT_GALAKROND_REACH would then summon Thrall 54972 wherever he stood.
+                if (wallEvent)
                 {
-                    MovementFlagWithoutWalking();
-                    me->GetMotionMaster()->MovePoint(21, BreakTheWall);
-                    nonCombatEvents.ScheduleEvent(EVENT_ESCORT_TO_WALL, me->GetSplineDuration() + 500);
+                    _EnterEvadeMode(why);
+                    return;
                 }
+
+                ScriptedAI::EnterEvadeMode(why);
             }
 
             void MovementFlagWithoutWalking()
@@ -831,19 +930,63 @@ class npc_thrall_arcurion : public CreatureScript
                         events.ScheduleEvent(EVENT_ATTACK_FROZEN_SERVITOR, 1500);
                         break;
                     case ACTION_TALK_FINISH_HIM:
+                    {
+                        // Refs #696 (w61: the group took Arcurion to 1% and wiped in the Torrent of Frost burn).
+                        // Wowpedia "Arcurion" (MediaWiki API, 2026-10-14): reaching 30% "will automatically release Thrall
+                        // from the ice tomb", and "at this time Thrall will cast Bloodlust (which does not trigger the sated
+                        // debuff ...) making it easier to finish the boss". The tomb is Thrall's summon (boss_arcurion.cpp:223);
+                        // despawning it skips npc_icy_tomb::JustDied, so the stun is cleared here.
+                        summons.DespawnEntry(NPC_ICY_TOMB);
+                        me->RemoveAurasDueToSpell(SPELL_THRALL_ICY_TOMB);
+                        me->RemoveAurasDueToSpell(SPELL_THRALL_ICY_TOMB_EFF);
+                        me->ClearUnitState(UNIT_STATE_STUNNED);
                         events.CancelEvent(EVENT_ATTACK_FROZEN_SERVITOR);
                         events.ScheduleEvent(EVENT_LAVA_BURST, 2000);
                         Talk(TALK_ARCURION_3);
+                        // 103834 targets SRC_AREA_ALLY (SpellEffect.dbc), so the aura is put on each player in range directly.
+                        Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                            if (Player* player = itr->GetSource())
+                                if (player->IsAlive() && player->IsWithinDistInMap(me, 100.0f))
+                                    me->AddAura(SPELL_THRALL_BLOODLUST, player);
+                        break;
+                    }
+                    case ACTION_ARCURION_WIPE:
+                        // Refs #824 (w61: the last player died, Arcurion evaded, and in the same ms re-engaged with his aggro
+                        // line while Thrall, passive and possibly entombed, stayed in combat). boss_arcurion::EnterEvadeMode
+                        // sends this: Thrall drops out of his Icy Tomb and out of combat and walks back to his spot (home =
+                        // point 20, MovementInform). He stays passive; the next pull re-runs ACTION_ARCURION.
+                        if (wallEvent)
+                            break;
+                        summons.DespawnEntry(NPC_ICY_TOMB);
+                        me->RemoveAurasDueToSpell(SPELL_THRALL_ICY_TOMB);
+                        me->RemoveAurasDueToSpell(SPELL_THRALL_ICY_TOMB_EFF);
+                        me->ClearUnitState(UNIT_STATE_STUNNED);
+                        events.Reset();
+                        nonCombatEvents.CancelEvent(EVENT_ARCURION);
+                        if (!me->IsInEvadeMode())
+                            EnterEvadeMode();
                         break;
                     case ACTION_TALK_ARCURION_DEATH:
                         summons.DespawnEntry(NPC_ICY_TOMB);
                         events.Reset();
-                        me->DeleteThreatList();
+                        me->GetThreatManager().RemoveMeFromThreatLists();
+                        me->GetThreatManager().ClearAllThreat();
 
                         if (instance)
                             instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
 
                         Talk(TALK_ARCURION_4);
+                        // Refs #673: the wall break and the ride to Asira start from Reset() (boss state DONE, set by
+                        // boss_arcurion::JustDied -> _JustDied before this action). Reset() only ran through the evade that
+                        // UpdateVictim triggers for a passive Thrall in combat; a Thrall that was never pulled into the
+                        // fight (Arcurion > 100 yd away at the pull, SendThrallInCombat) never evaded, so no Thrall 54972
+                        // was summoned (w62: Arcurion killed, encounter DONE, "asira thrall-3 NOT FOUND after 240s").
+                        if (!me->IsInEvadeMode())
+                            EnterEvadeMode();
+                        // A Thrall already evading skipped the evade above (and so Reset()); start the sequence directly.
+                        // No-op when Reset() already started it.
+                        StartWallEvent();
                         break;
                     default:
                         break;
@@ -857,6 +1000,8 @@ class npc_thrall_arcurion : public CreatureScript
 
                 if (pointId == 20)
                 {
+                    escortToArcurion = false;
+                    HotEscortLog(me, "reached", pointId);
                     me->GetMotionMaster()->Clear();
                     me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                     nonCombatEvents.Reset();
@@ -879,8 +1024,10 @@ class npc_thrall_arcurion : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_ESCORT:
+                            escortToArcurion = true;
                             MovementFlagWithoutWalking();
                             me->GetMotionMaster()->MovePoint(20, ThrallWaypoints_ArcurionPrepare);
+                            HotEscortLog(me, "move", 20);
                             break;
                         case EVENT_ESCORT_DIFF:
                         {
@@ -914,6 +1061,14 @@ class npc_thrall_arcurion : public CreatureScript
                             me->DespawnOrUnsummon();
                             break;
                     }
+                }
+
+                // Refs #673 (w68): same stall as npc_thrall_intro - a fight (or an evade home) that interrupted the walk to
+                // point 20 leaves nothing to restart it, and Arcurion is only summoned at point 20.
+                if (escortToArcurion && !wallEvent && HotEscortNeedsResume(me, nonCombatEvents, EVENT_ESCORT))
+                {
+                    HotEscortLog(me, "resume (walk interrupted, combat over)", 20);
+                    nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
                 }
 
                 if (!UpdateVictim())
@@ -983,6 +1138,8 @@ class npc_thrall_asira : public CreatureScript
             EventMap events, nonCombatEvents;
             uint32 timer;
             uint32 wp;
+            bool escortStarted = false; // Refs #673: see npc_thrall_intro
+            bool escortHeld = false;
 
             void IsSummonedBy(Unit* /*summoner*/) override
             {
@@ -1025,6 +1182,17 @@ class npc_thrall_asira : public CreatureScript
                         Talk(TALK_ASIRA_6);
                         me->HandleEmoteStateCommand(EMOTE_STATE_READY1H);
                         break;
+                    case ACTION_ASIRA_DEATH:
+                        // Refs #696 (boss_asira_dawnslayer::JustDied): leave the fight; Reset() (DATA_ASIRA DONE) walks him to the
+                        // Life Warden (EVENT_ESCORT_DIFF -> point 11 -> resurrection -> ride -> Thrall 54634 at ThrallLastSpawnPoint).
+                        // Active for the sequence, like Thrall 55779's ride (#673 w67): the group may leave Galakrond's Rest before
+                        // the Life Warden lands, and an object out of every player's grid range is not updated. He despawns at the end.
+                        me->setActive(true, ActiveFlags::Script);
+                        if (!me->IsInEvadeMode())
+                            EnterEvadeMode();
+                        if (!nonCombatEvents.IsScheduled(EVENT_ESCORT_DIFF))
+                            nonCombatEvents.ScheduleEvent(EVENT_ESCORT_DIFF, 1500);
+                        break;
                     default:
                         break;
                 }
@@ -1041,6 +1209,8 @@ class npc_thrall_asira : public CreatureScript
             void InitializeAI() override
             {
                 wp = 0;
+                escortStarted = false;
+                escortHeld = false;
             }
 
             void MovementInform(uint32 type, uint32 pointId) override
@@ -1048,10 +1218,13 @@ class npc_thrall_asira : public CreatureScript
                 if (type != POINT_MOTION_TYPE)
                     return;
 
+                HotEscortLog(me, "reached", pointId);
                 if (instance->GetBossState(DATA_ASIRA) != DONE)
                 {
                     wp++;
                     nonCombatEvents.ScheduleEvent(EVENT_ESCORT, urand(100, 200));
+                    // Refs #673: evade home = the last waypoint reached (see npc_thrall_intro::MovementInform).
+                    me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                 }
 
                 switch (pointId)
@@ -1100,8 +1273,17 @@ class npc_thrall_asira : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_ESCORT:
+                            // Refs #673: same hold as npc_thrall_intro (keep the event alive while the trash waves are up).
                             if (me->IsInCombat())
-                                return;
+                            {
+                                if (!escortHeld)
+                                    HotEscortLog(me, "hold (in combat)", wp);
+                                escortHeld = true;
+                                nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
+                                break;
+                            }
+                            escortHeld = false;
+                            escortStarted = true;
                             // Moving Without Walk...
                             me->GetMotionMaster()->MovementExpired();
                             me->GetMotionMaster()->Clear();
@@ -1110,6 +1292,7 @@ class npc_thrall_asira : public CreatureScript
                                 me->RemoveUnitMovementFlag(MOVEMENTFLAG_WALKING);
 
                             me->GetMotionMaster()->MovePoint(wp, ThrallWaypoints_Asira_Prepare[wp]);
+                            HotEscortLog(me, "move", wp);
                             break;
                         case EVENT_ESCORT_DIFF:
                             if (Creature* LifeWarden = GetClosestCreatureWithEntry(me, NPC_LIFE_WARDEN_1, 150.0f))
@@ -1143,6 +1326,16 @@ class npc_thrall_asira : public CreatureScript
                         default:
                             break;
                     }
+                }
+
+                // Refs #673 (w68): the same interrupted-walk stall as npc_thrall_intro, on the trash-wave route to Galakrond's
+                // Rest. Points 0-10 only: point 10 starts the random walk + Life Warden (nonCombatEvents.Reset there), and
+                // after Asira (DONE) the route is EVENT_ESCORT_DIFF / point 11.
+                if (escortStarted && wp < ASIRA_PREPARE_MAX_POINTS && instance && instance->GetBossState(DATA_ASIRA) != DONE &&
+                    HotEscortNeedsResume(me, nonCombatEvents, EVENT_ESCORT))
+                {
+                    HotEscortLog(me, "resume (walk interrupted, combat over)", wp);
+                    nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
                 }
 
                 if (!UpdateVictim())
@@ -1222,10 +1415,50 @@ class npc_thrall_trash_benedictus : public CreatureScript
 
         struct npc_thrall_trash_benedictusAI : public ScriptedAI
         {
-            npc_thrall_trash_benedictusAI(Creature* creature) : ScriptedAI(creature) { }
+            npc_thrall_trash_benedictusAI(Creature* creature) : ScriptedAI(creature), slimes(creature) { }
             EventMap nonCombatEvents;
+            SummonList slimes;
             uint32 timer, wp, tentacle;
             bool ToDragonSoul, LastStalker;
+
+            // Refs #696: the Path of the Titans has three faceless waves (Faceless Shadow Weaver + Faceless Brute + Shadow Borer
+            // out of a Dark Haze pool, Project-Neltharion-4.3.4 boss_archbishop_benedictus.cpp wavesInfos / ActivateWave, sniffed
+            // 4.3.4 positions = our three Dark Haze 54628 DB rows). The old 47 yd stalker search missed the second pool at point 3
+            // (3814.1,322.8,-32.8 is 49.1 yd from 3835.7,280.2,-21.0), so wave 2 never came. Each wave point now wakes the nearest
+            // pool within 60 yd (one per point: 25 / 49 / 40 yd, the next nearest is 77+ yd); a used pool stays used.
+            void ActivateDarkHaze()
+            {
+                if (Creature* haze = me->FindNearestCreature(NPC_DARK_HAZE_STALKER, 60.0f, true))
+                {
+                    haze->AI()->DoAction(ACTION_SPAWN);
+                    HotEscortLog(me, "wave", wp);
+                }
+                else
+                    HotEscortLog(me, "wave (no dark haze within 60 yd)", wp);
+            }
+
+            // Refs #696: Flailing Tentacle 54696 (VehicleId 1743, Health_mod 100 = ~8.3 M hp at level 87 elite) is the scene of a
+            // tentacle bursting out of the ground and snatching an Earthen Ring shaman (Neltharion npc_flailing_tentacle:
+            // UNIT_FLAG_NOT_ATTACKABLE_1 | UNIT_FLAG_NON_ATTACKABLE, despawns 8 s after the grab; Thrall's waves never wait for it).
+            // It was summoned as a hostile zone-in-combat add that the escort waited on, so the 4-bot group had to burn a
+            // boss-sized, harmless tentacle at every wave point (w106: 330 s at point 2, then stuck at point 3 until the wipe).
+            void SummonFlailingTentacle()
+            {
+                if (tentacle < TAXI_TWILIGHT_DRAKE_POINTS)
+                    me->SummonCreature(NPC_FLAILING_TENTACLE, TentacleSpawnPos[tentacle], TEMPSUMMON_TIMED_DESPAWN, 8000ms);
+                tentacle++;
+            }
+
+            void JustSummoned(Creature* summon) override
+            {
+                if (summon->GetEntry() == NPC_CORRUPTED_SLIME)
+                    slimes.Summon(summon);
+            }
+
+            void SummonedCreatureDespawn(Creature* summon) override
+            {
+                slimes.Despawn(summon);
+            }
 
             void IsSummonedBy(Unit* summoner) override
             {
@@ -1242,6 +1475,7 @@ class npc_thrall_trash_benedictus : public CreatureScript
                         me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                         SetEquipmentSlots(false, DoomHammer, 0, EQUIP_NO_CHANGE);
                         nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1500);
+                        nonCombatEvents.ScheduleEvent(EVENT_CORRUPTED_SLIME, 5000);
                         break;
                     case ACTION_BENEDICTUS:
                         wp = 0;
@@ -1269,26 +1503,21 @@ class npc_thrall_trash_benedictus : public CreatureScript
                 if (type != POINT_MOTION_TYPE)
                     return;
 
+                HotEscortLog(me, "reached", pointId); // Refs #696: the driver's benedictus escort-log row
                 wp++;
 
                 switch (pointId)
                 {
                     case 2:
                     case 3:
-                        for (auto itr : ActivateNearestStalkers(me, me->GetGUID(), NPC_DARK_HAZE_STALKER))
-                            itr->AI()->DoAction(ACTION_SPAWN);
-
-                        me->SummonCreature(NPC_FLAILING_TENTACLE, TentacleSpawnPos[tentacle], TEMPSUMMON_MANUAL_DESPAWN);
-                        tentacle++;
+                        ActivateDarkHaze();
+                        SummonFlailingTentacle();
                         me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                         nonCombatEvents.ScheduleEvent(EVENT_COMBAT, 1000);
                         break;
                     case 6:
-                        for (auto itr : ActivateNearestStalkers(me, me->GetGUID(), NPC_DARK_HAZE_STALKER))
-                            itr->AI()->DoAction(ACTION_SPAWN);
-
-                        me->SummonCreature(NPC_FLAILING_TENTACLE, TentacleSpawnPos[tentacle], TEMPSUMMON_MANUAL_DESPAWN);
-                        tentacle++;
+                        ActivateDarkHaze();
+                        SummonFlailingTentacle();
                         me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                         LastStalker = true;
                         nonCombatEvents.ScheduleEvent(EVENT_COMBAT, 1000);
@@ -1303,14 +1532,15 @@ class npc_thrall_trash_benedictus : public CreatureScript
                 }
             }
 
+            // Refs #696: a wave is the three faceless (Neltharion ActivateWave: Thrall moves on after their kills). The cosmetic
+            // tentacle and the Corrupted Slimes never hold the escort.
             bool HasInCombat()
             {
                 Creature* Brute = GetClosestCreatureWithEntry(me, NPC_FACELESS_BRUTE, 200.0f, true);
                 Creature* Borer = GetClosestCreatureWithEntry(me, NPC_FACELESS_BORER, 200.0f, true);
                 Creature* ShadowWeaver = GetClosestCreatureWithEntry(me, NPC_FACELESS_SHADOW_WEAVER, 200.0f, true);
-                Creature* Tentacle = GetClosestCreatureWithEntry(me, NPC_FLAILING_TENTACLE, 200.0f, true);
 
-                if (Brute || Borer || ShadowWeaver || Tentacle)
+                if (Brute || Borer || ShadowWeaver)
                     return true;
 
                 return false;
@@ -1326,8 +1556,15 @@ class npc_thrall_trash_benedictus : public CreatureScript
                     {
                         case EVENT_ESCORT:
                         {
+                            // Refs #696: the escort was dropped for good when a faceless or a tentacle was still alive within
+                            // 200 yd at this moment (the event is consumed and only MovementInform / EVENT_COMBAT schedule it).
+                            // Hold and retry, like npc_thrall_intro (#673).
                             if (HasInCombat())
-                                return;
+                            {
+                                HotEscortLog(me, "hold (faceless alive)", wp);
+                                nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
+                                break;
+                            }
 
                             me->GetMotionMaster()->MovementExpired();
                             me->GetMotionMaster()->Clear();
@@ -1336,32 +1573,55 @@ class npc_thrall_trash_benedictus : public CreatureScript
                                 me->RemoveUnitMovementFlag(MOVEMENTFLAG_WALKING);
 
                             me->GetMotionMaster()->MovePoint(wp, ThrallWaypoints_Benedict_Prepare[wp]);
+                            HotEscortLog(me, "move", wp);
                             break;
                         }
                         case EVENT_COMBAT:
                         {
-                            Creature* Brute = GetClosestCreatureWithEntry(me, NPC_FACELESS_BRUTE, 200.0f, true);
-                            Creature* Borer = GetClosestCreatureWithEntry(me,NPC_FACELESS_BORER, 200.0f, true);
-                            Creature* ShadowWeaver = GetClosestCreatureWithEntry(me, NPC_FACELESS_SHADOW_WEAVER, 200.0f, true);
-                            Creature* Tentacle = GetClosestCreatureWithEntry(me, NPC_FLAILING_TENTACLE, 200.0f, true);
-
                             if (HasInCombat())
                             {
                                 nonCombatEvents.ScheduleEvent(EVENT_COMBAT, urand(100, 200));
                                 return;
                             }
-                            nonCombatEvents.Reset();
+                            HotEscortLog(me, "wave-clear", wp);
+                            // Refs #696: Reset() here also dropped the slime drip after wave 1; only the escort pair is cleared.
+                            nonCombatEvents.CancelEvent(EVENT_ESCORT);
+                            nonCombatEvents.CancelEvent(EVENT_COMBAT);
 
                             if (LastStalker)
+                            {
+                                // Neltharion WaypointReached 7/8: the slimes are despawned and the drip ends with the last wave.
+                                nonCombatEvents.CancelEvent(EVENT_CORRUPTED_SLIME);
+                                slimes.DespawnAll();
                                 me->SummonCreature(NPC_BENEDICTUS, BenedictusSpawnPoint, TEMPSUMMON_MANUAL_DESPAWN);
+                            }
                             else
                                 nonCombatEvents.ScheduleEvent(EVENT_ESCORT, 1000);
                             break;
                         }
+                        case EVENT_CORRUPTED_SLIME:
+                        {
+                            // Refs #696: Corrupted Slimes ooze out next to Thrall while he walks the Path of the Titans: two every
+                            // 18 s, first 5 s after "Yes Thrall, lets do this!", none once he is past x 3760 (the last wave), all
+                            // despawned with the last wave (Project-Neltharion-4.3.4 npc_thrall_hot_3 EVENT_ACTIVATE_BLOOD /
+                            // ActivateRandomBlood). They used to come from the three Dark Haze pools every 8-20 s each from the
+                            // moment the grid loaded, for the whole life of the instance (the endless ATTACKSTART stream, w106).
+                            if (ToDragonSoul || me->GetPositionX() <= 3760.0f)
+                                break;
+
+                            for (uint8 i = 0; i < 2; ++i)
+                                me->SummonCreature(NPC_CORRUPTED_SLIME, me->GetRandomNearPosition(15.0f), TEMPSUMMON_MANUAL_DESPAWN);
+                            nonCombatEvents.ScheduleEvent(EVENT_CORRUPTED_SLIME, 18000);
+                            break;
+                        }
                         case EVENT_ESCORT_DIFF:
                         {
+                            // Refs #673: same hold as npc_thrall_intro (keep the event alive while the faceless are up).
                             if (me->IsInCombat())
-                                return;
+                            {
+                                nonCombatEvents.ScheduleEvent(EVENT_ESCORT_DIFF, 1000);
+                                break;
+                            }
 
                             me->GetMotionMaster()->MovementExpired();
                             me->GetMotionMaster()->Clear();
@@ -1370,6 +1630,7 @@ class npc_thrall_trash_benedictus : public CreatureScript
                                 me->RemoveUnitMovementFlag(MOVEMENTFLAG_WALKING);
 
                             me->GetMotionMaster()->MovePoint(wp + 7, ThrallWaypoints_To_Dragon_Soul[wp]);
+                            HotEscortLog(me, "move", wp + 7);
                             break;
                         }
                         default:
@@ -1442,8 +1703,34 @@ class npc_thrall_benedictus : public CreatureScript
                     case ACTION_WATER_SHIELD:
                         events.ScheduleEvent(EVENT_WATER_SHIELD, 1000);
                         break;
+                    case ACTION_BENEDICTUS_WIPE:
+                        // Refs #696 (the #824 pattern): Benedictus evaded with nobody left. Thrall drops the fight (he took no
+                        // damage, DamageTaken) and stands passive again; the next pull runs ACTION_COMBAT.
+                        events.Reset();
+                        me->InterruptNonMeleeSpells(false);
+                        me->SetReactState(REACT_PASSIVE);
+                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                        if (!me->IsInEvadeMode())
+                            EnterEvadeMode();
+                        break;
                     default:
                         break;
+                }
+            }
+
+            // Refs #696: Wowpedia "Archbishop Benedictus (tactics)" (MediaWiki API, 2026-10-22): "Benedictus will summon three
+            // Purifying Light orbs, two of which Thrall will destroy with his chain lightning, leaving only one to avoid", and Thrall
+            // "lashes out at the Purifying Light ... destroying them" (Chain Lightning 104130). Phase 1 only: in phase 2 he is held by
+            // Engulfing Twilight (103762, conditions -> 54971) and "will be unable to assist".
+            void SetGUID(ObjectGuid guid, int32 id) override
+            {
+                if (id != ACTION_THRALL_ORB_LIGHTNING || me->HasUnitState(UNIT_STATE_STUNNED))
+                    return;
+
+                if (Creature* orb = ObjectAccessor::GetCreature(*me, guid))
+                {
+                    me->CastSpell(orb, SPELL_CHAIN_LIGHTNING, true);
+                    orb->DespawnOrUnsummon(1500);
                 }
             }
 
@@ -1483,7 +1770,11 @@ class npc_thrall_benedictus : public CreatureScript
                             events.ScheduleEvent(EVENT_HEALING_WAVE, 50000);
                             break;
                         case EVENT_WATER_SHIELD:
-                            DoCastAOE(SPELL_WATER_SHIELD);
+                            // Refs #696: 103688 is TARGET_UNIT_TARGET_ANY (SpellEffect.dbc), so DoCastAOE (no target) put the
+                            // channel on Thrall's victim - Benedictus - and its 1 s pulse 103744 (4 yd SRC_AREA_ALLY, Water Shell
+                            // +100% damage done) went to HIS allies. Thrall shells himself: the players stack on him (Wowpedia
+                            // "Archbishop Benedictus (tactics)": "all party members should move to the Water Shell Thrall creates").
+                            DoCast(me, SPELL_WATER_SHIELD);
                             break;
                     }
                 }
@@ -1515,6 +1806,7 @@ class npc_frozen_servitor_stalker : public CreatureScript
             npc_frozen_servitor_stalkerAI(Creature* creature) : ScriptedAI(creature) { }
 
             EventMap nonCombatEvents;
+            bool hazeSpent = false; // Refs #696: a Dark Haze pool brings out its faceless wave once
 
             void Reset() override
             {
@@ -1522,11 +1814,11 @@ class npc_frozen_servitor_stalker : public CreatureScript
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             }
 
+            // Refs #696: the Dark Haze pools no longer drip Corrupted Slimes on their own (8-20 s each, from grid load, forever,
+            // every slime hunting the nearest player within 100 yd); Thrall 54634 drips them during his walk
+            // (npc_thrall_trash_benedictus EVENT_CORRUPTED_SLIME).
             void InitializeAI() override
             {
-                if (me->GetEntry() == NPC_DARK_HAZE_STALKER)
-                    nonCombatEvents.ScheduleEvent(EVENT_INTRO, urand(8 * IN_MILLISECONDS, 20 * IN_MILLISECONDS));
-
                 Reset();
             }
 
@@ -1554,6 +1846,9 @@ class npc_frozen_servitor_stalker : public CreatureScript
                                 me->SummonCreature(NPC_TWILIGHT_SHADOW_WALKER, me->GetPositionX() + frand(-15.0f, 15.0f), me->GetPositionY() + frand(-5.0f, 5.0f), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
                                 break;
                             case NPC_DARK_HAZE_STALKER:
+                                if (hazeSpent)
+                                    break;
+                                hazeSpent = true;
                                 if (me->HasAura(SPELL_GROW_VISUAL_COSMETIC))
                                     me->RemoveAura(SPELL_GROW_VISUAL_COSMETIC);
                                 Talk(EMOTE_DARK_HAZE);
@@ -1587,19 +1882,9 @@ class npc_frozen_servitor_stalker : public CreatureScript
                 damage = 0;
             }
 
-            void UpdateAI(uint32 diff) override 
+            void UpdateAI(uint32 diff) override
             {
                 nonCombatEvents.Update(diff);
-
-                while (uint32 eventId = nonCombatEvents.ExecuteEvent())
-                {
-                    if (eventId == EVENT_INTRO)
-                    {
-                        me->SummonCreature(NPC_CORRUPTED_SLIME, me->GetPositionX() + frand(-1.5f, -1.0f), me->GetPositionY() + frand(-3.0f, 3.0f), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
-                        nonCombatEvents.ScheduleEvent(EVENT_INTRO, urand(8 * IN_MILLISECONDS, 20 * IN_MILLISECONDS));
-                    }
-                    break;
-                }
             }
         };
 
@@ -1788,9 +2073,16 @@ class npc_faceless_minions : public CreatureScript
                 switch (me->GetEntry())
                 {
                     case NPC_FLAILING_TENTACLE:
+                        // Refs #696: scenery, not an add (Project-Neltharion-4.3.4 npc_flailing_tentacle sets
+                        // UNIT_FLAG_NOT_ATTACKABLE_1 | UNIT_FLAG_NON_ATTACKABLE; npc_thrall_trash_benedictus summons it for 8 s).
+                        SetCombatMovement(false);
+                        me->SetReactState(REACT_PASSIVE);
+                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+                        return;
                     case NPC_FACELESS_BORER:
                         SetCombatMovement(false);
                         me->SetInCombatWithZone();
+                        [[fallthrough]];
                     default:
                         nonCombatEvents.ScheduleEvent(EVENT_COMBAT, 4000);
                         break;
@@ -1798,7 +2090,7 @@ class npc_faceless_minions : public CreatureScript
 
             }
 
-            void EnterEvadeMode() override 
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override 
             {
                 ScriptedAI::EnterEvadeMode();
             }

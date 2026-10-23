@@ -52,8 +52,17 @@ enum eSpells
 enum eCreatures
 {
     NPC_TEMPEST_STORM                = 44713,
-    NPC_SETVANT_OF_SIAMAT            = 45269,
+    NPC_SETVANT_OF_SIAMAT            = 45269,   // the third servant (Static Shock 3, 84554)
+    NPC_SERVANT_OF_SIAMAT_1          = 45259,   // Static Shock 1 (84547)
+    NPC_SERVANT_OF_SIAMAT_2          = 45268,   // Static Shock 2 (84553)
 };
+
+// #680: Wowpedia "Siamat" (MediaWiki API, read 2026-10-23), Stage One: "A single Servant enters the fight every 45 seconds, or
+// immediately after the previous Servant dies. After all three Servants die, Siamat enters Stage Two." The fork summoned one
+// every 32 s and started stage two on the death of the third entry (45269) alone. TC 4.3.4 boss_siamat.cpp also calls the next
+// Static Shock on a servant's death.
+constexpr uint32 SERVANT_INTERVAL_MS = 45000;
+constexpr uint8 MAX_SERVANTS = 3;
 
 enum eActions
 {
@@ -120,6 +129,7 @@ class boss_siamat : public CreatureScript
             }
 
             uint8 uiStaticShockId;
+            uint8 uiServantsDead;
 
             void Reset() override
             {
@@ -129,6 +139,7 @@ class boss_siamat : public CreatureScript
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
 
                 uiStaticShockId = 0;
+                uiServantsDead = 0;
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
             }
             
@@ -152,8 +163,25 @@ class boss_siamat : public CreatureScript
             {
                 if (action == ACTION_SERVANT_DEATH)
                 {
+                    // #680: the next servant comes at once; stage two only after all three are dead
+                    if (++uiServantsDead < MAX_SERVANTS)
+                    {
+                        if (uiStaticShockId < MAX_SERVANTS)
+                            events.RescheduleEvent(EVENT_STATIC_SHOCK, 1000, 0, PHASE_DEFLECTING_WINDS);
+                        return;
+                    }
+
+                    if (!events.IsInPhase(PHASE_DEFLECTING_WINDS))
+                        return;
+
                     Talk(SAY_WAILING_WINDS);
                     me->RemoveAura(SPELL_DEFLECTING_WINDS);
+                    // #680 (w106: servants 3/3 dead, Wailing Winds 83066 cast 0 times, Siamat killed in stage "Siamat" 28 s later): this
+                    // runs from the third servant's death, not from UpdateAI, and Siamat is nearly always mid Storm Bolt (73564 every
+                    // 2.5 s), so Spell::prepare refused the channel with SPELL_FAILED_SPELL_IN_PROGRESS (Spell.cpp prepare,
+                    // IsNonMeleeSpellCasted) and EVENT_WAILING_WINDS, seeing no channel, went straight to PHASE_SIAMAT. CPP 4.3.4 casts
+                    // it from UpdateAI once he is not casting; here the bolt in progress is dropped so stage two always opens with it.
+                    me->InterruptNonMeleeSpells(false);
                     me->CastSpell(me, SPELL_WAILING_WINDS_AURA, false);
                     events.SetPhase(PHASE_WAILING_WINDS);
                     events.ScheduleEvent(EVENT_WAILING_WINDS, 1000, 0, PHASE_WAILING_WINDS);
@@ -187,6 +215,8 @@ class boss_siamat : public CreatureScript
 
                 DespawnCreatures(NPC_TEMPEST_STORM);
                 DespawnCreatures(NPC_SETVANT_OF_SIAMAT);
+                DespawnCreatures(NPC_SERVANT_OF_SIAMAT_1);
+                DespawnCreatures(NPC_SERVANT_OF_SIAMAT_2);
                 Talk(SAY_DEATH);
             }
 
@@ -209,12 +239,12 @@ class boss_siamat : public CreatureScript
                                 uint8 dist = urand(5, 30);
                                 float angle = frand(0, M_PI);
                                 float x, y;
-                                me->GetNearPoint2D(x, y, (float)dist, angle);
+                                me->GetNearPoint2D(nullptr, x, y, (float)dist, angle);
                                 me->CastSpell(x, y, FLOR_COORD_Z, StaticShock[uiStaticShockId], false);
                                 ++uiStaticShockId;
 
-                                if (uiStaticShockId < 3)
-                                    events.ScheduleEvent(EVENT_STATIC_SHOCK, 32000, 0, PHASE_DEFLECTING_WINDS);
+                                if (uiStaticShockId < MAX_SERVANTS)
+                                    events.ScheduleEvent(EVENT_STATIC_SHOCK, SERVANT_INTERVAL_MS, 0, PHASE_DEFLECTING_WINDS);
                             }
                             break;
                         case EVENT_DEFLECTING_WINDS:
@@ -225,7 +255,7 @@ class boss_siamat : public CreatureScript
                                 uint8 dist = urand(5, 30);
                                 float angle = frand(0, M_PI);
                                 float x, y;
-                                me->GetNearPoint2D(x, y, (float)dist, angle);
+                                me->GetNearPoint2D(nullptr, x, y, (float)dist, angle);
                                 me->CastSpell(x, y, FLOR_COORD_Z, SPELL_CALL_OF_SKY, false);
                                 events.ScheduleEvent(EVENT_CALL_OF_SKY, urand(15000, 35000));
                             }
@@ -244,7 +274,10 @@ class boss_siamat : public CreatureScript
                             break;
                         case EVENT_WAILING_WINDS:
                             {
-                                me->CastSpell(me, SPELL_WAILING_WINDS, false);
+                                // #680: triggered. A non-triggered generic cast goes through Unit::SetCurrentCastedSpell, which interrupts the
+                                // current channel ("generic spells always break channeled", Unit.cpp), i.e. this pulse ended the 83066
+                                // channel it belongs to after 1 s. CPP fires 83094 triggered from the 83066 periodic (spell_siamat_wailing_winds).
+                                me->CastSpell(me, SPELL_WAILING_WINDS, true);
 
                                 if (Spell* spell = me->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
                                 {
@@ -363,13 +396,23 @@ class npc_servant_of_siamat : public CreatureScript
 
             void JustDied(Unit* /*killer*/) override
             {
-                if (me->GetEntry() == NPC_SETVANT_OF_SIAMAT)
-                    if (Creature* siamat = me->FindNearestCreature(BOSS_SIAMAT, 300.0f))
-                        siamat->AI()->DoAction(ACTION_SERVANT_DEATH);
+                // #680: every servant reports (was 45269 only), Siamat counts them
+                if (Creature* siamat = me->FindNearestCreature(BOSS_SIAMAT, 300.0f))
+                    siamat->AI()->DoAction(ACTION_SERVANT_DEATH);
             }
 
             void UpdateAI(uint32 diff) override
             {
+                // #680 (w105): after the heroic Lightning Charge the servant is passive with no victim, so UpdateVictim() returned
+                // false and EVENT_SERVANT_DIED never ran: no servant died, wailing=0, no early next servant. Run the death timer first.
+                if (LightningCharge)
+                {
+                    events.Update(diff);
+                    if (events.ExecuteEvent() == EVENT_SERVANT_DIED)
+                        me->Kill(me);
+                    return;
+                }
+
                 if (!UpdateVictim())
                     return;
 
@@ -570,7 +613,7 @@ class spell_wailing_winds : public SpellScriptLoader
                 else
                 {
                     float dist = frand(10.0f, 30.0f);
-                    target->GetNearPoint2D(x, y, dist, angle);
+                    target->GetNearPoint2D(nullptr, x, y, dist, angle);
                     target->GetMotionMaster()->MoveJump(x, y, FLOR_COORD_Z, SpeedXY, SpeedZ);
                 }
             }

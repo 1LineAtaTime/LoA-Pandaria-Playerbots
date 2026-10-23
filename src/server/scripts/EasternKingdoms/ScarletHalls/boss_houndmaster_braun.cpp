@@ -17,6 +17,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include <algorithm>
 #include "scarlet_halls.h"
 
 enum spells
@@ -48,6 +49,7 @@ enum events
     EVENT_CALL_DOG                = 3,
     EVENT_AT_END                  = 4,
     EVENT_CALL_DOG_INTO           = 5,
+    EVENT_BLOCK_DOORS             = 6, // #683: "Additional hounds will block off the entrances a few seconds after the encounter begins"
 
     /*Dogs*/
     EVENT_RAKE                    = 1,
@@ -59,7 +61,23 @@ enum  Actions
     ACTION_ACTIVATE_DOG           = 1,
     ACTION_FINISH_HIM             = 2,
     ACTION_MOVE_TO                = 3,
-    ACTION_EATING                 = 4
+    ACTION_EATING                 = 4,
+    ACTION_BLOCK_DOOR_1           = 5,
+    ACTION_BLOCK_DOOR_2           = 6,
+    ACTION_RETURN_HOME            = 7
+};
+
+// #683 Wowpedia "Houndmaster Braun" Strategy (MediaWiki API, fetched 2026-10-22): "All members of the party must enter the area
+// shortly after the tank. Additional hounds will block off the entrances a few seconds after the encounter begins." The hall
+// has 6 hounds (59309): 4 are called at 90/80/70/60% (HandleCallDog), the other 2 are these blockers. The two entrances are the
+// openings of the 6-yd west aisle into the hall (navmesh data-mop-extract/mmaps/1001, see t6xx-dungeon-sh.sh w44 notes: the
+// aisle wall x 991-994 is open at y 516-518 and at y < 494). UNVERIFIED coordinates: confirm with the sh driver's
+// "braun door-block" row (hound positions at +10 s) and adjust here.
+constexpr uint32 BLOCK_DOORS_DELAY = 6000;
+const Position HoundDoorBlock[2] =
+{
+    { 992.5f, 517.0f, 13.55f, 0.0f },
+    { 992.5f, 490.0f, 13.55f, 0.0f }
 };
 
 Creature* SelectedObedientHound(WorldObject* owner)
@@ -83,6 +101,7 @@ class boss_houndmaster_braun : public CreatureScript
             bool Scenario;
             bool SudenDeath;
             int Phase;
+            GuidVector _doorBlockers;
 
             void InitializeAI() override
             {
@@ -100,6 +119,7 @@ class boss_houndmaster_braun : public CreatureScript
                 Scenario = false;
                 SudenDeath = false;
                 Phase = 0;
+                _doorBlockers.clear();
                 HandleDoors(true);
             }
 
@@ -117,7 +137,7 @@ class boss_houndmaster_braun : public CreatureScript
                 HandleDoors(true);
             }
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 BossAI::EnterEvadeMode();
                 if (instance)
@@ -126,6 +146,7 @@ class boss_houndmaster_braun : public CreatureScript
                     instance->SetData(BOSS_HOUNDMASTER_BRAUN, FAIL);
                 }
                 summons.DespawnAll();
+                HandleSendActionOnHounds(ACTION_RETURN_HOME);
                 HandleDoors(true);
             }
 
@@ -140,6 +161,7 @@ class boss_houndmaster_braun : public CreatureScript
                 }
                 events.ScheduleEvent(EVENT_PIERCING_THROW, 7000);
                 events.ScheduleEvent(EVENT_DEATH_BLOSSOM, urand(11000, 12000));
+                events.ScheduleEvent(EVENT_BLOCK_DOORS, BLOCK_DOORS_DELAY);
                 HandleDoors();
             }
 
@@ -174,13 +196,56 @@ class boss_houndmaster_braun : public CreatureScript
 
                 }
 
-                if ((Phase == 0 && HealthBelowPct(90))
-                    || (Phase == 1 && HealthBelowPct(80))
-                    || (Phase == 2 && HealthBelowPct(70))
-                    || (Phase == 3 && HealthBelowPct(60)))
+                // Call Dog: "Houndmaster Braun calls for an Obedient Hound to enter the fight at 90%, 80%, 70%,
+                // and 60% remaining health" (Wowpedia "Houndmaster Braun", MediaWiki API, fetched 2026-10-12).
+                // The thresholds only advanced Phase before, so ACTION_ACTIVATE_DOG was never sent and every
+                // hound stayed NON_ATTACKABLE (#788). A hit that crosses several thresholds releases one hound each.
+                while (!Scenario && Phase < 4 && HealthBelowPct(90 - Phase * 10))
                 {
                     Phase++;
-                }            
+                    HandleCallDog();
+                }
+            }
+
+            void HandleCallDog()
+            {
+                std::list<Creature*> ObedientHounds;
+                GetCreatureListWithEntryInGrid(ObedientHounds, me, NPC_OBEDIEND_HOUND, 200.0f);
+                // only a hound that is still waiting at heel
+                ObedientHounds.remove_if([this](Creature* hound) { return !hound->IsAlive() || !hound->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE) || std::find(_doorBlockers.begin(), _doorBlockers.end(), hound->GetGUID()) != _doorBlockers.end(); });
+
+                if (ObedientHounds.empty())
+                    return;
+
+                Trinity::Containers::SelectRandomContainerElement(ObedientHounds)->AI()->DoAction(ACTION_ACTIVATE_DOG);
+            }
+
+            // #683: the hound nearest to each entrance (still waiting at heel, not a chosen blocker) walks there and stands in it.
+            void HandleBlockDoors()
+            {
+                std::list<Creature*> ObedientHounds;
+                GetCreatureListWithEntryInGrid(ObedientHounds, me, NPC_OBEDIEND_HOUND, 200.0f);
+                ObedientHounds.remove_if([](Creature* hound) { return !hound->IsAlive() || !hound->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE); });
+
+                for (uint32 i = 0; i < 2 && !ObedientHounds.empty(); ++i)
+                {
+                    Creature* best = nullptr;
+                    float bestDist = 0.0f;
+                    for (Creature* hound : ObedientHounds)
+                    {
+                        float const dist = hound->GetExactDist2d(HoundDoorBlock[i].GetPositionX(), HoundDoorBlock[i].GetPositionY());
+                        if (!best || dist < bestDist)
+                        {
+                            best = hound;
+                            bestDist = dist;
+                        }
+                    }
+
+                    ObedientHounds.remove(best);
+                    _doorBlockers.push_back(best->GetGUID());
+                    best->AI()->DoAction(ACTION_BLOCK_DOOR_1 + i);
+                    TC_LOG_INFO("scripts", "[SH-BRAUN] door-block hound guid=%u door=%u from (%.1f,%.1f)", uint32(best->GetGUID().GetCounter()), i + 1, best->GetPositionX(), best->GetPositionY());
+                }
             }
 
             void HandleSendActionOnHounds(uint32 actionId)
@@ -206,6 +271,9 @@ class boss_houndmaster_braun : public CreatureScript
                 {
                     switch (eventId)
                     {
+                        case EVENT_BLOCK_DOORS:
+                            HandleBlockDoors();
+                            break;
                         case EVENT_PIERCING_THROW:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                                 me->CastSpell(target, SPELL_PIERCING_THROW, false);
@@ -267,10 +335,26 @@ class npc_obediend_hound : public CreatureScript
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             }
 
+            // A hound waiting at heel (Reset: passive + NON_ATTACKABLE) must not aggro by sight. Wowpedia "Houndmaster
+            // Braun" (MediaWiki API, fetched 2026-10-13): "Call Dog - calls for an Obedient Hound to enter the fight at
+            // 90%, 80%, 70%, and 60%"; the others "block off the entrances". This core's CreatureAI::MoveInLineOfSight
+            // (CreatureAI.cpp:286-295) has no REACT_AGGRESSIVE check, so every hound attacked whoever came within
+            // aggro range while nobody could hit it back (#657 w43: hounds 59309 attacking at Braun 100%, never a
+            // valid target). ACTION_ACTIVATE_DOG sets REACT_AGGRESSIVE, so a called hound aggroes normally.
+            void MoveInLineOfSight(Unit* who) override
+            {
+                if (!me->HasReactState(REACT_AGGRESSIVE))
+                    return;
+
+                ScriptedAI::MoveInLineOfSight(who);
+            }
+
             void MovementInform(uint32 type, uint32 pointId) override
             {
                 if (type == POINT_MOTION_TYPE && pointId == 1)
                     KillThemAll();
+                else if (type == POINT_MOTION_TYPE && pointId == 2)
+                    TC_LOG_INFO("scripts", "[SH-BRAUN] door-block hound guid=%u arrived at (%.1f,%.1f)", uint32(me->GetGUID().GetCounter()), me->GetPositionX(), me->GetPositionY());
             }
 
             void KillThemAll()
@@ -323,6 +407,15 @@ class npc_obediend_hound : public CreatureScript
                     case ACTION_MOVE_TO:
                         events.Reset();
                         me->GetMotionMaster()->MovePoint(1, EndScenario);
+                        break;
+                    case ACTION_BLOCK_DOOR_1:
+                    case ACTION_BLOCK_DOOR_2:
+                        // stay passive and NON_ATTACKABLE (they only stand in the entrance), point id 2 has no handler
+                        me->GetMotionMaster()->MovePoint(2, HoundDoorBlock[actionId - ACTION_BLOCK_DOOR_1]);
+                        break;
+                    case ACTION_RETURN_HOME:
+                        if (me->IsAlive())
+                            me->GetMotionMaster()->MoveTargetedHome();
                         break;
                     case ACTION_EATING:
                         if (_instance)

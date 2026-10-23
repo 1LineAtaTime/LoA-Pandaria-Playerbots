@@ -46,7 +46,7 @@ class go_end_time_teleport : public GameObjectScript
 
         bool OnGossipHello(Player* player, GameObject* go) override
         {
-            bool ru = player->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU;
+            bool ru = false; // Disabled Russian locale - use English by default
 
             if (player->IsInCombat())
                 return true;

@@ -22,6 +22,7 @@
 #include "CreatureTextMgr.h"
 #include "DatabaseEnv.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "MiscPackets.h"
 #include "ObjectMgr.h"
@@ -455,7 +456,13 @@ std::string CreatureTextMgr::GetLocalizedChatString(uint32 entry, uint8 gender, 
     BroadcastText const* bct = sObjectMgr->GetBroadcastText(groupItr->BroadcastTextId);
 
     if (bct)
+    {
         baseText = bct->GetText(locale, gender);
+        // #517: many broadcast_text rows carry only the female text (Text1), e.g. Aysa Cloudsinger 61792 "Yes. Go on."
+        // (61428); a speaker whose gender resolves to male got an empty chat line. Use the other gender's text then.
+        if (baseText.empty())
+            baseText = bct->GetText(locale, gender == GENDER_FEMALE ? GENDER_MALE : GENDER_FEMALE, true);
+    }
     else
         baseText = groupItr->text;
 

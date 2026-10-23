@@ -120,11 +120,61 @@ class boss_arcurion : public CreatureScript
             {
                 _Reset();
                 phase = 0;
+                evadeNoPlayer = false;
                 memset(servitors, 0, sizeof(servitors));
+            }
+
+            // Refs #824 (w61, EVT 1167696/7: the last player died - SAY_KILL - and in the same ms Arcurion said SAY_AGGRO
+            // again and Thrall answered with ACTION_ARCURION's line: the encounter restarted against Thrall alone and
+            // stayed IN_PROGRESS with no players). Only players (and their pets/guardians) pull Arcurion; Thrall 55779
+            // waits at point 20, ~27 yd away.
+            void MoveInLineOfSight(Unit* who) override
+            {
+                if (!who || !who->GetCharmerOrOwnerPlayerOrPlayerItself())
+                    return;
+
+                BossAI::MoveInLineOfSight(who);
+            }
+
+            // Refs #824: every evade (wipe) also frees Thrall - out of his Icy Tomb and out of combat, back to his spot.
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
+            {
+                evadeNoPlayer = false;
+                if (me->IsAlive())
+                    if (Creature* thrall = me->FindNearestCreature(NPC_THRALL_2, 200.0f))
+                        if (CreatureAI* thrallAI = thrall->AI())
+                            thrallAI->DoAction(ACTION_ARCURION_WIPE);
+
+                BossAI::EnterEvadeMode(why);
+            }
+
+            // Spirit of Redemption counts as alive but cannot be attacked (Unit::_IsValidAttackTarget), so it never holds the fight.
+            bool AnyLivePlayerNear() const
+            {
+                Map::PlayerList const& players = me->GetMap()->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->GetSource())
+                        if (player->IsAlive() && !player->IsGameMaster() && !player->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION)
+                            && player->IsWithinDistInMap(me, 100.0f))
+                            return true;
+                return false;
             }
 
             void JustEngagedWith(Unit* /*who*/) override
             {
+                // Refs #824: engaged with no live player around - do not start the encounter. The evade runs on the next
+                // UpdateAI, outside the combat-start call chain (CombatManager::SetInCombatWith -> Unit::SetInCombatState ->
+                // ... -> EngagementStart -> here). w105: a player-owned `who` is no exemption any more - ~9 s after the forced
+                // wipe (all four bots dead, the master ~266 yd away) Arcurion re-engaged three times in 1.4 s (SAY_AGGRO + Thrall's
+                // ACTION_ARCURION line each, three "DoZoneInCombat ... empty threat list (54590)" errors) with a source that
+                // passed the old `who` test: a dead caster's periodic aura or a dead owner's guardian. Every real pull has a
+                // live player within 100 yd.
+                if (!AnyLivePlayerNear())
+                {
+                    evadeNoPlayer = true;
+                    return;
+                }
+
                 Talk(SAY_AGGRO);
                 _JustEngagedWith();
                 phase = 0;
@@ -180,6 +230,13 @@ class boss_arcurion : public CreatureScript
 
             void UpdateAI(uint32 diff) override
             {
+                if (evadeNoPlayer)
+                {
+                    evadeNoPlayer = false;
+                    EnterEvadeMode();
+                    return;
+                }
+
                 if (!UpdateVictim())
                     return;
 
@@ -237,6 +294,7 @@ class boss_arcurion : public CreatureScript
             }
         private:
             uint8 phase;
+            bool evadeNoPlayer = false; // Refs #824: set in JustEngagedWith, evade on the next UpdateAI
             uint64 servitors[MAX_SERVITOR];
 
             void SummonNewServitor()
@@ -245,7 +303,7 @@ class boss_arcurion : public CreatureScript
                 {
                     if (servitors[i] == 0)
                     {
-                        if (Creature* pServitor = me->SummonCreature(NPC_FROZEN_SERVITOR, servitorPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000))
+                        if (Creature* pServitor = me->SummonCreature(NPC_FROZEN_SERVITOR, servitorPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000ms))
                         {
                             servitors[i] = pServitor->GetGUID();
                             break;
@@ -301,7 +359,18 @@ class npc_arcurion_frozen_servitor : public CreatureScript
 
                     if (uint32 eventId = events.ExecuteEvent())
                     {
-                        DoCastAOE(SPELL_ICY_BOULDER_AOE);
+                        // Refs #696: the glyphs. Wowpedia "Arcurion" (MediaWiki API, 2026-10-22): "all members must move out of the
+                        // glyphs that appear on the ground to avoid damage"; Wowhead tooltip 102198 Icy Boulder: "3 sec cast", 102199:
+                        // damage "to enemies in the area" (SpellEffect.dbc radius 2.5 yd, TRIGGER_MISSILE 102198 -> 102199). The old
+                        // path (102480 AoE dummy -> triggered 102198, spell_arcurion_icy_boulder) skipped the cast time, so the
+                        // boulder hit the player it picked at once, with nothing to dodge. Now the servitor marks the spot the
+                        // player stands on (an invisible World Trigger that lives past the impact) and casts the boulder at that
+                        // marker with its 3 s cast: TARGET_DEST_TARGET_ANY lands it on the marker, not on the player, so moving out
+                        // of the spot avoids it. The bots read the marker (CataHot "hot icy boulder").
+                        if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true))
+                            if (Creature* glyph = me->SummonCreature(NPC_WORLD_TRIGGER_HOT, target->GetPositionX(), target->GetPositionY(),
+                                target->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 7000ms))
+                                me->CastSpell(glyph, SPELL_ICY_BOULDER, false);
                         events.ScheduleEvent(EVENT_ICY_BOULDER, urand(5000, 10000));
                     }
 

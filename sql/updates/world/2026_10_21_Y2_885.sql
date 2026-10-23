@@ -1,0 +1,13 @@
+-- Refs #885: Volcanoth 38855 aggro emote (creature_text 38855 group 0, type 41 "Stay out of the way of Volcanoth's breath!").
+-- SAI id202 (On Aggro - Say Line 0) targets SMART_TARGET_THREAT_LIST (24). SMART_ACTION_TALK only sets a talker when that list
+-- yields a unit (SmartScript.cpp:121-153: talker = e.target.type == 0 ? me : nullptr). When Volcanoth pulls the player himself
+-- (MoveInLineOfSight -> AttackStart -> Unit::Attack, Unit.cpp:8860-8862) the engagement - and SMART_EVENT_AGGRO - fires inside
+-- SetInCombatWith(victim) (Unit::SetInCombatState -> JustStartedThreateningMe -> EngagementStart), BEFORE
+-- GetThreatManager().AddThreat(victim): the threat list is still empty, talker stays null, nothing is said (w87 L24 volcTalk=0;
+-- the PROBE shows Volcanoth attacking the player before the harness `engage`). AC engages threat-first (Unit::EngageWithTarget,
+-- AC Unit.cpp:7276-7284), so AC's SAI sees the victim. This is the only world row with event 4 + target 24 (and the same row in
+-- the MoP 5.4.8 data). Talk from self (target 1): talker = me, talk target = the aggro invoker (GetLastInvoker), on both pull paths.
+-- NOTE: SmartScript copies its events at AIM_Initialize (AddToWorld) only; `.reload smart_scripts` does not refresh live
+-- creatures and GridUnload = 0 on the test server, so this row (and 2026_10_21_PM_456.sql id203) takes effect after a restart.
+-- Undo: UPDATE smart_scripts SET target_type=24 WHERE entryorguid=38855 AND source_type=0 AND id=202;
+UPDATE `smart_scripts` SET `target_type`=1 WHERE `entryorguid`=38855 AND `source_type`=0 AND `id`=202 AND `action_type`=1 AND `target_type`=24;

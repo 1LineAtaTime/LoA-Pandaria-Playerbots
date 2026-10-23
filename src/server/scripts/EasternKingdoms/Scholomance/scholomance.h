@@ -155,7 +155,7 @@ enum eCreatures
     NPC_ICE_WALL_STALKER_ENTRANCE       = 69582,
     NPC_ICE_WALL_MOVE                   = 62731,
     NPC_FROSTGRASP_STALKER              = 57860,
-    NPC_GRAVITY_FLUX_STALKER            = 67272,
+    NPC_GRAVITY_FLUX_STALKER            = 300001, // #685: dedicated stalker (was 67272 = Zanvess scenario controller); see sql/updates/world/2026_10_23_scholo_gravity_flux_stalker.sql
 
     // Chillheart
     NPC_ANARCHIST_ARCANIST              = 59707,

@@ -9,8 +9,18 @@
 #include "Action.h"
 #include "Multiplier.h"
 #include "NamedObjectContext.h"
+#include "ObjectGuid.h"
 #include "PlayerbotAIAware.h"
 #include "Trigger.h"
+
+// AC Bot/Engine/Strategy/Strategy.h:17-23 (#413)
+enum class TargetValueExclusionType : uint8
+{
+    None = 0,
+    Tank,
+    Dps,
+    Attacker
+};
 
 enum StrategyType : uint32
 {
@@ -25,6 +35,9 @@ enum StrategyType : uint32
 };
 
 static float ACTION_IDLE = 0.0f;
+/// Battleground objective work: deliberately just above idle, so anything the bot would normally
+/// do (fighting, healing, fleeing) still outranks walking to an objective. Matches upstream.
+static float ACTION_BG = 1.0f;
 static float ACTION_DEFAULT = 5.0f;
 static float ACTION_NORMAL = 10.0f;
 static float ACTION_HIGH = 20.0f;
@@ -46,13 +59,17 @@ public:
     virtual NextAction** getDefaultActions() { return nullptr; }
     virtual void InitTriggers([[maybe_unused]] std::vector<TriggerNode*>& triggers) {}
     virtual void InitMultipliers([[maybe_unused]] std::vector<Multiplier*>& multipliers) {}
+    // AC Strategy.h:76-78 (#413): strategies may add guids that target values must skip.
+    virtual void AppendTargetExclusions([[maybe_unused]] GuidSet& exclusions,
+                                        [[maybe_unused]] TargetValueExclusionType type) {}
+    virtual bool HasTargetExclusions() const { return false; }
     virtual std::string const getName() = 0;
     virtual uint32 GetType() const { return STRATEGY_TYPE_GENERIC; }
     virtual ActionNode* GetAction(std::string const name);
     void Update() {}
     void Reset() {}
 
-protected:
+public:  // #72: AC Strategy.h:85-86 (Engine::Init merges it)
     NamedObjectFactoryList<ActionNode> actionNodeFactories;
 };
 

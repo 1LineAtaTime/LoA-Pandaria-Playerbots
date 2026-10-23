@@ -27,6 +27,7 @@
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "CreatureTextMgr.h"
 #include "Unit.h"
 #include "Player.h"
@@ -35,6 +36,7 @@
 #include "Map.h"
 #include "VehicleDefines.h"
 #include "SpellInfo.h"
+#include <utility>
 #include "throne_of_thunder.h"
 
 enum Yells
@@ -402,7 +404,7 @@ class boss_megaera : public CreatureScript
                 _JustEngagedWith();
 
                 scheduler
-                    .Schedule(Milliseconds(IsHeroic() ? TIMER_BERSERK_H : TIMER_BERSERK), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(IsHeroic() ? TIMER_BERSERK_H : TIMER_BERSERK), [this](TaskContext context)
                 {
                     DoCast(me, SPELL_BERSERK);
                     SendHeadsAction(ACTION_BERSERK);
@@ -498,7 +500,7 @@ class boss_megaera : public CreatureScript
 
                         // Megera Rampage 
                         scheduler
-                            .Schedule(Milliseconds(4500), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(4500), [this](TaskContext context)
                         {
                             if (Creature* announcer = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_SLG_GENERIC_MOP) : ObjectGuid::Empty))
                                 announcer->AI()->Talk(ANN_RAMPAGE_ADDIT);
@@ -510,7 +512,7 @@ class boss_megaera : public CreatureScript
 
                         // Rampage Done
                         scheduler
-                            .Schedule(Milliseconds(24500), [this](TaskContext /*context*/)
+                            .Schedule(Milliseconds(24500), [this](TaskContext context)
                         {
                             me->RemoveAurasDueToSpell(SPELL_RAMPAGE);
 
@@ -521,7 +523,7 @@ class boss_megaera : public CreatureScript
                 }
             };
 
-            void EnterEvadeMode() override
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 if (atEvade)
                     return;
@@ -741,7 +743,7 @@ struct megaeraHeadsBaseAI : public ScriptedAI
         me->NearTeleportTo(me->GetHomePosition().GetPositionX(), me->GetHomePosition().GetPositionY(), me->GetHomePosition().GetPositionZ(), me->GetHomePosition().GetOrientation());
 
         scheduler
-            .Schedule(Seconds(2), [this](TaskContext /*context*/)
+            .Schedule(Seconds(2), [this](TaskContext context)
         {
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_NON_ATTACKABLE);
         });
@@ -770,7 +772,7 @@ struct megaeraHeadsBaseAI : public ScriptedAI
             damage = 0;
     }
 
-    void EnterEvadeMode() override
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
     {
         if (!me->GetDBTableGUIDLow() || atEvade)
             return;
@@ -782,7 +784,8 @@ struct megaeraHeadsBaseAI : public ScriptedAI
 
         me->SetVisible(true);
         me->RemoveAllAuras();
-        me->DeleteThreatList();
+        me->GetThreatManager().RemoveMeFromThreatLists();
+        me->GetThreatManager().ClearAllThreat();
         me->CombatStop(true);
 
         if (Creature* megaera = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(DATA_MEGAERA) : ObjectGuid::Empty))
@@ -817,14 +820,14 @@ struct megaeraHeadsBaseAI : public ScriptedAI
                     spawner->AI()->SetData(TYPE_HEAD_SPAWNED, 0);
 
                 scheduler
-                    .Schedule(Milliseconds(1200), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(1200), [this](TaskContext context)
                 {
                     DoCast(me, SPELL_EMERGE);
                     me->NearTeleportTo(invHeadCombatType.find(me->GetEntry())->second.GetPositionX(), invHeadCombatType.find(me->GetEntry())->second.GetPositionY(), invHeadCombatType.find(me->GetEntry())->second.GetPositionZ(), invHeadCombatType.find(me->GetEntry())->second.GetOrientation());
                 });
             
                 scheduler
-                    .Schedule(Milliseconds(2700), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(2700), [this](TaskContext context)
                 {
                     me->RemoveAurasDueToSpell(SPELL_EMERGE);
                     me->RemoveAurasDueToSpell(SPELL_CONCEALING_FOG);
@@ -843,7 +846,7 @@ struct megaeraHeadsBaseAI : public ScriptedAI
             case ACTION_MEGERA_RAGE:
                 events.ScheduleEvent(EVENT_MEGAERAS_RAGE, urand(0.5 * IN_MILLISECONDS, 1.5 * IN_MILLISECONDS));
                 scheduler
-                    .Schedule(Milliseconds(20000), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(20000), [this](TaskContext context)
                 {
                     inRampage = false;
                 });
@@ -860,13 +863,13 @@ struct megaeraHeadsBaseAI : public ScriptedAI
                 me->HandleEmoteCommand(EMOTE_ONESHOT_SUBMERGE);
 
                 scheduler
-                    .Schedule(Milliseconds(1200), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(1200), [this](TaskContext context)
                 {
                     DoCast(me, SPELL_EMERGE);
                 });
 
                 scheduler
-                    .Schedule(Milliseconds(2700), [this](TaskContext /*context*/)
+                    .Schedule(Milliseconds(2700), [this](TaskContext context)
                 {
                     me->RemoveAurasDueToSpell(SPELL_EMERGE);
                 });
@@ -1068,7 +1071,7 @@ class npc_frozen_head_megaera : public CreatureScript
                                     if (Creature* announcer = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_SLG_GENERIC_MOP) : ObjectGuid::Empty))
                                         announcer->AI()->Talk(ANN_TORRENT_OF_FROST, target);
 
-                                    if (Creature* torrent = me->SummonCreature(NPC_TORRENT_OF_ICE, *target, TEMPSUMMON_TIMED_DESPAWN, 180000))
+                                    if (Creature* torrent = me->SummonCreature(NPC_TORRENT_OF_ICE, *target, TEMPSUMMON_TIMED_DESPAWN, 180000ms))
                                         torrent->AI()->SetGUID(target->GetGUID());
                                 }
                                 else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankSpecTargetSelector(SPELL_TORRENT_OF_ICE_TARGET)))
@@ -1078,7 +1081,7 @@ class npc_frozen_head_megaera : public CreatureScript
                                     if (Creature* announcer = ObjectAccessor::GetCreature(*me, instance ? instance->GetGuidData(NPC_SLG_GENERIC_MOP) : ObjectGuid::Empty))
                                         announcer->AI()->Talk(ANN_TORRENT_OF_FROST, target);
 
-                                    if (Creature* torrent = me->SummonCreature(NPC_TORRENT_OF_ICE, *target, TEMPSUMMON_TIMED_DESPAWN, 180000))
+                                    if (Creature* torrent = me->SummonCreature(NPC_TORRENT_OF_ICE, *target, TEMPSUMMON_TIMED_DESPAWN, 180000ms))
                                         torrent->AI()->SetGUID(target->GetGUID());
                                 }
 
@@ -1796,7 +1799,7 @@ class spell_acid_rain_summon : public SpellScript
         if (!caster || !target)
             return;
 
-        if (Creature* pRain = caster->SummonCreature(NPC_ACID_RAIN, *target, TEMPSUMMON_TIMED_DESPAWN, 10 * IN_MILLISECONDS))
+        if (Creature* pRain = caster->SummonCreature(NPC_ACID_RAIN, *target, TEMPSUMMON_TIMED_DESPAWN, Milliseconds(10 * IN_MILLISECONDS)))
         {
             pRain->CastSpell(pRain, SPELL_ACID_RAIN_VISUAL, true);
             caster->CastSpell(pRain, SPELL_ACID_RAIN_MISSILE, true);
@@ -1809,7 +1812,7 @@ class spell_acid_rain_summon : public SpellScript
             {
                 for (uint8 i = 0; i < 2; i++)
                 {
-                    if (Creature* pRain = caster->SummonCreature(NPC_ACID_RAIN, announcer->GetPositionX() + frand(-30.0f, 30.0f), announcer->GetPositionY() + frand(-28.0f, 28.0f), announcer->GetPositionZ(), announcer->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 10 * IN_MILLISECONDS))
+                    if (Creature* pRain = caster->SummonCreature(NPC_ACID_RAIN, announcer->GetPositionX() + frand(-30.0f, 30.0f), announcer->GetPositionY() + frand(-28.0f, 28.0f), announcer->GetPositionZ(), announcer->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, Milliseconds(10 * IN_MILLISECONDS)))
                     {
                         pRain->CastSpell(pRain, SPELL_ACID_RAIN_VISUAL, true);
                         caster->CastSpell(pRain, SPELL_ACID_RAIN_MISSILE, true);

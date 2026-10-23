@@ -149,7 +149,7 @@ class instance_lost_city_of_the_tolvir : public InstanceMapScript
                 switch (type)
                 {
                     case DATA_GENERAL_HUSAM:
-                        return uiSiamatGUID;
+                        return uiHusamGUID;   // #680: returned uiSiamatGUID (the Shockwave stalker handed its visuals to Siamat)
                     case DATA_LOCKMAW:
                         return uiLockmawGUID;
                     case DATA_AUGH:

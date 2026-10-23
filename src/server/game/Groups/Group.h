@@ -318,6 +318,7 @@ class Group
         bool SameSubGroup(uint64 guid1, MemberSlot const* slot2) const;
         bool SameSubGroup(Player const* member1, Player const* member2) const;
         bool HasFreeSlotSubGroup(uint8 subgroup) const;
+        Rolls GetRolls() const { return RollId; } // playerbots loot rolls; AC core has the same accessor
 
         MemberSlotList const& GetMemberSlots() const { return m_memberSlots; }
         GroupReference* GetFirstMember() { return m_memberMgr.getFirst(); }

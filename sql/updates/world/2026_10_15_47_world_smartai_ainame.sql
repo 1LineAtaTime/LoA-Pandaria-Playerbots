@@ -1,0 +1,22 @@
+-- Refs #183 (SmartAI data errors, part 1: AIName)
+-- ERROR CLASS: "SmartAIMgr::LoadSmartAIFromDB: Creature entry N has SmartAI scripts, but its AIName is not 'SmartAI'" (SmartScriptMgr.cpp:216) and the
+--   GameObject twin "... AIName is not 'SmartGameObjectAI'" (SmartScriptMgr.cpp:228). The creature/gameobject has smart_scripts rows but the template
+--   still runs the default AI, so the scripted behaviour never fires.
+-- FIX: set AIName on the entries that have NO ScriptName (a C++ ScriptName AI would override SmartAI anyway, see "left alone" below).
+--   Creatures (11): 30134 Brann's Flying Machine, 31428 Crusader Olakin Sainrith, 31432 Ghostwing, 37063 Stormwind City Guard (AC has AIName SmartAI +
+--   the same smart_scripts for all four), 35589 Jaeren Sunsworn, 35604 Arelas Brightstar (Cata Gilneas/Darnassus waypoint walkers, 6 rows each),
+--   64360 General Nazgrim, 64362 Shademaster Kiryn, 64363 Shokia, 64364 Rivett Clutchpop ('[Kill]OnSpeak' kill-credit rows, MoP quest givers).
+--   GameObjects (3): 181058 Banner of Provocation, 187073 Razorthorn Dirt Mound, 190555 Nerubian Crater.
+-- LEFT ALONE (still logged after this file): creatures with a C++ ScriptName whose AI wins over SmartAI - 18166 Khadgar (npc_khadgar), 25967 Zephyr (npc_zephyr),
+--   31848 Zidormi (npc_zidormi_dalaran), 38526 B.C. Eliminator (npc_canon_gob), 64267 Tornado (npc_kraxik_tornado), 64656 Spirit of Violence
+--   (celestial_experience_sha): their smart_scripts rows are shadowed duplicates; and 66654 Thunder Hold Supplies (2 rows commented 'tes' = debug debris).
+--   Remaining log lines: 18166 x2, 25967 x1, 31848 x1, 38526 x1, 64267 x1, 64656 x10, 66654 x2 = 18 (the lines are one per smart_scripts row).
+-- ROWS: 11 creature_template + 3 gameobject_template. Idempotent (AIName = '' guard).
+-- VERIFY: SELECT entry,AIName FROM creature_template WHERE entry IN (30134,31428,31432,37063,35589,35604,64360,64362,64363,64364);  -- all SmartAI
+--         SELECT entry,AIName FROM gameobject_template WHERE entry IN (181058,187073,190555);                                         -- all SmartGameObjectAI
+-- EXPECTED DBErrors.log DROP: 60 lines (55 creature + 5 GO; the per-row counts in the 2026-10-15 test log: 30134 x16, 31428 x10, 31432 x9, 35589 x6, 35604 x6,
+--   37063 x4, 64360/62/63/64 x1 each, GO 181058 x3, 187073 x1, 190555 x1).
+-- NOTE: AIName=SmartAI activates scripts that never ran on this DB; 30134's 9 talk rows still need creature_text (not available, see report) and stay skipped.
+-- UNDO: UPDATE creature_template SET AIName='' WHERE entry IN (...same ids...); UPDATE gameobject_template SET AIName='' WHERE entry IN (181058,187073,190555);
+UPDATE `creature_template` SET `AIName`='SmartAI' WHERE `entry` IN (30134,31428,31432,37063,35589,35604,64360,64362,64363,64364) AND `AIName`='' AND `ScriptName`='';
+UPDATE `gameobject_template` SET `AIName`='SmartGameObjectAI' WHERE `entry` IN (181058,187073,190555) AND `AIName`='' AND `ScriptName`='';

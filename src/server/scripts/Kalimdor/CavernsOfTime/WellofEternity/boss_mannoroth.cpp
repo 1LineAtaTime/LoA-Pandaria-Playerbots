@@ -185,7 +185,7 @@ class boss_mannoroth : public CreatureScript
             {
                 _Reset();
 
-                me->SummonCreature(NPC_VAROTHEN, varothenPos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
+                me->SummonCreature(NPC_VAROTHEN, varothenPos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000ms);
 
                 phase = 0;
                 bVarothen = false;
@@ -227,7 +227,12 @@ class boss_mannoroth : public CreatureScript
                 bEndEncounter = false;
 
                 events.ScheduleEvent(EVENT_MANNOROTH_AGGRO, 5000);
-                //events.ScheduleEvent(EVENT_FEL_FIRESTORM, 20000);
+                // #695: Fel Firestorm and Felblade (Wowpedia "Mannoroth and Varo'then", Stage One, 2026-10-23). 103888: 3 s cast, 12 s
+                // aura that every 0.3 s triggers 103889 = a Fel Flames (55502, creature_template_addon aura 103892 -> 103891
+                // ~20k Fire per s) at a random spot within 50 yd for 15 s (SpellMisc/SpellEffect, MoP DBC). 103966: 2 s cast, 10 s
+                // proc aura (Felburn 103972 on his melee strikes).
+                events.ScheduleEvent(EVENT_FEL_FIRESTORM, 20000);
+                events.ScheduleEvent(EVENT_FELBLADE, urand(10000, 15000));
                 events.ScheduleEvent(EVENT_SUMMON_DEBILITATOR, 65000);
                 events.ScheduleEvent(EVENT_SUMMON_DEVASTATOR, urand(5000, 8000));
                 events.ScheduleEvent(EVENT_SUMMON_DEVASTATOR, urand(5000, 8000));
@@ -346,8 +351,8 @@ class boss_mannoroth : public CreatureScript
                             Talk(SAY_MANNOROTH_AGGRO);
                             break;
                         case EVENT_FEL_FIRESTORM:
-                            //DoCast(me, SPELL_FEL_FIRESTORM);
-                            //events.ScheduleEvent(EVENT_FEL_FIRESTORM, urand(25000, 35000));
+                            DoCast(me, SPELL_FEL_FIRESTORM);
+                            events.ScheduleEvent(EVENT_FEL_FIRESTORM, urand(25000, 35000));
                             break;
                         case EVENT_FELBLADE:
                             DoCast(me, SPELL_FELBLADE);
@@ -359,12 +364,12 @@ class boss_mannoroth : public CreatureScript
                             break;
                         case EVENT_SUMMON_DEBILITATOR_1:
                             for (uint8 i = 0; i < 2; ++i)
-                                me->SummonCreature(NPC_DOOMGUARD_DEBILITATOR, debilitatorPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
+                                me->SummonCreature(NPC_DOOMGUARD_DEBILITATOR, debilitatorPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000ms);
                             break;
                         case EVENT_SUMMON_DEVASTATOR:
                         {
                             uint32 i = urand(0, 2);
-                            me->SummonCreature(NPC_DOOMGUARD_DEVASTATOR, devastatorPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000);
+                            me->SummonCreature(NPC_DOOMGUARD_DEVASTATOR, devastatorPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000ms);
                             events.ScheduleEvent(EVENT_SUMMON_DEVASTATOR, urand(4000, 7000));
                             break;
                         }
@@ -378,8 +383,8 @@ class boss_mannoroth : public CreatureScript
                         case EVENT_EMBEDDED_BLADE_1:
                             if (Creature* pIllidan = me->FindNearestCreature(NPC_ILLIDAN_2, 100.0f))
                                 pIllidan->AI()->Talk(15); // SAY_ILLIDAN_2_SWORD
-                            //events.RescheduleEvent(EVENT_FEL_FIRESTORM, urand(25000, 30000));
-                            //events.RescheduleEvent(EVENT_FELBLADE, urand(10000, 55000));
+                            events.RescheduleEvent(EVENT_FEL_FIRESTORM, urand(25000, 30000));   // #695
+                            events.RescheduleEvent(EVENT_FELBLADE, urand(10000, 55000));
                             break;
                         case EVENT_MANNOROTH_SARGERAS_1:
                             if (Creature* pIllidan = me->FindNearestCreature(NPC_ILLIDAN_2, 100.0f))
@@ -399,8 +404,8 @@ class boss_mannoroth : public CreatureScript
                                 pTyrande->AI()->Talk(14); // SAY_TYRANDE_MANY_DEMONS
                                 pTyrande->AI()->DoAction(10); // ACTION_MANNOROTH_INFERNO
                             }
-                            //events.RescheduleEvent(EVENT_FEL_FIRESTORM, urand(40000, 50000));
-                            //events.RescheduleEvent(EVENT_FELBLADE, urand(45000, 55000));
+                            events.RescheduleEvent(EVENT_FEL_FIRESTORM, urand(40000, 50000));   // #695
+                            events.RescheduleEvent(EVENT_FELBLADE, urand(45000, 55000));
                             events.ScheduleEvent(EVENT_GIFT_OF_SARGERAS_1, 5000);
                             break;
                         case EVENT_GIFT_OF_SARGERAS_1:
@@ -439,7 +444,12 @@ class boss_mannoroth : public CreatureScript
                     }
                 }
 
-                //DoMeleeAttackIfReady();
+                // #695: Felblade procs on his melee strikes, and retail Mannoroth "faces off in mortal combat against Illidan"
+                // (Illidan's Taunt 104461 keeps him there). The fork never scripts that taunt, so melee on a player tank would be a
+                // non-retail one-shot (DamageModifier 16.9); he swings only while Illidan is his victim.
+                if (Unit* victim = me->GetVictim())
+                    if (victim->GetEntry() == NPC_ILLIDAN_2)
+                        DoMeleeAttackIfReady();
             }
 
         private:

@@ -32,4 +32,18 @@ public:
     std::string const getName() override { return "cat aoe"; }
 };
 
+// #408 (AC parity, Ai/Class/Druid/Strategy/CatDruidStrategy.h:26-36). Optional additive strategy
+// that layers emergency heals on top of "cat", so the bot stays in cat form for DPS but shifts out
+// to heal when the party needs it.
+// Enable: co +offheal      Disable: co -offheal
+class CatOffhealStrategy : public CombatStrategy
+{
+public:
+    // #408: defined in the .cpp, which registers CatOffhealStrategyActionNodeFactory.
+    CatOffhealStrategy(PlayerbotAI* botAI);
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "offheal"; }
+};
+
 #endif
