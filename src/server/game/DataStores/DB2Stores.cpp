@@ -102,7 +102,24 @@ inline void LoadDB2(uint32& availableDb2Locales, DB2StoreProblemList& errlist, D
 
     ++DB2FilesCount;
 
-    if (storage->Load(db2Path + localeNames[defaultLocale] + '/', defaultLocale))
+    // The default-locale DB2 files are read from dbc/<locale>/. Older extractors wrote them straight into dbc/,
+    // so fall back to that folder when the locale folder does not have the file.
+    auto fileExists = [](std::string const& path)
+    {
+        if (FILE* f = fopen(path.c_str(), "rb"))
+        {
+            fclose(f);
+            return true;
+        }
+        return false;
+    };
+
+    std::string const localePath = db2Path + localeNames[defaultLocale] + '/';
+    std::string loadPath = localePath;
+    if (!fileExists(localePath + storage->GetFileName()) && fileExists(db2Path + storage->GetFileName()))
+        loadPath = db2Path;
+
+    if (storage->Load(loadPath, defaultLocale))
     {
         storage->LoadFromDB();
         // LoadFromDB() always loads strings into enUS locale, other locales are expected to have data in corresponding _locale tables
@@ -124,18 +141,16 @@ inline void LoadDB2(uint32& availableDb2Locales, DB2StoreProblemList& errlist, D
     }
     else
     {
-        // sort problematic db2 to (1) non compatible and (2) nonexistent
-        if (FILE* f = fopen((db2Path + storage->GetFileName()).c_str(), "rb"))
+        // sort problematic db2 to (1) non compatible and (2) nonexistent, reporting the path that was actually tried
+        if (fileExists(loadPath + storage->GetFileName()))
         {
             std::ostringstream stream;
-            stream << storage->GetFileName() << " exists, and has " << storage->GetFieldCount() << " field(s) (expected " << strlen(storage->GetFormat())
-                << "). Extracted file might be from wrong client version.";
-            std::string buf = stream.str();
-            errlist.push_back(buf);
-            fclose(f);
+            stream << loadPath << storage->GetFileName() << " exists, but could not be loaded (" << storage->GetFieldCount() << " field(s), expected "
+                << strlen(storage->GetFormat()) << "). Extracted file might be from wrong client version.";
+            errlist.push_back(stream.str());
         }
         else
-            errlist.push_back(storage->GetFileName());
+            errlist.push_back(storage->GetFileName() + " (not in " + localePath + " or " + db2Path + ")");
     }
 
     stores[storage->GetHash()] = storage;
@@ -245,7 +260,8 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     // error checks
     if (bad_db2_files.size() >= DB2FilesCount)
     {
-        TC_LOG_ERROR("misc", "\nIncorrect DataDir value in worldserver.conf or ALL required *.db2 files (%d) not found by path: %sdbc", DB2FilesCount, dataPath.c_str());
+        TC_LOG_ERROR("misc", "\nIncorrect DataDir value in worldserver.conf or ALL required *.db2 files (%d) not found by path: %sdbc/%s/ (or %sdbc/)",
+            DB2FilesCount, dataPath.c_str(), localeNames[defaultLocale], dataPath.c_str());
         exit(1);
     }
     else if (!bad_db2_files.empty())

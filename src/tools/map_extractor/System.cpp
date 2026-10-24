@@ -1226,7 +1226,7 @@ void ExtractCameraFiles(int locale, bool basicLocale)
     printf("Extracted %u camera files\n", count);
 }
 
-void ExtractDB2Files(int l, bool basicLocale)
+void ExtractDB2Files(int l, bool /*basicLocale*/)
 {
     printf("Extracting db2 files...\n");
 
@@ -1237,13 +1237,12 @@ void ExtractDB2Files(int l, bool basicLocale)
     uint32 count = 0;
     if (listFile)
     {
+        // The worldserver reads DB2 files from dbc/<locale>/ for every locale, the main one included
         std::string outputPath = output_path;
         outputPath += "/dbc/";
-        if (!basicLocale)
-        {
-            outputPath += Locales[l];
-            outputPath += "/";
-        }
+        outputPath += Locales[l];
+        outputPath += "/";
+        CreateDir(outputPath);
 
         std::string filename;
 
