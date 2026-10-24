@@ -1,0 +1,65 @@
+-- Magisters' Terrace: creature abilities
+-- Most of the dungeon's creatures (the Sunblade blood elves, the Wretched, the coilskar and brutes) had no AI or ran classic rows:
+-- port their abilities from the classic (AzerothCore) data, falling back to the Cataclysm data; rows needing events, actions or
+-- action lists LoA lacks are left out, and AzerothCore's range and area events are converted, keeping the dungeon (normal/heroic)
+-- flags. The creatures no reference scripts cast their sniffed spells (creature_template spell1-8).
+
+SET @ENTRIES := '24683,24684,24685,24686,24687,24688,24689';
+
+UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE FIND_IN_SET(`entry`, @ENTRIES);
+DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND FIND_IN_SET(`entryorguid`, @ENTRIES);
+INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
+(24683, 0, 0, 1, 1, 0, 100, 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Out of Combat - Disable Combat Movement'),
+(24683, 0, 1, 0, 61, 0, 100, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Out of Combat - Stop Attacking'),
+(24683, 0, 11, 12, 9, 0, 100, 0, 45, 80, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 45-80 Range - Enable Combat Movement'),
+(24683, 0, 12, 0, 61, 0, 100, 0, 0, 0, 0, 0, 20, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 45-80 Range - Start Attacking'),
+(24683, 0, 13, 0, 9, 0, 100, 0, 0, 5, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 0-5 Range - Enable Combat Movement'),
+(24683, 0, 14, 15, 9, 0, 100, 0, 0, 0, 0, 0, 40, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 0-0 Range - Set Sheath Melee'),
+(24683, 0, 15, 0, 61, 0, 100, 0, 0, 0, 0, 0, 20, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 0-0 Range - Start Attacking'),
+(24683, 0, 16, 17, 9, 0, 100, 0, 5, 20, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 5-20 Range - Disable Combat Movement'),
+(24683, 0, 17, 0, 61, 0, 100, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Within 5-20 Range - Stop Attacking'),
+(24683, 0, 18, 0, 2, 0, 100, 7, 0, 15, 0, 0, 23, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Between 0-15% Health - Increment Phase By 1'),
+(24683, 0, 19, 20, 2, 0, 100, 1, 0, 15, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Between 0-15% Health - Enable Combat Movement (No Repeat)'),
+(24683, 0, 20, 0, 61, 0, 100, 1, 0, 0, 0, 0, 25, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Between 0-15% Health - Flee For Assist (No Repeat)'),
+(24683, 0, 21, 0, 7, 0, 100, 0, 0, 0, 0, 0, 40, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - On Evade - Set Sheath Melee (No Repeat)'),
+(24683, 0, 22, 0, 9, 0, 100, 2, 10, 60, 4000, 6000, 11, 44478, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - In Combat - Cast Glaive Throw'),
+(24683, 0, 23, 0, 9, 0, 100, 4, 10, 60, 4000, 6000, 11, 46028, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - In Combat - Cast Glaive Throw'),
+(24683, 0, 24, 0, 0, 0, 100, 1, 1000, 4000, 0, 0, 11, 44475, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - In Combat - Cast Magic Dampening Field'),
+(24683, 0, 25, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44574, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Mage Guard - Out of Combat - Cast Fel Energy Cosmetic'),
+(24684, 0, 0, 0, 0, 0, 100, 2, 0, 0, 30000, 30000, 11, 44480, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Blood Knight - In Combat - Cast Seal of Wrath'),
+(24684, 0, 1, 0, 0, 0, 100, 4, 0, 0, 30000, 30000, 11, 46030, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Blood Knight - In Combat - Cast Seal of Wrath'),
+(24684, 0, 2, 0, 0, 0, 100, 2, 5000, 10000, 10000, 15000, 11, 44482, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Blood Knight - In Combat - Cast Judgement of Wrath'),
+(24684, 0, 3, 0, 0, 0, 100, 4, 5000, 10000, 10000, 15000, 11, 46033, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Blood Knight - In Combat - Cast Judgement of Wrath'),
+(24684, 0, 4, 0, 74, 0, 100, 2, 0, 40, 15000, 20000, 11, 44479, 1, 0, 0, 0, 0, 9, 0, 0, 40, 0, 0, 0, 0, 'Sunblade Blood Knight - On Friendly Between 0-40% Health - Cast Holy Light'),
+(24684, 0, 5, 0, 74, 0, 100, 4, 0, 40, 15000, 20000, 11, 46029, 1, 0, 0, 0, 0, 9, 0, 0, 40, 0, 0, 0, 0, 'Sunblade Blood Knight - On Friendly Between 0-40% Health - Cast Holy Light'),
+(24684, 0, 6, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44574, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Blood Knight - Out of Combat - Cast Fel Energy Cosmetic'),
+(24685, 0, 0, 0, 1, 0, 100, 7, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Out of Combat - Disable Combat Movement (No Repeat)'),
+(24685, 0, 9, 10, 3, 0, 100, 0, 0, 15, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Between 0-15% Mana - Enable Combat Movement'),
+(24685, 0, 10, 0, 61, 0, 100, 0, 0, 0, 0, 0, 23, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Between 0-15% Mana - Increment Phase By 1'),
+(24685, 0, 11, 0, 9, 0, 100, 7, 35, 80, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Within 35-80 Range - Enable Combat Movement'),
+(24685, 0, 12, 0, 9, 0, 100, 7, 5, 15, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Within 5-15 Range - Disable Combat Movement'),
+(24685, 0, 13, 0, 9, 0, 100, 7, 0, 5, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Within 0-5 Range - Enable Combat Movement'),
+(24685, 0, 14, 0, 3, 0, 100, 6, 30, 100, 100, 100, 23, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Between 30-100% Mana - Decrement Phase By 1'),
+(24685, 0, 15, 0, 0, 0, 100, 2, 0, 0, 3000, 4000, 11, 44606, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - In Combat - Cast Frostbolt'),
+(24685, 0, 16, 0, 0, 0, 100, 4, 0, 0, 3000, 4000, 11, 46035, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - In Combat - Cast Frostbolt'),
+(24685, 0, 17, 0, 9, 0, 100, 2, 0, 8, 20000, 20000, 11, 44644, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Within Range 0 - 10 - Cast Arcane Nova'),
+(24685, 0, 18, 0, 9, 0, 100, 4, 0, 8, 20000, 20000, 11, 46036, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Within Range 0 - 10 - Cast Arcane Nova'),
+(24685, 0, 19, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44574, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Magister - Out of Combat - Cast Fel Energy Cosmetic'),
+(24686, 0, 0, 0, 1, 0, 100, 1, 1000, 1000, 0, 0, 11, 44517, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - Out of Combat - Cast Summon Sunblade Imp'),
+(24686, 0, 1, 0, 1, 0, 100, 1, 1, 1000, 180000, 180000, 11, 44520, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - Out of Combat - Cast Fel Armor'),
+(24686, 0, 2, 0, 0, 0, 100, 2, 0, 0, 3000, 4000, 11, 44518, 64, 0, 0, 0, 0, 5, 30, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - In Combat - Cast Immolate'),
+(24686, 0, 3, 0, 0, 0, 100, 4, 0, 0, 3000, 4000, 11, 46042, 64, 0, 0, 0, 0, 5, 30, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - In Combat - Cast Immolate'),
+(24686, 0, 4, 0, 0, 0, 100, 2, 8000, 8000, 15000, 20000, 11, 44519, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - In Combat - Cast Incinerate'),
+(24686, 0, 5, 0, 0, 0, 100, 4, 8000, 8000, 15000, 20000, 11, 46043, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - In Combat - Cast Incinerate'),
+(24686, 0, 6, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44574, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Warlock - Out of Combat - Cast Fel Energy Cosmetic'),
+(24687, 0, 0, 0, 0, 0, 100, 2, 0, 0, 10000, 10000, 11, 44599, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Physician - In Combat - Cast Inject Poison'),
+(24687, 0, 1, 0, 0, 0, 100, 4, 0, 0, 10000, 10000, 11, 46046, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Physician - In Combat - Cast Inject Poison'),
+(24687, 0, 2, 0, 2, 0, 100, 2, 0, 60, 30000, 30000, 11, 44583, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Physician - In Combat - Cast Prayer of Mending'),
+(24687, 0, 3, 0, 2, 0, 100, 4, 0, 60, 30000, 30000, 11, 46045, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Physician - In Combat - Cast Prayer of Mending'),
+(24687, 0, 4, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44574, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunblade Physician - Out of Combat - Cast Fel Energy Cosmetic'),
+(24688, 0, 0, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44374, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Wretched Skulker - Out of Combat - Cast Spell Fel Crystal Cosmetic'),
+(24688, 0, 1, 0, 2, 0, 100, 0, 0, 20, 23000, 33000, 11, 44505, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Wretched Skulker - Between 0-20% Health - Cast Drink Fel Infusion'),
+(24688, 0, 2, 0, 0, 0, 100, 0, 0, 0, 4000, 6000, 11, 44533, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Wretched Skulker - In Combat - Cast Wretched Stab'),
+(24689, 0, 0, 0, 1, 0, 100, 1, 2000, 2000, 0, 0, 11, 44374, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Wretched Bruiser - Out of Combat - Cast Spell Fel Crystal Cosmetic'),
+(24689, 0, 1, 0, 2, 0, 100, 0, 0, 20, 23000, 33000, 11, 44505, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Wretched Bruiser - Between 0-20% Health - Cast Drink Fel Infusion'),
+(24689, 0, 2, 0, 0, 0, 100, 0, 3800, 3800, 6000, 11000, 11, 44534, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Wretched Bruiser - In Combat - Cast Wretched Strike');
