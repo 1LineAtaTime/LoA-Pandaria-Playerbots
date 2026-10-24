@@ -605,6 +605,9 @@ void WorldSession::LogoutPlayer(bool save)
             _player->BuildPlayerRepop();
             _player->RepopAtGraveyard();
         }
+        ///- Players kicked by a server shutdown are not running away from a fight, so don't kill them
+        else if (World::IsStopped())
+            _player->CombatStop();
         // #721: playerbot sessions are exempt from the combat-logout kill below. AC's core has no such
         // branch (AC WorldSession.cpp LogoutPlayer: death-timer repop, spirit of redemption, pending
         // bind only), so an AC bot logged out in combat stays alive. Here every random-bot logout or
