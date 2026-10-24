@@ -1,0 +1,68 @@
+-- Shadow Labyrinth: creature abilities
+-- Most of the dungeon's creatures (the Cabal cultists, spellbinders and assassins, the Fel Overseers, the Malicious Instructors)
+-- had no AI or ran classic rows: port their abilities from the classic (AzerothCore) data, falling back to the Cataclysm data; rows
+-- needing events, actions or action lists LoA lacks are left out, and AzerothCore's range and area events are converted, keeping
+-- the dungeon (normal/heroic) flags. The creatures no reference scripts cast their sniffed spells (creature_template spell1-8).
+
+SET @ENTRIES := '18631,18636,18638,18640,18794';
+
+UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE FIND_IN_SET(`entry`, @ENTRIES);
+DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND FIND_IN_SET(`entryorguid`, @ENTRIES);
+INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
+(18631, 0, 0, 0, 13, 0, 100, 6, 8000, 10000, 0, 0, 11, 15614, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Cultist - Target Casting - Cast ''Kick'' (No Repeat)'),
+(18631, 0, 1, 0, 0, 0, 100, 6, 3000, 8000, 10000, 12000, 11, 12787, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Cultist - In Combat - Cast ''Thrash'' (No Repeat)'),
+(18636, 0, 0, 0, 10, 0, 100, 1, 0, 8, 4000, 8000, 11, 30986, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Cabal Assassin - Out of Combat LoS - Cast ''Cheap Shot'''),
+(18636, 0, 1, 0, 67, 0, 100, 0, 4500, 6500, 0, 0, 11, 30992, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Assassin - On Behind Target - Cast ''Backstab'''),
+(18636, 0, 2, 0, 0, 0, 100, 0, 2000, 4500, 12000, 20000, 11, 30981, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Assassin - In Combat - Cast ''Crippling Poison'''),
+(18636, 0, 3, 0, 0, 0, 100, 0, 8000, 11000, 22000, 25000, 11, 36974, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Assassin - In Combat - Cast ''Wound Poison'''),
+(18638, 0, 0, 0, 1, 0, 100, 7, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Out of Combat - Disable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 7, 8, 3, 1, 100, 7, 0, 15, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Between 0-15% Mana - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 8, 0, 61, 1, 100, 0, 0, 0, 0, 0, 23, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Between 0-15% Mana - Increment Phase By 1 (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 9, 0, 9, 1, 100, 7, 35, 80, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Within 35-80 Range - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 10, 0, 9, 1, 100, 7, 5, 15, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Within 5-15 Range - Disable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 11, 0, 9, 1, 100, 7, 0, 5, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Within 0-5 Range - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 12, 0, 3, 2, 100, 6, 30, 100, 100, 100, 23, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Between 30-100% Mana - Decrement Phase By 1 (Phase 1) (No Repeat) (Dungeon)'),
+(18638, 0, 13, 0, 2, 0, 100, 7, 0, 20, 0, 0, 22, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Between 0-20% Health - Set Event Phase 3 (No Repeat) (Dungeon)'),
+(18638, 0, 14, 0, 0, 0, 100, 2, 0, 0, 3400, 4500, 11, 12471, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - In Combat CMC - Cast ''Shadow Bolt'' (Normal Dungeon)'),
+(18638, 0, 15, 0, 0, 0, 100, 4, 0, 0, 3400, 4500, 11, 15472, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - In Combat CMC - Cast ''Shadow Bolt'' (Heroic Dungeon)'),
+(18638, 0, 16, 17, 2, 0, 100, 1, 0, 50, 0, 0, 11, 33949, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - Between 0-50% Health - Cast ''Shape of the Beast'' (No Repeat)'),
+(18638, 0, 17, 0, 61, 0, 100, 0, 0, 0, 0, 0, 11, 33499, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Zealot - On Link - Cast ''Shape of the Beast'''),
+(18640, 0, 0, 0, 1, 0, 100, 7, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Out of Combat - Disable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 8, 9, 3, 1, 100, 7, 0, 15, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Between 0-15% Mana - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 9, 0, 61, 1, 100, 0, 0, 0, 0, 0, 23, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Between 0-15% Mana - Increment Phase By 1 (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 10, 0, 9, 1, 100, 7, 35, 80, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Within 35-80 Range - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 11, 0, 9, 1, 100, 7, 5, 15, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Within 5-15 Range - Disable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 12, 0, 9, 1, 100, 7, 0, 5, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Within 0-5 Range - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 13, 0, 3, 0, 100, 6, 30, 100, 100, 100, 23, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - Between 30-100% Mana - Decrement Phase By 1 (Phase 1) (No Repeat) (Dungeon)'),
+(18640, 0, 14, 0, 23, 0, 100, 0, 13787, 0, 3600, 3600, 11, 13787, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - On Aura Missing - Cast ''Demon Armor'''),
+(18640, 0, 15, 0, 0, 0, 100, 2, 0, 0, 3600, 4800, 11, 12471, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - In Combat - Cast ''Shadow Bolt'' (Normal Dungeon)'),
+(18640, 0, 16, 0, 0, 0, 100, 4, 0, 0, 3600, 4800, 11, 15232, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - In Combat - Cast ''Shadow Bolt'' (Heroic Dungeon)'),
+(18640, 0, 17, 0, 0, 0, 100, 0, 7800, 24100, 19300, 36200, 11, 32863, 32, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 'Cabal Warlock - In Combat - Cast ''Seed of Corruption'''),
+(18794, 0, 0, 1, 1, 0, 100, 7, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Out of Combat - Disable Combat Movement (No Repeat) (Dungeon)'),
+(18794, 0, 1, 0, 61, 0, 100, 0, 0, 0, 0, 0, 30, 1, 4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Out of Combat - Set Random Phase(1, 4) (No Repeat) (Dungeon)'),
+(18794, 0, 7, 8, 3, 1, 100, 7, 0, 15, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Between 0-15% Mana - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18794, 0, 8, 0, 61, 1, 100, 0, 0, 0, 0, 0, 23, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Between 0-15% Mana - Increment Phase By 1 (Phase 1) (No Repeat) (Dungeon)'),
+(18794, 0, 9, 0, 9, 1, 100, 7, 35, 80, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Within 35-80 Range - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18794, 0, 10, 0, 9, 1, 100, 7, 5, 15, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Within 5-15 Range - Disable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18794, 0, 11, 0, 9, 1, 100, 7, 0, 5, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Within 0-5 Range - Enable Combat Movement (Phase 1) (No Repeat) (Dungeon)'),
+(18794, 0, 15, 0, 3, 2, 100, 6, 30, 100, 100, 100, 23, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Between 30-100% Mana - Decrement Phase By 1 (Phase 1) (No Repeat) (Dungeon)'),
+(18794, 0, 21, 22, 3, 4, 100, 7, 0, 15, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Between 0-15% Mana - Enable Combat Movement (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 22, 0, 61, 4, 100, 0, 0, 0, 0, 0, 23, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Between 0-15% Mana - Increment Phase By 1 (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 23, 0, 9, 4, 100, 7, 35, 80, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Within 35-80 Range - Enable Combat Movement (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 24, 0, 9, 4, 100, 7, 5, 15, 0, 0, 21, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Within 5-15 Range - Disable Combat Movement (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 25, 0, 9, 4, 100, 7, 0, 5, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Within 0-5 Range - Enable Combat Movement (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 28, 0, 3, 8, 100, 6, 30, 100, 100, 100, 23, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Between 30-100% Mana - Decrement Phase By 1 (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 29, 0, 4, 0, 100, 7, 0, 0, 0, 0, 21, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - On Aggro - Enable Combat Movement (Phase 4) (No Repeat) (Dungeon)'),
+(18794, 0, 30, 0, 25, 0, 100, 0, 0, 0, 0, 0, 11, 32958, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - On Reset - Cast ''Crystal Channel'''),
+(18794, 0, 31, 0, 0, 0, 100, 2, 0, 0, 3400, 4500, 11, 15497, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat CMC - Cast ''Frostbolt'' (Normal Dungeon) (Phase 1)'),
+(18794, 0, 32, 0, 0, 0, 100, 4, 0, 0, 3400, 4500, 11, 12675, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat CMC - Cast ''Frostbolt'' (Heroic Dungeon) (Phase 1)'),
+(18794, 0, 33, 0, 9, 0, 100, 2, 0, 10, 12100, 16900, 11, 15532, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Frost Nova'' (Normal Dungeon) (Phase 1)'),
+(18794, 0, 34, 0, 9, 0, 100, 4, 0, 10, 12100, 16900, 11, 15063, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Frost Nova'' (Normal Dungeon) (Phase 1)'),
+(18794, 0, 35, 0, 0, 0, 100, 2, 0, 0, 5000, 5000, 11, 33832, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat CMC - Cast ''Arcane Missiles'' (Normal Dungeon) (Phase 2)'),
+(18794, 0, 36, 0, 0, 0, 100, 4, 0, 0, 5000, 5000, 11, 38263, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat CMC - Cast ''Arcane Missiles'' (Heroic Dungeon) (Phase 2)'),
+(18794, 0, 37, 0, 0, 0, 100, 0, 2400, 14300, 5200, 21700, 11, 33487, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Addle Humanoid'' (Phase 2)'),
+(18794, 0, 38, 0, 0, 0, 100, 0, 3600, 6200, 4800, 11200, 11, 9574, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Flame Buffet'' (Phase 3)'),
+(18794, 0, 39, 0, 0, 0, 100, 2, 6100, 20200, 8400, 22900, 11, 20795, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Fire Blast'' (Normal Dungeon) (Phase 3)'),
+(18794, 0, 40, 0, 0, 0, 100, 4, 6100, 20200, 8400, 22900, 11, 14145, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Fire Blast'' (Heroic Dungeon) (Phase 3)'),
+(18794, 0, 41, 0, 0, 0, 100, 0, 10000, 15000, 12100, 19300, 11, 12540, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - In Combat - Cast ''Gouge'' (Phase 4)'),
+(18794, 0, 42, 0, 15, 0, 100, 4, 15, 15000, 20000, 0, 11, 17201, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Cabal Ritualist - Friendly Crowd Controlled - Cast ''Dispel Magic'' (Heroic Dungeon)');
