@@ -1,0 +1,78 @@
+-- Bloodmyst Isle: creature abilities
+-- Bloodmyst Isle kept its TBC content and almost none of its creatures had AI. Port their abilities from the classic (TBC) data, and
+-- from the Cataclysm data for the Sunhawk Reclaimer; spells that 5.4.8 no longer has are left out. The creatures neither scripts
+-- cast their sniffed spells (creature_template spell1-8).
+
+SET @ENTRIES := '17322,17327,17330,17331,17333,17336,17339,17342,17343,17346,17349,17350,17352,17353,17358,17494,17522,17523,17527,17604,17606,17607,17608,17609,17678,17683,17713';
+
+UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE FIND_IN_SET(`entry`, @ENTRIES);
+DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND FIND_IN_SET(`entryorguid`, @ENTRIES);
+INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
+(17322, 0, 0, 0, 0, 0, 100, 0, 10000, 15000, 0, 0, 11, 31282, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Infected Wildkin - In Combat - Cast ''Infected Wound'''),
+(17327, 0, 0, 0, 0, 0, 100, 0, 1000, 1000, 15000, 15000, 11, 12550, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Blacksilt Tidecaller - In Combat - Cast ''Lightning Shield'''),
+(17327, 0, 1, 0, 0, 0, 100, 0, 5300, 5300, 19600, 19600, 11, 12160, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Blacksilt Tidecaller - In Combat - Cast ''Rejuvenation'''),
+(17330, 0, 0, 0, 0, 0, 100, 0, 500, 2000, 4000, 6000, 11, 9739, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Blacksilt Seer - In Combat - Cast ''Wrath'''),
+(17330, 0, 1, 0, 2, 0, 100, 0, 0, 35, 20000, 24000, 11, 12160, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Blacksilt Seer - Between 0-35% Health - Cast ''Rejuvenation'''),
+(17330, 0, 2, 0, 2, 0, 100, 0, 0, 35, 30000, 35000, 11, 12160, 32, 0, 0, 0, 0, 26, 20, 0, 0, 0, 0, 0, 0, 'Blacksilt Seer - Between 0-35% Health - Cast ''Rejuvenation'' (Friend)'),
+(17331, 0, 0, 0, 0, 0, 100, 0, 2500, 2500, 7400, 7400, 11, 11976, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Wrathscale Shorestalker - In Combat - Cast ''Strike'''),
+(17333, 0, 0, 0, 0, 0, 100, 0, 2000, 2000, 8000, 8000, 11, 31295, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Wrathscale Screamer - In Combat - Cast ''Scream'''),
+(17336, 0, 0, 0, 0, 0, 100, 0, 3500, 12000, 3500, 12000, 11, 9672, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Wrathscale Sorceress - In Combat - Cast ''Frostbolt'''),
+(17339, 0, 0, 0, 0, 0, 100, 0, 3200, 3200, 6400, 14700, 11, 9613, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Nazzivus Felsworn - In Combat - Cast ''Shadow Bolt'''),
+(17339, 0, 1, 0, 0, 0, 100, 0, 14500, 24300, 16100, 27540, 11, 11962, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Nazzivus Felsworn - In Combat - Cast ''Immolate'''),
+(17342, 0, 0, 0, 0, 0, 100, 0, 0, 3000, 12000, 20000, 11, 11990, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 'Axxarien Hellcaller - In Combat - Cast ''Rain of Fire'''),
+(17343, 0, 0, 0, 0, 0, 100, 0, 1800, 1800, 20600, 20600, 11, 31286, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Thistle Lasher - In Combat - Cast ''Lash'''),
+(17346, 0, 0, 0, 0, 0, 100, 0, 2500, 2500, 11720, 11720, 11, 31287, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mutated Tangler - In Combat - Cast ''Entangling Roots'''),
+(17349, 0, 0, 0, 0, 0, 100, 0, 1500, 1500, 10500, 10500, 11, 36332, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Blue Flutterer - In Combat - Cast ''Rake'''),
+(17350, 0, 0, 0, 0, 0, 100, 0, 1500, 1500, 10500, 10500, 11, 36332, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Royal Blue Flutterer - In Combat - Cast ''Rake'''),
+(17352, 0, 0, 0, 0, 0, 100, 0, 3250, 3250, 10270, 10270, 11, 5810, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Corrupted Treant - In Combat - Cast ''Stone Skin'''),
+(17353, 0, 0, 0, 0, 0, 100, 0, 2500, 2500, 8900, 8900, 11, 31277, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Corrupted Stomper - In Combat - Cast ''Stomp'''),
+(17358, 0, 0, 0, 0, 0, 100, 0, 1000, 1000, 121000, 121000, 11, 31280, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Fouled Water Spirit - In Combat - Cast ''Bloodmyst Chill'''),
+(17358, 0, 1, 0, 0, 0, 100, 0, 3100, 3100, 9600, 9600, 11, 31281, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Fouled Water Spirit - In Combat - Cast ''Bloodbolt'''),
+(17494, 0, 0, 0, 0, 0, 100, 0, 6470, 8620, 3240, 35910, 11, 20791, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Zevrax - In Combat - Cast ''Shadow Bolt'''),
+(17494, 0, 1, 0, 0, 0, 100, 0, 11300, 11300, 12950, 37520, 11, 11962, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Zevrax - In Combat - Cast ''Immolate'''),
+(17494, 0, 2, 0, 0, 0, 100, 0, 3230, 30750, 19410, 45930, 11, 21068, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Zevrax - In Combat - Cast ''Corruption'''),
+(17494, 0, 3, 0, 0, 0, 100, 0, 4850, 30740, 12950, 75790, 11, 17227, 32, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Zevrax - In Combat - Cast ''Curse of Weakness'''),
+(17522, 0, 0, 0, 0, 0, 100, 0, 4500, 4500, 12800, 12800, 11, 745, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Myst Spinner - In Combat - Cast ''Web'''),
+(17523, 0, 0, 0, 0, 0, 100, 0, 1500, 1500, 33000, 33000, 11, 31288, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Myst Leecher - In Combat - Cast ''Leech Poison'''),
+(17527, 0, 0, 0, 0, 0, 100, 0, 5000, 5000, 25000, 25000, 11, 3242, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Enraged Ravager - In Combat - Cast ''Ravage'''),
+(17527, 0, 1, 0, 2, 0, 100, 0, 0, 30, 0, 0, 11, 15716, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Enraged Ravager - Between 0-30% Health - Cast ''Enrage'''),
+(17604, 0, 0, 0, 26, 0, 100, 1, 0, 10, 0, 1, 11, 31734, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Spy - In Combat LOS 10 yards - Cast ''Mark of the Sunhawk'' (No Repeat)'),
+(17604, 0, 1, 0, 0, 0, 100, 0, 4800, 29700, 16140, 25110, 11, 13730, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Spy - In Combat - Cast ''Demoralizing Shout'''),
+(17604, 0, 2, 0, 0, 0, 100, 0, 6450, 9380, 9700, 21250, 11, 31827, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Spy - In Combat - Cast ''Heroic Strike'''),
+(17606, 0, 0, 0, 1, 0, 100, 0, 0, 0, 300000, 600000, 11, 12544, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Reclaimer - OOC - Cast Frost Armor'),
+(17606, 0, 1, 0, 4, 0, 100, 0, 0, 0, 0, 0, 11, 12544, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Reclaimer - On Agro - Cast Frost Armor'),
+(17606, 0, 2, 0, 0, 0, 100, 0, 0, 3000, 4500, 5000, 11, 19816, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Reclaimer - IC - Cast Fireball'),
+(17607, 0, 0, 0, 26, 0, 100, 1, 0, 10, 0, 1, 11, 31734, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Pyromancer - In Combat LOS 10 yards - Cast ''Mark of the Sunhawk'' (No Repeat)'),
+(17607, 0, 1, 0, 0, 0, 100, 0, 3200, 3200, 15400, 15400, 11, 15284, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Defender - In Combat - Cast ''Cleave'''),
+(17607, 0, 2, 0, 0, 0, 100, 0, 8600, 8600, 34200, 34200, 11, 31737, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Defender - In Combat - Cast ''Whirlwind'''),
+(17608, 0, 0, 0, 26, 0, 100, 1, 0, 10, 0, 1, 11, 31734, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Pyromancer - In Combat LOS 10 yards - Cast ''Mark of the Sunhawk'' (No Repeat)'),
+(17608, 0, 1, 0, 0, 0, 100, 0, 1500, 1500, 25700, 25700, 11, 11962, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Pyromancer - In Combat - Cast ''Immolate'''),
+(17608, 0, 2, 0, 0, 0, 100, 0, 5200, 5200, 9900, 9900, 11, 9053, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Pyromancer - In Combat - Cast ''Fireball'''),
+(17609, 0, 0, 0, 26, 0, 100, 1, 0, 10, 0, 1, 11, 31734, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Pyromancer - In Combat LOS 10 yards - Cast ''Mark of the Sunhawk'' (No Repeat)'),
+(17609, 0, 1, 0, 0, 0, 100, 0, 1000, 1000, 6200, 6200, 11, 6660, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Saboteur - In Combat - Cast ''Shoot'''),
+(17609, 0, 2, 0, 0, 0, 100, 0, 11750, 11750, 32400, 32400, 11, 14443, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sunhawk Saboteur - In Combat - Cast ''Multi-Shot'''),
+(17678, 0, 0, 0, 1, 0, 100, 0, 1000, 1000, 10000, 10000, 11, 31612, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sironas - Out of Combat - Cast ''Sironas Channeling'''),
+(17678, 0, 1, 0, 21, 0, 100, 0, 0, 0, 0, 0, 11, 31612, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sironas - On Reached Home - Cast ''Sironas Channeling'''),
+(17678, 0, 2, 0, 0, 0, 100, 0, 7000, 9000, 11000, 11000, 11, 12742, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sironas - In Combat - Cast ''Immolate'''),
+(17678, 0, 3, 0, 0, 0, 100, 0, 6000, 7000, 25000, 25000, 11, 8282, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sironas - In Combat - Cast ''Curse of Blood'''),
+(17678, 0, 4, 0, 0, 0, 100, 0, 4000, 4000, 15000, 15000, 11, 10966, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Sironas - In Combat - Cast ''Uppercut'''),
+(17683, 0, 0, 0, 0, 0, 100, 0, 22650, 46000, 24260, 65400, 11, 744, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Zarakh - In Combat - Cast ''Poison'''),
+(17683, 0, 1, 0, 0, 0, 100, 0, 1600, 19790, 17720, 40430, 11, 745, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Zarakh - In Combat - Cast ''Web'''),
+(17713, 0, 0, 0, 25, 0, 100, 0, 0, 0, 0, 0, 11, 12544, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Bloodcursed Naga - On Reset - Cast ''Frost Armor'''),
+(17713, 0, 1, 0, 0, 0, 100, 0, 2500, 2500, 6700, 6700, 11, 20792, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Bloodcursed Naga - In Combat - Cast ''Frostbolt''');
+
+-- Creatures without reference data: their sniffed creature_template spell1-8
+SET @ENTRIES := '17328,17334,17340,17341,17661,17704,17715';
+
+UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE FIND_IN_SET(`entry`, @ENTRIES);
+DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND FIND_IN_SET(`entryorguid`, @ENTRIES);
+INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `target_type`, `comment`) VALUES
+(17328, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 18000, 24000, 11, 31290, 0, 0, 2, 'Blacksilt Shorestriker - In Combat - Cast ''Net'''),
+(17334, 0, 0, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 12555, 0, 0, 2, 'Wrathscale Marauder - In Combat - Cast ''Pummel'''),
+(17340, 0, 0, 0, 0, 0, 100, 0, 1000, 3000, 15000, 18000, 11, 21068, 0, 0, 2, 'Axxarien Shadowstalker - In Combat - Cast ''Corruption'''),
+(17341, 0, 0, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 15691, 0, 0, 2, 'Axxarien Trickster - In Combat - Cast ''Eviscerate'''),
+(17661, 0, 0, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 31279, 0, 0, 2, 'Deathclaw - In Combat - Cast ''Swipe'''),
+(17704, 0, 0, 0, 4, 0, 100, 1, 0, 0, 0, 0, 11, 9128, 0, 0, 1, 'Hand of Argus Swordsman - On Aggro - Cast ''Battle Shout'' (No Repeat)'),
+(17704, 0, 1, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 11976, 0, 0, 2, 'Hand of Argus Swordsman - In Combat - Cast ''Strike'''),
+(17715, 0, 0, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 11976, 0, 0, 2, 'Atoph the Bloodcursed - In Combat - Cast ''Strike'''),
+(17715, 0, 1, 0, 0, 0, 100, 0, 6000, 8000, 12000, 16000, 11, 11977, 0, 0, 2, 'Atoph the Bloodcursed - In Combat - Cast ''Rend''');
