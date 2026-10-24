@@ -1,14 +1,1 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Discord
-    url: https://discord.gg/RtazYwQxS9
-    about: Chat
-  - name: How to Compile
-    url: https://trinitycore.atlassian.net/
-    about: Wiki
-  - name: Community Support Forum
-    url: https://discordapp.com/channels/986507647190695937/1065913720196321361
-    about: Forum
-  - name: Discussions
-    url: https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/discussions
-    about: Discuss
+blank_issues_enabled: true

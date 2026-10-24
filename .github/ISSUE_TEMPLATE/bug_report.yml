@@ -1,0 +1,65 @@
+name: Bug report
+description: Something does not work as it should (server, playerbots, quests, dungeons, battlegrounds, crashes).
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Please check the open issues first.
+        **Before posting logs or configs, remove anything personal: account names, passwords, IP addresses, database credentials.**
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: A clear description of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The steps, with the IDs of the creatures, items, quests, spells or maps involved where you know them.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Playerbots (behaviour, grouping, rotations, chat)
+        - Dungeons / raids
+        - Battlegrounds / arenas
+        - Quests / world content
+        - Server crash or freeze
+        - Build / setup / database
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag (e.g. v1.0.0) or commit hash.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Windows 11 x64
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or crash report
+      description: Relevant lines from Server.log / DBErrors.log, or the crash .txt from the Crashes folder. Remove personal data first.
+      render: text

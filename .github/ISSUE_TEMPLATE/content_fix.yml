@@ -1,0 +1,29 @@
+name: Content / SQL fix
+description: Wrong or missing world data (creatures, quests, loot, spawns, texts) or a proposed SQL fix.
+labels: ["content"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What is wrong
+      description: What the data does now and what it should do.
+    validations:
+      required: true
+  - type: textarea
+    id: ids
+    attributes:
+      label: Affected IDs
+      description: Entries of the creatures, gameobjects, quests, items or spells, and the map/zone.
+    validations:
+      required: true
+  - type: textarea
+    id: sql
+    attributes:
+      label: Proposed fix (optional)
+      description: The SQL you suggest, if you have one.
+      render: sql
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag (e.g. v1.0.0) or commit hash.
