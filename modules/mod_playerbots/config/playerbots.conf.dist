@@ -1841,6 +1841,10 @@ AiPlayerbot.RandomBotSpellIds = "54197"
 # Default: 30
 AiPlayerbot.ClassMatchingProfessionChance = 30
 
+# Automatically adds the 'master fishing' strategy to bots that have the fishing skill when the bots master fishes.
+# Default: 1 (Enabled)
+AiPlayerbot.EnableFishingWithMaster = 1
+
 #
 #
 #
@@ -1963,6 +1967,19 @@ AiPlayerbot.BgCheckInterval = 30
 #
 # Default: 70
 AiPlayerbot.BgSotaVehicleDriveChance = 70
+
+# Outdoor battlefields (Wintergrasp, Tol Barad) - beyond AC. A random bot that is already in the zone always joins the
+# war. With RandomBotJoinBattlefield = 1 bots also travel there: up to RandomBotJoinBattlefieldCount eligible random
+# bots per faction queue for an upcoming (15 minutes or less) or running battle, are taken to a graveyard their team
+# holds when it starts, and go back to roaming when it ends.
+#
+# Default: 0 (disabled)
+AiPlayerbot.RandomBotJoinBattlefield = 0
+
+# Bots per faction sent to a battlefield by the setting above.
+#
+# Default: 40
+AiPlayerbot.RandomBotJoinBattlefieldCount = 40
 
 # Let bots open battleground queues themselves, so matches still form on a realm with no human
 # players waiting. Requires RandomBotJoinBG. As on AC, nothing is seeded until every random bot is

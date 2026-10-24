@@ -87,8 +87,9 @@ namespace BattlefieldBots
 
     void Update(std::vector<Player*> const& randomBots)
     {
-        bool const census = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotJoinBattlefield", 0) != 0;
-        uint32 const cap = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotJoinBattlefieldCount", 40)));
+        // Read every pass (quiet: an older playerbots.conf without the keys must not log "Missing name" each time)
+        bool const census = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotJoinBattlefield", 0, true) != 0;
+        uint32 const cap = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotJoinBattlefieldCount", 40, true)));
 
         for (uint32 battleId : BattleIds)
         {

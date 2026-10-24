@@ -61,6 +61,7 @@ Arena.BonusReward.GamesCount.RBG = 0
 Arena.BonusReward.Item.RBG = 0 
 Arena.BonusReward.MailTitle.RBG = 
 Arena.BonusReward.MailText.RBG = 
+Arena.SeasonReward.Cleanup.Enabled = 1
 Arena.SeasonReward.Cleanup.KeepWithAchievements = 2091
 Arena.SeasonReward.Cleanup.Achievements = 2093 2092 2090
 Arena.SeasonReward.Cleanup.Titles = 44 43 45
@@ -499,6 +500,15 @@ AddonChannel = 1
 #        Default:     1
 
 MapUpdate.Threads = 1
+
+#
+#    Map.UpdatableObjectList
+#        Description: Update only the creatures and game objects near players or active objects, from a per-map list,
+#                     instead of every loaded grid cell. Experimental: with many bots it costs more than it saves.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Map.UpdatableObjectList = 0
 
 #
 #    CleanCharacterDB
@@ -5230,6 +5240,9 @@ ShowInfoPlayer.kick = 1
 ShowInfoPlayer.mute = 1
 
 TransferMail.Enabled = 1
+TransferMail.Header =
+TransferMail.Text =
+TransferMail.Items =
 
 XP.Kill.Difference = 10
 XP.Gather.Difference = 10

@@ -123,6 +123,14 @@ WrongPass.BanTime = 600
 WrongPass.BanType = 0
 
 #
+#    StrictVersionCheck
+#        Description: Check the client's version proof at login against the known build hashes and reject clients that do not match.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+StrictVersionCheck = 0
+
+#
 #    BanExpiryCheckInterval
 #        Description: Time (in seconds) between checks for expired bans
 #        Default:     60
