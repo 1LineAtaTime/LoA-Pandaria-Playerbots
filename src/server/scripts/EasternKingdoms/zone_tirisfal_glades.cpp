@@ -1382,7 +1382,7 @@ struct npc_vile_fin_puddlejumper : public ScriptedAI
         {
             if (spell->Id == TirisfalGlades::SPELL_MURLOC_LEACH)
             {
-                me->CastSpell(caster, TirisfalGlades::SPELL_SUMMON_PUDDLEJUMPER);
+                me->CastSpell(caster, TirisfalGlades::SPELL_SUMMON_PUDDLEJUMPER, true);
                 me->DespawnOrUnsummon(500);
             }
         }
@@ -1430,7 +1430,7 @@ struct npc_vile_fin_minor_oracle : public ScriptedAI
         {
             if (spell->Id == TirisfalGlades::SPELL_MURLOC_LEACH)
             {
-                me->CastSpell(caster, TirisfalGlades::SPELL_SUMMON_ORACLE);
+                me->CastSpell(caster, TirisfalGlades::SPELL_SUMMON_ORACLE, true);
                 me->DespawnOrUnsummon(500);
             }
         }
