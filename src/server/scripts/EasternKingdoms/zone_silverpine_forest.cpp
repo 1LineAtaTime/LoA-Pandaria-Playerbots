@@ -2703,6 +2703,1001 @@ private:
 };
 
 /*######
+## Fenris Isle: Rise, Forsaken (27097) and No Escape (27099)
+######*/
+
+enum FenrisIsle
+{
+    QUEST_RISE_FORSAKEN                         = 27097,
+    QUEST_NO_ESCAPE                             = 27099,
+
+    NPC_AGATHA_FENRIS                           = 44951,
+    NPC_FENRIS_KEEP_STALKER                     = 45032,
+
+    SPELL_AGATHA_BROADCAST                      = 83978,
+    SPELL_BOND_OF_THE_VALKYR                    = 83979,
+    SPELL_SUMMON_AGATHA_FENRIS                  = 83982,
+    SPELL_RAISE_FORSAKEN_FENRIS                 = 83993,
+    SPELL_DOOMHOWL                              = 84012,
+    SPELL_UNHOLY_DARKNESS                       = 84013,
+    SPELL_UNHOLY_SMITE                          = 84014,
+    SPELL_RIDE_VEHICLE_HARDCODED_AGATHA         = 46598,
+
+    TALK_AGATHA_BROADCAST                       = 0,
+    TALK_AGATHA_RISE_FORSAKEN                   = 1,
+    TALK_AGATHA_PRE_EVENT                       = 2,
+    TALK_AGATHA_POST_EVENT1                     = 3,
+    TALK_AGATHA_POST_EVENT2                     = 4
+};
+
+// Agatha is the player's guardian (Summon Agatha), so she is found through her summoner
+static Creature* FindAgathaOf(Player* player, float range)
+{
+    std::list<Creature*> agathas;
+    player->GetCreatureListWithEntryInGrid(agathas, NPC_AGATHA_FENRIS, range);
+    for (Creature* agatha : agathas)
+        if (agatha->IsAlive() && agatha->IsSummon() && agatha->ToTempSummon()->GetSummonerGUID() == player->GetGUID())
+            return agatha;
+    return nullptr;
+}
+
+// 83979 - Bond of the Val'kyr
+// Keeps Agatha with the player from Rise, Forsaken until No Escape is turned in
+class spell_silverpine_bond_of_the_valkyr : public AuraScript
+{
+    PrepareAuraScript(spell_silverpine_bond_of_the_valkyr);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_AGATHA_FENRIS, SPELL_AGATHA_BROADCAST });
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetTarget()->IsInWorld())
+            GetTarget()->CastSpell(GetTarget(), SPELL_SUMMON_AGATHA_FENRIS, true);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        GetTarget()->RemoveAurasDueToSpell(SPELL_SUMMON_AGATHA_FENRIS);
+    }
+
+    // The bond ticks every minute with Agatha Broadcast; check for Agatha every few seconds and broadcast on every 12th tick
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    // Agatha is not saved with the player and is left behind by a flight or a teleport: bring her back after a login, her death,
+    // the player's death or when the player is out of her reach
+    void OnPeriodic(AuraEffect const* aurEff)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        if (aurEff->GetTickNumber() % 12 == 0)
+            player->CastSpell(player, SPELL_AGATHA_BROADCAST, true, nullptr, aurEff);
+
+        if (!player->IsAlive() || player->IsInFlight() || player->GetVehicle())
+            return;
+
+        if (!FindAgathaOf(player, 50.0f))
+            player->CastSpell(player, SPELL_SUMMON_AGATHA_FENRIS, true);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_silverpine_bond_of_the_valkyr::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_silverpine_bond_of_the_valkyr::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_silverpine_bond_of_the_valkyr::CalcPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_silverpine_bond_of_the_valkyr::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+};
+
+// 44365 - Lady Sylvanas Windrunner
+// Gives the player Agatha (Bond of the Val'kyr) on accepting Rise, Forsaken and dismisses her when No Escape is turned in. Her lines
+// in The Warchief Cometh are played by Grand Executor Mortuus through this AI.
+struct npc_silverpine_sylvanas_windrunner_high_command : public ScriptedAI
+{
+    npc_silverpine_sylvanas_windrunner_high_command(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_RISE_FORSAKEN && !player->HasAura(SPELL_BOND_OF_THE_VALKYR))
+            player->CastSpell(player, SPELL_BOND_OF_THE_VALKYR, true);
+    }
+
+    void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
+    {
+        // Despawn All Summons, done directly: without the bond Agatha leaves
+        if (quest->GetQuestId() == QUEST_NO_ESCAPE)
+            player->RemoveAurasDueToSpell(SPELL_BOND_OF_THE_VALKYR);
+    }
+};
+
+Position const AgathaBackFrontyardPos = { 982.57f, 671.04f, 77.298f };
+
+enum AgathaFenrisIsle
+{
+    SPELL_SUMMON_FENRIS_CAMERA                  = 84068,
+
+    EVENT_AGATHA_CHECK_PLAYER_HEALTH            = 1,
+    EVENT_UNHOLY_SMITE                          = 2,
+    EVENT_DOOMHOWL                              = 3,
+    EVENT_AGATHA_SUMMON_CAMERA                  = 4,
+    EVENT_AGATHA_RUN_TALK                       = 5,
+    EVENT_AGATHA_FLEE                           = 6,
+    EVENT_AGATHA_ARRIVED                        = 7,
+    EVENT_AGATHA_CHECK_CAMERA                   = 8,
+
+    ACTION_AGATHA_NO_ESCAPE_START               = 1,
+    ACTION_AGATHA_RUN_TALK                      = 2,
+    ACTION_AGATHA_FLEE                          = 3,
+    ACTION_AGATHA_RESET                         = 4,
+
+    DATA_AGATHA_SCENE_STARTED                   = 1,
+
+    PATH_AGATHA_TO_FORSAKEN                     = 449510,
+
+    // Indexes in the path
+    WAYPOINT_SPEED_UP                           = 13,
+    WAYPOINT_ARRIVED_TO_FORSAKEN                = 18,
+
+    POINT_AGATHA_BACK_FRONTYARD                 = 1
+};
+
+float const AgathaFleeSpeedRate     = 7.7937083f / 7.0f;
+float const AgathaFastFleeSpeedRate = 15.880999f / 7.0f;
+float const AgathaNormalSpeedRate   = 1.14286f;
+float const AgathaChaseDistance     = 1.5f;
+
+// 44951 - Agatha
+// The player's guardian while Bond of the Val'kyr lasts: follows and helps the player, heals them, raises the Hillsbrad Refugees they
+// kill (Rise, Forsaken), and in Fenris Keep leads the player into the meeting of the human leaders, then flies them back to
+// Forsaken High Command (No Escape)
+struct npc_silverpine_agatha_fenris_isle : public ScriptedAI
+{
+    npc_silverpine_agatha_fenris_isle(Creature* creature) : ScriptedAI(creature), _sceneStarted(false), _fleeing(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _summonerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_ASSIST);
+        FollowSummoner();
+        _events.ScheduleEvent(EVENT_AGATHA_CHECK_PLAYER_HEALTH, 1s);
+    }
+
+    void Reset() override
+    {
+        _events.CancelEvent(EVENT_UNHOLY_SMITE);
+        _events.CancelEvent(EVENT_DOOMHOWL);
+
+        if (!_sceneStarted)
+            FollowSummoner();
+    }
+
+    void SpellHit(Unit* /*caster*/, SpellInfo const* spellInfo) override
+    {
+        if (spellInfo->Id != SPELL_AGATHA_BROADCAST || _sceneStarted)
+            return;
+
+        if (Player* player = GetSummoner())
+            Talk(TALK_AGATHA_BROADCAST, player);
+    }
+
+    uint32 GetData(uint32 type) const override
+    {
+        return type == DATA_AGATHA_SCENE_STARTED && _sceneStarted ? 1 : 0;
+    }
+
+    void DoAction(int32 action) override
+    {
+        switch (action)
+        {
+            case ACTION_AGATHA_NO_ESCAPE_START:
+                StartNoEscape();
+                break;
+            case ACTION_AGATHA_RUN_TALK:
+                _events.ScheduleEvent(EVENT_AGATHA_RUN_TALK, 1s);
+                break;
+            case ACTION_AGATHA_FLEE:
+                _events.ScheduleEvent(EVENT_AGATHA_FLEE, 1s);
+                break;
+            case ACTION_AGATHA_RESET:
+                if (!_fleeing)
+                    EndScene();
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Her combat reach (0.6) is far smaller than her model, so a melee chase put her inside her target: keep to its back
+    void AttackStart(Unit* who) override
+    {
+        if (who && me->Attack(who, true))
+            me->GetMotionMaster()->MoveChase(who, AgathaChaseDistance, float(M_PI));
+    }
+
+    void OwnerAttacked(Unit* target) override
+    {
+        HelpOwner(target);
+    }
+
+    void OwnerAttackedBy(Unit* attacker) override
+    {
+        HelpOwner(attacker);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_UNHOLY_SMITE, 500ms);
+        _events.ScheduleEvent(EVENT_DOOMHOWL, 2s, 3s);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != WAYPOINT_MOTION_TYPE || !_fleeing)
+            return;
+
+        if (pointId == WAYPOINT_SPEED_UP)
+            SetFlightSpeedRate(AgathaFastFleeSpeedRate);
+        else if (pointId == WAYPOINT_ARRIVED_TO_FORSAKEN)
+            _events.ScheduleEvent(EVENT_AGATHA_ARRIVED, 100ms);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* player = GetSummoner();
+        if (!player || !player->IsInWorld() || !player->IsAlive() || !player->HasAura(SPELL_SUMMON_AGATHA_FENRIS))
+        {
+            if (player && player->GetVehicleBase() == me)
+                player->ExitVehicle();
+            me->DespawnOrUnsummon(0);
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_AGATHA_CHECK_PLAYER_HEALTH:
+                    if (!_sceneStarted && !me->HasUnitState(UNIT_STATE_CASTING) && player->GetHealthPct() < 75.0f)
+                        me->CastSpell(player, SPELL_UNHOLY_DARKNESS, false);
+                    _events.ScheduleEvent(EVENT_AGATHA_CHECK_PLAYER_HEALTH, 1s);
+                    break;
+                case EVENT_DOOMHOWL:
+                    DoCastVictim(SPELL_DOOMHOWL);
+                    _events.ScheduleEvent(EVENT_DOOMHOWL, 14s, 18s);
+                    break;
+                case EVENT_UNHOLY_SMITE:
+                    DoCastVictim(SPELL_UNHOLY_SMITE);
+                    _events.ScheduleEvent(EVENT_UNHOLY_SMITE, 4s, 6s);
+                    break;
+                case EVENT_AGATHA_SUMMON_CAMERA:
+                    // Force Cast Fenris Camera, done directly: the player sits in the camera, which plays the meeting
+                    player->CastSpell(player, SPELL_SUMMON_FENRIS_CAMERA, true);
+                    _events.ScheduleEvent(EVENT_AGATHA_CHECK_CAMERA, 3s);
+                    break;
+                case EVENT_AGATHA_CHECK_CAMERA:
+                    // The player did not get into the camera: wait for the next try
+                    if (!player->GetVehicle())
+                        EndScene();
+                    break;
+                case EVENT_AGATHA_RUN_TALK:
+                    me->SetFacingTo(3.159046f);
+                    Talk(TALK_AGATHA_POST_EVENT1, player);
+                    break;
+                case EVENT_AGATHA_FLEE:
+                    // Reverse Cast Ride Vehicle, done directly
+                    _fleeing = true;
+                    player->ExitVehicle();
+                    player->CastSpell(me, SPELL_RIDE_VEHICLE_HARDCODED_AGATHA, true);
+                    Talk(TALK_AGATHA_POST_EVENT2, player);
+                    player->KilledMonsterCredit(NPC_AGATHA_FENRIS);
+                    me->SetCanFly(true);
+                    me->SetDisableGravity(true);
+                    SetFlightSpeedRate(AgathaFleeSpeedRate);
+                    me->GetMotionMaster()->Clear();
+                    me->GetMotionMaster()->MovePath(PATH_AGATHA_TO_FORSAKEN, false);
+                    break;
+                case EVENT_AGATHA_ARRIVED:
+                    if (player->GetVehicleBase() == me)
+                        player->ExitVehicle();
+                    _fleeing = false;
+                    SetFlightSpeedRate(AgathaNormalSpeedRate);
+                    EndScene();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // She is an ally summon, not one of the player's controlled units, so OwnerAttacked/OwnerAttackedBy never reach her:
+        // join the player's fight from here
+        if (!me->GetVictim())
+        {
+            if (Unit* target = player->GetVictim())
+                HelpOwner(target);
+            else if (!player->getAttackers().empty())
+                HelpOwner(*player->getAttackers().begin());
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    Player* GetSummoner() const
+    {
+        return ObjectAccessor::GetPlayer(*me, _summonerGUID);
+    }
+
+    void FollowSummoner()
+    {
+        if (Player* player = GetSummoner())
+        {
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveFollow(player, 3.0f, float(M_PI / 2.0f));
+        }
+    }
+
+    void HelpOwner(Unit* target)
+    {
+        if (!_sceneStarted && target && !me->GetVictim() && me->IsValidAttackTarget(target))
+            AttackStart(target);
+    }
+
+    void SetFlightSpeedRate(float rate)
+    {
+        me->SetSpeed(MOVE_RUN, rate);
+        me->SetSpeed(MOVE_FLIGHT, rate);
+    }
+
+    void StartNoEscape()
+    {
+        if (_sceneStarted)
+            return;
+
+        _sceneStarted = true;
+
+        me->CombatStop(true);
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MovePoint(POINT_AGATHA_BACK_FRONTYARD, AgathaBackFrontyardPos, false);
+
+        if (Player* player = GetSummoner())
+            Talk(TALK_AGATHA_PRE_EVENT, player);
+
+        // The player has just been moved to the back of the frontyard
+        _events.ScheduleEvent(EVENT_AGATHA_SUMMON_CAMERA, 1s);
+    }
+
+    void EndScene()
+    {
+        _sceneStarted = false;
+        _events.CancelEvent(EVENT_AGATHA_SUMMON_CAMERA);
+        _events.CancelEvent(EVENT_AGATHA_CHECK_CAMERA);
+        _events.CancelEvent(EVENT_AGATHA_RUN_TALK);
+        _events.CancelEvent(EVENT_AGATHA_FLEE);
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetReactState(REACT_ASSIST);
+        FollowSummoner();
+    }
+
+    EventMap _events;
+    ObjectGuid _summonerGUID;
+    bool _sceneStarted;
+    bool _fleeing;
+};
+
+enum SpellForsakenTrooperMasterScriptFenrisIsle
+{
+    SPELL_FORSAKEN_TROOPER_MALE_01_F            = 83998,
+    SPELL_FORSAKEN_TROOPER_MALE_02_F            = 83999,
+    SPELL_FORSAKEN_TROOPER_MALE_03_F            = 84000,
+    SPELL_FORSAKEN_TROOPER_MALE_04_F            = 84001,
+    SPELL_FORSAKEN_TROOPER_FEMALE_01_F          = 84002,
+    SPELL_FORSAKEN_TROOPER_FEMALE_02_F          = 84003,
+    SPELL_FORSAKEN_TROOPER_FEMALE_03_F          = 84004,
+    SPELL_FORSAKEN_TROOPER_FEMALE_04_F          = 84005,
+
+    DISPLAY_MALE_01_F                           = 33978,
+    DISPLAY_MALE_02_F                           = 33979,
+    DISPLAY_MALE_03_F                           = 33980,
+    DISPLAY_MALE_04_F                           = 33981,
+    DISPLAY_FEMALE_01_F                         = 33982,
+    DISPLAY_FEMALE_02_F                         = 33983,
+    DISPLAY_FEMALE_03_F                         = 33984,
+    DISPLAY_FEMALE_04_F                         = 33985,
+
+    DISPLAY_MALE_01_D_F                         = 33986,
+    DISPLAY_MALE_02_D_F                         = 33987,
+    DISPLAY_MALE_03_D_F                         = 33988,
+    DISPLAY_MALE_04_D_F                         = 33989,
+    DISPLAY_FEMALE_01_D_F                       = 33991,
+    DISPLAY_FEMALE_02_D_F                       = 33992,
+    DISPLAY_FEMALE_03_D_F                       = 33993,
+    DISPLAY_FEMALE_04_D_F                       = 33994
+};
+
+// 83997 - Forsaken Trooper Master Script (Fenris Isle)
+// Raises a Hillsbrad Refugee as the Forsaken Trooper that matches its human model
+class spell_silverpine_forsaken_trooper_masterscript_fenris_isle : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_forsaken_trooper_masterscript_fenris_isle);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo
+        ({
+            SPELL_FORSAKEN_TROOPER_MALE_01_F,
+            SPELL_FORSAKEN_TROOPER_MALE_02_F,
+            SPELL_FORSAKEN_TROOPER_MALE_03_F,
+            SPELL_FORSAKEN_TROOPER_MALE_04_F,
+            SPELL_FORSAKEN_TROOPER_FEMALE_01_F,
+            SPELL_FORSAKEN_TROOPER_FEMALE_02_F,
+            SPELL_FORSAKEN_TROOPER_FEMALE_03_F,
+            SPELL_FORSAKEN_TROOPER_FEMALE_04_F
+        });
+    }
+
+    void HandleScriptEffect(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+
+        uint32 spellId = caster->GetGender() == GENDER_MALE ? SPELL_FORSAKEN_TROOPER_MALE_01_F : SPELL_FORSAKEN_TROOPER_FEMALE_01_F;
+        switch (caster->GetDisplayId())
+        {
+            case DISPLAY_MALE_01_F:   spellId = SPELL_FORSAKEN_TROOPER_MALE_01_F;   break;
+            case DISPLAY_MALE_02_F:   spellId = SPELL_FORSAKEN_TROOPER_MALE_02_F;   break;
+            case DISPLAY_MALE_03_F:   spellId = SPELL_FORSAKEN_TROOPER_MALE_03_F;   break;
+            case DISPLAY_MALE_04_F:   spellId = SPELL_FORSAKEN_TROOPER_MALE_04_F;   break;
+            case DISPLAY_FEMALE_01_F: spellId = SPELL_FORSAKEN_TROOPER_FEMALE_01_F; break;
+            case DISPLAY_FEMALE_02_F: spellId = SPELL_FORSAKEN_TROOPER_FEMALE_02_F; break;
+            case DISPLAY_FEMALE_03_F: spellId = SPELL_FORSAKEN_TROOPER_FEMALE_03_F; break;
+            case DISPLAY_FEMALE_04_F: spellId = SPELL_FORSAKEN_TROOPER_FEMALE_04_F; break;
+            default: break;
+        }
+
+        caster->CastSpell(caster, spellId, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_silverpine_forsaken_trooper_masterscript_fenris_isle::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+enum HillsbradRefugee
+{
+    SPELL_TROOPER_MASTERSCRIPT_FENRIS           = 83997,
+    SPELL_MIGHT_OF_LORDAERON                    = 87104,
+
+    EVENT_MIGHT_OF_LORDAERON                    = 1
+};
+
+// 44954, 44966 - Hillsbrad Refugee
+// Killed by a player on Rise, Forsaken, it is raised by the player's Agatha (Notify Agatha, done directly), whose Raise Forsaken
+// gives the player the Forsaken raised credit
+struct npc_silverpine_hillsbrad_refugee : public ScriptedAI
+{
+    npc_silverpine_hillsbrad_refugee(Creature* creature) : ScriptedAI(creature), _raised(false) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _raised = false;
+    }
+
+    void SpellHit(Unit* /*caster*/, SpellInfo const* spellInfo) override
+    {
+        if (spellInfo->Id != SPELL_RAISE_FORSAKEN_FENRIS || _raised)
+            return;
+
+        _raised = true;
+        DoCast(me, SPELL_TROOPER_MASTERSCRIPT_FENRIS, true);
+        me->DespawnOrUnsummon(2 * IN_MILLISECONDS);
+    }
+
+    void JustDied(Unit* killer) override
+    {
+        Player* player = killer ? killer->GetCharmerOrOwnerPlayerOrPlayerItself() : nullptr;
+        if (!player || player->GetQuestStatus(QUEST_RISE_FORSAKEN) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        Creature* agatha = FindAgathaOf(player, 50.0f);
+        if (!agatha || !agatha->IsAIEnabled || agatha->AI()->GetData(DATA_AGATHA_SCENE_STARTED))
+            return;
+
+        agatha->CastSpell(me, SPELL_RAISE_FORSAKEN_FENRIS, true);
+
+        if (roll_chance_i(50))
+            agatha->AI()->Talk(TALK_AGATHA_RISE_FORSAKEN, player);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_MIGHT_OF_LORDAERON, 3s, 8s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_MIGHT_OF_LORDAERON:
+                    DoCast(me, SPELL_MIGHT_OF_LORDAERON);
+                    _events.ScheduleEvent(EVENT_MIGHT_OF_LORDAERON, 15s, 18s);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+    bool _raised;
+};
+
+enum ForsakenTrooperFenrisIsle
+{
+    EVENT_REFUGEE_JUST_RISEN                    = 1,
+
+    TALK_REFUGEE_JUST_RISEN                     = 0
+};
+
+// 44958, 44959, 44960, 44961 - Forsaken Trooper (Male)
+// 44962, 44963, 44964, 44965 - Forsaken Trooper (Female)
+// A raised Hillsbrad Refugee takes its model, speaks and leaves
+struct npc_silverpine_forsaken_trooper_fenris_isle : public ScriptedAI
+{
+    npc_silverpine_forsaken_trooper_fenris_isle(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        Creature* refugee = summoner->ToCreature();
+        if (!refugee)
+            return;
+
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetReactState(REACT_PASSIVE);
+
+        uint32 displayId = me->GetGender() == GENDER_MALE ? DISPLAY_MALE_01_D_F : DISPLAY_FEMALE_01_D_F;
+        switch (refugee->GetDisplayId())
+        {
+            case DISPLAY_MALE_01_F:   displayId = DISPLAY_MALE_01_D_F;   break;
+            case DISPLAY_MALE_02_F:   displayId = DISPLAY_MALE_02_D_F;   break;
+            case DISPLAY_MALE_03_F:   displayId = DISPLAY_MALE_03_D_F;   break;
+            case DISPLAY_MALE_04_F:   displayId = DISPLAY_MALE_04_D_F;   break;
+            case DISPLAY_FEMALE_01_F: displayId = DISPLAY_FEMALE_01_D_F; break;
+            case DISPLAY_FEMALE_02_F: displayId = DISPLAY_FEMALE_02_D_F; break;
+            case DISPLAY_FEMALE_03_F: displayId = DISPLAY_FEMALE_03_D_F; break;
+            case DISPLAY_FEMALE_04_F: displayId = DISPLAY_FEMALE_04_D_F; break;
+            default: break;
+        }
+
+        me->SetDisplayId(displayId);
+
+        _events.ScheduleEvent(EVENT_REFUGEE_JUST_RISEN, 1s);
+
+        me->DespawnOrUnsummon(4 * IN_MILLISECONDS);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId == EVENT_REFUGEE_JUST_RISEN)
+                Talk(TALK_REFUGEE_JUST_RISEN);
+        }
+    }
+
+private:
+    EventMap _events;
+};
+
+enum WorgenSentry
+{
+    SPELL_BATTLE_ROAR                           = 6507,
+    SPELL_UNDYING_FRENZY                        = 80515,
+
+    EVENT_UNDYING_FRENZY                        = 1,
+
+    TALK_SENTRY_WARNING                         = 0
+};
+
+// 44987 - Worgen Sentry
+struct npc_silverpine_worgen_sentry : public ScriptedAI
+{
+    npc_silverpine_worgen_sentry(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        Talk(TALK_SENTRY_WARNING);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        DoCast(me, SPELL_BATTLE_ROAR);
+        _events.ScheduleEvent(EVENT_UNDYING_FRENZY, 3s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_UNDYING_FRENZY:
+                    DoCastVictim(SPELL_UNDYING_FRENZY);
+                    _events.ScheduleEvent(EVENT_UNDYING_FRENZY, 10s, 12s);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+};
+
+Position const NoEscapeStartPos = { 981.782f, 670.953f, 74.898f, 3.1887f };
+
+// 6230 - No Escape
+// Entering Fenris Keep with Agatha on No Escape starts the meeting: the player is moved to the back of the frontyard and Agatha
+// leads on. The Fenris Keep Stalker's Force Cast Fenris Camera is done by Agatha, for each player.
+class at_silverpine_no_escape : public AreaTriggerScript
+{
+public:
+    at_silverpine_no_escape() : AreaTriggerScript("at_silverpine_no_escape") { }
+
+    bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/) override
+    {
+        if (!player->IsAlive() || player->GetVehicle() || player->GetQuestStatus(QUEST_NO_ESCAPE) != QUEST_STATUS_INCOMPLETE)
+            return true;
+
+        Creature* agatha = FindAgathaOf(player, 10.0f);
+        if (!agatha || !agatha->IsAIEnabled || agatha->AI()->GetData(DATA_AGATHA_SCENE_STARTED))
+            return true;
+
+        player->NearTeleportTo(NoEscapeStartPos.GetPositionX(), NoEscapeStartPos.GetPositionY(), NoEscapeStartPos.GetPositionZ(),
+            NoEscapeStartPos.GetOrientation(), true);
+        agatha->AI()->DoAction(ACTION_AGATHA_NO_ESCAPE_START);
+        return true;
+    }
+};
+
+Position const CameraFrontyardPos = { 980.7f, 689.14f, 76.9f };
+
+enum FenrisKeepCamera
+{
+    NPC_CROWLEY_FENRIS                          = 44989,
+    NPC_BLOODFANG_FENRIS                        = 44990,
+    NPC_PHIN_ODELIC                             = 44993,
+    NPC_BARTOLO_GINSETTI                        = 44994,
+    NPC_LOREMASTER_DIBBS                        = 44995,
+    NPC_MAGISTRATE_HENRY_MALEB                  = 44996,
+    NPC_CARETAKER_SMITHERS                      = 44997,
+    NPC_SOPHIA_ZWOSKI                           = 45002,
+
+    SPELL_SUMMON_BLOODFANG_FENRIS               = 84054,
+    SPELL_SUMMON_CROWLEY_FENRIS                 = 84055,
+    SPELL_SUMMON_PHIN_ODELIC                    = 84056,
+    SPELL_SUMMON_BARTOLO_GINSETTI               = 84057,
+    SPELL_SUMMON_LOREMASTER_DIBBS               = 84058,
+    SPELL_SUMMON_MAGISTRATE_HENRY               = 84059,
+    SPELL_SUMMON_CARETAKER_SMITHERS             = 84060,
+    SPELL_SUMMON_SOPHIA                         = 84061,
+    SPELL_BLOOD_ODELIC                          = 84094,
+    SPELL_BLOOD_BARTOLO                         = 84095,
+    SPELL_BLOOD_DIBBS                           = 84096,
+    SPELL_BLOOD_HENRY                           = 84097,
+    SPELL_BLOOD_SMITHERS                        = 84098,
+    SPELL_BLOOD_ZWOSKI                          = 84099,
+
+    SOUND_HOWLING                               = 17671,
+
+    // The scene steps follow each other from 1 up to EVENT_SCENE_FENRIS_FINISH
+    EVENT_SCENE_FENRIS_START                    = 1,
+    EVENT_SCENE_FENRIS_CHANGE_SEAT              = 2,
+    EVENT_SCENE_FENRIS_MORPH                    = 14,
+    EVENT_SCENE_FENRIS_AGATHA_TALK              = 16,
+    EVENT_SCENE_FENRIS_FINISH                   = 18,
+
+    TALK_CROWLEY_NO_ESCAPE_0                    = 0,
+    TALK_CROWLEY_NO_ESCAPE_1                    = 1,
+    TALK_CROWLEY_NO_ESCAPE_2                    = 2,
+    TALK_CROWLEY_NO_ESCAPE_3                    = 3,
+    TALK_CROWLEY_NO_ESCAPE_4                    = 4,
+    TALK_CROWLEY_NO_ESCAPE_5                    = 5,
+    TALK_HENRY_NO_ESCAPE_0                      = 0,
+    TALK_HENRY_NO_ESCAPE_1                      = 1,
+
+    POINT_CAMERA_FRONTYARD                      = 1,
+
+    SEAT_FENRIS_CAMERA                          = 0,
+    SEAT_FENRIS_CAMERA_FORCE                    = 1,
+
+    FENRIS_ACTOR_COUNT                          = 8
+};
+
+uint32 const FenrisActorSummonSpells[FENRIS_ACTOR_COUNT] =
+{
+    SPELL_SUMMON_CROWLEY_FENRIS, SPELL_SUMMON_BLOODFANG_FENRIS, SPELL_SUMMON_PHIN_ODELIC, SPELL_SUMMON_BARTOLO_GINSETTI,
+    SPELL_SUMMON_LOREMASTER_DIBBS, SPELL_SUMMON_MAGISTRATE_HENRY, SPELL_SUMMON_CARETAKER_SMITHERS, SPELL_SUMMON_SOPHIA
+};
+
+uint32 const FenrisActorEntries[FENRIS_ACTOR_COUNT] =
+{
+    NPC_CROWLEY_FENRIS, NPC_BLOODFANG_FENRIS, NPC_PHIN_ODELIC, NPC_BARTOLO_GINSETTI,
+    NPC_LOREMASTER_DIBBS, NPC_MAGISTRATE_HENRY_MALEB, NPC_CARETAKER_SMITHERS, NPC_SOPHIA_ZWOSKI
+};
+
+// Blood of the Worgen of the six humans, in the order above (none for Crowley and Bloodfang)
+uint32 const FenrisActorBloodSpells[FENRIS_ACTOR_COUNT] =
+{
+    0, 0, SPELL_BLOOD_ODELIC, SPELL_BLOOD_BARTOLO, SPELL_BLOOD_DIBBS, SPELL_BLOOD_HENRY, SPELL_BLOOD_SMITHERS, SPELL_BLOOD_ZWOSKI
+};
+
+enum FenrisActorIndex
+{
+    ACTOR_CROWLEY                               = 0,
+    ACTOR_HENRY                                 = 5,
+    ACTOR_SOPHIA                                = 7
+};
+
+// 45003 - Fenris Keep Camera
+// Summoned with the player in it (Summon Fenris Camera). Summons the human leaders, Crowley and Bloodfang (Summon Fenris Actors, done
+// directly), moves to the frontyard and plays the meeting: Crowley offers the humans his blood, they choose to become worgen, and
+// Agatha flies the player out, which completes No Escape. TrinityCore passes the steps along with General Trigger, Conversation
+// Trigger and Armoire Camera spells; the camera runs them itself here, as all of the actors are the player's personal summons.
+struct npc_silverpine_fenris_keep_camera : public VehicleAI
+{
+    npc_silverpine_fenris_keep_camera(Creature* creature) : VehicleAI(creature), _sceneStarted(false), _agathaTookOver(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _playerGUID = summoner->GetGUID();
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 seatId, bool apply) override
+    {
+        if (!apply || _sceneStarted || seatId != SEAT_FENRIS_CAMERA || passenger->GetGUID() != _playerGUID)
+            return;
+
+        _sceneStarted = true;
+        _events.ScheduleEvent(EVENT_SCENE_FENRIS_START, 10ms);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type == POINT_MOTION_TYPE && pointId == POINT_CAMERA_FRONTYARD)
+            _events.ScheduleEvent(EVENT_SCENE_FENRIS_CHANGE_SEAT, 500ms);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        if (!_sceneStarted)
+            return;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || (!_agathaTookOver && player->GetVehicleBase() != me))
+        {
+            // The player left before the end: Agatha waits for the next try
+            if (player)
+                if (Creature* agatha = FindAgathaOf(player, 100.0f))
+                    if (agatha->IsAIEnabled)
+                        agatha->AI()->DoAction(ACTION_AGATHA_RESET);
+            EndScene();
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId == EVENT_SCENE_FENRIS_START)
+            {
+                // The eight spells of Summon Fenris Actors, cast directly. The actors are the player's personal summons, so they
+                // are found from the player's side (only the player's own: group members play the same scene at the same spot).
+                for (uint8 i = 0; i < FENRIS_ACTOR_COUNT; ++i)
+                {
+                    player->CastSpell(player, FenrisActorSummonSpells[i], true);
+                    _actorGUIDs[i] = FindOwnSummon(player, FenrisActorEntries[i]);
+                }
+
+                me->GetMotionMaster()->MovePoint(POINT_CAMERA_FRONTYARD, CameraFrontyardPos, false);
+                continue;
+            }
+
+            Creature* actors[FENRIS_ACTOR_COUNT];
+            bool actorMissing = false;
+            for (uint8 i = 0; i < FENRIS_ACTOR_COUNT; ++i)
+            {
+                actors[i] = ObjectAccessor::GetCreature(*me, _actorGUIDs[i]);
+                if (!actors[i] || !actors[i]->IsAIEnabled)
+                    actorMissing = true;
+            }
+
+            Creature* agatha = FindAgathaOf(player, 100.0f);
+            if (actorMissing || !agatha || !agatha->IsAIEnabled)
+            {
+                // An actor is missing: let the player out, which ends the scene
+                _events.Reset();
+                if (!_agathaTookOver)
+                    player->ExitVehicle();
+                return;
+            }
+
+            Creature* crowley = actors[ACTOR_CROWLEY];
+            Creature* henry = actors[ACTOR_HENRY];
+
+            Milliseconds next = 0ms;
+
+            switch (eventId)
+            {
+                case EVENT_SCENE_FENRIS_CHANGE_SEAT:
+                    // Seat 02
+                    player->ChangeSeat(SEAT_FENRIS_CAMERA_FORCE);
+                    next = 2s;
+                    break;
+                case 3:
+                    next = 2s + 500ms;
+                    break;
+                case 4:
+                    crowley->AI()->Talk(TALK_CROWLEY_NO_ESCAPE_0, player);
+                    next = 4s + 700ms;
+                    break;
+                case 5:
+                    crowley->AI()->Talk(TALK_CROWLEY_NO_ESCAPE_1, player);
+                    next = 4s + 700ms;
+                    break;
+                case 6:
+                    crowley->AI()->Talk(TALK_CROWLEY_NO_ESCAPE_2, player);
+                    next = 4s + 700ms;
+                    break;
+                case 7:
+                    crowley->AI()->Talk(TALK_CROWLEY_NO_ESCAPE_3, player);
+                    next = 4s + 700ms;
+                    break;
+                case 8:
+                    crowley->AI()->Talk(TALK_CROWLEY_NO_ESCAPE_4, player);
+                    next = 6s + 100ms;
+                    break;
+                case 9:
+                    crowley->AI()->Talk(TALK_CROWLEY_NO_ESCAPE_5, player);
+                    next = 9s + 500ms;
+                    break;
+                case 10:
+                    next = 1s + 300ms;
+                    break;
+                case 11:
+                    henry->AI()->Talk(TALK_HENRY_NO_ESCAPE_0, player);
+                    next = 10s + 800ms;
+                    break;
+                case 12:
+                    henry->AI()->Talk(TALK_HENRY_NO_ESCAPE_1, player);
+                    next = 2s;
+                    break;
+                case 13:
+                    // The humans drink Crowley's blood
+                    next = 2s + 500ms;
+                    break;
+                case EVENT_SCENE_FENRIS_MORPH:
+                    for (uint8 i = 0; i < FENRIS_ACTOR_COUNT; ++i)
+                        if (FenrisActorBloodSpells[i])
+                            actors[i]->CastSpell(actors[i], FenrisActorBloodSpells[i], false);
+                    actors[ACTOR_SOPHIA]->PlayDirectSound(SOUND_HOWLING, player);
+                    next = 1s;
+                    break;
+                case 15:
+                    for (uint8 i = 0; i < FENRIS_ACTOR_COUNT; ++i)
+                        if (FenrisActorBloodSpells[i])
+                            actors[i]->SetEmoteState(EMOTE_STATE_READY_UNARMED);
+                    next = 2s;
+                    break;
+                case EVENT_SCENE_FENRIS_AGATHA_TALK:
+                    agatha->AI()->DoAction(ACTION_AGATHA_RUN_TALK);
+                    next = 2s + 500ms;
+                    break;
+                case 17:
+                    // Agatha takes the player away a second later
+                    _agathaTookOver = true;
+                    agatha->AI()->DoAction(ACTION_AGATHA_FLEE);
+                    me->SetFacingTo(0.08278348f);
+                    next = 4s;
+                    break;
+                case EVENT_SCENE_FENRIS_FINISH:
+                    EndScene();
+                    return;
+                default:
+                    break;
+            }
+
+            if (next > 0ms)
+                _events.ScheduleEvent(eventId + 1, next);
+        }
+    }
+
+private:
+    // Despawn All Summons, done directly
+    void EndScene()
+    {
+        _events.Reset();
+        for (uint8 i = 0; i < FENRIS_ACTOR_COUNT; ++i)
+            if (Creature* actor = ObjectAccessor::GetCreature(*me, _actorGUIDs[i]))
+                actor->DespawnOrUnsummon(0);
+        me->DespawnOrUnsummon(0);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _actorGUIDs[FENRIS_ACTOR_COUNT];
+    bool _sceneStarted;
+    bool _agathaTookOver;
+};
+
+// 44989 - Lord Darius Crowley, 44990 - Packleader Ivar Bloodfang, 44993 - Phin Odelic, 44994 - Bartolo Ginsetti,
+// 44995 - Loremaster Dibbs, 44996 - Magistrate Henry Maleb, 44997 - Caretaker Smithers, 45002 - Sophia Zwoski
+// The actors of the Fenris Keep meeting, played by the camera
+struct npc_silverpine_fenris_keep_actor : public ScriptedAI
+{
+    npc_silverpine_fenris_keep_actor(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* /*summoner*/) override
+    {
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetReactState(REACT_PASSIVE);
+
+        // The humans face the keep's hall, where Crowley and Bloodfang stand
+        if (me->GetEntry() != NPC_CROWLEY_FENRIS && me->GetEntry() != NPC_BLOODFANG_FENRIS)
+            if (Creature* fenrisStalker = me->FindNearestCreature(NPC_FENRIS_KEEP_STALKER, 50.0f))
+                me->SetFacingToObject(fenrisStalker);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
+/*######
 ## AddSC
 ######*/
 
@@ -2736,4 +3731,14 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_webbed_victim>("npc_silverpine_webbed_victim");
     new spell_script<spell_silverpine_free_webbed_victim_random>("spell_silverpine_free_webbed_victim_random");
     new creature_script<npc_silverpine_orc_sea_dog>("npc_silverpine_orc_sea_dog");
+    new aura_script<spell_silverpine_bond_of_the_valkyr>("spell_silverpine_bond_of_the_valkyr");
+    new creature_script<npc_silverpine_sylvanas_windrunner_high_command>("npc_silverpine_sylvanas_windrunner_high_command");
+    new creature_script<npc_silverpine_agatha_fenris_isle>("npc_silverpine_agatha_fenris_isle");
+    new spell_script<spell_silverpine_forsaken_trooper_masterscript_fenris_isle>("spell_silverpine_forsaken_trooper_masterscript_fenris_isle");
+    new creature_script<npc_silverpine_hillsbrad_refugee>("npc_silverpine_hillsbrad_refugee");
+    new creature_script<npc_silverpine_forsaken_trooper_fenris_isle>("npc_silverpine_forsaken_trooper_fenris_isle");
+    new creature_script<npc_silverpine_worgen_sentry>("npc_silverpine_worgen_sentry");
+    new at_silverpine_no_escape();
+    new creature_script<npc_silverpine_fenris_keep_camera>("npc_silverpine_fenris_keep_camera");
+    new creature_script<npc_silverpine_fenris_keep_actor>("npc_silverpine_fenris_keep_actor");
 }
