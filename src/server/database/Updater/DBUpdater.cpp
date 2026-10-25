@@ -26,8 +26,10 @@
 #include "StartProcess.h"
 #include "UpdateFetcher.h"
 #include <boost/filesystem/operations.hpp>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 std::string DBUpdaterUtil::GetCorrectedMySQLExecutable()
 {
@@ -163,10 +165,20 @@ std::string DBUpdater<PlayerbotsDatabaseConnection>::GetTableName()
     return "Playerbots";
 }
 
+// The module's sql tree, as in AzerothCore: `$` in its updates_include paths is the module directory
+template<>
+std::string DBUpdater<PlayerbotsDatabaseConnection>::GetSourceDirectory()
+{
+    return BuiltInConfig::GetSourceDirectory() +
+        "/modules/mod_playerbots";
+}
+
+// One file per table, all applied, as in AzerothCore
 template<>
 std::string DBUpdater<PlayerbotsDatabaseConnection>::GetBaseFile()
 {
-    return GitRevision::GetFullDatabase();
+    return DBUpdater<PlayerbotsDatabaseConnection>::GetSourceDirectory() +
+        "/data/sql/playerbots/base";
 }
 
 template<>
@@ -176,13 +188,13 @@ bool DBUpdater<PlayerbotsDatabaseConnection>::IsEnabled(uint32 const updateMask)
     return (updateMask & DatabaseLoader::DATABASE_PLAYERBOTS) ? true : false;
 }
 
-template<>
-BaseLocation DBUpdater<PlayerbotsDatabaseConnection>::GetBaseLocationType()
+// All
+template<class T>
+std::string DBUpdater<T>::GetSourceDirectory()
 {
-    return LOCATION_DOWNLOAD;
+    return BuiltInConfig::GetSourceDirectory();
 }
 
-// All
 template<class T>
 BaseLocation DBUpdater<T>::GetBaseLocationType()
 {
@@ -242,7 +254,7 @@ bool DBUpdater<T>::Update(DatabaseWorkerPool<T>& pool)
 
     TC_LOG_INFO("sql.updates", "Updating %s database...", DBUpdater<T>::GetTableName().c_str());
 
-    Path const sourceDirectory(BuiltInConfig::GetSourceDirectory());
+    Path const sourceDirectory(DBUpdater<T>::GetSourceDirectory());
 
     if (!is_directory(sourceDirectory))
     {
@@ -324,15 +336,37 @@ bool DBUpdater<T>::Populate(DatabaseWorkerPool<T>& pool)
         return false;
     }
 
-    // Update database
-    TC_LOG_INFO("sql.updates", ">> Applying \'%s\'...", base.generic_string().c_str());
-    try
+    // A base directory has its *.sql files applied in filename order (AzerothCore's PopulateDatabase)
+    std::vector<Path> files;
+    if (is_directory(base))
     {
-        ApplyFile(pool, base);
+        for (boost::filesystem::directory_iterator itr(base), end; itr != end; ++itr)
+            if (is_regular_file(itr->path()) && itr->path().extension() == ".sql")
+                files.push_back(itr->path());
+
+        if (files.empty())
+        {
+            TC_LOG_ERROR("sql.updates", ">> Base directory \"%s\" holds no *.sql files.", base.generic_string());
+            return false;
+        }
+
+        std::sort(files.begin(), files.end());
     }
-    catch (UpdateException&)
+    else
+        files.push_back(base);
+
+    // Update database
+    for (Path const& file : files)
     {
-        return false;
+        TC_LOG_INFO("sql.updates", ">> Applying \'%s\'...", file.generic_string());
+        try
+        {
+            ApplyFile(pool, file);
+        }
+        catch (UpdateException&)
+        {
+            return false;
+        }
     }
 
     TC_LOG_INFO("sql.updates", ">> Done!");

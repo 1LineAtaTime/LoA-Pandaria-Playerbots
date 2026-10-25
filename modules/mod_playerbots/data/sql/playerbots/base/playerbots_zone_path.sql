@@ -1,5 +1,3 @@
--- Listage de la structure de la base pour mop_playerbots
-
 -- Listage de la structure de table mop_playerbots. playerbots_zone_path
 CREATE TABLE IF NOT EXISTS `playerbot_zone_path` (
   `Zone` int(11) NOT NULL DEFAULT '0',

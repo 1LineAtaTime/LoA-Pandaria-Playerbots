@@ -23,6 +23,11 @@ CREATE TABLE IF NOT EXISTS `updates` (
   PRIMARY KEY (`name`) USING BTREE
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='List of all applied updates in this database.';
 
+-- 2024_08_07_00.sql recreates ai_playerbot_texts with an older text set than ai_playerbot_texts.sql, which already
+-- holds it (and newer texts), so it must not run on top of the base
+INSERT INTO `updates` (`name`, `hash`, `state`, `speed`) VALUES
+('2024_08_07_00.sql', '24D8822305AF0CBBC48DAFF8EF3F711A5135113F', 'RELEASED', 0);
+
 /*!40000 ALTER TABLE `updates` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
