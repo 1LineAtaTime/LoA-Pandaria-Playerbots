@@ -2957,6 +2957,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 case 138081:
                 case 138083:
                 case 91938: // Summon Darnell, spell_area casts it again (and so summons Darnell) on login
+                case 73306: // Summon Lilian Voss (Guardian), same
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB;
                     break;
                 case 3600:   // Earthbind Totem

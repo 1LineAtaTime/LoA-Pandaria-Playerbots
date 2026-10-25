@@ -222,6 +222,8 @@ enum TirisfalGlades
     NPC_DARNELL_RECRUITMENT                 = 49337,
     POINT_SCARLET_CORPSE                    = 49340,
 
+    NPC_LILIAN_VOSS_GUARDIAN                = 66185,
+
     TEXT_CAPTURE_READY                      = 0,
 
     EVENT_CHECK_PLAYER                      = 999
@@ -1533,6 +1535,28 @@ class spell_summon_darnell : public AuraScript
     }
 };
 
+// 73306 - Summon Lilian Voss (Guardian)
+class spell_summon_lilian_voss_guardian : public SpellScript
+{
+    PrepareSpellScript(spell_summon_lilian_voss_guardian);
+
+    // spell_area casts this on login or on entering the Scarlet Watch Post while A Daughter's Embrace is in the quest log.
+    // Lilian already following the player keeps doing so; one who died or was left behind is replaced (she takes the
+    // quest summon slot, so the new one unsummons the old one).
+    void HandleSummon(SpellEffIndex effIndex)
+    {
+        Unit* caster = GetCaster();
+        if (Creature* lilian = ObjectAccessor::GetCreature(*caster, caster->m_SummonSlot[SUMMON_SLOT_QUEST]))
+            if (lilian->GetEntry() == TirisfalGlades::NPC_LILIAN_VOSS_GUARDIAN && lilian->IsAlive() && lilian->IsWithinDist(caster, 50.0f))
+                PreventHitDefaultEffect(effIndex);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_summon_lilian_voss_guardian::HandleSummon, EFFECT_0, SPELL_EFFECT_SUMMON);
+    }
+};
+
 // 91942 - Select Scarlet Corpse
 class spell_select_scarlet_corpse : public SpellScript
 {
@@ -1711,6 +1735,7 @@ void AddSC_tirisfal_glades()
     new creature_script<npc_vile_fin_minor_oracle>("npc_vile_fin_minor_oracle");
     new spell_script<spell_murloc_leash>("spell_murloc_leash");
     new aura_script<spell_summon_darnell>("spell_summon_darnell");
+    new spell_script<spell_summon_lilian_voss_guardian>("spell_summon_lilian_voss_guardian");
     new spell_script<spell_select_scarlet_corpse>("spell_select_scarlet_corpse");
     new spell_script<spell_reverse_cast_ride_vehicle_darnell>("spell_reverse_cast_ride_vehicle_darnell");
     new creature_script<npc_captured_vile_fin_puddlejumper>("npc_captured_vile_fin_puddlejumper");
