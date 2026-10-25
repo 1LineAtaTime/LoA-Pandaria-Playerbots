@@ -29,8 +29,11 @@ EndContentData */
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedEscortAI.h"
+#include "ScriptedGossip.h"
 #include "Player.h"
 #include "SpellScript.h"
+#include "Vehicle.h"
+#include "CombatAI.h"
 
 /*######
 ## npc_deathstalker_erland
@@ -891,6 +894,235 @@ class spell_silverpine_forsaken_trooper_masterscript_high_command : public Spell
     }
 };
 
+enum BatHandlerMaggotbreath
+{
+    QUEST_ITERATING_UPON_SUCCESS                = 26998,
+
+    SPELL_SUMMON_FORSAKEN_BAT                   = 83584,
+
+    TALK_MAGGOTBREATH_ITERATING_UPON_SUCCESS    = 0,
+
+    GOSSIP_MENU_MAGGOTBREATH                    = 11892,
+    GOSSIP_OPTION_TAKE_A_BAT                    = 0
+};
+
+// 44825 - Bat Handler Maggotbreath
+// The gossip option (shown while Iterating Upon Success is in progress) lends the player a bat; the flight master option stays default
+struct npc_silverpine_bat_handler_maggotbreath : public ScriptedAI
+{
+    npc_silverpine_bat_handler_maggotbreath(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_MAGGOTBREATH || gossipListId != GOSSIP_OPTION_TAKE_A_BAT)
+            return false;
+
+        CloseGossipMenuFor(player);
+
+        if (player->GetQuestStatus(QUEST_ITERATING_UPON_SUCCESS) != QUEST_STATUS_INCOMPLETE || player->GetVehicle())
+            return true;
+
+        Talk(TALK_MAGGOTBREATH_ITERATING_UPON_SUCCESS, player);
+        player->CastSpell(player, SPELL_SUMMON_FORSAKEN_BAT, true);
+        return true;
+    }
+};
+
+enum ForsakenBat
+{
+    NPC_BAT_HANDLER_MAGGOTBREATH                = 44825,
+    NPC_FORSAKEN_BAT                            = 44821,
+
+    SPELL_BLIGHT_CONCOCTION                     = 83573,
+    SPELL_GO_HOME                               = 83594,
+
+    EVENT_CHECK_FINISH_ITERATING                = 1,
+    EVENT_CIRCLE_THE_LAKE                       = 2,
+    EVENT_LAND_AT_HIGH_COMMAND                  = 3,
+
+    ACTION_GO_HOME                              = 1,
+
+    TALK_BAT_ARRIVED_TO_ISLE                    = 0,
+    TALK_BAT_GOING_HOME                         = 1,
+
+    PATH_BAT_TO_LAKE                            = 448210,
+    PATH_BAT_AROUND_LAKE                        = 448211,
+    PATH_BAT_TO_HOME                            = 448212,
+
+    WAYPOINT_LAST_POINT_TO_LAKE                 = 7,
+    WAYPOINT_LAST_POINT_TO_HOME                 = 6
+};
+
+// TrinityCore's absolute speeds (17.79, 17.98 and 35.79 yards per second) as rates of the 7.0 base speed
+float const BatSpeedToLake   = 2.542f;
+float const BatSpeedAtLake   = 2.569f;
+float const BatSpeedToHome   = 5.113f;
+
+// 44821 - Forsaken Bat
+// Flies its rider to Lordamere Lake, circles it while the Blight Concoction kills the Vile Fin murlocs, and brings the rider back to
+// Forsaken High Command when the 50 murlocs are slain or the rider uses Go Home
+struct npc_silverpine_forsaken_bat : public VehicleAI
+{
+    npc_silverpine_forsaken_bat(Creature* creature) : VehicleAI(creature), _currentPath(0), _goingHome(false)
+    {
+        // The rider's action bar is sent when it boards, so the first spell has to be there from the start
+        SetInitialActionBar();
+    }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetDisableGravity(true);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (!apply)
+            return;
+
+        Player* player = passenger->ToPlayer();
+        if (!player || player->GetQuestStatus(QUEST_ITERATING_UPON_SUCCESS) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        player->KilledMonsterCredit(NPC_BAT_HANDLER_MAGGOTBREATH);
+
+        StartPath(PATH_BAT_TO_LAKE, BatSpeedToLake, false);
+        _events.ScheduleEvent(EVENT_CHECK_FINISH_ITERATING, 500ms);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != WAYPOINT_MOTION_TYPE)
+            return;
+
+        // The next path is started from UpdateAI: the waypoint generator resets the motion master after its last point
+        if (_currentPath == PATH_BAT_TO_LAKE && pointId == WAYPOINT_LAST_POINT_TO_LAKE)
+            _events.ScheduleEvent(EVENT_CIRCLE_THE_LAKE, 0ms);
+        else if (_currentPath == PATH_BAT_TO_HOME && pointId == WAYPOINT_LAST_POINT_TO_HOME)
+            _events.ScheduleEvent(EVENT_LAND_AT_HIGH_COMMAND, 0ms);
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_GO_HOME || _goingHome)
+            return;
+
+        _goingHome = true;
+        _events.CancelEvent(EVENT_CHECK_FINISH_ITERATING);
+        _events.CancelEvent(EVENT_CIRCLE_THE_LAKE);
+
+        me->GetMotionMaster()->Clear();
+        StartPath(PATH_BAT_TO_HOME, BatSpeedToHome, false);
+
+        SetFinishActionBar();
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            if (player->GetVehicleBase() == me)
+                player->VehicleSpellInitialize();
+            Talk(TALK_BAT_GOING_HOME, player);
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_CHECK_FINISH_ITERATING:
+                {
+                    // The bat's credit is given on boarding, so the quest is complete once the 50 murlocs are slain
+                    Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+                    if (player && player->GetQuestStatus(QUEST_ITERATING_UPON_SUCCESS) == QUEST_STATUS_INCOMPLETE)
+                        _events.ScheduleEvent(EVENT_CHECK_FINISH_ITERATING, 500ms);
+                    else
+                        DoAction(ACTION_GO_HOME);
+                    break;
+                }
+                case EVENT_CIRCLE_THE_LAKE:
+                    StartPath(PATH_BAT_AROUND_LAKE, BatSpeedAtLake, true);
+                    SetCircularActionBar();
+
+                    if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+                    {
+                        Talk(TALK_BAT_ARRIVED_TO_ISLE, player);
+                        if (player->GetVehicleBase() == me)
+                            player->VehicleSpellInitialize();
+                    }
+                    break;
+                case EVENT_LAND_AT_HIGH_COMMAND:
+                    if (Vehicle* vehicle = me->GetVehicleKit())
+                        vehicle->RemoveAllPassengers();
+                    me->DespawnOrUnsummon(0);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void StartPath(uint32 pathId, float speedRate, bool repeatable)
+    {
+        _currentPath = pathId;
+        me->SetSpeed(MOVE_RUN, speedRate);
+        me->SetSpeed(MOVE_FLIGHT, speedRate);
+        me->GetMotionMaster()->MovePath(pathId, repeatable);
+    }
+
+    void SetInitialActionBar()
+    {
+        me->m_spells[0] = SPELL_BLIGHT_CONCOCTION;
+        me->m_spells[1] = 0;
+    }
+
+    void SetCircularActionBar()
+    {
+        me->m_spells[0] = SPELL_BLIGHT_CONCOCTION;
+        me->m_spells[1] = SPELL_GO_HOME;
+    }
+
+    void SetFinishActionBar()
+    {
+        me->m_spells[0] = 0;
+        me->m_spells[1] = 0;
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    uint32 _currentPath;
+    bool _goingHome;
+};
+
+// 83594 - Go Home
+// Cast from the bat's action bar, so the caster is the bat itself, which has no vehicle for the TARGET_UNIT_VEHICLE effect to hit
+// (TrinityCore's SpellHit never fires here); act before target selection instead, for the bat or for a rider casting it
+class spell_silverpine_go_home : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_go_home);
+
+    void HandleBeforeCast()
+    {
+        Unit* caster = GetCaster();
+        Unit* bat = caster->GetVehicleBase() ? caster->GetVehicleBase() : caster;
+        if (Creature* creature = bat->ToCreature())
+            if (creature->GetEntry() == NPC_FORSAKEN_BAT && creature->IsAIEnabled)
+                creature->AI()->DoAction(ACTION_GO_HOME);
+    }
+
+    void Register() override
+    {
+        BeforeCast += SpellCastFn(spell_silverpine_go_home::HandleBeforeCast);
+    }
+};
+
 /*######
 ## AddSC
 ######*/
@@ -903,4 +1135,7 @@ void AddSC_silverpine_forest()
     new aura_script<spell_silverpine_raise_forsaken_83173>("spell_silverpine_raise_forsaken_83173");
     new creature_script<npc_silverpine_fallen_human>("npc_silverpine_fallen_human");
     new spell_script<spell_silverpine_forsaken_trooper_masterscript_high_command>("spell_silverpine_forsaken_trooper_masterscript_high_command");
+    new creature_script<npc_silverpine_bat_handler_maggotbreath>("npc_silverpine_bat_handler_maggotbreath");
+    new creature_script<npc_silverpine_forsaken_bat>("npc_silverpine_forsaken_bat");
+    new spell_script<spell_silverpine_go_home>("spell_silverpine_go_home");
 }
