@@ -34,6 +34,7 @@ EndContentData */
 #include "SpellScript.h"
 #include "Vehicle.h"
 #include "CombatAI.h"
+#include "GameObjectAI.h"
 
 /*######
 ## npc_deathstalker_erland
@@ -1123,6 +1124,602 @@ class spell_silverpine_go_home : public SpellScript
     }
 };
 
+enum WaitingToExsanguinate
+{
+    QUEST_WAITING_TO_EXSANGUINATE               = 27045,
+
+    NPC_DEATHSTALKER_RANE_YORICK                = 44882,
+    NPC_LORD_DARIUS_CROWLEY_EXSANGUINATE        = 44883,
+    NPC_PACKLEADER_IVAR_BLOODFANG_EXSANGUINATE  = 44884,
+
+    SPELL_SUMMON_DEATHSTALKER_YORICK            = 83751,
+    SPELL_SUMMON_CROWLEY_EXSANGUINATE           = 83752,
+    SPELL_SUMMON_BLOODFANG_EXSANGUINATE         = 83753,
+    SPELL_ARMOIRE_CAMERA_ON_CROWLEY             = 83763,
+    SPELL_ARMOIRE_CAMERA_ON_BLOODFANG           = 83764,
+    SPELL_KILL_CREDIT_YORICK                    = 83786,
+    SPELL_HIDE_IN_ARMOIRE                       = 83788,
+    SPELL_STEALTH_YORICK                        = 34189,
+    SPELL_PERMANENT_FEIGN_DEATH_YORICK          = 29266,
+    SPELL_RIDE_VEHICLE_HARDCODED_YORICK         = 46598,
+
+    GOSSIP_MENU_ABANDONED_OUTHOUSE              = 11897,
+    GOSSIP_OPTION_YORICK_READY                  = 0,
+
+    // Deathstalker Rane Yorick
+    EVENT_YORICK_GREET                          = 1,
+    EVENT_YORICK_WALK_UP                        = 2,
+    EVENT_YORICK_WAIT_FOR_PLAYER                = 3,
+    EVENT_YORICK_TALK_HIDE                      = 4,
+    EVENT_YORICK_HIDE                           = 5,
+    EVENT_YORICK_SKIP_PATH                      = 6,
+    EVENT_YORICK_STEALTH                        = 7,
+    EVENT_YORICK_FEIGN_DEATH                    = 8,
+    EVENT_YORICK_ENABLE_GRAVITY                 = 9,
+
+    // Armoire: the scene steps follow each other from 1 up to EVENT_SCENE_EXSANGUINATE_FINISH
+    EVENT_SCENE_EXSANGUINATE_START              = 1,
+    EVENT_SCENE_EXSANGUINATE_FINISH             = 39,
+
+    ACTION_YORICK_DIE                           = 1,
+
+    TALK_YORICK_SUMMONED                        = 0,
+    TALK_YORICK_HIDE                            = 1,
+    TALK_YORICK_DEATH                           = 2,
+    TALK_CROWLEY_EXSANGUINATE_0                 = 0,
+    TALK_CROWLEY_EXSANGUINATE_1                 = 1,
+    TALK_CROWLEY_EXSANGUINATE_2                 = 2,
+    TALK_CROWLEY_EXSANGUINATE_3                 = 3,
+    TALK_BLOODFANG_EXSANGUINATE_0               = 0,
+    TALK_BLOODFANG_EXSANGUINATE_1               = 1,
+    TALK_BLOODFANG_EXSANGUINATE_2               = 2,
+    TALK_BLOODFANG_EXSANGUINATE_3               = 3,
+    TALK_BLOODFANG_EXSANGUINATE_4               = 4,
+    TALK_BLOODFANG_EXSANGUINATE_5               = 5,
+    TALK_BLOODFANG_EXSANGUINATE_6               = 6,
+    TALK_BLOODFANG_EXSANGUINATE_7               = 7,
+    TALK_BLOODFANG_EXSANGUINATE_8               = 8,
+    TALK_BLOODFANG_EXSANGUINATE_9               = 9,
+    TALK_BLOODFANG_EXSANGUINATE_10              = 10,
+
+    PATH_YORICK_UP                              = 448820,
+    PATH_YORICK_HIDE                            = 448821,
+    PATH_CROWLEY_ENTER                          = 448830,
+    PATH_CROWLEY_EXIT                           = 448831,
+    PATH_BLOODFANG_ENTER                        = 448840,
+    PATH_BLOODFANG_NEAR_YORICK                  = 448841,
+    PATH_BLOODFANG_WITH_YORICK                  = 448842,
+    PATH_BLOODFANG_EXIT                         = 448843,
+
+    // Indexes of the last point of each path
+    WAYPOINT_YORICK_CLOSE_TO_ARMOIRE            = 14,
+    WAYPOINT_YORICK_HIDDEN_NEXT_TO_ARMOIRE      = 1,
+    WAYPOINT_CROWLEY_EXIT_LAST                  = 1,
+    WAYPOINT_BLOODFANG_EXIT_LAST                = 2
+};
+
+Position const YorickReadyPosition = { 1313.7f, 1211.99f, 58.5f, 4.564474f };
+
+// 205143 - Abandoned Outhouse
+// Ends Dangerous Intentions and starts Waiting to Exsanguinate: Deathstalker Rane Yorick comes out on accepting the quest, or later
+// through the "Yorick, you in there?" option (shown while the quest is in progress and Yorick is not out)
+struct go_silverpine_abandoned_outhouse : public GameObjectAI
+{
+    go_silverpine_abandoned_outhouse(GameObject* go) : GameObjectAI(go) { }
+
+    bool OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_WAITING_TO_EXSANGUINATE)
+            SummonYorick(player);
+        return false;
+    }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_ABANDONED_OUTHOUSE || gossipListId != GOSSIP_OPTION_YORICK_READY)
+            return false;
+
+        CloseGossipMenuFor(player);
+        SummonYorick(player);
+        return true;
+    }
+
+private:
+    static void SummonYorick(Player* player)
+    {
+        if (player->GetQuestStatus(QUEST_WAITING_TO_EXSANGUINATE) == QUEST_STATUS_INCOMPLETE && !player->HasAura(SPELL_SUMMON_DEATHSTALKER_YORICK))
+            player->CastSpell(player, SPELL_SUMMON_DEATHSTALKER_YORICK, true);
+    }
+};
+
+// 44882 - Deathstalker Rane Yorick
+// The player's personal summon: leads the way up to the armoire in the house, waits for the player, then hides in the shadows next
+// to it until Bloodfang finds him. Leaves when the summoner loses Summon Deathstalker Yorick.
+struct npc_silverpine_deathstalker_rane_yorick : public ScriptedAI
+{
+    npc_silverpine_deathstalker_rane_yorick(Creature* creature) : ScriptedAI(creature), _currentPath(0), _playerArrived(false), _hidden(false) { }
+
+    void Reset() override
+    {
+        me->SetPowerType(POWER_ENERGY);
+        me->SetMaxPower(POWER_ENERGY, 100);
+        me->SetPower(POWER_ENERGY, 100);
+    }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _summonerGUID = summoner->GetGUID();
+        me->SetFacingToObject(summoner);
+        _events.ScheduleEvent(EVENT_YORICK_GREET, 1s);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != WAYPOINT_MOTION_TYPE)
+            return;
+
+        if (_currentPath == PATH_YORICK_UP && pointId == WAYPOINT_YORICK_CLOSE_TO_ARMOIRE)
+        {
+            _currentPath = 0;
+            _events.ScheduleEvent(EVENT_YORICK_WAIT_FOR_PLAYER, 1s);
+        }
+        else if (_currentPath == PATH_YORICK_HIDE && pointId == WAYPOINT_YORICK_HIDDEN_NEXT_TO_ARMOIRE)
+        {
+            _currentPath = 0;
+            me->SetFacingTo(4.6425757f);
+            Hide();
+        }
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_YORICK_DIE)
+            return;
+
+        _events.Reset();
+        me->SetDisableGravity(true);
+        _events.ScheduleEvent(EVENT_YORICK_FEIGN_DEATH, 10ms);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* summoner = ObjectAccessor::GetPlayer(*me, _summonerGUID);
+        if (!summoner || !summoner->HasAura(SPELL_SUMMON_DEATHSTALKER_YORICK))
+        {
+            me->DespawnOrUnsummon(0);
+            return;
+        }
+
+        // The player got into the armoire before Yorick reached it: take the hiding spot at once
+        if (!_hidden && summoner->HasAura(SPELL_HIDE_IN_ARMOIRE))
+        {
+            _hidden = true;
+            _currentPath = 0;
+            _events.Reset();
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveIdle();
+            _events.ScheduleEvent(EVENT_YORICK_SKIP_PATH, 250ms);
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_YORICK_GREET:
+                    Talk(TALK_YORICK_SUMMONED, summoner);
+                    _events.ScheduleEvent(EVENT_YORICK_WALK_UP, 1s + 500ms);
+                    break;
+                case EVENT_YORICK_WALK_UP:
+                    _currentPath = PATH_YORICK_UP;
+                    me->GetMotionMaster()->MovePath(PATH_YORICK_UP, false);
+                    break;
+                case EVENT_YORICK_WAIT_FOR_PLAYER:
+                    if (!_playerArrived && summoner->GetDistance2d(me) <= 5.0f)
+                    {
+                        _playerArrived = true;
+                        _events.ScheduleEvent(EVENT_YORICK_TALK_HIDE, 1s);
+                    }
+                    else
+                        _events.ScheduleEvent(EVENT_YORICK_WAIT_FOR_PLAYER, 1s);
+                    break;
+                case EVENT_YORICK_TALK_HIDE:
+                    Talk(TALK_YORICK_HIDE, summoner);
+                    _events.ScheduleEvent(EVENT_YORICK_HIDE, 3s);
+                    break;
+                case EVENT_YORICK_HIDE:
+                    _currentPath = PATH_YORICK_HIDE;
+                    me->GetMotionMaster()->MovePath(PATH_YORICK_HIDE, false);
+                    break;
+                case EVENT_YORICK_SKIP_PATH:
+                    me->NearTeleportTo(YorickReadyPosition.GetPositionX(), YorickReadyPosition.GetPositionY(), YorickReadyPosition.GetPositionZ(),
+                        YorickReadyPosition.GetOrientation());
+                    _events.ScheduleEvent(EVENT_YORICK_STEALTH, 250ms);
+                    break;
+                case EVENT_YORICK_STEALTH:
+                    Hide();
+                    break;
+                case EVENT_YORICK_FEIGN_DEATH:
+                    DoCast(me, SPELL_PERMANENT_FEIGN_DEATH_YORICK, true);
+                    _events.ScheduleEvent(EVENT_YORICK_ENABLE_GRAVITY, 2s);
+                    break;
+                case EVENT_YORICK_ENABLE_GRAVITY:
+                    me->SetDisableGravity(false);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void Hide()
+    {
+        _hidden = true;
+        DoCast(me, SPELL_STEALTH_YORICK, true);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+    }
+
+    EventMap _events;
+    ObjectGuid _summonerGUID;
+    uint32 _currentPath;
+    bool _playerArrived;
+    bool _hidden;
+};
+
+// The player's own summon of an entry. FindNearestCreature also finds group members' personal summons, which play the same scene
+// at the same spot.
+static ObjectGuid FindOwnSummon(Player* player, uint32 entry)
+{
+    std::list<Creature*> creatures;
+    player->GetCreatureListWithEntryInGrid(creatures, entry, 50.0f);
+    for (Creature* creature : creatures)
+        if (creature->IsAlive() && creature->IsSummon() && creature->ToTempSummon()->GetSummonerGUID() == player->GetGUID())
+            return creature->GetGUID();
+    return ObjectGuid::Empty;
+}
+
+// 44893 - Armoire
+// Summoned by clicking the armoire in the house (Summon Hiding Spot), with the player hidden inside. Plays the meeting the player
+// eavesdrops on: Crowley asks Bloodfang for his pack's help, Bloodfang sniffs out and kills Yorick, and Crowley's Kill Credit Yorick
+// completes the quest before the player is let out. Leaving the armoire ends the scene.
+struct npc_silverpine_armoire : public VehicleAI
+{
+    npc_silverpine_armoire(Creature* creature) : VehicleAI(creature), _sceneStarted(false) { }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        Player* player = passenger->ToPlayer();
+        if (!player)
+            return;
+
+        if (apply)
+        {
+            if (_sceneStarted || player->GetQuestStatus(QUEST_WAITING_TO_EXSANGUINATE) != QUEST_STATUS_INCOMPLETE)
+                return;
+
+            _sceneStarted = true;
+            _playerGUID = player->GetGUID();
+            _events.ScheduleEvent(EVENT_SCENE_EXSANGUINATE_START, 400ms);
+            return;
+        }
+
+        _events.Reset();
+
+        if (Creature* crowley = ObjectAccessor::GetCreature(*me, _crowleyGUID))
+            crowley->DespawnOrUnsummon(0);
+        if (Creature* bloodfang = ObjectAccessor::GetCreature(*me, _bloodfangGUID))
+            bloodfang->DespawnOrUnsummon(0);
+
+        // Yorick leaves with his summoning aura
+        player->RemoveAurasDueToSpell(SPELL_SUMMON_DEATHSTALKER_YORICK);
+        player->RemoveAurasDueToSpell(SPELL_HIDE_IN_ARMOIRE);
+
+        me->DespawnOrUnsummon(1000);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+            if (!player || player->GetVehicleBase() != me)
+            {
+                _events.Reset();
+                me->DespawnOrUnsummon(0);
+                return;
+            }
+
+            if (eventId == EVENT_SCENE_EXSANGUINATE_START)
+            {
+                // The three spells of Summon Crowley/Bloodfang Master, cast directly
+                player->CastSpell(player, SPELL_SUMMON_BLOODFANG_EXSANGUINATE, true);
+                player->CastSpell(player, SPELL_SUMMON_CROWLEY_EXSANGUINATE, true);
+                player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_CROWLEY, true);
+
+                // They are personal summons (as is Yorick), so they are found from the player's side. Group members see each
+                // other's, so only this player's own are taken.
+                _crowleyGUID = FindOwnSummon(player, NPC_LORD_DARIUS_CROWLEY_EXSANGUINATE);
+                _bloodfangGUID = FindOwnSummon(player, NPC_PACKLEADER_IVAR_BLOODFANG_EXSANGUINATE);
+                _yorickGUID = FindOwnSummon(player, NPC_DEATHSTALKER_RANE_YORICK);
+            }
+
+            Creature* crowley = ObjectAccessor::GetCreature(*me, _crowleyGUID);
+            Creature* bloodfang = ObjectAccessor::GetCreature(*me, _bloodfangGUID);
+            Creature* yorick = ObjectAccessor::GetCreature(*me, _yorickGUID);
+            // From step 37 on Bloodfang and then Crowley walk off and despawn at the end of their paths, so only the steps
+            // before that need all three
+            if (eventId < 37 && (!crowley || !bloodfang || !yorick || !crowley->IsAIEnabled || !bloodfang->IsAIEnabled || !yorick->IsAIEnabled))
+            {
+                // An actor is missing: let the player out, which ends the scene
+                _events.Reset();
+                player->ExitVehicle();
+                return;
+            }
+
+            Milliseconds next = 0ms;
+
+            switch (eventId)
+            {
+                case EVENT_SCENE_EXSANGUINATE_START:
+                    next = 100ms;
+                    break;
+                case 2:
+                    crowley->AI()->DoAction(PATH_CROWLEY_ENTER);
+                    bloodfang->AI()->DoAction(PATH_BLOODFANG_ENTER);
+                    next = 7s;
+                    break;
+                case 3:
+                    crowley->SetFacingToObject(bloodfang);
+                    bloodfang->SetFacingToObject(crowley);
+                    next = 2s;
+                    break;
+                case 4:
+                    crowley->AI()->Talk(TALK_CROWLEY_EXSANGUINATE_0, player);
+                    next = 3s + 900ms;
+                    break;
+                case 5:
+                    player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_BLOODFANG, true);
+                    next = 2s + 500ms;
+                    break;
+                case 6:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_0, player);
+                    next = 3s + 100ms;
+                    break;
+                case 7:
+                    bloodfang->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
+                    next = 4s + 800ms;
+                    break;
+                case 8:
+                    player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_CROWLEY, true);
+                    next = 2s + 500ms;
+                    break;
+                case 9:
+                    crowley->AI()->Talk(TALK_CROWLEY_EXSANGUINATE_1, player);
+                    next = 3s + 500ms;
+                    break;
+                case 10:
+                    crowley->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                    next = 5s + 400ms;
+                    break;
+                case 11:
+                    crowley->AI()->Talk(TALK_CROWLEY_EXSANGUINATE_2, player);
+                    next = 3s + 100ms;
+                    break;
+                case 12:
+                    crowley->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                    next = 3s + 550ms;
+                    break;
+                case 13:
+                    player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_BLOODFANG, true);
+                    next = 2s + 500ms;
+                    break;
+                case 14:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_1, player);
+                    next = 3s + 800ms;
+                    break;
+                case 15:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_2, player);
+                    next = 2s + 400ms;
+                    break;
+                case 16:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_3, player);
+                    next = 3s + 900ms;
+                    break;
+                case 17:
+                    bloodfang->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                    next = 4s + 450ms;
+                    break;
+                case 18:
+                    player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_CROWLEY, true);
+                    next = 3s;
+                    break;
+                case 19:
+                    crowley->AI()->Talk(TALK_CROWLEY_EXSANGUINATE_3, player);
+                    next = 1s + 900ms;
+                    break;
+                case 20:
+                    player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_BLOODFANG, true);
+                    next = 2s + 500ms;
+                    break;
+                case 21:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_4, player);
+                    next = 2s + 300ms;
+                    break;
+                case 22:
+                    bloodfang->SetFacingTo(0.6457718f);
+                    next = 1s + 300ms;
+                    break;
+                case 23:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_5, player);
+                    next = 4s;
+                    break;
+                case 24:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_6, player);
+                    next = 3s + 500ms;
+                    break;
+                case 25:
+                    bloodfang->HandleEmoteCommand(EMOTE_ONESHOT_YES);
+                    next = 2s + 800ms;
+                    break;
+                case 26:
+                    bloodfang->AI()->DoAction(PATH_BLOODFANG_NEAR_YORICK);
+                    next = 3s;
+                    break;
+                case 27:
+                    bloodfang->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                    next = 200ms;
+                    break;
+                case 28:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_7, player);
+                    next = 2s + 300ms;
+                    break;
+                case 29:
+                    // Bloodfang grabs Yorick: TrinityCore's Reverse Cast Ride Vehicle (83781), which makes Yorick ride him
+                    yorick->RemoveAurasDueToSpell(SPELL_STEALTH_YORICK);
+                    yorick->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    yorick->CastSpell(bloodfang, SPELL_RIDE_VEHICLE_HARDCODED_YORICK, true);
+                    next = 1s + 100ms;
+                    break;
+                case 30:
+                    bloodfang->AI()->DoAction(PATH_BLOODFANG_WITH_YORICK);
+                    next = 3s;
+                    break;
+                case 31:
+                    bloodfang->SetFacingTo(3.054326f);
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_8, player);
+                    next = 3s + 600ms;
+                    break;
+                case 32:
+                    yorick->AI()->Talk(TALK_YORICK_DEATH, player);
+                    next = 4s + 850ms;
+                    break;
+                case 33:
+                    // TrinityCore's Eject Passenger 1 (80743)
+                    yorick->ExitVehicle();
+                    yorick->AI()->DoAction(ACTION_YORICK_DIE);
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_9, player);
+                    next = 3s + 600ms;
+                    break;
+                case 34:
+                    bloodfang->SetFacingTo(0.0f);
+                    next = 1s + 100ms;
+                    break;
+                case 35:
+                    bloodfang->AI()->Talk(TALK_BLOODFANG_EXSANGUINATE_10, player);
+                    next = 4s + 100ms;
+                    break;
+                case 36:
+                    bloodfang->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                    next = 3s + 250ms;
+                    break;
+                case 37:
+                    player->CastSpell(player, SPELL_ARMOIRE_CAMERA_ON_CROWLEY, true);
+                    if (bloodfang && bloodfang->IsAIEnabled)
+                        bloodfang->AI()->DoAction(PATH_BLOODFANG_EXIT);
+                    next = 3s;
+                    break;
+                case 38:
+                    if (crowley && crowley->IsAIEnabled)
+                        crowley->AI()->DoAction(PATH_CROWLEY_EXIT);
+                    next = 4s;
+                    break;
+                case EVENT_SCENE_EXSANGUINATE_FINISH:
+                    // Crowley has gone by now; the armoire's summoner is the player, so its cast still lands on the player
+                    me->CastSpell(player, SPELL_KILL_CREDIT_YORICK, true);
+                    player->RemoveAurasDueToSpell(SPELL_HIDE_IN_ARMOIRE);
+                    player->ExitVehicle();
+                    return;
+                default:
+                    break;
+            }
+
+            if (next > 0ms)
+                _events.ScheduleEvent(eventId + 1, next);
+        }
+    }
+
+private:
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _yorickGUID;
+    ObjectGuid _crowleyGUID;
+    ObjectGuid _bloodfangGUID;
+    bool _sceneStarted;
+};
+
+// Lord Darius Crowley and Packleader Ivar Bloodfang in the meeting: the armoire picks their paths, and they leave at the end of
+// their exit path
+struct npc_silverpine_exsanguinate_actor : public ScriptedAI
+{
+    npc_silverpine_exsanguinate_actor(Creature* creature, uint32 exitPath, uint32 exitLastPoint) : ScriptedAI(creature),
+        _currentPath(0), _exitPath(exitPath), _exitLastPoint(exitLastPoint) { }
+
+    void Reset() override
+    {
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    // The action is the path to walk
+    void DoAction(int32 pathId) override
+    {
+        _currentPath = uint32(pathId);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MovePath(_currentPath, false);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type == WAYPOINT_MOTION_TYPE && _currentPath == _exitPath && pointId == _exitLastPoint)
+            me->DespawnOrUnsummon(0);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override { }
+
+private:
+    uint32 _currentPath;
+    uint32 _exitPath;
+    uint32 _exitLastPoint;
+};
+
+// 44883 - Lord Darius Crowley
+struct npc_silverpine_lord_darius_crowley_exsanguinate : public npc_silverpine_exsanguinate_actor
+{
+    npc_silverpine_lord_darius_crowley_exsanguinate(Creature* creature)
+        : npc_silverpine_exsanguinate_actor(creature, PATH_CROWLEY_EXIT, WAYPOINT_CROWLEY_EXIT_LAST) { }
+};
+
+// 44884 - Packleader Ivar Bloodfang
+struct npc_silverpine_packleader_ivar_bloodfang_exsanguinate : public npc_silverpine_exsanguinate_actor
+{
+    npc_silverpine_packleader_ivar_bloodfang_exsanguinate(Creature* creature)
+        : npc_silverpine_exsanguinate_actor(creature, PATH_BLOODFANG_EXIT, WAYPOINT_BLOODFANG_EXIT_LAST) { }
+};
+
+// 83788 - Hide in Armoire
+// Its second effect moves the player to phase 265, where nothing of the scene would be seen here (there is no phasing in Silverpine
+// Forest, and Yorick and the armoire are summoned before the aura), so it is kept from applying
+class spell_silverpine_hide_in_armoire : public AuraScript
+{
+    PrepareAuraScript(spell_silverpine_hide_in_armoire);
+
+    void PreventPhase(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        PreventDefaultAction();
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_silverpine_hide_in_armoire::PreventPhase, EFFECT_1, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_silverpine_hide_in_armoire::PreventPhase, EFFECT_1, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 /*######
 ## AddSC
 ######*/
@@ -1138,4 +1735,10 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_bat_handler_maggotbreath>("npc_silverpine_bat_handler_maggotbreath");
     new creature_script<npc_silverpine_forsaken_bat>("npc_silverpine_forsaken_bat");
     new spell_script<spell_silverpine_go_home>("spell_silverpine_go_home");
+    RegisterGameObjectAI(go_silverpine_abandoned_outhouse);
+    new creature_script<npc_silverpine_deathstalker_rane_yorick>("npc_silverpine_deathstalker_rane_yorick");
+    new creature_script<npc_silverpine_armoire>("npc_silverpine_armoire");
+    new creature_script<npc_silverpine_lord_darius_crowley_exsanguinate>("npc_silverpine_lord_darius_crowley_exsanguinate");
+    new creature_script<npc_silverpine_packleader_ivar_bloodfang_exsanguinate>("npc_silverpine_packleader_ivar_bloodfang_exsanguinate");
+    new aura_script<spell_silverpine_hide_in_armoire>("spell_silverpine_hide_in_armoire");
 }
