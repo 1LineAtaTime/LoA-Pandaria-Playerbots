@@ -4025,6 +4025,302 @@ struct npc_silverpine_fenris_keep_actor : public ScriptedAI
     void UpdateAI(uint32 /*diff*/) override { }
 };
 
+enum NowhereToRun
+{
+    QUEST_NOWHERE_TO_RUN                        = 27195,
+
+    NPC_VETERAN_FORSAKEN_TROOPER                = 45225,
+    NPC_PACKLEADER_IVAR_BLOODFANG_MINE          = 45236,
+    NPC_BOMB_MINE                               = 45237,
+
+    SPELL_EXPLOSION_MINE                        = 84474,
+
+    TALK_FORTESKI_START                         = 0,
+    TALK_FORTESKI_ONWARD                        = 1,
+    TALK_FORTESKI_WHATS_THIS                    = 2,
+    TALK_FORTESKI_TRAP                          = 3,
+    TALK_FORTESKI_RUN                           = 4,
+    TALK_BLOODFANG_YOUR_DOOM                    = 0,
+
+    EVENT_FORTESKI_CHECK_PLAYER                 = 1,
+    EVENT_FORTESKI_ONWARD                       = 2,
+    EVENT_FORTESKI_WHATS_THIS                   = 3,
+    EVENT_FORTESKI_YOUR_DOOM                    = 4,
+    EVENT_FORTESKI_TRAP                         = 5,
+    EVENT_FORTESKI_RUN                          = 6,
+    EVENT_FORTESKI_EXPLOSION                    = 7,
+    EVENT_FORTESKI_DIE                          = 8,
+
+    POINT_FORTESKI_MINE_END                     = 1
+};
+
+// In front of where Bloodfang appears (his sniffed spawn faces up the tunnel), facing him
+Position const ForteskiMineEndPos   = { 409.39f, 1024.73f, 107.6f, 5.54f };
+Position const BloodfangMinePos     = { 413.818f, 1020.68f, 107.745f, 2.4f };
+Position const BombMinePos          = { 410.661f, 1011.75f, 107.928f, 0.0f };
+
+float const ForteskiMaxPlayerDistance = 60.0f;
+
+// 45228 - Master Forteski
+// Nowhere to Run: leads his troopers into the Deep Elem Mine, where Packleader Ivar Bloodfang springs a trap; Forteski sends the
+// player back to Sylvanas (the quest event) before the bomb goes off and kills him and his troopers, who return a little later
+struct npc_silverpine_master_forteski : public ScriptedAI
+{
+    npc_silverpine_master_forteski(Creature* creature) : ScriptedAI(creature), _escorting(false), _creditGiven(false) { }
+
+    void Reset() override
+    {
+        if (_escorting)
+            return;
+
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, me->GetCreatureTemplate()->npcflag);
+        me->SetReactState(REACT_AGGRESSIVE);
+    }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_NOWHERE_TO_RUN)
+            StartEscort(player);
+    }
+
+    // An escort that was reset (the player died, left or abandoned the quest) starts again by talking to him
+    bool OnGossipHello(Player* player) override
+    {
+        if (player->GetQuestStatus(QUEST_NOWHERE_TO_RUN) == QUEST_STATUS_INCOMPLETE)
+            StartEscort(player);
+        return false;
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type == POINT_MOTION_TYPE && pointId == POINT_FORTESKI_MINE_END && _escorting)
+            _events.ScheduleEvent(EVENT_FORTESKI_WHATS_THIS, 0ms);
+    }
+
+    void JustReachedHome() override
+    {
+        // Sent home by a fight on the way
+        if (_escorting && !_creditGiven)
+            ResetEscort();
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        // Killed before the explosion: the troopers go home
+        if (_escorting)
+            ResetEscort();
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!_escorting)
+        {
+            if (!UpdateVictim())
+                return;
+
+            DoMeleeAttackIfReady();
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+
+            switch (eventId)
+            {
+                case EVENT_FORTESKI_CHECK_PLAYER:
+                    if (!player || !player->IsInWorld() || !player->IsAlive() || !me->IsWithinDistInMap(player, ForteskiMaxPlayerDistance) ||
+                        player->GetQuestStatus(QUEST_NOWHERE_TO_RUN) != QUEST_STATUS_INCOMPLETE)
+                    {
+                        ResetEscort();
+                        return;
+                    }
+                    _events.ScheduleEvent(EVENT_FORTESKI_CHECK_PLAYER, 1s);
+                    break;
+                case EVENT_FORTESKI_ONWARD:
+                {
+                    Talk(TALK_FORTESKI_ONWARD);
+                    me->SetWalk(false);
+                    me->GetMotionMaster()->MovePoint(POINT_FORTESKI_MINE_END, ForteskiMineEndPos, true);
+
+                    // The troopers follow in rows of three behind him
+                    uint32 index = 0;
+                    for (Creature* trooper : GetTroopers())
+                    {
+                        trooper->SetWalk(false);
+                        trooper->GetMotionMaster()->Clear();
+                        trooper->GetMotionMaster()->MoveFollow(me, 2.5f + float(index / 3) * 2.5f, float(M_PI) + (float(index % 3) - 1.0f) * 0.6f);
+                        ++index;
+                    }
+                    break;
+                }
+                case EVENT_FORTESKI_WHATS_THIS:
+                    me->SetFacingTo(ForteskiMineEndPos.GetOrientation());
+                    Talk(TALK_FORTESKI_WHATS_THIS);
+                    if (Creature* bloodfang = me->SummonCreature(NPC_PACKLEADER_IVAR_BLOODFANG_MINE, BloodfangMinePos, TEMPSUMMON_MANUAL_DESPAWN))
+                    {
+                        // The trap is sprung, not fought
+                        bloodfang->SetReactState(REACT_PASSIVE);
+                        bloodfang->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+                        bloodfang->SetFacingToObject(me);
+                        _bloodfangGUID = bloodfang->GetGUID();
+                    }
+                    _events.ScheduleEvent(EVENT_FORTESKI_YOUR_DOOM, 3s);
+                    break;
+                case EVENT_FORTESKI_YOUR_DOOM:
+                    if (Creature* bloodfang = ObjectAccessor::GetCreature(*me, _bloodfangGUID))
+                    {
+                        me->SetFacingToObject(bloodfang);
+                        bloodfang->AI()->Talk(TALK_BLOODFANG_YOUR_DOOM);
+                        // Toss Bomb, done with its throw: its nearby-entry destination is searched within its self range here
+                        bloodfang->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK_THROWN);
+                    }
+                    if (Creature* bomb = me->SummonCreature(NPC_BOMB_MINE, BombMinePos, TEMPSUMMON_TIMED_DESPAWN, 20s))
+                    {
+                        bomb->SetReactState(REACT_PASSIVE);
+                        bomb->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NOT_SELECTABLE);
+                        _bombGUID = bomb->GetGUID();
+                    }
+                    _events.ScheduleEvent(EVENT_FORTESKI_TRAP, 2s);
+                    break;
+                case EVENT_FORTESKI_TRAP:
+                    Talk(TALK_FORTESKI_TRAP);
+                    _events.ScheduleEvent(EVENT_FORTESKI_RUN, 3s);
+                    break;
+                case EVENT_FORTESKI_RUN:
+                    _creditGiven = true;
+                    _events.CancelEvent(EVENT_FORTESKI_CHECK_PLAYER);
+                    if (player)
+                    {
+                        Talk(TALK_FORTESKI_RUN, player);
+                        player->GroupEventHappens(QUEST_NOWHERE_TO_RUN, me);
+                    }
+                    // Bloodfang slips away before the blast
+                    if (Creature* bloodfang = ObjectAccessor::GetCreature(*me, _bloodfangGUID))
+                        bloodfang->DespawnOrUnsummon(1500);
+                    _events.ScheduleEvent(EVENT_FORTESKI_EXPLOSION, 4s);
+                    break;
+                case EVENT_FORTESKI_EXPLOSION:
+                    if (Creature* bomb = ObjectAccessor::GetCreature(*me, _bombGUID))
+                        bomb->CastSpell(bomb, SPELL_EXPLOSION_MINE, true);
+                    // Once they have landed from the blast
+                    _events.ScheduleEvent(EVENT_FORTESKI_DIE, 2500ms);
+                    break;
+                case EVENT_FORTESKI_DIE:
+                {
+                    // They come back shortly for the next player
+                    Unit* killer = ObjectAccessor::GetCreature(*me, _bombGUID);
+                    if (!killer)
+                        killer = me;
+
+                    for (Creature* trooper : GetTroopers())
+                    {
+                        trooper->SetReactState(REACT_AGGRESSIVE);
+                        trooper->SetRespawnDelay(30);
+                        trooper->SetCorpseDelay(15);
+                        killer->Kill(trooper);
+                    }
+                    _trooperGUIDs.clear();
+
+                    _escorting = false;
+                    me->SetRespawnDelay(30);
+                    me->SetCorpseDelay(15);
+                    killer->Kill(me);
+                    return;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    std::vector<Creature*> GetTroopers() const
+    {
+        std::vector<Creature*> troopers;
+        for (ObjectGuid const& guid : _trooperGUIDs)
+            if (Creature* trooper = ObjectAccessor::GetCreature(*me, guid))
+                if (trooper->IsAlive())
+                    troopers.push_back(trooper);
+        return troopers;
+    }
+
+    void StartEscort(Player* player)
+    {
+        if (_escorting || me->IsInCombat() || !player->IsAlive())
+            return;
+
+        _escorting = true;
+        _creditGiven = false;
+        _playerGUID = player->GetGUID();
+        _events.Reset();
+
+        // One escort at a time
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFacingToObject(player);
+        Talk(TALK_FORTESKI_START, player);
+
+        _trooperGUIDs.clear();
+        std::list<Creature*> troopers;
+        me->GetCreatureListWithEntryInGrid(troopers, NPC_VETERAN_FORSAKEN_TROOPER, 30.0f);
+        for (Creature* trooper : troopers)
+        {
+            if (!trooper->IsAlive() || trooper->IsInCombat())
+                continue;
+
+            trooper->SetReactState(REACT_PASSIVE);
+            _trooperGUIDs.push_back(trooper->GetGUID());
+        }
+
+        _events.ScheduleEvent(EVENT_FORTESKI_CHECK_PLAYER, 1s);
+        _events.ScheduleEvent(EVENT_FORTESKI_ONWARD, 4s);
+    }
+
+    // Everyone walks back without the explosion, and the quest can be started again
+    void ResetEscort()
+    {
+        _escorting = false;
+        _events.Reset();
+        DespawnTrap();
+
+        for (Creature* trooper : GetTroopers())
+        {
+            trooper->SetReactState(REACT_AGGRESSIVE);
+            trooper->GetMotionMaster()->Clear();
+            trooper->GetMotionMaster()->MoveTargetedHome();
+        }
+        _trooperGUIDs.clear();
+
+        if (me->IsAlive())
+        {
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveTargetedHome();
+            Reset();
+        }
+    }
+
+    void DespawnTrap()
+    {
+        if (Creature* bloodfang = ObjectAccessor::GetCreature(*me, _bloodfangGUID))
+            bloodfang->DespawnOrUnsummon(0);
+        if (Creature* bomb = ObjectAccessor::GetCreature(*me, _bombGUID))
+            bomb->DespawnOrUnsummon(0);
+        _bloodfangGUID.Clear();
+        _bombGUID.Clear();
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _bloodfangGUID;
+    ObjectGuid _bombGUID;
+    std::vector<ObjectGuid> _trooperGUIDs;
+    bool _escorting;
+    bool _creditGiven;
+};
+
 /*######
 ## AddSC
 ######*/
@@ -4071,4 +4367,5 @@ void AddSC_silverpine_forest()
     new at_silverpine_no_escape();
     new creature_script<npc_silverpine_fenris_keep_camera>("npc_silverpine_fenris_keep_camera");
     new creature_script<npc_silverpine_fenris_keep_actor>("npc_silverpine_fenris_keep_actor");
+    new creature_script<npc_silverpine_master_forteski>("npc_silverpine_master_forteski");
 }
