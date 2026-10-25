@@ -35,6 +35,7 @@ EndContentData */
 #include "Vehicle.h"
 #include "CombatAI.h"
 #include "GameObjectAI.h"
+#include "ObjectMgr.h"
 
 /*######
 ## npc_deathstalker_erland
@@ -1720,6 +1721,987 @@ class spell_silverpine_hide_in_armoire : public AuraScript
     }
 };
 
+enum ForsakenRearGuard
+{
+    QUEST_STEEL_THUNDER                         = 27069,
+    QUEST_ITS_ONLY_POISONOUS_IF_YOU_INGEST_IT   = 27088,
+    QUEST_LOST_IN_THE_DARKNESS                  = 27093,
+    QUEST_DEEPER_INTO_DARKNESS                  = 27094,
+
+    NPC_APOTHECARY_WORMCRUD                     = 44912,
+    NPC_DRUNKEN_ORC_SEA_DOG                     = 44913,
+    NPC_ORC_SEA_PUP                             = 44914,
+    NPC_ORC_CRATE                               = 44915,
+    NPC_ADMIRAL_HATCHET                         = 44916,
+    NPC_WARLORD_TOROK                           = 44917,
+    NPC_RESCUED_ORC_SEA_DOG                     = 44942,
+    NPC_SALTY_GORGAR                            = 45497,
+
+    SPELL_ORC_SEA_PUP                           = 83839,
+    SPELL_SUMMON_ORC_CRATE                      = 83835,
+
+    GOSSIP_MENU_ADMIRAL_HATCHET                 = 11901,
+    GOSSIP_OPTION_MISPLACED_SEA_PUP             = 0,
+
+    ACTION_HATCHET_START_CONVERSATION           = 1,
+    ACTION_WORMCRUD_START_CONVERSATION          = 2,
+    ACTION_SEA_PUP_DELIVER_CRATES               = 3,
+
+    // "Salty" Rocka
+    EVENT_ROCKA_FIRST_LINE                      = 1,
+    EVENT_ROCKA_GORGAR_LINE                     = 2,
+    EVENT_ROCKA_SECOND_LINE                     = 3,
+    EVENT_ROCKA_CONVERSATION_COOLDOWN           = 4,
+
+    // Apothecary Wormcrud
+    EVENT_WORMCRUD_SEA_DOG_LINE                 = 1,
+    EVENT_WORMCRUD_LINE                         = 2,
+    EVENT_WORMCRUD_CONVERSATION_COOLDOWN        = 3,
+
+    // Admiral Hatchet
+    EVENT_HATCHET_LINE_0                        = 1,
+    EVENT_TOROK_LINE_0                          = 2,
+    EVENT_HATCHET_LINE_1                        = 3,
+    EVENT_TOROK_LINE_1                          = 4,
+    EVENT_HATCHET_CONVERSATION_COOLDOWN         = 5,
+
+    // Orc Sea Pup
+    EVENT_SEA_PUP_GREET                         = 1,
+    EVENT_SEA_PUP_RELOAD_CRATES                 = 2,
+    EVENT_SEA_PUP_REMOVE_PROTECTION             = 3,
+    EVENT_SEA_PUP_COMPLAIN                      = 4,
+    EVENT_SEA_PUP_DROP_CRATES                   = 5,
+
+    TALK_HATCHET_0                              = 0,
+    TALK_HATCHET_1                              = 1,
+    TALK_TOROK_0                                = 0,
+    TALK_TOROK_1                                = 1,
+    TALK_WORMCRUD_0                             = 0,
+    TALK_SEA_PUP_SUMMONED                       = 0,    // 1 to 5: a crate is loaded on seat 0 to 4
+    TALK_SEA_PUP_DELIVER_CRATES                 = 6,
+    TALK_SEA_PUP_WORN_OFF                       = 7,
+
+    ANIMKIT_TOROK                               = 594
+};
+
+// The creatures a spell summoned for the player (their owner) around them
+static std::list<Creature*> GetOwnedCreatures(Unit* owner, uint32 entry, float range)
+{
+    std::list<Creature*> creatures;
+    owner->GetCreatureListWithEntryInGrid(creatures, entry, range);
+    creatures.remove_if([owner](Creature* creature) { return creature->GetOwnerGUID() != owner->GetGUID(); });
+    return creatures;
+}
+
+// 45498 - "Salty" Rocka
+// When a player comes by, picks one of five drunken arguments with "Salty" Gorgar across the camp
+struct npc_silverpine_salty_rocka : public ScriptedAI
+{
+    npc_silverpine_salty_rocka(Creature* creature) : ScriptedAI(creature), _conversation(0), _onCooldown(false) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _onCooldown = false;
+    }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        if (_onCooldown || who->GetTypeId() != TYPEID_PLAYER || who->GetDistance2d(me) >= 20.0f)
+            return;
+
+        _onCooldown = true;
+        _conversation = urand(0, 4);
+        _events.ScheduleEvent(EVENT_ROCKA_FIRST_LINE, 1s);
+        _events.ScheduleEvent(EVENT_ROCKA_CONVERSATION_COOLDOWN, 180s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_ROCKA_FIRST_LINE:
+                    Talk(_conversation * 2);
+                    _events.ScheduleEvent(EVENT_ROCKA_GORGAR_LINE, 20s);
+                    break;
+                case EVENT_ROCKA_GORGAR_LINE:
+                    if (Creature* gorgar = me->FindNearestCreature(NPC_SALTY_GORGAR, 60.0f))
+                        if (gorgar->IsAIEnabled)
+                            gorgar->AI()->Talk(_conversation);
+                    _events.ScheduleEvent(EVENT_ROCKA_SECOND_LINE, 20s);
+                    break;
+                case EVENT_ROCKA_SECOND_LINE:
+                    Talk(_conversation * 2 + 1);
+                    break;
+                case EVENT_ROCKA_CONVERSATION_COOLDOWN:
+                    _onCooldown = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    EventMap _events;
+    uint32 _conversation;
+    bool _onCooldown;
+};
+
+// 6222 - Forsaken Rear Guard
+// Arriving at the camp starts Admiral Hatchet's talk with Warlord Torok until the spiders are dealt with, then Apothecary
+// Wormcrud's with the drunken sea dogs until the ettin is
+class at_silverpine_forsaken_rear_guard : public AreaTriggerScript
+{
+public:
+    at_silverpine_forsaken_rear_guard() : AreaTriggerScript("at_silverpine_forsaken_rear_guard") { }
+
+    bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/) override
+    {
+        if (!player->IsAlive())
+            return true;
+
+        if (!IsDone(player, QUEST_LOST_IN_THE_DARKNESS) && !IsDone(player, QUEST_DEEPER_INTO_DARKNESS))
+        {
+            if (Creature* hatchet = player->FindNearestCreature(NPC_ADMIRAL_HATCHET, 50.0f))
+                if (hatchet->IsAIEnabled)
+                    hatchet->AI()->DoAction(ACTION_HATCHET_START_CONVERSATION);
+        }
+        else if (!IsDone(player, QUEST_ITS_ONLY_POISONOUS_IF_YOU_INGEST_IT))
+        {
+            if (Creature* wormcrud = player->FindNearestCreature(NPC_APOTHECARY_WORMCRUD, 50.0f))
+                if (wormcrud->IsAIEnabled)
+                    wormcrud->AI()->DoAction(ACTION_WORMCRUD_START_CONVERSATION);
+        }
+
+        return true;
+    }
+
+private:
+    static bool IsDone(Player* player, uint32 questId)
+    {
+        QuestStatus status = player->GetQuestStatus(questId);
+        return status == QUEST_STATUS_COMPLETE || status == QUEST_STATUS_REWARDED;
+    }
+};
+
+// 44912 - Apothecary Wormcrud
+// Three of the drunken sea dogs next to him wonder about his huge chicken
+struct npc_silverpine_apothecary_wormcrud : public ScriptedAI
+{
+    npc_silverpine_apothecary_wormcrud(Creature* creature) : ScriptedAI(creature), _seaDogLine(0), _onCooldown(false) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _onCooldown = false;
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_WORMCRUD_START_CONVERSATION || _onCooldown)
+            return;
+
+        std::list<Creature*> seaDogs;
+        me->GetCreatureListWithEntryInGrid(seaDogs, NPC_DRUNKEN_ORC_SEA_DOG, 10.0f);
+        if (seaDogs.size() < _seaDogGUIDs.size())
+            return;
+
+        seaDogs.sort(Trinity::ObjectDistanceOrderPred(me));
+        auto seaDog = seaDogs.begin();
+        for (ObjectGuid& guid : _seaDogGUIDs)
+            guid = (*seaDog++)->GetGUID();
+
+        _onCooldown = true;
+        _seaDogLine = 0;
+        _events.ScheduleEvent(EVENT_WORMCRUD_SEA_DOG_LINE, 15s);
+        _events.ScheduleEvent(EVENT_WORMCRUD_CONVERSATION_COOLDOWN, 215s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_WORMCRUD_SEA_DOG_LINE:
+                    if (Creature* seaDog = ObjectAccessor::GetCreature(*me, _seaDogGUIDs[_seaDogLine]))
+                        if (seaDog->IsAIEnabled)
+                            seaDog->AI()->Talk(_seaDogLine);
+
+                    if (++_seaDogLine < _seaDogGUIDs.size())
+                        _events.ScheduleEvent(EVENT_WORMCRUD_SEA_DOG_LINE, 12s);
+                    else
+                        _events.ScheduleEvent(EVENT_WORMCRUD_LINE, 12s);
+                    break;
+                case EVENT_WORMCRUD_LINE:
+                    Talk(TALK_WORMCRUD_0);
+                    break;
+                case EVENT_WORMCRUD_CONVERSATION_COOLDOWN:
+                    _onCooldown = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    EventMap _events;
+    std::array<ObjectGuid, 3> _seaDogGUIDs;
+    uint32 _seaDogLine;
+    bool _onCooldown;
+};
+
+// 44916 - Admiral Hatchet
+// Lends an Orc Sea Pup to carry the Sea Dog Crates for Steel Thunder (on accepting it, or again through the gossip option while
+// it is in progress), takes the crates from the pup when it is turned in, and sends the rescued sea dogs off after Lost in the
+// Darkness. Talks with Warlord Torok when players arrive at the camp.
+struct npc_silverpine_admiral_hatchet : public ScriptedAI
+{
+    npc_silverpine_admiral_hatchet(Creature* creature) : ScriptedAI(creature), _onCooldown(false) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _onCooldown = false;
+    }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_STEEL_THUNDER)
+            SummonSeaPup(player);
+    }
+
+    void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
+    {
+        if (quest->GetQuestId() == QUEST_STEEL_THUNDER)
+        {
+            for (Creature* seaPup : GetOwnedCreatures(player, NPC_ORC_SEA_PUP, 100.0f))
+                if (seaPup->IsAIEnabled)
+                    seaPup->AI()->DoAction(ACTION_SEA_PUP_DELIVER_CRATES);
+        }
+        else if (quest->GetQuestId() == QUEST_LOST_IN_THE_DARKNESS)
+        {
+            for (Creature* seaDog : GetOwnedCreatures(player, NPC_RESCUED_ORC_SEA_DOG, 100.0f))
+                seaDog->DespawnOrUnsummon(0);
+        }
+    }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_ADMIRAL_HATCHET || gossipListId != GOSSIP_OPTION_MISPLACED_SEA_PUP)
+            return false;
+
+        CloseGossipMenuFor(player);
+        SummonSeaPup(player);
+        return true;
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_HATCHET_START_CONVERSATION || _onCooldown)
+            return;
+
+        _onCooldown = true;
+        _events.ScheduleEvent(EVENT_HATCHET_LINE_0, 1s);
+        _events.ScheduleEvent(EVENT_HATCHET_CONVERSATION_COOLDOWN, 230s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_HATCHET_LINE_0:
+                    Talk(TALK_HATCHET_0);
+                    _events.ScheduleEvent(EVENT_TOROK_LINE_0, 8s);
+                    break;
+                case EVENT_TOROK_LINE_0:
+                    if (Creature* torok = me->FindNearestCreature(NPC_WARLORD_TOROK, 30.0f))
+                        if (torok->IsAIEnabled)
+                            torok->AI()->Talk(TALK_TOROK_0);
+                    _events.ScheduleEvent(EVENT_HATCHET_LINE_1, 6s);
+                    break;
+                case EVENT_HATCHET_LINE_1:
+                    Talk(TALK_HATCHET_1);
+                    _events.ScheduleEvent(EVENT_TOROK_LINE_1, 6s);
+                    break;
+                case EVENT_TOROK_LINE_1:
+                    if (Creature* torok = me->FindNearestCreature(NPC_WARLORD_TOROK, 30.0f))
+                    {
+                        torok->PlayOneShotAnimKitId(ANIMKIT_TOROK);
+                        if (torok->IsAIEnabled)
+                            torok->AI()->Talk(TALK_TOROK_1);
+                    }
+                    break;
+                case EVENT_HATCHET_CONVERSATION_COOLDOWN:
+                    _onCooldown = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // A lost pup (it stays behind when the player leaves the map, while its Orc Sea Pup aura lasts) is replaced
+    static void SummonSeaPup(Player* player)
+    {
+        if (player->GetQuestStatus(QUEST_STEEL_THUNDER) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        for (Creature* seaPup : GetOwnedCreatures(player, NPC_ORC_SEA_PUP, 500.0f))
+            seaPup->DespawnOrUnsummon(0);
+
+        player->RemoveAurasDueToSpell(SPELL_ORC_SEA_PUP);
+        player->CastSpell(player, SPELL_ORC_SEA_PUP, true);
+    }
+
+    EventMap _events;
+    bool _onCooldown;
+};
+
+// 44914 - Orc Sea Pup
+// Follows the player and carries the Sea Dog Crates they pick up (each one an Orc Crate on one of its five seats), complaining
+// about the load. A replacement pup is given the crates already collected. Drops them at Admiral Hatchet's feet when the quest
+// is turned in.
+struct npc_silverpine_orc_sea_pup : public ScriptedAI
+{
+    npc_silverpine_orc_sea_pup(Creature* creature) : ScriptedAI(creature), _isJustSummoned(true), _delivering(false) { }
+
+    void Reset() override
+    {
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        Player* player = summoner->ToPlayer();
+        if (!player)
+            return;
+
+        _playerGUID = player->GetGUID();
+        me->GetMotionMaster()->MoveFollow(player, 2.0f, float(M_PI / 2.0f));
+
+        if (player->GetQuestStatus(QUEST_STEEL_THUNDER) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        _events.ScheduleEvent(EVENT_SEA_PUP_GREET, 1s);
+        _events.ScheduleEvent(EVENT_SEA_PUP_RELOAD_CRATES, 500ms);
+        _events.ScheduleEvent(EVENT_SEA_PUP_REMOVE_PROTECTION, 1s + 500ms);
+        _events.ScheduleEvent(EVENT_SEA_PUP_COMPLAIN, 5s);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 seatId, bool apply) override
+    {
+        Creature* crate = passenger->ToCreature();
+        if (!crate || crate->GetEntry() != NPC_ORC_CRATE)
+            return;
+
+        if (!apply)
+        {
+            crate->DespawnOrUnsummon(3000);
+            return;
+        }
+
+        if (!_isJustSummoned)
+            if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+                Talk(TALK_SEA_PUP_SUMMONED + 1 + seatId, player);
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_SEA_PUP_DELIVER_CRATES || _delivering)
+            return;
+
+        _delivering = true;
+        _events.Reset();
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            Talk(TALK_SEA_PUP_DELIVER_CRATES, player);
+            player->RemoveAurasDueToSpell(SPELL_ORC_SEA_PUP);
+        }
+
+        _events.ScheduleEvent(EVENT_SEA_PUP_DROP_CRATES, 1s + 250ms);
+        me->DespawnOrUnsummon(3000);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!_delivering && (!player || !player->IsInWorld() || player->GetQuestStatus(QUEST_STEEL_THUNDER) == QUEST_STATUS_NONE))
+        {
+            if (player)
+                player->RemoveAurasDueToSpell(SPELL_ORC_SEA_PUP);
+            me->DespawnOrUnsummon(0);
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SEA_PUP_GREET:
+                    Talk(TALK_SEA_PUP_SUMMONED, player);
+                    break;
+                case EVENT_SEA_PUP_RELOAD_CRATES:
+                    for (uint32 i = 0; i < GetCollectedCrates(player); ++i)
+                        DoCast(me, SPELL_SUMMON_ORC_CRATE, true);
+                    break;
+                case EVENT_SEA_PUP_REMOVE_PROTECTION:
+                    _isJustSummoned = false;
+                    break;
+                case EVENT_SEA_PUP_COMPLAIN:
+                    if (Vehicle* vehicle = me->GetVehicleKit())
+                        if (vehicle->IsVehicleInUse())
+                            Talk(TALK_SEA_PUP_WORN_OFF, player);
+                    _events.ScheduleEvent(EVENT_SEA_PUP_COMPLAIN, 30s, 75s);
+                    break;
+                case EVENT_SEA_PUP_DROP_CRATES:
+                    if (Vehicle* vehicle = me->GetVehicleKit())
+                        vehicle->RemoveAllPassengers();
+                    me->SetStandState(UNIT_STAND_STATE_DEAD);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // GetReqKillOrCastCurrentCount only counts for quests with item objectives here
+    static uint32 GetCollectedCrates(Player* player)
+    {
+        Quest const* quest = sObjectMgr->GetQuestTemplate(QUEST_STEEL_THUNDER);
+        if (!quest)
+            return 0;
+
+        for (QuestObjective const& objective : quest->GetObjectives())
+            if (objective.Type == QUEST_OBJECTIVE_MONSTER && objective.ObjectID == NPC_ORC_CRATE)
+                return std::min<uint32>(player->GetQuestObjectiveCounter(objective.ID), uint32(objective.Amount));
+
+        return 0;
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    bool _isJustSummoned;
+    bool _delivering;
+};
+
+// 44915 - Orc Crate
+// Summoned by an Orc Sea Pup, it climbs onto the pup's next free seat
+struct npc_silverpine_orc_crate : public ScriptedAI
+{
+    npc_silverpine_orc_crate(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (summoner->GetEntry() != NPC_ORC_SEA_PUP)
+            return;
+
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        me->EnterVehicle(summoner);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
+// 83838 - Pick Up Orc Crate
+// Forced on the player by a Sea Dog Crate: the player's own pup takes an Orc Crate on board and the crate is counted
+class spell_silverpine_pick_up_orc_crate : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_pick_up_orc_crate);
+
+    void FilterTargets(std::list<WorldObject*>& targets)
+    {
+        Unit* caster = GetCaster();
+        targets.remove_if([caster](WorldObject* target)
+        {
+            Unit* unit = target->ToUnit();
+            return !unit || unit->GetEntry() != NPC_ORC_SEA_PUP || unit->GetOwnerGUID() != caster->GetGUID();
+        });
+    }
+
+    void HandleScript(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* seaPup = GetHitUnit();
+        if (!player || !seaPup || player->GetQuestStatus(QUEST_STEEL_THUNDER) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        seaPup->CastSpell(seaPup, SPELL_SUMMON_ORC_CRATE, true);
+        player->KilledMonsterCredit(NPC_ORC_CRATE);
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_silverpine_pick_up_orc_crate::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_silverpine_pick_up_orc_crate::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+enum ItsOnlyPoisonous
+{
+    NPC_FOREST_ETTIN                            = 44367,
+    NPC_MUTANT_BUSH_CHICKEN                     = 44935,
+
+    SPELL_BONK                                  = 80146,
+    SPELL_LOG_SMASH                             = 88421,
+    SPELL_RELEASE_BUSH_CHICKEN                  = 83902,
+    SPELL_BUSH_EXPLOSION                        = 83903,
+    SPELL_RIDE_VEHICLE_HARDCODED_CHICKEN        = 46598,
+
+    // Forest Ettin
+    EVENT_ETTIN_BONK                            = 1,
+    EVENT_ETTIN_LOG_SMASH                       = 2,
+    EVENT_ETTIN_GRAB_CHICKEN                    = 3,
+    EVENT_ETTIN_WALK_ON                         = 4,
+    EVENT_ETTIN_CHICKEN_TO_MOUTH                = 5,
+    EVENT_ETTIN_CHICKEN_BLASTS                  = 6,
+    EVENT_ETTIN_FORGET_CHICKEN                  = 7,
+
+    // Mutant Bush Chicken
+    EVENT_CHICKEN_MOVE_TO_ETTIN                 = 1,
+
+    ACTION_ETTIN_NOTICE_CHICKEN                 = 1,
+
+    POINT_CHICKEN_NEAR_ETTIN                    = 1,
+
+    SEAT_ETTIN_ARM                              = 0,
+    SEAT_ETTIN_MOUTH                            = 1,
+
+    SOUND_CHICKEN_MOUNT_WOUND                   = 15936
+};
+
+// 44367 - Forest Ettin
+// Hauls its log around; a Mutant Bush Chicken released at it is picked up and eaten, and blows up in its mouth, which leaves the
+// ettin badly weakened (Bush Chicken Explosion!) and angry at whoever released it
+struct npc_silverpine_forest_ettin : public ScriptedAI
+{
+    npc_silverpine_forest_ettin(Creature* creature) : ScriptedAI(creature), _grabbingChicken(false) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        ForgetChicken();
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spell) override
+    {
+        if (spell->Id == SPELL_RELEASE_BUSH_CHICKEN && caster->GetTypeId() == TYPEID_PLAYER)
+            _playerGUID = caster->GetGUID();
+    }
+
+    // The released chicken runs up to the ettin, which waits for it (when not fighting)
+    void SetGUID(ObjectGuid guid, int32 id) override
+    {
+        if (id != NPC_MUTANT_BUSH_CHICKEN || _grabbingChicken)
+            return;
+
+        _chickenGUID = guid;
+
+        if (!me->IsInCombat())
+        {
+            me->StopMoving();
+            me->GetMotionMaster()->MoveIdle();
+        }
+
+        _events.RescheduleEvent(EVENT_ETTIN_FORGET_CHICKEN, 30s);
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_ETTIN_NOTICE_CHICKEN || _grabbingChicken)
+            return;
+
+        if (Creature* chicken = ObjectAccessor::GetCreature(*me, _chickenGUID))
+        {
+            me->SetFacingToObject(chicken);
+            _events.ScheduleEvent(EVENT_ETTIN_GRAB_CHICKEN, 1s + 250ms);
+        }
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 seatId, bool apply) override
+    {
+        if (!apply || !_grabbingChicken || passenger->GetGUID() != _chickenGUID)
+            return;
+
+        if (seatId == SEAT_ETTIN_ARM)
+            _events.ScheduleEvent(EVENT_ETTIN_WALK_ON, 2s);
+        else if (seatId == SEAT_ETTIN_MOUTH)
+            _events.ScheduleEvent(EVENT_ETTIN_CHICKEN_BLASTS, 2s);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_ETTIN_BONK, 2s);
+        _events.ScheduleEvent(EVENT_ETTIN_LOG_SMASH, 8s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_ETTIN_BONK:
+                    if (me->GetVictim())
+                        DoCastVictim(SPELL_BONK);
+                    _events.ScheduleEvent(EVENT_ETTIN_BONK, 9s, 11s);
+                    break;
+                case EVENT_ETTIN_LOG_SMASH:
+                    if (me->GetVictim())
+                        DoCastVictim(SPELL_LOG_SMASH);
+                    _events.ScheduleEvent(EVENT_ETTIN_LOG_SMASH, 15s, 16s);
+                    break;
+                case EVENT_ETTIN_GRAB_CHICKEN:
+                    // TrinityCore's Reverse Cast Ride Vehicle (83904): the chicken is made to ride the ettin's arm
+                    if (Creature* chicken = ObjectAccessor::GetCreature(*me, _chickenGUID))
+                    {
+                        _grabbingChicken = true;
+                        chicken->CastSpell(me, SPELL_RIDE_VEHICLE_HARDCODED_CHICKEN, true);
+                    }
+                    break;
+                case EVENT_ETTIN_WALK_ON:
+                    if (!me->IsInCombat())
+                        me->GetMotionMaster()->InitDefault();
+                    _events.ScheduleEvent(EVENT_ETTIN_CHICKEN_TO_MOUTH, 2s);
+                    break;
+                case EVENT_ETTIN_CHICKEN_TO_MOUTH:
+                    // Ettin's Mouth (83907) moves the chicken to the second seat
+                    if (Creature* chicken = ObjectAccessor::GetCreature(*me, _chickenGUID))
+                    {
+                        chicken->ChangeSeat(SEAT_ETTIN_MOUTH);
+                        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+                            if (player->GetQuestStatus(QUEST_ITS_ONLY_POISONOUS_IF_YOU_INGEST_IT) == QUEST_STATUS_INCOMPLETE)
+                                chicken->PlayDirectSound(SOUND_CHICKEN_MOUNT_WOUND, player);
+                    }
+                    break;
+                case EVENT_ETTIN_CHICKEN_BLASTS:
+                    if (Creature* chicken = ObjectAccessor::GetCreature(*me, _chickenGUID))
+                    {
+                        chicken->CastSpell(chicken, SPELL_BUSH_EXPLOSION, true);
+                        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+                            if (player->IsAlive() && !me->IsInCombat())
+                                AttackStart(player);
+                    }
+                    break;
+                case EVENT_ETTIN_FORGET_CHICKEN:
+                    ForgetChicken();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    void ForgetChicken()
+    {
+        bool waiting = !_chickenGUID.IsEmpty() && !_grabbingChicken;
+
+        _events.CancelEvent(EVENT_ETTIN_GRAB_CHICKEN);
+        _events.CancelEvent(EVENT_ETTIN_WALK_ON);
+        _events.CancelEvent(EVENT_ETTIN_CHICKEN_TO_MOUTH);
+        _events.CancelEvent(EVENT_ETTIN_CHICKEN_BLASTS);
+        _events.CancelEvent(EVENT_ETTIN_FORGET_CHICKEN);
+
+        _grabbingChicken = false;
+        _chickenGUID.Clear();
+        _playerGUID.Clear();
+
+        // It stopped for a chicken that never came
+        if (waiting && !me->IsInCombat())
+            me->GetMotionMaster()->InitDefault();
+    }
+
+    EventMap _events;
+    ObjectGuid _chickenGUID;
+    ObjectGuid _playerGUID;
+    bool _grabbingChicken;
+};
+
+// 44935 - Mutant Bush Chicken
+// Released from its cage at a Forest Ettin, it runs up to the ettin to be eaten. Nothing attacks it on the way.
+struct npc_silverpine_mutant_bush_chicken : public ScriptedAI
+{
+    npc_silverpine_mutant_bush_chicken(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+    }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _summonerGUID = summoner->GetGUID();
+
+        if (Player* player = summoner->ToPlayer())
+            if (player->GetQuestStatus(QUEST_ITS_ONLY_POISONOUS_IF_YOU_INGEST_IT) == QUEST_STATUS_INCOMPLETE)
+                me->PlayDirectSound(SOUND_CHICKEN_MOUNT_WOUND, player);
+    }
+
+    void SetGUID(ObjectGuid guid, int32 id) override
+    {
+        if (id != NPC_FOREST_ETTIN || !_ettinGUID.IsEmpty())
+            return;
+
+        _ettinGUID = guid;
+
+        if (Creature* ettin = ObjectAccessor::GetCreature(*me, _ettinGUID))
+            me->SetFacingToObject(ettin);
+
+        _events.ScheduleEvent(EVENT_CHICKEN_MOVE_TO_ETTIN, 1s);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != POINT_MOTION_TYPE || pointId != POINT_CHICKEN_NEAR_ETTIN)
+            return;
+
+        Creature* ettin = ObjectAccessor::GetCreature(*me, _ettinGUID);
+        if (!ettin)
+            return;
+
+        // The ettin may have walked on, or still be fighting
+        if (me->GetDistance(ettin) > 5.0f)
+            _events.ScheduleEvent(EVENT_CHICKEN_MOVE_TO_ETTIN, 500ms);
+        else if (ettin->IsAIEnabled)
+            ettin->AI()->DoAction(ACTION_ETTIN_NOTICE_CHICKEN);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Unit* summoner = ObjectAccessor::GetUnit(*me, _summonerGUID);
+        if (!summoner || !summoner->IsInWorld())
+        {
+            me->DespawnOrUnsummon(0);
+            return;
+        }
+
+        _events.Update(diff);
+
+        if (_events.ExecuteEvent() == EVENT_CHICKEN_MOVE_TO_ETTIN && !me->GetVehicle())
+            if (Creature* ettin = ObjectAccessor::GetCreature(*me, _ettinGUID))
+                me->GetMotionMaster()->MovePoint(POINT_CHICKEN_NEAR_ETTIN, ettin->GetPositionX(), ettin->GetPositionY(), ettin->GetPositionZ(), false);
+    }
+
+    bool IsBoundToEttin() const { return !_ettinGUID.IsEmpty(); }
+
+private:
+    EventMap _events;
+    ObjectGuid _summonerGUID;
+    ObjectGuid _ettinGUID;
+};
+
+// 83902 - Release Diseased Mutant Bush Chicken
+// The chicken just released by the player is sent at the targeted Forest Ettin
+class spell_silverpine_release_diseased_mutant_bush_chicken : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_release_diseased_mutant_bush_chicken);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        Creature* ettin = GetHitCreature();
+        if (!ettin || ettin->GetEntry() != NPC_FOREST_ETTIN || !ettin->IsAIEnabled)
+            return;
+
+        for (Creature* chicken : GetOwnedCreatures(caster, NPC_MUTANT_BUSH_CHICKEN, 10.0f))
+        {
+            auto chickenAI = CAST_AI(npc_silverpine_mutant_bush_chicken, chicken->AI());
+            if (!chickenAI || chickenAI->IsBoundToEttin())
+                continue;
+
+            ettin->AI()->SetGUID(chicken->GetGUID(), NPC_MUTANT_BUSH_CHICKEN);
+            chicken->AI()->SetGUID(ettin->GetGUID(), NPC_FOREST_ETTIN);
+            break;
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_silverpine_release_diseased_mutant_bush_chicken::HandleDummy, EFFECT_1, SPELL_EFFECT_DUMMY);
+    }
+};
+
+enum LostInTheDarkness
+{
+    NPC_BLOODFANG_SCAVENGER                     = 44547,
+    NPC_RABID_WORG                              = 1766,
+    NPC_GIANT_RABID_BEAR                        = 1797,
+
+    SPELL_FREE_WEBBED_VICTIM_RANDOM             = 83919,
+    SPELL_FREE_WEBBED_VICTIM                    = 83927,
+    SPELL_SINISTER_STRIKE                       = 60195,
+
+    EVENT_SEA_DOG_FREED_TALK                    = 1,
+    EVENT_SEA_DOG_SINISTER_STRIKE               = 2,
+
+    TALK_SEA_DOG_FREED                          = 0
+};
+
+// 44941 - Webbed Victim
+// Cutting a victim free during Lost in the Darkness frees an Orc Sea Dog half of the time; otherwise there is a foe in the web, or
+// nothing. The spells are cast just before the killing blow, since they cannot target the dead web.
+struct npc_silverpine_webbed_victim : public ScriptedAI
+{
+    npc_silverpine_webbed_victim(Creature* creature) : ScriptedAI(creature), _freed(false) { }
+
+    void Reset() override
+    {
+        _freed = false;
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    void DamageTaken(Unit* attacker, uint32& damage) override
+    {
+        if (_freed || damage < me->GetHealth() || !attacker)
+            return;
+
+        _freed = true;
+
+        Player* player = attacker->GetCharmerOrOwnerPlayerOrPlayerItself();
+        if (player && player->GetQuestStatus(QUEST_LOST_IN_THE_DARKNESS) == QUEST_STATUS_INCOMPLETE)
+            player->CastSpell(me, roll_chance_i(50) ? SPELL_FREE_WEBBED_VICTIM : SPELL_FREE_WEBBED_VICTIM_RANDOM, true);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override { }
+
+private:
+    bool _freed;
+};
+
+// 83919 - Free Webbed Victim
+// A Bloodfang Scavenger, a Rabid Worg or a Giant Rabid Bear comes out of the web and attacks, or nothing does
+class spell_silverpine_free_webbed_victim_random : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_free_webbed_victim_random);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* web = GetHitUnit();
+        if (!web)
+            return;
+
+        static uint32 const foes[] = { NPC_BLOODFANG_SCAVENGER, NPC_RABID_WORG, NPC_GIANT_RABID_BEAR, 0 };
+        uint32 entry = foes[urand(0, 3)];
+        if (!entry)
+            return;
+
+        if (Creature* foe = caster->SummonCreature(entry, *web, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30s))
+            if (foe->IsAIEnabled)
+                foe->AI()->AttackStart(caster);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_silverpine_free_webbed_victim_random::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 44942 - Orc Sea Dog
+// Freed from a web: counts for Lost in the Darkness, follows the player and joins their fights. Leaves when the player dies or
+// is gone, or when Admiral Hatchet takes the quest.
+struct npc_silverpine_orc_sea_dog : public ScriptedAI
+{
+    npc_silverpine_orc_sea_dog(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        me->SetPowerType(POWER_ENERGY);
+        me->SetMaxPower(POWER_ENERGY, 100);
+        me->SetPower(POWER_ENERGY, 100);
+        me->SetReactState(REACT_DEFENSIVE);
+        _events.CancelEvent(EVENT_SEA_DOG_SINISTER_STRIKE);
+    }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        Player* player = summoner->ToPlayer();
+        if (!player)
+            return;
+
+        _playerGUID = player->GetGUID();
+        player->KilledMonsterCredit(NPC_RESCUED_ORC_SEA_DOG);
+
+        me->GetMotionMaster()->MoveFollow(player, 5.0f, frand(1.57f, 4.71f));
+        _events.ScheduleEvent(EVENT_SEA_DOG_FREED_TALK, 1s + 500ms);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_SEA_DOG_SINISTER_STRIKE, 2s, 4s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld() || !player->IsAlive())
+        {
+            me->DespawnOrUnsummon(0);
+            return;
+        }
+
+        // Help the player
+        if (!me->IsInCombat())
+            if (Unit* victim = player->GetVictim())
+                if (me->IsValidAttackTarget(victim))
+                    AttackStart(victim);
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SEA_DOG_FREED_TALK:
+                    Talk(TALK_SEA_DOG_FREED, player);
+                    break;
+                case EVENT_SEA_DOG_SINISTER_STRIKE:
+                    if (me->GetVictim())
+                        DoCastVictim(SPELL_SINISTER_STRIKE);
+                    _events.ScheduleEvent(EVENT_SEA_DOG_SINISTER_STRIKE, 6s, 8s);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+    ObjectGuid _playerGUID;
+};
+
 /*######
 ## AddSC
 ######*/
@@ -1741,4 +2723,17 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_lord_darius_crowley_exsanguinate>("npc_silverpine_lord_darius_crowley_exsanguinate");
     new creature_script<npc_silverpine_packleader_ivar_bloodfang_exsanguinate>("npc_silverpine_packleader_ivar_bloodfang_exsanguinate");
     new aura_script<spell_silverpine_hide_in_armoire>("spell_silverpine_hide_in_armoire");
+    new creature_script<npc_silverpine_salty_rocka>("npc_silverpine_salty_rocka");
+    new at_silverpine_forsaken_rear_guard();
+    new creature_script<npc_silverpine_apothecary_wormcrud>("npc_silverpine_apothecary_wormcrud");
+    new creature_script<npc_silverpine_admiral_hatchet>("npc_silverpine_admiral_hatchet");
+    new creature_script<npc_silverpine_orc_sea_pup>("npc_silverpine_orc_sea_pup");
+    new creature_script<npc_silverpine_orc_crate>("npc_silverpine_orc_crate");
+    new spell_script<spell_silverpine_pick_up_orc_crate>("spell_silverpine_pick_up_orc_crate");
+    new creature_script<npc_silverpine_forest_ettin>("npc_silverpine_forest_ettin");
+    new creature_script<npc_silverpine_mutant_bush_chicken>("npc_silverpine_mutant_bush_chicken");
+    new spell_script<spell_silverpine_release_diseased_mutant_bush_chicken>("spell_silverpine_release_diseased_mutant_bush_chicken");
+    new creature_script<npc_silverpine_webbed_victim>("npc_silverpine_webbed_victim");
+    new spell_script<spell_silverpine_free_webbed_victim_random>("spell_silverpine_free_webbed_victim_random");
+    new creature_script<npc_silverpine_orc_sea_dog>("npc_silverpine_orc_sea_dog");
 }
