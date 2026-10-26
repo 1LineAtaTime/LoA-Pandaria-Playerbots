@@ -30,6 +30,13 @@
 
 bool HandleRandomPlayerbotConsoleCommand(ChatHandler* handler, char const* args);   // Manager/RandomPlayerbotMgr.cpp (#808)
 
+// #934 (public #9): AC registers ".playerbots bot" as SEC_PLAYER (Script/PlayerbotCommandScript.cpp), so any player can
+// add, remove and control the characters of their own account. Permission 1346 is linked to role 199 (Player Commands) by
+// sql/updates/master/auth/2026_10_26_00_playerbots_bot_player_command.sql; a local id keeps RBAC.h (included everywhere)
+// untouched. pmon / rndbot / botscenario / botprobe keep their GM permissions. Who may be added stays the job of
+// PlayerbotHolder::AddPlayerBot (same account, same guild or a random-bot account).
+static rbac::RBACPermissions const RBAC_PERM_COMMAND_PLAYERBOTS_BOT = static_cast<rbac::RBACPermissions>(1346);
+
 class playerbots_commandscript : public CommandScript
 {
 public:
@@ -42,15 +49,15 @@ public:
         // ".npcbot" and ".pmon" stay as aliases so existing harness scripts keep working.
         static std::vector<ChatCommand> playerbotsCommandTable =
         {
-            { "bot",  &HandlePlayerbotCommand, rbac::RBAC_PERM_COMMAND_NPCBOT, Trinity::ChatCommands::Console::Yes },
+            { "bot",  &HandlePlayerbotCommand, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::Yes },
             { "pmon", &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
             // #808: AC SEC_GAMEMASTER + Console::Yes (PlayerbotCommandScript.cpp:45); console/SOAP only needs Console::Yes.
             { "rndbot", &HandleRandomPlayerbotCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
         };
         static std::vector<ChatCommand> commandTable =
         {
-            { "playerbots", playerbotsCommandTable, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
-            { "npcbot", &HandlePlayerbotCommand, rbac::RBAC_PERM_COMMAND_NPCBOT, Trinity::ChatCommands::Console::Yes },
+            { "playerbots", playerbotsCommandTable, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::Yes },
+            { "npcbot", &HandlePlayerbotCommand, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::Yes },
             { "pmon",   &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
             { "botscenario", &HandleBotScenarioCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
             { "botprobe", &HandleBotProbeCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },

@@ -95,6 +95,27 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
         return;
     }
 
+    // #934 (AC Bot/PlayerbotMgr.cpp AddPlayerBot): decide whether the master may control this character BEFORE it is
+    // loaded, with the rule HandlePlayerBotLoginCallback applies after login (same account, same guild, random-bot
+    // account; addclass picks come from random accounts). Now that ".playerbots bot" is a player command, a character of
+    // someone else's account is refused here and never logs in; the master is told why (it only reached the log before).
+    if (masterAccountId && accountId != masterAccountId && !sPlayerbotAIConfig->IsInRandomAccountList(accountId))
+    {
+        WorldSession* masterSession = sWorld->FindSession(masterAccountId);
+        Player* masterPlayer = masterSession ? masterSession->GetPlayer() : nullptr;
+        ObjectGuid::LowType const guildId = sCharacterCache->GetCharacterGuildIdByGuid(playerGuid);
+        if (!masterPlayer || !guildId || guildId != masterPlayer->GetGuildId())
+        {
+            std::string botName;
+            sCharacterCache->GetCharacterNameByGuid(playerGuid, botName);
+            if (masterSession)
+                ChatHandler(masterSession).PSendSysMessage("Failure: You are not allowed to control bot %s", botName.c_str());
+            TC_LOG_DEBUG("playerbots", "Bot %u refused: account %u is not the master's (%u), guild or a random-bot account",
+                playerGuid.GetCounter(), accountId, masterAccountId);
+            return;
+        }
+    }
+
     // will be delete in WorldSession
     std::shared_ptr<PlayerbotLoginQueryHolder> holder = std::make_shared<PlayerbotLoginQueryHolder>(this, masterAccountId, accountId, playerGuid);
     if (!holder->Initialize())
