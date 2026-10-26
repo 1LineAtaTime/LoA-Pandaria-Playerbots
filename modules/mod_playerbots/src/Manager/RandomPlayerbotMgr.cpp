@@ -62,6 +62,7 @@
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
 #include "RandomPlayerbotFactory.h"
+#include "RBAC.h"
 #include "PerformanceMonitor.h"
 #include "Playerbots.h"
 #include "BotScenario.h"
@@ -3208,6 +3209,21 @@ void RandomPlayerbotMgr::AssignAccountTypes()
             rndBotTypeAccounts.push_back(accountId);
         else if (accountType == 2)
             addClassTypeAccounts.push_back(accountId);
+    }
+
+    // Bots must not take realm firsts from players: the core refuses them to accounts with this permission (AzerothCore
+    // uses an achievement hook this core lacks). The insert is an upsert, so it is safe on every start.
+    for (std::vector<uint32> const* accounts : { &rndBotTypeAccounts, &addClassTypeAccounts })
+    {
+        for (uint32 accountId : *accounts)
+        {
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_RBAC_ACCOUNT_PERMISSION);
+            stmt->setUInt32(0, accountId);
+            stmt->setUInt32(1, rbac::RBAC_PERM_CANNOT_EARN_REALM_FIRST_ACHIEVEMENTS);
+            stmt->setBool(2, true);
+            stmt->setInt32(3, -1);
+            LoginDatabase.Execute(stmt);
+        }
     }
 
     TC_LOG_INFO("playerbots", "Account type assignment complete: %u RNDbot accounts, %u AddClass accounts, %u unassigned",
