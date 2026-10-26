@@ -12,6 +12,40 @@
 #include "Playerbots.h"
 #include "ReputationMgr.h"
 #include "ServerFacade.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+
+namespace
+{
+// The core's HasBreakableByDamageCrowdControlAura, counting only crowd control someone else cast: many creatures
+// spawn with a self-cast sleep or stun aura as ambience, and those are fair targets
+bool HasBreakableCrowdControlFromOthers(Unit* unit)
+{
+    static AuraType const types[] =
+    {
+        SPELL_AURA_MOD_CONFUSE, SPELL_AURA_MOD_FEAR, SPELL_AURA_MOD_FEAR_2, SPELL_AURA_MOD_STUN, SPELL_AURA_TRANSFORM
+    };
+
+    for (AuraType type : types)
+    {
+        for (AuraEffect const* effect : unit->GetAuraEffectsByType(type))
+        {
+            if (effect->GetCasterGUID() == unit->GetGUID())
+                continue;
+
+            SpellInfo const* spellInfo = effect->GetSpellInfo();
+            if (spellInfo->Id == 19503 || // Scatter Shot: neither the attribute nor the interrupt flag, as in the core
+                spellInfo->HasAttribute(SPELL_ATTR0_BREAKABLE_BY_DAMAGE) ||
+                spellInfo->HasAuraInterruptFlag(AURA_INTERRUPT_FLAG_TAKE_DAMAGE) ||
+                ((spellInfo->ProcFlags & TAKEN_HIT_PROC_FLAG_MASK) && spellInfo->ProcCharges == 1))
+                return true;
+        }
+    }
+
+    return false;
+}
+}
 
 GuidVector AttackersValue::Calculate()
 {
@@ -180,6 +214,18 @@ bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float /*range
 
     // Relationship checks
     if (attacker->IsFriendlyTo(bot))
+        return false;
+
+    // Crowd control (beyond current AzerothCore, whose older IsPossibleTarget had these checks commented out): leave
+    // shackled enemies alone, and polymorphed, sapped and feared ones unless they carry the skull raid icon. MoP adds
+    // crowd control that breaks on damage under other names (repentance, hex, blind, gouge, freezing trap, wyvern sting,
+    // paralysis...): the core's breakable crowd control check covers those, if someone else cast it.
+    if (attacker->HasUnitState(UNIT_STATE_STUNNED) && botAI->HasAura("shackle undead", attacker))
+        return false;
+
+    bool const rti = bot->GetGroup() && bot->GetGroup()->GetTargetIcon(7) == attacker->GetGUID();
+    if (!rti && (attacker->IsPolymorphed() || botAI->HasAura("sap", attacker) || attacker->isFeared() ||
+            HasBreakableCrowdControlFromOthers(attacker)))
         return false;
 
     // Critter exception
