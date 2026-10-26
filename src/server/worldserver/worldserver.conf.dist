@@ -1314,11 +1314,14 @@ TicketSystem.FeedBackTickets = 1
 DungeonFinder.OptionsMask = 1
 #
 #    LFGSolo.Enabled
-#        Description: Looking for Group Solo Option to queue solo thru LFG\RFD
-#        Default:     1  - (Enabled)
-#                     0  - (Disabled)
+#        Description: Solo dungeon finder. Every dungeon queue becomes 0 tanks / 0 healers / 1 damage dealer, so a
+#                     single player gets the dungeon at once, alone: random bots never join (they only queue for
+#                     dungeons a player is waiting for) and a party's role check fails. Leave it off for a normal
+#                     dungeon finder with bots filling the roles.
+#        Default:     0  - (Disabled)
+#                     1  - (Enabled)
 
-LFGSolo.Enabled = 1
+LFGSolo.Enabled = 0
 #
 #   DBC.EnforceItemAttributes
 #        Description: Disallow overriding item attributes stored in DBC files with values from the
