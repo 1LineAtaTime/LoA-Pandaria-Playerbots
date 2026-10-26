@@ -191,36 +191,14 @@ class CreatureTextLocalizer
                 whisperGUIDpos = _packetCache[loc_idx]->second;
             }
 
-            ObjectGuid receiverGUID = player->GetGUID();
+            // #936: whispers (MONSTER_WHISPER / RAID_BOSS_WHISPER) used to have the receiver GUID patched into the cached
+            // packet at whisperGUIDpos / whisperGUIDpos + 71 bits. In 5.4.8 SMSG_MESSAGECHAT the receiver GUID bytes follow the
+            // variable-length sender name / message, so the fixed offset overwrote other fields (the chat type byte among them:
+            // "The Great Bank Heist" tool prompts reached the client as type 9 WHISPER_INFORM and were never shown), and a
+            // different receiver can change the packet length, so it cannot be patched in place. The builder already wrote
+            // the whisper target as receiver, and a normal-range whisper only goes to that target: send it unchanged.
+            (void)whisperGUIDpos;
             WorldPacket data(*messageTemplate);
-            switch (_msgType)
-            {
-                case CHAT_MSG_MONSTER_WHISPER:
-                case CHAT_MSG_RAID_BOSS_WHISPER:
-                    data.bitwpos(whisperGUIDpos);
-                    data.WriteBit(receiverGUID[7]);
-                    data.WriteBit(receiverGUID[6]);
-                    data.WriteBit(receiverGUID[1]);
-                    data.WriteBit(receiverGUID[4]);
-                    data.WriteBit(receiverGUID[0]);
-                    data.WriteBit(receiverGUID[2]);
-                    data.WriteBit(receiverGUID[3]);
-                    data.WriteBit(receiverGUID[5]);
-
-                    data.bitwpos(whisperGUIDpos+71);
-                    data.WriteByteSeq(receiverGUID[2]);
-                    data.WriteByteSeq(receiverGUID[5]);
-                    data.WriteByteSeq(receiverGUID[3]);
-                    data.WriteByteSeq(receiverGUID[6]);
-                    data.WriteByteSeq(receiverGUID[7]);
-                    data.WriteByteSeq(receiverGUID[4]);
-                    data.WriteByteSeq(receiverGUID[1]);
-                    data.WriteByteSeq(receiverGUID[0]);                  
-                    break;
-                default:
-                    break;
-            }
-
             player->SendDirectMessage(&data);
         }
 
