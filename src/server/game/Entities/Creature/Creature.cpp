@@ -3002,6 +3002,10 @@ void Creature::UpdateMovementFlags(bool force)
     if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED) || IsPet() || GetTransport())
         return;
 
+    // Creatures with CREATURE_FLAG_EXTRA_NO_MOVE_FLAGS_UPDATE control their movement flags in their own scripts
+    if (GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_NO_MOVE_FLAGS_UPDATE)
+        return;
+
     // It should be rather rare for creatures to transition between ground, water and air with random movement,
     // and since most of the creatures in the world will be using it - we can reduce strain on performance by skipping it.
     if (GetMotionMaster()->GetCurrentMovementGeneratorType() == RANDOM_MOTION_TYPE && !force)

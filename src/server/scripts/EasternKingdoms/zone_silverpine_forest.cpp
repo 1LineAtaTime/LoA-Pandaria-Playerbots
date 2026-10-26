@@ -2702,6 +2702,165 @@ private:
     ObjectGuid _playerGUID;
 };
 
+enum SkitterwebMatriarch
+{
+    SPELL_SKITTERWEB                            = 83827,
+    SPELL_SUMMON_SPIDERLINGS                    = 87084,
+    SPELL_VENOM_SPLASH                          = 79607,
+
+    EVENT_MATRIARCH_DROP                        = 1,
+    EVENT_MATRIARCH_LAND                        = 2,
+    EVENT_MATRIARCH_FIGHT                       = 3,
+    EVENT_MATRIARCH_BACK_ON_CEILING             = 4,
+    EVENT_MATRIARCH_SUMMON_SPIDERLINGS          = 5,
+    EVENT_MATRIARCH_VENOM_SPLASH                = 6,
+
+    ANIMKIT_MATRIARCH_INTERACT                  = 1,
+    ANIMKIT_MATRIARCH_LURKING_ON_CEILING        = 865,
+    ANIMKIT_MATRIARCH_HANGING_BY_WEB            = 866
+};
+
+// 44906 - Skitterweb Matriarch
+// Lurks on the ceiling of the Skittering Dark and drops down on whoever engages her; climbs back up when she gets home. She needs
+// CREATURE_FLAG_EXTRA_NO_MOVE_FLAGS_UPDATE, or the movement flag update gives her gravity back.
+struct npc_silverpine_skitterweb_matriarch : public ScriptedAI
+{
+    npc_silverpine_skitterweb_matriarch(Creature* creature) : ScriptedAI(creature), _onCeiling(false) { }
+
+    void JustAppeared() override
+    {
+        me->SetDisableGravity(true);
+        me->SetHover(true);
+        _ceilingPos = me->GetPosition();
+        _onCeiling = true;
+
+        me->SetAIAnimKitId(ANIMKIT_MATRIARCH_LURKING_ON_CEILING);
+        me->CastSpell(me, SPELL_SKITTERWEB, true);
+    }
+
+    void Reset() override
+    {
+        _events.Reset();
+    }
+
+    void JustReachedHome() override
+    {
+        me->SetDisableGravity(true);
+        me->SetHover(true);
+        me->CastSpell(me, SPELL_SKITTERWEB, true);
+
+        me->SetAIAnimKitId(ANIMKIT_MATRIARCH_HANGING_BY_WEB);
+        me->GetMotionMaster()->MoveJump(_ceilingPos, 8.0f, 8.0f);
+
+        _events.ScheduleEvent(EVENT_MATRIARCH_BACK_ON_CEILING, 1s + 500ms);
+    }
+
+    // On the ceiling she must not chase anyone through the air
+    void AttackStart(Unit* who) override
+    {
+        if (_onCeiling)
+            AttackStartNoMove(who);
+        else
+            ScriptedAI::AttackStart(who);
+    }
+
+    // Creature::CanStartAttack turns down anyone far below a creature that cannot fly, and the ceiling can block line of sight,
+    // so she drops on whoever comes within her aggro radius by herself
+    void MoveInLineOfSight(Unit* who) override
+    {
+        if (!_onCeiling || me->IsInCombat())
+        {
+            ScriptedAI::MoveInLineOfSight(who);
+            return;
+        }
+
+        if (who->IsControlledByPlayer() && me->IsHostileTo(who) && me->IsValidAttackTarget(who)
+            && me->IsWithinDist2d(who, me->GetAttackDistance(who)))
+            AttackStart(who);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        if (!_onCeiling)
+        {
+            ScheduleCombatEvents();
+            return;
+        }
+
+        me->SetAIAnimKitId(ANIMKIT_RESET);
+        me->PlayOneShotAnimKitId(ANIMKIT_MATRIARCH_HANGING_BY_WEB);
+        _events.ScheduleEvent(EVENT_MATRIARCH_DROP, 3s + 500ms);
+    }
+
+    void JustSummoned(Creature* summon) override
+    {
+        if (Unit* victim = me->GetVictim())
+            if (summon->IsAIEnabled)
+                summon->AI()->AttackStart(victim);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_MATRIARCH_DROP:
+                    me->SetDisableGravity(false);
+                    me->SetHover(false);
+                    me->GetMotionMaster()->MoveFall();
+                    _events.ScheduleEvent(EVENT_MATRIARCH_LAND, 1s);
+                    break;
+                case EVENT_MATRIARCH_LAND:
+                    me->PlayOneShotAnimKitId(ANIMKIT_MATRIARCH_INTERACT);
+                    me->SetHomePosition(me->GetPosition());
+                    _onCeiling = false;
+                    _events.ScheduleEvent(EVENT_MATRIARCH_FIGHT, 1s + 500ms);
+                    break;
+                case EVENT_MATRIARCH_FIGHT:
+                    if (Unit* victim = me->GetVictim())
+                        ScriptedAI::AttackStart(victim);
+                    ScheduleCombatEvents();
+                    break;
+                case EVENT_MATRIARCH_BACK_ON_CEILING:
+                    me->SetFacingTo(_ceilingPos.GetOrientation());
+                    me->SetHomePosition(_ceilingPos);
+                    me->SetAIAnimKitId(ANIMKIT_MATRIARCH_LURKING_ON_CEILING);
+                    _onCeiling = true;
+                    break;
+                case EVENT_MATRIARCH_SUMMON_SPIDERLINGS:
+                    DoCastSelf(SPELL_SUMMON_SPIDERLINGS);
+                    break;
+                case EVENT_MATRIARCH_VENOM_SPLASH:
+                    DoCastVictim(SPELL_VENOM_SPLASH);
+                    _events.ScheduleEvent(EVENT_MATRIARCH_VENOM_SPLASH, 15s, 18s);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        if (!_onCeiling)
+            DoMeleeAttackIfReady();
+    }
+
+private:
+    void ScheduleCombatEvents()
+    {
+        _events.ScheduleEvent(EVENT_MATRIARCH_SUMMON_SPIDERLINGS, 5s);
+        _events.ScheduleEvent(EVENT_MATRIARCH_VENOM_SPLASH, 9s, 14s);
+    }
+
+    EventMap _events;
+    Position _ceilingPos;
+    bool _onCeiling;
+};
+
 /*######
 ## Fenris Isle: Rise, Forsaken (27097) and No Escape (27099)
 ######*/
@@ -4355,6 +4514,7 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_webbed_victim>("npc_silverpine_webbed_victim");
     new spell_script<spell_silverpine_free_webbed_victim_random>("spell_silverpine_free_webbed_victim_random");
     new creature_script<npc_silverpine_orc_sea_dog>("npc_silverpine_orc_sea_dog");
+    new creature_script<npc_silverpine_skitterweb_matriarch>("npc_silverpine_skitterweb_matriarch");
     new aura_script<spell_silverpine_bond_of_the_valkyr>("spell_silverpine_bond_of_the_valkyr");
     new creature_script<npc_silverpine_sylvanas_windrunner_high_command>("npc_silverpine_sylvanas_windrunner_high_command");
     new creature_script<npc_silverpine_sylvanas_windrunner_lordaeron>("npc_silverpine_sylvanas_windrunner_lordaeron");
