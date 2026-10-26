@@ -231,6 +231,14 @@ AiPlayerbot.AllowSummonWhenBotIsDead = 1
 # default: 1 (disable in combat)
 AiPlayerbot.ReviveBotWhenSummoned = 1
 
+# Follow the master to another map or instance (a dungeon portal, a hearthstone, a mage portal): a bot with the
+# follow strategy, in the master's group and out of combat, teleports next to the master once the master has been
+# there for FollowTeleportDelay milliseconds. The core's entry checks apply, and a bot that would end up in another
+# copy of the instance stays and says why. A dead bot is revived as ReviveBotWhenSummoned says.
+# default: 1 (enabled), 2000
+AiPlayerbot.FollowTeleport = 1
+AiPlayerbot.FollowTeleportDelay = 2000
+
 # Enable/Disable bot repair gear when summon (0 = no, 1 = yes)
 # default: 1
 AiPlayerbot.BotRepairWhenSummon = 1

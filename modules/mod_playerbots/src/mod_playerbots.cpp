@@ -29,6 +29,7 @@
 #include "Authentication/AuthCrypt.h"
 #include "CharacterHandler.h"
 
+#include <atomic>
 #include <boost/filesystem.hpp>
 #include <vector>
 #include <future>
@@ -145,6 +146,9 @@ public:
     }
 };
 
+// The thread that runs World::Update, which only updates maps through MapManager::Update and waits for them
+static std::atomic<std::thread::id> worldThreadId;
+
 class PlayerbotsScript : public PlayerbotScript
 {
 public:
@@ -185,6 +189,8 @@ public:
 
     void OnPlayerbotUpdate(uint32 diff) override
     {
+        worldThreadId = std::this_thread::get_id();
+
         PlayerbotRecordWorldUpdateDiff(diff);  // AC World::Update -> sWorldUpdateTime.UpdateWithDiff(diff)
         sRandomPlayerbotMgr->UpdateAI(diff);
         sRandomPlayerbotMgr->UpdateSessions();
@@ -192,6 +198,13 @@ public:
 
     void OnPlayerbotUpdateSessions(Player* player) override
     {
+        // WorldSession::Update runs this for the master both from World::UpdateSessions and from the update of the
+        // master's map. Teleport acks must come from the first: they add a bot to its destination map, which
+        // another map thread may be updating, while the bot itself may still be in its own map's update.
+        if (std::this_thread::get_id() != worldThreadId.load())
+            return;
+
+
         if (player)
             if (PlayerbotMgr* playerbotMgr = GET_PLAYERBOT_MGR(player))
                 playerbotMgr->UpdateSessions();

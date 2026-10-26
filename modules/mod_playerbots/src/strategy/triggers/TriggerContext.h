@@ -9,6 +9,7 @@
 
 #include "NamedObjectContext.h"
 #include "GenericTriggers.h"
+#include "MasterOnOtherMapTrigger.h"
 #include "PullTriggers.h"
 #include "LfgTriggers.h"
 #include "LootTriggers.h"
@@ -115,6 +116,7 @@ public:
         // dismounted, and Unit::Attack refuses a mounted player, so it stood with a target forever (#134).
         creators["mounted"] = &TriggerContext::mounted;
         creators["corpse near"] = &TriggerContext::corpse_near;
+        creators["master on other map"] = &TriggerContext::master_on_other_map;
         // #149 (AC Base/Trigger/LootTriggers.h): LootAvailableTrigger is generic on AC, so every
         // class sees it (e.g. DK's UnholyDKStrategy.cpp corpse-explosion-on-loot line). Defined in
         // GenericTriggers.h; see the class comment there for why it does not need AC's
@@ -346,6 +348,7 @@ private:
     static Trigger* Dead(PlayerbotAI* botAI) { return new DeadTrigger(botAI); }
     static Trigger* mounted(PlayerbotAI* botAI) { return new IsMountedTrigger(botAI); }
     static Trigger* corpse_near(PlayerbotAI* botAI) { return new CorpseNearTrigger(botAI); }
+    static Trigger* master_on_other_map(PlayerbotAI* botAI) { return new MasterOnOtherMapTrigger(botAI); }
     static Trigger* loot_available(PlayerbotAI* botAI) { return new LootAvailableTrigger(botAI); }
     static Trigger* far_from_loot_target(PlayerbotAI* botAI) { return new FarFromCurrentLootTrigger(botAI); }
     static Trigger* can_loot(PlayerbotAI* botAI) { return new CanLootTrigger(botAI); }

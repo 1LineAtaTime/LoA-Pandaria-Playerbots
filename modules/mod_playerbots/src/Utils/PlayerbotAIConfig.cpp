@@ -524,6 +524,8 @@ bool PlayerbotAIConfig::Initialize()
     allowSummonWhenMasterIsDead = sConfigMgr->GetBoolDefault("AiPlayerbot.AllowSummonWhenMasterIsDead", true);
     allowSummonWhenBotIsDead = sConfigMgr->GetBoolDefault("AiPlayerbot.AllowSummonWhenBotIsDead", true);
     reviveBotWhenSummoned = sConfigMgr->GetIntDefault("AiPlayerbot.ReviveBotWhenSummoned", 1);
+    followTeleport = sConfigMgr->GetBoolDefault("AiPlayerbot.FollowTeleport", true);
+    followTeleportDelay = sConfigMgr->GetIntDefault("AiPlayerbot.FollowTeleportDelay", 2000);
     botRepairWhenSummon = sConfigMgr->GetBoolDefault("AiPlayerbot.BotRepairWhenSummon", true);
     summonAtInnkeepersEnabled = sConfigMgr->GetBoolDefault("AiPlayerbot.SummonAtInnkeepersEnabled", true);
     logInGroupOnly = sConfigMgr->GetBoolDefault("AiPlayerbot.LogInGroupOnly", true);
