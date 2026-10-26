@@ -161,6 +161,11 @@ void KillRewarder::RewardXP(Player* player, float rate)
         int32 diff = _victim->GetLevel() - player->GetLevel();
         xp *= diff > int32(sWorld->getIntConfig(CONFIG_XP_KILL_LEVEL_DIFFERENCE)) ? 0 : sWorld->getRate(RATE_XP_KILL, player);
 
+        // Players credited with less than half of the damage (CREATURE_FLAG_EXTRA_NO_PLAYER_DAMAGE_REQ) get XP for their share
+        if (Creature* creature = _victim->ToCreature())
+            if (creature->m_PlayerDamageReq)
+                xp = uint32(xp * (1.0f - 2.0f * creature->m_PlayerDamageReq / creature->GetMaxHealth()));
+
         // 4.2.3. Calculate expansion penalty
         if (_victim->GetTypeId() == TYPEID_UNIT && player->GetLevel() >= sDBCManager.GetMaxLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
             xp = CalculatePct(xp, 10); // Players get only 10% xp for killing creatures of lower expansion levels than himself
