@@ -863,6 +863,10 @@ struct npc_first_bank_of_kezan_vault : public ScriptedAI
     {
         if (!apply)
         {
+            // #938: the toolset spell also left a dummy aura on the rider; without this, leaving the vault early blocked the
+            // vault spell (67555, TARGET_AURASTATE) until relog (and for good before 67476 became unsaveable).
+            who->RemoveAurasDueToSpell(SPELL_VAULT_CONTROL_VEHICLE);
+
             if (who->GetGUID() == _riderGuid)
             {
                 _state = STATE_DONE;
