@@ -75,7 +75,7 @@ bool PlayerbotAIConfig::Initialize()
     enabled = sConfigMgr->GetBoolDefault("AiPlayerbot.Enabled", true);
     if (!enabled)
     {
-        TC_LOG_INFO("server.loading", "AI Playerbots is Disabled in aiplayerbot.conf");
+        TC_LOG_INFO("server.loading", "Playerbots Module is disabled in playerbots.conf");
         return false;
     }
 
