@@ -51,6 +51,7 @@
 #include "PointMovementGenerator.h"
 #include "Playerbots.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotRepository.h"
 #include "PlayerbotSpec.h"
 #include "PerformanceMonitor.h"
 #include "RandomPlayerbotMgr.h"
@@ -2004,7 +2005,7 @@ void PlayerbotAI::Reset(bool full)
     }
 }
 
-void PlayerbotAI::ResetStrategies()
+void PlayerbotAI::ResetStrategies(bool /*load*/)
 {
     for (uint8 i = 0; i < BOT_STATE_MAX; i++)
         _engines[i]->removeAllStrategies();
@@ -2070,6 +2071,22 @@ void PlayerbotAI::ChangeStrategy(std::string const names, BotState type)
     e->ChangeStrategy(names);
 }
 
+void PlayerbotAI::SelectiveResetStrategies(BotState type)
+{
+    Engine* e = _engines[type];
+    if (!e)
+        return;
+
+    e->removeAllStrategies();
+
+    if (type == BOT_STATE_COMBAT)
+        AiFactory::AddDefaultCombatStrategies(bot, this, e);
+    else if (type == BOT_STATE_NON_COMBAT)
+        AiFactory::AddDefaultNonCombatStrategies(bot, this, e);
+
+    e->Init();
+}
+
 void PlayerbotAI::ClearStrategies(BotState type)
 {
     Engine* e = _engines[type];
@@ -2119,6 +2136,8 @@ void PlayerbotAI::UpdateAIGroupMaster()
                          bot->GetName().c_str(), master->GetName().c_str());
             SetMaster(nullptr);
             Reset(true);
+            // Also drop the strategies the player stored, which the bot would load at its next login
+            PlayerbotRepository::instance().Reset(this);
             ResetStrategies();
         }
         return;

@@ -28,6 +28,7 @@
 #include <mutex>
 #include "Helper.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotRepository.h"
 #include "CharacterCache.h"
 #include "ChannelMgr.h"
 #include "CharacterHandler.h"
@@ -367,7 +368,7 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
         Group* group = bot->GetGroup();
         if (group && !bot->InBattleground() && !bot->InBattlegroundQueue() && botAI->HasActivePlayerMaster())
         {
-            //sPlayerbotDbStore->Save(botAI);
+            PlayerbotRepository::instance().Save(botAI);
         }
 
         TC_LOG_INFO("playerbots", "Bot %s logging out", bot->GetName().c_str());
@@ -469,7 +470,7 @@ void PlayerbotHolder::DisablePlayerBot(ObjectGuid guid)
         Group* group = bot->GetGroup();
         if (group && !bot->InBattleground() && !bot->InBattlegroundQueue() && botAI->HasActivePlayerMaster())
         {
-            //sPlayerbotDbStore->Save(botAI);
+            PlayerbotRepository::instance().Save(botAI);
         }
 
         TC_LOG_DEBUG("playerbots", "Bot %s logged out", bot->GetName().c_str());
@@ -528,8 +529,8 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     Player* master = botAI->GetMaster();
     if (!master)
     {
-        // Log a warning to indicate that the master is null
-        //TC_LOG_DEBUG("playerbots", "Master is null for bot with GUID: %u", bot->GetGUID());
+        // A random bot logging in on its own still gets its stored strategies, as in AzerothCore
+        PlayerbotRepository::instance().Load(botAI);
         return;
     }
 
@@ -573,8 +574,9 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     }
     else
     {
-        botAI->ResetStrategies();
+        botAI->ResetStrategies(!sRandomPlayerbotMgr->IsRandomBot(bot));
     }
+    PlayerbotRepository::instance().Load(botAI);
 
     if (master && !master->HasUnitState(UNIT_STATE_IN_FLIGHT))
     {
@@ -1003,8 +1005,6 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
     //  - AC CanBeGameMaster() -> HasPermission(rbac::RBAC_PERM_COMMAND_GM), the mapping PlayerbotAI.cpp/PlayerbotSecurity.cpp use.
     //  - AC's ~PlayerbotAI erases the AI-map entry (AC PlayerbotAI.cpp:357-358). This fork's destructor does not, so the
     //    entry is erased here before the delete; otherwise GET_PLAYERBOT_AI(master) would return a freed AI.
-    //  - AC PlayerbotRepository::Load (saved strategies) is skipped: this fork's bot DB store is disabled
-    //    (PlayerbotOperations.h:11).
     if (!strcmp(cmd, "self") && master)
     {
         if (PlayerbotAI* selfAI = GET_PLAYERBOT_AI(master))

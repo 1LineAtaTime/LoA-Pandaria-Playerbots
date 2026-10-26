@@ -30,6 +30,7 @@
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotRepository.h"
 #include "PlayerbotSpec.h"
 #include "Playerbots.h"
 #include "RandomPlayerbotFactory.h"
@@ -828,10 +829,12 @@ void BotFactory::Randomize(bool incremental)
 
     // #65 (AC Bot/Factory/PlayerbotFactory.cpp:873-878: PlayerbotRepository::Reset + ResetStrategies(false)): the spec may
     // have changed, so rebuild the engines for it. Without this a re-randomized L85 warrior turned fury kept the protection
-    // strategies (w67: revenge / shield slam / devastate never resolved). This fork stores no per-bot strategies, so the
-    // repository reset has no counterpart and ResetStrategies() is AC's ResetStrategies(false).
+    // strategies (w67: revenge / shield slam / devastate never resolved). The stored strategies go too.
     if (botAI)
-        botAI->ResetStrategies();
+    {
+        PlayerbotRepository::instance().Reset(botAI);
+        botAI->ResetStrategies(false);  // fix wrong stored strategy
+    }
 
     // #745: AC Randomize -> InitSkills (Bot/Factory/PlayerbotFactory.cpp:853), before InitClassSpells/InitAvailableSpells
     // (:855-856) so the trainer sweep sees the professions. It ends in InitInventorySkill (AC :3408, #707).

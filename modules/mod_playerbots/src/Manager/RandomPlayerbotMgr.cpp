@@ -62,6 +62,7 @@
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
 #include "RandomPlayerbotFactory.h"
+#include "PlayerbotRepository.h"
 #include "RBAC.h"
 #include "PerformanceMonitor.h"
 #include "Playerbots.h"
@@ -2757,6 +2758,9 @@ void RandomPlayerbotMgr::OnPlayerLogout(Player* player)
             botAI->SetMaster(nullptr);
             if (!bot->InBattleground())
             {
+                // The strategies the player set are not the random bot's own: drop the stored ones too, or its next
+                // login without a master would load them
+                PlayerbotRepository::instance().Reset(botAI);
                 botAI->ResetStrategies(); // #162 AC parity: the master logged out, drop its strategies
             }
         }
