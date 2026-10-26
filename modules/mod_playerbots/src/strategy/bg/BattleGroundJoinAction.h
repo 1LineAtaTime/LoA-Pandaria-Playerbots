@@ -20,9 +20,6 @@
 
 class PlayerbotAI;
 
-enum BattlegroundQueueTypeId : uint8;
-enum BattlegroundBracketId : uint8;
-
 /// Battleground queues bots are allowed to use.
 ///
 /// Upstream has no filter here at all - it walks every queue type and lets canJoinBg() decide,
