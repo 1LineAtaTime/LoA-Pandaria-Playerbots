@@ -26,6 +26,7 @@
 #include "Playerbots.h"
 #include "PlayerbotAIConfig.h"
 #include "Random.h"
+#include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
 #include "Timer.h"
@@ -33,8 +34,8 @@
 #include <future>
 #include <algorithm>
 #include <cctype>
-
-std::map<uint8, std::vector<uint8>> RandomPlayerbotFactory::availableRaces;
+#include <set>
+#include <thread>
 
 // AC Bot/Factory/RandomPlayerbotFactory.cpp:26-49 (#627). Cata/MoP races (goblin, worgen, pandaren) have no
 // own name category in playerbots_names and fall to Generic, like AC's default.
@@ -63,269 +64,96 @@ constexpr RandomPlayerbotFactory::NameRaceAndGender RandomPlayerbotFactory::Comb
                                           ((gender >= GENDER_NONE) ? static_cast<uint8>(GENDER_MALE) : gender));
 }
 
-RandomPlayerbotFactory::RandomPlayerbotFactory(uint32 accountId) : accountId(accountId)
+// The races come from the character creation data (playercreateinfo) rather than a hand-kept table: every race and
+// class combination this server can create, pandaren and monks included
+bool RandomPlayerbotFactory::IsValidRaceClassCombination(uint8 race, uint8 cls, uint32 expansion)
 {
-    uint32 const expansion = sWorld->getIntConfig(WorldIntConfigs::CONFIG_EXPANSION);
+    // skip expansion races if not playing with expansion
+    if (expansion < EXPANSION_THE_BURNING_CRUSADE && (race == RACE_BLOODELF || race == RACE_DRAENEI))
+        return false;
 
-    // warrior
-    // alliance
-    {
-        availableRaces[CLASS_WARRIOR].push_back(RACE_HUMAN);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_DWARF);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_NIGHTELF);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_GNOME);
-    }
-    // horde
-    {
-        availableRaces[CLASS_WARRIOR].push_back(RACE_ORC);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_UNDEAD_PLAYER);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_TROLL);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_TAUREN);
-    }
+    if (expansion < EXPANSION_CATACLYSM && (race == RACE_WORGEN || race == RACE_GOBLIN))
+        return false;
 
-    // paladin
-    // alliance
-    {
-        availableRaces[CLASS_PALADIN].push_back(RACE_HUMAN);
-        availableRaces[CLASS_PALADIN].push_back(RACE_DWARF);
-    }
-    // horde
-    {
-        availableRaces[CLASS_PALADIN].push_back(RACE_TAUREN);
-    }
+    if (expansion < EXPANSION_MISTS_OF_PANDARIA && (race == RACE_PANDAREN_NEUTRAL || cls == CLASS_MONK))
+        return false;
 
-    // hunter
-    // alliance
-    {
-        availableRaces[CLASS_HUNTER].push_back(RACE_HUMAN);
-        availableRaces[CLASS_HUNTER].push_back(RACE_DWARF);
-        availableRaces[CLASS_HUNTER].push_back(RACE_NIGHTELF);
-    }
-    // horde
-    {
-        availableRaces[CLASS_HUNTER].push_back(RACE_ORC);
-        availableRaces[CLASS_HUNTER].push_back(RACE_UNDEAD_PLAYER);
-        availableRaces[CLASS_HUNTER].push_back(RACE_TROLL);
-        availableRaces[CLASS_HUNTER].push_back(RACE_TAUREN);
-    }
+    // skip expansion classes if not playing with expansion
+    if (expansion < EXPANSION_WRATH_OF_THE_LICH_KING && cls == CLASS_DEATH_KNIGHT)
+        return false;
 
-    // rogue
-    // alliance
-    {
-        availableRaces[CLASS_ROGUE].push_back(RACE_HUMAN);
-        availableRaces[CLASS_ROGUE].push_back(RACE_DWARF);
-        availableRaces[CLASS_ROGUE].push_back(RACE_NIGHTELF);
-        availableRaces[CLASS_ROGUE].push_back(RACE_GNOME);
-    }
-    // horde
-    {
-        availableRaces[CLASS_ROGUE].push_back(RACE_ORC);
-        availableRaces[CLASS_ROGUE].push_back(RACE_UNDEAD_PLAYER);
-        availableRaces[CLASS_ROGUE].push_back(RACE_TROLL);
-    }
-
-    // priest
-    // alliance
-    {
-        availableRaces[CLASS_PRIEST].push_back(RACE_HUMAN);
-        availableRaces[CLASS_PRIEST].push_back(RACE_DWARF);
-        availableRaces[CLASS_PRIEST].push_back(RACE_NIGHTELF);
-        availableRaces[CLASS_PRIEST].push_back(RACE_GNOME);
-    }
-    // horde
-    {
-        availableRaces[CLASS_PRIEST].push_back(RACE_UNDEAD_PLAYER);
-        availableRaces[CLASS_PRIEST].push_back(RACE_TROLL);
-        availableRaces[CLASS_PRIEST].push_back(RACE_TAUREN);
-    }
-
-    // shaman
-    // alliance
-    {
-        availableRaces[CLASS_SHAMAN].push_back(RACE_DWARF);
-    }
-    // horde
-    {
-        availableRaces[CLASS_SHAMAN].push_back(RACE_ORC);
-        availableRaces[CLASS_SHAMAN].push_back(RACE_TROLL);
-        availableRaces[CLASS_SHAMAN].push_back(RACE_TAUREN);
-    }
-
-    // mage
-    // alliance
-    {
-        availableRaces[CLASS_MAGE].push_back(RACE_HUMAN);
-        availableRaces[CLASS_MAGE].push_back(RACE_DWARF);
-        availableRaces[CLASS_MAGE].push_back(RACE_NIGHTELF);
-        availableRaces[CLASS_MAGE].push_back(RACE_GNOME);
-    }
-    // horde
-    {
-        availableRaces[CLASS_MAGE].push_back(RACE_ORC);
-        availableRaces[CLASS_MAGE].push_back(RACE_UNDEAD_PLAYER);
-        availableRaces[CLASS_MAGE].push_back(RACE_TROLL);
-    }
-
-    // warlock
-    // alliance
-    {
-        availableRaces[CLASS_WARLOCK].push_back(RACE_HUMAN);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_DWARF);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_GNOME);
-    }
-    // horde
-    {
-        availableRaces[CLASS_WARLOCK].push_back(RACE_ORC);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_UNDEAD_PLAYER);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_TROLL);
-    }
-
-    // druid
-    // alliance
-    {
-        availableRaces[CLASS_DRUID].push_back(RACE_NIGHTELF);
-    }
-    // horde
-    {
-        availableRaces[CLASS_DRUID].push_back(RACE_TROLL);
-        availableRaces[CLASS_DRUID].push_back(RACE_TAUREN);
-    }
-    if (expansion >= EXPANSION_THE_BURNING_CRUSADE)
-    {
-        // Draenei
-        availableRaces[CLASS_WARRIOR].push_back(RACE_DRAENEI);
-        availableRaces[CLASS_PALADIN].push_back(RACE_DRAENEI);
-        availableRaces[CLASS_MAGE].push_back(RACE_DRAENEI);
-        availableRaces[CLASS_SHAMAN].push_back(RACE_DRAENEI);
-        availableRaces[CLASS_HUNTER].push_back(RACE_DRAENEI);
-        availableRaces[CLASS_PRIEST].push_back(RACE_DRAENEI);
-
-        // Blood
-        availableRaces[CLASS_WARRIOR].push_back(RACE_BLOODELF);
-        availableRaces[CLASS_PALADIN].push_back(RACE_BLOODELF);
-        availableRaces[CLASS_HUNTER].push_back(RACE_BLOODELF);
-        availableRaces[CLASS_ROGUE].push_back(RACE_BLOODELF);
-        availableRaces[CLASS_PRIEST].push_back(RACE_BLOODELF);
-        availableRaces[CLASS_MAGE].push_back(RACE_BLOODELF);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_BLOODELF);
-    }
-
-    if (expansion >= EXPANSION_CATACLYSM)
-    {
-        // Worgen
-        availableRaces[CLASS_WARRIOR].push_back(RACE_WORGEN);
-        availableRaces[CLASS_HUNTER].push_back(RACE_WORGEN);
-        availableRaces[CLASS_ROGUE].push_back(RACE_WORGEN);
-        availableRaces[CLASS_MAGE].push_back(RACE_WORGEN);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_WORGEN);
-        availableRaces[CLASS_PRIEST].push_back(RACE_WORGEN);
-        availableRaces[CLASS_DRUID].push_back(RACE_WORGEN);
-
-        // Goblin
-        availableRaces[CLASS_WARRIOR].push_back(RACE_GOBLIN);
-        availableRaces[CLASS_HUNTER].push_back(RACE_GOBLIN);
-        availableRaces[CLASS_ROGUE].push_back(RACE_GOBLIN);
-        availableRaces[CLASS_PRIEST].push_back(RACE_GOBLIN);
-        availableRaces[CLASS_SHAMAN].push_back(RACE_GOBLIN);
-        availableRaces[CLASS_MAGE].push_back(RACE_GOBLIN);
-        availableRaces[CLASS_WARLOCK].push_back(RACE_GOBLIN);
-    }
-
-    if (expansion >= EXPANSION_WRATH_OF_THE_LICH_KING)
-    {
-        // deathnight
-        // alliance
-        {
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_HUMAN);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_DWARF);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_DWARF);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_GNOME);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_DRAENEI);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_BLOODELF);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_WORGEN);
-        }
-        // horde
-        {
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_ORC);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_UNDEAD_PLAYER);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_TROLL);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_TAUREN);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_BLOODELF);
-            availableRaces[CLASS_DEATH_KNIGHT].push_back(RACE_GOBLIN);
-        }
-    }
-    if (expansion >= EXPANSION_MISTS_OF_PANDARIA)
-    {
-        /*availableRaces[CLASS_WARRIOR].push_back(RACE_PANDAREN_ALLIANCE);
-        availableRaces[CLASS_WARRIOR].push_back(RACE_PANDAREN_HORDE);
-
-        availableRaces[CLASS_HUNTER].push_back(RACE_PANDAREN_ALLIANCE);
-        availableRaces[CLASS_HUNTER].push_back(RACE_PANDAREN_HORDE);
-
-        availableRaces[CLASS_ROGUE].push_back(RACE_PANDAREN_ALLIANCE);
-        availableRaces[CLASS_ROGUE].push_back(RACE_PANDAREN_HORDE);
-
-        availableRaces[CLASS_PRIEST].push_back(RACE_PANDAREN_ALLIANCE);
-        availableRaces[CLASS_PRIEST].push_back(RACE_PANDAREN_HORDE);
-
-        availableRaces[CLASS_MAGE].push_back(RACE_PANDAREN_ALLIANCE);
-        availableRaces[CLASS_MAGE].push_back(RACE_PANDAREN_HORDE);
-
-        availableRaces[CLASS_SHAMAN].push_back(RACE_PANDAREN_ALLIANCE);
-        availableRaces[CLASS_SHAMAN].push_back(RACE_PANDAREN_HORDE);*/
-
-        availableRaces[CLASS_WARRIOR].push_back(RACE_PANDAREN_NEUTRAL);
-        availableRaces[CLASS_HUNTER].push_back(RACE_PANDAREN_NEUTRAL);
-        availableRaces[CLASS_ROGUE].push_back(RACE_PANDAREN_NEUTRAL);
-        availableRaces[CLASS_PRIEST].push_back(RACE_PANDAREN_NEUTRAL);
-        availableRaces[CLASS_MAGE].push_back(RACE_PANDAREN_NEUTRAL);
-        availableRaces[CLASS_SHAMAN].push_back(RACE_PANDAREN_NEUTRAL);
-        availableRaces[CLASS_MONK].push_back(RACE_PANDAREN_NEUTRAL);
-        // monk
-        // alliance
-        {
-            availableRaces[CLASS_MONK].push_back(RACE_HUMAN);
-            availableRaces[CLASS_MONK].push_back(RACE_DWARF);
-            availableRaces[CLASS_MONK].push_back(RACE_NIGHTELF);
-            availableRaces[CLASS_MONK].push_back(RACE_GNOME);
-            availableRaces[CLASS_MONK].push_back(RACE_DRAENEI);
-            availableRaces[CLASS_MONK].push_back(RACE_BLOODELF);
-            //availableRaces[CLASS_MONK].push_back(RACE_PANDAREN_ALLIANCE);
-        }
-        // horde
-        {
-            availableRaces[CLASS_MONK].push_back(RACE_ORC);
-            availableRaces[CLASS_MONK].push_back(RACE_UNDEAD_PLAYER);
-            availableRaces[CLASS_MONK].push_back(RACE_TROLL);
-            availableRaces[CLASS_MONK].push_back(RACE_TAUREN);
-            availableRaces[CLASS_MONK].push_back(RACE_BLOODELF);
-            //availableRaces[CLASS_MONK].push_back(RACE_PANDAREN_HORDE);
-        }
-    }
+    return sObjectMgr->GetPlayerInfo(race, cls) != nullptr;
 }
 
-Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, Classes cls, std::unordered_map<NameRaceAndGender, std::vector<std::string>>& nameCache)
+bool RandomPlayerbotFactory::IsPlayableClass(uint8 cls)
 {
-    TC_LOG_DEBUG("playerbots", "Creating new random bot for class %s", ClassToString(cls).c_str());
+    // skip nonexistent classes
+    if (!((1 << (cls - 1)) & CLASSMASK_ALL_PLAYABLE) || !sChrClassesStore.LookupEntry(cls))
+        return false;
+
+    // skip disabled with config classes
+    if ((1 << (cls - 1)) & sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_CLASSMASK))
+        return false;
+
+    uint32 const expansion = sWorld->getIntConfig(CONFIG_EXPANSION);
+    if (cls == CLASS_DEATH_KNIGHT && expansion < EXPANSION_WRATH_OF_THE_LICH_KING)
+        return false;
+
+    if (cls == CLASS_MONK && expansion < EXPANSION_MISTS_OF_PANDARIA)
+        return false;
+
+    return true;
+}
+
+RandomPlayerbotFactory::RandomPlayerbotFactory(uint32 accountId) : accountId(accountId)
+{
+}
+
+Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls,
+    std::unordered_map<NameRaceAndGender, std::vector<std::string>>& nameCache, uint32 team)
+{
+    TC_LOG_DEBUG("playerbots", "Creating new random bot for class %s", ClassToString((Classes)cls).c_str());
 
     uint8 gender = rand() % 2 ? GENDER_MALE : GENDER_FEMALE;
-    bool alliance = rand() % 2 ? true : false;
+    bool const factionGiven = team == ALLIANCE || team == HORDE;
+    bool const alliance = factionGiven ? team == ALLIANCE : urand(0, 1) != 0;
+
     std::vector<uint8> raceOptions;
-    for (const auto& race : availableRaces[cls])
+    for (uint8 race = RACE_HUMAN; race < MAX_RACES; ++race)
     {
-        if (alliance == IsAlliance(race))
+        // skip disabled with config races
+        if ((1 << (race - 1)) & sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_RACEMASK))
+            continue;
+
+        if (factionGiven)
         {
-            raceOptions.push_back(race);
+            // A character of the faction from the start, a pandaren included
+            if (race == RACE_PANDAREN_NEUTRAL || alliance != IsAlliance(race))
+                continue;
         }
+        else
+        {
+            // A pandaren starts neutral and picks its faction on its first login (RandomPlayerbotMgr::ProcessBot)
+            if (race == RACE_PANDAREN_ALLIANCE || race == RACE_PANDAREN_HORDE)
+                continue;
+
+            // Try to get 50/50 faction distribution for random bot population balance.
+            // Without this check, races from the faction with more class options would dominate.
+            if (race != RACE_PANDAREN_NEUTRAL && alliance != IsAlliance(race))
+                continue;
+        }
+
+        if (IsValidRaceClassCombination(race, cls, sWorld->getIntConfig(CONFIG_EXPANSION)))
+            raceOptions.push_back(race);
     }
 
     if (raceOptions.empty())
     {
-        TC_LOG_ERROR("playerbots", "No races available for class: %s", ClassToString(cls).c_str());
+        TC_LOG_ERROR("playerbots", "No races available for class: %s", ClassToString((Classes)cls).c_str());
         return nullptr;
     }
 
-    uint8 race = raceOptions[std::rand() % raceOptions.size()];
+    uint8 race = raceOptions[urand(0, raceOptions.size() - 1)];
     // AC RandomPlayerbotFactory.cpp:95-121: names keyed by race+gender (#627)
     const auto raceAndGender = CombineRaceAndGender(race, gender);
 
@@ -354,7 +182,7 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, Classes c
         return nullptr;
     }
 
-    std::vector<uint8> skinColors, facialHairTypes;
+    std::vector<uint8> facialHairTypes;
     std::vector<std::pair<uint8, uint8>> faces, hairs;
 
     for (uint32 index = 0; index < sChrSectionStore.GetNumRows(); ++index)
@@ -366,9 +194,6 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, Classes c
 
         switch (charSection->BaseSection)
         {
-            case SECTION_TYPE_SKIN:
-                skinColors.push_back(charSection->ColorIndex);
-                break;
             case SECTION_TYPE_FACE:
                 faces.push_back(std::pair<uint8, uint8>(charSection->VariationIndex, charSection->ColorIndex));
                 break;
@@ -381,13 +206,18 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, Classes c
         }
     }
 
-    uint8 skinColor = skinColors[std::rand() % skinColors.size()];
-    std::pair<uint8, uint8> face = faces[std::rand() % faces.size()];
-    std::pair<uint8, uint8> hair = hairs[std::rand() % hairs.size()];
+    if (faces.empty() || hairs.empty())
+    {
+        TC_LOG_ERROR("playerbots", "No CharSections faces or hairs for race %s gender %u", RaceToString((Races)race).c_str(), uint32(gender));
+        return nullptr;
+    }
+
+    std::pair<uint8, uint8> face = faces[urand(0, faces.size() - 1)];
+    std::pair<uint8, uint8> hair = hairs[urand(0, hairs.size() - 1)];
 
     bool excludeCheck = (race == RACE_TAUREN) || (race == RACE_DRAENEI) ||
         (gender == GENDER_FEMALE && race != RACE_NIGHTELF && race != RACE_UNDEAD_PLAYER);
-    uint8 facialHair = excludeCheck ? 0 : facialHairTypes[std::rand() % facialHairTypes.size()];
+    uint8 facialHair = (excludeCheck || facialHairTypes.empty()) ? 0 : facialHairTypes[urand(0, facialHairTypes.size() - 1)];
 
     WorldPacket p;
     std::unique_ptr<CharacterCreateInfo> characterInfo = std::make_unique<CharacterCreateInfo>(
@@ -401,7 +231,7 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, Classes c
         delete player;
 
         TC_LOG_ERROR("playerbots", "Unable to create random bot for account %u - name: \"%s\"; race: %s; class: %s",
-            accountId, name.c_str(), RaceToString((Races)race).c_str(), ClassToString(cls).c_str());
+            accountId, name.c_str(), RaceToString((Races)race).c_str(), ClassToString((Classes)cls).c_str());
         return nullptr;
     }
 
@@ -413,7 +243,7 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, Classes c
         player->LearnSpell(50977, false);
     }
     TC_LOG_DEBUG("playerbots", "Random bot created for account %u - name: \"%s\"; race: %s; class: %s", accountId,
-        name.c_str(), RaceToString((Races)race).c_str(), ClassToString(cls).c_str());
+        name.c_str(), RaceToString((Races)race).c_str(), ClassToString((Classes)cls).c_str());
 
     return player;
 }
@@ -552,38 +382,169 @@ std::string const RandomPlayerbotFactory::CreateRandomBotName(NameRaceAndGender 
     return botName;
 }
 
+// AzerothCore's CalculateTotalAccountCount: the accounts needed for MaxRandomBots and AddClassAccountPoolSize, after the
+// unassigned accounts of playerbots_account_type are used up, or RandomBotAccountCount when that is higher (0, the
+// default, means calculate)
+uint32 RandomPlayerbotFactory::CalculateTotalAccountCount()
+{
+    // Reset account types if features are disabled
+    // (synchronously: AzerothCore queues these and then polls up to a second for them to land)
+    if (sPlayerbotAIConfig->maxRandomBots == 0)
+    {
+        PlayerbotsPreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_UPD_ACCOUNT_TYPE_UNASSIGN);
+        stmt->setUInt8(0, 1);
+        PlayerbotsDatabase.DirectExecute(stmt);
+        TC_LOG_INFO("playerbots", "MaxRandomBots set to 0, any RNDbot accounts (type 1) will be unassigned (type 0)");
+    }
+    if (sPlayerbotAIConfig->addClassAccountPoolSize == 0)
+    {
+        PlayerbotsPreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_UPD_ACCOUNT_TYPE_UNASSIGN);
+        stmt->setUInt8(0, 2);
+        PlayerbotsDatabase.DirectExecute(stmt);
+        TC_LOG_INFO("playerbots", "AddClassAccountPoolSize set to 0, any AddClass accounts (type 2) will be unassigned (type 0)");
+    }
+
+    // Check existing account types
+    uint32 existingRndBotAccounts = 0;
+    uint32 existingAddClassAccounts = 0;
+    uint32 existingUnassignedAccounts = 0;
+    if (PreparedQueryResult typeCheck = PlayerbotsDatabase.Query(PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_ACCOUNT_TYPE_COUNT_BY_TYPE)))
+    {
+        do
+        {
+            Field* fields = typeCheck->Fetch();
+            uint8 accountType = fields[0].GetUInt8();
+            uint32 count = uint32(fields[1].GetUInt64());
+
+            if (accountType == 0)
+                existingUnassignedAccounts = count;
+            else if (accountType == 1)
+                existingRndBotAccounts = count;
+            else if (accountType == 2)
+                existingAddClassAccounts = count;
+        } while (typeCheck->NextRow());
+    }
+
+    uint32 divisor = CalculateAvailableCharsPerAccount();
+    if (!divisor)
+        return 0;
+
+    // Calculate max bots, taking periodic online/offline into account
+    uint32 maxBots = sPlayerbotAIConfig->maxRandomBots;
+    if (sPlayerbotAIConfig->enablePeriodicOnlineOffline)
+        maxBots = uint32(maxBots * sPlayerbotAIConfig->periodicOnlineOfflineRatio);
+
+    // Result is rounded up for maxBots not cleanly divisible by the divisor
+    uint32 neededRndBotAccounts = (maxBots + divisor - 1) / divisor;
+    uint32 neededAddClassAccounts = sPlayerbotAIConfig->addClassAccountPoolSize;
+
+    uint32 existingTotal = existingRndBotAccounts + existingAddClassAccounts + existingUnassignedAccounts;
+
+    // Calculate shortfalls after using unassigned accounts
+    uint32 availableUnassigned = existingUnassignedAccounts;
+    uint32 additionalAccountsNeeded = 0;
+    for (auto [needed, existing] : { std::pair(neededRndBotAccounts, existingRndBotAccounts),
+                                     std::pair(neededAddClassAccounts, existingAddClassAccounts) })
+    {
+        if (needed <= existing)
+            continue;
+
+        uint32 shortfall = needed - existing;
+        if (shortfall <= availableUnassigned)
+            availableUnassigned -= shortfall;
+        else
+        {
+            additionalAccountsNeeded += shortfall - availableUnassigned;
+            availableUnassigned = 0;
+        }
+    }
+
+    uint32 calculatedTotal = existingTotal + additionalAccountsNeeded;
+
+    // Manually set randomBotAccountCount meets the requirements
+    if (sPlayerbotAIConfig->randomBotAccountCount >= calculatedTotal)
+        return sPlayerbotAIConfig->randomBotAccountCount;
+
+    // Manually set randomBotAccountCount doesn't meet the requirements. Using calculated value
+    if (sPlayerbotAIConfig->randomBotAccountCount > 0)
+        TC_LOG_WARN("playerbots", "RandomBotAccountCount (%u) is lower than the required calculated value (%u). Using the calculated value instead.",
+            sPlayerbotAIConfig->randomBotAccountCount, calculatedTotal);
+
+    return calculatedTotal;
+}
+
+// The characters CreateRandomBots gives an account: one per playable class (11 in Mists of Pandaria, death knights
+// and monks included), capped by CharactersPerRealm
+uint32 RandomPlayerbotFactory::GetCharsPerAccount(bool withDeathKnight)
+{
+    uint32 chars = 0;
+    for (uint8 cls = CLASS_WARRIOR; cls < MAX_CLASSES; ++cls)
+        if (IsPlayableClass(cls) && (withDeathKnight || cls != CLASS_DEATH_KNIGHT))
+            ++chars;
+
+    return std::min(chars, sWorld->getIntConfig(CONFIG_CHARACTERS_PER_REALM));
+}
+
+// AzerothCore's: the characters of an account that can log in as random bots, without the death knight
+// (AiPlayerbot.DisableDeathKnightLogin) and less the share an uneven faction ratio leaves unused
+uint32 RandomPlayerbotFactory::CalculateAvailableCharsPerAccount()
+{
+    uint32 availableChars = GetCharsPerAccount(!sPlayerbotAIConfig->disableDeathKnightLogin);
+
+    uint32 hordeRatio = sPlayerbotAIConfig->randomBotHordeRatio;
+    uint32 allianceRatio = sPlayerbotAIConfig->randomBotAllianceRatio;
+    // AzerothCore divides by zero when both are 0
+    if (!std::max(hordeRatio, allianceRatio))
+        return availableChars;
+
+    // horde : alliance = 50 : 50 -> 0%
+    // horde : alliance = 0 : 50 -> 50%
+    // horde : alliance = 10 : 50 -> 40%
+    float unavailableRatio =
+        static_cast<float>((std::max(hordeRatio, allianceRatio) - std::min(hordeRatio, allianceRatio))) /
+        (std::max(hordeRatio, allianceRatio) * 2);
+
+    // Conservative floor to ensure enough characters (may result in more accounts than needed).
+    if (unavailableRatio != 0)
+        availableChars = availableChars - availableChars * unavailableRatio;
+
+    return availableChars;
+}
+
 void RandomPlayerbotFactory::CreateRandomBots()
 {
     TC_LOG_INFO("playerbots", "Creating random bot accounts...");
 
     std::unordered_map<NameRaceAndGender, std::vector<std::string>> nameCache;
-    uint32 totalAccCount = sPlayerbotAIConfig->randomBotAccountCount;
-    std::vector<std::future<void>> account_creations;
     int account_creation = 0;
+
+    // Calculates the total number of required accounts.
+    uint32 totalAccountCount = CalculateTotalAccountCount();
+    uint32 charsPerAccount = GetCharsPerAccount(true);
     uint32 timer = getMSTime();
 
-    for (uint32 accountNumber = 0; accountNumber < sPlayerbotAIConfig->randomBotAccountCount; ++accountNumber)
+    for (uint32 accountNumber = 0; accountNumber < totalAccountCount; ++accountNumber)
     {
         std::ostringstream out;
         out << sPlayerbotAIConfig->randomBotAccountPrefix << accountNumber;
         std::string const accountName = out.str();
 
+        // Account names are stored in upper case (AccountMgr::CreateAccount normalizes them)
+        std::string storedName = accountName;
+        std::transform(storedName.begin(), storedName.end(), storedName.begin(), ::toupper);
+
         LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_ACCOUNT_ID_BY_USERNAME);
-        stmt->setString(0, accountName);
+        stmt->setString(0, storedName);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
         if (result)
-        {
             continue;
-        }
+
         account_creation++;
         std::string password = "";
         if (sPlayerbotAIConfig->randomBotRandomPassword)
         {
             for (int i = 0; i < 10; i++)
-            {
-                password += static_cast<char>('!' + (std::rand() % ('z' - '!' + 1)));
-
-            }
+                password += static_cast<char>(urand('!', 'z'));
         }
         else
             password = accountName;
@@ -591,31 +552,34 @@ void RandomPlayerbotFactory::CreateRandomBots()
         AccountOpResult res = sAccountMgr->CreateAccount(accountName, password, "");
         if (AccountOpResult::AOR_OK == res)
             TC_LOG_INFO("playerbots", "Account %s created for random bots", accountName.c_str());
+        else
+            TC_LOG_ERROR("playerbots", "Could not create random bot account %s (error %u)", accountName.c_str(), uint32(res));
     }
 
     if (account_creation)
     {
         // AC RandomPlayerbotFactory.cpp:647-656 (#627): wait until the login DB queue is drained instead of a
-        // fixed sleep; an account still in the queue is skipped below and gets its characters on a later boot.
+        // fixed sleep
         TC_LOG_INFO("playerbots", "Waiting for %u accounts loading into database (%u queries)...", account_creation, uint32(LoginDatabase.QueueSize()));
         /* wait for async accounts create to make character create correctly */
-
         while (LoginDatabase.QueueSize())
-        {
             std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
+
         TC_LOG_INFO("playerbots", ">> %u Accounts loaded into database in %u ms", account_creation, GetMSTimeDiffToNow(timer));
     }
 
+    // AzerothCore assigns the account types after CreateRandomBots; here before the characters are made, so that an
+    // addclass account gets pandaren of a faction (see below)
+    sRandomPlayerbotMgr->AssignAccountTypes();
+
     TC_LOG_INFO("playerbots", "Creating random bot characters...");
     uint32 totalRandomBotChars = 0;
-    uint32 totalCharCount = sPlayerbotAIConfig->randomBotAccountCount * 10;
-    std::vector<std::pair<Player*, uint32>> playerBots;
     std::vector<WorldSession*> sessionBots;
     int bot_creation = 0;
+    uint32 expectedChars = 0;
     timer = getMSTime();
     bool nameCached = false;
-    for (uint32 accountNumber = 0; accountNumber < sPlayerbotAIConfig->randomBotAccountCount; ++accountNumber)
+    for (uint32 accountNumber = 0; accountNumber < totalAccountCount; ++accountNumber)
     {
         std::ostringstream out;
         out << sPlayerbotAIConfig->randomBotAccountPrefix << accountNumber;
@@ -626,30 +590,47 @@ void RandomPlayerbotFactory::CreateRandomBots()
         stmt->setString(0, accountName);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
         if (!result)
+        {
+            // AccountMgr::CreateAccount writes the account synchronously: it failed
+            TC_LOG_ERROR("playerbots", "Random bot account %s is missing, its characters are not created", accountName.c_str());
             continue;
+        }
 
         Field* fields = result->Fetch();
         uint32 accountId = fields[0].GetUInt32();
 
         sPlayerbotAIConfig->randomBotAccounts.push_back(accountId);
 
-        uint32 character_count = AccountMgr::GetCharactersCount(accountId);
-        if (character_count >= 10)
+        // The classes the account already has, so a top-up creates only the missing ones (the loop ran up to
+        // MAX_CLASSES - characters, so an account with some characters skipped the last classes instead)
+        std::set<uint8> existingClasses;
+        if (QueryResult classes = CharacterDatabase.PQuery("SELECT class FROM characters WHERE account = %u", accountId))
         {
+            do
+            {
+                existingClasses.insert(classes->Fetch()[0].GetUInt8());
+            } while (classes->NextRow());
+        }
+
+        uint32 count = AccountMgr::GetCharactersCount(accountId);
+        if (count >= charsPerAccount)
+        {
+            expectedChars += count;
             continue;
         }
 
         // AC RandomPlayerbotFactory.cpp:688-713 (#627): build the name cache only when an account needs
-        // characters, and leave out every name already taken in characters (CHAR_SEL_CHECK_NAME). The fork
-        // cached all of playerbots_names, so a later boot that topped up accounts reused taken names.
+        // characters, and leave out every name already taken
         if (!nameCached)
         {
             nameCached = true;
             TC_LOG_INFO("playerbots", "Creating cache for names per gender and race...");
-            QueryResult result = CharacterDatabase.Query("SELECT name, gender FROM playerbots_names");
+            QueryResult result = CharacterDatabase.Query(
+                "SELECT n.name, n.gender FROM playerbots_names n "
+                "LEFT OUTER JOIN characters c ON c.name = n.name WHERE c.guid IS NULL");
             if (!result)
             {
-                TC_LOG_ERROR("playerbots", "No more unused names left");
+                TC_LOG_ERROR("playerbots", "No more unused names left (is the characters table playerbots_names imported?)");
                 return;
             }
             do
@@ -658,67 +639,50 @@ void RandomPlayerbotFactory::CreateRandomBots()
                 std::string name = fields[0].GetString();
                 NameRaceAndGender raceAndGender = static_cast<NameRaceAndGender>(fields[1].GetUInt8());
                 if (sObjectMgr->CheckPlayerName(name) == ResponseCodes::CHAR_NAME_SUCCESS)
-                {
-                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHECK_NAME);
-                    stmt->setString(0, name);
-
-                    if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
-                        continue;
-
                     nameCache[raceAndGender].push_back(name);
-                }
-
             } while (result->NextRow());
         }
 
-        TC_LOG_INFO("playerbots", "Creating random bot characters for account: [%u/%u]", accountNumber + 1, sPlayerbotAIConfig->randomBotAccountCount);
+        TC_LOG_INFO("playerbots", "Creating random bot characters for account: [%u/%u]", accountNumber + 1, totalAccountCount);
         RandomPlayerbotFactory factory(accountId);
+        bool const addClassAccount = sRandomPlayerbotMgr->IsAccountType(accountId, 2);
 
         WorldSession* session = new WorldSession(accountId, accountName, nullptr, AccountTypes::SEC_PLAYER, EXPANSION_MISTS_OF_PANDARIA,
             time_t(0), LOCALE_enUS, 0, false, false, true, true /*isBot, as AC*/);
-        //session->SetVirtualRealmID(1);
         sessionBots.push_back(session);
 
-        for (uint8 cls = CLASS_WARRIOR; cls < MAX_CLASSES - character_count; ++cls)
+        // One character for each class the account does not have yet, while it has room
+        for (uint8 cls = CLASS_WARRIOR; cls < MAX_CLASSES && count < charsPerAccount; ++cls)
         {
-            // skip nonexistent classes
-            if (!((1 << (cls - 1)) & CLASSMASK_ALL_PLAYABLE) || !sChrClassesStore.LookupEntry(cls))
+            if (!IsPlayableClass(cls) || existingClasses.count(cls))
                 continue;
 
-            if (bool const isClassDeathKnight = cls == CLASS_DEATH_KNIGHT;
-                isClassDeathKnight && sWorld->getIntConfig(WorldIntConfigs::CONFIG_EXPANSION) < EXPANSION_WRATH_OF_THE_LICH_KING)
+            // A random bot's pandaren picks its faction on its first login, which an addclass bot never has before
+            // its master's: an addclass account's characters are of a faction from the start
+            uint32 const team = addClassAccount ? (urand(0, 1) ? ALLIANCE : HORDE) : 0;
+            Player* playerBot = factory.CreateRandomBot(session, cls, nameCache, team);
+            if (!playerBot)
             {
-                continue;
-            }
-            if (bool const isClassMonk = cls == CLASS_MONK;
-                isClassMonk&& sWorld->getIntConfig(WorldIntConfigs::CONFIG_EXPANSION) < EXPANSION_MISTS_OF_PANDARIA)
-            {
+                TC_LOG_ERROR("playerbots", "Fail to create character for account %u", accountId);
                 continue;
             }
 
-            if (cls <= CLASS_DRUID)
-            {
-                if (Player* playerBot = factory.CreateRandomBot(session, (Classes)cls, nameCache))
-                {
-                    playerBot->SaveToDB(true);
+            playerBot->SaveToDB(true);
 
-                    sWorld->AddCharacterNameData(playerBot->GetGUID(), playerBot->GetName(), playerBot->GetGender(), playerBot->GetRace(), playerBot->GetClass(), playerBot->GetLevel());
-                    sCharacterCache->AddCharacterCacheEntry(playerBot->GetGUID(), accountId, playerBot->GetName(), playerBot->GetGender(), playerBot->GetRace(), playerBot->GetClass(), playerBot->GetLevel());
+            sWorld->AddCharacterNameData(playerBot->GetGUID(), playerBot->GetName(), playerBot->GetGender(), playerBot->GetRace(), playerBot->GetClass(), playerBot->GetLevel());
+            sCharacterCache->AddCharacterCacheEntry(playerBot->GetGUID(), accountId, playerBot->GetName(), playerBot->GetGender(), playerBot->GetRace(), playerBot->GetClass(), playerBot->GetLevel());
 
-                    playerBot->CleanupsBeforeDelete();
+            playerBot->CleanupsBeforeDelete();
 
-                    delete playerBot;
-                    playerBot = nullptr;
-                    session->SetPlayer(nullptr);
+            delete playerBot;
+            playerBot = nullptr;
+            session->SetPlayer(nullptr);
 
-                    bot_creation++;
-                }
-                else
-                {
-                    TC_LOG_ERROR("playerbots", "Fail to create character for account %u", accountId);
-                }
-            }
+            ++count;
+            bot_creation++;
         }
+
+        expectedChars += count;
     }
 
     if (bot_creation)
@@ -727,9 +691,29 @@ void RandomPlayerbotFactory::CreateRandomBots()
         TC_LOG_INFO("playerbots", "Waiting for %u characters loading into database (%u queries)...", bot_creation, uint32(CharacterDatabase.QueueSize()));
         /* wait for characters load into database, or characters will fail to loggin */
         while (CharacterDatabase.QueueSize())
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        // and until the rows are there: the saves are transactions on the async workers
+        std::ostringstream accounts;
+        for (uint32 accountId : sPlayerbotAIConfig->randomBotAccounts)
+            accounts << (accounts.tellp() ? "," : "") << accountId;
+
+        uint32 savedChars = 0;
+        for (uint32 waited = 0; waited <= 60; ++waited)
         {
+            if (QueryResult result = CharacterDatabase.PQuery("SELECT COUNT(*) FROM characters WHERE account IN (%s)", accounts.str().c_str()))
+                savedChars = uint32(result->Fetch()[0].GetUInt64());
+
+            if (savedChars >= expectedChars)
+                break;
+
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
+
+        if (savedChars < expectedChars)
+            TC_LOG_ERROR("playerbots", "Only %u of %u random bot characters are in the database after waiting a minute", savedChars,
+                expectedChars);
+
         TC_LOG_INFO("playerbots", ">> %u Characters loaded into database in %u ms", bot_creation, GetMSTimeDiffToNow(timer));
     }
 
@@ -737,11 +721,9 @@ void RandomPlayerbotFactory::CreateRandomBots()
         delete session;
 
     for (uint32 accountId : sPlayerbotAIConfig->randomBotAccounts)
-    {
         totalRandomBotChars += AccountMgr::GetCharactersCount(accountId);
-    }
 
-    TC_LOG_INFO("server.loading", ">> %u random bot accounts with %u characters available", sPlayerbotAIConfig->randomBotAccounts.size(), totalRandomBotChars);
+    TC_LOG_INFO("server.loading", ">> %u random bot accounts with %u characters available", uint32(sPlayerbotAIConfig->randomBotAccounts.size()), totalRandomBotChars);
 }
 
 // #611 item 4: AC Bot/Factory/RandomPlayerbotFactory.cpp:774-803 (Query("{}") -> PQuery("%u"); Get<T>() -> GetUInt32()/GetString()).

@@ -156,7 +156,7 @@ bool PlayerbotAIConfig::Initialize()
 
     randomBotAutologin = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotAutologin", true);
     randomBotAccountPrefix = sConfigMgr->GetStringDefault("AiPlayerbot.RandomBotAccountPrefix", "rndbot");
-    randomBotAccountCount = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAccountCount", 200);
+    randomBotAccountCount = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAccountCount", 0);
     maxAddedBotsPerClass = sConfigMgr->GetIntDefault("AiPlayerbot.MaxAddedBotsPerClass", 50);
     maxAddedBots = sConfigMgr->GetIntDefault("AiPlayerbot.MaxAddedBots", 200);
     minRandomBots = sConfigMgr->GetIntDefault("AiPlayerbot.MinRandomBots", 50);
@@ -400,13 +400,19 @@ bool PlayerbotAIConfig::Initialize()
     travelNodeRouteDistance = sConfigMgr->GetFloatDefault("AiPlayerbot.TravelNodeRouteDistance", 500.0f);
 
 
+    // Before CreateRandomBots, which sizes and assigns the addclass accounts
+    addClassCommand = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassCommand", 1);
+    addClassAccountPoolSize = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassAccountPoolSize", 50);
+
     RandomPlayerbotFactory::CreateRandomBots();
     if (World::IsStopped())
     {
         return true;
     }
 
-    sRandomPlayerbotMgr->PrepareAddclassCache();
+    // As AzerothCore (RandomPlayerbotMgr::Init); the account types were assigned in CreateRandomBots
+    if (addClassCommand)
+        sRandomPlayerbotMgr->PrepareAddclassCache();
     sRandomPlayerbotMgr->PrepareTeleportCache();
     sRandomPlayerbotMgr->PrepareBattleMastersCache();
 
@@ -499,8 +505,6 @@ bool PlayerbotAIConfig::Initialize()
     allowTrustedAccountBots = sConfigMgr->GetBoolDefault("AiPlayerbot.AllowTrustedAccountBots", true);
     selfBotLevel = sConfigMgr->GetIntDefault("AiPlayerbot.SelfBotLevel", 1);
 
-    addClassCommand = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassCommand", 1);
-    addClassAccountPoolSize = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassAccountPoolSize", 50);
     autoInitOnly = sConfigMgr->GetBoolDefault("AiPlayerbot.AutoInitOnly", false);
 
     commandPrefix = sConfigMgr->GetStringDefault("AiPlayerbot.CommandPrefix", "");

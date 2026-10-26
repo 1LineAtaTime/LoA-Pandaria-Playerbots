@@ -57,6 +57,12 @@ void PlayerbotsDatabaseConnection::DoPrepareStatements()
     PrepareStatement(PLAYERBOTS_DEL_RANDOM_BOTS_BY_OWNER, "DELETE FROM playerbots_random_bots WHERE owner = ? AND bot = ?", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_DEL_RANDOM_BOTS_BY_OWNER_AND_EVENT, "DELETE FROM playerbots_random_bots WHERE owner = ? AND bot = ? AND `event` = ?", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_UPD_RANDOM_BOTS, "UPDATE playerbots_random_bots SET validIn = ? WHERE `event` = ? AND bot = ?", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_SEL_ACCOUNT_TYPE, "SELECT account_id, account_type FROM playerbots_account_type", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_SEL_ACCOUNT_TYPE_BY_ACCOUNT_AND_TYPE, "SELECT 1 FROM playerbots_account_type WHERE account_id = ? AND account_type = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_SEL_ACCOUNT_TYPE_COUNT_BY_TYPE, "SELECT account_type, COUNT(*) FROM playerbots_account_type GROUP BY account_type", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_INS_ACCOUNT_TYPE, "INSERT INTO playerbots_account_type (account_id, account_type) VALUES (?, ?) ON DUPLICATE KEY UPDATE account_type = account_type", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_UPD_ACCOUNT_TYPE, "UPDATE playerbots_account_type SET account_type = ?, assignment_date = NOW() WHERE account_id = ?", CONNECTION_SYNCH);
+    PrepareStatement(PLAYERBOTS_UPD_ACCOUNT_TYPE_UNASSIGN, "UPDATE playerbots_account_type SET account_type = 0 WHERE account_type = ?", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_SEL_RARITY_CACHE, "SELECT item, rarity FROM playerbots_rarity_cache", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_RARITY_CACHE, "INSERT INTO playerbots_rarity_cache (item, rarity) VALUES (?, ?)", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_SEL_RNDITEM_CACHE, "SELECT lvl, type, item FROM playerbots_rnditem_cache", CONNECTION_SYNCH);

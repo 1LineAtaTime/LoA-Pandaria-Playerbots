@@ -86,12 +86,13 @@ AiPlayerbot.Enabled = 1
 # Enable random bot system
 AiPlayerbot.RandomBotAutologin = 1
 
-# Random bot account
-# Please ensure that RandomBotAccountCount is greater than (MaxRandomBots / 10 + AddClassAccountPoolSize)
-# Kept at 200 (AC: 0 = automatic): this fork has no automatic account calculation (RandomPlayerbotFactory.cpp uses the
-# configured number as is, code default 200), so 0 would create no accounts. 200 accounts cover 500 bots
-# (500 / 10 + AddClassAccountPoolSize 50 = 100).
-AiPlayerbot.RandomBotAccountCount = 200
+# Randombot accounts
+# Set to 0 to automatically calculate needed accounts based on MaxRandomBots, EnablePeriodicOnlineOffline
+# and its ratio, and AddClassAccountPoolSize. Set manually if you want to create more accounts than needed.
+# If the manual value is less than the required, the system will override it with the required value.
+# Each account gets one character of every playable class (11, death knights and monks included).
+# Default: 0 (automatic)
+AiPlayerbot.RandomBotAccountCount = 0
 
 # Randombot count
 AiPlayerbot.MinRandomBots = 500
@@ -133,8 +134,9 @@ AiPlayerbot.MaxAddedBotsPerClass = 40
 # default: 1 (enable)
 AiPlayerbot.AddClassCommand = 1
 
-# Set the addclass command account pool size
-# Addclass command uses a subset of accounts from RandomBotAccountCount
+# Addclass accounts
+# Number of accounts reserved for the addclass command (playerbots_account_type 2), taken from the highest
+# random bot accounts. Their characters are never logged in as random bots. 0 disables them.
 AiPlayerbot.AddClassAccountPoolSize = 50
 
 # Bot group invitation permission level (0 = GM only, 1 = accept based on level, 2 = always accept)

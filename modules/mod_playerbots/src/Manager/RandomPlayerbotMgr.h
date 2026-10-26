@@ -147,6 +147,12 @@ public:
     void ScheduleTeleport(uint32 bot, uint32 time = 0);
     void PrepareAddclassCache();
     std::map<uint8, std::vector<ObjectGuid>>& AddclassCache() { return _addclassCache; };
+
+    // AzerothCore's account types (playerbots_account_type): 1 random bot accounts, 2 addclass accounts
+    void AssignAccountTypes();
+    bool IsAccountType(uint32 accountId, uint8 accountType);
+    std::vector<uint32> const& GetRndBotTypeAccounts() const { return rndBotTypeAccounts; }
+
     void PrepareTeleportCache();
     void RandomTeleportForLevel(Player* bot);
 
@@ -221,6 +227,8 @@ private:
     // -- lists
     std::map<uint32, std::map<std::string, CachedEvent>> _eventCache;
     std::map<uint8, std::vector<ObjectGuid>> _addclassCache;
+    std::vector<uint32> rndBotTypeAccounts;
+    std::vector<uint32> addClassTypeAccounts;
     std::vector<city> _city_cache_data;
     std::vector<farm_zone> _farm_cache_data;
 
