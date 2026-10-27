@@ -3889,7 +3889,7 @@ BattlePay.StoreEnabled = 1
 
 #
 #    BattlePay.Currency
-#        Description: Сurrency used for store
+#        Description: Currency used for store
 #        Default:     0 - (None)
 #                     1 - (Dollar)
 #                     2 - (Pound)
@@ -3986,10 +3986,11 @@ PacketSpoof.BanDuration = 86400
 
 WordFilter.Enable = 1
 
-#   .wordfilter mod on/off 开启或者关闭检测
-#   .wordfilter badword add #word 添加某个关键字检测   .wordfilter badword remove #word 移除某个检测关键字检测  
-#   .wordfilter badword list 显示已经检测的关键字
-#   .reload bad_word 重新加载关键字表   
+#   .wordfilter mod on/off              - turn the chat check on or off
+#   .wordfilter badword add #word       - add a word to the check
+#   .wordfilter badword remove #word    - remove a word from the check
+#   .wordfilter badword list            - list the checked words
+#   .reload bad_word                    - reload the bad word table
 
 #    Description: Mute chat for player.
 #    Default:     10000 - (10 sec)
