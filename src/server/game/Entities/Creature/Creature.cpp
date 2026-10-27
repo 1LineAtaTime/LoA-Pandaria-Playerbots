@@ -507,7 +507,7 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
     if (!GetCreatureAddon())
         SetSheath(SHEATH_STATE_MELEE);
 
-    SelectLevel(GetCreatureTemplate());
+    SelectLevel(GetCreatureTemplate(), true);  // an entry change in view must not re-roll the level (level-up effect)
     SetFaction(cInfo->faction);
 
     uint32 npcflag, unit_flags, dynamicflags;
@@ -1275,7 +1275,7 @@ void Creature::SaveToDB(uint32 mapid, uint16 spawnMask, uint32 phaseMask)
     WorldDatabase.CommitTransaction(trans);
 }
 
-void Creature::SelectLevel(const CreatureTemplate* cinfo)
+void Creature::SelectLevel(const CreatureTemplate* cinfo, bool keepLevel)
 {
     uint8 dbminlevel = cinfo->minlevel;
     uint8 dbmaxlevel = cinfo->maxlevel;
@@ -1296,7 +1296,14 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     // level
     uint8 minlevel = std::min(dbmaxlevel, dbminlevel);
     uint8 maxlevel = std::max(dbmaxlevel, dbminlevel);
-    uint8 level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+    uint8 level;
+    if (minlevel == maxlevel)
+        level = minlevel;
+    else if (keepLevel && m_rolledLevel >= minlevel && m_rolledLevel <= maxlevel)
+        level = m_rolledLevel;
+    else
+        level = urand(minlevel, maxlevel);
+    m_rolledLevel = level;
 
     // #702: AutoBalance level scaling (off unless AutoBalance.Enable.Global = 1). AC calls OnBeforeCreatureSelectLevel
     // at this point (AC Creature.cpp:1523), so everything below is computed for the scaled level.
@@ -1857,8 +1864,9 @@ void Creature::Respawn(bool force)
         if (m_originalEntry != GetEntry())
             UpdateEntry(m_originalEntry);
 
+        // Same GUID as before: a new level within ~30 s of the corpse vanishing plays the client's level-up effect
         CreatureTemplate const* cinfo = GetCreatureTemplate();
-        SelectLevel(cinfo);
+        SelectLevel(cinfo, true);
 
         setDeathState(JUST_RESPAWNED);
 

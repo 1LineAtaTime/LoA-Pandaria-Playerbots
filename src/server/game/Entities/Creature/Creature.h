@@ -262,7 +262,9 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, uint32 vehId, uint32 team, float x, float y, float z, float ang, const CreatureData* data = NULL);
         bool LoadCreaturesAddon(bool reload = false);
-        void SelectLevel(const CreatureTemplate* cinfo);
+        // keepLevel: keep the level picked last time when it is still in the template's range. The client plays the
+        // level-up effect whenever a unit it knows (or destroyed less than ~30 s ago) comes back with another level.
+        void SelectLevel(const CreatureTemplate* cinfo, bool keepLevel = false);
         void LoadEquipment(int8 id = 1, bool force = false);
 
         uint32 GetDBTableGUIDLow() const { return m_spawnId; }
@@ -616,6 +618,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
+        uint8 m_rolledLevel = 0;                                // SelectLevel's pick before AutoBalance scaling
 
         Position m_homePosition;
         Position m_transportHomePosition;
