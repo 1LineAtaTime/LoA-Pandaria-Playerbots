@@ -4863,6 +4863,458 @@ struct npc_silverpine_sylvanas_forsaken_front : public ScriptedAI
 };
 
 /*######
+## Rise, Godfrey (27472)
+######*/
+
+enum RiseGodfrey
+{
+    QUEST_RISE_GODFREY                          = 27472,
+
+    NPC_SYLVANAS_RISE_GODFREY                   = 45605,
+    NPC_GODFREY_RISE_GODFREY                    = 45606,
+    NPC_ASHBURY_RISE_GODFREY                    = 45607,
+    NPC_WALDEN_RISE_GODFREY                     = 45608,
+    NPC_AGATHA_RISE_GODFREY                     = 45609,
+    NPC_DASCHLA_RISE_GODFREY                    = 45610,
+    NPC_ARTHURA_RISE_GODFREY                    = 45611,
+    NPC_CROMUSH_RISE_GODFREY                    = 45612,
+
+    SPELL_SUMMON_FORSAKEN_FRONT_ACTORS          = 85149,
+    SPELL_SUMMON_SYLVANAS_RISE_GODFREY          = 85150,
+    SPELL_SUMMON_CROMUSH_RISE_GODFREY           = 85151,
+    SPELL_SUMMON_AGATHA_RISE_GODFREY            = 85152,
+    SPELL_SUMMON_DASCHLA_RISE_GODFREY           = 85153,
+    SPELL_SUMMON_ARTHURA_RISE_GODFREY           = 85154,
+    SPELL_SUMMON_WALDEN_RISE_GODFREY            = 85155,
+    SPELL_SUMMON_GODFREY_RISE_GODFREY           = 85156,
+    SPELL_SUMMON_ASHBURY_RISE_GODFREY           = 85157,
+    SPELL_GODFREY_KILL_CREDIT                   = 85177,
+    SPELL_RAISE_FORSAKEN_RISE_GODFREY           = 85197,
+    SPELL_GODFREY_TRANSFORM                     = 85198,
+    SPELL_ASHBURY_TRANSFORM                     = 85200,
+    SPELL_WALDEN_TRANSFORM                      = 85201,
+    SPELL_PERMANENT_FEIGN_DEATH                 = 29266,
+
+    // The scene steps follow each other from here up to EVENT_RISE_GODFREY_CREDIT
+    EVENT_RISE_GODFREY_START                    = 1,
+    EVENT_RISE_GODFREY_RAISE                    = 2,
+    EVENT_RISE_GODFREY_TRANSFORM                = 3,
+    EVENT_RISE_GODFREY_CREDIT                   = 15,
+    EVENT_RISE_GODFREY_END                      = 16,
+
+    TALK_SYLVANAS_RISE_GODFREY_0                = 0,
+    TALK_SYLVANAS_RISE_GODFREY_1                = 1,
+    TALK_SYLVANAS_RISE_GODFREY_2                = 2,
+    TALK_SYLVANAS_RISE_GODFREY_3                = 3,
+    TALK_SYLVANAS_RISE_GODFREY_4                = 4,
+    TALK_SYLVANAS_RISE_GODFREY_5                = 5,
+    TALK_GODFREY_RISE_GODFREY_0                 = 0,
+    TALK_GODFREY_RISE_GODFREY_1                 = 1,
+    TALK_GODFREY_RISE_GODFREY_2                 = 2,
+    TALK_GODFREY_RISE_GODFREY_3                 = 3,
+    TALK_GODFREY_RISE_GODFREY_4                 = 4,
+    TALK_CROMUSH_RISE_GODFREY_0                 = 0,
+
+    RISE_GODFREY_ACTOR_COUNT                    = 8
+};
+
+// The eight spells of Summon Forsaken Front Actors and what they summon, on the spots of the camp around Godfrey's body
+// (spell_target_position), facing as that camp does
+uint32 const RiseGodfreyActorSummonSpells[RISE_GODFREY_ACTOR_COUNT] =
+{
+    SPELL_SUMMON_SYLVANAS_RISE_GODFREY, SPELL_SUMMON_CROMUSH_RISE_GODFREY, SPELL_SUMMON_AGATHA_RISE_GODFREY, SPELL_SUMMON_DASCHLA_RISE_GODFREY,
+    SPELL_SUMMON_ARTHURA_RISE_GODFREY, SPELL_SUMMON_WALDEN_RISE_GODFREY, SPELL_SUMMON_GODFREY_RISE_GODFREY, SPELL_SUMMON_ASHBURY_RISE_GODFREY
+};
+
+uint32 const RiseGodfreyActorEntries[RISE_GODFREY_ACTOR_COUNT] =
+{
+    NPC_SYLVANAS_RISE_GODFREY, NPC_CROMUSH_RISE_GODFREY, NPC_AGATHA_RISE_GODFREY, NPC_DASCHLA_RISE_GODFREY,
+    NPC_ARTHURA_RISE_GODFREY, NPC_WALDEN_RISE_GODFREY, NPC_GODFREY_RISE_GODFREY, NPC_ASHBURY_RISE_GODFREY
+};
+
+float const RiseGodfreyActorOrientations[RISE_GODFREY_ACTOR_COUNT] =
+{
+    3.12414f, 3.12414f, 3.83972f, 2.19912f, 6.19592f, 5.20108f, 0.0f, 0.820305f
+};
+
+enum RiseGodfreyActorIndex
+{
+    RISE_ACTOR_SYLVANAS                         = 0,
+    RISE_ACTOR_CROMUSH                          = 1,
+    RISE_ACTOR_ARTHURA                          = 4,
+    RISE_ACTOR_WALDEN                           = 5,
+    RISE_ACTOR_GODFREY                          = 6,
+    RISE_ACTOR_ASHBURY                          = 7
+};
+
+// Godfrey's body at the Forsaken Front; the scene is played to a player this close to it
+Position const RiseGodfreyBodyPos = { -198.587f, 1275.19f, 40.0797f };
+float const RiseGodfreySceneRange = 60.0f;
+
+static void DespawnForsakenFrontActors(Player* player)
+{
+    for (uint32 entry : RiseGodfreyActorEntries)
+    {
+        std::list<Creature*> actors;
+        player->GetCreatureListWithEntryInGrid(actors, entry, 200.0f);
+        for (Creature* actor : actors)
+            if (actor->IsSummon() && actor->ToTempSummon()->GetSummonerGUID() == player->GetGUID())
+                actor->DespawnOrUnsummon(0);
+    }
+}
+
+// Summon Forsaken Front Actors, done afresh: any actors of an earlier try leave first
+static void SummonForsakenFrontActors(Player* player)
+{
+    DespawnForsakenFrontActors(player);
+    for (uint32 spellId : RiseGodfreyActorSummonSpells)
+        player->CastSpell(player, spellId, true);
+}
+
+static bool CanSeeRiseGodfrey(Player* player)
+{
+    return player->IsInWorld() && player->IsAlive() && !player->GetVehicle() && !player->IsInFlight()
+        && player->GetQuestStatus(QUEST_RISE_GODFREY) == QUEST_STATUS_INCOMPLETE
+        && player->GetExactDist2d(RiseGodfreyBodyPos.GetPositionX(), RiseGodfreyBodyPos.GetPositionY()) < RiseGodfreySceneRange;
+}
+
+// 85149 - Summon Forsaken Front Actors
+// The start spell of Rise, Godfrey: Sylvanas and the others around Godfrey's body, as the player's own actors
+class spell_silverpine_summon_forsaken_front_actors : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_summon_forsaken_front_actors);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_SYLVANAS_RISE_GODFREY, SPELL_SUMMON_CROMUSH_RISE_GODFREY, SPELL_SUMMON_AGATHA_RISE_GODFREY,
+            SPELL_SUMMON_DASCHLA_RISE_GODFREY, SPELL_SUMMON_ARTHURA_RISE_GODFREY, SPELL_SUMMON_WALDEN_RISE_GODFREY,
+            SPELL_SUMMON_GODFREY_RISE_GODFREY, SPELL_SUMMON_ASHBURY_RISE_GODFREY });
+    }
+
+    void HandleScript(SpellEffIndex /*effIndex*/)
+    {
+        if (Player* player = GetCaster()->ToPlayer())
+            if (CanSeeRiseGodfrey(player))
+                SummonForsakenFrontActors(player);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_silverpine_summon_forsaken_front_actors::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+// 85149 - Summon Forsaken Front Actors
+// The aura stays while Rise, Godfrey is in progress (the quest's reward spell, Cancel 85149, takes it away) and brings the actors
+// back for a scene that was cut short (the player died, left or logged out); abandoning the quest takes it and the actors away
+class spell_silverpine_summon_forsaken_front_actors_aura : public AuraScript
+{
+    PrepareAuraScript(spell_silverpine_summon_forsaken_front_actors_aura);
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 3 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        switch (player->GetQuestStatus(QUEST_RISE_GODFREY))
+        {
+            case QUEST_STATUS_INCOMPLETE:
+                break;
+            case QUEST_STATUS_COMPLETE:
+            case QUEST_STATUS_REWARDED:
+                return;
+            default:
+                Remove();
+                return;
+        }
+
+        // The aura lasts ten minutes; keep it while the quest is open
+        if (GetDuration() >= 0 && GetDuration() < 60 * IN_MILLISECONDS)
+            RefreshDuration();
+
+        if (CanSeeRiseGodfrey(player) && !FindPersonalSummonOf(player, NPC_SYLVANAS_RISE_GODFREY, 100.0f))
+            SummonForsakenFrontActors(player);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+            if (player->IsInWorld())
+                DespawnForsakenFrontActors(player);
+    }
+
+    void Register() override
+    {
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_silverpine_summon_forsaken_front_actors_aura::CalcPeriodic, EFFECT_1, SPELL_AURA_DUMMY);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_silverpine_summon_forsaken_front_actors_aura::OnPeriodic, EFFECT_1, SPELL_AURA_DUMMY);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_silverpine_summon_forsaken_front_actors_aura::OnRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 85197 - Raise Forsaken (Rise, Godfrey), 85950 - Raise Forsaken (Cities in Dust)
+// The val'kyr raise the dead of their own scene. The spells have no radius here, so the dead are picked directly: the actors of the
+// same player, as group members' scenes play on the same spots.
+class spell_silverpine_raise_forsaken_actors : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_raise_forsaken_actors);
+
+    void SelectTargets(std::list<WorldObject*>& targets)
+    {
+        targets.clear();
+
+        std::vector<uint32> entries;
+        if (GetSpellInfo()->Id == SPELL_RAISE_FORSAKEN_RISE_GODFREY)
+            entries = { NPC_GODFREY_RISE_GODFREY, NPC_WALDEN_RISE_GODFREY, NPC_ASHBURY_RISE_GODFREY };
+        else
+            entries = { 46026 }; // Lady Sylvanas Windrunner (Cities in Dust)
+
+        Unit* caster = GetCaster();
+        for (uint32 entry : entries)
+        {
+            std::list<Creature*> creatures;
+            caster->GetCreatureListWithEntryInGrid(creatures, entry, 30.0f);
+            for (Creature* creature : creatures)
+                if (creature->IsAlive() && creature->GetPrivateObjectOwner() == caster->GetPrivateObjectOwner())
+                    targets.push_back(creature);
+        }
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_silverpine_raise_forsaken_actors::SelectTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ENTRY);
+    }
+};
+
+// 45605 - Lady Sylvanas Windrunner (Rise, Godfrey)
+// The first of the Forsaken Front actors: plays the scene from the wiki's order of the broadcast texts 45740-45751. Arthura raises
+// Godfrey, Walden and Ashbury, they take their undead forms and stand, and Sylvanas sends the player on with Godfrey Kill Credit.
+struct npc_silverpine_sylvanas_rise_godfrey : public ScriptedAI
+{
+    npc_silverpine_sylvanas_rise_godfrey(Creature* creature) : ScriptedAI(creature), _startTries(0), _credited(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetFacingTo(RiseGodfreyActorOrientations[RISE_ACTOR_SYLVANAS]);
+
+        // The other actors are summoned right after her
+        _events.ScheduleEvent(EVENT_RISE_GODFREY_START, 2s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld() || !player->IsAlive()
+            || player->GetExactDist2d(RiseGodfreyBodyPos.GetPositionX(), RiseGodfreyBodyPos.GetPositionY()) > RiseGodfreySceneRange + 20.0f
+            || (!_credited && player->GetQuestStatus(QUEST_RISE_GODFREY) != QUEST_STATUS_INCOMPLETE))
+        {
+            // The player left or abandoned the quest: the start spell's aura brings the scene back when they return
+            EndScene(0);
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId == EVENT_RISE_GODFREY_START)
+            {
+                bool allThere = true;
+                for (uint8 i = 0; i < RISE_GODFREY_ACTOR_COUNT; ++i)
+                {
+                    Creature* actor = FindPersonalSummonOf(player, RiseGodfreyActorEntries[i], 100.0f);
+                    _actorGUIDs[i] = actor ? actor->GetGUID() : ObjectGuid::Empty;
+                    if (!actor)
+                        allThere = false;
+                }
+
+                if (!allThere)
+                {
+                    if (++_startTries < 5)
+                        _events.ScheduleEvent(EVENT_RISE_GODFREY_START, 1s);
+                    else
+                        EndScene(0);
+                    return;
+                }
+            }
+            else if (eventId == EVENT_RISE_GODFREY_END)
+            {
+                EndScene(0);
+                return;
+            }
+
+            Creature* actors[RISE_GODFREY_ACTOR_COUNT];
+            for (uint8 i = 0; i < RISE_GODFREY_ACTOR_COUNT; ++i)
+            {
+                actors[i] = ObjectAccessor::GetCreature(*me, _actorGUIDs[i]);
+                if (!actors[i] || !actors[i]->IsAIEnabled)
+                {
+                    // An actor is missing: the scene starts again with new ones
+                    EndScene(0);
+                    return;
+                }
+            }
+
+            Creature* godfrey = actors[RISE_ACTOR_GODFREY];
+            Creature* walden = actors[RISE_ACTOR_WALDEN];
+            Creature* ashbury = actors[RISE_ACTOR_ASHBURY];
+
+            Milliseconds next = 0ms;
+
+            switch (eventId)
+            {
+                case EVENT_RISE_GODFREY_START:
+                    Talk(TALK_SYLVANAS_RISE_GODFREY_0, player);
+                    next = 5s;
+                    break;
+                case EVENT_RISE_GODFREY_RAISE:
+                    actors[RISE_ACTOR_ARTHURA]->CastSpell(actors[RISE_ACTOR_ARTHURA], SPELL_RAISE_FORSAKEN_RISE_GODFREY, false);
+                    next = 8s;
+                    break;
+                case EVENT_RISE_GODFREY_TRANSFORM:
+                    godfrey->CastSpell(godfrey, SPELL_GODFREY_TRANSFORM, true);
+                    walden->CastSpell(walden, SPELL_WALDEN_TRANSFORM, true);
+                    ashbury->CastSpell(ashbury, SPELL_ASHBURY_TRANSFORM, true);
+                    for (Creature* raised : { godfrey, walden, ashbury })
+                    {
+                        raised->RemoveAurasDueToSpell(SPELL_PERMANENT_FEIGN_DEATH);
+                        raised->SetStandState(UNIT_STAND_STATE_STAND);
+                    }
+                    next = 3s;
+                    break;
+                case 4:
+                    godfrey->AI()->Talk(TALK_GODFREY_RISE_GODFREY_0, player);
+                    next = 4s;
+                    break;
+                case 5:
+                    godfrey->SetFacingToObject(me);
+                    Talk(TALK_SYLVANAS_RISE_GODFREY_1, player);
+                    next = 8s;
+                    break;
+                case 6:
+                    actors[RISE_ACTOR_CROMUSH]->AI()->Talk(TALK_CROMUSH_RISE_GODFREY_0, player);
+                    next = 3s;
+                    break;
+                case 7:
+                    Talk(TALK_SYLVANAS_RISE_GODFREY_2, player);
+                    next = 3s;
+                    break;
+                case 8:
+                    godfrey->AI()->Talk(TALK_GODFREY_RISE_GODFREY_1, player);
+                    next = 5s;
+                    break;
+                case 9:
+                    godfrey->AI()->Talk(TALK_GODFREY_RISE_GODFREY_2, player);
+                    next = 5s;
+                    break;
+                case 10:
+                    godfrey->AI()->Talk(TALK_GODFREY_RISE_GODFREY_3, player);
+                    next = 4s;
+                    break;
+                case 11:
+                    Talk(TALK_SYLVANAS_RISE_GODFREY_3, player);
+                    next = 9s;
+                    break;
+                case 12:
+                    godfrey->AI()->Talk(TALK_GODFREY_RISE_GODFREY_4, player);
+                    next = 3s;
+                    break;
+                case 13:
+                    me->SetFacingToObject(player);
+                    Talk(TALK_SYLVANAS_RISE_GODFREY_4, player);
+                    next = 6s;
+                    break;
+                case 14:
+                    Talk(TALK_SYLVANAS_RISE_GODFREY_5, player);
+                    next = 4s;
+                    break;
+                case EVENT_RISE_GODFREY_CREDIT:
+                    // Godfrey Kill Credit goes to her summoner; the camp after Rise, Godfrey takes the actors' place
+                    _credited = true;
+                    DoCast(me, SPELL_GODFREY_KILL_CREDIT, true);
+                    next = 2s;
+                    break;
+                default:
+                    break;
+            }
+
+            if (next > 0ms)
+                _events.ScheduleEvent(eventId + 1, next);
+        }
+    }
+
+private:
+    void EndScene(uint32 delay)
+    {
+        _events.Reset();
+        for (ObjectGuid const& guid : _actorGUIDs)
+            if (Creature* actor = ObjectAccessor::GetCreature(*me, guid))
+                if (actor != me)
+                    actor->DespawnOrUnsummon(delay);
+        me->DespawnOrUnsummon(delay);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _actorGUIDs[RISE_GODFREY_ACTOR_COUNT];
+    uint32 _startTries;
+    bool _credited;
+};
+
+// 45606 - Lord Godfrey, 45607 - Baron Ashbury, 45608 - Lord Walden, 45609 - Agatha, 45610 - Daschla, 45611 - Arthura,
+// 45612 - High Warlord Cromush
+// The other Forsaken Front actors, played by Sylvanas; they leave with her
+struct npc_silverpine_forsaken_front_actor : public ScriptedAI
+{
+    npc_silverpine_forsaken_front_actor(Creature* creature) : ScriptedAI(creature), _checkTimer(5000) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _summonerGUID = summoner->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+
+        for (uint8 i = 0; i < RISE_GODFREY_ACTOR_COUNT; ++i)
+            if (RiseGodfreyActorEntries[i] == me->GetEntry())
+                me->SetFacingTo(RiseGodfreyActorOrientations[i]);
+
+        // The val'kyr hover over the dead
+        if (me->GetEntry() == NPC_AGATHA_RISE_GODFREY || me->GetEntry() == NPC_DASCHLA_RISE_GODFREY || me->GetEntry() == NPC_ARTHURA_RISE_GODFREY)
+            me->SetDisableGravity(true);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 1000;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _summonerGUID);
+        if (!player || !FindPersonalSummonOf(player, NPC_SYLVANAS_RISE_GODFREY, 100.0f))
+            me->DespawnOrUnsummon(0);
+    }
+
+private:
+    ObjectGuid _summonerGUID;
+    uint32 _checkTimer;
+};
+
+/*######
 ## AddSC
 ######*/
 
@@ -4916,4 +5368,9 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_belmont_great_escape>("npc_silverpine_belmont_great_escape");
     new creature_script<npc_silverpine_arthura_great_escape>("npc_silverpine_arthura_great_escape");
     new creature_script<npc_silverpine_sylvanas_forsaken_front>("npc_silverpine_sylvanas_forsaken_front");
+    new spell_script<spell_silverpine_summon_forsaken_front_actors>("spell_silverpine_summon_forsaken_front_actors");
+    new aura_script<spell_silverpine_summon_forsaken_front_actors_aura>("spell_silverpine_summon_forsaken_front_actors_aura");
+    new spell_script<spell_silverpine_raise_forsaken_actors>("spell_silverpine_raise_forsaken_actors");
+    new creature_script<npc_silverpine_sylvanas_rise_godfrey>("npc_silverpine_sylvanas_rise_godfrey");
+    new creature_script<npc_silverpine_forsaken_front_actor>("npc_silverpine_forsaken_front_actor");
 }
