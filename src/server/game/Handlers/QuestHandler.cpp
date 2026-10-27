@@ -754,7 +754,8 @@ void WorldSession::HandleQuestgiverCompleteQuest(WorldPacket& recvData)
                 _player->PlayerTalkClass->SendQuestGiverOfferReward(quest, playerGuid, true);
         }
 
-        if (Creature* creature = object->ToCreature())
+        // object is null when a quest handed in from the log names no giver in reach
+        if (Creature* creature = object ? object->ToCreature() : nullptr)
             sScriptMgr->OnQuestComplete(_player, creature, quest);
     }
 }
@@ -832,7 +833,8 @@ void WorldSession::HandlePushQuestToParty(WorldPacket& recvPacket)
         if (quest->IsAutoAccept() && receiver->CanAddQuest(quest, true) && receiver->CanTakeQuest(quest, true))
             receiver->AddQuestAndCheckCompletion(quest, sender);
 
-        if ((quest->IsTurnIn() && quest->IsRepeatable() && !quest->IsDailyOrWeekly()) || quest->HasFlag(QUEST_FLAGS_AUTO_COMPLETE))
+        // A quest handed in from the log (QUEST_FLAGS_AUTO_COMPLETE) is shared like any other: the receiver gets its details
+        if (quest->IsTurnIn() && quest->IsRepeatable() && !quest->IsDailyOrWeekly())
             receiver->PlayerTalkClass->SendQuestGiverRequestItems(quest, sender->GetGUID(), receiver->CanCompleteRepeatableQuest(quest), true);
         else
         {

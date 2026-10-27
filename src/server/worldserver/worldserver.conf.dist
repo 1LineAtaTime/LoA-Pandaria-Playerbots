@@ -1124,9 +1124,10 @@ Quests.IgnoreAutoAccept = 0
 
 #
 #    Quests.IgnoreAutoComplete
-#        Description: Ignore auto complete flag. Clients will have to manually complete all quests.
-#        Default:     0 - (Disabled, DB values determine if quest is marked auto complete or not.)
-#                     1 - (Enabled, clients will not be told to automatically complete any quest.)
+#        Description: Do not complete turn-in quests (QuestType 0, nothing to do) on their own: clients will have to hand
+#                     them in manually. Quests handed in from the log (auto-complete flag) still need their objectives.
+#        Default:     0 - (Disabled, turn-in quests complete on their own.)
+#                     1 - (Enabled, turn-in quests are handed in manually.)
 
 Quests.IgnoreAutoComplete = 0
 
