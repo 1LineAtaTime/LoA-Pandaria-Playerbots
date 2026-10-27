@@ -4537,17 +4537,17 @@ enum TheGreatEscape
 // Belmont there (Quest Invis 11) was meant to give the quest. He can't be seen, so the escape starts at Forsaken Forward Command.
 Position const GreatEscapeTempestsReachPos = { -2121.2f, 931.754f, 3.18012f };
 
-// Nothing was sniffed. The flight leaves Forsaken Forward Command eastwards over the Greymane Wall and the Battlefront at a height
-// that clears them, and lands at the Forsaken Front beside Sylvanas (wiki: "you pass the Forsaken Forward Command ... the 7th
+// Nothing was sniffed. The flight leaves Forsaken Forward Command eastwards over the Greymane Wall (its towers reach 172 yards, from
+// the vmaps) and the Battlefront at a height that clears them, and lands at the Forsaken Front beside Sylvanas (wiki: "you pass the Forsaken Forward Command ... the 7th
 // Legion marches on the road").
 Position const GreatEscapeFlightPath[] =
 {
-    {  -860.0f, 1600.0f, 105.0f },
-    {  -760.0f, 1560.0f, 110.0f },
-    {  -690.0f, 1530.0f, 100.0f },
-    {  -560.0f, 1440.0f,  92.0f },
-    {  -420.0f, 1360.0f,  88.0f },
-    {  -300.0f, 1300.0f,  80.0f },
+    {  -860.0f, 1600.0f, 195.0f },
+    {  -760.0f, 1560.0f, 200.0f },
+    {  -690.0f, 1530.0f, 170.0f },
+    {  -560.0f, 1440.0f, 130.0f },
+    {  -420.0f, 1360.0f, 105.0f },
+    {  -300.0f, 1300.0f,  85.0f },
     {  -215.0f, 1268.0f,  62.0f }
 };
 
