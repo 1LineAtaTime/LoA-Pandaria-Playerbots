@@ -6526,6 +6526,39 @@ struct npc_silverpine_sylvanas_forsaken_front_finale : public ScriptedAI
 };
 
 /*######
+## On Whose Orders? (27364)
+######*/
+
+// 84870 - Start Quest: Master Sergeant Zaren
+// On Whose Orders? comes over the F.C.D. ("<The F.C.D. buzzes.>") as the player takes Vengeance for Our Soldiers from Captain
+// Rutsak. The quest is accepted automatically; show it in its window, as a quest started by an area trigger is, instead of only
+// adding it to the log.
+class spell_silverpine_start_quest_master_sergeant_zaren : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_start_quest_master_sergeant_zaren);
+
+    void HandleQuestStart(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+
+        Player* player = GetHitPlayer();
+        Quest const* quest = sObjectMgr->GetQuestTemplate(uint32(GetSpellInfo()->Effects[effIndex].MiscValue));
+        if (!player || !quest || !player->CanTakeQuest(quest, false) || !player->CanAddQuest(quest, false))
+            return;
+
+        player->AddQuest(quest, nullptr);
+        player->PlayerTalkClass->SendQuestGiverQuestDetails(quest, player->GetGUID(), true, true);
+        if (player->CanCompleteQuest(quest->GetQuestId()))
+            player->CompleteQuest(quest->GetQuestId());
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_silverpine_start_quest_master_sergeant_zaren::HandleQuestStart, EFFECT_0, SPELL_EFFECT_QUEST_START);
+    }
+};
+
+/*######
 ## What Tomorrow Brings (27401)
 ######*/
 
@@ -6764,4 +6797,5 @@ void AddSC_silverpine_forest()
     new spell_script<spell_silverpine_flight_of_the_valkyr_forward_command>("spell_silverpine_flight_of_the_valkyr_forward_command");
     new creature_script<npc_silverpine_arthura_forward_command>("npc_silverpine_arthura_forward_command");
     new creature_script<npc_silverpine_gilneas_camera>("npc_silverpine_gilneas_camera");
+    new spell_script<spell_silverpine_start_quest_master_sergeant_zaren>("spell_silverpine_start_quest_master_sergeant_zaren");
 }
