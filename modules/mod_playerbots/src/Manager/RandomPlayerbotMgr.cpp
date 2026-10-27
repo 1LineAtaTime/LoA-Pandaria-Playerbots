@@ -202,13 +202,56 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool /*minimal*/)
             PERF_MON_TOTAL,
             onlineBotCount < maxAllowedBotCount ? "RandomPlayerbotMgr::Login" : "RandomPlayerbotMgr::UpdateAIInternal");
 
-    if (availableBotCount < maxAllowedBotCount)
+    // AC Bot/RandomPlayerbotMgr.cpp:336-375: with DisabledWithoutRealPlayer, random bots log in LoginDelay seconds after a
+    // real player logs in and are all logged out LogoutDelay seconds after the last one logs out. Bot sessions are never
+    // added to the world here, so the world's session count is the real players (AC: sWorldSessionMgr).
+    bool realPlayerIsLogged = false;
+    if (sPlayerbotAIConfig->disabledWithoutRealPlayer)
+    {
+        if (sWorld->GetActiveAndQueuedSessionCount() > 0)
+        {
+            _realPlayerLastTimeSeen = time(nullptr);
+            realPlayerIsLogged = true;
+
+            if (_delayLoginBotsTimer == 0)
+            {
+                _delayLoginBotsTimer = time(nullptr) + sPlayerbotAIConfig->disabledWithoutRealPlayerLoginDelay;
+            }
+        }
+        else
+        {
+            if (_delayLoginBotsTimer)
+            {
+                _delayLoginBotsTimer = 0;
+            }
+
+            if (_realPlayerLastTimeSeen != 0 && onlineBotCount > 0 &&
+                time(nullptr) > _realPlayerLastTimeSeen + sPlayerbotAIConfig->disabledWithoutRealPlayerLogoutDelay)
+            {
+                LogoutAllBots();
+                TC_LOG_INFO("playerbots", "Logout all bots due no real player session.");
+            }
+        }
+
+        if (availableBotCount < maxAllowedBotCount &&
+            (sPlayerbotAIConfig->disabledWithoutRealPlayer == false ||
+             (realPlayerIsLogged && _delayLoginBotsTimer != 0 && time(nullptr) >= _delayLoginBotsTimer)))
+        {
+            AddRandomBots();
+        }
+    }
+    else if (availableBotCount < maxAllowedBotCount)
     {
         AddRandomBots();
     }
 
     uint32 updateBots = sPlayerbotAIConfig->randomBotsPerInterval * onlineBotFocus / 100;
-    uint32 maxNewBots = onlineBotCount < maxAllowedBotCount ? maxAllowedBotCount - onlineBotCount : 0;
+    uint32 maxNewBots =
+        onlineBotCount < maxAllowedBotCount &&
+                (sPlayerbotAIConfig->disabledWithoutRealPlayer == false ||
+                 (realPlayerIsLogged && _delayLoginBotsTimer != 0 && time(nullptr) >= _delayLoginBotsTimer))
+            ? maxAllowedBotCount - onlineBotCount
+            : 0;
     uint32 loginBots = std::min(sPlayerbotAIConfig->randomBotsPerInterval - updateBots, maxNewBots);
 
     if (!availableBots.empty())
@@ -249,6 +292,8 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool /*minimal*/)
                 if (!loginBots)
                     break;
             }
+
+            _delayLoginBotsTimer = 0;
         }
     }
 
