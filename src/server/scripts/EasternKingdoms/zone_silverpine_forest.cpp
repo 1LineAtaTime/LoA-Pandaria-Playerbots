@@ -6525,6 +6525,177 @@ struct npc_silverpine_sylvanas_forsaken_front_finale : public ScriptedAI
 };
 
 /*######
+## What Tomorrow Brings (27401)
+######*/
+
+enum WhatTomorrowBrings
+{
+    QUEST_WHAT_TOMORROW_BRINGS                  = 27401,
+
+    NPC_GILNEAS_CAMERA_TARGET                   = 45430,
+
+    EVENT_CAMERA_WAIT_FOR_RIDER                 = 1,
+    EVENT_CAMERA_PAN                            = 2,
+    EVENT_CAMERA_CREDIT                         = 3,
+    EVENT_CAMERA_RETURN                         = 4,
+
+    POINT_CAMERA_HARBOR                         = 1
+};
+
+// Nothing was sniffed. The camera rises from the 7th Legion Telescope and glides out over the harbour, where the 7th Legion lands
+// under High Commander Halford Wyrmbane, to stop short of the camera target (45430, hovering above it).
+Position const GilneasCameraPath[] =
+{
+    { -1440.0f, 1745.0f, 60.0f },
+    { -1380.0f, 1830.0f, 75.0f },
+    { -1310.0f, 1920.0f, 85.0f },
+    { -1260.0f, 1985.0f, 85.0f }
+};
+
+Position const GilneasCameraTargetPos = { -1200.5f, 2063.86f, 82.5887f };
+
+float const GilneasCameraSpeedRate = 1.2f;
+
+// 45427 - Gilneas Camera 01
+// Summoned on the player by the 7th Legion Telescope (Summon Gilneas Camera) with the player in its seat. It takes the player's
+// view out over the harbour, holds it there, gives the credit (Quest Credit: What Tomorrow Brings targets the camera target,
+// so it is given directly) and brings the player back to the telescope.
+struct npc_silverpine_gilneas_camera : public VehicleAI
+{
+    npc_silverpine_gilneas_camera(Creature* creature) : VehicleAI(creature), _boardTries(0), _started(false), _done(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        _home = me->GetPosition();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NOT_SELECTABLE);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+
+        _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (apply || passenger->GetGUID() != _playerGUID)
+            return;
+
+        // The player left early: back to the telescope
+        if (!_done)
+            Return();
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type == EFFECT_MOTION_TYPE && pointId == POINT_CAMERA_HARBOR)
+        {
+            me->SetFacingTo(me->GetAngle(GilneasCameraTargetPos.GetPositionX(), GilneasCameraTargetPos.GetPositionY()));
+            _events.ScheduleEvent(EVENT_CAMERA_CREDIT, 6s);
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld())
+        {
+            _done = true;
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        if (_started && !_done && player->GetVehicleBase() != me)
+        {
+            Return();
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_CAMERA_WAIT_FOR_RIDER:
+                    if (player->GetVehicleBase() == me)
+                    {
+                        _started = true;
+                        _events.ScheduleEvent(EVENT_CAMERA_PAN, 1s);
+                    }
+                    else if (++_boardTries < 10)
+                        _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
+                    else
+                    {
+                        _done = true;
+                        me->DespawnOrUnsummon();
+                        return;
+                    }
+                    break;
+                case EVENT_CAMERA_PAN:
+                {
+                    std::vector<Position> path;
+                    path.push_back(me->GetPosition());
+                    for (Position const& node : GilneasCameraPath)
+                        path.push_back(node);
+
+                    me->SetSpeed(MOVE_RUN, GilneasCameraSpeedRate);
+                    me->SetSpeed(MOVE_FLIGHT, GilneasCameraSpeedRate);
+                    me->GetMotionMaster()->Clear();
+                    me->GetMotionMaster()->MoveSmoothPath(POINT_CAMERA_HARBOR, path.data(), path.size(), false, true);
+                    break;
+                }
+                case EVENT_CAMERA_CREDIT:
+                    if (player->GetQuestStatus(QUEST_WHAT_TOMORROW_BRINGS) == QUEST_STATUS_INCOMPLETE)
+                        player->KilledMonsterCredit(NPC_GILNEAS_CAMERA_TARGET);
+                    _events.ScheduleEvent(EVENT_CAMERA_RETURN, 2s);
+                    break;
+                case EVENT_CAMERA_RETURN:
+                    Return();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // Sets the player down at the telescope again, wherever the camera is. The teleport waits until getting off is over: from
+    // PassengerBoarded it would run before the exit's jump, which would then carry the player back out over the harbour.
+    void Return()
+    {
+        _events.Reset();
+        _done = true;
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            if (player->GetVehicleBase() == me)
+                player->ExitVehicle();
+
+            Position home = _home;
+            player->m_Events.AddLambdaEventAtOffset([player, home]()
+            {
+                if (player->IsInWorld() && !player->GetVehicle() && player->GetExactDist(&home) > 5.0f)
+                    player->NearTeleportTo(home.GetPositionX(), home.GetPositionY(), home.GetPositionZ(), player->GetOrientation());
+            }, 300);
+        }
+
+        me->DespawnOrUnsummon();
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    Position _home;
+    uint32 _boardTries;
+    bool _started;
+    bool _done;
+};
+
+/*######
 ## AddSC
 ######*/
 
@@ -6591,4 +6762,5 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_sylvanas_forsaken_front_finale>("npc_silverpine_sylvanas_forsaken_front_finale");
     new spell_script<spell_silverpine_flight_of_the_valkyr_forward_command>("spell_silverpine_flight_of_the_valkyr_forward_command");
     new creature_script<npc_silverpine_arthura_forward_command>("npc_silverpine_arthura_forward_command");
+    new creature_script<npc_silverpine_gilneas_camera>("npc_silverpine_gilneas_camera");
 }
