@@ -4523,6 +4523,19 @@ private:
 
 // A personal summon of the player (or an actor of the player's scene) of an entry, alive and in reach. Lookups from the
 // player's side find only the player's own: group members can see each other's actors standing on the same spots.
+// Takes a creature out of Permanent Feign Death so it can be seen getting up: removing the aura alone left it lying on the client,
+// as the stand state (already standing under the feign death) did not change. Clear the dead state outright and kneel; the
+// caller stands it up a moment later (SetStandState(UNIT_STAND_STATE_STAND)), which the client shows as rising.
+static void BeginRisingFromFeignDeath(Creature* creature)
+{
+    creature->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
+    creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+    creature->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
+    creature->RemoveFlag(OBJECT_FIELD_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+    creature->ClearUnitState(UNIT_STATE_DIED);
+    creature->SetStandState(UNIT_STAND_STATE_KNEEL);
+}
+
 static Creature* FindPersonalSummonOf(Player* player, uint32 entry, float range)
 {
     std::list<Creature*> creatures;
@@ -5407,13 +5420,12 @@ struct npc_silverpine_sylvanas_rise_godfrey : public ScriptedAI
                     walden->CastSpell(walden, SPELL_WALDEN_TRANSFORM, true);
                     ashbury->CastSpell(ashbury, SPELL_ASHBURY_TRANSFORM, true);
                     for (Creature* raised : { godfrey, walden, ashbury })
-                    {
-                        raised->RemoveAurasDueToSpell(SPELL_PERMANENT_FEIGN_DEATH);
-                        raised->SetStandState(UNIT_STAND_STATE_STAND);
-                    }
+                        BeginRisingFromFeignDeath(raised);
                     next = 3s;
                     break;
                 case 4:
+                    for (Creature* raised : { godfrey, walden, ashbury })
+                        raised->SetStandState(UNIT_STAND_STATE_STAND);
                     godfrey->AI()->Talk(TALK_GODFREY_RISE_GODFREY_0, player);
                     next = 4s;
                     break;
@@ -6210,13 +6222,13 @@ struct npc_silverpine_sylvanas_cities_in_dust : public ScriptedAI
                             valkyr->Kill(valkyr, false);
                             valkyr->DespawnOrUnsummon(6000);
                         }
-                    me->RemoveAurasDueToSpell(SPELL_PERMANENT_FEIGN_DEATH);
-                    me->SetStandState(UNIT_STAND_STATE_STAND);
+                    BeginRisingFromFeignDeath(me);
                     if (cromush)
                         cromush->SetStandState(UNIT_STAND_STATE_STAND);
                     next = 3s;
                     break;
                 case 42:
+                    me->SetStandState(UNIT_STAND_STATE_STAND);
                     me->SetFacingToObject(player);
                     Talk(TALK_CID_SYLVANAS_ONLY_DARKNESS, player);
                     next = 4s;
