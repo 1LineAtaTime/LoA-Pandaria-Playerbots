@@ -5443,6 +5443,869 @@ private:
 };
 
 /*######
+## Cities in Dust (27601)
+######*/
+
+enum CitiesInDust
+{
+    QUEST_CITIES_IN_DUST                        = 27601,
+
+    NPC_SYLVANAS_FORSAKEN_FRONT_RAISED          = 45617,
+    NPC_CITIES_IN_DUST_QUEST_CREDIT             = 46019,
+    NPC_SYLVANAS_CITIES_IN_DUST                 = 46026,
+    NPC_LORNA_CITIES_IN_DUST                    = 46027,
+    NPC_GODFREY_CITIES_IN_DUST                  = 46028,
+    NPC_WALDEN_CITIES_IN_DUST                   = 46029,
+    NPC_ASHBURY_CITIES_IN_DUST                  = 46030,
+    NPC_CROMUSH_CITIES_IN_DUST                  = 46031,
+    NPC_ARTHURA_CITIES_IN_DUST                  = 46032,
+    NPC_DASCHLA_CITIES_IN_DUST                  = 46033,
+    NPC_AGATHA_CITIES_IN_DUST                   = 46034,
+    NPC_BLOODFANG_CITIES_IN_DUST                = 46035,
+    NPC_CROWLEY_CITIES_IN_DUST                  = 46036,
+
+    SPELL_SUMMON_SYLVANAS_CITIES_IN_DUST        = 85864,
+    SPELL_SUMMON_CROMUSH_CITIES_IN_DUST         = 85868,
+    SPELL_SUMMON_ARTHURA_CITIES_IN_DUST         = 85869,
+    SPELL_SUMMON_AGATHA_CITIES_IN_DUST          = 85870,
+    SPELL_SUMMON_DASCHLA_CITIES_IN_DUST         = 85871,
+    SPELL_SONG_OF_SYLVANAS                      = 85874,
+    SPELL_SUMMON_CROWLEY_CITIES_IN_DUST         = 85877,
+    SPELL_SUMMON_BLOODFANG_CITIES_IN_DUST       = 85878,
+    SPELL_SUMMON_GODFREY_CITIES_IN_DUST         = 85925,
+    SPELL_SUMMON_WALDEN_CITIES_IN_DUST          = 85926,
+    SPELL_SUMMON_ASHBURY_CITIES_IN_DUST         = 85927,
+    SPELL_SHIELD_OF_THE_VALKYR                  = 85934,
+    SPELL_EXECUTION                             = 85944,
+    SPELL_RAISE_FORSAKEN_CITIES_IN_DUST         = 85950,
+
+    GOSSIP_MENU_SYLVANAS_FORSAKEN_FRONT         = 11823,
+    GOSSIP_OPTION_ACCOMPANY_SYLVANAS            = 0,
+
+    EVENT_CITIES_START                          = 1,
+    // The scene at the Greymane Wall: its steps follow each other from here up to EVENT_CITIES_END
+    EVENT_CITIES_SCENE                          = 2,
+    EVENT_CITIES_CROWLEY_ARRIVED                = 3,
+    EVENT_CITIES_BRING_HER                      = 14,
+    EVENT_CITIES_GODFREY_ARRIVED                = 15,
+    EVENT_CITIES_EXECUTION                      = 25,
+    EVENT_CITIES_FIGHT                          = 29,
+    EVENT_CITIES_FALL_BACK                      = 33,
+    EVENT_CITIES_RAISE                          = 40,
+    EVENT_CITIES_SACRIFICE                      = 41,
+    EVENT_CITIES_CREDIT                         = 46,
+    EVENT_CITIES_END                            = 47,
+
+    // Point ids of the march are this plus the step in the route
+    POINT_CITIES_ROUTE                          = 100,
+    POINT_CITIES_SPOT                           = 1,
+
+    SEAT_GODFREY_LORNA                          = 0
+};
+
+// Lady Sylvanas Windrunner (46026)
+enum CitiesInDustSylvanasTexts
+{
+    TALK_CID_SYLVANAS_ONWARD                    = 0,  // 46139
+    TALK_CID_SYLVANAS_CITIES_IN_DUST            = 1,  // 46141
+    TALK_CID_SYLVANAS_SURRENDER                 = 2,  // 46142
+    TALK_CID_SYLVANAS_SCURRY                    = 3,  // 46143
+    TALK_CID_SYLVANAS_GREYMANE_WALL             = 4,  // 46144
+    TALK_CID_SYLVANAS_YOU_HAVE_LOST             = 5,  // 46188
+    TALK_CID_SYLVANAS_FRIVOLOUSLY               = 6,  // 46190
+    TALK_CID_SYLVANAS_GILNEAS_WORTH             = 7,  // 46191
+    TALK_CID_SYLVANAS_YOUR_DAUGHTER             = 8,  // 46194
+    TALK_CID_SYLVANAS_NOTHING_YET               = 9,  // 46196
+    TALK_CID_SYLVANAS_A_CHOICE                  = 10, // 46197
+    TALK_CID_SYLVANAS_LIFE_OF_LORNA             = 11, // 46198
+    TALK_CID_SYLVANAS_CHOOSE_WISELY             = 12, // 46199
+    TALK_CID_SYLVANAS_BRING_HER                 = 13, // 46200
+    TALK_CID_SYLVANAS_RELEASE_HER               = 14, // 46206
+    TALK_CID_SYLVANAS_LEAVE_HERE                = 15, // 46208
+    TALK_CID_SYLVANAS_LORDAERON_BELONGS         = 16, // 46209
+    TALK_CID_SYLVANAS_VICTORIOUS                = 17, // 46211
+    TALK_CID_SYLVANAS_DIES                      = 18, // 46212
+    TALK_CID_SYLVANAS_ONLY_DARKNESS             = 19, // 46224
+    TALK_CID_SYLVANAS_BRILLIANT_LIGHT           = 20, // 46225
+    TALK_CID_SYLVANAS_VALKYR_FUTURE             = 21, // 46226
+    TALK_CID_SYLVANAS_NEVER_STOP                = 22  // 46227
+};
+
+enum CitiesInDustActorTexts
+{
+    TALK_CID_CROWLEY_NOT_OVER                   = 0,  // 46189
+    TALK_CID_CROWLEY_DIE_TRYING                 = 1,  // 46193
+    TALK_CID_CROWLEY_LORNA                      = 2,  // 46195
+    TALK_CID_CROWLEY_MAGGOT                     = 3,  // 46203
+    TALK_CID_CROWLEY_RETREAT                    = 4,  // 46204
+    TALK_CID_CROWLEY_FORGIVE_ME                 = 5,  // 46210
+    TALK_CID_BLOODFANG_CANT_BE_SERIOUS          = 0,  // 46205
+    TALK_CID_GODFREY_OLD_FRIEND                 = 0,  // 46202
+    TALK_CID_GODFREY_OF_COURSE                  = 1,  // 46207
+    TALK_CID_GODFREY_LONG_AGO                   = 2,  // 46214
+    TALK_CID_GODFREY_BELONGS_TO_ME              = 3,  // 46215
+    TALK_CID_GODFREY_JOIN_YOUR_MISTRESS         = 4,  // 46216
+    TALK_CID_GODFREY_FALL_BACK                  = 5,  // 46217
+    TALK_CID_GODFREY_QUIVER                     = 6,  // 46218
+    TALK_CID_CROMUSH_WHAT_HAVE_YOU_DONE         = 0,  // 46213
+    TALK_CID_CROMUSH_FIX_HER                    = 1,  // 46219
+    TALK_CID_AGATHA_BOUND_TO_HER                = 0,  // 46220
+    TALK_CID_ARTHURA_DESTROY_US                 = 0,  // 46221
+    TALK_CID_ARTHURA_LET_IT_BE_DONE             = 1,  // 46223
+    TALK_CID_DASCHLA_SACRED_DUTY                = 0   // 46222
+};
+
+enum CitiesInDustActorIndex
+{
+    CID_CROMUSH,
+    CID_ARTHURA,
+    CID_AGATHA,
+    CID_DASCHLA,
+    CID_CROWLEY,
+    CID_BLOODFANG,
+    CID_GODFREY,
+    CID_WALDEN,
+    CID_ASHBURY,
+    CID_LORNA,
+    CID_ACTOR_COUNT
+};
+
+uint32 const CitiesInDustActorEntries[CID_ACTOR_COUNT] =
+{
+    NPC_CROMUSH_CITIES_IN_DUST, NPC_ARTHURA_CITIES_IN_DUST, NPC_AGATHA_CITIES_IN_DUST, NPC_DASCHLA_CITIES_IN_DUST,
+    NPC_CROWLEY_CITIES_IN_DUST, NPC_BLOODFANG_CITIES_IN_DUST, NPC_GODFREY_CITIES_IN_DUST, NPC_WALDEN_CITIES_IN_DUST,
+    NPC_ASHBURY_CITIES_IN_DUST, NPC_LORNA_CITIES_IN_DUST
+};
+
+// The march from the Forsaken Front across the Battlefront to the Greymane Wall. Nothing was sniffed: the nodes keep to the open
+// ground between the catapults and Pyrewood, and the ground height under them is taken when the march starts. It ends where
+// Sylvanas (46124) and Cromush (46125) stand after the quest.
+Position const CitiesInDustRoute[] =
+{
+    { -215.0f, 1288.0f, 44.0f },
+    { -270.0f, 1298.0f, 42.0f },
+    { -350.0f, 1300.0f, 39.0f },
+    { -420.0f, 1340.0f, 37.0f },
+    { -500.0f, 1385.0f, 30.0f },
+    { -580.0f, 1440.0f, 27.0f },
+    { -640.0f, 1500.0f, 28.0f },
+    { -690.0f, 1540.0f, 28.0f },
+    { -698.4f, 1546.6f, 28.1f }
+};
+
+float const CitiesInDustMaxStep         = 25.0f;
+float const CitiesInDustStepLead        = 5.0f;
+// The march waits for a player this far behind, and goes on once they are this close again
+float const CitiesInDustWaitDistance    = 35.0f;
+float const CitiesInDustResumeDistance  = 15.0f;
+float const CitiesInDustAbortDistance   = 150.0f;
+
+// Spots at the Greymane Wall: the val'kyr hover around Sylvanas, Crowley and Bloodfang face her from the wall, Godfrey's men stand
+// between them (Ashbury on his sniffed spot) and later run for Shadowfang Keep
+Position const CitiesSylvanasFacingWall = { -698.4f, 1546.6f, 28.1f, float(M_PI) };
+Position const CitiesCromushSpot        = { -694.8f, 1545.6f, 28.1f };
+Position const CitiesArthuraSpot        = { -695.5f, 1552.5f, 28.1f };
+Position const CitiesAgathaSpot         = { -695.5f, 1540.5f, 28.1f };
+Position const CitiesDaschlaSpot        = { -692.0f, 1547.5f, 28.1f };
+Position const CitiesCrowleySpot        = { -722.0f, 1548.5f, 28.1f };
+Position const CitiesBloodfangSpot      = { -724.0f, 1542.0f, 28.1f };
+Position const CitiesGodfreySpot        = { -707.5f, 1550.5f, 28.1f };
+Position const CitiesWaldenSpot         = { -707.0f, 1541.5f, 28.1f };
+Position const CitiesAshburySpot        = { -708.249f, 1546.1f, 28.0089f };
+Position const CitiesLornaSpot          = { -718.0f, 1546.0f, 28.1f };
+Position const CitiesGilneasRetreat     = { -800.0f, 1546.0f, 28.0f };
+Position const CitiesShadowfangFlight   = { -640.0f, 1600.0f, 28.0f };
+float const CitiesValkyrHoverHeight     = 3.0f;
+
+static Position CitiesGroundPos(Map* map, Position const& pos, float above = 0.0f)
+{
+    Position ground = pos;
+    float z = map->GetHeight(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ() + 10.0f, false);
+    if (z > INVALID_HEIGHT)
+        ground.m_positionZ = z;
+    ground.m_positionZ += above;
+    return ground;
+}
+
+// 85877 - Summon Crowley, 85878 - Summon Bloodfang, 85925 - Summon Godfrey, 85926 - Summon Walden, 85927 - Summon Asbhury
+// Their spell_target_position is on the ground of the Battlefront; keep the summon on it
+class spell_silverpine_cities_in_dust_summon : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_cities_in_dust_summon);
+
+    void SetDest(SpellDestination& dest)
+    {
+        dest.Relocate(CitiesGroundPos(GetCaster()->GetMap(), dest._position));
+    }
+
+    void Register() override
+    {
+        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_silverpine_cities_in_dust_summon::SetDest, EFFECT_0, TARGET_DEST_DB);
+    }
+};
+
+// 85944 - Execution
+// Godfrey's shot only fells Sylvanas: she lies dead until her val'kyr raise her, and plays on
+class spell_silverpine_execution : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_execution);
+
+    void HandleHit(SpellEffIndex effIndex)
+    {
+        Unit* target = GetHitUnit();
+        if (!target || target->GetEntry() != NPC_SYLVANAS_CITIES_IN_DUST)
+            return;
+
+        PreventHitDefaultEffect(effIndex);
+        target->CastSpell(target, SPELL_PERMANENT_FEIGN_DEATH, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_silverpine_execution::HandleHit, EFFECT_0, SPELL_EFFECT_INSTAKILL);
+    }
+};
+
+// 46026 - Lady Sylvanas Windrunner (Cities in Dust)
+// Summoned by Summon Sylvanas when the player tells Sylvanas at the Forsaken Front that they are ready. Brings her Cromush and the
+// three val'kyr (Silverpine Finale Master Summon Script, done directly), sings Song of Sylvanas and marches them with the player
+// across the Battlefront to the Greymane Wall, and plays the finale of broadcast_text 46139-46227 with the speakers of
+// warcraft.wiki.gg: Crowley and Bloodfang come to parley, Godfrey brings Lorna and the worgen retreat, Godfrey shoots Sylvanas,
+// fights Cromush and the val'kyr and flees for Shadowfang, and the val'kyr give their lives to raise her. The player is credited at
+// the end. The actors are all the player's personal summons; the crowd of the Battlefront leaves the player alone meanwhile.
+struct npc_silverpine_sylvanas_cities_in_dust : public ScriptedAI
+{
+    npc_silverpine_sylvanas_cities_in_dust(Creature* creature) : ScriptedAI(creature), _routePoint(0), _startTries(0),
+        _marching(false), _waiting(false), _credited(false), _ended(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetWalk(false);
+
+        // Silverpine Finale Master Summon Script, done directly
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+            for (uint32 spellId : { SPELL_SUMMON_CROMUSH_CITIES_IN_DUST, SPELL_SUMMON_ARTHURA_CITIES_IN_DUST, SPELL_SUMMON_AGATHA_CITIES_IN_DUST,
+                SPELL_SUMMON_DASCHLA_CITIES_IN_DUST })
+                player->CastSpell(player, spellId, true);
+
+        BuildRoute();
+        _events.ScheduleEvent(EVENT_CITIES_START, 1500ms);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_ended)
+            return;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld() || !player->IsAlive() || !me->IsWithinDist(player, CitiesInDustAbortDistance)
+            || (!_credited && player->GetQuestStatus(QUEST_CITIES_IN_DUST) != QUEST_STATUS_INCOMPLETE))
+        {
+            // Sylvanas at the Forsaken Front starts it again
+            EndEvent(player, 0);
+            return;
+        }
+
+        _events.Update(diff);
+
+        if (_marching)
+            UpdateMarch(player);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId == EVENT_CITIES_START)
+            {
+                StartMarch(player);
+                continue;
+            }
+
+            Creature* cromush = Actor(CID_CROMUSH);
+            Creature* crowley = Actor(CID_CROWLEY);
+            Creature* godfrey = Actor(CID_GODFREY);
+
+            Milliseconds next = 0ms;
+
+            switch (eventId)
+            {
+                case EVENT_CITIES_SCENE:
+                    // At the wall: Crowley and Bloodfang come out to parley
+                    me->SetFacingTo(CitiesSylvanasFacingWall.GetOrientation());
+                    player->CastSpell(player, SPELL_SUMMON_CROWLEY_CITIES_IN_DUST, true);
+                    player->CastSpell(player, SPELL_SUMMON_BLOODFANG_CITIES_IN_DUST, true);
+                    FindActor(player, CID_CROWLEY);
+                    FindActor(player, CID_BLOODFANG);
+                    MoveActor(CID_CROWLEY, CitiesCrowleySpot);
+                    MoveActor(CID_BLOODFANG, CitiesBloodfangSpot);
+                    next = 8s;
+                    break;
+                case EVENT_CITIES_CROWLEY_ARRIVED:
+                    FaceMe(CID_CROWLEY);
+                    FaceMe(CID_BLOODFANG);
+                    Talk(TALK_CID_SYLVANAS_YOU_HAVE_LOST, player);
+                    next = 5s;
+                    break;
+                case 4:
+                    ActorTalk(CID_CROWLEY, TALK_CID_CROWLEY_NOT_OVER, player);
+                    next = 4s;
+                    break;
+                case 5:
+                    Talk(TALK_CID_SYLVANAS_FRIVOLOUSLY, player);
+                    next = 7s;
+                    break;
+                case 6:
+                    Talk(TALK_CID_SYLVANAS_GILNEAS_WORTH, player);
+                    next = 6s;
+                    break;
+                case 7:
+                    ActorTalk(CID_CROWLEY, TALK_CID_CROWLEY_DIE_TRYING, player);
+                    next = 4s;
+                    break;
+                case 8:
+                    Talk(TALK_CID_SYLVANAS_YOUR_DAUGHTER, player);
+                    next = 7s;
+                    break;
+                case 9:
+                    ActorTalk(CID_CROWLEY, TALK_CID_CROWLEY_LORNA, player);
+                    next = 4s;
+                    break;
+                case 10:
+                    Talk(TALK_CID_SYLVANAS_NOTHING_YET, player);
+                    next = 3s;
+                    break;
+                case 11:
+                    Talk(TALK_CID_SYLVANAS_A_CHOICE, player);
+                    next = 5s;
+                    break;
+                case 12:
+                    Talk(TALK_CID_SYLVANAS_LIFE_OF_LORNA, player);
+                    next = 5s;
+                    break;
+                case 13:
+                    Talk(TALK_CID_SYLVANAS_CHOOSE_WISELY, player);
+                    next = 6s;
+                    break;
+                case EVENT_CITIES_BRING_HER:
+                {
+                    // AICast Godfrey+ Summon and its Silverpine Finale Master Summon Script (Godfrey+), done directly. Godfrey carries
+                    // Lorna, who has no summon spell.
+                    Talk(TALK_CID_SYLVANAS_BRING_HER, player);
+                    player->CastSpell(player, SPELL_SUMMON_GODFREY_CITIES_IN_DUST, true);
+                    player->CastSpell(player, SPELL_SUMMON_WALDEN_CITIES_IN_DUST, true);
+                    player->CastSpell(player, SPELL_SUMMON_ASHBURY_CITIES_IN_DUST, true);
+                    FindActor(player, CID_GODFREY);
+                    FindActor(player, CID_WALDEN);
+                    FindActor(player, CID_ASHBURY);
+                    if (Creature* summonedGodfrey = Actor(CID_GODFREY))
+                        if (TempSummon* lorna = player->SummonCreature(NPC_LORNA_CITIES_IN_DUST, summonedGodfrey->GetPosition(), TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID()))
+                        {
+                            _actorGUIDs[CID_LORNA] = lorna->GetGUID();
+                            lorna->EnterVehicle(summonedGodfrey, SEAT_GODFREY_LORNA);
+                        }
+                    MoveActor(CID_GODFREY, CitiesGodfreySpot);
+                    MoveActor(CID_WALDEN, CitiesWaldenSpot);
+                    MoveActor(CID_ASHBURY, CitiesAshburySpot);
+                    next = 14s;
+                    break;
+                }
+                case EVENT_CITIES_GODFREY_ARRIVED:
+                    FaceActor(CID_GODFREY, CID_CROWLEY);
+                    FaceActor(CID_WALDEN, CID_CROWLEY);
+                    FaceActor(CID_ASHBURY, CID_CROWLEY);
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_OLD_FRIEND, player);
+                    next = 3s;
+                    break;
+                case 16:
+                    ActorTalk(CID_CROWLEY, TALK_CID_CROWLEY_MAGGOT, player);
+                    next = 4s;
+                    break;
+                case 17:
+                    ActorTalk(CID_CROWLEY, TALK_CID_CROWLEY_RETREAT, player);
+                    next = 6s;
+                    break;
+                case 18:
+                    // Bloodfang will not have it and runs back to Gilneas
+                    ActorTalk(CID_BLOODFANG, TALK_CID_BLOODFANG_CANT_BE_SERIOUS, player);
+                    MoveActor(CID_BLOODFANG, CitiesGilneasRetreat);
+                    DespawnActor(CID_BLOODFANG, 10000);
+                    next = 4s;
+                    break;
+                case 19:
+                    Talk(TALK_CID_SYLVANAS_RELEASE_HER, player);
+                    next = 3s;
+                    break;
+                case 20:
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_OF_COURSE, player);
+                    if (Creature* lorna = Actor(CID_LORNA))
+                    {
+                        lorna->ExitVehicle();
+                        MoveActor(CID_LORNA, CitiesLornaSpot);
+                    }
+                    next = 4s;
+                    break;
+                case 21:
+                    Talk(TALK_CID_SYLVANAS_LEAVE_HERE, player);
+                    next = 4s;
+                    break;
+                case 22:
+                    Talk(TALK_CID_SYLVANAS_LORDAERON_BELONGS, player);
+                    next = 4s;
+                    break;
+                case 23:
+                    // Crowley takes his daughter home
+                    ActorTalk(CID_CROWLEY, TALK_CID_CROWLEY_FORGIVE_ME, player);
+                    MoveActor(CID_CROWLEY, CitiesGilneasRetreat);
+                    MoveActor(CID_LORNA, CitiesGilneasRetreat);
+                    DespawnActor(CID_CROWLEY, 12000);
+                    DespawnActor(CID_LORNA, 12000);
+                    next = 6s;
+                    break;
+                case 24:
+                    // She turns to her army
+                    me->SetFacingTo(0.0f);
+                    Talk(TALK_CID_SYLVANAS_VICTORIOUS, player);
+                    next = 3s;
+                    break;
+                case EVENT_CITIES_EXECUTION:
+                    if (godfrey)
+                    {
+                        godfrey->SetFacingToObject(me);
+                        godfrey->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK_RIFLE);
+                        godfrey->CastSpell(me, SPELL_EXECUTION, true);
+                    }
+                    // She falls even if the shot could not hit her
+                    if (!me->HasAura(SPELL_PERMANENT_FEIGN_DEATH))
+                        me->CastSpell(me, SPELL_PERMANENT_FEIGN_DEATH, true);
+                    Talk(TALK_CID_SYLVANAS_DIES, player);
+                    next = 3s;
+                    break;
+                case 26:
+                    if (cromush)
+                        cromush->SetFacingToObject(godfrey ? godfrey : me);
+                    ActorTalk(CID_CROMUSH, TALK_CID_CROMUSH_WHAT_HAVE_YOU_DONE, player);
+                    next = 3s;
+                    break;
+                case 27:
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_LONG_AGO, player);
+                    next = 5s;
+                    break;
+                case 28:
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_BELONGS_TO_ME, player);
+                    next = 4s;
+                    break;
+                case EVENT_CITIES_FIGHT:
+                    // The fight is played, not fought: the actors can't be hurt and the player stays out of it
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_JOIN_YOUR_MISTRESS, player);
+                    if (cromush)
+                    {
+                        cromush->SetFacingToObject(godfrey ? godfrey : me);
+                        cromush->SetEmoteState(EMOTE_STATE_READY1H);
+                    }
+                    for (uint8 i : { CID_GODFREY, CID_WALDEN, CID_ASHBURY })
+                        if (Creature* traitor = Actor(i))
+                        {
+                            if (cromush)
+                                traitor->SetFacingToObject(cromush);
+                            traitor->SetEmoteState(i == CID_GODFREY ? EMOTE_STATE_READY_RIFLE : EMOTE_STATE_READY1H);
+                        }
+                    for (uint8 i : { CID_ARTHURA, CID_AGATHA, CID_DASCHLA })
+                        if (Creature* valkyr = Actor(i))
+                            valkyr->CastSpell(valkyr, SPELL_SHIELD_OF_THE_VALKYR, true);
+                    next = 2s;
+                    break;
+                case 30:
+                case 31:
+                case 32:
+                    if (cromush)
+                        cromush->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                    if (godfrey)
+                        godfrey->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK_RIFLE);
+                    for (uint8 i : { CID_WALDEN, CID_ASHBURY })
+                        if (Creature* traitor = Actor(i))
+                            traitor->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                    next = 2s;
+                    break;
+                case EVENT_CITIES_FALL_BACK:
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_FALL_BACK, player);
+                    if (cromush)
+                        cromush->SetEmoteState(EMOTE_ONESHOT_NONE);
+                    for (uint8 i : { CID_GODFREY, CID_WALDEN, CID_ASHBURY })
+                    {
+                        if (Creature* traitor = Actor(i))
+                            traitor->SetEmoteState(EMOTE_ONESHOT_NONE);
+                        MoveActor(i, CitiesShadowfangFlight);
+                    }
+                    next = 3s;
+                    break;
+                case 34:
+                    ActorTalk(CID_GODFREY, TALK_CID_GODFREY_QUIVER, player);
+                    for (uint8 i : { CID_GODFREY, CID_WALDEN, CID_ASHBURY })
+                        DespawnActor(i, 8000);
+                    next = 4s;
+                    break;
+                case 35:
+                    // Cromush kneels at her side
+                    if (cromush)
+                    {
+                        cromush->SetFacingToObject(me);
+                        cromush->SetStandState(UNIT_STAND_STATE_KNEEL);
+                    }
+                    ActorTalk(CID_CROMUSH, TALK_CID_CROMUSH_FIX_HER, player);
+                    next = 4s;
+                    break;
+                case 36:
+                    ActorTalk(CID_AGATHA, TALK_CID_AGATHA_BOUND_TO_HER, player);
+                    next = 4s;
+                    break;
+                case 37:
+                    ActorTalk(CID_ARTHURA, TALK_CID_ARTHURA_DESTROY_US, player);
+                    next = 4s;
+                    break;
+                case 38:
+                    ActorTalk(CID_DASCHLA, TALK_CID_DASCHLA_SACRED_DUTY, player);
+                    next = 5s;
+                    break;
+                case 39:
+                    ActorTalk(CID_ARTHURA, TALK_CID_ARTHURA_LET_IT_BE_DONE, player);
+                    next = 2s;
+                    break;
+                case EVENT_CITIES_RAISE:
+                    for (uint8 i : { CID_ARTHURA, CID_AGATHA, CID_DASCHLA })
+                        if (Creature* valkyr = Actor(i))
+                        {
+                            valkyr->SetFacingToObject(me);
+                            valkyr->CastSpell(valkyr, SPELL_RAISE_FORSAKEN_CITIES_IN_DUST, false);
+                        }
+                    next = 8s;
+                    break;
+                case EVENT_CITIES_SACRIFICE:
+                    // The val'kyr give their lives for hers
+                    for (uint8 i : { CID_ARTHURA, CID_AGATHA, CID_DASCHLA })
+                        if (Creature* valkyr = Actor(i))
+                        {
+                            valkyr->Kill(valkyr, false);
+                            valkyr->DespawnOrUnsummon(6000);
+                        }
+                    me->RemoveAurasDueToSpell(SPELL_PERMANENT_FEIGN_DEATH);
+                    me->SetStandState(UNIT_STAND_STATE_STAND);
+                    if (cromush)
+                        cromush->SetStandState(UNIT_STAND_STATE_STAND);
+                    next = 3s;
+                    break;
+                case 42:
+                    me->SetFacingToObject(player);
+                    Talk(TALK_CID_SYLVANAS_ONLY_DARKNESS, player);
+                    next = 4s;
+                    break;
+                case 43:
+                    Talk(TALK_CID_SYLVANAS_BRILLIANT_LIGHT, player);
+                    next = 8s;
+                    break;
+                case 44:
+                    Talk(TALK_CID_SYLVANAS_VALKYR_FUTURE, player);
+                    next = 6s;
+                    break;
+                case 45:
+                    Talk(TALK_CID_SYLVANAS_NEVER_STOP, player);
+                    next = 4s;
+                    break;
+                case EVENT_CITIES_CREDIT:
+                    // Cities in Dust (85952) targets her master, the player; the credit is given directly so it does not depend on
+                    // the spell reaching them. Sylvanas and Cromush of the Battlefront (46124, 46125) take the actors' place.
+                    _credited = true;
+                    player->KilledMonsterCredit(NPC_CITIES_IN_DUST_QUEST_CREDIT);
+                    next = 1s;
+                    break;
+                case EVENT_CITIES_END:
+                    EndEvent(player, 0);
+                    return;
+                default:
+                    break;
+            }
+
+            if (next > 0ms)
+                _events.ScheduleEvent(eventId + 1, next);
+        }
+    }
+
+private:
+    Creature* Actor(uint8 index) const
+    {
+        return ObjectAccessor::GetCreature(*me, _actorGUIDs[index]);
+    }
+
+    void FindActor(Player* player, uint8 index)
+    {
+        if (Creature* actor = FindPersonalSummonOf(player, CitiesInDustActorEntries[index], 200.0f))
+            _actorGUIDs[index] = actor->GetGUID();
+    }
+
+    void ActorTalk(uint8 index, uint8 textId, Player* player)
+    {
+        if (Creature* actor = Actor(index))
+            if (actor->IsAIEnabled)
+                actor->AI()->Talk(textId, player);
+    }
+
+    void MoveActor(uint8 index, Position const& pos)
+    {
+        if (Creature* actor = Actor(index))
+        {
+            actor->SetWalk(false);
+            actor->GetMotionMaster()->Clear();
+            actor->GetMotionMaster()->MovePoint(POINT_CITIES_SPOT, CitiesGroundPos(me->GetMap(), pos), true);
+        }
+    }
+
+    void FaceMe(uint8 index)
+    {
+        if (Creature* actor = Actor(index))
+            actor->SetFacingToObject(me);
+    }
+
+    void FaceActor(uint8 index, uint8 targetIndex)
+    {
+        if (Creature* actor = Actor(index))
+            if (Creature* target = Actor(targetIndex))
+                actor->SetFacingToObject(target);
+    }
+
+    void DespawnActor(uint8 index, uint32 delay)
+    {
+        if (Creature* actor = Actor(index))
+            actor->DespawnOrUnsummon(delay);
+    }
+
+    // Splits the route into short steps, so that each one finds a ground path, at the ground height under it
+    void BuildRoute()
+    {
+        _route.clear();
+        _routeNodes.clear();
+
+        Position from = me->GetPosition();
+        for (uint8 node = 0; node < std::size(CitiesInDustRoute); ++node)
+        {
+            Position const& to = CitiesInDustRoute[node];
+            float dist = from.GetExactDist2d(to.GetPositionX(), to.GetPositionY());
+            uint32 steps = std::max<uint32>(1, uint32(std::ceil(dist / CitiesInDustMaxStep)));
+            for (uint32 i = 1; i <= steps; ++i)
+            {
+                float t = float(i) / float(steps);
+                Position step = { from.GetPositionX() + (to.GetPositionX() - from.GetPositionX()) * t,
+                    from.GetPositionY() + (to.GetPositionY() - from.GetPositionY()) * t,
+                    from.GetPositionZ() + (to.GetPositionZ() - from.GetPositionZ()) * t };
+                _route.push_back(CitiesGroundPos(me->GetMap(), step));
+                _routeNodes.push_back(node);
+            }
+            from = to;
+        }
+    }
+
+    void StartMarch(Player* player)
+    {
+        for (uint8 i : { CID_CROMUSH, CID_ARTHURA, CID_AGATHA, CID_DASCHLA })
+            FindActor(player, i);
+
+        if (!Actor(CID_CROMUSH) || !Actor(CID_ARTHURA) || !Actor(CID_AGATHA) || !Actor(CID_DASCHLA))
+        {
+            if (++_startTries < 5)
+                _events.ScheduleEvent(EVENT_CITIES_START, 1s);
+            else
+                EndEvent(player, 0);
+            return;
+        }
+
+        // Her army marches with her
+        float const angles[] = { float(M_PI * 3 / 4), float(M_PI / 2), float(M_PI * 3 / 2), float(M_PI) };
+        uint8 const followers[] = { CID_CROMUSH, CID_ARTHURA, CID_AGATHA, CID_DASCHLA };
+        for (uint8 i = 0; i < std::size(followers); ++i)
+            if (Creature* follower = Actor(followers[i]))
+            {
+                follower->GetMotionMaster()->Clear();
+                follower->GetMotionMaster()->MoveFollow(me, 3.0f, angles[i]);
+            }
+
+        DoCast(me, SPELL_SONG_OF_SYLVANAS, true);
+        Talk(TALK_CID_SYLVANAS_ONWARD, player);
+
+        _marching = true;
+        MoveTo(0);
+    }
+
+    // Each step is a pathed move, started before the previous one ends; the march waits for a player left behind
+    void UpdateMarch(Player* player)
+    {
+        float const playerDist = me->GetExactDist2d(player);
+        if (_waiting)
+        {
+            if (playerDist < CitiesInDustResumeDistance)
+            {
+                _waiting = false;
+                MoveTo(_routePoint);
+            }
+            return;
+        }
+
+        if (playerDist > CitiesInDustWaitDistance)
+        {
+            _waiting = true;
+            me->GetMotionMaster()->Clear();
+            me->StopMoving();
+            return;
+        }
+
+        bool const lastPoint = _routePoint + 1 >= _route.size();
+        float const dist = me->GetExactDist2d(_route[_routePoint].GetPositionX(), _route[_routePoint].GetPositionY());
+        bool const moving = me->GetMotionMaster()->GetCurrentMovementGeneratorType() == POINT_MOTION_TYPE;
+
+        if (lastPoint)
+        {
+            if (!moving)
+                ArriveAtWall();
+        }
+        else if (dist < CitiesInDustStepLead || !moving)
+            MoveTo(_routePoint + 1);
+    }
+
+    void MoveTo(uint32 routePoint)
+    {
+        if (routePoint > 0 && routePoint != _routePoint && _routeNodes[routePoint] != _routeNodes[routePoint - 1])
+            NodeReached(_routeNodes[routePoint - 1]);
+
+        _routePoint = routePoint;
+        me->GetMotionMaster()->MovePoint(POINT_CITIES_ROUTE + _routePoint, _route[_routePoint], true);
+    }
+
+    // Her demands across the Battlefront
+    void NodeReached(uint8 node)
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        switch (node)
+        {
+            case 2: Talk(TALK_CID_SYLVANAS_CITIES_IN_DUST, player); break;
+            case 3: Talk(TALK_CID_SYLVANAS_SURRENDER, player); break;
+            case 4: Talk(TALK_CID_SYLVANAS_SCURRY, player); break;
+            case 5: Talk(TALK_CID_SYLVANAS_GREYMANE_WALL, player); break;
+            default: break;
+        }
+    }
+
+    void ArriveAtWall()
+    {
+        _marching = false;
+        me->RemoveAurasDueToSpell(SPELL_SONG_OF_SYLVANAS);
+
+        MoveActor(CID_CROMUSH, CitiesCromushSpot);
+        if (Creature* arthura = Actor(CID_ARTHURA))
+            arthura->GetMotionMaster()->MovePoint(POINT_CITIES_SPOT, CitiesGroundPos(me->GetMap(), CitiesArthuraSpot, CitiesValkyrHoverHeight), false);
+        if (Creature* agatha = Actor(CID_AGATHA))
+            agatha->GetMotionMaster()->MovePoint(POINT_CITIES_SPOT, CitiesGroundPos(me->GetMap(), CitiesAgathaSpot, CitiesValkyrHoverHeight), false);
+        if (Creature* daschla = Actor(CID_DASCHLA))
+            daschla->GetMotionMaster()->MovePoint(POINT_CITIES_SPOT, CitiesGroundPos(me->GetMap(), CitiesDaschlaSpot, CitiesValkyrHoverHeight), false);
+
+        _events.ScheduleEvent(EVENT_CITIES_SCENE, 2s);
+    }
+
+    void EndEvent(Player* player, uint32 delay)
+    {
+        _ended = true;
+        _marching = false;
+        _events.Reset();
+
+        if (player)
+        {
+            for (uint32 spellId : { SPELL_SUMMON_SYLVANAS_CITIES_IN_DUST, SPELL_SUMMON_CROMUSH_CITIES_IN_DUST, SPELL_SUMMON_ARTHURA_CITIES_IN_DUST,
+                SPELL_SUMMON_AGATHA_CITIES_IN_DUST, SPELL_SUMMON_DASCHLA_CITIES_IN_DUST })
+                player->RemoveAurasDueToSpell(spellId);
+        }
+
+        for (ObjectGuid const& guid : _actorGUIDs)
+            if (Creature* actor = ObjectAccessor::GetCreature(*me, guid))
+                actor->DespawnOrUnsummon(delay);
+        me->DespawnOrUnsummon(delay);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _actorGUIDs[CID_ACTOR_COUNT];
+    std::vector<Position> _route;
+    std::vector<uint8> _routeNodes;
+    uint32 _routePoint;
+    uint32 _startTries;
+    bool _marching;
+    bool _waiting;
+    bool _credited;
+    bool _ended;
+};
+
+// 46027 - Commander Lorna Crowley, 46028 - Lord Godfrey, 46029 - Lord Walden, 46030 - Baron Ashbury, 46031 - High Warlord Cromush,
+// 46032 - Arthura, 46033 - Daschla, 46034 - Agatha, 46035 - Packleader Ivar Bloodfang, 46036 - Lord Darius Crowley
+// The other actors of Cities in Dust, played by Sylvanas; they leave with her
+struct npc_silverpine_cities_in_dust_actor : public ScriptedAI
+{
+    npc_silverpine_cities_in_dust_actor(Creature* creature) : ScriptedAI(creature), _checkTimer(3000) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _summonerGUID = summoner->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+
+        if (me->GetEntry() == NPC_ARTHURA_CITIES_IN_DUST || me->GetEntry() == NPC_DASCHLA_CITIES_IN_DUST || me->GetEntry() == NPC_AGATHA_CITIES_IN_DUST)
+        {
+            me->SetCanFly(true);
+            me->SetDisableGravity(true);
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 1000;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _summonerGUID);
+        if (!player || !FindPersonalSummonOf(player, NPC_SYLVANAS_CITIES_IN_DUST, 200.0f))
+            me->DespawnOrUnsummon(0);
+    }
+
+private:
+    ObjectGuid _summonerGUID;
+    uint32 _checkTimer;
+};
+
+// 45617 - Lady Sylvanas Windrunner (the Forsaken Front, after Rise, Godfrey)
+// Gives Cities in Dust; told that the player is ready (gossip, while the quest is in progress), she summons her march across the
+// Battlefront (Summon Sylvanas). Choosing it again after the march was cut short starts it again.
+struct npc_silverpine_sylvanas_forsaken_front_finale : public ScriptedAI
+{
+    npc_silverpine_sylvanas_forsaken_front_finale(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_SYLVANAS_FORSAKEN_FRONT || gossipListId != GOSSIP_OPTION_ACCOMPANY_SYLVANAS)
+            return false;
+
+        CloseGossipMenuFor(player);
+
+        if (player->GetQuestStatus(QUEST_CITIES_IN_DUST) != QUEST_STATUS_INCOMPLETE || !player->IsAlive() || player->GetVehicle())
+            return true;
+
+        if (!FindPersonalSummonOf(player, NPC_SYLVANAS_CITIES_IN_DUST, 200.0f))
+            player->CastSpell(player, SPELL_SUMMON_SYLVANAS_CITIES_IN_DUST, true);
+        return true;
+    }
+};
+
+/*######
 ## AddSC
 ######*/
 
@@ -5502,4 +6365,9 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_sylvanas_rise_godfrey>("npc_silverpine_sylvanas_rise_godfrey");
     new creature_script<npc_silverpine_forsaken_front_actor>("npc_silverpine_forsaken_front_actor");
     new aura_script<spell_silverpine_battlefront_summon_master_aura>("spell_silverpine_battlefront_summon_master_aura");
+    new spell_script<spell_silverpine_cities_in_dust_summon>("spell_silverpine_cities_in_dust_summon");
+    new spell_script<spell_silverpine_execution>("spell_silverpine_execution");
+    new creature_script<npc_silverpine_sylvanas_cities_in_dust>("npc_silverpine_sylvanas_cities_in_dust");
+    new creature_script<npc_silverpine_cities_in_dust_actor>("npc_silverpine_cities_in_dust_actor");
+    new creature_script<npc_silverpine_sylvanas_forsaken_front_finale>("npc_silverpine_sylvanas_forsaken_front_finale");
 }
