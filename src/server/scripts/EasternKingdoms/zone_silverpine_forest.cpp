@@ -4480,6 +4480,388 @@ private:
     bool _creditGiven;
 };
 
+// A personal summon of the player (or an actor of the player's scene) of an entry, alive and in reach. Lookups from the
+// player's side find only the player's own: group members can see each other's actors standing on the same spots.
+static Creature* FindPersonalSummonOf(Player* player, uint32 entry, float range)
+{
+    std::list<Creature*> creatures;
+    player->GetCreatureListWithEntryInGrid(creatures, entry, range);
+    for (Creature* creature : creatures)
+        if (creature->IsAlive() && creature->IsSummon() && creature->ToTempSummon()->GetSummonerGUID() == player->GetGUID())
+            return creature;
+    return nullptr;
+}
+
+/*######
+## The Great Escape (27438)
+######*/
+
+enum TheGreatEscape
+{
+    QUEST_THE_GREAT_ESCAPE                      = 27438,
+
+    NPC_ARTHURA_GREAT_ESCAPE                    = 45555,
+    NPC_GODFREY_CORPSE_GREAT_ESCAPE             = 45556,
+    NPC_BELMONT_GREAT_ESCAPE                    = 45557,
+    NPC_BELMONT_FORWARD_COMMAND                 = 45312,
+    NPC_BELMONT_FORWARD_COMMAND_2               = 45474,
+
+    SPELL_THE_GREAT_ESCAPE_INITIALIZE           = 89225,
+    SPELL_FLIGHT_OF_THE_VALKYR                  = 85073,
+    SPELL_SUMMON_BELMONT_GREAT_ESCAPE           = 85079,
+    SPELL_QUEST_CREDIT_THE_GREAT_ESCAPE         = 85091,
+
+    EVENT_GREAT_ESCAPE_BOARD_CORPSE             = 1,
+    EVENT_GREAT_ESCAPE_WAIT_FOR_RIDER           = 2,
+    // The farewell steps follow each other from here up to EVENT_GREAT_ESCAPE_TAKE_OFF
+    EVENT_GREAT_ESCAPE_TALK                     = 3,
+    EVENT_GREAT_ESCAPE_TAKE_OFF                 = 8,
+    EVENT_GREAT_ESCAPE_LAND                     = 9,
+    EVENT_GREAT_ESCAPE_CREDIT                   = 10,
+    EVENT_GREAT_ESCAPE_LEAVE                    = 11,
+
+    TALK_ARTHURA_WHAT_ABOUT_YOU                 = 0,
+    TALK_ARTHURA_FAREWELL                       = 1,
+    TALK_ARTHURA_HANG_ON                        = 2,
+    TALK_BELMONT_ILL_BE_FINE                    = 0,
+    TALK_BELMONT_MAKE_IT_BACK                   = 1,
+    TALK_BELMONT_MOVE_OUT                       = 2,
+
+    POINT_GREAT_ESCAPE_FLIGHT                   = 1,
+    POINT_GREAT_ESCAPE_LANDING                  = 2,
+
+    SEAT_GREAT_ESCAPE_GODFREY                   = 1
+};
+
+// Where Flight of the Val'kyr and Summon Belmont put Arthura and Belmont (spell_target_position): Tempest's Reach, where the
+// Belmont there (Quest Invis 11) was meant to give the quest. He can't be seen, so the escape starts at Forsaken Forward Command.
+Position const GreatEscapeTempestsReachPos = { -2121.2f, 931.754f, 3.18012f };
+
+// Nothing was sniffed. The flight leaves Forsaken Forward Command eastwards over the Greymane Wall and the Battlefront at a height
+// that clears them, and lands at the Forsaken Front beside Sylvanas (wiki: "you pass the Forsaken Forward Command ... the 7th
+// Legion marches on the road").
+Position const GreatEscapeFlightPath[] =
+{
+    {  -860.0f, 1600.0f, 105.0f },
+    {  -760.0f, 1560.0f, 110.0f },
+    {  -690.0f, 1530.0f, 100.0f },
+    {  -560.0f, 1440.0f,  92.0f },
+    {  -420.0f, 1360.0f,  88.0f },
+    {  -300.0f, 1300.0f,  80.0f },
+    {  -215.0f, 1268.0f,  62.0f }
+};
+
+// From Tempest's Reach the flight first crosses the Ruins of Gilneas to Forward Command
+Position const GreatEscapeTempestsReachPath[] =
+{
+    { -2060.0f,  990.0f,  80.0f },
+    { -1500.0f, 1300.0f, 160.0f },
+    { -1000.0f, 1580.0f, 140.0f }
+};
+
+Position const GreatEscapeLandingPos = { -188.5f, 1263.0f, 45.0f };
+
+float const GreatEscapeFlightSpeedRate = 2.5f;
+
+// 89225 - The Great Escape Initialize
+// The quest's start spell (and talking to Belmont while the escape has not been made): Flight of the Val'kyr
+class spell_silverpine_the_great_escape_initialize : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_the_great_escape_initialize);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_FLIGHT_OF_THE_VALKYR });
+    }
+
+    void HandleScript(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->IsAlive() || player->GetVehicle() || player->IsInFlight())
+            return;
+
+        if (player->GetQuestStatus(QUEST_THE_GREAT_ESCAPE) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        if (FindPersonalSummonOf(player, NPC_ARTHURA_GREAT_ESCAPE, 100.0f))
+            return;
+
+        player->CastSpell(player, SPELL_FLIGHT_OF_THE_VALKYR, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_silverpine_the_great_escape_initialize::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+// 85073 - Flight of the Val'kyr
+// Brings Arthura where the player is when the escape does not start at Tempest's Reach
+class spell_silverpine_flight_of_the_valkyr : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_flight_of_the_valkyr);
+
+    void SetDest(SpellDestination& dest)
+    {
+        Unit* caster = GetCaster();
+        if (caster->GetExactDist2d(GreatEscapeTempestsReachPos.GetPositionX(), GreatEscapeTempestsReachPos.GetPositionY()) > 50.0f)
+            dest.Relocate(caster->GetPosition());
+    }
+
+    void Register() override
+    {
+        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_silverpine_flight_of_the_valkyr::SetDest, EFFECT_0, TARGET_DEST_DB);
+    }
+};
+
+// 85079 - Summon Belmont
+// Belmont stays behind at Tempest's Reach; anywhere else the Belmont who gave the quest is already there to say farewell
+class spell_silverpine_summon_belmont_great_escape : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_summon_belmont_great_escape);
+
+    void HandleSummon(SpellEffIndex effIndex)
+    {
+        Unit* caster = GetCaster();
+        if (caster->GetExactDist2d(GreatEscapeTempestsReachPos.GetPositionX(), GreatEscapeTempestsReachPos.GetPositionY()) > 50.0f)
+            PreventHitDefaultEffect(effIndex);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_silverpine_summon_belmont_great_escape::HandleSummon, EFFECT_0, SPELL_EFFECT_SUMMON);
+    }
+};
+
+// 45312, 45474 - Deathstalker Commander Belmont
+// The escape starts with the quest's start spell; talking to him again starts an escape that was cut short (the player logged out
+// or was taken off the val'kyr)
+struct npc_silverpine_belmont_great_escape : public ScriptedAI
+{
+    npc_silverpine_belmont_great_escape(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipHello(Player* player) override
+    {
+        if (player->GetQuestStatus(QUEST_THE_GREAT_ESCAPE) == QUEST_STATUS_INCOMPLETE)
+            player->CastSpell(player, SPELL_THE_GREAT_ESCAPE_INITIALIZE, true);
+        return false;
+    }
+};
+
+// 45555 - Arthura
+// Summoned by Flight of the Val'kyr with the player on her (its ride aura also gives the Gilneas Act II phase) and Lord Godfrey's
+// corpse in her other hand. Belmont sees them off, she flies them over the Greymane Wall to the Forsaken Front, where the player is
+// credited and set down beside Sylvanas, and she leaves.
+struct npc_silverpine_arthura_great_escape : public VehicleAI
+{
+    npc_silverpine_arthura_great_escape(Creature* creature) : VehicleAI(creature), _boardTries(0), _started(false), _arrived(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+
+        // Lord Godfrey's corpse rides in the second seat; the player gets the first one from the ride aura
+        if (TempSummon* corpse = me->SummonCreature(NPC_GODFREY_CORPSE_GREAT_ESCAPE, me->GetPosition(), TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, _playerGUID))
+            _corpseGUID = corpse->GetGUID();
+
+        _events.ScheduleEvent(EVENT_GREAT_ESCAPE_BOARD_CORPSE, 500ms);
+        _events.ScheduleEvent(EVENT_GREAT_ESCAPE_WAIT_FOR_RIDER, 1s);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (apply || passenger->GetGUID() != _playerGUID)
+            return;
+
+        // The player is off: the val'kyr leaves
+        if (!_arrived)
+            Leave(0);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != EFFECT_MOTION_TYPE)
+            return;
+
+        if (pointId == POINT_GREAT_ESCAPE_FLIGHT)
+            _events.ScheduleEvent(EVENT_GREAT_ESCAPE_LAND, 100ms);
+        else if (pointId == POINT_GREAT_ESCAPE_LANDING)
+            _events.ScheduleEvent(EVENT_GREAT_ESCAPE_CREDIT, 500ms);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld() || (_started && !_arrived && player->GetVehicleBase() != me))
+        {
+            Leave(0);
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            Milliseconds next = 0ms;
+
+            switch (eventId)
+            {
+                case EVENT_GREAT_ESCAPE_BOARD_CORPSE:
+                    if (Creature* corpse = ObjectAccessor::GetCreature(*me, _corpseGUID))
+                        corpse->EnterVehicle(me, SEAT_GREAT_ESCAPE_GODFREY);
+                    break;
+                case EVENT_GREAT_ESCAPE_WAIT_FOR_RIDER:
+                    if (player->GetVehicleBase() == me)
+                    {
+                        _started = true;
+                        _events.ScheduleEvent(EVENT_GREAT_ESCAPE_TALK, 1s);
+                    }
+                    else if (++_boardTries < 10)
+                        _events.ScheduleEvent(EVENT_GREAT_ESCAPE_WAIT_FOR_RIDER, 500ms);
+                    else
+                    {
+                        Leave(0);
+                        return;
+                    }
+                    break;
+                case EVENT_GREAT_ESCAPE_TALK:
+                    Talk(TALK_ARTHURA_WHAT_ABOUT_YOU, player);
+                    next = 4s;
+                    break;
+                case EVENT_GREAT_ESCAPE_TALK + 1:
+                    BelmontTalk(player, TALK_BELMONT_ILL_BE_FINE);
+                    next = 6s;
+                    break;
+                case EVENT_GREAT_ESCAPE_TALK + 2:
+                    BelmontTalk(player, TALK_BELMONT_MAKE_IT_BACK);
+                    next = 5s;
+                    break;
+                case EVENT_GREAT_ESCAPE_TALK + 3:
+                    BelmontTalk(player, TALK_BELMONT_MOVE_OUT);
+                    next = 4s;
+                    break;
+                case EVENT_GREAT_ESCAPE_TALK + 4:
+                    Talk(TALK_ARTHURA_FAREWELL, player);
+                    next = 3s;
+                    break;
+                case EVENT_GREAT_ESCAPE_TAKE_OFF:
+                    Talk(TALK_ARTHURA_HANG_ON, player);
+                    TakeOff();
+                    break;
+                case EVENT_GREAT_ESCAPE_LAND:
+                {
+                    Position landing = GreatEscapeLandingPos;
+                    float ground = me->GetMap()->GetHeight(landing.GetPositionX(), landing.GetPositionY(), landing.GetPositionZ() + 10.0f);
+                    if (ground > INVALID_HEIGHT)
+                        landing.m_positionZ = ground;
+                    me->GetMotionMaster()->MoveLand(POINT_GREAT_ESCAPE_LANDING, landing);
+                    break;
+                }
+                case EVENT_GREAT_ESCAPE_CREDIT:
+                    // Quest Credit: The Great Escape (85091) targets the val'kyr's master, the player; the credit is given directly
+                    // so it does not depend on the spell reaching them
+                    _arrived = true;
+                    if (player->GetQuestStatus(QUEST_THE_GREAT_ESCAPE) == QUEST_STATUS_INCOMPLETE)
+                        player->AreaExploredOrEventHappens(QUEST_THE_GREAT_ESCAPE);
+                    // Getting off despawns the val'kyr (a vehicle minion leaves with its owner), so the corpse she carries,
+                    // which the player does not own, goes first
+                    if (Creature* corpse = ObjectAccessor::GetCreature(*me, _corpseGUID))
+                        corpse->DespawnOrUnsummon();
+                    if (player->GetVehicleBase() == me)
+                        player->ExitVehicle();
+                    _events.ScheduleEvent(EVENT_GREAT_ESCAPE_LEAVE, 2s);
+                    break;
+                case EVENT_GREAT_ESCAPE_LEAVE:
+                    Leave(0);
+                    return;
+                default:
+                    break;
+            }
+
+            if (next > 0ms)
+                _events.ScheduleEvent(eventId + 1, next);
+        }
+    }
+
+private:
+    // Belmont stays behind: his own summon at Tempest's Reach, or the Belmont at Forsaken Forward Command who gave the quest
+    void BelmontTalk(Player* player, uint8 textId)
+    {
+        Creature* belmont = FindPersonalSummonOf(player, NPC_BELMONT_GREAT_ESCAPE, 50.0f);
+        if (!belmont)
+            belmont = me->FindNearestCreature(NPC_BELMONT_FORWARD_COMMAND, 40.0f);
+        if (!belmont)
+            belmont = me->FindNearestCreature(NPC_BELMONT_FORWARD_COMMAND_2, 40.0f);
+        if (belmont && belmont->IsAIEnabled)
+            belmont->AI()->Talk(textId, player);
+    }
+
+    void TakeOff()
+    {
+        std::vector<Position> path;
+        path.push_back(me->GetPosition());
+        path.push_back({ me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 20.0f });
+
+        if (me->GetExactDist2d(GreatEscapeTempestsReachPos.GetPositionX(), GreatEscapeTempestsReachPos.GetPositionY()) < 100.0f)
+            for (Position const& node : GreatEscapeTempestsReachPath)
+                path.push_back(node);
+
+        for (Position const& node : GreatEscapeFlightPath)
+            path.push_back(node);
+
+        me->SetSpeed(MOVE_RUN, GreatEscapeFlightSpeedRate);
+        me->SetSpeed(MOVE_FLIGHT, GreatEscapeFlightSpeedRate);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(POINT_GREAT_ESCAPE_FLIGHT, path.data(), path.size(), false, true);
+    }
+
+    // Godfrey's corpse leaves with her; a player still on board is set down first
+    void Leave(uint32 delay)
+    {
+        _events.Reset();
+        _started = false;
+        _arrived = true;
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+            if (player->GetVehicleBase() == me)
+                player->ExitVehicle();
+
+        if (Creature* corpse = ObjectAccessor::GetCreature(*me, _corpseGUID))
+            corpse->DespawnOrUnsummon(delay);
+        me->DespawnOrUnsummon(delay);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _corpseGUID;
+    uint32 _boardTries;
+    bool _started;
+    bool _arrived;
+};
+
+// 45525 - Lady Sylvanas Windrunner (the Forsaken Front, around Godfrey's body)
+// Ends The Great Escape. A player who got here with the escape still open (the flight was cut short) has made it all the same.
+struct npc_silverpine_sylvanas_forsaken_front : public ScriptedAI
+{
+    npc_silverpine_sylvanas_forsaken_front(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipHello(Player* player) override
+    {
+        if (player->GetQuestStatus(QUEST_THE_GREAT_ESCAPE) == QUEST_STATUS_INCOMPLETE && !player->GetVehicle()
+            && !FindPersonalSummonOf(player, NPC_ARTHURA_GREAT_ESCAPE, 100.0f))
+            player->AreaExploredOrEventHappens(QUEST_THE_GREAT_ESCAPE);
+        return false;
+    }
+};
+
 /*######
 ## AddSC
 ######*/
@@ -4528,4 +4910,10 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_fenris_keep_camera>("npc_silverpine_fenris_keep_camera");
     new creature_script<npc_silverpine_fenris_keep_actor>("npc_silverpine_fenris_keep_actor");
     new creature_script<npc_silverpine_master_forteski>("npc_silverpine_master_forteski");
+    new spell_script<spell_silverpine_the_great_escape_initialize>("spell_silverpine_the_great_escape_initialize");
+    new spell_script<spell_silverpine_flight_of_the_valkyr>("spell_silverpine_flight_of_the_valkyr");
+    new spell_script<spell_silverpine_summon_belmont_great_escape>("spell_silverpine_summon_belmont_great_escape");
+    new creature_script<npc_silverpine_belmont_great_escape>("npc_silverpine_belmont_great_escape");
+    new creature_script<npc_silverpine_arthura_great_escape>("npc_silverpine_arthura_great_escape");
+    new creature_script<npc_silverpine_sylvanas_forsaken_front>("npc_silverpine_sylvanas_forsaken_front");
 }
