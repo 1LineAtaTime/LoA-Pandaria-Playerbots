@@ -724,6 +724,10 @@ void MotionMaster::MoveKnockbackFrom(float srcX, float srcY, float speedXY, floa
     if (_owner->GetTypeId() == TYPEID_PLAYER)
         return;
 
+    // A knock-up without horizontal speed would be a jump spline at velocity 0, which MoveSplineInitArgs::Validate refuses
+    if (speedXY < 0.01f)
+        return;
+
     float x, y, z;
     float moveTimeHalf = speedZ / Movement::gravity;
     float dist = 2 * moveTimeHalf * speedXY;
