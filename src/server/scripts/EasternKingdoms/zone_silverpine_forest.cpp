@@ -5315,6 +5315,134 @@ private:
 };
 
 /*######
+## The Battlefront: Godfrey, Walden and Ashbury go with the player (Taking the Battlefront to On Her Majesty's Secret Service)
+######*/
+
+enum BattlefrontCompanions
+{
+    QUEST_TAKING_THE_BATTLEFRONT                = 27542,
+    QUEST_ON_HER_MAJESTYS_SECRET_SERVICE        = 27594,
+
+    NPC_GODFREY_BATTLEFRONT                     = 45878,
+    NPC_WALDEN_BATTLEFRONT                      = 45879,
+    NPC_ASHBURY_BATTLEFRONT                     = 45880,
+
+    SPELL_SUMMON_GODFREY_BATTLEFRONT            = 85517,
+    SPELL_SUMMON_WALDEN_BATTLEFRONT             = 85518,
+    SPELL_SUMMON_ASHBURY_BATTLEFRONT            = 85519,
+
+    BATTLEFRONT_COMPANION_COUNT                 = 3
+};
+
+uint32 const BattlefrontCompanionSummonSpells[BATTLEFRONT_COMPANION_COUNT] =
+{
+    SPELL_SUMMON_GODFREY_BATTLEFRONT, SPELL_SUMMON_WALDEN_BATTLEFRONT, SPELL_SUMMON_ASHBURY_BATTLEFRONT
+};
+
+uint32 const BattlefrontCompanionEntries[BATTLEFRONT_COMPANION_COUNT] =
+{
+    NPC_GODFREY_BATTLEFRONT, NPC_WALDEN_BATTLEFRONT, NPC_ASHBURY_BATTLEFRONT
+};
+
+// They walk behind the player
+float const BattlefrontCompanionFollowAngles[BATTLEFRONT_COMPANION_COUNT] =
+{
+    float(M_PI), float(M_PI * 3 / 4), float(M_PI * 5 / 4)
+};
+
+// 85516 - Battlefront Summon Master Aura
+// Given in Silverpine Forest from Taking the Battlefront until On Her Majesty's Secret Service is turned in (spell_area). Godfrey,
+// Walden and Ashbury are the player's guardians: they are summoned when the aura comes and whenever one of them is missing (after a
+// login, a death, a flight or a teleport) or left far behind, and leave with it. Battlefront Broadcast is not needed for that.
+class spell_silverpine_battlefront_summon_master_aura : public AuraScript
+{
+    PrepareAuraScript(spell_silverpine_battlefront_summon_master_aura);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_GODFREY_BATTLEFRONT, SPELL_SUMMON_WALDEN_BATTLEFRONT, SPELL_SUMMON_ASHBURY_BATTLEFRONT });
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+            if (player->IsInWorld())
+                SummonMissingCompanions(player);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        for (uint32 entry : BattlefrontCompanionEntries)
+            GetTarget()->RemoveAllMinionsByEntry(entry);
+    }
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        // spell_area only looks at the quests on area changes: the companions leave once On Her Majesty's Secret Service is turned in
+        if (player->GetQuestStatus(QUEST_TAKING_THE_BATTLEFRONT) != QUEST_STATUS_REWARDED
+            || player->GetQuestStatus(QUEST_ON_HER_MAJESTYS_SECRET_SERVICE) == QUEST_STATUS_REWARDED)
+        {
+            Remove();
+            return;
+        }
+
+        SummonMissingCompanions(player);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_silverpine_battlefront_summon_master_aura::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_silverpine_battlefront_summon_master_aura::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_silverpine_battlefront_summon_master_aura::CalcPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_silverpine_battlefront_summon_master_aura::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+
+private:
+    // One of each, the player's own: a companion that is dead or left far behind is replaced
+    static void SummonMissingCompanions(Player* player)
+    {
+        if (!player->IsAlive() || player->IsInFlight() || player->GetVehicle())
+            return;
+
+        for (uint8 i = 0; i < BATTLEFRONT_COMPANION_COUNT; ++i)
+        {
+            std::list<Creature*> companions;
+            player->GetAllMinionsByEntry(companions, BattlefrontCompanionEntries[i]);
+
+            bool found = false;
+            for (Creature* companion : companions)
+            {
+                if (!found && companion->IsAlive() && companion->IsInMap(player) && companion->IsWithinDist(player, 100.0f))
+                    found = true;
+                else
+                    companion->ToTempSummon()->UnSummon();
+            }
+
+            if (found)
+                continue;
+
+            player->CastSpell(player, BattlefrontCompanionSummonSpells[i], true);
+
+            if (Unit* companion = player->GetFirstMinionByEntry(BattlefrontCompanionEntries[i]))
+                if (!companion->IsInCombat())
+                    companion->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, BattlefrontCompanionFollowAngles[i]);
+        }
+    }
+};
+
+/*######
 ## AddSC
 ######*/
 
@@ -5373,4 +5501,5 @@ void AddSC_silverpine_forest()
     new spell_script<spell_silverpine_raise_forsaken_actors>("spell_silverpine_raise_forsaken_actors");
     new creature_script<npc_silverpine_sylvanas_rise_godfrey>("npc_silverpine_sylvanas_rise_godfrey");
     new creature_script<npc_silverpine_forsaken_front_actor>("npc_silverpine_forsaken_front_actor");
+    new aura_script<spell_silverpine_battlefront_summon_master_aura>("spell_silverpine_battlefront_summon_master_aura");
 }
