@@ -4575,7 +4575,7 @@ enum TheGreatEscape
 };
 
 // Where Flight of the Val'kyr and Summon Belmont put Arthura and Belmont (spell_target_position): Tempest's Reach, where the
-// Belmont there (Quest Invis 11) was meant to give the quest. He can't be seen, so the escape starts at Forsaken Forward Command.
+// quest's Belmont kneels by Godfrey's corpse (seen once A Man Named Godfrey is completed, Detect: Quest Invis Zone 11).
 Position const GreatEscapeTempestsReachPos = { -2121.2f, 931.754f, 3.18012f };
 
 // Nothing was sniffed. The flight leaves Forsaken Forward Command eastwards over the Greymane Wall (its towers reach 172 yards, from
@@ -4592,12 +4592,14 @@ Position const GreatEscapeFlightPath[] =
     {  -215.0f, 1268.0f,  62.0f }
 };
 
-// From Tempest's Reach the flight first crosses the Ruins of Gilneas to Forward Command
+// From Tempest's Reach the flight first climbs out of the bay over the cliffs behind it and crosses the Ruins of Gilneas to
+// Forward Command, clearing the terrain by 20 yards or more
 Position const GreatEscapeTempestsReachPath[] =
 {
-    { -2060.0f,  990.0f,  80.0f },
-    { -1500.0f, 1300.0f, 160.0f },
-    { -1000.0f, 1580.0f, 140.0f }
+    { -2112.0f,  940.0f, 110.0f },
+    { -2000.0f, 1030.0f, 165.0f },
+    { -1500.0f, 1300.0f, 175.0f },
+    { -1000.0f, 1580.0f, 165.0f }
 };
 
 Position const GreatEscapeLandingPos = { -188.5f, 1263.0f, 45.0f };
@@ -4656,16 +4658,14 @@ class spell_silverpine_flight_of_the_valkyr : public SpellScript
 };
 
 // 85079 - Summon Belmont
-// Belmont stays behind at Tempest's Reach; anywhere else the Belmont who gave the quest is already there to say farewell
+// Belmont stays behind: the Belmont who gave the quest kneels on the very spot this would summon one, so none is summoned
 class spell_silverpine_summon_belmont_great_escape : public SpellScript
 {
     PrepareSpellScript(spell_silverpine_summon_belmont_great_escape);
 
     void HandleSummon(SpellEffIndex effIndex)
     {
-        Unit* caster = GetCaster();
-        if (caster->GetExactDist2d(GreatEscapeTempestsReachPos.GetPositionX(), GreatEscapeTempestsReachPos.GetPositionY()) > 50.0f)
-            PreventHitDefaultEffect(effIndex);
+        PreventHitDefaultEffect(effIndex);
     }
 
     void Register() override
@@ -4833,7 +4833,8 @@ struct npc_silverpine_arthura_great_escape : public VehicleAI
     }
 
 private:
-    // Belmont stays behind: his own summon at Tempest's Reach, or the Belmont at Forsaken Forward Command who gave the quest
+    // Belmont stays behind: the Belmont who gave the quest, kneeling at Tempest's Reach (or wherever an escape cut short was
+    // started again)
     void BelmontTalk(Player* player, uint8 textId)
     {
         Creature* belmont = FindPersonalSummonOf(player, NPC_BELMONT_GREAT_ESCAPE, 50.0f);
