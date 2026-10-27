@@ -1158,7 +1158,7 @@ void RandomPlayerbotMgr::Refresh(Player* bot)
     if (bot->InBattleground())
         return;
 
-    TC_LOG_INFO("playerbots", "Refreshing bot #%u <%s>", bot->GetGUID().GetCounter(), bot->GetName().c_str());
+    TC_LOG_DEBUG("playerbots", "Refreshing bot #%u <%s>", bot->GetGUID().GetCounter(), bot->GetName().c_str());
     PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "Refresh");
 
     botAI->Reset();
