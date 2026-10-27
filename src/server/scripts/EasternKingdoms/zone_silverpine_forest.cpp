@@ -3028,6 +3028,30 @@ static Creature* FindLordaeronSummonOf(Player* player, uint32 entry)
     return nullptr;
 }
 
+enum ToForsakenForwardCommand
+{
+    QUEST_TO_FORSAKEN_FORWARD_COMMAND           = 27290,
+
+    NPC_ARTHURA_FORWARD_COMMAND                 = 45318,
+
+    SPELL_FLIGHT_OF_THE_VALKYR_FORWARD_COMMAND  = 84695,
+
+    GOSSIP_MENU_SYLVANAS                        = 11823,
+    GOSSIP_OPTION_FORWARD_COMMAND               = 1,
+
+    EVENT_FORWARD_COMMAND_WAIT_FOR_RIDER        = 1,
+    EVENT_FORWARD_COMMAND_TAKE_OFF              = 2,
+    EVENT_FORWARD_COMMAND_LAND                  = 3,
+    EVENT_FORWARD_COMMAND_SET_DOWN              = 4,
+    EVENT_FORWARD_COMMAND_LEAVE                 = 5,
+
+    POINT_FORWARD_COMMAND_FLIGHT                = 1,
+    POINT_FORWARD_COMMAND_LANDING               = 2
+};
+
+// Where Flight of the Val'kyr (84695) summons Arthura (spell_target_position): beside Sylvanas at the Sepulcher
+Position const ForwardCommandSepulcherPos = { 505.193f, 1574.03f, 132.098f };
+
 // 44365 - Lady Sylvanas Windrunner
 // Gives the player Agatha (Bond of the Val'kyr) on accepting Rise, Forsaken and dismisses her when No Escape is turned in, and at
 // Forsaken High Command takes the player to the Sepulcher on accepting Lordaeron. Her lines in The Warchief Cometh are played by
@@ -3050,6 +3074,23 @@ struct npc_silverpine_sylvanas_windrunner_high_command : public ScriptedAI
         if (player->GetQuestStatus(QUEST_LORDAERON) == QUEST_STATUS_INCOMPLETE)
             StartLordaeron(player);
         return false;
+    }
+
+    // To Forsaken Forward Command: "Arthura will escort you to Forward Command. Tell me when you are ready and I will send you on
+    // your way." The option (shown at the Sepulcher while the quest is in the log) calls Arthura, Flight of the Val'kyr. The quest
+    // has no objectives, so it is complete as soon as it is accepted.
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_SYLVANAS || gossipListId != GOSSIP_OPTION_FORWARD_COMMAND)
+            return false;
+
+        CloseGossipMenuFor(player);
+
+        QuestStatus status = player->GetQuestStatus(QUEST_TO_FORSAKEN_FORWARD_COMMAND);
+        if ((status == QUEST_STATUS_COMPLETE || status == QUEST_STATUS_INCOMPLETE) && player->IsAlive() && !player->GetVehicle()
+            && !player->IsInFlight() && me->GetExactDist2d(ForwardCommandSepulcherPos.GetPositionX(), ForwardCommandSepulcherPos.GetPositionY()) < 40.0f)
+            player->CastSpell(player, SPELL_FLIGHT_OF_THE_VALKYR_FORWARD_COMMAND, true);
+        return true;
     }
 
     void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
@@ -4847,6 +4888,184 @@ private:
     bool _arrived;
 };
 
+// 84695 - Flight of the Val'kyr (To Forsaken Forward Command)
+// One Arthura per player
+class spell_silverpine_flight_of_the_valkyr_forward_command : public SpellScript
+{
+    PrepareSpellScript(spell_silverpine_flight_of_the_valkyr_forward_command);
+
+    SpellCastResult CheckCast()
+    {
+        if (Player* player = GetCaster()->ToPlayer())
+            if (FindPersonalSummonOf(player, NPC_ARTHURA_FORWARD_COMMAND, 200.0f))
+                return SPELL_FAILED_DONT_REPORT;
+        return SPELL_CAST_OK;
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_silverpine_flight_of_the_valkyr_forward_command::CheckCast);
+    }
+};
+
+// Nothing was sniffed. From the Sepulcher the val'kyr climbs over the hills west of it, crosses the Battlefront and the Greymane Wall
+// above its towers (172 yards, from the vmaps) and sets the player down beside Deathstalker Commander Belmont at Forsaken Forward
+// Command. Every node clears the terrain and the models under it by 20 yards or more.
+Position const ForwardCommandFlightPath[] =
+{
+    {  470.0f, 1575.0f, 205.0f },
+    {  380.0f, 1580.0f, 215.0f },
+    {  250.0f, 1586.0f, 215.0f },
+    {  120.0f, 1591.0f, 230.0f },
+    {    0.0f, 1595.0f, 240.0f },
+    { -150.0f, 1605.0f, 205.0f },
+    { -350.0f, 1610.0f, 150.0f },
+    { -600.0f, 1616.0f, 170.0f },
+    { -700.0f, 1620.0f, 195.0f },
+    { -820.0f, 1624.0f, 195.0f },
+    { -880.0f, 1626.0f, 120.0f }
+};
+
+Position const ForwardCommandLandingPos = { -922.0f, 1630.0f, 68.5f };
+
+float const ForwardCommandFlightSpeedRate = 2.5f;
+
+// 45318 - Arthura
+// Summoned by Flight of the Val'kyr with the player on her (its ride aura, 84691, also gives the Gilneas Act I phase). She flies the
+// player to Forsaken Forward Command, sets them down and leaves; the quest ends at Belmont there.
+struct npc_silverpine_arthura_forward_command : public VehicleAI
+{
+    npc_silverpine_arthura_forward_command(Creature* creature) : VehicleAI(creature), _boardTries(0), _started(false), _arrived(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+
+        _events.ScheduleEvent(EVENT_FORWARD_COMMAND_WAIT_FOR_RIDER, 1s);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (apply || passenger->GetGUID() != _playerGUID)
+            return;
+
+        // The player is off: the val'kyr leaves
+        if (!_arrived)
+            Leave();
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != EFFECT_MOTION_TYPE)
+            return;
+
+        if (pointId == POINT_FORWARD_COMMAND_FLIGHT)
+            _events.ScheduleEvent(EVENT_FORWARD_COMMAND_LAND, 100ms);
+        else if (pointId == POINT_FORWARD_COMMAND_LANDING)
+            _events.ScheduleEvent(EVENT_FORWARD_COMMAND_SET_DOWN, 500ms);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld() || (_started && !_arrived && player->GetVehicleBase() != me))
+        {
+            Leave();
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_FORWARD_COMMAND_WAIT_FOR_RIDER:
+                    if (player->GetVehicleBase() == me)
+                    {
+                        _started = true;
+                        _events.ScheduleEvent(EVENT_FORWARD_COMMAND_TAKE_OFF, 1500ms);
+                    }
+                    else if (++_boardTries < 10)
+                        _events.ScheduleEvent(EVENT_FORWARD_COMMAND_WAIT_FOR_RIDER, 500ms);
+                    else
+                    {
+                        Leave();
+                        return;
+                    }
+                    break;
+                case EVENT_FORWARD_COMMAND_TAKE_OFF:
+                    TakeOff();
+                    break;
+                case EVENT_FORWARD_COMMAND_LAND:
+                {
+                    Position landing = ForwardCommandLandingPos;
+                    float ground = me->GetMap()->GetHeight(landing.GetPositionX(), landing.GetPositionY(), landing.GetPositionZ() + 10.0f);
+                    if (ground > INVALID_HEIGHT)
+                        landing.m_positionZ = ground;
+                    me->GetMotionMaster()->MoveLand(POINT_FORWARD_COMMAND_LANDING, landing);
+                    break;
+                }
+                case EVENT_FORWARD_COMMAND_SET_DOWN:
+                    // Getting off despawns the val'kyr (a vehicle minion leaves with its owner)
+                    _arrived = true;
+                    if (player->GetVehicleBase() == me)
+                        player->ExitVehicle();
+                    _events.ScheduleEvent(EVENT_FORWARD_COMMAND_LEAVE, 2s);
+                    break;
+                case EVENT_FORWARD_COMMAND_LEAVE:
+                    Leave();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void TakeOff()
+    {
+        std::vector<Position> path;
+        path.push_back(me->GetPosition());
+        path.push_back({ me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 20.0f });
+        for (Position const& node : ForwardCommandFlightPath)
+            path.push_back(node);
+
+        me->SetSpeed(MOVE_RUN, ForwardCommandFlightSpeedRate);
+        me->SetSpeed(MOVE_FLIGHT, ForwardCommandFlightSpeedRate);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(POINT_FORWARD_COMMAND_FLIGHT, path.data(), path.size(), false, true);
+    }
+
+    // A player still on board is set down first
+    void Leave()
+    {
+        _events.Reset();
+        _started = false;
+        _arrived = true;
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+            if (player->GetVehicleBase() == me)
+                player->ExitVehicle();
+
+        me->DespawnOrUnsummon();
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    uint32 _boardTries;
+    bool _started;
+    bool _arrived;
+};
+
 // 45525 - Lady Sylvanas Windrunner (the Forsaken Front, around Godfrey's body)
 // Ends The Great Escape. A player who got here with the escape still open (the flight was cut short) has made it all the same.
 struct npc_silverpine_sylvanas_forsaken_front : public ScriptedAI
@@ -6370,4 +6589,6 @@ void AddSC_silverpine_forest()
     new creature_script<npc_silverpine_sylvanas_cities_in_dust>("npc_silverpine_sylvanas_cities_in_dust");
     new creature_script<npc_silverpine_cities_in_dust_actor>("npc_silverpine_cities_in_dust_actor");
     new creature_script<npc_silverpine_sylvanas_forsaken_front_finale>("npc_silverpine_sylvanas_forsaken_front_finale");
+    new spell_script<spell_silverpine_flight_of_the_valkyr_forward_command>("spell_silverpine_flight_of_the_valkyr_forward_command");
+    new creature_script<npc_silverpine_arthura_forward_command>("npc_silverpine_arthura_forward_command");
 }
