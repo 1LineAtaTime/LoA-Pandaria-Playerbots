@@ -342,6 +342,7 @@ void AddSC_isle_of_queldanas();
 void AddSC_loch_modan();
 void AddSC_redridge_mountains();
 void AddSC_silverpine_forest();
+void AddSC_hillsbrad_purgation();
 void AddSC_hillsbrad_sludge_stormpike();
 void AddSC_stormwind_city();
 void AddSC_tol_barad();
@@ -1380,6 +1381,7 @@ void AddEasternKingdomsScripts()
     AddSC_loch_modan();
     AddSC_redridge_mountains();
     AddSC_silverpine_forest();
+    AddSC_hillsbrad_purgation();
     AddSC_hillsbrad_sludge_stormpike();
     AddSC_stormwind_city();
     AddSC_tol_barad();
