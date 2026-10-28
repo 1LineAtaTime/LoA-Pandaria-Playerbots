@@ -5890,6 +5890,48 @@ class spell_silverpine_cities_in_dust_summon : public SpellScript
     }
 };
 
+// 85874 - Song of Sylvanas
+// Her song carries her party across the Battlefront (health, speed and crit, a 150 yd friendly area aura). While the player walks in
+// it, the Battlefront's fighting leaves them alone (ours): the march is a scripted walk that waits for the player, and every 7th
+// Legion scout that pulled them broke it up. The aura stays with Sylvanas, so it ends by itself if the player falls behind or she
+// goes. Only her own player and her party get it, not other players passing by.
+class spell_silverpine_song_of_sylvanas : public AuraScript
+{
+    PrepareAuraScript(spell_silverpine_song_of_sylvanas);
+
+    bool CheckAreaTarget(Unit* target)
+    {
+        Unit* caster = GetCaster();
+        if (!caster)
+            return false;
+
+        ObjectGuid const owner = caster->GetPrivateObjectOwner();
+        return target == caster || (!owner.IsEmpty() && (target->GetGUID() == owner || target->GetPrivateObjectOwner() == owner));
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+        {
+            player->CombatStop();
+            player->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+        }
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+            player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+    }
+
+    void Register() override
+    {
+        DoCheckAreaTarget += AuraCheckAreaTargetFn(spell_silverpine_song_of_sylvanas::CheckAreaTarget);
+        OnEffectApply += AuraEffectApplyFn(spell_silverpine_song_of_sylvanas::OnApply, EFFECT_0, SPELL_AURA_MOD_INCREASE_HEALTH, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_silverpine_song_of_sylvanas::OnRemove, EFFECT_0, SPELL_AURA_MOD_INCREASE_HEALTH, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 // 85944 - Execution
 // Godfrey's shot only fells Sylvanas: she lies dead until her val'kyr raise her, and plays on
 class spell_silverpine_execution : public SpellScript
@@ -5933,11 +5975,18 @@ struct npc_silverpine_sylvanas_cities_in_dust : public ScriptedAI
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
         me->SetWalk(false);
 
-        // Silverpine Finale Master Summon Script, done directly
+        // Silverpine Finale Master Summon Script, done directly. Summon Cromush (85868) requires area group 303, which in the 5.4.8
+        // data is an Icecrown area (4417): the cast always failed with "You are in the wrong zone", so Cromush is summoned here as
+        // the spell would (his entry, beside the player, private to them).
         if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
-            for (uint32 spellId : { SPELL_SUMMON_CROMUSH_CITIES_IN_DUST, SPELL_SUMMON_ARTHURA_CITIES_IN_DUST, SPELL_SUMMON_AGATHA_CITIES_IN_DUST,
-                SPELL_SUMMON_DASCHLA_CITIES_IN_DUST })
+        {
+            for (uint32 spellId : { SPELL_SUMMON_ARTHURA_CITIES_IN_DUST, SPELL_SUMMON_AGATHA_CITIES_IN_DUST, SPELL_SUMMON_DASCHLA_CITIES_IN_DUST })
                 player->CastSpell(player, spellId, true);
+
+            if (!FindPersonalSummonOf(player, NPC_CROMUSH_CITIES_IN_DUST, 200.0f))
+                player->SummonCreature(NPC_CROMUSH_CITIES_IN_DUST, player->GetNearPosition(2.0f, float(M_PI / 2)), TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0,
+                    player->GetGUID());
+        }
 
         BuildRoute();
         _events.ScheduleEvent(EVENT_CITIES_START, 1500ms);
@@ -5990,6 +6039,8 @@ struct npc_silverpine_sylvanas_cities_in_dust : public ScriptedAI
                     next = 8s;
                     break;
                 case EVENT_CITIES_CROWLEY_ARRIVED:
+                    EnsureArrived(CID_CROWLEY, CitiesCrowleySpot);
+                    EnsureArrived(CID_BLOODFANG, CitiesBloodfangSpot);
                     FaceMe(CID_CROWLEY);
                     FaceMe(CID_BLOODFANG);
                     Talk(TALK_CID_SYLVANAS_YOU_HAVE_LOST, player);
@@ -6059,6 +6110,9 @@ struct npc_silverpine_sylvanas_cities_in_dust : public ScriptedAI
                     break;
                 }
                 case EVENT_CITIES_GODFREY_ARRIVED:
+                    EnsureArrived(CID_GODFREY, CitiesGodfreySpot);
+                    EnsureArrived(CID_WALDEN, CitiesWaldenSpot);
+                    EnsureArrived(CID_ASHBURY, CitiesAshburySpot);
                     FaceActor(CID_GODFREY, CID_CROWLEY);
                     FaceActor(CID_WALDEN, CID_CROWLEY);
                     FaceActor(CID_ASHBURY, CID_CROWLEY);
@@ -6305,6 +6359,23 @@ private:
             actor->GetMotionMaster()->Clear();
             actor->GetMotionMaster()->MovePoint(POINT_CITIES_SPOT, CitiesGroundPos(me->GetMap(), pos), true);
         }
+    }
+
+    // The summon spells put Godfrey's men and the Gilneans on the far side of the Greymane Wall, and their path through it can
+    // fail: two of the three traitors never arrived, so nobody shot Sylvanas. Whoever is not on their spot when the scene needs them
+    // is put there (a passenger, Lorna on Godfrey, goes along with the vehicle).
+    void EnsureArrived(uint8 index, Position const& spot)
+    {
+        Creature* actor = Actor(index);
+        if (!actor)
+            return;
+
+        Position const ground = CitiesGroundPos(me->GetMap(), spot);
+        if (actor->GetExactDist2d(ground.GetPositionX(), ground.GetPositionY()) <= 4.0f)
+            return;
+
+        actor->GetMotionMaster()->Clear();
+        actor->NearTeleportTo(ground.GetPositionX(), ground.GetPositionY(), ground.GetPositionZ(), actor->GetOrientation());
     }
 
     void FaceMe(uint8 index)
@@ -6817,6 +6888,7 @@ void AddSC_silverpine_forest()
     new aura_script<spell_silverpine_battlefront_summon_master_aura>("spell_silverpine_battlefront_summon_master_aura");
     new spell_script<spell_silverpine_cities_in_dust_summon>("spell_silverpine_cities_in_dust_summon");
     new spell_script<spell_silverpine_execution>("spell_silverpine_execution");
+    new aura_script<spell_silverpine_song_of_sylvanas>("spell_silverpine_song_of_sylvanas");
     new creature_script<npc_silverpine_sylvanas_cities_in_dust>("npc_silverpine_sylvanas_cities_in_dust");
     new creature_script<npc_silverpine_cities_in_dust_actor>("npc_silverpine_cities_in_dust_actor");
     new creature_script<npc_silverpine_sylvanas_forsaken_front_finale>("npc_silverpine_sylvanas_forsaken_front_finale");
