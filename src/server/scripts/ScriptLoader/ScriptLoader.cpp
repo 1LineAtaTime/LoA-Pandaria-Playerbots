@@ -344,6 +344,7 @@ void AddSC_redridge_mountains();
 void AddSC_silverpine_forest();
 void AddSC_hillsbrad_purgation();
 void AddSC_hillsbrad_sludge_stormpike();
+void AddSC_hillsbrad_brazie();
 void AddSC_stormwind_city();
 void AddSC_tol_barad();
 void AddSC_stranglethorn_vale();
@@ -1383,6 +1384,7 @@ void AddEasternKingdomsScripts()
     AddSC_silverpine_forest();
     AddSC_hillsbrad_purgation();
     AddSC_hillsbrad_sludge_stormpike();
+    AddSC_hillsbrad_brazie();
     AddSC_stormwind_city();
     AddSC_tol_barad();
     AddSC_stranglethorn_vale();
