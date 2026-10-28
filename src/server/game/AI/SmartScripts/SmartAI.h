@@ -62,6 +62,7 @@ class TC_GAME_API SmartAI : public CreatureAI
         void SetAutoAttack(bool on) { mCanAutoAttack = on; }
         void SetCombatMove(bool on);
         bool CanCombatMove() { return mCanCombatMove; }
+        bool IsCombatMovementAllowed() const override { return mCanCombatMove; }
         void SetFollow(Unit* target, float dist = 0.0f, float angle = 0.0f, uint32 credit = 0, uint32 end = 0, uint32 creditType = 0);
         void StopFollow(bool complete);
         void SetUnfollow();

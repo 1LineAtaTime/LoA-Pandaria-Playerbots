@@ -385,6 +385,48 @@ void CreatureAI::EngagementOver()
     _isEngaged = false;
 }
 
+void CreatureAI::MoveCircleChecks()
+{
+    Unit* victim = me->GetVictim();
+
+    if (
+        !victim ||
+        !me->IsFreeToMove() || me->HasUnitMovementFlag(MOVEMENTFLAG_ROOT) ||
+        !me->IsWithinMeleeRange(victim) || me == victim->GetVictim()
+    )
+    {
+        return;
+    }
+
+    /**
+     *  optimization, disable circling movement for NPC vs NPC combat
+     */
+    if (!sWorld->getBoolConfig(CONFIG_CREATURE_REPOSITION_AGAINST_NPCS) && victim->GetTypeId() != TYPEID_PLAYER && !victim->IsPet())
+        return;
+
+    me->GetMotionMaster()->MoveCircleTarget(me->GetVictim());
+}
+
+void CreatureAI::MoveBackwardsChecks()
+{
+    Unit* victim = me->GetVictim();
+
+    if (!victim || !me->IsFreeToMove() || me->HasUnitMovementFlag(MOVEMENTFLAG_ROOT))
+        return;
+
+    /**
+     *  optimization, disable backwards movement for NPC vs NPC combat
+     */
+    if (!sWorld->getBoolConfig(CONFIG_CREATURE_REPOSITION_AGAINST_NPCS) && victim->GetTypeId() != TYPEID_PLAYER && !victim->IsPet())
+    {
+        return;
+    }
+
+    float moveDist = me->GetMeleeRange(victim) / 2;
+
+    me->GetMotionMaster()->MoveBackwards(victim, moveDist);
+}
+
 bool CreatureAI::CheckInRoom()
 {
     if (!_boundary || _boundary->empty())

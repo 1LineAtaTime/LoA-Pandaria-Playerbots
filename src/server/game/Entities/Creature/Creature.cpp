@@ -19,6 +19,7 @@
 #include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
+#include "ChaseMovementGenerator.h"
 #include "Common.h"
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"
@@ -754,6 +755,32 @@ void Creature::Update(uint32 diff)
                 LastCharmerGUID.Clear();
             }
 
+            Unit* victim = GetVictim();
+            if (victim && IsAIEnabled && !IsInEvadeMode())
+            {
+                // If we are closer than 50% of the combat reach we are going to reposition the victim
+                if (diff >= m_moveBackwardsMovementTime)
+                {
+                    float MaxRange = GetCollisionRadius() + victim->GetCollisionRadius();
+
+                    if (IsInDist(victim, MaxRange))
+                        AI()->MoveBackwardsChecks();
+
+                    m_moveBackwardsMovementTime = urand(MOVE_BACKWARDS_CHECK_INTERVAL, MOVE_BACKWARDS_CHECK_INTERVAL * 3);
+                }
+                else
+                    m_moveBackwardsMovementTime -= diff;
+
+                // Circling the target
+                if (diff >= m_moveCircleMovementTime)
+                {
+                    AI()->MoveCircleChecks();
+                    m_moveCircleMovementTime = urand(MOVE_CIRCLE_CHECK_INTERVAL, MOVE_CIRCLE_CHECK_INTERVAL * 2);
+                }
+                else
+                    m_moveCircleMovementTime -= diff;
+            }
+
             if (!IsInEvadeMode() && IsAIEnabled)
             {
                 // do not allow the AI to be changed during update
@@ -827,6 +854,37 @@ void Creature::RegenerateMana()
     addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) * CREATURE_REGEN_INTERVAL / (5 * IN_MILLISECONDS);
 
     ModifyPower(POWER_MANA, addvalue);
+}
+
+bool Creature::IsFreeToMove()
+{
+    // Only a creature chasing its current victim may reposition itself, and not while the chase is still
+    // moving it (AC: chase movement and no MOVEMENTFLAG_SPLINE_ENABLED)
+    if (GetMotionMaster()->GetCurrentMovementGeneratorType() != CHASE_MOTION_TYPE || HasUnitState(UNIT_STATE_CHASE_MOVE))
+        return false;
+
+    ChaseMovementGenerator const* chase = dynamic_cast<ChaseMovementGenerator const*>(GetMotionMaster()->GetCurrentMovementGenerator());
+    if (!chase || !chase->GetTarget() || chase->GetTarget() != GetVictim())
+        return false;
+
+    // A chase with an angle (e.g. ScriptedAI::DoStartMovement(target, 0, 0), behind-target scripts) keeps its
+    // owner in that cone and would undo any step around the victim
+    if (chase->GetAngle())
+        return false;
+
+    // Combat movement turned off by the script (ScriptedAI::SetCombatMovement, SMART_ACTION_SET_COMBAT_MOVE)
+    if (!IsAIEnabled || !AI() || !AI()->IsCombatMovementAllowed())
+        return false;
+
+    // The chase movement stops its owner on the next update while it cannot move or is casting
+    if (HasUnitFlag(UNIT_FLAG_DISABLE_MOVE) || HasUnitState(UNIT_STATE_NOT_MOVE) || IsNonMeleeSpellCasted(false))
+        return false;
+
+    // Do not reposition ourself when we are not allowed to move
+    if ((IsMovementPreventedByCasting() || isMoving() || !CanFreeMove()) && !movespline->Finalized())
+        return false;
+
+    return true;
 }
 
 void Creature::DoFleeToGetAssistance()

@@ -687,6 +687,99 @@ void Unit::GetRandomContactPoint(const Unit* obj, float &x, float &y, float &z, 
                  GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI / 2) - static_cast<float>(M_PI) * (float) rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
 }
 
+bool Unit::GetMeleeAttackPoint(Unit* attacker, Position& pos)
+{
+    if (!attacker)
+    {
+        return false;
+    }
+
+    AttackerSet const& attackers = getAttackers();
+
+    if (attackers.size() <= 1) // if the attackers are not more than one
+    {
+        return false;
+    }
+
+    float meleeReach = GetExactDist2d(attacker);
+    if (meleeReach <= 0)
+    {
+        return false;
+    }
+
+    float minAngle = 0;
+    Unit* refUnit = nullptr;
+    uint32 validAttackers = 0;
+
+    double attackerSize = attacker->GetCollisionRadius();
+
+    for (auto const& otherAttacker : attackers)
+    {
+        // if the otherAttacker is not valid, skip
+        if (!otherAttacker || otherAttacker->GetGUID() == attacker->GetGUID() ||
+            !otherAttacker->IsWithinMeleeRange(this) || otherAttacker->isMoving())
+        {
+            continue;
+        }
+
+        float curretAngle = atan(attacker->GetExactDist2d(otherAttacker) / meleeReach);
+        if (minAngle == 0 || curretAngle < minAngle)
+        {
+            minAngle = curretAngle;
+            refUnit = otherAttacker;
+        }
+
+        validAttackers++;
+    }
+
+    if (!validAttackers || !refUnit)
+    {
+        return false;
+    }
+
+    float contactDist = attackerSize + refUnit->GetCollisionRadius();
+    float requiredAngle = atan(contactDist / meleeReach);
+    float attackersAngle = atan(attacker->GetExactDist2d(refUnit) / meleeReach);
+
+    // in instance: the more attacker there are, the higher will be the tollerance
+    // outside: creatures should not intersecate
+    float angleTollerance = attacker->GetMap()->IsDungeon() ? requiredAngle - requiredAngle * tanh(validAttackers / 5.0f) : requiredAngle;
+
+    if (attackersAngle > angleTollerance)
+    {
+        return false;
+    }
+
+    double angle = atan(contactDist / meleeReach);
+
+    float angularRadius = frand(0.1f, 0.3f) + angle;
+    int8 direction = (urand(0, 1) ? -1 : 1);
+    float currentAngle = GetAngle(refUnit);
+    float absAngle = currentAngle + angularRadius * direction;
+
+    // stay at the attacker's current distance; GetNearPoint here adds both combat reaches itself
+    float x, y, z;
+    float distance = meleeReach - GetCombatReach() - attacker->GetCombatReach();
+    GetNearPoint(attacker, x, y, z, distance, absAngle);
+
+    // the attacker is the one that walks there, so its own walk and water rules apply
+    if (!GetMap()->CanReachPositionAndGetValidCoords(attacker, x, y, z, true, true))
+    {
+        // try the other side of the reference attacker; AC uses absAngle * -1, which mirrors the world
+        // angle across the x axis instead (deliberate deviation, bug fix)
+        GetNearPoint(attacker, x, y, z, distance, currentAngle - angularRadius * direction);
+
+        if (!GetMap()->CanReachPositionAndGetValidCoords(attacker, x, y, z, true, true))
+        {
+            return false;
+        }
+    }
+
+    pos.Relocate(x, y, z);
+
+    return true;
+}
+
 AuraApplication * Unit::GetVisibleAura(uint8 slot) const
 {
     VisibleAuraMap::const_iterator itr = m_visibleAuras.find(slot);

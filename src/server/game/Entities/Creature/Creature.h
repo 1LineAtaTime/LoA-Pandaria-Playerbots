@@ -476,6 +476,14 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         void SetWanderDistance(float dist) { m_wanderDistance = dist; }
 
         void DoImmediateBoundaryCheck() { m_boundaryCheckTime = 0; }
+
+        // Melee repositioning (backing out of the victim, spreading around it), from AzerothCore
+        bool IsFreeToMove();
+        static constexpr uint32 MOVE_CIRCLE_CHECK_INTERVAL = 3000;
+        static constexpr uint32 MOVE_BACKWARDS_CHECK_INTERVAL = 2000;
+        uint32 m_moveCircleMovementTime = MOVE_CIRCLE_CHECK_INTERVAL;
+        uint32 m_moveBackwardsMovementTime = MOVE_BACKWARDS_CHECK_INTERVAL;
+
         uint32 GetCombatPulseDelay() const { return m_combatPulseDelay; }
         void SetCombatPulseDelay(uint32 delay) // (secs) interval at which the creature pulses the entire zone into combat (only works in dungeons)
         {

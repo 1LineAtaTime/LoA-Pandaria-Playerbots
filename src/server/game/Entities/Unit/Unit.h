@@ -1177,6 +1177,7 @@ public:
     {
         return m_attackers;
     }
+    bool GetMeleeAttackPoint(Unit* attacker, Position& pos);
     bool isAttackingPlayer() const;
     Unit* GetVictim() const
     {
