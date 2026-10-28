@@ -756,8 +756,8 @@ void ObjectMgr::LoadCreatureDifficultyModifiers()
     _creatureDifficulty.clear();
     _creatureDifficulty.resize(MAX_CREATURE_DIFFICULTY);
 
-    //                                               0        1            2           3            4         5
-    QueryResult result = WorldDatabase.Query("SELECT id, difficulty+0, DamageModifier, health_mod, level_min, level_max FROM creature_template_difficulty");
+    //                                               0        1            2           3            4         5         6        7
+    QueryResult result = WorldDatabase.Query("SELECT id, difficulty+0, DamageModifier, health_mod, level_min, level_max, mingold, maxgold FROM creature_template_difficulty");
     if (!result)
     {
         TC_LOG_INFO("server.loading", ">> Loaded 0 creature difficulty modifiers. DB table `creature_template_difficulty` is empty.");
@@ -788,6 +788,9 @@ void ObjectMgr::LoadCreatureDifficultyModifiers()
         info.HealthMod         = fields[3].GetFloat();
         info.LevelMin          = fields[4].GetUInt8();
         info.LevelMax          = fields[5].GetUInt8();
+        info.HasGold           = !fields[6].IsNull() && !fields[7].IsNull();
+        info.MinGold           = info.HasGold ? fields[6].GetUInt32() : 0;
+        info.MaxGold           = info.HasGold ? fields[7].GetUInt32() : 0;
         ++count;
 
         _creatureDifficulty[difficulty].insert({ creature, info });

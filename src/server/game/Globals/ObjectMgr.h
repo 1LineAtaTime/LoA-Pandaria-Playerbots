@@ -873,6 +873,9 @@ struct CreatureDifficultyInfo
     uint8 LevelMax;
     float DamageMod;
     float HealthMod;
+    bool HasGold;                                           // mingold/maxgold set: they replace creature_template's
+    uint32 MinGold;
+    uint32 MaxGold;
 };
 
 typedef std::unordered_map<uint32, ResearchProjectRequirements> ResearchProjectRequirementContainer;

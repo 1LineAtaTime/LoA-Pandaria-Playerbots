@@ -16075,7 +16075,19 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
             if (uint32 lootid = creature->GetCreatureTemplate()->lootid)
                 loot->FillLoot(creature, lootid, LootTemplates_Creature, looter, false, false, creature->GetMap()->GetDifficulty());
 
-            loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
+            // The difficulty row's gold, when it has one, as Creature::SelectLevel takes its level: the dungeon revamps keep
+            // their heroic gold in creature_template and run normal mode at a far lower level.
+            uint32 minGold = creature->GetCreatureTemplate()->mingold;
+            uint32 maxGold = creature->GetCreatureTemplate()->maxgold;
+            if (creature->GetMap()->GetDifficulty() > REGULAR_DIFFICULTY || creature->GetMap()->IsBattleground())
+                if (CreatureDifficultyInfo const* difficultyInfo = sObjectMgr->SelectDifficultyInfo(creature->GetMap(), creature->GetEntry()))
+                    if (difficultyInfo->HasGold)
+                    {
+                        minGold = difficultyInfo->MinGold;
+                        maxGold = difficultyInfo->MaxGold;
+                    }
+
+            loot->generateMoneyLoot(minGold, maxGold);
         }
 
         player->RewardPlayerAndGroupAtKill(victim, false);
