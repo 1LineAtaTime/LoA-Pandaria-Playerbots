@@ -1331,6 +1331,12 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo, bool keepLevel)
     else if (scaledExpansion >= 0)
         expansion = uint32(scaledExpansion); // #702: the column of the scaled level (AutoBalance::ExpansionColumnForLevel)
 
+    // A column with no health at this level (the loader stores a missing basehp as 1, #175) takes the column of the level.
+    // The Cataclysm and MoP dungeon revamps keep the expansion of their heroic level (exp 3 at 85-87) and run their normal
+    // mode from creature_template_difficulty at levels 15-21, where basehp3 has no data and they had 1 x health_mod HP.
+    if (stats->BaseHealth[expansion] <= 1)
+        expansion = AutoBalance::ExpansionColumnForLevel(level);
+
     // health
     uint32 health = uint32(std::ceil(stats->BaseHealth[expansion] * hpmod * _GetHealthMod(rank)));
 
