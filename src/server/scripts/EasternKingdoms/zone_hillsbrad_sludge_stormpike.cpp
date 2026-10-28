@@ -1347,15 +1347,16 @@ MachineVisitor const MachineVisitors[MACHINE_VISITOR_COUNT] =
 
 float const MachineSteedFacing = 2.47837f;     // the steed at the gate (47445)
 Position const MachineDarthaliaSpot = { -572.135f, 428.285f, 80.3627f, 2.25147f };   // 88563 (where the real Darthalia stands)
-Position const MachineVisitorSpot   = { -578.5f, 427.5f, 80.2f };                    // in front of the steed
+// A visitor stops this far from the rider, on his own side: the steed stands wherever Summon Skeletal Steed put it, and the
+// gossip range (INTERACTION_DISTANCE, 5 yd) is measured from the player's own position (ours)
+float const MachineVisitorDistance  = 2.5f;
 
 // Orkus' approach: down over his summon spot to the spot in front of the steed (ground clearance checked against the
 // 5.4.8 terrain and vmaps: 30 yd at the start, nothing in the way)
 Position const MachineOrkusArrival[] =
 {
     { -586.2f, 472.9f, 100.0f },
-    { -581.0f, 446.0f, 88.0f },
-    { -578.5f, 427.5f, 80.2f }
+    { -581.0f, 446.0f, 88.0f }
 };
 
 // The departures, each the way the visitor was sent. The camp's wall runs north-south at y 392-404 with the gate at
@@ -1401,20 +1402,33 @@ struct npc_hillsbrad_machine_visitor : public ScriptedAI
         // Not to be talked to before he stands in front of the steed
         me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
 
+        // Where he stops: close to the rider, on the side he comes from
+        Position const& rider = summoner->GetPosition();
+        float const angle = rider.GetAbsoluteAngle(me);
+        _spot.Relocate(rider.GetPositionX() + MachineVisitorDistance * std::cos(angle), rider.GetPositionY() + MachineVisitorDistance * std::sin(angle),
+            rider.GetPositionZ());
+        float const ground = me->GetMap()->GetHeight(_spot.GetPositionX(), _spot.GetPositionY(), _spot.GetPositionZ() + 5.0f, true);
+        if (ground > INVALID_HEIGHT)
+            _spot.m_positionZ = ground;
+
         switch (me->GetEntry())
         {
             case NPC_MACHINE_KINGSLAYER_ORKUS:
+            {
                 me->SetCanFly(true);
                 me->SetDisableGravity(true);
-                FlyPath(POINT_MACHINE_ARRIVE, std::begin(MachineOrkusArrival), std::end(MachineOrkusArrival));
+                std::vector<Position> arrival(std::begin(MachineOrkusArrival), std::end(MachineOrkusArrival));
+                arrival.push_back(_spot);
+                FlyPath(POINT_MACHINE_ARRIVE, arrival.data(), arrival.data() + arrival.size());
                 break;
+            }
             case NPC_MACHINE_JOHNNY_AWESOME:
                 me->SetWalk(false);
-                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, MachineVisitorSpot);
+                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, _spot);
                 break;
             default:
                 me->SetWalk(true);
-                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, MachineVisitorSpot);
+                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, _spot);
                 break;
         }
 
@@ -1487,8 +1501,7 @@ struct npc_hillsbrad_machine_visitor : public ScriptedAI
                     if (!_arrived)
                     {
                         me->GetMotionMaster()->Clear();
-                        me->NearTeleportTo(MachineVisitorSpot.GetPositionX(), MachineVisitorSpot.GetPositionY(),
-                            MachineVisitorSpot.GetPositionZ(), me->GetOrientation());
+                        me->NearTeleportTo(_spot.GetPositionX(), _spot.GetPositionY(), _spot.GetPositionZ(), me->GetOrientation());
                         Arrive(player);
                     }
                     break;
@@ -1593,6 +1606,7 @@ private:
 
     EventMap _events;
     ObjectGuid _playerGUID;
+    Position _spot;
     uint8 _arrivalLine;
     uint8 _leavePoint;
     bool _arrived;
