@@ -38,6 +38,7 @@
 #include "Player.h"
 #include "Vehicle.h"
 #include "TemporarySummon.h"
+#include "SpellScript.h"
 
 namespace
 {
@@ -1258,15 +1259,21 @@ private:
 ## Welcome to the Machine (28096)
 ######*/
 
-// The player sits on the Skeletal Steed at Southpoint Gate as the quest giver: Dumass walks in, then Kingslayer Orkus, then
-// Johnny Awesome, each only once the one before has been handed his quest and has gone, while High Executor Darthalia comments.
-// Getting off the steed sends them all away (the 2011-09-09 hotfix on warcraft.wiki.gg).
+// The player sits on the Skeletal Steed at Southpoint Gate as the quest giver: Dumass walks in, then Kingslayer Orkus flies in on
+// his frost wyrm, then Johnny Awesome rides in, each only once the one before has been handed his quest and has gone, while
+// High Executor Darthalia comments. Each is talked into his quest through two or three gossip windows, says his parting line and
+// leaves the way he was sent: Dumass, sent southeast to the Azurelode Mine, runs north; Orkus flies off southeast over the gate;
+// Johnny rides northeast through the gate towards the Sludge Fields. Getting off the steed sends them all away (the 2011-09-09
+// hotfix on warcraft.wiki.gg).
 //
-// Sourced: the spells (88542 Summon Skeletal Steed, 88559/88560/88562 the visitors' summons and
-// 88563 Summon High Executor Darthalia, with their spell_target_position spots), every line (broadcast_text 47658-47689) and
-// the order (warcraft.wiki.gg). Ours: the timings, the spot in front of the steed, and that the visitors are summoned from here
-// as private summons of the player (the spells' summon properties are personal) rather than by casting the spells, so the
-// script holds them. Each visitor's own SmartAI gives the credit and sends him off after his gossip.
+// Sourced (5.4.8 data): the spells - 88542 Summon Skeletal Steed, whose effect value names the ride spell 88543 Ride Skeletal
+// Steed (phase 317 "Welcome to the Machine", quest invisibility 4 on the rider), 88476 Quest Giver (makes its target cast 88563
+// Summon High Executor Darthalia), 88574 Cancel Questgiver; the spell_target_position spots of the summons; every line
+// (broadcast_text 47658-47689); the gossip windows and their options (gossip_menu 12272-12279 with their npc_text, the options
+// of the retail TDB); the mounts; the order and the directions (warcraft.wiki.gg, the options' own text). Ours: who casts the
+// Quest Giver aura and when (the player, once seated) and that it ends with the scene, every timing, the spot in front of the
+// steed, Orkus' start in the air and every approach and departure path, and that the visitors are summoned from here as private
+// summons of the player (the spells' summon properties are personal) rather than by casting their spells.
 
 enum WelcomeToTheMachine
 {
@@ -1277,6 +1284,15 @@ enum WelcomeToTheMachine
     NPC_MACHINE_DUMASS                          = 47444,
     NPC_MACHINE_DARTHALIA                       = 47499,
 
+    SPELL_MACHINE_QUEST_GIVER                   = 88476,    // forces its target to cast 88563 Summon High Executor Darthalia
+    SPELL_MACHINE_CANCEL_QUESTGIVER             = 88574,    // removes 88476 from its caster
+
+    // The last gossip window of each visitor: its option hands him his quest (12273 -> 12272, 12276 -> 12275 -> 12274,
+    // 12279 -> 12278 -> 12277; the windows before it only lead on, through gossip_menu_option.ActionMenuID)
+    GOSSIP_MENU_MACHINE_DUMASS_LAST             = 12272,
+    GOSSIP_MENU_MACHINE_ORKUS_LAST              = 12274,
+    GOSSIP_MENU_MACHINE_JOHNNY_LAST             = 12277,
+
     // High Executor Darthalia (47499)
     TALK_MACHINE_DARTHALIA_STAND_TALL           = 0,    // 47658
     TALK_MACHINE_DARTHALIA_ONE_COMING           = 1,    // 47659
@@ -1285,15 +1301,27 @@ enum WelcomeToTheMachine
     TALK_MACHINE_DARTHALIA_NEVER_RETURNS        = 4,    // 47680
     TALK_MACHINE_DARTHALIA_ON_YOUR_OWN          = 5,    // 47681
 
-    // The visitors' arrival lines start at group 1 (group 0 is the parting line their SmartAI says)
+    // The visitors: group 0 is the parting line, the arrival lines start at group 1
+    TALK_MACHINE_VISITOR_PARTING                = 0,
     TALK_MACHINE_VISITOR_ARRIVAL                = 1,
 
+    // The steed
     EVENT_MACHINE_CHECK_RIDER                   = 1,
     EVENT_MACHINE_DARTHALIA                     = 2,
     EVENT_MACHINE_NEXT_VISITOR                  = 3,
     EVENT_MACHINE_WATCH_VISITOR                 = 4,
-    EVENT_MACHINE_ARRIVAL_TALK                  = 5,
-    EVENT_MACHINE_DISMOUNT                      = 6,
+    EVENT_MACHINE_DISMOUNT                      = 5,
+
+    // The visitors
+    EVENT_MACHINE_VISITOR_ARRIVED               = 1,
+    EVENT_MACHINE_VISITOR_TALK                  = 2,
+    EVENT_MACHINE_VISITOR_STUCK                 = 3,
+    EVENT_MACHINE_VISITOR_LEAVE                 = 4,
+    EVENT_MACHINE_VISITOR_LEAVE_NEXT            = 5,
+    EVENT_MACHINE_VISITOR_GONE                  = 6,
+
+    POINT_MACHINE_ARRIVE                        = 1,
+    POINT_MACHINE_LEAVE                         = 2,
 
     MACHINE_VISITOR_COUNT                       = 3
 };
@@ -1301,7 +1329,7 @@ enum WelcomeToTheMachine
 struct MachineVisitor
 {
     uint32 Entry;
-    Position Spawn;             // spell_target_position of its summon spell
+    Position Spawn;             // spell_target_position of its summon spell (Orkus: ours, see below)
     uint8 ArrivalLines;
     int8 DarthaliaBefore;       // her line as he comes
     int8 DarthaliaAfter;        // and once he is gone (-1: none)
@@ -1309,19 +1337,273 @@ struct MachineVisitor
 
 MachineVisitor const MachineVisitors[MACHINE_VISITOR_COUNT] =
 {
-    { NPC_MACHINE_DUMASS,           { -580.382f, 453.204f, 81.575f, 4.7473f },   2, TALK_MACHINE_DARTHALIA_ONE_COMING,  TALK_MACHINE_DARTHALIA_NEW_FORSAKEN },
-    { NPC_MACHINE_KINGSLAYER_ORKUS, { -586.156f, 472.934f, 82.487f, 4.66003f },  3, TALK_MACHINE_DARTHALIA_THIS_ORC,    TALK_MACHINE_DARTHALIA_NEVER_RETURNS },
-    { NPC_MACHINE_JOHNNY_AWESOME,   { -582.636f, 470.513f, 82.4887f, 4.76475f }, 2, TALK_MACHINE_DARTHALIA_ON_YOUR_OWN, -1 }
+    { NPC_MACHINE_DUMASS,           { -580.382f, 453.204f, 81.575f, 4.7473f },   1, TALK_MACHINE_DARTHALIA_ONE_COMING,  TALK_MACHINE_DARTHALIA_NEW_FORSAKEN },
+    // Orkus flies in: he starts in the air about 100 yd behind his summon spot (88560: -586.156 472.934 82.487), out of
+    // sight but inside the cells that are updated around the player, and passes over that spot
+    { NPC_MACHINE_KINGSLAYER_ORKUS, { -605.0f, 520.0f, 115.0f, 4.94f },          3, TALK_MACHINE_DARTHALIA_THIS_ORC,    TALK_MACHINE_DARTHALIA_NEVER_RETURNS },
+    { NPC_MACHINE_JOHNNY_AWESOME,   { -582.636f, 470.513f, 82.4887f, 4.76475f }, 1, TALK_MACHINE_DARTHALIA_ON_YOUR_OWN, -1 }
 };
 
-Position const MachineDarthaliaSpot = { -572.135f, 428.285f, 80.3627f, 2.25147f };   // 88563
-Position const MachineVisitorSpot   = { -577.9f, 425.6f, 80.3f };                    // in front of the steed
+float const MachineSteedFacing = 2.47837f;     // the steed at the gate (47445)
+Position const MachineDarthaliaSpot = { -572.135f, 428.285f, 80.3627f, 2.25147f };   // 88563 (where the real Darthalia stands)
+Position const MachineVisitorSpot   = { -578.5f, 427.5f, 80.2f };                    // in front of the steed
+
+// Orkus' approach: down over his summon spot to the spot in front of the steed (ground clearance checked against the
+// 5.4.8 terrain and vmaps: 30 yd at the start, nothing in the way)
+Position const MachineOrkusArrival[] =
+{
+    { -586.2f, 472.9f, 100.0f },
+    { -581.0f, 446.0f, 88.0f },
+    { -578.5f, 427.5f, 80.2f }
+};
+
+// The departures, each the way the visitor was sent. The camp's wall runs north-south at y 392-404 with the gate at
+// x -572 to -596, so everyone going into Hillsbrad passes through the gate.
+// Dumass: sent southeast, he runs north along the camp (the joke of "NORTH! GOT IT!")
+Position const MachineDumassDeparture[] =
+{
+    { -535.0f, 412.0f, 85.0f },
+    { -515.0f, 414.0f, 87.0f }
+};
+// Orkus: southeast, "more south than east, probably off the coast": he takes off and flies out over the gate
+Position const MachineOrkusDeparture[] =
+{
+    { -586.0f, 412.0f, 90.0f },
+    { -590.0f, 395.0f, 99.0f },
+    { -630.0f, 375.0f, 110.0f },
+    { -660.0f, 362.0f, 118.0f }
+};
+// Johnny: northeast to the Sludge Fields, through the gate
+Position const MachineJohnnyDeparture[] =
+{
+    { -584.0f, 398.0f, 77.7f },
+    { -555.0f, 362.0f, 81.0f }
+};
+
+// 47444 Dumass, 47443 Kingslayer Orkus, 47442 Johnny Awesome - the player's private summons, called by the steed below
+struct npc_hillsbrad_machine_visitor : public ScriptedAI
+{
+    npc_hillsbrad_machine_visitor(Creature* creature) : ScriptedAI(creature), _arrivalLine(0), _leavePoint(0), _arrived(false),
+        _leaving(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (!summoner->IsPlayer())
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        _playerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+        // Not to be talked to before he stands in front of the steed
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+
+        switch (me->GetEntry())
+        {
+            case NPC_MACHINE_KINGSLAYER_ORKUS:
+                me->SetCanFly(true);
+                me->SetDisableGravity(true);
+                FlyPath(POINT_MACHINE_ARRIVE, std::begin(MachineOrkusArrival), std::end(MachineOrkusArrival));
+                break;
+            case NPC_MACHINE_JOHNNY_AWESOME:
+                me->SetWalk(false);
+                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, MachineVisitorSpot);
+                break;
+            default:
+                me->SetWalk(true);
+                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, MachineVisitorSpot);
+                break;
+        }
+
+        // Whatever kept him from coming, he must be there to be talked to (ours: the quest stays completable)
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_STUCK, 40s);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != POINT_MOTION_TYPE && type != EFFECT_MOTION_TYPE)
+            return;
+
+        // The next move is started from the update: a move started here is undone when the finished one is finalized
+        if (pointId == POINT_MACHINE_ARRIVE && !_arrived)
+            _events.ScheduleEvent(EVENT_MACHINE_VISITOR_ARRIVED, 100ms);
+        else if (pointId == POINT_MACHINE_LEAVE && _leaving)
+            _events.ScheduleEvent(EVENT_MACHINE_VISITOR_LEAVE_NEXT, 100ms);
+    }
+
+    // Group members see each other's private summons; a visitor only talks to the player on the steed
+    bool OnGossipHello(Player* player) override
+    {
+        if (player->GetGUID() == _playerGUID)
+            return false;
+
+        CloseGossipMenuFor(player);
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 /*gossipListId*/) override
+    {
+        if (player->GetGUID() != _playerGUID)
+        {
+            CloseGossipMenuFor(player);
+            return true;
+        }
+
+        // The menu id comes from the client: only the window the player really has open counts
+        if (_leaving || menuId != LastMenu() || player->PlayerTalkClass->GetGossipMenu().GetMenuId() != menuId)
+            return false;   // the windows before the last one lead on by themselves
+
+        CloseGossipMenuFor(player);
+        _leaving = true;
+        _events.Reset();
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+        Talk(TALK_MACHINE_VISITOR_PARTING, player);
+        player->KilledMonsterCredit(me->GetEntry());
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_LEAVE, 3s);
+        // Gone at the latest after this, wherever his way ended
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_GONE, 30s);
+        return true;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld())
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_MACHINE_VISITOR_STUCK:
+                    if (!_arrived)
+                    {
+                        me->GetMotionMaster()->Clear();
+                        me->NearTeleportTo(MachineVisitorSpot.GetPositionX(), MachineVisitorSpot.GetPositionY(),
+                            MachineVisitorSpot.GetPositionZ(), me->GetOrientation());
+                        Arrive(player);
+                    }
+                    break;
+                case EVENT_MACHINE_VISITOR_ARRIVED:
+                    if (!_arrived)
+                        Arrive(player);
+                    break;
+                case EVENT_MACHINE_VISITOR_TALK:
+                    Talk(TALK_MACHINE_VISITOR_ARRIVAL + _arrivalLine, player);
+                    if (++_arrivalLine < ArrivalLines())
+                        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_TALK, 5s);
+                    break;
+                case EVENT_MACHINE_VISITOR_LEAVE:
+                    if (me->GetEntry() == NPC_MACHINE_KINGSLAYER_ORKUS)
+                    {
+                        me->SetCanFly(true);
+                        me->SetDisableGravity(true);
+                        FlyPath(POINT_MACHINE_LEAVE, std::begin(MachineOrkusDeparture), std::end(MachineOrkusDeparture));
+                        _leavePoint = uint8(std::size(MachineOrkusDeparture));
+                    }
+                    else
+                    {
+                        me->SetWalk(false);
+                        MoveOn();
+                    }
+                    break;
+                case EVENT_MACHINE_VISITOR_LEAVE_NEXT:
+                    if (_leavePoint >= DeparturePoints())
+                    {
+                        me->DespawnOrUnsummon();
+                        return;
+                    }
+                    MoveOn();
+                    break;
+                case EVENT_MACHINE_VISITOR_GONE:
+                    me->DespawnOrUnsummon();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void Arrive(Player* player)
+    {
+        _arrived = true;
+        if (me->GetEntry() == NPC_MACHINE_KINGSLAYER_ORKUS)
+        {
+            // Lands
+            me->SetDisableGravity(false);
+            me->SetCanFly(false);
+        }
+        me->SetFacingToObject(player);
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_GOSSIP);
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_TALK, 500ms);
+    }
+
+    // The next point of a ground departure
+    void MoveOn()
+    {
+        Position const* path = me->GetEntry() == NPC_MACHINE_JOHNNY_AWESOME ? MachineJohnnyDeparture : MachineDumassDeparture;
+        me->GetMotionMaster()->MovePoint(POINT_MACHINE_LEAVE, path[_leavePoint++]);
+    }
+
+    void FlyPath(uint32 pointId, Position const* begin, Position const* end)
+    {
+        std::vector<Position> path;
+        path.push_back(me->GetPosition());   // replaced by the current position when the spline starts
+        path.insert(path.end(), begin, end);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(pointId, path.data(), path.size(), false, true);
+    }
+
+    uint8 DeparturePoints() const
+    {
+        switch (me->GetEntry())
+        {
+            case NPC_MACHINE_KINGSLAYER_ORKUS: return uint8(std::size(MachineOrkusDeparture));
+            case NPC_MACHINE_JOHNNY_AWESOME:   return uint8(std::size(MachineJohnnyDeparture));
+            default:                           return uint8(std::size(MachineDumassDeparture));
+        }
+    }
+
+    uint32 LastMenu() const
+    {
+        switch (me->GetEntry())
+        {
+            case NPC_MACHINE_KINGSLAYER_ORKUS: return GOSSIP_MENU_MACHINE_ORKUS_LAST;
+            case NPC_MACHINE_JOHNNY_AWESOME:   return GOSSIP_MENU_MACHINE_JOHNNY_LAST;
+            default:                           return GOSSIP_MENU_MACHINE_DUMASS_LAST;
+        }
+    }
+
+    uint8 ArrivalLines() const
+    {
+        for (MachineVisitor const& visitor : MachineVisitors)
+            if (visitor.Entry == me->GetEntry())
+                return visitor.ArrivalLines;
+        return 0;
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    uint8 _arrivalLine;
+    uint8 _leavePoint;
+    bool _arrived;
+    bool _leaving;
+};
 
 // 47488 - Skeletal Steed, summoned by Summon Skeletal Steed (88542) when the player clicks the steed at the gate
-struct npc_hillsbrad_machine_skeletal_steed : public ScriptedAI
+// Its one seat (8976) can control it, so seating the player charms the steed; a plain ScriptedAI is switched off for PossessedAI
+// then and the scene would never start. VehicleAI stays on, as the scene cameras do.
+struct npc_hillsbrad_machine_skeletal_steed : public VehicleAI
 {
-    npc_hillsbrad_machine_skeletal_steed(Creature* creature) : ScriptedAI(creature), _visitor(0), _arrivalLine(0), _boarded(false),
-        _arrived(false), _ended(false) { }
+    npc_hillsbrad_machine_skeletal_steed(Creature* creature) : VehicleAI(creature), _visitor(0), _boarded(false), _ended(false) { }
 
     void IsSummonedBy(Unit* summoner) override
     {
@@ -1332,11 +1614,14 @@ struct npc_hillsbrad_machine_skeletal_steed : public ScriptedAI
             return;
         }
 
-        // Summon Skeletal Steed is a vehicle summon: the core seats the player right after this (Spell::EffectSummonType casts the
-        // ride spell, the hardcoded one as 88542 names none). Ride Skeletal Steed (88543) is not cast on top of it: a second ride
-        // on the same steed would change seats, which reads as getting off.
+        // Summon Skeletal Steed is a vehicle summon: right after this the core makes the player cast the ride spell its effect
+        // value names, Ride Skeletal Steed (88543), which seats the player and puts the player in phase 317 and quest
+        // invisibility 4 (hidden from other players). The player's own summons share the phase; the rest of the world, the
+        // real Darthalia included, stays in sight through the default phase.
         _playerGUID = player->GetGUID();
         me->SetReactState(REACT_PASSIVE);
+        // Facing the road, as the steed at the gate does (the spell's destination has no orientation)
+        me->SetFacingTo(MachineSteedFacing);
         _events.ScheduleEvent(EVENT_MACHINE_CHECK_RIDER, 2s);
     }
 
@@ -1354,12 +1639,17 @@ struct npc_hillsbrad_machine_skeletal_steed : public ScriptedAI
         if (!_boarded)
         {
             _boarded = true;
+            // "Stand there and wait": the controlling seat would let the player ride off, away from the visitors
+            me->SetControlled(true, UNIT_STATE_ROOT);
+            me->SetFacingTo(MachineSteedFacing);
             _events.ScheduleEvent(EVENT_MACHINE_DARTHALIA, 1s);
         }
     }
 
     void UpdateAI(uint32 diff) override
     {
+        VehicleAI::UpdateAI(diff);
+
         if (_ended)
             return;
 
@@ -1384,9 +1674,14 @@ struct npc_hillsbrad_machine_skeletal_steed : public ScriptedAI
                     }
                     break;
                 case EVENT_MACHINE_DARTHALIA:
-                    if (TempSummon* darthalia = player->SummonCreature(NPC_MACHINE_DARTHALIA, MachineDarthaliaSpot, TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0,
-                        player->GetGUID()))
-                        _darthaliaGUID = darthalia->GetGUID();
+                    // The Quest Giver aura brings the player's own Darthalia (88563, onto the real one's spot); removing it
+                    // sends her away (spell_hillsbrad_machine_quest_giver)
+                    player->CastSpell(player, SPELL_MACHINE_QUEST_GIVER, true);
+                    _darthaliaGUID = FindOwnSummon(player, NPC_MACHINE_DARTHALIA, 30.0f);
+                    if (_darthaliaGUID.IsEmpty())
+                        if (TempSummon* darthalia = player->SummonCreature(NPC_MACHINE_DARTHALIA, MachineDarthaliaSpot,
+                            TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID()))
+                            _darthaliaGUID = darthalia->GetGUID();
                     DarthaliaTalk(TALK_MACHINE_DARTHALIA_STAND_TALL, player);
                     _events.ScheduleEvent(EVENT_MACHINE_NEXT_VISITOR, 6s);
                     break;
@@ -1403,15 +1698,10 @@ struct npc_hillsbrad_machine_skeletal_steed : public ScriptedAI
                     }
 
                     DarthaliaTalk(MachineVisitors[_visitor].DarthaliaBefore, player);
-                    _arrived = false;
-                    _arrivalLine = 0;
+                    // He comes, talks and leaves by himself (npc_hillsbrad_machine_visitor)
                     if (TempSummon* visitor = player->SummonCreature(MachineVisitors[_visitor].Entry, MachineVisitors[_visitor].Spawn,
                         TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID()))
-                    {
                         _visitorGUID = visitor->GetGUID();
-                        visitor->SetWalk(true);
-                        visitor->GetMotionMaster()->MovePoint(1, MachineVisitorSpot, true);
-                    }
                     _events.ScheduleEvent(EVENT_MACHINE_WATCH_VISITOR, 1s);
                     break;
                 case EVENT_MACHINE_WATCH_VISITOR:
@@ -1427,25 +1717,9 @@ struct npc_hillsbrad_machine_skeletal_steed : public ScriptedAI
                         _events.ScheduleEvent(EVENT_MACHINE_NEXT_VISITOR, 6s);
                         break;
                     }
-
-                    if (!_arrived && visitor->GetExactDist2d(MachineVisitorSpot.GetPositionX(), MachineVisitorSpot.GetPositionY()) < 2.0f)
-                    {
-                        _arrived = true;
-                        visitor->SetFacingToObject(player);
-                        _events.ScheduleEvent(EVENT_MACHINE_ARRIVAL_TALK, 500ms);
-                    }
                     _events.ScheduleEvent(EVENT_MACHINE_WATCH_VISITOR, 1s);
                     break;
                 }
-                case EVENT_MACHINE_ARRIVAL_TALK:
-                    if (Creature* visitor = ObjectAccessor::GetCreature(*me, _visitorGUID))
-                        if (visitor->IsAIEnabled && _arrivalLine < MachineVisitors[_visitor].ArrivalLines)
-                        {
-                            visitor->AI()->Talk(TALK_MACHINE_VISITOR_ARRIVAL + _arrivalLine, player);
-                            if (++_arrivalLine < MachineVisitors[_visitor].ArrivalLines)
-                                _events.ScheduleEvent(EVENT_MACHINE_ARRIVAL_TALK, 5s);
-                        }
-                    break;
                 case EVENT_MACHINE_DISMOUNT:
                     // All three have their quests: the player gets off, which ends the scene
                     End();
@@ -1472,13 +1746,17 @@ private:
         _ended = true;
         _events.Reset();
 
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            if (player->IsInWorld() && !player->GetSession()->PlayerLogout())
+                player->CastSpell(player, SPELL_MACHINE_CANCEL_QUESTGIVER, true);
+            if (player->GetVehicleBase() == me)
+                player->ExitVehicle();
+        }
+
         for (ObjectGuid const& guid : { _visitorGUID, _darthaliaGUID })
             if (Creature* actor = ObjectAccessor::GetCreature(*me, guid))
                 actor->DespawnOrUnsummon();
-
-        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
-            if (player->GetVehicleBase() == me)
-                player->ExitVehicle();
 
         me->DespawnOrUnsummon(500);
     }
@@ -1488,15 +1766,36 @@ private:
     ObjectGuid _darthaliaGUID;
     ObjectGuid _visitorGUID;
     uint8 _visitor;
-    uint8 _arrivalLine;
     bool _boarded;
-    bool _arrived;
     bool _ended;
+};
+
+// 88476 - Quest Giver: the player's own Darthalia, whom the aura brought (its effect 1 has the player cast 88563), leaves with it
+class spell_hillsbrad_machine_quest_giver : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_machine_quest_giver);
+
+    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        if (Creature* darthalia = ObjectAccessor::GetCreature(*player, FindOwnSummon(player, NPC_MACHINE_DARTHALIA)))
+            darthalia->DespawnOrUnsummon();
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_machine_quest_giver::AfterRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
 };
 
 void AddSC_hillsbrad_sludge_stormpike()
 {
     new creature_script<npc_hillsbrad_machine_skeletal_steed>("npc_hillsbrad_machine_skeletal_steed");
+    new creature_script<npc_hillsbrad_machine_visitor>("npc_hillsbrad_machine_visitor");
+    new aura_script<spell_hillsbrad_machine_quest_giver>("spell_hillsbrad_machine_quest_giver");
     new creature_script<npc_hillsbrad_scene_actor>("npc_hillsbrad_scene_actor");
     new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
     new creature_script<npc_hillsbrad_sludge_fields_camera>("npc_hillsbrad_sludge_fields_camera");
