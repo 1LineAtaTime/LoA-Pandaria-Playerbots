@@ -1615,9 +1615,8 @@ struct npc_hillsbrad_machine_skeletal_steed : public VehicleAI
         }
 
         // Summon Skeletal Steed is a vehicle summon: right after this the core makes the player cast the ride spell its effect
-        // value names, Ride Skeletal Steed (88543), which seats the player and puts the player in phase 317 and quest
-        // invisibility 4 (hidden from other players). The player's own summons share the phase; the rest of the world, the
-        // real Darthalia included, stays in sight through the default phase.
+        // value names, Ride Skeletal Steed (88543), which seats the player in quest invisibility 4 (hidden from other players);
+        // its phase 317 is not applied (spell_hillsbrad_machine_ride_skeletal_steed).
         _playerGUID = player->GetGUID();
         me->SetReactState(REACT_PASSIVE);
         // Facing the road, as the steed at the gate does (the spell's destination has no orientation)
@@ -1771,6 +1770,26 @@ private:
 };
 
 // 88476 - Quest Giver: the player's own Darthalia, whom the aura brought (its effect 1 has the player cast 88563), leaves with it
+// 88543 - Ride Skeletal Steed
+// Its phase effect (phase 317) left the rider seeing nothing but phase 317, so the visitors, Darthalia and everyone else
+// vanished the moment the player sat down. The scene is private to the player already, so the phase is not applied; the ride and
+// the quest invisibility stay.
+class spell_hillsbrad_machine_ride_skeletal_steed : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_machine_ride_skeletal_steed);
+
+    void PreventPhase(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        PreventDefaultAction();
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_machine_ride_skeletal_steed::PreventPhase, EFFECT_0, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_machine_ride_skeletal_steed::PreventPhase, EFFECT_0, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 class spell_hillsbrad_machine_quest_giver : public AuraScript
 {
     PrepareAuraScript(spell_hillsbrad_machine_quest_giver);
@@ -1796,6 +1815,7 @@ void AddSC_hillsbrad_sludge_stormpike()
     new creature_script<npc_hillsbrad_machine_skeletal_steed>("npc_hillsbrad_machine_skeletal_steed");
     new creature_script<npc_hillsbrad_machine_visitor>("npc_hillsbrad_machine_visitor");
     new aura_script<spell_hillsbrad_machine_quest_giver>("spell_hillsbrad_machine_quest_giver");
+    new aura_script<spell_hillsbrad_machine_ride_skeletal_steed>("spell_hillsbrad_machine_ride_skeletal_steed");
     new creature_script<npc_hillsbrad_scene_actor>("npc_hillsbrad_scene_actor");
     new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
     new creature_script<npc_hillsbrad_sludge_fields_camera>("npc_hillsbrad_sludge_fields_camera");
