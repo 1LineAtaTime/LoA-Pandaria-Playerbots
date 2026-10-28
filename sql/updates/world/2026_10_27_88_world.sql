@@ -1,0 +1,18 @@
+-- Scarlet Halls gold was the level 90 heroic amount. Scale it to each creature's level: gold * (average gold of open-world
+-- normal mobs at that level) / (the same average at level 90: 3865 copper); at levels 29/30/31 those averages are 100/117/130 copper.
+UPDATE `creature_template` SET `mingold` = 7767, `maxgold` = 7767 WHERE `entry` = 58632; -- Armsmaster Harlan (was 231024)
+UPDATE `creature_template` SET `mingold` = 375, `maxgold` = 375 WHERE `entry` = 58674; -- Angry Hound (was 12373)
+UPDATE `creature_template` SET `mingold` = 129, `maxgold` = 129 WHERE `entry` = 58676; -- Scarlet Defender (was 4991)
+UPDATE `creature_template` SET `mingold` = 129, `maxgold` = 129 WHERE `entry` = 58683; -- Scarlet Myrmidon (was 4971)
+UPDATE `creature_template` SET `mingold` = 124, `maxgold` = 124 WHERE `entry` = 58684; -- Scarlet Scourge Hewer (was 4784)
+UPDATE `creature_template` SET `mingold` = 124, `maxgold` = 124 WHERE `entry` = 58685; -- Scarlet Evangelist (was 4766)
+UPDATE `creature_template` SET `mingold` = 132, `maxgold` = 132 WHERE `entry` = 58756; -- Scarlet Evoker (was 5084)
+UPDATE `creature_template` SET `mingold` = 264, `maxgold` = 264 WHERE `entry` = 58876; -- Starving Hound (was 10197)
+UPDATE `creature_template` SET `mingold` = 85, `maxgold` = 85 WHERE `entry` = 58898; -- Vigilant Watchman (was 2817)
+UPDATE `creature_template` SET `mingold` = 9971, `maxgold` = 9971 WHERE `entry` = 59150; -- Flameweaver Koegler (was 296577)
+UPDATE `creature_template` SET `mingold` = 107, `maxgold` = 107 WHERE `entry` = 59175; -- Master Archer (was 4121)
+UPDATE `creature_template` SET `mingold` = 153, `maxgold` = 153 WHERE `entry` = 59240; -- Scarlet Hall Guardian (was 5918)
+UPDATE `creature_template` SET `mingold` = 152, `maxgold` = 152 WHERE `entry` = 59241; -- Scarlet Treasurer (was 5846)
+UPDATE `creature_template` SET `mingold` = 8110, `maxgold` = 8110 WHERE `entry` = 59303; -- Houndmaster Braun (was 241231)
+UPDATE `creature_template` SET `mingold` = 153, `maxgold` = 153 WHERE `entry` = 59372; -- Scarlet Scholar (was 5897)
+UPDATE `creature_template` SET `mingold` = 142, `maxgold` = 142 WHERE `entry` = 59373; -- Scarlet Pupil (was 5472)
