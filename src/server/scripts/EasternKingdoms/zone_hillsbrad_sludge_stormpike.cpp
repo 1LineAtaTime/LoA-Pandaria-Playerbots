@@ -15,16 +15,19 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* Hillsbrad Foothills: the Sludge Fields
+/* Hillsbrad Foothills: the Sludge Fields and the Stormpike scenes
  *
  * No One Here Gets Out Alive (28192)   the camera tour of the Sludge Fields
  * A Blight Upon the Land (28237)       Lydon's sentence and Warden Stillwater's new form
+ * Matters of Loyalty (28600)           Drek'Thar refuses to aid the Forsaken
+ * March of the Stormpike (28506)       the camera tour of the four fingers of Hillsbrad
+ * Stormpike Apocalypse (28616)         the pocket-nukes go off
  *
- * Sourced: the spells (5.4.8 Spell.dbc: the camera summon, its ride aura with the scene's phase, the end spell with
- * QUEST_COMPLETE, SMASH!), every line (broadcast_text), the camera start (spell_target_position of 89144, as in the
- * Cataclysm Classic TDB), Stillwater's combat spells (his SmartAI in the same TDB) and the order of the dialogue
- * (warcraft.wiki.gg). Ours: the camera path, every timing, where Lydon and Johnny stand and the replay when the scene was
- * interrupted. None of this was sniffed.
+ * Sourced: the spells (5.4.8 Spell.dbc: the camera summons, their ride auras with the scene's phase, the end spells with
+ * QUEST_COMPLETE), the actors (their summon spells and templates), every line (broadcast_text), the Sludge Fields camera start
+ * (spell_target_position of 89144 in the Cataclysm Classic TDB), Stillwater's combat spells (its SmartAI in the same TDB) and
+ * the order of the scenes (warcraft.wiki.gg). Ours: the camera paths, every timing, where the actors stand, the vehicle of the
+ * three Stormpike cameras (no source has it) and the replay when a scene was interrupted. None of this was sniffed.
  */
 
 #include "ScriptMgr.h"
@@ -42,9 +45,7 @@ enum HillsbradScenes
 {
     // The camera's own steps; the scenes number theirs from EVENT_SCENE_FIRST on
     EVENT_CAMERA_WAIT_FOR_RIDER                 = 1,
-    EVENT_SCENE_FIRST                           = 10,
-
-    SEAT_SCENE_CAMERA                           = 0
+    EVENT_SCENE_FIRST                           = 10
 };
 
 // The player's own summon of an entry near the player (personal summons are private: closest-creature searches skip them)
@@ -287,6 +288,16 @@ private:
     bool _done;
 };
 
+// A passive actor of a scene: the camera moves and speaks for it
+struct npc_hillsbrad_scene_actor : public ScriptedAI
+{
+    npc_hillsbrad_scene_actor(Creature* creature) : ScriptedAI(creature) { }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
 } // namespace
 
 /*######
@@ -452,10 +463,10 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
     npc_hillsbrad_warden_stillwater_blight(Creature* creature) : ScriptedAI(creature), _introStarted(false), _newForm(false), _baseMaxHealth(0) { }
 
     void Reset() override
-        // Also on respawn (Creature::Respawn resets the AI): the intro's hostile faction is not kept past death or evade
-        me->SetFaction(me->GetCreatureTemplate()->faction);
     {
         _events.Reset();
+        // Also on respawn (Creature::Respawn resets the AI): the intro's hostile faction is not kept past death or evade
+        me->SetFaction(me->GetCreatureTemplate()->faction);
         if (_newForm)
         {
             _newForm = false;
@@ -519,9 +530,9 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
     {
         // The AI does not update once he is dead: the witnesses go by themselves. He respawns friendly, for the next player's
         // intro (Respawn keeps the faction).
-        me->SetFaction(me->GetCreatureTemplate()->faction);
         _introStarted = false;
         _events.Reset();
+        me->SetFaction(me->GetCreatureTemplate()->faction);
         if (Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID))
             lydon->DespawnOrUnsummon(10000);
         if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
@@ -713,9 +724,545 @@ private:
     uint32 _baseMaxHealth;
 };
 
+/*######
+## Matters of Loyalty (28600)
+######*/
+
+enum MattersOfLoyalty
+{
+    QUEST_MATTERS_OF_LOYALTY                    = 28600,
+
+    NPC_AID_OF_THE_FROSTWOLF_CAMERA             = 48986,
+    NPC_DREKTHAR                                = 48969,
+    NPC_DREKTHARS_WHEELCHAIR                    = 48971,
+    NPC_CAPTAIN_GALVANGAR                       = 48980,
+
+    SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA    = 91356,
+    SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY   = 91358,
+    SPELL_MIRROR_IMAGE_AURA                     = 90746,
+
+    // Drek'Thar: the twelve lines of the scene, in order
+    TALK_DREKTHAR_FIRST                         = 0,
+    TALK_DREKTHAR_LAST                          = 11,
+
+    POINT_FROSTWOLF_VANTAGE                     = 1,
+    POINT_GALVANGAR_OUT_OF_THE_TUNNEL           = 2,
+
+    EVENT_FROSTWOLF_ACTORS_BOARD                = EVENT_SCENE_FIRST,
+    EVENT_FROSTWOLF_GALVANGAR_WALK,
+    EVENT_FROSTWOLF_TALK,
+    EVENT_FROSTWOLF_GALVANGAR_TURN_BACK,
+    EVENT_FROSTWOLF_END
+};
+
+// The entrance to Alterac Valley next to Voggah (the Pvp_Alterac_Ent01 doorway), where Galvangar comes out, and where he stops
+Position const GalvangarTunnelPos   = { 405.0f, -1004.0f, 111.6f, float(M_PI) };
+Position const GalvangarStopPos     = { 388.5f, -1004.0f, 110.2f };
+Position const FrostwolfVantagePos  = { 378.0f,  -989.0f, 117.0f };
+
+// Pauses after each of Drek'Thar's lines (ours)
+Milliseconds const DrekTharLineDelays[TALK_DREKTHAR_LAST + 1] =
+{
+    4s, 3s, 7s, 4s, 8s, 5s, 7s, 5s, 4s, 7s, 8s, 3s
+};
+
+// 13817 - Voggah Deathgrip
+// Accepting Matters of Loyalty starts the scene (Summon Aid of the Frostwolf Camera, cast on the player).
+struct npc_hillsbrad_voggah_deathgrip : public ScriptedAI
+{
+    npc_hillsbrad_voggah_deathgrip(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_MATTERS_OF_LOYALTY)
+            StartScene(player, QUEST_MATTERS_OF_LOYALTY, NPC_AID_OF_THE_FROSTWOLF_CAMERA, SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        return ReplayScene(player, QUEST_MATTERS_OF_LOYALTY, NPC_AID_OF_THE_FROSTWOLF_CAMERA, SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA);
+    }
+};
+
+// 48986 - Aid of the Frostwolf Camera
+// Summoned on the player with phase 357 (Aid of the Frostwolf Camera); the same spell leaves a Cloned Image of the player in
+// front of Voggah. Summon Drek'thar/Crew, done directly: Captain Galvangar pushes Drek'Thar in his wheelchair out of the
+// Alterac Valley tunnel (Galvangar carries the wheelchair, which carries Drek'Thar: vehicles 1367 and 1363), Drek'Thar refuses
+// the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest.
+struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0) { }
+
+    void Start(Player* /*player*/) override
+    {
+        if (Creature* galvangar = SummonActor(NPC_CAPTAIN_GALVANGAR, GalvangarTunnelPos))
+            _galvangarGUID = galvangar->GetGUID();
+        if (Creature* wheelchair = SummonActor(NPC_DREKTHARS_WHEELCHAIR, GalvangarTunnelPos))
+            _wheelchairGUID = wheelchair->GetGUID();
+        if (Creature* drekthar = SummonActor(NPC_DREKTHAR, GalvangarTunnelPos))
+            _drektharGUID = drekthar->GetGUID();
+
+        me->GetMotionMaster()->MovePoint(POINT_FROSTWOLF_VANTAGE, FrostwolfVantagePos, false);
+        _events.ScheduleEvent(EVENT_FROSTWOLF_ACTORS_BOARD, 500ms);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        Creature* galvangar = GetActor(_galvangarGUID);
+        Creature* drekthar = GetActor(_drektharGUID);
+        if (!galvangar || !drekthar)
+        {
+            Finish();
+            return;
+        }
+
+        switch (eventId)
+        {
+            case EVENT_FROSTWOLF_ACTORS_BOARD:
+                if (Creature* wheelchair = GetActor(_wheelchairGUID))
+                {
+                    wheelchair->EnterVehicle(galvangar, 0);
+                    drekthar->EnterVehicle(wheelchair, 0);
+                }
+                _events.ScheduleEvent(EVENT_FROSTWOLF_GALVANGAR_WALK, 2s);
+                break;
+            case EVENT_FROSTWOLF_GALVANGAR_WALK:
+                galvangar->SetWalk(true);
+                galvangar->GetMotionMaster()->MovePoint(POINT_GALVANGAR_OUT_OF_THE_TUNNEL, GalvangarStopPos);
+                // About the walk out of the tunnel (16 yd)
+                _events.ScheduleEvent(EVENT_FROSTWOLF_TALK, 7s);
+                break;
+            case EVENT_FROSTWOLF_TALK:
+                if (_line == 0)
+                    galvangar->SetFacingToObject(player);
+                drekthar->AI()->Talk(TALK_DREKTHAR_FIRST + _line, player);
+                if (_line < TALK_DREKTHAR_LAST)
+                    _events.ScheduleEvent(EVENT_FROSTWOLF_TALK, DrekTharLineDelays[_line]);
+                else
+                    _events.ScheduleEvent(EVENT_FROSTWOLF_GALVANGAR_TURN_BACK, DrekTharLineDelays[_line]);
+                ++_line;
+                break;
+            case EVENT_FROSTWOLF_GALVANGAR_TURN_BACK:
+                galvangar->GetMotionMaster()->MovePoint(0, GalvangarTunnelPos);
+                _events.ScheduleEvent(EVENT_FROSTWOLF_END, 4s);
+                break;
+            case EVENT_FROSTWOLF_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* /*player*/) override
+    {
+        if (pointId == POINT_FROSTWOLF_VANTAGE)
+            FaceTo(GalvangarStopPos.GetPositionX() + 4.0f, GalvangarStopPos.GetPositionY());
+    }
+
+private:
+    ObjectGuid _galvangarGUID;
+    ObjectGuid _wheelchairGUID;
+    ObjectGuid _drektharGUID;
+    uint8 _line;
+};
+
+// 48700 - Cloned Image
+// Summon Cloned Image (triggered by Summon Aid of the Frostwolf Camera) stands in for the hidden player in front of Voggah.
+// Mirror Image Aura makes it look like the player; it goes when the player leaves the camera.
+struct npc_hillsbrad_cloned_image : public ScriptedAI
+{
+    npc_hillsbrad_cloned_image(Creature* creature) : ScriptedAI(creature), _checkTimer(5000) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        Player* player = summoner->ToPlayer();
+        if (!player)
+            return;
+
+        _playerGUID = player->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NOT_SELECTABLE);
+        // Mirror Image Aura, put on directly (its target is a nearby-entry search): the player is its caster, so it clones the player
+        player->AddAura(SPELL_MIRROR_IMAGE_AURA, me);
+        me->SetFacingTo(me->GetAngle(GalvangarStopPos.GetPositionX(), GalvangarStopPos.GetPositionY()));
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 1000;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->GetVehicle())
+            me->DespawnOrUnsummon();
+    }
+
+private:
+    ObjectGuid _playerGUID;
+    uint32 _checkTimer;
+};
+
+/*######
+## High Warlord Cromush: March of the Stormpike (28506), Stormpike Apocalypse (28616)
+######*/
+
+enum StormpikeScenes
+{
+    QUEST_MARCH_OF_THE_STORMPIKE                = 28506,
+    QUEST_STORMPIKE_APOCALYPSE                  = 28616,
+
+    NPC_HIGH_WARLORD_CROMUSH                    = 48545,
+    NPC_TARREN_MILL_CAMERA                      = 48696,
+    NPC_STORMPIKE_APOCALYPSE_CAMERA             = 49152,
+    NPC_GOBLIN_POCKET_NUKE_GAVINS_NAZE          = 49153,
+    NPC_GOBLIN_POCKET_NUKE_THE_HEADLAND         = 49168,
+    NPC_GOBLIN_POCKET_NUKE_CORRAHNS_DAGGER      = 49169,
+    NPC_GOBLIN_POCKET_NUKE_SOFERAS_NAZE         = 49171,
+    NPC_MAGRUDER                                = 49165,
+    NPC_LIEUTENANT_JAN_LAGRAVE                  = 49166,
+
+    SPELL_SUMMON_TARREN_MILL_CAMERA             = 90713,
+    SPELL_CANCEL_CINEMATIC_MARCH                = 90711,
+    SPELL_SUMMON_STORMPIKE_APOCALYPSE           = 91608,
+    SPELL_CANCEL_CINEMATIC_APOCALYPSE           = 91607,
+    SPELL_GLOBAL_THERMONUCLEAR_WAR              = 91617,
+
+    TALK_CROMUSH_HILLSBRAD_IS_OURS              = 10,
+
+    // Tarren Mill Camera: the narration, in order
+    TALK_MARCH_FIRST                            = 0,
+
+    TALK_LAGRAVE_DEFUSE                         = 0,
+    TALK_MAGRUDER_WHAT_IS_THIS                  = 0,
+    TALK_MAGRUDER_WIRES                         = 1,
+    TALK_MAGRUDER_RUN                           = 2,
+
+    POINT_MARCH_SOFERAS_NAZE                    = 1,
+    POINT_MARCH_CORRAHNS_DAGGER                 = 2,
+    POINT_MARCH_THE_HEADLAND                    = 3,
+    POINT_MARCH_GAVINS_NAZE                     = 4,
+    POINT_MARCH_GRASP                           = 5,
+
+    POINT_APOCALYPSE_GAVINS_NAZE                = 1,
+    POINT_APOCALYPSE_THE_HEADLAND               = 2,
+    POINT_APOCALYPSE_CORRAHNS_DAGGER            = 3,
+    POINT_APOCALYPSE_SOFERAS_NAZE               = 4,
+
+    EVENT_MARCH_SECOND_LINE                     = EVENT_SCENE_FIRST,
+    EVENT_MARCH_FLY_ON,
+    EVENT_MARCH_END,
+
+    EVENT_APOCALYPSE_FLY                        = EVENT_SCENE_FIRST,
+    EVENT_APOCALYPSE_LAGRAVE_DEFUSE,
+    EVENT_APOCALYPSE_MAGRUDER_WHAT_IS_THIS,
+    EVENT_APOCALYPSE_MAGRUDER_WIRES,
+    EVENT_APOCALYPSE_MAGRUDER_RUN,
+    EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS,
+    EVENT_APOCALYPSE_TO_THE_HEADLAND,
+    EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER,
+    EVENT_APOCALYPSE_TO_SOFERAS_NAZE,
+    EVENT_APOCALYPSE_END
+};
+
+// 48545 - High Warlord Cromush
+// Accepting March of the Stormpike or Stormpike Apocalypse starts its scene (Summon Tarren Mill Camera, Summon Stormpike
+// Apocalypse, cast on the player).
+struct npc_hillsbrad_high_warlord_cromush : public ScriptedAI
+{
+    npc_hillsbrad_high_warlord_cromush(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_MARCH_OF_THE_STORMPIKE)
+            StartScene(player, QUEST_MARCH_OF_THE_STORMPIKE, NPC_TARREN_MILL_CAMERA, SPELL_SUMMON_TARREN_MILL_CAMERA);
+        else if (quest->GetQuestId() == QUEST_STORMPIKE_APOCALYPSE)
+            StartScene(player, QUEST_STORMPIKE_APOCALYPSE, NPC_STORMPIKE_APOCALYPSE_CAMERA, SPELL_SUMMON_STORMPIKE_APOCALYPSE);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        return ReplayScene(player, QUEST_MARCH_OF_THE_STORMPIKE, NPC_TARREN_MILL_CAMERA, SPELL_SUMMON_TARREN_MILL_CAMERA)
+            || ReplayScene(player, QUEST_STORMPIKE_APOCALYPSE, NPC_STORMPIKE_APOCALYPSE_CAMERA, SPELL_SUMMON_STORMPIKE_APOCALYPSE);
+    }
+};
+
+// Where the player set the pocket-nukes in Breaking the Hand: the four Credit bunnies (and Four Fingers Spell Focus objects)
+Position const SoferasNazeNukePos       = { 235.465f, -850.531f, 146.945f };
+Position const CorrahnsDaggerNukePos    = { -26.2726f, -550.632f, 151.308f };
+Position const TheHeadlandNukePos       = { -104.951f, -287.163f, 143.865f };
+Position const GavinsNazeNukePos        = { -104.993f, -69.8663f, 147.112f };
+
+// 48696 - Tarren Mill Camera
+// Summoned on the player with phase 355 (Tarren Mill Camera). It flies from Tarren Mill over the four fingers of Hillsbrad in
+// the order of the narration, stopping at each while the two lines on it show, rises over Gavin's Naze for the last line, and
+// Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: 17 yd or more above the
+// ground on every leg.
+struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0) { }
+
+    void Start(Player* /*player*/) override
+    {
+        FlyOn();
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        switch (eventId)
+        {
+            case EVENT_MARCH_SECOND_LINE:
+                Talk(_line++, player);
+                _events.ScheduleEvent(EVENT_MARCH_FLY_ON, 5s);
+                break;
+            case EVENT_MARCH_FLY_ON:
+                FlyOn();
+                break;
+            case EVENT_MARCH_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* player) override
+    {
+        switch (pointId)
+        {
+            case POINT_MARCH_SOFERAS_NAZE:
+                FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
+                break;
+            case POINT_MARCH_CORRAHNS_DAGGER:
+                FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
+                break;
+            case POINT_MARCH_THE_HEADLAND:
+                FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
+                break;
+            case POINT_MARCH_GAVINS_NAZE:
+                FaceTo(GavinsNazeNukePos.GetPositionX(), GavinsNazeNukePos.GetPositionY());
+                break;
+            case POINT_MARCH_GRASP:
+                // "Together the fingers represent the grasp of Stormpike closing upon us."
+                Talk(_line++, player);
+                _events.ScheduleEvent(EVENT_MARCH_END, 6s);
+                return;
+            default:
+                return;
+        }
+
+        // The finger's name, then what the Stormpike do there
+        Talk(_line++, player);
+        _events.ScheduleEvent(EVENT_MARCH_SECOND_LINE, 5s);
+    }
+
+private:
+    void FlyOn()
+    {
+        switch (++_stop)
+        {
+            case POINT_MARCH_SOFERAS_NAZE:
+                FlyPath(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } });
+                break;
+            case POINT_MARCH_CORRAHNS_DAGGER:
+                FlyPath(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -10.0f, -610.0f, 195.0f } });
+                break;
+            case POINT_MARCH_THE_HEADLAND:
+                FlyPath(POINT_MARCH_THE_HEADLAND, { { -100.0f, -420.0f, 200.0f }, { -120.0f, -345.0f, 190.0f } });
+                break;
+            case POINT_MARCH_GAVINS_NAZE:
+                FlyPath(POINT_MARCH_GAVINS_NAZE, { { -90.0f, -230.0f, 190.0f }, { -65.0f, -155.0f, 175.0f } });
+                break;
+            case POINT_MARCH_GRASP:
+                FlyPath(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } });
+                break;
+            default:
+                Finish();
+                break;
+        }
+    }
+
+    uint8 _line;
+    uint8 _stop;
+};
+
+// Cromush's yell once the player is back in Tarren Mill (Cancel Cinematic has put the player in front of him)
+static void CromushHillsbradIsOurs(Player* player)
+{
+    if (Creature* cromush = player->FindNearestCreature(NPC_HIGH_WARLORD_CROMUSH, 30.0f))
+        if (cromush->IsAIEnabled)
+            cromush->AI()->Talk(TALK_CROMUSH_HILLSBRAD_IS_OURS, player);
+}
+
+// 49152 - Stormpike Apocalypse Camera
+// Summoned on the player with phase 364 (Stormpike Apocalypse Camera). The actors are those of the 5.4.8 summon spells, done
+// directly: Magruder (Summon Magruder) and Lieutenant Jan Lagrave (Summon Pixin) at the pocket-nuke on Gavin's Naze (Summon
+// Goblin Pocket Nuke), and one pocket-nuke on each of the other fingers. The camera flies to Gavin's Naze, where Lagrave asks
+// Magruder to defuse the nuke and Magruder runs; the nuke goes off (Global Thermonuclear War), and the camera pulls back over
+// the Headland, Corrahn's Dagger and Sofera's Naze as their nukes go off in turn. Cancel Cinematic puts the player back in
+// front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!".
+struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_stormpike_apocalypse_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_APOCALYPSE, SPELL_CANCEL_CINEMATIC_APOCALYPSE, 5.0f)
+    {
+        _returnHook = &CromushHillsbradIsOurs;
+    }
+
+    void Start(Player* /*player*/) override
+    {
+        _nukeGUIDs[0] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_GAVINS_NAZE, GavinsNazeNukePos);
+        _nukeGUIDs[1] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_THE_HEADLAND, TheHeadlandNukePos);
+        _nukeGUIDs[2] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_CORRAHNS_DAGGER, CorrahnsDaggerNukePos);
+        _nukeGUIDs[3] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_SOFERAS_NAZE, SoferasNazeNukePos);
+
+        // Bent over the nuke, on the platform where it stands (ours)
+        if (Creature* magruder = SummonActor(NPC_MAGRUDER, { -102.0f, -72.5f, 147.0f }))
+        {
+            magruder->SetFacingTo(magruder->GetAngle(&GavinsNazeNukePos));
+            _magruderGUID = magruder->GetGUID();
+        }
+        if (Creature* lagrave = SummonActor(NPC_LIEUTENANT_JAN_LAGRAVE, { -107.5f, -72.5f, 147.0f }))
+        {
+            lagrave->SetFacingTo(lagrave->GetAngle(&GavinsNazeNukePos));
+            _lagraveGUID = lagrave->GetGUID();
+        }
+
+        _events.ScheduleEvent(EVENT_APOCALYPSE_FLY, 1s);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        Creature* magruder = GetActor(_magruderGUID);
+        Creature* lagrave = GetActor(_lagraveGUID);
+
+        switch (eventId)
+        {
+            case EVENT_APOCALYPSE_FLY:
+                FlyPath(POINT_APOCALYPSE_GAVINS_NAZE,
+                {
+                    { -5.0f, -890.0f, 100.0f },
+                    { -60.0f, -600.0f, 200.0f },
+                    { -100.0f, -330.0f, 195.0f },
+                    { -95.0f, -140.0f, 175.0f },
+                    { -93.0f, -92.0f, 158.0f }
+                });
+                break;
+            case EVENT_APOCALYPSE_LAGRAVE_DEFUSE:
+                if (lagrave)
+                    lagrave->AI()->Talk(TALK_LAGRAVE_DEFUSE, player);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_MAGRUDER_WHAT_IS_THIS, 4s);
+                break;
+            case EVENT_APOCALYPSE_MAGRUDER_WHAT_IS_THIS:
+                if (magruder)
+                    magruder->AI()->Talk(TALK_MAGRUDER_WHAT_IS_THIS, player);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_MAGRUDER_WIRES, 4s);
+                break;
+            case EVENT_APOCALYPSE_MAGRUDER_WIRES:
+                if (magruder)
+                    magruder->AI()->Talk(TALK_MAGRUDER_WIRES, player);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_MAGRUDER_RUN, 6s);
+                break;
+            case EVENT_APOCALYPSE_MAGRUDER_RUN:
+                if (magruder)
+                {
+                    magruder->AI()->Talk(TALK_MAGRUDER_RUN, player);
+                    magruder->SetWalk(false);
+                    magruder->GetMotionMaster()->MovePoint(0, -95.0f, -45.0f, 142.0f);
+                }
+                if (lagrave)
+                {
+                    lagrave->SetWalk(false);
+                    lagrave->GetMotionMaster()->MovePoint(0, -110.0f, -45.0f, 145.0f);
+                }
+                _events.ScheduleEvent(EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS, 2s);
+                break;
+            case EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS:
+                Detonate(0);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_THE_HEADLAND, 3s);
+                break;
+            case EVENT_APOCALYPSE_TO_THE_HEADLAND:
+                FlyPath(POINT_APOCALYPSE_THE_HEADLAND, { { -85.0f, -170.0f, 215.0f }, { -75.0f, -245.0f, 225.0f } });
+                break;
+            case EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER:
+                FlyPath(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -40.0f, -480.0f, 230.0f } });
+                break;
+            case EVENT_APOCALYPSE_TO_SOFERAS_NAZE:
+                FlyPath(POINT_APOCALYPSE_SOFERAS_NAZE, { { 60.0f, -700.0f, 235.0f }, { 150.0f, -790.0f, 225.0f } });
+                break;
+            case EVENT_APOCALYPSE_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* /*player*/) override
+    {
+        switch (pointId)
+        {
+            case POINT_APOCALYPSE_GAVINS_NAZE:
+                FaceTo(GavinsNazeNukePos.GetPositionX(), GavinsNazeNukePos.GetPositionY());
+                _events.ScheduleEvent(EVENT_APOCALYPSE_LAGRAVE_DEFUSE, 1s);
+                break;
+            case POINT_APOCALYPSE_THE_HEADLAND:
+                FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
+                Detonate(1);
+                // The next leg starts from UpdateAI, not from inside the movement generator that just finished
+                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER, 100ms);
+                break;
+            case POINT_APOCALYPSE_CORRAHNS_DAGGER:
+                FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
+                Detonate(2);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_SOFERAS_NAZE, 100ms);
+                break;
+            case POINT_APOCALYPSE_SOFERAS_NAZE:
+                FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
+                Detonate(3);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
+                break;
+            default:
+                break;
+        }
+    }
+
+private:
+    ObjectGuid SummonNuke(uint32 entry, Position const& pos)
+    {
+        if (Creature* nuke = SummonActor(entry, pos))
+            return nuke->GetGUID();
+        return ObjectGuid::Empty;
+    }
+
+    // Global Thermonuclear War: its conditions keep it on the nukes and the two engineers
+    void Detonate(uint8 index)
+    {
+        if (Creature* nuke = GetActor(_nukeGUIDs[index]))
+            nuke->CastSpell(nuke, SPELL_GLOBAL_THERMONUCLEAR_WAR, true);
+    }
+
+    ObjectGuid _nukeGUIDs[4];
+    ObjectGuid _magruderGUID;
+    ObjectGuid _lagraveGUID;
+};
+
 void AddSC_hillsbrad_sludge_stormpike()
 {
+    new creature_script<npc_hillsbrad_scene_actor>("npc_hillsbrad_scene_actor");
     new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
     new creature_script<npc_hillsbrad_sludge_fields_camera>("npc_hillsbrad_sludge_fields_camera");
     new creature_script<npc_hillsbrad_warden_stillwater_blight>("npc_hillsbrad_warden_stillwater_blight");
+    new creature_script<npc_hillsbrad_voggah_deathgrip>("npc_hillsbrad_voggah_deathgrip");
+    new creature_script<npc_hillsbrad_aid_of_the_frostwolf_camera>("npc_hillsbrad_aid_of_the_frostwolf_camera");
+    new creature_script<npc_hillsbrad_cloned_image>("npc_hillsbrad_cloned_image");
+    new creature_script<npc_hillsbrad_high_warlord_cromush>("npc_hillsbrad_high_warlord_cromush");
+    new creature_script<npc_hillsbrad_tarren_mill_camera>("npc_hillsbrad_tarren_mill_camera");
+    new creature_script<npc_hillsbrad_stormpike_apocalypse_camera>("npc_hillsbrad_stormpike_apocalypse_camera");
 }
