@@ -18,10 +18,13 @@
 /* Hillsbrad Foothills: the Sludge Fields
  *
  * No One Here Gets Out Alive (28192)   the camera tour of the Sludge Fields
+ * A Blight Upon the Land (28237)       Lydon's sentence and Warden Stillwater's new form
  *
  * Sourced: the spells (5.4.8 Spell.dbc: the camera summon, its ride aura with the scene's phase, the end spell with
- * QUEST_COMPLETE), the line (broadcast_text) and the camera start (spell_target_position of 89144, as in the Cataclysm Classic
- * TDB). Ours: the camera path, every timing and the replay when the scene was interrupted. None of this was sniffed.
+ * QUEST_COMPLETE, SMASH!), every line (broadcast_text), the camera start (spell_target_position of 89144, as in the
+ * Cataclysm Classic TDB), Stillwater's combat spells (his SmartAI in the same TDB) and the order of the dialogue
+ * (warcraft.wiki.gg). Ours: the camera path, every timing, where Lydon and Johnny stand and the replay when the scene was
+ * interrupted. None of this was sniffed.
  */
 
 #include "ScriptMgr.h"
@@ -391,8 +394,328 @@ struct npc_hillsbrad_sludge_fields_camera : public npc_hillsbrad_scene_camera
     }
 };
 
+/*######
+## A Blight Upon the Land (28237)
+######*/
+
+enum ABlightUponTheLand
+{
+    QUEST_A_BLIGHT_UPON_THE_LAND                = 28237,
+
+    NPC_MASTER_APOTHECARY_LYDON                 = 48020,
+    NPC_JOHNNY_AWESOME                          = 48021,
+    NPC_FLESH_SHAPER_ARNAULD                    = 48081,
+    NPC_SLUDGE_GUARD                            = 48083,
+
+    SPELL_PLAGUE_SLIME                          = 89461,
+    SPELL_PLAGUE_BARREL                         = 89463,
+    SPELL_SMASH                                 = 89450,
+
+    // Warden Stillwater 48103, his new form: the Wight Scientist model at three times the size
+    DISPLAY_STILLWATER_NEW_FORM                 = 30993,
+
+    TALK_STILLWATER_LYDON_ALIVE                 = 0,
+    TALK_STILLWATER_ALLEGIANCES                 = 1,
+    TALK_STILLWATER_JENNY                       = 2,
+    TALK_STILLWATER_THREAT                      = 3,
+    TALK_STILLWATER_EVOLUTION                   = 4,
+    TALK_STILLWATER_KILL_THEM_ALL               = 5,
+    TALK_STILLWATER_NEW_FORM                    = 6,
+
+    TALK_LYDON_SENTENCE                         = 10,
+    TALK_LYDON_TRAITOROUS_SCUM                  = 11,
+    TALK_LYDON_KNEEL                            = 12,
+
+    // SmartAI of Arnauld and the Sludge Guards (2026_10_28_41): turn hostile and attack the closest player
+    DATA_FOLLOWERS_ATTACK                       = 1,
+
+    EVENT_BLIGHT_INTRO                          = 1,
+    EVENT_BLIGHT_INTRO_LAST                     = 9,
+    EVENT_BLIGHT_PLAGUE_BARREL                  = 20,
+    EVENT_BLIGHT_PLAGUE_SLIME                   = 21,
+    EVENT_BLIGHT_SMASH                          = 22
+};
+
+float const StillwaterIntroRange = 25.0f;
+float const StillwaterIntroLeaveRange = 60.0f;
+
+// 48080 - Warden Stillwater
+// Phase 332 shows him with Flesh-Shaper Arnauld and his Sludge Guards to players on A Blight Upon the Land. When one comes
+// near, Lydon and Johnny Awesome (whom Stillwater calls Jenny) stand beside the player, Lydon passes the sentence and
+// Stillwater's people attack (the dialogue in the order of the wiki's notes; Lydon and Johnny are temporary copies here, as mop
+// keeps the freed Lydon as a static quest giver instead of the player's follower). The blow that would kill Stillwater makes
+// him yell "Stand before my new form and tremble!" and take his new form (48103's model, and its health: HealthModifier 10
+// against his 3 in the Cataclysm Classic TDB); SMASH! then throws the players back and kills his followers (its instakill
+// effect, given the followers by conditions). He drops his head as before (his own loot).
+struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
+{
+    npc_hillsbrad_warden_stillwater_blight(Creature* creature) : ScriptedAI(creature), _introStarted(false), _newForm(false), _baseMaxHealth(0) { }
+
+    void Reset() override
+        // Also on respawn (Creature::Respawn resets the AI): the intro's hostile faction is not kept past death or evade
+        me->SetFaction(me->GetCreatureTemplate()->faction);
+    {
+        _events.Reset();
+        if (_newForm)
+        {
+            _newForm = false;
+            me->DeMorph();
+            if (_baseMaxHealth)
+                me->SetMaxHealth(_baseMaxHealth);
+            me->SetFullHealth();
+        }
+    }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        ScriptedAI::MoveInLineOfSight(who);
+
+        if (_introStarted || me->IsInCombat() || !me->IsAlive())
+            return;
+
+        Player* player = who->ToPlayer();
+        if (!player || !player->IsAlive() || player->IsGameMaster() || !me->IsWithinDistInMap(player, StillwaterIntroRange)
+            || player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_INCOMPLETE || !me->IsWithinLOSInMap(player))
+            return;
+
+        StartIntro(player);
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        _introStarted = false;
+        me->SetFaction(me->GetCreatureTemplate()->faction);
+        DespawnWitnesses();
+        ScriptedAI::EnterEvadeMode(why);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        // Cataclysm Classic TDB SmartAI: Plague Barrel 5-8 s, then every 12-15 s; Plague Slime after 10 s, then every 18-22 s
+        _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_BARREL, 5s, 8s);
+        _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_SLIME, 10s);
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    {
+        if (_newForm || damage < me->GetHealth())
+            return;
+
+        damage = me->GetHealth() - 1;
+        _newForm = true;
+        _baseMaxHealth = me->GetMaxHealth();
+
+        Talk(TALK_STILLWATER_NEW_FORM);
+        me->SetDisplayId(DISPLAY_STILLWATER_NEW_FORM);
+        me->SetMaxHealth(_baseMaxHealth * 10 / 3);
+        me->SetFullHealth();
+        me->CastSpell(me, SPELL_SMASH, true);
+
+        // Cataclysm Classic TDB SmartAI: SMASH! on close every 15-25 s
+        _events.ScheduleEvent(EVENT_BLIGHT_SMASH, 15s, 25s);
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        // The AI does not update once he is dead: the witnesses go by themselves. He respawns friendly, for the next player's
+        // intro (Respawn keeps the faction).
+        me->SetFaction(me->GetCreatureTemplate()->faction);
+        _introStarted = false;
+        _events.Reset();
+        if (Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID))
+            lydon->DespawnOrUnsummon(10000);
+        if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
+            johnny->DespawnOrUnsummon(10000);
+        _lydonGUID.Clear();
+        _johnnyGUID.Clear();
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        if (!me->IsInCombat())
+        {
+            while (uint32 eventId = _events.ExecuteEvent())
+            {
+                if (eventId >= EVENT_BLIGHT_INTRO && eventId <= EVENT_BLIGHT_INTRO_LAST)
+                    IntroStep(eventId);
+            }
+            return;
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_BLIGHT_PLAGUE_BARREL:
+                    DoCastVictim(SPELL_PLAGUE_BARREL);
+                    _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_BARREL, 12s, 15s);
+                    break;
+                case EVENT_BLIGHT_PLAGUE_SLIME:
+                    DoCastVictim(SPELL_PLAGUE_SLIME);
+                    _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_SLIME, 18s, 22s);
+                    break;
+                case EVENT_BLIGHT_SMASH:
+                    if (me->GetVictim() && me->IsWithinDistInMap(me->GetVictim(), 10.0f))
+                    {
+                        DoCast(me, SPELL_SMASH);
+                        _events.ScheduleEvent(EVENT_BLIGHT_SMASH, 15s, 25s);
+                    }
+                    else
+                        _events.ScheduleEvent(EVENT_BLIGHT_SMASH, 2s);
+                    break;
+                default:
+                    break;
+            }
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    void StartIntro(Player* player)
+    {
+        _introStarted = true;
+        _playerGUID = player->GetGUID();
+        me->GetMotionMaster()->Clear();
+        me->StopMoving();
+        me->SetFacingToObject(player);
+
+        // Lydon and Johnny stand to either side behind the player, facing Stillwater (ours)
+        float angle = player->GetAngle(me);
+        float x, y, z;
+        player->GetNearPoint(player, x, y, z, 2.5f, angle + float(M_PI) * 0.7f);
+        if (Creature* lydon = me->SummonCreature(NPC_MASTER_APOTHECARY_LYDON, x, y, z, angle, TEMPSUMMON_MANUAL_DESPAWN))
+            SetUpWitness(lydon, _lydonGUID);
+        player->GetNearPoint(player, x, y, z, 2.5f, angle - float(M_PI) * 0.7f);
+        if (Creature* johnny = me->SummonCreature(NPC_JOHNNY_AWESOME, x, y, z, angle, TEMPSUMMON_MANUAL_DESPAWN))
+            SetUpWitness(johnny, _johnnyGUID);
+
+        _events.ScheduleEvent(EVENT_BLIGHT_INTRO, 1s);
+    }
+
+    void SetUpWitness(Creature* witness, ObjectGuid& guid)
+    {
+        witness->SetReactState(REACT_PASSIVE);
+        witness->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        witness->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+        witness->SetFacingToObject(me);
+        guid = witness->GetGUID();
+    }
+
+    void DespawnWitnesses()
+    {
+        if (Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID))
+            lydon->DespawnOrUnsummon();
+        if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
+            johnny->DespawnOrUnsummon();
+        _lydonGUID.Clear();
+        _johnnyGUID.Clear();
+    }
+
+    void AbortIntro()
+    {
+        _events.Reset();
+        _introStarted = false;
+        DespawnWitnesses();
+        me->GetMotionMaster()->MoveTargetedHome();
+    }
+
+    void IntroStep(uint32 eventId)
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID);
+        if (!player || !player->IsAlive() || !me->IsWithinDistInMap(player, StillwaterIntroLeaveRange) || !lydon
+            || player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_INCOMPLETE)
+        {
+            AbortIntro();
+            return;
+        }
+
+        Milliseconds next = 0ms;
+        switch (eventId)
+        {
+            case 1:
+                Talk(TALK_STILLWATER_LYDON_ALIVE);
+                next = 3s;
+                break;
+            case 2:
+                me->SetFacingToObject(player);
+                Talk(TALK_STILLWATER_ALLEGIANCES, player);
+                next = 4s;
+                break;
+            case 3:
+                if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
+                    me->SetFacingToObject(johnny);
+                Talk(TALK_STILLWATER_JENNY);
+                next = 5s;
+                break;
+            case 4:
+                lydon->AI()->Talk(TALK_LYDON_SENTENCE);
+                next = 8s;
+                break;
+            case 5:
+                lydon->AI()->Talk(TALK_LYDON_TRAITOROUS_SCUM);
+                next = 4s;
+                break;
+            case 6:
+                lydon->AI()->Talk(TALK_LYDON_KNEEL);
+                next = 3s;
+                break;
+            case 7:
+                me->SetFacingToObject(lydon);
+                Talk(TALK_STILLWATER_THREAT);
+                next = 3s;
+                break;
+            case 8:
+                Talk(TALK_STILLWATER_EVOLUTION);
+                next = 6s;
+                break;
+            case EVENT_BLIGHT_INTRO_LAST:
+            {
+                Talk(TALK_STILLWATER_KILL_THEM_ALL);
+                me->SetFaction(14);
+
+                std::list<Creature*> followers;
+                me->GetCreatureListWithEntryInGrid(followers, NPC_SLUDGE_GUARD, 40.0f);
+                me->GetCreatureListWithEntryInGrid(followers, NPC_FLESH_SHAPER_ARNAULD, 40.0f);
+                for (Creature* follower : followers)
+                    if (follower->IsAlive() && follower->IsAIEnabled && !follower->IsInCombat())
+                        follower->AI()->SetData(DATA_FOLLOWERS_ATTACK, 1);
+
+                AttackStart(player);
+                break;
+            }
+            default:
+                break;
+        }
+
+        if (next > 0ms)
+            _events.ScheduleEvent(eventId + 1, next);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _lydonGUID;
+    ObjectGuid _johnnyGUID;
+    bool _introStarted;
+    bool _newForm;
+    uint32 _baseMaxHealth;
+};
+
 void AddSC_hillsbrad_sludge_stormpike()
 {
     new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
     new creature_script<npc_hillsbrad_sludge_fields_camera>("npc_hillsbrad_sludge_fields_camera");
+    new creature_script<npc_hillsbrad_warden_stillwater_blight>("npc_hillsbrad_warden_stillwater_blight");
 }
