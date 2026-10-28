@@ -5576,10 +5576,11 @@ uint32 const BattlefrontCompanionEntries[BATTLEFRONT_COMPANION_COUNT] =
     NPC_GODFREY_BATTLEFRONT, NPC_WALDEN_BATTLEFRONT, NPC_ASHBURY_BATTLEFRONT
 };
 
-// They walk behind the player
+// Godfrey behind the player, Walden on the left, Ashbury on the right: a quarter turn apart, so the follow movement's angle
+// tolerance (ChaseAngle) never lets two of them settle on the same spot
 float const BattlefrontCompanionFollowAngles[BATTLEFRONT_COMPANION_COUNT] =
 {
-    float(M_PI), float(M_PI * 3 / 4), float(M_PI * 5 / 4)
+    float(M_PI), float(M_PI / 2), float(M_PI * 3 / 2)
 };
 
 // 85516 - Battlefront Summon Master Aura
@@ -5667,9 +5668,22 @@ private:
 
             player->CastSpell(player, BattlefrontCompanionSummonSpells[i], true);
 
+            // The three summon spells share one destination, so all three came out on one spot and took the same follow angle
+            // (Spell::SummonGuardian sets it from the spawn point); their AI re-follows with that angle after every fight. Keep
+            // each on its own angle and put it there at once, or they stand inside each other and their quest clicks overlap.
             if (Unit* companion = player->GetFirstMinionByEntry(BattlefrontCompanionEntries[i]))
+            {
+                if (companion->HasUnitTypeMask(UNIT_MASK_MINION))
+                    static_cast<Minion*>(companion)->SetFollowAngle(BattlefrontCompanionFollowAngles[i]);
+
                 if (!companion->IsInCombat())
+                {
+                    float x, y, z;
+                    player->GetClosePoint(x, y, z, companion->GetObjectSize(), PET_FOLLOW_DIST, BattlefrontCompanionFollowAngles[i]);
+                    companion->NearTeleportTo(x, y, z, player->GetOrientation());
                     companion->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, BattlefrontCompanionFollowAngles[i]);
+                }
+            }
         }
     }
 };
