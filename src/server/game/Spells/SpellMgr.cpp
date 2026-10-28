@@ -3014,6 +3014,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 spellInfo->HasEffect(SPELL_EFFECT_APPLY_AREA_AURA_PET) ||
                 spellInfo->HasAura(SPELL_AURA_SET_VEHICLE_ID) ||
                 spellInfo->HasAura(SPELL_AURA_AREA_TIRGGER) ||
+                spellInfo->HasAura(SPELL_AURA_CONTROL_VEHICLE) || // the ride is never restored at login, nor should what comes with it (phases, invisibility)
                 spellInfo->IsChanneled())
                 spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB;
 
