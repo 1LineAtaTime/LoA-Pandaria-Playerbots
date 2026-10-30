@@ -1040,6 +1040,11 @@ namespace
         // the master's deck-valid one.
         bool const snapped = SnapToDeckOffsetFromMaster(bot, master, transport);
 
+        // Tell the clients around the bot that it is a passenger, on the deck spot it was just moved to: neither
+        // AddPassenger nor the snap's Relocate sends a packet, so observers kept the bot where it was put down and it
+        // hung in the air once the transport moved on. Same announce as the ambient transport check in UpdateAI.
+        StopOnCurrentPos(bot);
+
         // Evidence line: never dereferences null (every pointer is guarded above / by the helpers).
         // Cheap: TC_LOG_DEBUG only evaluates its arguments when the playerbots category is enabled
         // (Log.h TC_LOG_MESSAGE_BODY), so the two raycast probes cost nothing when it is off.

@@ -35,6 +35,7 @@
 #include "MapManager.h"
 #include "MotionMaster.h"
 #include "MoveSpline.h"
+#include "MoveSplineInit.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "PathGenerator.h"
@@ -525,10 +526,13 @@ namespace
     }
 
     // A deck point a bot standing at the dock can walk onto: march from the bot toward the transport origin until the
-    // model is under the march point no more than 2.5 yd above / 8 yd below the bot's feet, then go 3 yd further in.
+    // model is under the march point no more than 2.5 yd above / 8 yd below the bot's feet, then go 3 yd further in
+    // (a boat / zeppelin: further, while the deck stays level, see kMoBoardDepth).
     // #848: (ex, ey) is where the deck starts on that line (the march point it was first found under), the spot where
     // Board attaches a bot walking onto a static platform.
     // #948: the march starts from any point (bx, by, bz) - the bot's feet, or a pier candidate (FindPierPoint).
+    constexpr float kMoBoardDepth = 10.0f;  // a boat / zeppelin deck point: at most this far in from the deck edge
+    constexpr float kMoBoardLevel = 1.5f;   // ... on deck no more than this above / below the edge
     bool FindDeckPointFrom(Transport* t, float bx, float by, float bz, float& ox, float& oy, float& oz, float& ex, float& ey)
     {
         // #218 (w90 Z4 Darcellis, Iron Eagle 175080 at the Orgrimmar tower): a boat / zeppelin deck is boarded from a
@@ -560,9 +564,24 @@ namespace
                 continue;
             float const inner = std::min(s + 3.0f, len);
             float iz = z;
-            float const ix = bx + ux * inner, iy = by + uy * inner;
+            float ix = bx + ux * inner, iy = by + uy * inner;
             if (!DeckZAt(t, ix, iy, rayFrom, rayDown, iz))
                 iz = z;
+            // A boat / zeppelin deck is boarded well inside its edge: 3 yd in left zeppelin riders 12-14 yd from the
+            // transport origin, on the rim of the deck. Keep marching toward the origin (never past it) while the deck
+            // stays on the edge's level - a cabin, mast or stairs ends the march - up to kMoBoardDepth from the edge.
+            if (mo)
+            {
+                float const deepest = std::min(s + kMoBoardDepth, len);
+                for (float d = std::floor(inner) + 1.0f; d <= deepest; d += 1.0f)
+                {
+                    float const qx = bx + ux * d, qy = by + uy * d;
+                    float qz = 0.0f;
+                    if (!DeckZAt(t, qx, qy, rayFrom, rayDown, qz) || std::fabs(qz - z) > kMoBoardLevel)
+                        break;
+                    ix = qx; iy = qy; iz = qz;
+                }
+            }
             ox = ix; oy = iy; oz = iz;
             ex = px; ey = py;
             return true;
@@ -997,6 +1016,34 @@ namespace
         if (MotionMaster* mm = bot->GetMotionMaster())
             mm->Clear(true);
         bot->StopMoving();
+    }
+
+    // Tell the clients around a bot that it is now a passenger. Transport::AddPassenger only changes server state: a
+    // bot has no client of its own to send movement with the transport GUID, and the core relocates passengers
+    // without a packet, so observers kept drawing the rider where it boarded - frozen in the air once the ship left,
+    // and back on the deck only after the ship changed maps (a fresh create block carries the transport). AC follows
+    // every attach with Unit::StopMovingOnCurrentPos (AC PlayerbotAI.cpp ambient transport check, AC FollowActions.cpp
+    // boarding): a zero-length spline in the bot's current frame, which MoveSplineInit sends in the transport frame
+    // once the bot is a passenger. Same stand-in as PlayerbotAI.cpp / FollowActions.cpp StopOnCurrentPos (this core's
+    // Unit::StopMoving sends nothing for a bot that already stands still).
+    void AnnounceAboard(Player* bot)
+    {
+        bot->ClearUnitState(UNIT_STATE_MOVING);
+        if (!bot->IsInWorld() || !bot->GetTransport())
+            return;
+        Movement::MoveSplineInit init(bot);
+        init.MoveTo(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), false, true);
+        init.SetFacing(bot->GetOrientation());
+        init.Launch();
+    }
+
+    // Attach a bot that stands on the deck: stop first (a world-frame spline must not be read as a deck offset, see
+    // PlayerbotAI.cpp SeatBotOnMasterTransport), attach with the offset of where it stands, then announce it.
+    void AttachAboard(Transport* t, Player* bot)
+    {
+        StopHere(bot);
+        t->AddPassenger(bot, true);
+        AnnounceAboard(bot);
     }
 
     // At the trip's destination: on its map, off any transport, inside AC's GO_GRIND / GO_CAMP arrival distance (2D for
@@ -2870,9 +2917,22 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     return 1;
                 };
                 bool const atStop = AtStop(t, from.point);
+                bool const staticDeck = t->GetGoType() == GAMEOBJECT_TYPE_TRANSPORT;
+                // A boat / zeppelin that leaves (or a board walk that runs out of time) while the bot already stands on
+                // its deck: the bot rides it from where it stands, as AC's ambient check would attach it. Sent back to
+                // the dock wait instead, it stayed in the air at the dock once the deck had moved on.
+                if (!staticDeck && trip.boardMoveIssued && (!atStop || getMSTimeDiff(trip.phaseMs, now) > kBoardMs) &&
+                    DeckUnder(t, bot) && !HullSwimmer(t, bot))
+                {
+                    AttachAboard(t, bot);
+                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board-late transport=%u map=%u (%.1f,%.1f,%.1f) docked=%u deck=%.1f yd",
+                                 bot->GetName().c_str(), t->GetEntry(), bot->GetMapId(), bot->GetPositionX(),
+                                 bot->GetPositionY(), bot->GetPositionZ(), uint32(atStop),
+                                 bot->GetExactDist2d(trip.boardX, trip.boardY));
+                    return 1;  // next tick sees GetTransport() == t
+                }
                 if (!atStop || getMSTimeDiff(trip.phaseMs, now) > kBoardMs)
                     return backToDock();
-                bool const staticDeck = t->GetGoType() == GAMEOBJECT_TYPE_TRANSPORT;
                 // #848: a static platform is left in time when the rest of the walk to its edge fits (DockWait's own
                 // test); the flat 800 ms sent a bot back from a 1.33 s stop it was about to make.
                 uint32 const stayMs = staticDeck ? StaticStepMs(bot, bot->GetExactDist2d(trip.edgeX, trip.edgeY)) : 800;
@@ -2900,9 +2960,9 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                                              trip.boardRefused);
                             return backToDock();
                         }
-                        // #223 P2: stop BEFORE boarding, then attach with the offset of where the bot stands.
-                        StopHere(bot);
-                        t->AddPassenger(bot, true);
+                        // #223 P2: stop BEFORE boarding, then attach with the offset of where the bot stands, and tell
+                        // the clients around it (AnnounceAboard).
+                        AttachAboard(t, bot);
                         return 1;  // next tick sees GetTransport() == t
                     }
                 }
