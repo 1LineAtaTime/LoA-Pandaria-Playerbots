@@ -14,7 +14,9 @@ name: playerbot-beta pre-release
 #
 # The database zip starts from the database of the newest versioned release in the
 # branch history that has one, and applies every SQL update that release does not have
-# yet, the way the worldserver's database updater would.
+# yet, the way the worldserver's database updater would. A second zip carries the SQL
+# files themselves (sql-sources/), so an existing install can be upgraded by the
+# worldserver's updater without a checkout of the repository.
 
 on:
   schedule:
@@ -315,20 +317,102 @@ jobs:
             echo "::error::$name is not registered in the $db updates table"; fail=1
           fi
         done < applied-updates.txt
-        # A database without new updates must dump exactly as the baseline release did.
+        # A database without new updates must hold the same tables and rows as the
+        # baseline release dump (the DDL text may differ with the MySQL server version).
         for db in auth characters world playerbots; do
           if cmp -s <(tr -d '\r' < "baseline/db/$db.sql") "dump/$db.sql"; then
             echo "$db.sql: identical to the $BASELINE dump"
           elif grep -q "^$db"$'\t' applied-updates.txt; then
             echo "$db.sql: changed by the applied updates"
+          elif python3 -c '
+        import re, sys
+        def content(path):
+            text = open(path, encoding="utf-8", errors="replace").read().replace("\r\n", "\n")
+            tables = sorted(re.findall(r"^CREATE TABLE `([^`]+)`", text, re.M))
+            rows = []
+            for table, values in re.findall(r"^INSERT INTO `([^`]+)` VALUES (.*);$", text, re.M):
+                rows += [table + " " + row for row in values[1:-1].split("),(")]
+            return tables, sorted(rows)
+        sys.exit(0 if content(sys.argv[1]) == content(sys.argv[2]) else 1)
+        ' "baseline/db/$db.sql" "dump/$db.sql"; then
+            echo "$db.sql: same tables and rows as the $BASELINE dump (DDL formatting differs)"
           else
-            echo "::warning::$db.sql differs from the $BASELINE dump although no update was applied to it"
-            diff <(tr -d '\r' < "baseline/db/$db.sql") "dump/$db.sql" | head -n 20 | cut -c1-300 || true
+            echo "::error::$db.sql has other tables or rows than the $BASELINE dump although no update was applied to it"
+            fail=1
           fi
         done
         echo "Newest registered world updates:"
         grep -o "('[^']*'" updates-world.txt | tr -d "('" | sort | tail -n 5
         exit $fail
+
+    # The SQL files the worldserver's updater reads, for upgrading an existing install
+    # (Updates.EnableDatabases, SourceDirectory = the extracted sql-sources folder):
+    # sql/base, sql/archive and sql/updates for auth, characters and world, and the
+    # playerbots module's SQL at its source-tree path ("$" in the playerbots
+    # updates_include rows is SourceDirectory/modules/mod_playerbots).
+    - name: Zip the SQL sources
+      run: |
+        set -euo pipefail
+        mkdir -p sqlsrc/sql-sources/sql sqlsrc/sql-sources/modules/mod_playerbots/data/sql
+        cp -a sql/base sql/archive sql/updates sqlsrc/sql-sources/sql/
+        cp -a modules/mod_playerbots/data/sql/playerbots sqlsrc/sql-sources/modules/mod_playerbots/data/sql/
+        (cd sqlsrc && zip -X -q -r ../playerbot-beta-ci-sql.zip sql-sources)
+        echo "playerbot-beta-ci-sql.zip: $(stat -c %s playerbot-beta-ci-sql.zip) bytes" | tee -a "$GITHUB_STEP_SUMMARY"
+
+    # Proof that the zip is what the updater needs: extracted, it has the base files and
+    # every update directory the databases list, and against the updated databases the
+    # updater would find nothing to apply and no registered file missing.
+    - name: Check the SQL sources against the databases
+      run: |
+        set -euo pipefail
+        rm -rf sqlcheck && mkdir sqlcheck && unzip -q playerbot-beta-ci-sql.zip -d sqlcheck
+        python3 - <<'PY'
+        import os, pathlib, subprocess, sys
+
+        MYSQL = ["docker", "exec", "-i", "-e", "MYSQL_PWD=" + os.environ["MYSQL_PASSWORD"],
+                 os.environ["MYSQL_CONTAINER"], "mysql", "-uroot", "-N", "-B",
+                 "--default-character-set=utf8mb4"]
+        SRC = pathlib.Path("sqlcheck/sql-sources")
+        ROOTS = {"auth": SRC, "characters": SRC, "world": SRC,
+                 "playerbots": SRC / "modules/mod_playerbots"}
+        BASES = [SRC / "sql/base/auth.sql", SRC / "sql/base/characters.sql",
+                 SRC / "modules/mod_playerbots/data/sql/playerbots/base"]
+
+        def query(db, sql):
+            r = subprocess.run(MYSQL + ["-e", sql, db], capture_output=True, text=True, check=True)
+            return [line.split("\t") for line in r.stdout.splitlines() if line]
+
+        def walk(path, depth=1):
+            for p in sorted(path.iterdir()):
+                if p.is_dir():
+                    if depth < 10:
+                        yield from walk(p, depth + 1)
+                elif p.suffix == ".sql":
+                    yield p
+
+        bad = 0
+        for base in BASES:
+            if not base.exists():
+                print(f"::error::missing {base}"); bad = 1
+        for db, root in ROOTS.items():
+            registered = {row[0] for row in query(db, "SELECT `name` FROM `updates`")}
+            available = set()
+            for path, state in query(db, "SELECT `path`, `state` FROM `updates_include`"):
+                directory = root / path[2:] if path.startswith("$/") else pathlib.Path(path)
+                if not directory.is_dir():
+                    print(f"::error::{db}: update directory {path} is not in the zip"); bad = 1
+                    continue
+                available |= {f.name for f in walk(directory)}
+            pending = sorted(available - registered)
+            missing = sorted(registered - available)
+            print(f"{db}: {len(available)} files in the zip, {len(registered)} registered, "
+                  f"{len(pending)} not applied, {len(missing)} registered but missing")
+            for name in pending:
+                print(f"::error::{db}: {name} is in the zip but not applied to the database"); bad = 1
+            for name in missing:
+                print(f"::error::{db}: {name} is registered but not in the zip"); bad = 1
+        sys.exit(bad)
+        PY
 
     - name: Zip the database
       run: |
@@ -344,11 +428,13 @@ jobs:
           echo "::warning::The database zip is within 10% of GitHub's 2 GiB release asset limit"
         fi
 
-    - name: Upload the database zip
+    - name: Upload the database and SQL sources zips
       uses: actions/upload-artifact@v4
       with:
         name: ci-package-database
-        path: playerbot-beta-ci-database.zip
+        path: |
+          playerbot-beta-ci-database.zip
+          playerbot-beta-ci-sql.zip
         retention-days: 7
         compression-level: 0
         if-no-files-found: error
@@ -381,9 +467,11 @@ jobs:
           if [ -z "$zip" ]; then echo "::error::No ci-$os.zip in the build artifacts"; exit 1; fi
           mv "$zip" "out/$BRANCH-ci-$os.zip"
         done
-        zip=$(find dl -name "$BRANCH-ci-database.zip" | head -n 1)
-        if [ -z "$zip" ]; then echo "::error::No database zip in the artifacts"; exit 1; fi
-        mv "$zip" out/
+        for kind in database sql; do
+          zip=$(find dl -name "$BRANCH-ci-$kind.zip" | head -n 1)
+          if [ -z "$zip" ]; then echo "::error::No $BRANCH-ci-$kind.zip in the artifacts"; exit 1; fi
+          mv "$zip" out/
+        done
         ls -la out
         DATE=$(gh api "repos/$REPO/commits/$SHA" --jq .commit.committer.date)
         {
@@ -395,9 +483,17 @@ jobs:
           echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
           echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
           echo "- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
-          echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\`: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes; no update needs to be applied on top."
+          echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\` for a **new install**: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes."
+          echo "- \`$BRANCH-ci-sql.zip\`: the SQL update files up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install."
           echo
           echo "Extracted map data is not included: extract it from your own client (see the README)."
+          echo
+          echo "### Upgrading an existing install"
+          echo "1. Back up all four databases (\`mysqldump\`)."
+          echo "2. Replace the binaries. Keep your \`.conf\` files and add any new keys from the \`.conf.dist\` files."
+          echo "3. Extract \`$BRANCH-ci-sql.zip\` and set, in \`worldserver.conf\`: \`Updates.EnableDatabases = 15\`, \`SourceDirectory\` = the extracted \`sql-sources\` folder, \`MySQLExecutable\` = your \`mysql\` client (\`mysql.exe\` on Windows)."
+          echo "4. Start the worldserver once: it applies only the missing updates and keeps your accounts and characters."
+          echo "5. Never import \`auth.sql\`, \`characters.sql\` or \`playerbots.sql\` from the database zip over an existing install: they replace your saves. The database zip is for new installs."
         } > notes.md
         cat notes.md
 
