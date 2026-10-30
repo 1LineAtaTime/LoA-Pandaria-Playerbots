@@ -1,9 +1,8 @@
 name: GCC
 
+# No push trigger: pull requests are checked here, builds can be run by hand, and the
+# daily playerbot-beta pre-release (beta-prerelease.yml) calls this workflow.
 on:
-  push:
-    paths-ignore:
-      - 'sql/**'    
   pull_request:
     paths-ignore:
       - 'sql/**'
@@ -12,12 +11,30 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit to build"
+        type: string
+        required: true
+      package:
+        description: "Upload the binaries-only zip (artifact ci-package-linux-x64)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
     if: ${{ !github.event.pull_request.draft }}
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
     - name: Dependencies
       run: |
         sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-13 libreadline-dev libbz2-dev
@@ -37,10 +54,10 @@ jobs:
         cd bin/check_install/bin
         ./authserver --version
         ./worldserver --version
-    # Binaries-only zip for the rolling "ci-<branch>" pre-release (ci-release.yml).
+    # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml).
     # Zipped here so the executables keep their permissions.
     - name: Package (CI)
-      if: github.event_name == 'push'
+      if: ${{ inputs.package }}
       run: |
         mkdir -p ci-package/etc
         cp -a bin/check_install/bin ci-package/bin
@@ -49,7 +66,7 @@ jobs:
         ls -la ci-package/bin ci-package/etc
         (cd ci-package && zip -r -q ../ci-linux-x64.zip .)
     - name: Upload CI package
-      if: github.event_name == 'push'
+      if: ${{ inputs.package }}
       uses: actions/upload-artifact@v4
       with:
         name: ci-package-linux-x64

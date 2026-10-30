@@ -1,0 +1,432 @@
+name: playerbot-beta pre-release
+
+# Daily rolling pre-release "ci-playerbot-beta": an untested development build of the
+# playerbot-beta branch, with Windows, Linux and macOS binaries and a database zip.
+#
+# Scheduled workflows only run from the default branch, so this file lives on the
+# default branch and builds the playerbot-beta branch.
+#
+# Once a day the job compares the head of playerbot-beta with the commit the
+# ci-playerbot-beta tag points at. Equal: nothing new, no build. Different (or a manual
+# run with "force"): the three builds and the database run on that commit, then the
+# pre-release assets and notes are replaced and the tag is moved last, so a failed run is
+# retried the next day. The release stays a pre-release and never becomes "Latest".
+#
+# The database zip starts from the database of the newest versioned release in the
+# branch history that has one, and applies every SQL update that release does not have
+# yet, the way the worldserver's database updater would.
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Build and publish even if playerbot-beta has no new commits"
+        type: boolean
+        default: false
+      baseline:
+        description: "Release tag whose database zip is the starting point (empty: newest release in the branch history with one)"
+        type: string
+        default: ''
+
+permissions: {}
+
+# Runs queue instead of overlapping: a queued run sees the tag the previous one moved.
+concurrency:
+  group: beta-prerelease
+  cancel-in-progress: false
+
+env:
+  BRANCH: playerbot-beta
+  TAG: ci-playerbot-beta
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      build: ${{ steps.check.outputs.build }}
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+    - name: Compare playerbot-beta with the ci-playerbot-beta tag
+      id: check
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        FORCE: ${{ inputs.force && 'true' || 'false' }}
+      run: |
+        set -euo pipefail
+        SHA=$(gh api "repos/$REPO/branches/$BRANCH" --jq .commit.sha)
+        TAG_SHA=""
+        if REF=$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha' 2>/dev/null); then
+          read -r TYPE TAG_SHA <<< "$REF"
+          if [ "$TYPE" = "tag" ]; then
+            TAG_SHA=$(gh api "repos/$REPO/git/tags/$TAG_SHA" --jq .object.sha)
+          fi
+        fi
+        echo "$BRANCH head: $SHA"
+        echo "$TAG tag:     ${TAG_SHA:-(none)}"
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+        if [ "$FORCE" = "true" ]; then
+          echo "Forced run: building $SHA." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "build=true" >> "$GITHUB_OUTPUT"
+        elif [ "$SHA" = "$TAG_SHA" ]; then
+          echo "No new commits on $BRANCH since the last pre-release ($SHA): nothing to build." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "build=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "$BRANCH has new commits: building $SHA." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "build=true" >> "$GITHUB_OUTPUT"
+        fi
+
+  windows:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/windows-build-release.yml
+    with:
+      ref: ${{ needs.check.outputs.sha }}
+      package: true
+
+  linux:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/linux_gcc.yml
+    with:
+      ref: ${{ needs.check.outputs.sha }}
+      package: true
+
+  macos:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/macos-arm-build.yml
+    with:
+      ref: ${{ needs.check.outputs.sha }}
+      package: true
+
+  database:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      baseline: ${{ steps.baseline.outputs.tag }}
+      applied: ${{ steps.apply.outputs.count }}
+    services:
+      mysql:
+        # The MySQL major version the release databases target.
+        image: mysql:8.0
+        env:
+          # Throwaway database inside this job, not a secret.
+          MYSQL_ROOT_PASSWORD: ci-root
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pci-root"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ needs.check.outputs.sha }}
+      MYSQL_PASSWORD: ci-root
+    steps:
+    - name: Find the MySQL container
+      env:
+        CONTAINER: ${{ job.services.mysql.id }}
+      run: echo "MYSQL_CONTAINER=$CONTAINER" >> "$GITHUB_ENV"
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.check.outputs.sha }}
+        persist-credentials: false
+
+    - name: Download the baseline release database
+      id: baseline
+      env:
+        BASELINE_INPUT: ${{ inputs.baseline }}
+      run: |
+        set -euo pipefail
+        BASE=""
+        if [ -n "$BASELINE_INPUT" ]; then
+          if ! [[ "$BASELINE_INPUT" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Invalid baseline tag '$BASELINE_INPUT'"; exit 1
+          fi
+          BASE="$BASELINE_INPUT"
+        else
+          # Newest versioned release (not ci-*) that has a database zip and is part of
+          # the history of the commit being built.
+          for tag in $(gh release list -R "$REPO" --exclude-drafts --limit 100 \
+                         --json tagName,publishedAt --jq 'sort_by(.publishedAt) | reverse | .[].tagName'); do
+            case "$tag" in ci-*) continue ;; esac
+            n=$(gh release view "$tag" -R "$REPO" --json assets \
+                  --jq '[.assets[].name | select(endswith("-database.zip"))] | length')
+            [ "$n" -gt 0 ] || continue
+            status=$(gh api "repos/$REPO/compare/$tag...$SHA" --jq .status)
+            case "$status" in
+              ahead|identical) BASE="$tag"; break ;;
+              *) echo "$tag has a database but is not in the history of $SHA ($status): skipped." ;;
+            esac
+          done
+        fi
+        if [ -z "$BASE" ]; then echo "::error::No release with a database zip found"; exit 1; fi
+        echo "Baseline: $BASE" | tee -a "$GITHUB_STEP_SUMMARY"
+        mkdir -p baseline/zip baseline/db
+        gh release download "$BASE" -R "$REPO" -p '*-database.zip' -D baseline/zip
+        ls -la baseline/zip
+        unzip -q baseline/zip/*-database.zip -d baseline/db
+        ls -la baseline/db
+        for db in auth characters world playerbots; do
+          [ -f "baseline/db/$db.sql" ] || { echo "::error::$BASE database zip has no $db.sql"; exit 1; }
+        done
+        echo "tag=$BASE" >> "$GITHUB_OUTPUT"
+
+    - name: Import the baseline databases
+      run: |
+        set -euo pipefail
+        mysql() { docker exec -i -e MYSQL_PWD="$MYSQL_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot \
+                    --default-character-set=utf8mb4 --max-allowed-packet=1GB "$@"; }
+        mysql -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2; SET GLOBAL sync_binlog = 0;
+                  SET GLOBAL max_allowed_packet = 1073741824; SELECT VERSION(), @@sql_mode;"
+        for db in auth characters world playerbots; do
+          echo "Importing $db..."
+          mysql -e "CREATE DATABASE \`$db\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+          mysql "$db" < "baseline/db/$db.sql"
+          mysql -N -e "SELECT '$db', COUNT(*) FROM information_schema.tables WHERE table_schema = '$db';"
+        done
+
+    # Same rules as the worldserver's database updater (DBUpdater / UpdateFetcher):
+    # the update directories come from each database's updates_include table ("$" is the
+    # source root, or the module root for the playerbots database), .sql files are found
+    # recursively, applied in file name order when their name is not in the updates table
+    # yet, and recorded with REPLACE INTO updates (name, hash, state, speed). The hash is
+    # left empty, as in the release databases: the updater then re-hashes the entry on its
+    # next run instead of applying the file again (the hash depends on the line endings
+    # of the checkout, so a hash computed here would not match every platform).
+    # Any SQL error fails the job.
+    - name: Apply the SQL updates
+      id: apply
+      run: |
+        set -euo pipefail
+        python3 - <<'PY'
+        import os, pathlib, re, subprocess, sys, time
+
+        MYSQL = ["docker", "exec", "-i", "-e", "MYSQL_PWD=" + os.environ["MYSQL_PASSWORD"],
+                 os.environ["MYSQL_CONTAINER"], "mysql", "-uroot",
+                 "--default-character-set=utf8mb4", "--max-allowed-packet=1GB"]
+        ROOTS = {"auth": ".", "characters": ".", "world": ".", "playerbots": "modules/mod_playerbots"}
+        NAME = re.compile(r"^[A-Za-z0-9._-]+[.]sql$")
+
+        def query(db, sql):
+            r = subprocess.run(MYSQL + ["-N", "-B", "-e", sql, db], capture_output=True, text=True)
+            if r.returncode:
+                print(r.stderr, file=sys.stderr)
+                sys.exit(f"query failed on {db}: {sql}")
+            return [line.split("\t") for line in r.stdout.splitlines() if line]
+
+        def walk(path, depth=1):
+            for p in sorted(path.iterdir()):
+                if p.is_dir():
+                    if depth < 10:
+                        yield from walk(p, depth + 1)
+                elif p.suffix == ".sql":
+                    yield p
+
+        applied_all = []
+        for db, root in ROOTS.items():
+            applied = {row[0] for row in query(db, "SELECT `name` FROM `updates`")}
+            available = {}
+            for path, state in query(db, "SELECT `path`, `state` FROM `updates_include`"):
+                directory = pathlib.Path(root + path[1:] if path.startswith("$") else path)
+                if not directory.is_dir():
+                    print(f"::warning::{db}: update include directory {path} does not exist, skipped")
+                    continue
+                for f in walk(directory):
+                    if f.name in available:
+                        sys.exit(f"duplicate update file name {f.name}: {available[f.name][0]} and {f}")
+                    available[f.name] = (f, "RELEASED" if state == "RELEASED" else "ARCHIVED")
+            pending = sorted(n for n in available if n not in applied)
+            print(f"{db}: {len(available)} update files, {len(applied)} registered, {len(pending)} to apply")
+            for name in pending:
+                f, state = available[name]
+                if not NAME.match(name):
+                    sys.exit(f"unexpected update file name {name!r}")
+                print(f"  {db} <- {f}", flush=True)
+                start = time.monotonic()
+                with open(f, "rb") as fh:
+                    r = subprocess.run(MYSQL + [db], stdin=fh)
+                if r.returncode:
+                    print(f"::error file={f}::applying {f} to {db} failed")
+                    sys.exit(1)
+                ms = int((time.monotonic() - start) * 1000)
+                query(db, f"REPLACE INTO `updates` (`name`, `hash`, `state`, `speed`) "
+                          f"VALUES ('{name}', '', '{state}', {ms})")
+                applied_all.append((db, name))
+
+        with open("applied-updates.txt", "w") as out:
+            for db, name in applied_all:
+                out.write(f"{db}\t{name}\n")
+        with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+            out.write(f"count={len(applied_all)}\n")
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
+            out.write(f"Applied {len(applied_all)} SQL updates on top of the baseline.\n\n")
+            for db, name in applied_all:
+                out.write(f"- {db}: `{name}`\n")
+        PY
+
+    # Same dump options as the release databases. DEFINER clauses are stripped (the
+    # auth vw_rbac view), so the dumps import under any MySQL user.
+    - name: Dump the databases
+      run: |
+        set -euo pipefail
+        mkdir -p dump
+        for db in auth characters world playerbots; do
+          docker exec -e MYSQL_PWD="$MYSQL_PASSWORD" "$MYSQL_CONTAINER" mysqldump -uroot \
+            --default-character-set=utf8mb4 --set-gtid-purged=OFF --skip-comments "$db" \
+            | sed -E 's/ DEFINER=`[^`]+`@`[^`]+`//' > "dump/$db.sql"
+        done
+        ls -la dump
+
+    - name: Check the dumps
+      env:
+        BASELINE: ${{ steps.baseline.outputs.tag }}
+      run: |
+        set -euo pipefail
+        fail=0
+        if grep -l 'DEFINER' dump/*.sql; then echo "::error::DEFINER left in a dump"; fail=1; fi
+        for t in playerbots_names playerbots_guild_names playerbots_arena_team_names; do
+          if ! grep -q "^INSERT INTO \`$t\`" dump/characters.sql; then
+            echo "::error::characters.sql has no data for $t"; fail=1
+          fi
+        done
+        # Every applied update must be registered in its database's updates table.
+        for db in auth characters world playerbots; do
+          grep '^INSERT INTO `updates` VALUES' "dump/$db.sql" > "updates-$db.txt" || true
+        done
+        while IFS=$'\t' read -r db name; do
+          if ! grep -qF "('$name',''" "updates-$db.txt"; then
+            echo "::error::$name is not registered in the $db updates table"; fail=1
+          fi
+        done < applied-updates.txt
+        # A database without new updates must dump exactly as the baseline release did.
+        for db in auth characters world playerbots; do
+          if cmp -s <(tr -d '\r' < "baseline/db/$db.sql") "dump/$db.sql"; then
+            echo "$db.sql: identical to the $BASELINE dump"
+          elif grep -q "^$db"$'\t' applied-updates.txt; then
+            echo "$db.sql: changed by the applied updates"
+          else
+            echo "::warning::$db.sql differs from the $BASELINE dump although no update was applied to it"
+            diff <(tr -d '\r' < "baseline/db/$db.sql") "dump/$db.sql" | head -n 20 | cut -c1-300 || true
+          fi
+        done
+        echo "Newest registered world updates:"
+        grep -o "('[^']*'" updates-world.txt | tr -d "('" | sort | tail -n 5
+        exit $fail
+
+    - name: Zip the database
+      run: |
+        set -euo pipefail
+        (cd dump && zip -X -q ../playerbot-beta-ci-database.zip auth.sql characters.sql playerbots.sql world.sql)
+        unzip -l playerbot-beta-ci-database.zip
+        size=$(stat -c %s playerbot-beta-ci-database.zip)
+        echo "playerbot-beta-ci-database.zip: $size bytes" | tee -a "$GITHUB_STEP_SUMMARY"
+        # GitHub release assets must be under 2 GiB.
+        if [ "$size" -ge 2147483648 ]; then
+          echo "::error::The database zip is over GitHub's 2 GiB release asset limit"; exit 1
+        elif [ "$size" -ge 1932735283 ]; then
+          echo "::warning::The database zip is within 10% of GitHub's 2 GiB release asset limit"
+        fi
+
+    - name: Upload the database zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-package-database
+        path: playerbot-beta-ci-database.zip
+        retention-days: 7
+        compression-level: 0
+        if-no-files-found: error
+
+  publish:
+    needs: [check, windows, linux, macos, database]
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ needs.check.outputs.sha }}
+      BASELINE: ${{ needs.database.outputs.baseline }}
+      APPLIED: ${{ needs.database.outputs.applied }}
+    steps:
+    - name: Download the packages
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ci-package-*
+        path: dl
+
+    - name: Prepare the assets and the release notes
+      run: |
+        set -euo pipefail
+        mkdir -p out
+        for os in win64 linux-x64 macos-arm64; do
+          zip=$(find dl -name "ci-$os.zip" | head -n 1)
+          if [ -z "$zip" ]; then echo "::error::No ci-$os.zip in the build artifacts"; exit 1; fi
+          mv "$zip" "out/$BRANCH-ci-$os.zip"
+        done
+        zip=$(find dl -name "$BRANCH-ci-database.zip" | head -n 1)
+        if [ -z "$zip" ]; then echo "::error::No database zip in the artifacts"; exit 1; fi
+        mv "$zip" out/
+        ls -la out
+        DATE=$(gh api "repos/$REPO/commits/$SHA" --jq .commit.committer.date)
+        {
+          echo "Automated build of the \`$BRANCH\` branch at commit [\`${SHA:0:8}\`](https://github.com/$REPO/commit/$SHA) ($DATE)."
+          echo "Rebuilt at most once a day, and only when the branch has new commits."
+          echo
+          echo "**Untested development build.** For a tested package, use a versioned [release](https://github.com/$REPO/releases)."
+          echo
+          echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
+          echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
+          echo "- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
+          echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\`: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes; no update needs to be applied on top."
+          echo
+          echo "Extracted map data is not included: extract it from your own client (see the README)."
+        } > notes.md
+        cat notes.md
+
+    # Assets and notes first, the tag last: if anything fails, the tag still points at the
+    # previous build and the next daily run tries again.
+    - name: Update the ci-playerbot-beta pre-release
+      run: |
+        set -euo pipefail
+        TITLE="Latest beta CI build (playerbot-beta)"
+        if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+          gh release upload "$TAG" -R "$REPO" --clobber out/*.zip
+          keep=" $(cd out && echo *.zip) "
+          for name in $(gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name'); do
+            case "$keep" in *" $name "*) ;; *) gh release delete-asset "$TAG" "$name" -R "$REPO" --yes ;; esac
+          done
+          gh release edit "$TAG" -R "$REPO" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
+          gh api -X PATCH "repos/$REPO/git/refs/tags/$TAG" -f sha="$SHA" -F force=true > /dev/null
+        else
+          if gh api "repos/$REPO/git/ref/tags/$TAG" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/tags/$TAG" -f sha="$SHA" -F force=true > /dev/null
+          else
+            gh api -X POST "repos/$REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SHA" > /dev/null
+          fi
+          gh release create "$TAG" -R "$REPO" --title "$TITLE" --notes-file notes.md --prerelease --latest=false out/*.zip
+        fi
+        gh release view "$TAG" -R "$REPO" --json tagName,isPrerelease,assets \
+          --jq '{tagName, isPrerelease, assets: [.assets[] | "\(.name) \(.size)"]}'
+        TAG_SHA=$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq .object.sha)
+        LATEST=$(gh api "repos/$REPO/releases/latest" --jq .tag_name)
+        echo "Tag $TAG -> $TAG_SHA; latest release: $LATEST" | tee -a "$GITHUB_STEP_SUMMARY"
+        [ "$TAG_SHA" = "$SHA" ] || { echo "::error::The tag did not move to $SHA"; exit 1; }
+        case "$LATEST" in ci-*) echo "::error::$LATEST became the latest release"; exit 1 ;; esac

@@ -1,9 +1,8 @@
 name: macOS arm64
 
+# No push trigger: pull requests are checked here, builds can be run by hand, and the
+# daily playerbot-beta pre-release (beta-prerelease.yml) calls this workflow.
 on:
-  push:
-    paths-ignore:
-      - 'sql/**'     
   pull_request:
     paths-ignore:
       - 'sql/**' 
@@ -12,6 +11,21 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit to build"
+        type: string
+        required: true
+      package:
+        description: "Upload the binaries-only zip (artifact ci-package-macos-arm64)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-15
@@ -19,6 +33,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
 
     - name: Set reusable strings
       id: strings
@@ -68,10 +85,10 @@ jobs:
         cd ${{ github.workspace }}/check_install/bin
         ./authserver --version
         ./worldserver --version
-    # Binaries-only zip for the rolling "ci-<branch>" pre-release (ci-release.yml).
+    # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml).
     # Zipped here so the executables keep their permissions.
     - name: Package (CI)
-      if: github.event_name == 'push'
+      if: ${{ inputs.package }}
       run: |
         mkdir -p ci-package/etc
         cp -a check_install/bin ci-package/bin
@@ -81,7 +98,7 @@ jobs:
         (cd ci-package && zip -r -q ../ci-macos-arm64.zip .)
 
     - name: Upload CI package
-      if: github.event_name == 'push'
+      if: ${{ inputs.package }}
       uses: actions/upload-artifact@v4
       with:
         name: ci-package-macos-arm64
