@@ -58,6 +58,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -921,6 +922,295 @@ namespace
         if (bot->IsMounted())
             walkSpeed = std::min(walkSpeed, playerBaseMoveSpeed[MOVE_RUN]);  // Board dismounts for a static platform
         return uint32(dist / walkSpeed * IN_MILLISECONDS) + kStaticStepMarginMs;
+    }
+
+    // ---- walking on and off a boat / zeppelin deck -------------------------------------------------------------------
+    // A boat or zeppelin has no navmesh (neither has AC: its mmaps generator skips transport maps, and its follow
+    // boarding walks a straight line, AC FollowActions.cpp:181-189), so the board and step-off walks were straight
+    // lines between the dock and a deck point. Where the deck is not level with the dock (ships whose deck is reached
+    // by stairs, some zeppelins) that line went through the hull, rails and cabin walls. A player walks across the
+    // opening in the rail and up the stairs instead. DeckRoute finds that way on the transport's own collision model:
+    // a grid search over the model's walkable surfaces (1 yd cells, several levels per cell), where a step to a
+    // neighbouring cell climbs at most kRouteClimb, drops at most kRouteDrop, keeps kRouteHeadroom above the feet, is
+    // not a rail or gunwale top (a ridge that falls away on both sides), and crosses no model geometry at knee or chest
+    // height. The end off the deck (the bot on the dock, or the step-off point) joins a rim cell of the deck by one
+    // straight leg that is level with it, crosses no model geometry and keeps dry ground under it. The search runs
+    // from the deck end toward the dock end (A*), at most kRouteMaxNodes cells, and the route is then shortened to
+    // the fewest legs that still cross nothing and stay on the deck surface. The transport is docked (stationary)
+    // while it runs, so the route is in world coordinates.
+    constexpr float kRouteClimb = 1.0f;
+    constexpr float kRouteDrop = 1.5f;
+    constexpr float kRouteHeadroom = 1.8f;
+    constexpr float kRouteRidge = 0.6f;
+    constexpr float kRouteLinkMax = 30.0f;
+    constexpr uint32 kRouteMaxNodes = 1000;
+
+    // The nearest model surface under (x, y) between fromZ and fromZ - maxDown (nearest hit, not the first found).
+    bool ModelFloor(Transport* t, float x, float y, float fromZ, float maxDown, float& outZ)
+    {
+        G3D::Ray const r(G3D::Vector3(x, y, fromZ), G3D::Vector3(0.0f, 0.0f, -1.0f));
+        float dist = maxDown;
+        if (!t->m_model->intersectRay(r, dist, false, t->GetPhaseMask(), VMAP::ModelIgnoreFlags::Nothing))
+            return false;
+        outZ = fromZ - dist;
+        return true;
+    }
+
+    bool ModelSegmentHit(Transport* t, G3D::Vector3 const& a, G3D::Vector3 const& b)
+    {
+        G3D::Vector3 const d = b - a;
+        float const len = d.length();
+        if (len < 0.01f)
+            return false;
+        G3D::Ray const r(a, d / len);
+        float dist = len;
+        return t->m_model->intersectRay(r, dist, true, t->GetPhaseMask(), VMAP::ModelIgnoreFlags::Nothing);
+    }
+
+    // A walk leg crosses no model geometry at knee (0.6 yd) or chest (1.6 yd) height above its two ends.
+    bool LegClear(Transport* t, G3D::Vector3 const& a, G3D::Vector3 const& b)
+    {
+        for (float const h : { 0.6f, 1.6f })
+            if (ModelSegmentHit(t, a + G3D::Vector3(0.0f, 0.0f, h), b + G3D::Vector3(0.0f, 0.0f, h)))
+                return false;
+        return true;
+    }
+
+    // Room to stand at a model surface point: headroom, and not the top of a rail or gunwale (both sides of it, 0.5 yd
+    // away along x or along y, more than kRouteRidge lower or without a surface).
+    bool Standable(Transport* t, float x, float y, float z)
+    {
+        if (ModelSegmentHit(t, G3D::Vector3(x, y, z + 0.1f), G3D::Vector3(x, y, z + kRouteHeadroom)))
+            return false;
+        auto lowAt = [&](float px, float py)
+        {
+            float pz = 0.0f;
+            return !ModelFloor(t, px, py, z + 0.5f, 1.5f, pz) || pz < z - kRouteRidge;
+        };
+        if (lowAt(x + 0.5f, y) && lowAt(x - 0.5f, y))
+            return false;
+        if (lowAt(x, y + 0.5f) && lowAt(x, y - 0.5f))
+            return false;
+        return true;
+    }
+
+    // Every 1 yd sample of a shortened leg stands on the deck surface within 0.75 yd of the leg's own height.
+    bool LegOnSurface(Transport* t, G3D::Vector3 const& a, G3D::Vector3 const& b)
+    {
+        float const len = (b - a).xy().length();
+        for (float s = 1.0f; s < len; s += 1.0f)
+        {
+            G3D::Vector3 const p = a + (b - a) * (s / len);
+            float z = 0.0f;
+            if (!ModelFloor(t, p.x, p.y, p.z + 0.75f, 1.5f, z) || std::fabs(z - p.z) > 0.75f)
+                return false;
+        }
+        return true;
+    }
+
+    struct DeckRouteInfo
+    {
+        bool found = false;
+        uint32 nodes = 0;       // cells searched
+        uint32 legs = 0;        // legs of the route walked
+        uint32 cross = 0;       // legs that cross model geometry (0 for a found route; the straight fallback's own count)
+        float length = 0.0f;
+        uint32 ms = 0;          // search time
+    };
+
+    // A walk route between `dock` (off the deck: on the pier / tower, or anywhere when it is itself on the deck) and
+    // `deck` (a point on the deck). out runs from `from` to the other end; fromDock says which end `from` is.
+    bool DeckRoute(Transport* t, Map* map, uint32 phase, G3D::Vector3 const& dock, G3D::Vector3 const& deck, bool fromDock,
+                   std::vector<G3D::Vector3>& out, DeckRouteInfo& info)
+    {
+        out.clear();
+        if (!t || !t->m_model || !map)
+            return false;
+        uint32 const startMs = getMSTime();
+        // The search starts at the deck end, on the model surface under it.
+        float sz = 0.0f;
+        if (!ModelFloor(t, deck.x, deck.y, deck.z + 1.0f, 2.5f, sz))
+            return false;
+        // The dock end is itself on the deck (a rider walking on, after an early attach): reached at its own cell.
+        float dz = 0.0f;
+        bool const dockOnDeck = ModelFloor(t, dock.x, dock.y, dock.z + 1.0f, 2.5f, dz) && std::fabs(dz - dock.z) <= 1.0f;
+
+        struct Node
+        {
+            G3D::Vector3 p;
+            float g;
+            int32 parent;
+        };
+        std::vector<Node> nodes;
+        std::unordered_map<uint64, int32> index;
+        auto keyOf = [&](float x, float y, float z) -> uint64
+        {
+            int32 const i = int32(std::floor(x - deck.x + 0.5f)), j = int32(std::floor(y - deck.y + 0.5f));
+            int32 const k = int32(std::floor(z * 2.0f + 0.5f));
+            return (uint64(uint32(i) & 0xFFFFF) << 40) | (uint64(uint32(j) & 0xFFFFF) << 20) | uint64(uint32(k) & 0xFFFFF);
+        };
+        using QItem = std::pair<float, int32>;  // f, node
+        std::vector<QItem> open;
+        auto push = [&](float f, int32 n)
+        {
+            open.emplace_back(f, n);
+            std::push_heap(open.begin(), open.end(), std::greater<QItem>());
+        };
+        auto h = [&](G3D::Vector3 const& p) { return (dock - p).length(); };
+
+        nodes.push_back({ G3D::Vector3(deck.x, deck.y, sz), 0.0f, -1 });
+        index[keyOf(deck.x, deck.y, sz)] = 0;
+        push(h(nodes[0].p), 0);
+        std::vector<bool> closed;
+        int32 best = -1;           // the node the dock end joins
+        float bestCost = 0.0f;
+        static int32 const kDirs[8][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
+        while (!open.empty() && nodes.size() < kRouteMaxNodes)
+        {
+            std::pop_heap(open.begin(), open.end(), std::greater<QItem>());
+            QItem const top = open.back();
+            open.pop_back();
+            int32 const n = top.second;
+            if (closed.size() < nodes.size())
+                closed.resize(nodes.size(), false);
+            if (closed[n])
+                continue;
+            closed[n] = true;
+            if (best >= 0 && top.first >= bestCost)
+                break;
+            ++info.nodes;
+            G3D::Vector3 const p = nodes[n].p;
+            float const g = nodes[n].g;
+            bool rim = false;
+            for (auto const& d : kDirs)
+            {
+                float const nx = p.x + float(d[0]), ny = p.y + float(d[1]);
+                float nz = 0.0f;
+                if (!ModelFloor(t, nx, ny, p.z + kRouteClimb + 0.05f, kRouteClimb + kRouteDrop + 0.05f, nz))
+                {
+                    rim = true;
+                    continue;
+                }
+                uint64 const key = keyOf(nx, ny, nz);
+                auto it = index.find(key);
+                float const step = std::sqrt(float(d[0] * d[0] + d[1] * d[1]) + (nz - p.z) * (nz - p.z));
+                if (it != index.end())
+                {
+                    Node& o = nodes[it->second];
+                    if (g + step < o.g && !closed[it->second] && LegClear(t, p, o.p))
+                    {
+                        o.g = g + step;
+                        o.parent = n;
+                        push(o.g + h(o.p), it->second);
+                    }
+                    continue;
+                }
+                G3D::Vector3 const q(nx, ny, nz);
+                if (!Standable(t, nx, ny, nz) || !LegClear(t, p, q))
+                    continue;
+                int32 const id = int32(nodes.size());
+                nodes.push_back({ q, g + step, n });
+                index[key] = id;
+                closed.push_back(false);
+                push(nodes[id].g + h(q), id);
+            }
+            // The dock end: its own cell when it stands on the deck, else one straight leg from a rim cell.
+            float const toDock = (dock - p).length();
+            if (dockOnDeck)
+            {
+                if ((dock - p).xy().length() <= 1.0f && std::fabs(dock.z - p.z) <= 1.0f && (best < 0 || g < bestCost))
+                {
+                    best = n;
+                    bestCost = g;
+                }
+            }
+            else if (rim && std::fabs(dock.z - p.z) <= kRouteClimb + 0.25f * (dock - p).xy().length() &&
+                     (dock - p).xy().length() <= kRouteLinkMax &&
+                     (best < 0 || g + toDock < bestCost) && LegClear(t, p, dock) &&
+                     StraightLineDryFrom(map, phase, dock.x, dock.y, dock.z, p.x, p.y, false))
+            {
+                best = n;
+                bestCost = g + toDock;
+            }
+        }
+        if (best < 0)
+        {
+            info.ms = getMSTimeDiff(startMs, getMSTime());
+            return false;
+        }
+        // deck end ... best (+ the dock end), then shortened
+        std::vector<G3D::Vector3> chain;
+        for (int32 n = best; n >= 0; n = nodes[n].parent)
+            chain.push_back(nodes[n].p);
+        std::reverse(chain.begin(), chain.end());  // deck end first
+        std::vector<G3D::Vector3> walk;  // deck end -> rim
+        size_t i = 0;
+        walk.push_back(chain[0]);
+        while (i + 1 < chain.size())
+        {
+            size_t j = chain.size() - 1;
+            while (j > i + 1 && !(LegClear(t, chain[i], chain[j]) && LegOnSurface(t, chain[i], chain[j])))
+                --j;
+            walk.push_back(chain[j]);
+            i = j;
+        }
+        if (!dockOnDeck)
+            walk.push_back(dock);
+        else
+            walk.back() = dock;
+        walk.front() = deck;
+        if (fromDock)
+            std::reverse(walk.begin(), walk.end());
+        out = walk;
+        info.found = true;
+        info.legs = uint32(out.size() - 1);
+        for (size_t k = 1; k < out.size(); ++k)
+        {
+            info.length += (out[k] - out[k - 1]).length();
+            if (!LegClear(t, out[k - 1], out[k]))  // re-checked on the final legs (the evidence count, expected 0)
+                ++info.cross;
+        }
+        info.ms = getMSTimeDiff(startMs, getMSTime());
+        return true;
+    }
+
+    // Walk `bot` along a deck route (the first point is where it stands). A straight line when there is no route.
+    // Logged once per walk kind ("board-route" / "leave-route" / "deck-route"), with how many legs cross the model.
+    void WalkDeckRoute(Player* bot, Transport* t, char const* what, G3D::Vector3 const& dock, G3D::Vector3 const& deck,
+                       bool fromDock, bool log)
+    {
+        std::vector<G3D::Vector3> route;
+        DeckRouteInfo info;
+        G3D::Vector3 const target = fromDock ? deck : dock;
+        bool const ok = t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT &&
+                        DeckRoute(t, bot->GetMap(), bot->GetPhaseMask(), dock, deck, fromDock, route, info);
+        if (bot->IsSitState())
+            bot->SetStandState(UNIT_STAND_STATE_STAND);
+        if (ok && route.size() >= 2)
+        {
+            std::vector<Position> pts;
+            pts.reserve(route.size());
+            pts.emplace_back(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
+            for (size_t k = 1; k < route.size(); ++k)
+                pts.emplace_back(route[k].x, route[k].y, route[k].z);
+            bot->GetMotionMaster()->Clear();
+            // A smooth path runs under the effect movement generator: PlayerbotAI's ambient check does not attach (and
+            // stop) a bot in it on the deck's rim (the #675 jump-arc rule), so the walk reaches its end.
+            bot->GetMotionMaster()->MoveSmoothPath(0, pts.data(), pts.size(), false);
+        }
+        else
+        {
+            G3D::Vector3 const from(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
+            info.legs = 1;
+            info.cross = t->m_model && !LegClear(t, from, target) ? 1 : 0;
+            info.length = (target - from).length();
+            bot->GetMotionMaster()->MovePoint(0, target.x, target.y, target.z, false);
+        }
+        if (log)
+            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s %s transport=%u route=%s legs=%u cross=%u len=%.1f nodes=%u ms=%u from=(%.1f,%.1f,%.1f) to=(%.1f,%.1f,%.1f)",
+                         bot->GetName().c_str(), what, t->GetEntry(), ok ? "deck" : "straight", info.legs, info.cross,
+                         info.length, info.nodes, info.ms, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
+                         target.x, target.y, target.z);
     }
 
     // Where to step off at the arrival dock: the first following walk point on the bot's map that is at least 8 yd
@@ -2924,9 +3214,8 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                         if (aimLeft >= 1.5f && AtStop(t, from.point) && StaysFor(t, walkMs) && !HullSwimmer(t, bot))
                         {
                             trip.deckWalked = true;
-                            if (bot->IsSitState())
-                                bot->SetStandState(UNIT_STAND_STATE_STAND);
-                            bot->GetMotionMaster()->MovePoint(0, trip.boardX, trip.boardY, trip.boardZ, false);
+                            WalkDeckRoute(bot, t, "deck-route", G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
+                                          G3D::Vector3(trip.boardX, trip.boardY, trip.boardZ), true, true);
                             return 1;
                         }
                     }
@@ -3021,8 +3310,13 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     // a flying mount is left before any transport, a ground mount only before a static platform.
                     if (bot->IsMounted() && (t->GetGoType() == GAMEOBJECT_TYPE_TRANSPORT || bot->IsFlying() || bot->CanFly()))
                         bot->Dismount();
-                    // Straight line (no navmesh on a deck) - the S9 boarding assist (FollowActions.cpp #206 B2).
-                    bot->GetMotionMaster()->MovePoint(0, trip.boardX, trip.boardY, trip.boardZ, false);
+                    // No navmesh on a deck: a static platform is stepped onto in a straight line (the S9 boarding assist,
+                    // FollowActions.cpp #206 B2); a boat / zeppelin is walked onto along its walkable surfaces (DeckRoute).
+                    if (t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
+                        WalkDeckRoute(bot, t, "board-route", G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
+                                      G3D::Vector3(trip.boardX, trip.boardY, trip.boardZ), true, trip.boardWalks == 0);
+                    else
+                        bot->GetMotionMaster()->MovePoint(0, trip.boardX, trip.boardY, trip.boardZ, false);
                     trip.boardMoveIssued = true;
                     if (trip.boardWalks < 255)
                         ++trip.boardWalks;
@@ -3079,7 +3373,11 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                              bot->GetName().c_str(), riding->GetEntry(), bot->GetMapId(), bot->GetPositionX(),
                              bot->GetPositionY(), bot->GetPositionZ(), trip.leaveX, trip.leaveY, trip.leaveZ,
                              getMSTimeDiff(trip.startMs, now) / IN_MILLISECONDS);
-                bot->GetMotionMaster()->MovePoint(0, trip.leaveX, trip.leaveY, trip.leaveZ, false);
+                if (riding->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
+                    WalkDeckRoute(bot, riding, "leave-route", G3D::Vector3(trip.leaveX, trip.leaveY, trip.leaveZ), G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
+                                  false, true);
+                else
+                    bot->GetMotionMaster()->MovePoint(0, trip.leaveX, trip.leaveY, trip.leaveZ, false);
                 return 1;
             }
             case TripPhase::Leave:
@@ -3143,7 +3441,13 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     return 1;
                 }
                 if (!bot->isMoving())
-                    bot->GetMotionMaster()->MovePoint(0, trip.leaveX, trip.leaveY, trip.leaveZ, false);
+                {
+                    if (riding->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
+                        WalkDeckRoute(bot, riding, "leave-route", G3D::Vector3(trip.leaveX, trip.leaveY, trip.leaveZ), G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
+                                      false, false);
+                    else
+                        bot->GetMotionMaster()->MovePoint(0, trip.leaveX, trip.leaveY, trip.leaveZ, false);
+                }
                 return 1;
             }
             default:
