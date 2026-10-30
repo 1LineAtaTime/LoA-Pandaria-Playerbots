@@ -537,6 +537,7 @@ namespace
     // #848: (ex, ey) is where the deck starts on that line (the march point it was first found under), the spot where
     // Board attaches a bot walking onto a static platform.
     // #948: the march starts from any point (bx, by, bz) - the bot's feet, or a pier candidate (FindPierPoint).
+    bool Standable(Transport* t, float x, float y, float z);  // below (deck routes)
     constexpr float kMoBoardDepth = 10.0f;  // a boat / zeppelin deck point: at most this far in from the deck edge
     constexpr float kMoBoardLevel = 1.5f;   // ... on deck no more than this above / below the edge
     constexpr uint32 kMoBoardGap = 3;       // ... stepping over at most this many non-level 1 yd samples in a row
@@ -588,7 +589,8 @@ namespace
                 {
                     float const qx = bx + ux * d, qy = by + uy * d;
                     float qz = 0.0f;
-                    if (!DeckZAt(t, qx, qy, rayFrom, rayDown, qz) || std::fabs(qz - z) > kMoBoardLevel)
+                    if (!DeckZAt(t, qx, qy, rayFrom, rayDown, qz) || std::fabs(qz - z) > kMoBoardLevel ||
+                        !Standable(t, qx, qy, qz))
                     {
                         if (++misses > kMoBoardGap)
                             break;
@@ -967,12 +969,17 @@ namespace
         return t->m_model->intersectRay(r, dist, true, t->GetPhaseMask(), VMAP::ModelIgnoreFlags::Nothing);
     }
 
-    // A walk leg crosses no model geometry at knee (0.6 yd) or chest (1.6 yd) height above its two ends.
+    // A walk leg crosses no model geometry at knee (0.6 yd) or chest (1.6 yd) height above its two ends, cast both ways:
+    // a ray that grazes a rail post or the deck lip can hit from one end and miss from the other (float rounding at a
+    // triangle edge), and the search and the evidence re-check of the final legs must agree.
     bool LegClear(Transport* t, G3D::Vector3 const& a, G3D::Vector3 const& b)
     {
         for (float const h : { 0.6f, 1.6f })
-            if (ModelSegmentHit(t, a + G3D::Vector3(0.0f, 0.0f, h), b + G3D::Vector3(0.0f, 0.0f, h)))
+        {
+            G3D::Vector3 const up(0.0f, 0.0f, h);
+            if (ModelSegmentHit(t, a + up, b + up) || ModelSegmentHit(t, b + up, a + up))
                 return false;
+        }
         return true;
     }
 
@@ -1008,6 +1015,47 @@ namespace
         return true;
     }
 
+    // The standable model surface nearest to p (3D): p's own column first, then rings 1..radius yd out (8 columns per yd
+    // of radius), each column scanned for up to 4 surfaces from 2.5 yd above p down to 3 yd below it. The first ring
+    // with a standable surface wins. A deck point taken by the deck ray can sit on a rail top or a wall seam (the
+    // Lady Mehley's deck point at Theramore lay on the bulkhead between the main deck and the quarterdeck), and a bot
+    // can stand between two surfaces; the route starts and ends on a real standing spot instead. fromHere: p is where
+    // the bot stands, so the spot must also be reached from p without crossing the model (a bot on a mast collar is
+    // not walked down through it).
+    bool SnapStand(Transport* t, G3D::Vector3 const& p, float radius, G3D::Vector3& out, bool fromHere)
+    {
+        bool found = false;
+        float bestD = 0.0f;
+        for (float r = 0.0f; r <= radius + 0.01f && !found; r += 1.0f)
+        {
+            uint32 const n = r < 0.5f ? 1 : uint32(8.0f * r);
+            for (uint32 k = 0; k < n; ++k)
+            {
+                float const a = 2.0f * float(M_PI) * float(k) / float(n);
+                float const x = p.x + r * std::cos(a), y = p.y + r * std::sin(a);
+                float from = p.z + 2.5f;
+                for (uint32 s = 0; s < 4; ++s)
+                {
+                    float z = 0.0f;
+                    if (from <= p.z - 3.0f || !ModelFloor(t, x, y, from, from - (p.z - 3.0f), z))
+                        break;
+                    if (Standable(t, x, y, z) && (!fromHere || LegClear(t, p, G3D::Vector3(x, y, z))))
+                    {
+                        float const d = (G3D::Vector3(x, y, z) - p).length();
+                        if (!found || d < bestD)
+                        {
+                            found = true;
+                            bestD = d;
+                            out = G3D::Vector3(x, y, z);
+                        }
+                    }
+                    from = z - 0.05f;
+                }
+            }
+        }
+        return found;
+    }
+
     struct DeckRouteInfo
     {
         bool found = false;
@@ -1016,24 +1064,38 @@ namespace
         uint32 cross = 0;       // legs that cross model geometry (0 for a found route; the straight fallback's own count)
         float length = 0.0f;
         uint32 ms = 0;          // search time
+        char const* fail = "";  // why no route: "deck-snap" / "no-join" / "nodes"
+        bool landing = false;   // the route ends on a landing beside the deck (step-off), not at the dock end itself
+        G3D::Vector3 deckEnd;   // the deck end the route uses (SnapStand of `deck`)
     };
 
     // A walk route between `dock` (off the deck: on the pier / tower, or anywhere when it is itself on the deck) and
-    // `deck` (a point on the deck). out runs from `from` to the other end; fromDock says which end `from` is.
-    bool DeckRoute(Transport* t, Map* map, uint32 phase, G3D::Vector3 const& dock, G3D::Vector3 const& deck, bool fromDock,
-                   std::vector<G3D::Vector3>& out, DeckRouteInfo& info)
+    // `deck` (a point on the deck). out runs from the `fromDock` end to the other one.
+    // allowLanding (the step-off): the route may also end on a landing, the dock / tower floor right beside a rim cell
+    // (at most kRouteClimb above / kRouteDrop below it, dry, reached without crossing the model), when the dock end
+    // itself is not level with any rim cell - a step-off point down a ramp or stairs (the Borean tower: 11 yd below the
+    // deck). The rest of that walk is on the navmesh (Leave detaches the rider once the deck is no longer under it).
+    bool DeckRoute(Transport* t, Map* map, uint32 phase, G3D::Vector3 const& dock, G3D::Vector3 const& deckIn, bool fromDock,
+                   bool allowLanding, std::vector<G3D::Vector3>& out, DeckRouteInfo& info)
     {
         out.clear();
         if (!t || !t->m_model || !map)
             return false;
         uint32 const startMs = getMSTime();
-        // The search starts at the deck end, on the model surface under it.
-        float sz = 0.0f;
-        if (!ModelFloor(t, deck.x, deck.y, deck.z + 1.0f, 2.5f, sz))
+        // The search starts at the deck end, on the standable surface nearest to it.
+        G3D::Vector3 deck;
+        if (!SnapStand(t, deckIn, 4.0f, deck, !fromDock))
+        {
+            info.fail = "deck-snap";
             return false;
-        // The dock end is itself on the deck (a rider walking on, after an early attach): reached at its own cell.
+        }
+        info.deckEnd = deck;
+        // The dock end is itself on the deck (a rider walking on, after an early attach): reached at the standable spot
+        // nearest to it.
         float dz = 0.0f;
-        bool const dockOnDeck = ModelFloor(t, dock.x, dock.y, dock.z + 1.0f, 2.5f, dz) && std::fabs(dz - dock.z) <= 1.0f;
+        G3D::Vector3 dockStand = dock;
+        bool const dockOnDeck = ModelFloor(t, dock.x, dock.y, dock.z + 1.0f, 2.5f, dz) && std::fabs(dz - dock.z) <= 1.0f &&
+                                SnapStand(t, dock, 2.0f, dockStand, true);
 
         struct Node
         {
@@ -1056,14 +1118,17 @@ namespace
             open.emplace_back(f, n);
             std::push_heap(open.begin(), open.end(), std::greater<QItem>());
         };
-        auto h = [&](G3D::Vector3 const& p) { return (dock - p).length(); };
+        G3D::Vector3 const target = dockOnDeck ? dockStand : dock;
+        auto h = [&](G3D::Vector3 const& p) { return (target - p).length(); };
 
-        nodes.push_back({ G3D::Vector3(deck.x, deck.y, sz), 0.0f, -1 });
-        index[keyOf(deck.x, deck.y, sz)] = 0;
-        push(h(nodes[0].p), 0);
+        nodes.push_back({ deck, 0.0f, -1 });
+        index[keyOf(deck.x, deck.y, deck.z)] = 0;
+        push(h(deck), 0);
         std::vector<bool> closed;
         int32 best = -1;           // the node the dock end joins
         float bestCost = 0.0f;
+        bool bestLanding = false;
+        G3D::Vector3 bestLand;
         static int32 const kDirs[8][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
         while (!open.empty() && nodes.size() < kRouteMaxNodes)
         {
@@ -1081,14 +1146,16 @@ namespace
             ++info.nodes;
             G3D::Vector3 const p = nodes[n].p;
             float const g = nodes[n].g;
-            bool rim = false;
-            for (auto const& d : kDirs)
+            int32 missing = -1;  // a direction without a deck floor (a rim cell); the first one is the landing probe
+            for (int32 di = 0; di < 8; ++di)
             {
+                int32 const* d = kDirs[di];
                 float const nx = p.x + float(d[0]), ny = p.y + float(d[1]);
                 float nz = 0.0f;
                 if (!ModelFloor(t, nx, ny, p.z + kRouteClimb + 0.05f, kRouteClimb + kRouteDrop + 0.05f, nz))
                 {
-                    rim = true;
+                    if (missing < 0)
+                        missing = di;
                     continue;
                 }
                 uint64 const key = keyOf(nx, ny, nz);
@@ -1114,31 +1181,65 @@ namespace
                 closed.push_back(false);
                 push(nodes[id].g + h(q), id);
             }
-            // The dock end: its own cell when it stands on the deck, else one straight leg from a rim cell.
-            float const toDock = (dock - p).length();
             if (dockOnDeck)
             {
-                if ((dock - p).xy().length() <= 1.0f && std::fabs(dock.z - p.z) <= 1.0f && (best < 0 || g < bestCost))
+                // The dock end's own standing spot.
+                if ((dockStand - p).xy().length() <= 0.75f && std::fabs(dockStand.z - p.z) <= 1.0f && (best < 0 || g < bestCost))
                 {
                     best = n;
                     bestCost = g;
+                    bestLanding = false;
                 }
+                continue;
             }
-            else if (rim && std::fabs(dock.z - p.z) <= kRouteClimb + 0.25f * (dock - p).xy().length() &&
-                     (dock - p).xy().length() <= kRouteLinkMax &&
-                     (best < 0 || g + toDock < bestCost) && LegClear(t, p, dock) &&
-                     StraightLineDryFrom(map, phase, dock.x, dock.y, dock.z, p.x, p.y, false))
+            if (missing < 0)
+                continue;
+            // The dock end, by one straight leg from this rim cell.
+            float const toDock = (dock - p).length();
+            float const flat = (dock - p).xy().length();
+            if (std::fabs(dock.z - p.z) <= kRouteClimb + 0.25f * flat && flat <= kRouteLinkMax &&
+                (best < 0 || g + toDock < bestCost) && LegClear(t, p, dock) &&
+                StraightLineDryFrom(map, phase, dock.x, dock.y, dock.z, p.x, p.y, false))
             {
                 best = n;
                 bestCost = g + toDock;
+                bestLanding = false;
+            }
+            // Or (step-off) a landing on the floor right beside it; the dock end is then walked to on the navmesh.
+            // The landing is 1.5 or 2.5 yd out, where Leave's own deck ray (4 yd down from 2 yd above the feet) no
+            // longer finds the model, so the rider is detached there and walks on along the navmesh.
+            if (allowLanding)
+            {
+                float const ux = float(kDirs[missing][0]), uy = float(kDirs[missing][1]);
+                float const ul = std::sqrt(ux * ux + uy * uy);
+                for (float const out : { 1.5f, 2.5f })
+                {
+                    float const lx = p.x + ux / ul * out, ly = p.y + uy / ul * out;
+                    float const lz = map->GetHeight(phase, lx, ly, p.z + kRouteClimb, true, kRouteClimb + kRouteDrop);
+                    if (lz <= INVALID_HEIGHT || lz < p.z - kRouteDrop || lz > p.z + kRouteClimb)
+                        continue;
+                    G3D::Vector3 const land(lx, ly, lz);
+                    float const cost = g + (land - p).length() + (dock - land).length();
+                    float under = 0.0f;
+                    if ((best < 0 || cost < bestCost) && !DeckZAt(t, lx, ly, lz + 2.0f, 4.0f, under) &&
+                        !NearSeaSurface(map, phase, lx, ly, lz, 0.5f) && LegClear(t, p, land))
+                    {
+                        best = n;
+                        bestCost = cost;
+                        bestLanding = true;
+                        bestLand = land;
+                        break;
+                    }
+                }
             }
         }
         if (best < 0)
         {
+            info.fail = nodes.size() >= kRouteMaxNodes ? "nodes" : "no-join";
             info.ms = getMSTimeDiff(startMs, getMSTime());
             return false;
         }
-        // deck end ... best (+ the dock end), then shortened
+        // deck end ... best (+ the dock end or the landing), then shortened
         std::vector<G3D::Vector3> chain;
         for (int32 n = best; n >= 0; n = nodes[n].parent)
             chain.push_back(nodes[n].p);
@@ -1154,11 +1255,14 @@ namespace
             walk.push_back(chain[j]);
             i = j;
         }
-        if (!dockOnDeck)
-            walk.push_back(dock);
+        if (dockOnDeck)
+        {
+            if ((walk.back() - dockStand).length() > 0.25f)
+                walk.push_back(dockStand);
+        }
         else
-            walk.back() = dock;
-        walk.front() = deck;
+            walk.push_back(bestLanding ? bestLand : dock);
+        info.landing = bestLanding;
         if (fromDock)
             std::reverse(walk.begin(), walk.end());
         out = walk;
@@ -1174,25 +1278,37 @@ namespace
         return true;
     }
 
-    // Walk `bot` along a deck route (the first point is where it stands). A straight line when there is no route.
-    // Logged once per walk kind ("board-route" / "leave-route" / "deck-route"), with how many legs cross the model.
-    void WalkDeckRoute(Player* bot, Transport* t, char const* what, G3D::Vector3 const& dock, G3D::Vector3 const& deck,
-                       bool fromDock, bool log)
+    // Walk `bot` along a deck route from where it stands: dock -> deck (fromDock, board) or deck -> dock (step-off). A
+    // straight line to the target when there is no route. Returns the end the bot walks to (the snapped deck end of a
+    // board route, so the caller's arrival test matches it). Logged when `log` ("board-route" / "deck-route" /
+    // "leave-route"), with the legs that cross the model.
+    G3D::Vector3 WalkDeckRoute(Player* bot, Transport* t, char const* what, G3D::Vector3 const& dock, G3D::Vector3 const& deck,
+                               bool fromDock, bool log)
     {
         std::vector<G3D::Vector3> route;
         DeckRouteInfo info;
-        G3D::Vector3 const target = fromDock ? deck : dock;
+        G3D::Vector3 target = fromDock ? deck : dock;
         bool const ok = t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT &&
-                        DeckRoute(t, bot->GetMap(), bot->GetPhaseMask(), dock, deck, fromDock, route, info);
+                        DeckRoute(t, bot->GetMap(), bot->GetPhaseMask(), dock, deck, fromDock, !fromDock, route, info);
         if (bot->IsSitState())
             bot->SetStandState(UNIT_STAND_STATE_STAND);
+        G3D::Vector3 const from(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
         if (ok && route.size() >= 2)
         {
+            target = route.back();
             std::vector<Position> pts;
-            pts.reserve(route.size());
-            pts.emplace_back(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
-            for (size_t k = 1; k < route.size(); ++k)
+            pts.reserve(route.size() + 1);
+            pts.emplace_back(from.x, from.y, from.z);
+            // route[0] is the bot's own end; it is kept as a waypoint when the bot does not stand on it (a snapped
+            // standing spot), and the leg to it is checked like the others.
+            for (size_t k = 0; k < route.size(); ++k)
+            {
+                if (k == 0 && (route[0] - from).length() <= 0.5f)
+                    continue;
+                if (k == 0 && !LegClear(t, from, route[0]))
+                    ++info.cross;
                 pts.emplace_back(route[k].x, route[k].y, route[k].z);
+            }
             bot->GetMotionMaster()->Clear();
             // A smooth path runs under the effect movement generator: PlayerbotAI's ambient check does not attach (and
             // stop) a bot in it on the deck's rim (the #675 jump-arc rule), so the walk reaches its end.
@@ -1200,17 +1316,17 @@ namespace
         }
         else
         {
-            G3D::Vector3 const from(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
             info.legs = 1;
             info.cross = t->m_model && !LegClear(t, from, target) ? 1 : 0;
             info.length = (target - from).length();
             bot->GetMotionMaster()->MovePoint(0, target.x, target.y, target.z, false);
         }
         if (log)
-            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s %s transport=%u route=%s legs=%u cross=%u len=%.1f nodes=%u ms=%u from=(%.1f,%.1f,%.1f) to=(%.1f,%.1f,%.1f)",
+            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s %s transport=%u route=%s legs=%u cross=%u len=%.1f nodes=%u ms=%u from=(%.1f,%.1f,%.1f) to=(%.1f,%.1f,%.1f) end=%s fail=%s",
                          bot->GetName().c_str(), what, t->GetEntry(), ok ? "deck" : "straight", info.legs, info.cross,
-                         info.length, info.nodes, info.ms, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
-                         target.x, target.y, target.z);
+                         info.length, info.nodes, info.ms, from.x, from.y, from.z, target.x, target.y, target.z,
+                         ok ? (info.landing ? "landing" : "dock") : "-", ok ? "-" : info.fail);
+        return target;
     }
 
     // Where to step off at the arrival dock: the first following walk point on the bot's map that is at least 8 yd
@@ -3214,8 +3330,12 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                         if (aimLeft >= 1.5f && AtStop(t, from.point) && StaysFor(t, walkMs) && !HullSwimmer(t, bot))
                         {
                             trip.deckWalked = true;
-                            WalkDeckRoute(bot, t, "deck-route", G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
-                                          G3D::Vector3(trip.boardX, trip.boardY, trip.boardZ), true, true);
+                            G3D::Vector3 const end = WalkDeckRoute(bot, t, "deck-route",
+                                G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
+                                G3D::Vector3(trip.boardX, trip.boardY, trip.boardZ), true, true);
+                            trip.boardX = end.x;  // the standing spot the route ends on
+                            trip.boardY = end.y;
+                            trip.boardZ = end.z;
                             return 1;
                         }
                     }
@@ -3313,8 +3433,16 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     // No navmesh on a deck: a static platform is stepped onto in a straight line (the S9 boarding assist,
                     // FollowActions.cpp #206 B2); a boat / zeppelin is walked onto along its walkable surfaces (DeckRoute).
                     if (t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
-                        WalkDeckRoute(bot, t, "board-route", G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
-                                      G3D::Vector3(trip.boardX, trip.boardY, trip.boardZ), true, trip.boardWalks == 0);
+                    {
+                        // The route ends on the standing spot nearest to the deck point (SnapStand); the arrival test
+                        // (toDeck) and the deck walk use that spot from now on.
+                        G3D::Vector3 const end = WalkDeckRoute(bot, t, "board-route",
+                            G3D::Vector3(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()),
+                            G3D::Vector3(trip.boardX, trip.boardY, trip.boardZ), true, trip.boardWalks == 0);
+                        trip.boardX = end.x;
+                        trip.boardY = end.y;
+                        trip.boardZ = end.z;
+                    }
                     else
                         bot->GetMotionMaster()->MovePoint(0, trip.boardX, trip.boardY, trip.boardZ, false);
                     trip.boardMoveIssued = true;
