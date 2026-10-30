@@ -1361,6 +1361,8 @@ AiPlayerbot.DuelSpotMaxLevelDiff = 5
 AiPlayerbot.DuelSpotMaxLevelPairsOnly = 1
 # Only challenge players of the bot's own faction.
 AiPlayerbot.DuelSpotSameTeamOnly = 1
+# Never challenge a player of the bot's own class, so the duels at the spots are mixed matchups.
+AiPlayerbot.DuelSpotDifferentClassOnly = 1
 
 # Bots challenge real players standing at a spot (as in MoP). Each scan a real candidate is
 # considered with PlayerChallengeChance percent; after any bot challenged a player, that player is

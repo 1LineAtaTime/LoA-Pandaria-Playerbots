@@ -18,6 +18,7 @@
 
 #include "BotFactory.h"
 #include "BotScenario.h"
+#include "Config.h"
 #include "DBCStores.h"
 #include "DBCStructure.h"
 #include "Group.h"
@@ -1080,6 +1081,14 @@ bool NewRpgDuelSpotAction::Execute(Event /*event*/)
     return ScanAndChallenge(data, spot);
 }
 
+// AiPlayerbot.DuelSpotDifferentClassOnly: duel-spot challenges skip candidates of the bot's own class, so the duels
+// at the city gates are mixed matchups. Read once through sConfigMgr, like AiPlayerbot.RpgTownErrandEnable.
+static bool DuelSpotDifferentClassOnly()
+{
+    static bool const v = sConfigMgr->GetBoolDefault("AiPlayerbot.DuelSpotDifferentClassOnly", true);
+    return v;
+}
+
 bool NewRpgDuelSpotAction::ScanAndChallenge(NewRpgInfo::DuelSpot& data, DuelSpotInfo const& spot)
 {
     Map* map = bot->GetMap();
@@ -1175,6 +1184,11 @@ bool NewRpgDuelSpotAction::ScanAndChallenge(NewRpgInfo::DuelSpot& data, DuelSpot
         if (sPlayerbotAIConfig->duelSpotSameTeamOnly && p->GetTeamId() != bot->GetTeamId())
         {
             skip(p, "team");
+            continue;
+        }
+        if (DuelSpotDifferentClassOnly() && p->GetClass() == bot->GetClass())
+        {
+            skip(p, "class");
             continue;
         }
 
