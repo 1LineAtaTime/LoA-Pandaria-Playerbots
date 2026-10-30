@@ -59,6 +59,23 @@ jobs:
       #git bash shell
       shell: bash
 
+    # The runner image ships one MySQL Server (8.4 on windows-2022 today);
+    # FindMySQL.cmake only knows the 5.7-8.3 folder names, so point it at
+    # whichever version is installed.
+    - name: Locate MySQL
+      shell: pwsh
+      run: |
+        $server = Get-ChildItem "C:/Program Files/MySQL" -Directory -Filter "MySQL Server *" -ErrorAction SilentlyContinue |
+          Sort-Object { [version]($_.Name -replace '^MySQL Server ', '') } -Descending |
+          Select-Object -First 1
+        if (-not $server) { throw "No MySQL Server found under C:/Program Files/MySQL" }
+        $root = $server.FullName -replace '\\', '/'
+        foreach ($f in "include/mysql.h", "lib/libmysql.lib", "lib/libmysql.dll") {
+          if (-not (Test-Path "$root/$f")) { throw "MySQL install at $root has no $f" }
+        }
+        Write-Host "Using MySQL at $root"
+        "MYSQL_ROOT_DIR=$root" >> $env:GITHUB_ENV
+
     #build and install
     - name: windows build & install
       env:
@@ -76,7 +93,7 @@ jobs:
         cd ${{github.workspace}}/build/bin/RelWithDebInfo
         
         dir
-          copy "C:/Program Files/MySQL/MySQL Server 8.0/lib/libmysql.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libmysql.dll
+          copy "$env:MYSQL_ROOT_DIR/lib/libmysql.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libmysql.dll
           copy "C:/Program Files/OpenSSL/bin/libcrypto-3-x64.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libcrypto-3-x64.dll
           copy "C:/Program Files/OpenSSL/bin/libssl-3-x64.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libssl-3-x64.dll
           move ${{github.workspace}}/contrib/lua_scripts ${{github.workspace}}/build/bin/RelWithDebInfo/lua_scripts
