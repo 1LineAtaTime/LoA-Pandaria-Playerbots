@@ -1241,7 +1241,10 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
             break;
     }
 
-    //float att_speed = float(GetAttackTime(attType))/1000.0f;
+    // creature_classlevelstats damage columns are damage per second (as in TrinityCore and AzerothCore,
+    // Creature::CalculateMinMaxDamage): the weapon damage and the attack power part are both multiplied by the
+    // base attack time, so a slower creature hits harder per swing at the same damage per second.
+    float att_speed = GetAPMultiplier(attType, false);
 
     float weapon_mindamage = GetWeaponDamageRange(attType, MINDAMAGE);
     float weapon_maxdamage = GetWeaponDamageRange(attType, MAXDAMAGE);
@@ -1254,8 +1257,8 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
 
     float att_pwr_change = GetTotalAttackPowerValue(attType);
 
-    float base_value  = GetModifierValue(unitMod, BASE_VALUE) + (att_pwr_change * GetAPMultiplier(attType, false) / 14.0f);
-    float base_pct    = GetModifierValue(unitMod, BASE_PCT);
+    float base_value  = GetModifierValue(unitMod, BASE_VALUE) + att_pwr_change / 14.0f;
+    float base_pct    = GetModifierValue(unitMod, BASE_PCT) * att_speed;
     float total_value = GetModifierValue(unitMod, TOTAL_VALUE);
     float total_pct   = GetModifierValue(unitMod, TOTAL_PCT);
 
