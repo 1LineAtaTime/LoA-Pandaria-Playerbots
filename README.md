@@ -64,6 +64,14 @@ authors and contributors.
 + GCC >= 13.0, Clang >= 12.0
 + A 5.4.8 (build 18414) game client, enUS locale, for the data extraction below.
 
+## Latest builds (CI)
+Prebuilt binaries from the newest commit of this branch, for Windows (x64), Linux (x64) and
+macOS (arm64), are published automatically after every successful CI build:
+**[latest playerbot-beta build](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/ci-playerbot-beta)**.
+These are untested development builds: binaries only, without the database or extracted map
+data. For a tested package with the database, use the
+[releases](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases).
+
 ## Getting started
 
 ### 1. Binaries
