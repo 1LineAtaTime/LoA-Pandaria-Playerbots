@@ -355,8 +355,17 @@ void CreatureAI::JustEnteredCombat(Unit* who)
     // AI object, so a respawned creature can still be flagged as engaged. Clear that stale engagement so
     // EngagementStart/JustEngagedWith runs for the new fight. Skipped while evading: CombatManager can
     // notify without the combat flag being set (SetInCombatState returns early on UNIT_STATE_EVADE).
-    if (IsEngaged() && me->IsInCombat())
+    if (IsEngaged())
+    {
+        // No combat flag: Unit::SetInCombatState refused it (dead or evading unit), so no new fight starts.
+        // Keep the engagement, as AC/TC do (CreatureAI::JustEnteredCombat: !IsEngaged() && !CanHaveThreatList()).
+        // Falling through only logged "EngagementStart called even though creature is already engaged"
+        // (mostly player-owned guardians in battlegrounds, re-notified through a refreshed PvP combat reference).
+        if (!me->IsInCombat())
+            return;
+
         EngagementOver();
+    }
 
     if (!me->CanHaveThreatList())
         EngagementStart(who);
