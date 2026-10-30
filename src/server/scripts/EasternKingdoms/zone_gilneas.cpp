@@ -3408,9 +3408,22 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
                     }
                     else
                     {
-                        if (++_kormPolls % 10 == 0)
-                            if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                        if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                        {
+                            if (++_kormPolls % 10 == 0)
                                 LogKorm(korm, "alive");
+                            // #1024: after Korm kills the player (or evades) he went home idle and never engaged again, while
+                            // the timeline kept waiting for his death. Release him again and send him at the nearest player
+                            // on 26706 within 60 yd, as at the furnace beat.
+                            if (korm->IsAlive() && !korm->IsInCombat() && !korm->IsInEvadeMode())
+                            {
+                                korm->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                                korm->SetReactState(REACT_AGGRESSIVE);
+                                if (Player* target = korm->SelectNearestPlayer(60.0f))
+                                    if (target->IsAlive() && target->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE && korm->IsAIEnabled)
+                                        korm->AI()->AttackStart(target);
+                            }
+                        }
                         // Nobody left to kill Korm for ~3 minutes: reset (ShatterCore :1733-1742).
                         if (HasEligiblePlayerNearby(250.0f))
                             _abandonedPolls = 0;
