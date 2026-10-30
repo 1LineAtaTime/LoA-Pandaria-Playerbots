@@ -949,6 +949,10 @@ struct loi_npc_gallywix_rocket : public loi_escort_base
 // 24864 Irresistible Pool Pony   (hatchlings 38412 / 44578 / 44579 / 44580 = npc_young_naga_gob)
 // A player carrying the Pool Pony aura 71914 within 10 yd makes the hatchling follow him as the summoned companion
 // 44589 and credits 38413 (spellclick 71916 is not in the DBC set, so the LoA SAI could never fire).
+// The hatchlings live on the lake floor (spawn z -30 to -56, the same in the reference 5.4.8 world DB), and 71914 is
+// dropped on leaving the water (aura interrupt flag 0x100), so the player has to dive to them with the pony up; the
+// 10 yd check is 3D. The retail right-click on a hatchling ("talk" icon, npc_spellclick_spells 71916 with the quest
+// condition) lures it too: Unit::HandleSpellClick still calls OnSpellClick when the click spell is missing.
 // Megs 38432 (npc_megs_isle_gob) dismisses the companions on turn-in.
 // ---------------------------------------------------------------------------------------------------------------
 struct loi_npc_young_naga : public ScriptedAI
@@ -978,20 +982,37 @@ struct loi_npc_young_naga : public ScriptedAI
             if (!player->HasAura(SPELL_POOL_PONY_AURA) || player->GetQuestStatus(QUEST_IRRESISTIBLE_POOL_PONY) != QUEST_STATUS_INCOMPLETE)
                 continue;
 
-            if (TempSummon* naga = player->SummonCreature(NPC_NAGA_HATCHLING_COMPANION, me->GetPositionX(), me->GetPositionY(),
-                me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(40000)))
-            {
-                naga->CastSpell(naga, SPELL_HATCHLING_PROXIMITY_MASTER, true);
-                naga->GetMotionMaster()->MoveFollow(player, float(urand(1, 4)), float(urand(0, 6)));
-                player->KilledMonsterCredit(NPC_NAGA_HATCHLING_CREDIT);
-            }
-
-            me->DespawnOrUnsummon();
+            Lure(player);
             break;
         }
     }
 
+    // CMSG_SPELLCLICK has no range check (SpellHandler.cpp HandleSpellClick), so the click must come from within the
+    // same 10 yd as the proximity lure; the quest condition is the one on the npc_spellclick_spells row.
+    void OnSpellClick(Unit* clicker, bool& /*result*/) override
+    {
+        Player* player = clicker ? clicker->ToPlayer() : nullptr;
+        if (!player || !me->IsAlive() || !player->IsAlive() || !me->IsWithinDistInMap(player, 10.0f) ||
+            player->GetQuestStatus(QUEST_IRRESISTIBLE_POOL_PONY) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        Lure(player);
+    }
+
 private:
+    void Lure(Player* player)
+    {
+        if (TempSummon* naga = player->SummonCreature(NPC_NAGA_HATCHLING_COMPANION, me->GetPositionX(), me->GetPositionY(),
+            me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_CORPSE_TIMED_DESPAWN, Milliseconds(40000)))
+        {
+            naga->CastSpell(naga, SPELL_HATCHLING_PROXIMITY_MASTER, true);
+            naga->GetMotionMaster()->MoveFollow(player, float(urand(1, 4)), float(urand(0, 6)));
+            player->KilledMonsterCredit(NPC_NAGA_HATCHLING_CREDIT);
+        }
+
+        me->DespawnOrUnsummon();
+    }
+
     uint32 _timer;
 };
 
