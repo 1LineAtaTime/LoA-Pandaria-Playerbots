@@ -157,6 +157,16 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             if (!talker)
                 break;
 
+            // #1025, AC SmartScript.cpp:253: a victim / invoker target can resolve to a guardian (a shaman's fire elemental) that
+            // has no creature_text; skip the row instead of making it speak. AC logs this as an sql error; here it is a debug
+            // line, since the same data rows trigger it whenever such a guardian pulls the creature.
+            if (!sCreatureTextMgr->TextExist(talker->GetEntry(), uint8(e.action.talk.textGroupID)))
+            {
+                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TALK: entry %d source %u event %u target %u: talker %u has no text group %u, ignored.",
+                    e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetTargetType(), talker->GetEntry(), uint32(e.action.talk.textGroupID));
+                break;
+            }
+
             mTalkerEntry = talker->GetEntry();
             mLastTextID = e.action.talk.textGroupID;
             mTextTimer = e.action.talk.duration;
