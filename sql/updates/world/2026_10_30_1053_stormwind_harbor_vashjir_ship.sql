@@ -1,0 +1,29 @@
+-- Stormwind Harbor: the mercenary "Ship to Vashj'ir" (197195) and Stormwind's Pride (190536, to Valiance Keep) dock at the
+-- same pier and are seen overlapping there, one hull inside the other.
+--
+-- Data (TaxiPathNode.dbc 5.4.8): path 965 (190536) stops at node 4 (-8288.8, 1424.7) for 60 s, path 1368 (197195) stops at
+-- node 4 (-8290.9, 1423.8) for 35 s: one berth, 2.3 yd apart. Their periods are 271873 ms and 317524 ms (the core's
+-- TransportMgr::GeneratePath values, matching the sniffed 271979 / 317922 of TDB 4.3.4), so no start offset keeps them
+-- apart: both start at PathProgress 0 at boot and their relative phase drifts by 45.7 s per cycle. A replay of the core's
+-- path timing finds both ships within 60 yd of that berth about every 32 minutes for 30-45 s (3.5 ks per day), the first
+-- time 50 s after boot.
+--
+-- Retail: the mercenary ship belongs to the phase of quest 14482 "Call of Duty". Accepting it phases the player; the ship
+-- then comes to the dock "where normally The Kraken takes players to Borean Tundra", and in that phase the boat to Valiance
+-- Keep is phased out (Warcraft Wiki "Call of Duty (Alliance)" and "Stormwind Harbor", revisions of 2026-07-30 and
+-- 2026-09-29). Outside that phase only Stormwind's Pride uses the berth. This core has no transport phasing and no quest
+-- phase for 14482; the quest is done through the Portal to Vashj'ir (gameobject 207691, shown by object_visibility_state for
+-- 14482) and credited by Erunak Stonespeaker (36915) in Kelp'thar Forest, so the always-spawned ship serves no quest and only
+-- puts a second hull into the Northrend boat's berth. AzerothCore has no such ship. Despawning it gives every player the
+-- retail non-quest view of the harbor.
+--
+-- The Horde ship 203466 is left as it is: no other transport uses its Orgrimmar berth.
+--
+-- Backup (state before this file): `transports` guid 9 = (9, 197195, 'Alliance Ship to Vashj''ir').
+-- Rollback:
+--   DELETE FROM `transports` WHERE `guid` = 9 OR `entry` = 197195;
+--   INSERT INTO `transports` (`guid`, `entry`, `name`) VALUES (9, 197195, 'Alliance Ship to Vashj''ir');
+-- Takes effect at the next worldserver start (transports are spawned once, by TransportMgr::SpawnContinentTransports).
+-- Re-runnable.
+
+DELETE FROM `transports` WHERE `entry` = 197195;
