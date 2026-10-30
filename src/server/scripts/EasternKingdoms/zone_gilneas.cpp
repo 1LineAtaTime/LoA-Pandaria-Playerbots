@@ -3355,8 +3355,13 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
         if (_armTimer <= diff)
         {
             _armTimer = 2000;
-            if (!_running && HasEligiblePlayerNearby(40.0f))
-                Arm();
+            if (!_running)
+            {
+                if (HasEligiblePlayerNearby(40.0f))
+                    Arm();
+                else if (HasEligiblePlayerAtFurnace())
+                    ArmAtFurnace();
+            }
         }
         else
             _armTimer -= diff;
@@ -3467,6 +3472,33 @@ private:
         _events.ScheduleEvent(EVENT_ENDGAME_DOWNSTAIRS, 126900ms);
         _events.ScheduleEvent(EVENT_ENDGAME_FURNACE, 172300ms);
         _events.ScheduleEvent(EVENT_ENDGAME_BIG_ORC, 183600ms);
+    }
+
+    // #1028: a player who comes back already at the furnace (relog or server restart mid-boarding, or after a reset)
+    // never gets within 40 yd of the top deck again, so the boarding never armed and Korm kept IMMUNE_TO_PC.
+    // Resume at the furnace beat for that player instead of replaying the deck timeline.
+    void ArmAtFurnace()
+    {
+        _running = true;
+        _kormGuid.Clear();
+        _events.Reset();
+
+        _events.ScheduleEvent(EVENT_ENDGAME_FURNACE, 2s);
+        _events.ScheduleEvent(EVENT_ENDGAME_BIG_ORC, 13300ms);
+    }
+
+    bool HasEligiblePlayerAtFurnace() const
+    {
+        Creature* korm = me->FindNearestCreature(GilneasEndgame::NPC_KORM_BONEGRIND, 250.0f);
+        if (!korm)
+            return false;
+
+        std::list<Player*> players;
+        korm->GetPlayerListInGrid(players, 40.0f);
+        for (Player* player : players)
+            if (player->IsAlive() && player->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE)
+                return true;
+        return false;
     }
 
     // Wave 27 (t439 cp9): the "say" lines (40 yd) never reached the boarding player while the yells (300 yd) did. The
