@@ -7519,7 +7519,11 @@ SpellCastResult Spell::CheckRange(bool strict)
     // If I'm not wrong, this is needed to put animation to the dest and not to the unit target.
     // And ofc check below will fail becasue of not including target's combat reach.
     // I don't know is this safe but it seems to be (need to check client tho).
-    else if (m_targets.HasDst() && !m_targets.HasTraj())
+    else if (m_targets.HasDst() && !m_targets.HasTraj()
+        // A vehicle weapon's impact spell (e.g. the glaive thrower's 84874 / 70738, 150 yd) is triggered as a missile child of
+        // a long-range parent cast from the vehicle bar (range index 13).  The parent already passed its own range check, and
+        // the child inherits only the destination, not the missile speed, so it must not be range-checked a second time.
+        && !((_triggeredCastFlags & TRIGGERED_IGNORE_POWER_AND_REAGENT_COST) && m_caster->GetVehicleKit()))
     {
         Unit* caster = m_caster;
         if (m_spellInfo->Id == 119909 || m_spellInfo->Id == 119913) // Whiplash & Fellash casterd through Command Deamon
