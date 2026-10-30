@@ -2004,7 +2004,7 @@ void PlayerbotAI::Reset(bool full)
     }
 }
 
-void PlayerbotAI::ResetStrategies()
+void PlayerbotAI::ResetStrategies(bool /*load*/)
 {
     for (uint8 i = 0; i < BOT_STATE_MAX; i++)
         _engines[i]->removeAllStrategies();
@@ -2068,6 +2068,26 @@ void PlayerbotAI::ChangeStrategy(std::string const names, BotState type)
         return;
 
     e->ChangeStrategy(names);
+}
+
+void PlayerbotAI::SelectiveResetStrategies(BotState type)
+{
+    Engine* e = _engines[type];
+    if (!e)
+        return;
+
+    e->removeAllStrategies();
+
+    if (type == BOT_STATE_COMBAT)
+        AiFactory::AddDefaultCombatStrategies(bot, this, e);
+    else if (type == BOT_STATE_NON_COMBAT)
+        AiFactory::AddDefaultNonCombatStrategies(bot, this, e);
+
+    // AC Bot/PlayerbotAI.cpp:1788-1789: re-apply the current map's instance strategy
+    if (sPlayerbotAIConfig->applyInstanceStrategies)
+        ApplyInstanceStrategies(bot->GetMapId());
+
+    e->Init();
 }
 
 void PlayerbotAI::ClearStrategies(BotState type)

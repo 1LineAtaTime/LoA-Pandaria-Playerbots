@@ -272,6 +272,9 @@ public:
     bool allowSummonWhenMasterIsDead;
     bool allowSummonWhenBotIsDead;
     int32 reviveBotWhenSummoned;
+    bool followTeleport;           // beyond AC (#985), default off
+    bool respectCrowdControl;      // beyond AC (#985), default off: AttackersValue skips breakable-CC targets
+    uint32 followTeleportDelay;
     bool botRepairWhenSummon;
     bool summonAtInnkeepersEnabled;
     // AC PlayerbotAIConfig.h:287 / .cpp:407-408 (#530 item 6): per-bot diagnostic logs only for bots with a real-player master.

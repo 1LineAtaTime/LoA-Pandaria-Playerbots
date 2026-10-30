@@ -265,10 +265,10 @@ WorldSafeLocsEntry const* SpiritHealerAction::GetGrave(bool startZone)
         Player* master = botAI->GetGroupMaster();
         if (master && master != bot)
         {
-            ClosestGrave = sObjectMgr->GetClosestGraveYard(master->GetWorldLocation(), bot->GetTeam(), bot);
+            NewGrave = sObjectMgr->GetClosestGraveYard(master->GetWorldLocation(), bot->GetTeam(), bot);
 
-            if (ClosestGrave)
-                return ClosestGrave;
+            if (NewGrave)
+                return NewGrave;
         }
     }
     /*else if (startZone && AI_VALUE(uint8, "durability"))

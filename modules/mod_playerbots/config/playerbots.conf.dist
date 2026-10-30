@@ -229,6 +229,22 @@ AiPlayerbot.AllowSummonWhenBotIsDead = 1
 # default: 1 (disable in combat)
 AiPlayerbot.ReviveBotWhenSummoned = 1
 
+# BEYOND AZEROTHCORE (not in mod-playerbots): follow the master to another map or instance (a dungeon portal, a
+# hearthstone, a mage portal). A bot with the follow strategy, in the master's group and out of combat, teleports next to
+# the master once the master has been there for FollowTeleportDelay milliseconds. The core's entry checks apply, and a bot
+# that would end up in another copy of the instance stays and says why. A dead bot is revived as ReviveBotWhenSummoned
+# says, but only after the entry check has passed, and it does not follow into a different instance while dead.
+# With FollowTeleport = 0 the follow strategy has no extra trigger and nothing runs.
+# default: 0 (disabled), 2000
+AiPlayerbot.FollowTeleport = 0
+AiPlayerbot.FollowTeleportDelay = 2000
+
+# BEYOND AZEROTHCORE (not in mod-playerbots): bots leave alone enemies that another unit has crowd-controlled with a
+# break-on-damage effect (polymorph, sap, shackle undead, repentance and the like) unless they carry the skull raid icon.
+# Fear and plain stuns are not treated as crowd control. With RespectCrowdControl = 0 no aura is looked at.
+# default: 0 (disabled)
+AiPlayerbot.RespectCrowdControl = 0
+
 # Enable/Disable bot repair gear when summon (0 = no, 1 = yes)
 # default: 1
 AiPlayerbot.BotRepairWhenSummon = 1

@@ -8,7 +8,8 @@
  * commented-out code (as AC keeps dormant code), each with the reason:
  *  - ArenaGroupFormationOperation: dormant in AC too - nothing queues it; AC (and this fork,
  *    BattleGroundJoinAction.cpp) form the arena party inline because the queue join follows immediately.
- *  - BotLogoutGroupCleanupOperation: needs PlayerbotRepository::Save (this fork's sPlayerbotDbStore is disabled).
+ *  - BotLogoutGroupCleanupOperation: not needed; PlayerbotHolder::LogoutPlayerBot saves the strategies directly, as
+ *    DisablePlayerBot does (AC's queued save never finds the bot, which is deleted at once).
  *  - ArenaTeamAssignOperation: needs RandomPlayerbotFactory::AssignBotToArenaTeamInternal (not on this fork).
  * LOG_* {} -> TC_LOG_* %s; sPlayerbotsMgr / sRandomPlayerbotMgr / sPlayerbotAIConfig are pointers here;
  * sWorldSessionMgr->FindSession -> sWorld->FindSession.
@@ -276,7 +277,7 @@ class ArenaGroupFormationOperation : public PlayerbotOperation
 };
 */
 
-// Bot logout group cleanup operation - dormant on this fork (see the file header); AC PlayerbotOperations.h:417-452.
+// Bot logout group cleanup operation - not used on this fork (see the file header); AC PlayerbotOperations.h:417-452.
 /*
 class BotLogoutGroupCleanupOperation : public PlayerbotOperation
 {

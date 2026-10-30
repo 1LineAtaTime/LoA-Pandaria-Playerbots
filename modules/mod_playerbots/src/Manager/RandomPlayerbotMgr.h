@@ -230,6 +230,8 @@ private:
     std::map<TeamId, std::map<BattlegroundTypeId, std::vector<ObjectGuid::LowType>>> _battleMastersCache;
     time_t _bgCheckTimer = 0;
     time_t _lfgCheckTimer = 0;  // #142 (AC LfgCheckTimer)
+    time_t _realPlayerLastTimeSeen = 0;  // AC RealPlayerLastTimeSeen (DisabledWithoutRealPlayer)
+    time_t _delayLoginBotsTimer = 0;     // AC DelayLoginBotsTimer
 };
 
 #define sRandomPlayerbotMgr RandomPlayerbotMgr::instance()

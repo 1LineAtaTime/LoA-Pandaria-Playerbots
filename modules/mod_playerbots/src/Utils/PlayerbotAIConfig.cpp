@@ -75,7 +75,7 @@ bool PlayerbotAIConfig::Initialize()
     enabled = sConfigMgr->GetBoolDefault("AiPlayerbot.Enabled", true);
     if (!enabled)
     {
-        TC_LOG_INFO("server.loading", "AI Playerbots is Disabled in aiplayerbot.conf");
+        TC_LOG_INFO("server.loading", "Playerbots Module is disabled in playerbots.conf");
         return false;
     }
 
@@ -520,6 +520,10 @@ bool PlayerbotAIConfig::Initialize()
     allowSummonWhenMasterIsDead = sConfigMgr->GetBoolDefault("AiPlayerbot.AllowSummonWhenMasterIsDead", true);
     allowSummonWhenBotIsDead = sConfigMgr->GetBoolDefault("AiPlayerbot.AllowSummonWhenBotIsDead", true);
     reviveBotWhenSummoned = sConfigMgr->GetIntDefault("AiPlayerbot.ReviveBotWhenSummoned", 1);
+    // Beyond AC (#985): off by default
+    followTeleport = sConfigMgr->GetBoolDefault("AiPlayerbot.FollowTeleport", false);
+    followTeleportDelay = sConfigMgr->GetIntDefault("AiPlayerbot.FollowTeleportDelay", 2000);
+    respectCrowdControl = sConfigMgr->GetBoolDefault("AiPlayerbot.RespectCrowdControl", false);
     botRepairWhenSummon = sConfigMgr->GetBoolDefault("AiPlayerbot.BotRepairWhenSummon", true);
     summonAtInnkeepersEnabled = sConfigMgr->GetBoolDefault("AiPlayerbot.SummonAtInnkeepersEnabled", true);
     logInGroupOnly = sConfigMgr->GetBoolDefault("AiPlayerbot.LogInGroupOnly", true);
