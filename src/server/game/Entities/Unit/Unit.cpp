@@ -4635,13 +4635,14 @@ void Unit::RemoveAurasByTypeOnImmunity(AuraType auraType)
     AuraEffectList& effects = *effectsPtr;
     for (auto itr = effects.begin(); itr != effects.end();)
     {
-        Aura* aura = (*itr)->GetBase();
+        AuraEffect* auraEffect = *itr;
+        Aura* aura = auraEffect->GetBase();
         AuraApplication* aurApp = aura->GetApplicationOfTarget(GetGUID());
         ++itr;
         // Apparently, we shouldn't remove root auras by type
         if (aura->GetSpellInfo()->Id == 142913) // Displaced Energy
         {
-            aura->RemoveEffect((*itr)->GetEffIndex());
+            aura->RemoveEffect(auraEffect->GetEffIndex());
             continue;
         }
         if (!aura->GetSpellInfo()->HasAttribute(SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY))
