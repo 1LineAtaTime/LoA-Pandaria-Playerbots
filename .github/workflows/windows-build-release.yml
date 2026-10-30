@@ -84,7 +84,7 @@ jobs:
         cd $GITHUB_WORKSPACE
         
         mkdir -p build && cd build
-        cmake .. -DTOOLS=ON -DELUNA=1 -A x64
+        cmake .. -DTOOLS=ON -DELUNA=0 -A x64
         cmake --build . --config RelWithDebInfo --parallel 4
       #git bash shell
       shell: bash
@@ -96,8 +96,7 @@ jobs:
           copy "$env:MYSQL_ROOT_DIR/lib/libmysql.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libmysql.dll
           copy "C:/Program Files/OpenSSL/bin/libcrypto-3-x64.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libcrypto-3-x64.dll
           copy "C:/Program Files/OpenSSL/bin/libssl-3-x64.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libssl-3-x64.dll
-          move ${{github.workspace}}/contrib/lua_scripts ${{github.workspace}}/build/bin/RelWithDebInfo/lua_scripts
-        
+
         ./authserver --version
         ./worldserver --version
 
@@ -108,3 +107,24 @@ jobs:
         name: PandariaMasterWin64VS2022
         # Set a custom retention for artifacts
         #retention-days: 7
+
+    # Binaries-only zip for the rolling "ci-<branch>" pre-release (ci-release.yml):
+    # no .pdb files, plus the playerbots module config.
+    - name: Package (CI)
+      shell: pwsh
+      run: |
+        $src = "${{github.workspace}}/build/bin/RelWithDebInfo"
+        $stage = "${{github.workspace}}/ci-package"
+        New-Item -ItemType Directory -Force $stage | Out-Null
+        Get-ChildItem $src -File | Where-Object { $_.Extension -ne '.pdb' } | Copy-Item -Destination $stage
+        Copy-Item "${{github.workspace}}/modules/mod_playerbots/config/playerbots.conf.dist" $stage
+        Get-ChildItem $stage | Format-Table Name, Length
+        Compress-Archive -Path "$stage/*" -DestinationPath "${{github.workspace}}/ci-win64.zip"
+
+    - name: Upload CI package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-package-win64
+        path: ${{github.workspace}}/ci-win64.zip
+        retention-days: 7
+        compression-level: 0

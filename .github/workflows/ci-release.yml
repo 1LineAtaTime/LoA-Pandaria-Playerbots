@@ -1,0 +1,115 @@
+name: ci-release
+
+# Rolling "always latest" pre-release per branch: ci-playerbot and ci-playerbot-beta.
+# When the Windows, GCC and macOS builds of a branch tip have all passed, the ci-<branch>
+# tag is moved to that commit and the release assets are replaced with the three
+# binaries-only zips the builds uploaded (artifacts ci-package-*).
+# The release is always a pre-release and never "Latest".
+#
+# workflow_run fires once per finished build; the job only publishes when the run is
+# for the current branch tip and all three builds of that commit have succeeded, so
+# the last build to finish publishes. Manual re-publish: run this workflow by hand.
+
+on:
+  workflow_run:
+    workflows: ["GCC", "macOS arm64", "windows-build-release"]
+    types: [completed]
+    branches: [playerbot, playerbot-beta]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to publish (playerbot or playerbot-beta)"
+        required: true
+        default: playerbot-beta
+
+permissions: {}
+
+concurrency:
+  group: ci-release-${{ github.event.workflow_run.head_branch || inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.workflow_run.head_branch || inputs.branch }}
+      RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+    - name: Collect the packages of the branch tip
+      id: collect
+      run: |
+        case "$BRANCH" in
+          playerbot|playerbot-beta) ;;
+          *) echo "::error::Unsupported branch '$BRANCH'"; exit 1 ;;
+        esac
+        SHA=$(gh api "repos/$REPO/branches/$BRANCH" --jq .commit.sha)
+        if [ -n "$RUN_SHA" ] && [ "$RUN_SHA" != "$SHA" ]; then
+          echo "This build is for $RUN_SHA but $BRANCH is now at $SHA: nothing to publish."
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        for wf in windows-build-release.yml linux_gcc.yml macos-arm-build.yml; do
+          read -r id status conclusion < <(gh api \
+            "repos/$REPO/actions/workflows/$wf/runs?branch=$BRANCH&head_sha=$SHA&event=push&per_page=1" \
+            --jq '.workflow_runs[0] | "\(.id) \(.status) \(.conclusion)"')
+          echo "$wf: run $id, $status, $conclusion"
+          if [ "$status" != "completed" ] || [ "$conclusion" != "success" ]; then
+            echo "Not every build of $SHA has passed yet: nothing to publish."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh run download "$id" -R "$REPO" -p 'ci-package-*' -D dl
+        done
+        mkdir -p out
+        for os in win64 linux-x64 macos-arm64; do
+          zip=$(find dl -name "ci-$os.zip" | head -n 1)
+          if [ -z "$zip" ]; then echo "::error::No ci-$os.zip in the build artifacts"; exit 1; fi
+          mv "$zip" "out/$BRANCH-ci-$os.zip"
+        done
+        ls -la out
+        DATE=$(gh api "repos/$REPO/commits/$SHA" --jq .commit.committer.date)
+        if [ "$BRANCH" = "playerbot-beta" ]; then
+          TITLE="Latest beta CI build (playerbot-beta)"
+        else
+          TITLE="Latest CI build (playerbot)"
+        fi
+        {
+          echo "Automated build of the \`$BRANCH\` branch at commit [\`${SHA:0:8}\`](https://github.com/$REPO/commit/$SHA) ($DATE), replaced after every successful CI build of the branch."
+          echo
+          echo "**Untested development build**: binaries only, without the database or extracted map data. For a tested package with the database, use a versioned [release](https://github.com/$REPO/releases)."
+          echo
+          echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
+          echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
+          echo "- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
+        } > notes.md
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+        echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+        echo "ready=true" >> "$GITHUB_OUTPUT"
+
+    - name: Update the ci-${{ env.BRANCH }} pre-release
+      if: steps.collect.outputs.ready == 'true'
+      env:
+        SHA: ${{ steps.collect.outputs.sha }}
+        TITLE: ${{ steps.collect.outputs.title }}
+      run: |
+        TAG="ci-$BRANCH"
+        if gh api "repos/$REPO/git/ref/tags/$TAG" > /dev/null 2>&1; then
+          gh api -X PATCH "repos/$REPO/git/refs/tags/$TAG" -f sha="$SHA" -F force=true > /dev/null
+        else
+          gh api -X POST "repos/$REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SHA" > /dev/null
+        fi
+        if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+          gh release edit "$TAG" -R "$REPO" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
+          gh release upload "$TAG" -R "$REPO" --clobber out/*.zip
+        else
+          gh release create "$TAG" -R "$REPO" --title "$TITLE" --notes-file notes.md --prerelease --latest=false out/*.zip
+        fi
+        gh release view "$TAG" -R "$REPO" --json tagName,isPrerelease,assets --jq '{tagName, isPrerelease, assets: [.assets[].name]}'

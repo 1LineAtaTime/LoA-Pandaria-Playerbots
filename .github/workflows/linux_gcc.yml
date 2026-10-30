@@ -37,3 +37,22 @@ jobs:
         cd bin/check_install/bin
         ./authserver --version
         ./worldserver --version
+    # Binaries-only zip for the rolling "ci-<branch>" pre-release (ci-release.yml).
+    # Zipped here so the executables keep their permissions.
+    - name: Package (CI)
+      if: github.event_name == 'push'
+      run: |
+        mkdir -p ci-package/etc
+        cp -a bin/check_install/bin ci-package/bin
+        cp src/server/authserver/authserver.conf.dist src/server/worldserver/worldserver.conf.dist \
+          modules/mod_playerbots/config/playerbots.conf.dist ci-package/etc/
+        ls -la ci-package/bin ci-package/etc
+        (cd ci-package && zip -r -q ../ci-linux-x64.zip .)
+    - name: Upload CI package
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-package-linux-x64
+        path: ci-linux-x64.zip
+        retention-days: 7
+        compression-level: 0
