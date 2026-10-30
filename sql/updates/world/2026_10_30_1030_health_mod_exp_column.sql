@@ -2,7 +2,7 @@
 --
 -- The core takes creature health from creature_classlevelstats.basehp{exp} (CreatureBaseStats::BaseHealth[exp] in
 -- Creature::SelectLevel) and multiplies it by Health_mod. These templates had Health_mod = health / basehp0 while their
--- exp is 1-4, so their health came out 1.5x to 16x too high (the #1026 Gallywix pattern).
+-- exp is 1-4, so their health came out 1.6x to 23x too high (the #1026 Gallywix pattern).
 --
 -- Each row sets the Health_mod that gives, at the template's own level and exp column:
 --   * AC parity:          the health AzerothCore gives the same creature at the same level (AC keeps these at exp 0);
