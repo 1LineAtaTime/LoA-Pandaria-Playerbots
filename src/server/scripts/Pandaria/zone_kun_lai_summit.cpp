@@ -247,7 +247,7 @@ enum ZoneKunLaiSummitTexts
 
     SAY_BORGINN_DARKFIST_AGGRO              = 0,
 
-    SAY_SCRITCH_AGGRO                       = 1,
+    SAY_SCRITCH_AGGRO                       = 0, // #1021: its one creature_text group is 0 (was 1: "Could not find TextGroup 1")
 
     SAY_YOWLER_AGGRO                        = 0,
 
