@@ -366,7 +366,8 @@ void BattlegroundBFG::NodeOccupied(uint8 node, Team team)
     if (node >= BG_BFG_DYNAMIC_NODES_COUNT) // only dynamic nodes, no start points
         return;
 
-    Creature* trigger = GetBGCreature(node + 5); // 0-5 spirit guides
+    // probe the map directly: the trigger slot is empty until the node is first taken (AC BattlegroundAB.cpp NodeOccupied)
+    Creature* trigger = GetBgMap()->GetCreature(BgCreatures[node + 5]); // 0-4 spirit guides
 
     if (!trigger)
         trigger = AddCreature(WORLD_TRIGGER, node + 5, team, BG_BFG_NodePositions[node][0], BG_BFG_NodePositions[node][1], BG_BFG_NodePositions[node][2], BG_BFG_NodePositions[node][3]);

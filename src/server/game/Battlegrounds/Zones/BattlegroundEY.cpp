@@ -777,7 +777,8 @@ void BattlegroundEY::EventTeamCapturedPoint(Player* player, uint32 Point)
     if (Point >= EY_POINTS_MAX)
         return;
 
-    Creature* trigger = GetBGCreature(Point + 6);//0-5 spirit guides
+    // probe the map directly: the trigger slot is empty until the point is first taken (AC BattlegroundEY.cpp EventTeamCapturedPoint)
+    Creature* trigger = GetBgMap()->GetCreature(BgCreatures[Point + 6]);//0-5 spirit guides
     if (!trigger)
        trigger = AddCreature(WORLD_TRIGGER, Point+6, Team, BG_EY_TriggerPositions[Point][0], BG_EY_TriggerPositions[Point][1], BG_EY_TriggerPositions[Point][2], BG_EY_TriggerPositions[Point][3]);
 
