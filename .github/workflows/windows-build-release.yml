@@ -1,14 +1,30 @@
 name: windows-build-release
 
+# No push trigger: pull requests are checked here, builds can be run by hand, and the
+# daily playerbot-beta pre-release (beta-prerelease.yml) calls this workflow.
 on:
-  push:
+  pull_request:
     paths-ignore:
-      - 'sql/**'    
+      - 'sql/**'
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit to build"
+        type: string
+        required: true
+      package:
+        description: "Upload the binaries-only zip (artifact ci-package-win64)"
+        type: boolean
+        default: false
 
-concurrency:
-  group: ${{ github.head_ref }} || concat(${{ github.ref }}, ${{ github.workflow }})
-  cancel-in-progress: true
-
+permissions:
+  contents: read
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -21,10 +37,19 @@ env:
 jobs:
   build:
     runs-on: windows-2022
-    
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 120
+    # A newer push to a pull request cancels its older build; other runs never share a group.
+    concurrency:
+      group: ${{ github.event_name == 'pull_request' && format('windows-pr-{0}', github.event.pull_request.number) || format('windows-{0}-{1}', github.run_id, github.run_attempt) }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
     steps:
     #git checkout
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
 
     - uses: FranzDiebold/github-env-vars-action@v2.8.0
     - name: Create Build Environment
@@ -100,7 +125,9 @@ jobs:
         ./authserver --version
         ./worldserver --version
 
+    # Full output with .pdb files, for pull requests and manual runs.
     - name: Upload Artifacts
+      if: ${{ !inputs.package }}
       uses: actions/upload-artifact@v4
       with:
         path: ${{github.workspace}}/build/bin/RelWithDebInfo/
@@ -108,9 +135,10 @@ jobs:
         # Set a custom retention for artifacts
         #retention-days: 7
 
-    # Binaries-only zip for the rolling "ci-<branch>" pre-release (ci-release.yml):
+    # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml):
     # no .pdb files, plus the playerbots module config.
     - name: Package (CI)
+      if: ${{ inputs.package }}
       shell: pwsh
       run: |
         $src = "${{github.workspace}}/build/bin/RelWithDebInfo"
@@ -122,6 +150,7 @@ jobs:
         Compress-Archive -Path "$stage/*" -DestinationPath "${{github.workspace}}/ci-win64.zip"
 
     - name: Upload CI package
+      if: ${{ inputs.package }}
       uses: actions/upload-artifact@v4
       with:
         name: ci-package-win64

@@ -1,9 +1,6 @@
 name: Clang
 
 on:
-  push:
-    paths-ignore:
-      - 'sql/**'    
   pull_request:
     paths-ignore:
       - 'sql/**'
@@ -12,6 +9,11 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04

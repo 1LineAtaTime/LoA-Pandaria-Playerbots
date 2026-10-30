@@ -51,11 +51,11 @@ authors and contributors.
 + A 5.4.8 (build 18414) game client, enUS locale, for the data extraction below.
 
 ## Latest builds (CI)
-Prebuilt binaries from the newest commit of this branch, for Windows (x64), Linux (x64) and
-macOS (arm64), are published automatically after every successful CI build:
-**[latest playerbot build](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/ci-playerbot)**.
-These are untested development builds: binaries only, without the database or extracted map
-data. For a tested package with the database, use the
+This branch has no automatic builds. Untested development builds of the `playerbot-beta`
+branch (Windows x64, Linux x64, macOS arm64 and a database with every SQL update applied)
+are published at most once a day:
+**[latest playerbot-beta build](../../releases/tag/ci-playerbot-beta)**.
+For a tested package, use the
 [releases](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases).
 
 ## Getting started
