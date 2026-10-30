@@ -1661,7 +1661,9 @@ Reach NavmeshReach(Player* bot, StarterSpawn const& spawn, bool& botInside)
             dtMeshTile const* nextTile = nullptr;
             dtPoly const* nextPoly = nullptr;
             nav->getTileAndPolyByRefUnsafe(link.ref, &nextTile, &nextPoly);
-            if (!filter.passFilter(link.ref, nextTile, nextPoly))
+            // the flag test of dtQueryFilter::passFilter: without DT_VIRTUAL_QUERYFILTER Detour defines it inline in its own
+            // .cpp, so a call from here does not link on GCC / Clang (Linux / macOS CI)
+            if (!nextPoly || (nextPoly->flags & filter.getIncludeFlags()) == 0 || (nextPoly->flags & filter.getExcludeFlags()) != 0)
                 continue;
             seen.insert(link.ref);
             pending.push_back(link.ref);
