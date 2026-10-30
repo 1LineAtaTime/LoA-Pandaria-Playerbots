@@ -1249,11 +1249,12 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
     float weapon_mindamage = GetWeaponDamageRange(attType, MINDAMAGE);
     float weapon_maxdamage = GetWeaponDamageRange(attType, MAXDAMAGE);
 
-    /* per-creature/per-difficulty damage multiplier (from difficulty table, default 1.0)
-       combined with any runtime override (e.g. world events) */
+    // per-creature damage modifier: creature_template.DamageModifier x the rank's config rate on every map (AC
+    // StatSystem.cpp:1169, ObjectMgr.cpp:628/1216); where the map has a creature_template_difficulty row for the creature
+    // (instances, battlegrounds) that row's DamageModifier replaces it, so nothing is multiplied twice
     float dmg_multiplier = GetCreatureTemplate()->dmg_multiplier;
     if (auto mod = sObjectMgr->SelectDifficultyInfo(GetMap(), GetEntry()))
-        dmg_multiplier *= mod->DamageMod;
+        dmg_multiplier = mod->DamageMod;
 
     float att_pwr_change = GetTotalAttackPowerValue(attType);
 

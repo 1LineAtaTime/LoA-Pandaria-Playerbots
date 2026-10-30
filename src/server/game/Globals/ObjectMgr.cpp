@@ -439,7 +439,9 @@ void ObjectMgr::LoadCreatureTemplates()
     //                                            73           74         75           76           77          78            79          80          81          82          83
                                               "HoverHeight, Health_mod, Mana_mod, Mana_mod_extra, Armor_mod, RacialLeader, questItem1, questItem2, questItem3, questItem4, questItem5, "
     //                                            84           85          86           87            88                   89               90          91
-                                              " questItem6, movementId, RegenHealth, VignetteID, TrackingQuestID,  mechanic_immune_mask, flags_extra, ScriptName "
+                                              " questItem6, movementId, RegenHealth, VignetteID, TrackingQuestID,  mechanic_immune_mask, flags_extra, ScriptName, "
+    //                                            92 (read as fields[87])
+                                              "DamageModifier "
                                               "FROM creature_template ct LEFT JOIN creature_template_movement ctm ON ct.entry = ctm.CreatureId;");
 
     if (!result)
@@ -564,7 +566,9 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
         creatureTemplate.MechanicImmuneMask = fields[84].GetUInt32();
         creatureTemplate.flags_extra        = fields[85].GetUInt32();
         creatureTemplate.ScriptID           = GetScriptId(fields[86].GetString());
-        creatureTemplate.dmg_multiplier     = 1.0f;
+        // AC ObjectMgr.cpp:628: the template's melee damage modifier, used on every map without a creature_template_difficulty
+        // row for the creature (the open world); a difficulty row replaces it (Creature::UpdateDamagePhysical)
+        creatureTemplate.dmg_multiplier     = fields[87].GetFloat();
 }
 
 void ObjectMgr::LoadCreatureTemplateModels()
@@ -982,6 +986,9 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
 
     if (cInfo->RangeAttackTime == 0)
         const_cast<CreatureTemplate*>(cInfo)->RangeAttackTime = BASE_ATTACK_TIME;
+
+    // AC ObjectMgr.cpp:1216: the Rate.Creature.*.Damage config rate of the rank (1.0 by default)
+    const_cast<CreatureTemplate*>(cInfo)->dmg_multiplier *= Creature::_GetDamageMod(cInfo->rank);
 
     if ((cInfo->npcflag & UNIT_NPC_FLAG_TRAINER) && cInfo->trainer_type >= MAX_TRAINER_TYPE)
         TC_LOG_ERROR("sql.sql", "Creature (Entry: %u) has wrong trainer type %u.", cInfo->Entry, cInfo->trainer_type);
