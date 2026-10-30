@@ -254,8 +254,8 @@ AiPlayerbot.FollowTeleportDelay = 2000
 # BEYOND AZEROTHCORE (not in mod-playerbots): bots leave alone enemies that another unit has crowd-controlled with a
 # break-on-damage effect (polymorph, sap, shackle undead, repentance and the like) unless they carry the skull raid icon.
 # Fear and plain stuns are not treated as crowd control. With RespectCrowdControl = 0 no aura is looked at.
-# default: 0 (disabled)
-AiPlayerbot.RespectCrowdControl = 0
+# default: 1 (enabled)
+AiPlayerbot.RespectCrowdControl = 1
 
 # Enable/Disable bot repair gear when summon (0 = no, 1 = yes)
 # default: 1

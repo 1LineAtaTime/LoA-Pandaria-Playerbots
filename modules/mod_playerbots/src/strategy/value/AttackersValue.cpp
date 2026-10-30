@@ -216,7 +216,7 @@ bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float /*range
     if (attacker->IsFriendlyTo(bot))
         return false;
 
-    // Beyond AC (#985), AiPlayerbot.RespectCrowdControl, default off: with the key off nothing below runs (no aura is
+    // Beyond AC (#985), AiPlayerbot.RespectCrowdControl, default on (owner 2026-10-29): with the key off nothing below runs (no aura is
     // read). On, bots leave alone enemies that someone else has crowd-controlled by a break-on-damage effect
     // (polymorph, sap, shackle, repentance and the like), unless they carry the skull raid icon. Fear and plain
     // stuns are not crowd control here: a feared target is still attackable and an unbreakable stun is a fair target.

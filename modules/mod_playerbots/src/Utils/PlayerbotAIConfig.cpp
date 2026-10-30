@@ -532,7 +532,7 @@ bool PlayerbotAIConfig::Initialize()
     // Beyond AC (#985): off by default
     followTeleport = sConfigMgr->GetBoolDefault("AiPlayerbot.FollowTeleport", false);
     followTeleportDelay = sConfigMgr->GetIntDefault("AiPlayerbot.FollowTeleportDelay", 2000);
-    respectCrowdControl = sConfigMgr->GetBoolDefault("AiPlayerbot.RespectCrowdControl", false);
+    respectCrowdControl = sConfigMgr->GetBoolDefault("AiPlayerbot.RespectCrowdControl", true);
     botRepairWhenSummon = sConfigMgr->GetBoolDefault("AiPlayerbot.BotRepairWhenSummon", true);
     summonAtInnkeepersEnabled = sConfigMgr->GetBoolDefault("AiPlayerbot.SummonAtInnkeepersEnabled", true);
     logInGroupOnly = sConfigMgr->GetBoolDefault("AiPlayerbot.LogInGroupOnly", true);
