@@ -954,6 +954,60 @@ def auth_login(host, port, account, password, timeout=15.0):
 # ---------------------------------------------------------------------------
 # world connection
 # ---------------------------------------------------------------------------
+def decode_attackerstateupdate(body):
+    """SMSG_ATTACKERSTATEUPDATE, mirroring Unit::SendAttackStateUpdate: a flag bit, a size
+    placeholder, hit info, both packed guids, damage, overkill, the sub-damage list, absorb and
+    resist per sub-damage by hit info, victim state and the blocked amount.  Returns a dict."""
+    if not body:
+        raise ValueError("empty")
+    if body[0] & 0x80:
+        raise ValueError("unk-flags block present")
+    pos = 5                                    # flag byte + u32 size placeholder
+
+    def pguid(pos):
+        mask = body[pos]
+        pos += 1
+        val = 0
+        for i in range(8):
+            if mask & (1 << i):
+                val |= body[pos] << (8 * i)
+                pos += 1
+        return val, pos
+
+    hit = struct.unpack_from("<I", body, pos)[0]
+    pos += 4
+    attacker, pos = pguid(pos)
+    victim, pos = pguid(pos)
+    dmg, over = struct.unpack_from("<II", body, pos)
+    pos += 8
+    count = body[pos]
+    pos += 1
+    subs = []
+    for _ in range(count):
+        school, fdmg, idmg = struct.unpack_from("<IfI", body, pos)
+        pos += 12
+        subs.append((school, fdmg, idmg))
+    absorb = resist = blocked = 0
+    if hit & 0x60:                             # FULL_ABSORB | PARTIAL_ABSORB
+        for _ in range(count):
+            absorb += struct.unpack_from("<I", body, pos)[0]
+            pos += 4
+    if hit & 0x180:                            # FULL_RESIST | PARTIAL_RESIST
+        for _ in range(count):
+            resist += struct.unpack_from("<I", body, pos)[0]
+            pos += 4
+    state = body[pos]
+    pos += 1 + 4 + 4                           # victim state, unknown attacker state, melee spell id
+    if hit & 0x2000:                           # HITINFO_BLOCK
+        blocked = struct.unpack_from("<I", body, pos)[0]
+    entry = 0
+    hi = (attacker >> 48) & 0xFFFF
+    if (hi >> 4) in (0xF13, 0xF15, 0xF11):     # Unit / Vehicle / GameObject carry the entry
+        entry = (attacker >> 32) & 0xFFFFF
+    return dict(hit=hit, attacker=attacker, victim=victim, entry=entry, dmg=dmg, over=over,
+                subs=subs, absorb=absorb, resist=resist, blocked=blocked, state=state)
+
+
 class WorldClient:
     def __init__(self, host, port, session_key, account, timeout=20.0):
         self.s = socket.create_connection((host, port), timeout=timeout)
@@ -1600,6 +1654,15 @@ class WorldClient:
                 self._parse_battle_pay(op, body)
             except (IndexError, struct.error) as exc:
                 log("BattlePay 0x%04X parse failed: %s (body=%s)" % (op, exc, body[:48].hex()))
+        elif op == 0x06AA:
+            try:
+                m = decode_attackerstateupdate(body)
+                log("[MELEE] attacker=0x%016X entry=%d hit=0x%x dmg=%d absorb=%d resist=%d blocked=%d state=%d"
+                    % (m["attacker"], m["entry"], m["hit"], m["dmg"], m["absorb"], m["resist"],
+                       m["blocked"], m["state"]))
+            except (IndexError, struct.error, ValueError) as exc:
+                log("SMSG_ATTACKERSTATEUPDATE parse failed: %s (body=%s)" % (exc, body[:48].hex()))
+            self.emit("observed", op="SMSG_ATTACKERSTATEUPDATE", size=len(body))
         elif op in OBSERVED_470:
             log("%s (%d bytes) %s" % (OBSERVED_470[op], len(body), body[:16].hex()))
             self.emit("observed", op=OBSERVED_470[op], size=len(body))
