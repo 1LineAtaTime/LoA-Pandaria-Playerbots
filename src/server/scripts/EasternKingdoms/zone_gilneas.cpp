@@ -3308,9 +3308,9 @@ private:
 
 // #506 - Lorna Crowley 43566 on the static gunship deck: the boarding timeline. Port of ShatterCore
 // npc_gilneas_endgame_controller (gilneas_chapter_4.cpp:1645-1921); offsets from arming (= a 26706 player on the
-// deck), Korm Bonegrind 43567 is released at the furnace beat, his death launches the wyverns (81779 = credit +
-// ride), the event re-arms 123 s later. Differences: Lorna herself stays out of the fight (her template is
-// IMMUNE_TO_NPC here and the timeline lives in her AI, so she must not die); the Navigator answers "Dabu?" after
+// deck), Korm Bonegrind 43567 is released at the furnace beat, his death or the explosion 45 s later (#1029) launches
+// the wyverns (81779 = credit + ride), the event re-arms 123 s later. Differences: Lorna herself stays out of the
+// fight (her template is IMMUNE_TO_NPC here and the timeline lives in her AI, so she must not die); the Navigator answers "Dabu?" after
 // "Hands up, greenskins!" (Wowpedia "Endgame (quest)" Notes, MediaWiki API 2026-10-09; not in ShatterCore).
 struct npc_lorna_crowley_endgame : public ScriptedAI
 {
@@ -3326,6 +3326,7 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
         EVENT_ENDGAME_FURNACE,
         EVENT_ENDGAME_BIG_ORC,
         EVENT_ENDGAME_KORM_POLL,
+        EVENT_ENDGAME_EXPLOSION,
         EVENT_ENDGAME_WYVERN_YELL,
         EVENT_ENDGAME_LAUNCH,
         EVENT_ENDGAME_RESET,
@@ -3399,18 +3400,14 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
                     SayToBoarders(me, SAY_LORNA_FURNACE);
                     ActivateKorm();
                     _events.ScheduleEvent(EVENT_ENDGAME_KORM_POLL, 2s);
+                    _events.ScheduleEvent(EVENT_ENDGAME_EXPLOSION, 45s);
                     break;
                 case EVENT_ENDGAME_BIG_ORC:
                     SayToBoarders(me, SAY_LORNA_BIG_ORC);
                     break;
                 case EVENT_ENDGAME_KORM_POLL:
                     if (IsKormDead())
-                    {
-                        _abandonedPolls = 0;
-                        _events.ScheduleEvent(EVENT_ENDGAME_WYVERN_YELL, 750ms);
-                        _events.ScheduleEvent(EVENT_ENDGAME_LAUNCH, 3200ms);
-                        _events.ScheduleEvent(EVENT_ENDGAME_RESET, 123s);
-                    }
+                        BeginEscape();
                     else
                     {
                         if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
@@ -3439,6 +3436,11 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
                         }
                         _events.ScheduleEvent(EVENT_ENDGAME_KORM_POLL, 2s);
                     }
+                    break;
+                case EVENT_ENDGAME_EXPLOSION:
+                    if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                        LogKorm(korm, "still alive at the explosion");
+                    BeginEscape();
                     break;
                 case EVENT_ENDGAME_WYVERN_YELL:
                     Talk(SAY_LORNA_WYVERNS);
@@ -3636,6 +3638,25 @@ private:
 
         Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid);
         return !korm || !korm->IsAlive();
+    }
+
+    // #1029: the explosives go off on the ship's own clock, not on Korm's death. Wowpedia "Korm Bonegrind" Notes (MediaWiki
+    // API, 2026-10-30): "If he does not spawn, the event will eventually go on, and you will be able to complete the
+    // quest"; "Endgame (quest)" Notes: Lorna says "Just hold them off now!" and the explosives go off as the ship reaches the
+    // wall. Korm (level 12 elite, 30x health = 7410 hp, reference 5.4.8 data) is sized for Lorna's boarding party, which
+    // fights beside the player in the original event. Here the party stays on the decks (the ship has no navmesh, and a
+    // squad that could engage him pulled him off the furnace room in wave 30), so a quest-level player (about 450-890 hp,
+    // 10-15 dps) can not kill him alone: a level-24 warrior lost a 4.5-minute fight with Korm still at 28%. ShatterCore
+    // gated the escape on his death (IsKormDead only). Now his death brings the escape forward, and otherwise it starts
+    // 45 s after the furnace beat, when "hold them off" is over.
+    void BeginEscape()
+    {
+        _events.CancelEvent(EVENT_ENDGAME_KORM_POLL);
+        _events.CancelEvent(EVENT_ENDGAME_EXPLOSION);
+        _abandonedPolls = 0;
+        _events.ScheduleEvent(EVENT_ENDGAME_WYVERN_YELL, 750ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_LAUNCH, 3200ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_RESET, 123s);
     }
 
     // ShatterCore gilneas_chapter_4.cpp:1881-1896 (LaunchWyverns): 81779 gives the credit, summons the wyvern and
