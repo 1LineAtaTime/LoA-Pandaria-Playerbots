@@ -637,6 +637,20 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     }*/
 
     bot->SaveToDB(false);
+    // AC Bot/PlayerbotMgr.cpp:595-609: an addclass bot more than 3 levels away from its master is re-geared to the
+    // master's level and gear score
+    bool addClassBot = sRandomPlayerbotMgr->IsAccountType(accountId, 2);
+    if (addClassBot && master && abs((int)master->GetLevel() - (int)bot->GetLevel()) > 3)
+    {
+        uint32 mixedGearScore =
+            PlayerbotAI::GetMixedGearScore(master, true, false, 12) * sPlayerbotAIConfig->autoInitEquipLevelLimitRatio;
+        // work around: distinguish from 0 if no gear
+        if (mixedGearScore == 0)
+            mixedGearScore = 1;
+        BotFactory factory(bot, master->GetLevel(), ITEM_QUALITY_LEGENDARY, mixedGearScore);
+        factory.Randomize(false);
+    }
+
     /*if (master && isRandomAccount && master->getLevel() < bot->getLevel())
     {
         uint32 mixedGearScore =

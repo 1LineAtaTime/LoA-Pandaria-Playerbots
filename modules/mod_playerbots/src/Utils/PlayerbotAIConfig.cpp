@@ -156,7 +156,8 @@ bool PlayerbotAIConfig::Initialize()
 
     randomBotAutologin = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotAutologin", true);
     randomBotAccountPrefix = sConfigMgr->GetStringDefault("AiPlayerbot.RandomBotAccountPrefix", "rndbot");
-    randomBotAccountCount = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAccountCount", 200);
+    randomBotAccountCount = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAccountCount", 0);
+    randomBotAccountSlackPct = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotAccountSlackPct", 0);
     maxAddedBotsPerClass = sConfigMgr->GetIntDefault("AiPlayerbot.MaxAddedBotsPerClass", 50);
     maxAddedBots = sConfigMgr->GetIntDefault("AiPlayerbot.MaxAddedBots", 200);
     minRandomBots = sConfigMgr->GetIntDefault("AiPlayerbot.MinRandomBots", 50);
@@ -400,13 +401,23 @@ bool PlayerbotAIConfig::Initialize()
     travelNodeRouteDistance = sConfigMgr->GetFloatDefault("AiPlayerbot.TravelNodeRouteDistance", 500.0f);
 
 
+    // Before CreateRandomBots, which sizes and assigns the addclass accounts
+    addClassCommand = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassCommand", 1);
+    addClassAccountPoolSize = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassAccountPoolSize", 50);
+    autoInitEquipLevelLimitRatio = sConfigMgr->GetFloatDefault("AiPlayerbot.AutoInitEquipLevelLimitRatio", 1.0f);
+
     RandomPlayerbotFactory::CreateRandomBots();
     if (World::IsStopped())
     {
         return true;
     }
 
-    sRandomPlayerbotMgr->PrepareAddclassCache();
+    // Assign account types after the accounts and characters are created (AC PlayerbotAIConfig.cpp:913)
+    sRandomPlayerbotMgr->AssignAccountTypes();
+
+    // As AzerothCore (RandomPlayerbotMgr::Init)
+    if (addClassCommand)
+        sRandomPlayerbotMgr->PrepareAddclassCache();
     sRandomPlayerbotMgr->PrepareTeleportCache();
     sRandomPlayerbotMgr->PrepareBattleMastersCache();
 
@@ -499,8 +510,6 @@ bool PlayerbotAIConfig::Initialize()
     allowTrustedAccountBots = sConfigMgr->GetBoolDefault("AiPlayerbot.AllowTrustedAccountBots", true);
     selfBotLevel = sConfigMgr->GetIntDefault("AiPlayerbot.SelfBotLevel", 1);
 
-    addClassCommand = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassCommand", 1);
-    addClassAccountPoolSize = sConfigMgr->GetIntDefault("AiPlayerbot.AddClassAccountPoolSize", 50);
     autoInitOnly = sConfigMgr->GetBoolDefault("AiPlayerbot.AutoInitOnly", false);
 
     commandPrefix = sConfigMgr->GetStringDefault("AiPlayerbot.CommandPrefix", "");
@@ -730,4 +739,4 @@ void PlayerbotAIConfig::log(std::string const fileName, char const* str, ...)
 bool PlayerbotAIConfig::IsInRandomAccountList(uint32 id)
 {
     return std::find(randomBotAccounts.begin(), randomBotAccounts.end(), id) != randomBotAccounts.end();
-}
+}

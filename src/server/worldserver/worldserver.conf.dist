@@ -1361,8 +1361,10 @@ BirthdayTime = 1222964635
 #           DATABASE_LOGIN     = 1, // Auth database
 #           DATABASE_CHARACTER = 2, // Character database
 #           DATABASE_WORLD     = 4, // World database
+#           DATABASE_PLAYERBOTS = 8, // Playerbots database (only in builds with PLAYERBOTS)
 #
 #        Default:     7  - (All enabled)
+#                     15 - (All enabled, with the playerbots database)
 #                     4  - (Enable world only)
 #                     0  - (All disabled)
 

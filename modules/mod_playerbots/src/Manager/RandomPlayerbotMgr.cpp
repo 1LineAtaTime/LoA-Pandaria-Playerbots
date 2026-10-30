@@ -61,6 +61,8 @@
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
+#include "RandomPlayerbotFactory.h"
+#include "RBAC.h"
 #include "PerformanceMonitor.h"
 #include "Playerbots.h"
 #include "BotScenario.h"
@@ -354,11 +356,11 @@ uint32 RandomPlayerbotMgr::AddRandomBots()
         {
             // Calculate how many accounts can be used
             // With enablePeriodicOnlineOffline, don't use all of the accounts right away. Fraction results are rounded up
-            uint32 accountsToUseCount = (sPlayerbotAIConfig->randomBotAccounts.size() + sPlayerbotAIConfig->periodicOnlineOfflineRatio - 1)
+            uint32 accountsToUseCount = (rndBotTypeAccounts.size() + sPlayerbotAIConfig->periodicOnlineOfflineRatio - 1)
                                         / sPlayerbotAIConfig->periodicOnlineOfflineRatio;
 
             // Randomly select accounts
-            std::vector<uint32> shuffledAccounts = sPlayerbotAIConfig->randomBotAccounts;
+            std::vector<uint32> shuffledAccounts = rndBotTypeAccounts;
             std::shuffle(shuffledAccounts.begin(), shuffledAccounts.end(), rng);
 
             for (uint32 i = 0; i < accountsToUseCount && i < shuffledAccounts.size(); i++)
@@ -368,7 +370,7 @@ uint32 RandomPlayerbotMgr::AddRandomBots()
         }
         else
         {
-            accountsToUse = sPlayerbotAIConfig->randomBotAccounts;
+            accountsToUse = rndBotTypeAccounts;   // the random bot accounts (type 1), not the addclass ones
         }
 
         // Pre-map all characters from selected accounts
@@ -1256,6 +1258,47 @@ bool RandomPlayerbotMgr::IsRandomBot(ObjectGuid::LowType bot)
         return false;
     if (std::find(_currentBots.begin(), _currentBots.end(), bot) != _currentBots.end())
         return true;
+    return false;
+}
+
+// AC Bot/RandomPlayerbotMgr.cpp:2250-2297 (IsSelfBot -> IsRealPlayer, as IsRandomBot above). A bot of the addclass cache, or
+// of an addclass account (playerbots_account_type 2).
+bool RandomPlayerbotMgr::IsAddclassBot(Player* bot)
+{
+    if (bot && GET_PLAYERBOT_AI(bot))
+    {
+        if (GET_PLAYERBOT_AI(bot)->IsRealPlayer())
+            return false;
+    }
+    if (bot)
+    {
+        return IsAddclassBot(bot->GetGUID().GetCounter());
+    }
+
+    return false;
+}
+
+bool RandomPlayerbotMgr::IsAddclassBot(ObjectGuid::LowType bot)
+{
+    ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(bot);
+
+    // Check the cache with faction considerations (this fork's cache is a vector per team and class; AC's skip of class 10
+    // is dropped, the cache holds monks)
+    for (uint8 claz = CLASS_WARRIOR; claz < MAX_CLASSES; claz++)
+    {
+        for (uint8 isAlliance = 0; isAlliance <= 1; isAlliance++)
+        {
+            auto const itr = _addclassCache.find(GetTeamClassIdx(isAlliance, claz));
+            if (itr != _addclassCache.end() && std::find(itr->second.begin(), itr->second.end(), guid) != itr->second.end())
+                return true;
+        }
+    }
+
+    // If not in cache, check the account type
+    uint32 accountId = sCharacterCache->GetCharacterAccountIdByGuid(guid);
+    if (accountId && IsAccountType(accountId, 2)) // Type 2 = AddClass
+        return true;
+
     return false;
 }
 
@@ -3073,45 +3116,208 @@ Player* RandomPlayerbotMgr::GetRandomPlayer()
     return _players[index];
 }
 
+// AzerothCore's PrepareAddclassCache: the offline characters of the addclass accounts (type 2), by faction and class.
+// Monks are included (AzerothCore skips class 10, which WotLK does not have, and so did this; the addclass command
+// takes "monk") and the faction is the core's (Player::TeamForRace, worgen, goblins and pandaren included); a pandaren
+// who has not picked a faction yet belongs to neither, but CreateRandomBots gives the addclass accounts faction
+// pandaren.
 void RandomPlayerbotMgr::PrepareAddclassCache()
 {
-    if (sPlayerbotAIConfig->randomBotAccounts.empty())
+    if (addClassTypeAccounts.empty())
     {
-        TC_LOG_WARN("playerbots", "Unable to prepare add class cache as accounts are empty");
+        TC_LOG_WARN("playerbots", "Unable to prepare add class cache as there are no AddClass accounts");
         return;
     }
-    int32 maxAccountId = sPlayerbotAIConfig->randomBotAccounts.back();
-    int32 minIdx = 0;
-    int32 minAccountId = sPlayerbotAIConfig->randomBotAccounts[minIdx];
-    if (minAccountId < 0)
-    {
-        TC_LOG_ERROR("playerbots", "No available account for add class!");
-    }
+
     int32 collected = 0;
-    for (uint8 claz = CLASS_WARRIOR; claz <= CLASS_DRUID; claz++)
+    for (uint32 accountId : addClassTypeAccounts)
     {
-        if (claz == 10)
-            continue;
         QueryResult results = CharacterDatabase.PQuery(
-            "SELECT guid, race FROM characters "
-            "WHERE account >= %u AND account <= %u AND class = '%u' AND online = 0 AND "
-            "guid NOT IN ( SELECT guid FROM guild_member ) "
-            "ORDER BY account DESC",
-            minAccountId, maxAccountId, claz);
-        if (results)
+            "SELECT guid, race, class FROM characters "
+            "WHERE account = %u AND online = 0 AND "
+            "guid NOT IN ( SELECT guid FROM guild_member )",
+            accountId);
+        if (!results)
+            continue;
+
+        do
         {
-            do
-            {
-                Field* fields = results->Fetch();
-                ObjectGuid guid = ObjectGuid(HighGuid::Player, fields[0].GetUInt32());
-                uint32 race = fields[1].GetUInt32();
-                bool isAlliance = race == 1 || race == 3 || race == 4 || race == 7 || race == 11;
-                AddclassCache()[GetTeamClassIdx(isAlliance, claz)].push_back(guid);
-                collected++;
-            } while (results->NextRow());
+            Field* fields = results->Fetch();
+            ObjectGuid guid = ObjectGuid(HighGuid::Player, fields[0].GetUInt32());
+            uint32 team = Player::TeamForRace(fields[1].GetUInt8());
+            uint8 claz = fields[2].GetUInt8();
+            if (team != ALLIANCE && team != HORDE)
+                continue;
+
+            AddclassCache()[GetTeamClassIdx(team == ALLIANCE, claz)].push_back(guid);
+            collected++;
+        } while (results->NextRow());
+    }
+
+    TC_LOG_INFO("playerbots", ">> %u characters collected for addclass command from %u AddClass accounts.", uint32(collected),
+        uint32(addClassTypeAccounts.size()));
+}
+
+// AzerothCore's AssignAccountTypes: every <prefix> account gets a type in playerbots_account_type, the random bot
+// accounts (type 1) from the lowest, MaxRandomBots worth, and the addclass accounts (type 2) from the highest,
+// AddClassAccountPoolSize of them. Assignments are permanent, unless MaxRandomBots or AddClassAccountPoolSize is 0
+// (CalculateTotalAccountCount unassigns them then). The writes are synchronous (AzerothCore queues them), so the
+// lists and the table agree when the bots log in.
+void RandomPlayerbotMgr::AssignAccountTypes()
+{
+    TC_LOG_INFO("playerbots", "Assigning account types for random bot accounts...");
+
+    rndBotTypeAccounts.clear();
+    addClassTypeAccounts.clear();
+
+    // First, get ALL randombot accounts from the database: the prefix followed by the account number only (AzerothCore
+    // matches LIKE '<prefix>%', which also takes a real account whose name starts with the prefix). Names are stored
+    // in upper case; each character of the prefix that is not a letter or digit is matched as a bracket expression.
+    std::string pattern = "^";
+    for (char c : sPlayerbotAIConfig->randomBotAccountPrefix)
+    {
+        if (std::isalnum(static_cast<unsigned char>(c)))
+            pattern += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        else if (c != '\\' && c != '\'' && c != ']' && c != '^' && c != '%')
+            pattern += std::string("[") + c + "]";
+    }
+    pattern += "[0-9]+$";
+
+    std::vector<uint32> allRandomBotAccounts;
+    if (QueryResult allAccounts = LoginDatabase.PQuery("SELECT id FROM account WHERE username REGEXP '%s' ORDER BY id", pattern.c_str()))
+    {
+        do
+        {
+            allRandomBotAccounts.push_back(allAccounts->Fetch()[0].GetUInt32());
+        } while (allAccounts->NextRow());
+    }
+
+    TC_LOG_INFO("playerbots", "Found %u total randombot accounts in database", uint32(allRandomBotAccounts.size()));
+
+    // Check existing assignments
+    std::map<uint32, uint8> currentAssignments;
+    if (PreparedQueryResult existingAssignments = PlayerbotsDatabase.Query(PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_ACCOUNT_TYPE)))
+    {
+        do
+        {
+            Field* fields = existingAssignments->Fetch();
+            currentAssignments[fields[0].GetUInt32()] = fields[1].GetUInt8();
+        } while (existingAssignments->NextRow());
+    }
+
+    // Mark ALL randombot accounts as unassigned if not already assigned
+    for (uint32 accountId : allRandomBotAccounts)
+    {
+        if (currentAssignments.find(accountId) == currentAssignments.end())
+        {
+            PlayerbotsPreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_INS_ACCOUNT_TYPE);
+            stmt->setUInt32(0, accountId);
+            stmt->setUInt8(1, 0);
+            PlayerbotsDatabase.DirectExecute(stmt);
+            currentAssignments[accountId] = 0;
         }
     }
-    TC_LOG_INFO("playerbots", ">> %u characters collected for addclass command.", collected);
+
+    // Calculate needed RNDbot accounts
+    // (AC: MaxRandomBots, with the periodic online/offline ratio, per AvailableCharsPerAccount, rounded up; plus the
+    // beyond-AC RandomBotAccountSlackPct, 0 by default)
+    uint32 const neededRndBotAccounts = RandomPlayerbotFactory::CalculateNeededRndBotAccounts();
+
+    // Count existing assigned accounts
+    uint32 existingRndBotAccounts = 0;
+    uint32 existingAddClassAccounts = 0;
+    for (auto const& [accountId, accountType] : currentAssignments)
+    {
+        if (accountType == 1)
+            existingRndBotAccounts++;
+        else if (accountType == 2)
+            existingAddClassAccounts++;
+    }
+
+    // Assign RNDbot accounts from lowest position if needed
+    if (existingRndBotAccounts < neededRndBotAccounts)
+    {
+        uint32 toAssign = neededRndBotAccounts - existingRndBotAccounts;
+        uint32 assigned = 0;
+        for (uint32 i = 0; i < allRandomBotAccounts.size() && assigned < toAssign; i++)
+        {
+            uint32 accountId = allRandomBotAccounts[i];
+            if (currentAssignments[accountId] == 0)
+            {
+                PlayerbotsPreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_UPD_ACCOUNT_TYPE);
+                stmt->setUInt8(0, 1);
+                stmt->setUInt32(1, accountId);
+                PlayerbotsDatabase.DirectExecute(stmt);
+                currentAssignments[accountId] = 1;
+                assigned++;
+            }
+        }
+
+        if (assigned < toAssign)
+            TC_LOG_ERROR("playerbots", "Not enough unassigned accounts to fulfill RNDbot requirements. Need %u more accounts.", toAssign - assigned);
+    }
+
+    // Assign AddClass accounts from highest position if needed
+    uint32 neededAddClassAccounts = sPlayerbotAIConfig->addClassAccountPoolSize;
+    if (existingAddClassAccounts < neededAddClassAccounts)
+    {
+        uint32 toAssign = neededAddClassAccounts - existingAddClassAccounts;
+        uint32 assigned = 0;
+        for (size_t idx = allRandomBotAccounts.size(); idx-- > 0 && assigned < toAssign;)
+        {
+            uint32 accountId = allRandomBotAccounts[idx];
+            if (currentAssignments[accountId] == 0)
+            {
+                PlayerbotsPreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_UPD_ACCOUNT_TYPE);
+                stmt->setUInt8(0, 2);
+                stmt->setUInt32(1, accountId);
+                PlayerbotsDatabase.DirectExecute(stmt);
+                currentAssignments[accountId] = 2;
+                assigned++;
+            }
+        }
+
+        if (assigned < toAssign)
+            TC_LOG_ERROR("playerbots", "Not enough unassigned accounts to fulfill AddClass requirements. Need %u more accounts.", toAssign - assigned);
+    }
+
+    // Populate filtered account lists with ALL accounts of each type
+    for (auto const& [accountId, accountType] : currentAssignments)
+    {
+        if (accountType == 1)
+            rndBotTypeAccounts.push_back(accountId);
+        else if (accountType == 2)
+            addClassTypeAccounts.push_back(accountId);
+    }
+
+    // Bots must not take realm firsts from players. AzerothCore refuses them in an OnPlayerBeforeAchievementComplete hook
+    // (Script/Playerbots.cpp:356-365); this core has no such hook but refuses realm firsts to sessions with
+    // RBAC_PERM_CANNOT_EARN_REALM_FIRST_ACHIEVEMENTS (AchievementMgr::CanCompleteCriteriaTree), so every random and
+    // addclass bot account gets it. The statement is the core's upsert, so it is safe on every start.
+    for (std::vector<uint32> const* accounts : { &rndBotTypeAccounts, &addClassTypeAccounts })
+    {
+        for (uint32 accountId : *accounts)
+        {
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_RBAC_ACCOUNT_PERMISSION);
+            stmt->setUInt32(0, accountId);
+            stmt->setUInt32(1, rbac::RBAC_PERM_CANNOT_EARN_REALM_FIRST_ACHIEVEMENTS);
+            stmt->setBool(2, true);
+            stmt->setInt32(3, -1);
+            LoginDatabase.Execute(stmt);
+        }
+    }
+
+    TC_LOG_INFO("playerbots", "Account type assignment complete: %u RNDbot accounts, %u AddClass accounts, %u unassigned",
+        uint32(rndBotTypeAccounts.size()), uint32(addClassTypeAccounts.size()),
+        uint32(currentAssignments.size() - rndBotTypeAccounts.size() - addClassTypeAccounts.size()));
+}
+
+bool RandomPlayerbotMgr::IsAccountType(uint32 accountId, uint8 accountType)
+{
+    PlayerbotsPreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_ACCOUNT_TYPE_BY_ACCOUNT_AND_TYPE);
+    stmt->setUInt32(0, accountId);
+    stmt->setUInt8(1, accountType);
+    return PlayerbotsDatabase.Query(stmt) != nullptr;
 }
 
 void RandomPlayerbotMgr::PrepareTeleportCache()
