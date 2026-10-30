@@ -203,6 +203,7 @@ namespace
         float edgeX = 0.0f, edgeY = 0.0f;  // #848: where the deck starts on the bot's way to (boardX, boardY)
         bool boardMoveIssued = false;
         uint8 boardWalks = 0;           // board walks issued in this Board phase (an interrupted walk is issued again)
+        bool deckWalked = false;        // the board walk was finished on the deck after an early attach
         float leaveX = 0.0f, leaveY = 0.0f, leaveZ = 0.0f;
         uint32 legs = 0;                // transport / flight / portal legs completed
         uint32 failAtMs = 0;            // last abandon or empty route (retry gate)
@@ -2123,6 +2124,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         trip.transportGuid = ObjectGuid::Empty;
         trip.boardMoveIssued = false;
         trip.boardWalks = 0;
+        trip.deckWalked = false;
         trip.lookupMs = 0;
         trip.portalMs = 0;
         trip.stuckTpIdx = size_t(-1);
@@ -2897,6 +2899,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 trip.dockZ = bot->GetPositionZ();
                 trip.boardMoveIssued = false;
                 trip.boardWalks = 0;
+                trip.deckWalked = false;
                 trip.phase = TripPhase::Board;
                 trip.phaseMs = now;
                 [[fallthrough]];
@@ -2910,14 +2913,37 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 }
                 if (bot->GetTransport() == t)
                 {
+                    // PlayerbotAI's once-a-second ambient check attaches a bot as soon as the deck is under its feet and
+                    // stops it there (AC parity), which cut the board walk short on the deck's rim (aim 3-7 yd). While the
+                    // boat / zeppelin stays docked long enough, the rest of the walk is made on the deck, once, as a
+                    // passenger (the spline is in the transport frame, like the Leave walk).
+                    if (t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT && trip.boardMoveIssued && !trip.deckWalked)
+                    {
+                        float const aimLeft = bot->GetExactDist2d(trip.boardX, trip.boardY);
+                        uint32 const walkMs = uint32(aimLeft / std::max(2.5f, bot->GetSpeed(MOVE_RUN)) * IN_MILLISECONDS) + 1000;
+                        if (aimLeft >= 1.5f && AtStop(t, from.point) && StaysFor(t, walkMs) && !HullSwimmer(t, bot))
+                        {
+                            trip.deckWalked = true;
+                            if (bot->IsSitState())
+                                bot->SetStandState(UNIT_STAND_STATE_STAND);
+                            bot->GetMotionMaster()->MovePoint(0, trip.boardX, trip.boardY, trip.boardZ, false);
+                            return 1;
+                        }
+                    }
+                    if (trip.deckWalked && bot->isMoving() && AtStop(t, from.point))
+                        return 1;  // still walking in on the deck
                     StopHere(bot);
                     trip.phase = TripPhase::Ride;
                     trip.phaseMs = trip.progressMs = now;
-                    // origin= 2D yards from the transport origin, aim= from the deck point, walks= board walks issued
-                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board transport=%u type=%u map=%u (%.1f,%.1f,%.1f) origin=%.1f aim=%.1f walks=%u",
+                    // origin= 2D yd from the transport origin, aim= from the deck point, in= from where the deck starts on
+                    // the approach line, local= the rider's deck offset (x, y), walks= board walks issued, deckwalk= 1 when
+                    // the walk was finished on the deck after an early attach
+                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board transport=%u type=%u map=%u (%.1f,%.1f,%.1f) origin=%.1f aim=%.1f in=%.1f local=(%.1f,%.1f) walks=%u deckwalk=%u",
                                  bot->GetName().c_str(), t->GetEntry(), uint32(t->GetGoType()), bot->GetMapId(),
                                  bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), t->GetExactDist2d(bot),
-                                 bot->GetExactDist2d(trip.boardX, trip.boardY), uint32(trip.boardWalks));
+                                 bot->GetExactDist2d(trip.boardX, trip.boardY), bot->GetExactDist2d(trip.edgeX, trip.edgeY),
+                                 bot->m_movementInfo.transport.pos.GetPositionX(), bot->m_movementInfo.transport.pos.GetPositionY(),
+                                 uint32(trip.boardWalks), uint32(trip.deckWalked));
                     return 1;
                 }
                 // It left (or we could not get on): back to the dock and wait for the next one. A bot that had
@@ -2933,6 +2959,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                         bot->GetMotionMaster()->MovePoint(0, trip.dockX, trip.dockY, trip.dockZ, false);
                     trip.boardMoveIssued = false;
                     trip.boardWalks = 0;
+                    trip.deckWalked = false;
                     return 1;
                 };
                 bool const atStop = AtStop(t, from.point);
