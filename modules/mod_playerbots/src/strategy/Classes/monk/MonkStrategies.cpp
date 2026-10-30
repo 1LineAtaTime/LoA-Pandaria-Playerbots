@@ -41,7 +41,7 @@ NextAction** BrewmasterMonkStrategy::getDefaultActions()
     // (CastShuffleAction), Keg Smash 121253 (builder, 2 Chi), Breath of Fire 115181, Expel Harm 115072,
     // Tiger Palm 100787 only for Tiger Power upkeep (CastTigerPalmAction::isUseful), Jab 100780 (builder) filler.
     // Chi cost is enforced by the spell check itself (checkcast NO_POWER falls through to the next edge).
-    return NextAction::array(0, new NextAction("guard", ACTION_DEFAULT + 0.7f),
+    return NextAction::array(0, new NextAction("guard spell", ACTION_DEFAULT + 0.7f),
                              new NextAction("purifying brew", ACTION_DEFAULT + 0.6f),
                              new NextAction("shuffle", ACTION_DEFAULT + 0.55f),
                              new NextAction("keg smash", ACTION_DEFAULT + 0.5f),

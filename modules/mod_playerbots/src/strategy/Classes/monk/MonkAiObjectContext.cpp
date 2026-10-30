@@ -183,7 +183,7 @@ public:
         creators["keg smash"] = &MonkActionFactoryInternal::keg_smash;
         creators["breath of fire"] = &MonkActionFactoryInternal::breath_of_fire;
         creators["dizzying haze"] = &MonkActionFactoryInternal::dizzying_haze;
-        creators["guard"] = &MonkActionFactoryInternal::guard;
+        creators["guard spell"] = &MonkActionFactoryInternal::guard;
         creators["purifying brew"] = &MonkActionFactoryInternal::purifying_brew;
         creators["elusive brew"] = &MonkActionFactoryInternal::elusive_brew;
 
