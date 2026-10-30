@@ -1028,6 +1028,7 @@ void World::LoadConfigSettings(bool reload)
     }
 
     m_bool_configs[CONFIG_DETECT_POS_COLLISION] = sConfigMgr->GetBoolDefault("DetectPosCollision", true);
+    m_bool_configs[CONFIG_CREATURE_REPOSITION_AGAINST_NPCS] = sConfigMgr->GetBoolDefault("Creature.RepositionAgainstNpcs", true);
 
     m_int_configs[CONFIG_CHANNEL_CONSTANT_LOCALE]      = sConfigMgr->GetIntDefault("Channel.ConstantLocale", 0);
     m_bool_configs[CONFIG_RESTRICTED_LFG_CHANNEL]      = sConfigMgr->GetBoolDefault("Channel.RestrictedLfg", true);

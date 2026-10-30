@@ -611,12 +611,21 @@ void SmartAI::JustAppeared()
     if (me->isDead())
         return;
 
-    mDespawnTime = 0;
-    mDespawnState = 0;
+    // A respawn: the AI object survives it, and with it the despawn state of a forced despawn of a
+    // living creature - it then despawned itself again at every respawn, invisible, until a restart. Not on the first appearance:
+    // InitializeAI just ran, and a summon may have been told to despawn after a delay in the tick it was created.
+    if (mAppearedOnce)
+    {
+        mDespawnTime = 0;
+        mDespawnState = 0;
+        me->SetVisible(true);
+    }
+    mAppearedOnce = true;
+
     mEscortState = SMART_ESCORT_NONE;
-    me->SetVisible(true);
     if (me->GetFaction() != me->GetCreatureTemplate()->faction)
         me->RestoreFaction();
+
     GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);
     Reset();
     mFollowGuid.Clear();//do not reset follower on Reset(), we need it after combat evade
@@ -757,6 +766,8 @@ void SmartAI::PassengerBoarded(Unit* who, int8 seatId, bool apply)
 void SmartAI::InitializeAI()
 {
     GetScript()->OnInitialize(me);
+    // The first JustAppeared after this keeps the despawn state (see JustAppeared)
+    mAppearedOnce = false;
     if (!me->isDead())
         Reset();
     GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);

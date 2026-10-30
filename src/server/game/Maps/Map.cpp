@@ -1067,6 +1067,13 @@ void Map::Update(const uint32 t_diff)
         WorldPacket packet(SMSG_UPDATE_OBJECT, 4096);
         for (auto&& it : updatePlayers)
         {
+            // Bots read no object updates (AzerothCore's playerbots filter)
+            if (!sScriptMgr->OnPlayerbotCheckUpdatesToSend(it.first))
+            {
+                it.second.Clear();
+                continue;
+            }
+
             it.second.BuildPacket(&packet);
             it.first->GetSession()->SendPacket(&packet);
             packet.clear();

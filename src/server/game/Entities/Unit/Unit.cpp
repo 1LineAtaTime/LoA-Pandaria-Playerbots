@@ -16,6 +16,7 @@
 */
 
 #include "Unit.h"
+#include "AbstractFollower.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "Battleground.h"
@@ -684,6 +685,99 @@ void Unit::GetRandomContactPoint(const Unit* obj, float &x, float &y, float &z, 
         --attacker_number;
     GetNearPoint(obj, x, y, z, distance2dMin + (distance2dMax - distance2dMin) * (float) rand_norm(),
                  GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI / 2) - static_cast<float>(M_PI) * (float) rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
+}
+
+bool Unit::GetMeleeAttackPoint(Unit* attacker, Position& pos)
+{
+    if (!attacker)
+    {
+        return false;
+    }
+
+    AttackerSet const& attackers = getAttackers();
+
+    if (attackers.size() <= 1) // if the attackers are not more than one
+    {
+        return false;
+    }
+
+    float meleeReach = GetExactDist2d(attacker);
+    if (meleeReach <= 0)
+    {
+        return false;
+    }
+
+    float minAngle = 0;
+    Unit* refUnit = nullptr;
+    uint32 validAttackers = 0;
+
+    double attackerSize = attacker->GetCollisionRadius();
+
+    for (auto const& otherAttacker : attackers)
+    {
+        // if the otherAttacker is not valid, skip
+        if (!otherAttacker || otherAttacker->GetGUID() == attacker->GetGUID() ||
+            !otherAttacker->IsWithinMeleeRange(this) || otherAttacker->isMoving())
+        {
+            continue;
+        }
+
+        float curretAngle = atan(attacker->GetExactDist2d(otherAttacker) / meleeReach);
+        if (minAngle == 0 || curretAngle < minAngle)
+        {
+            minAngle = curretAngle;
+            refUnit = otherAttacker;
+        }
+
+        validAttackers++;
+    }
+
+    if (!validAttackers || !refUnit)
+    {
+        return false;
+    }
+
+    float contactDist = attackerSize + refUnit->GetCollisionRadius();
+    float requiredAngle = atan(contactDist / meleeReach);
+    float attackersAngle = atan(attacker->GetExactDist2d(refUnit) / meleeReach);
+
+    // in instance: the more attacker there are, the higher will be the tollerance
+    // outside: creatures should not intersecate
+    float angleTollerance = attacker->GetMap()->IsDungeon() ? requiredAngle - requiredAngle * tanh(validAttackers / 5.0f) : requiredAngle;
+
+    if (attackersAngle > angleTollerance)
+    {
+        return false;
+    }
+
+    double angle = atan(contactDist / meleeReach);
+
+    float angularRadius = frand(0.1f, 0.3f) + angle;
+    int8 direction = (urand(0, 1) ? -1 : 1);
+    float currentAngle = GetAngle(refUnit);
+    float absAngle = currentAngle + angularRadius * direction;
+
+    // stay at the attacker's current distance; GetNearPoint here adds both combat reaches itself
+    float x, y, z;
+    float distance = meleeReach - GetCombatReach() - attacker->GetCombatReach();
+    GetNearPoint(attacker, x, y, z, distance, absAngle);
+
+    // the attacker is the one that walks there, so its own walk and water rules apply
+    if (!GetMap()->CanReachPositionAndGetValidCoords(attacker, x, y, z, true, true))
+    {
+        // try the other side of the reference attacker; AC uses absAngle * -1, which mirrors the world
+        // angle across the x axis instead (deliberate deviation, bug fix)
+        GetNearPoint(attacker, x, y, z, distance, currentAngle - angularRadius * direction);
+
+        if (!GetMap()->CanReachPositionAndGetValidCoords(attacker, x, y, z, true, true))
+        {
+            return false;
+        }
+    }
+
+    pos.Relocate(x, y, z);
+
+    return true;
 }
 
 AuraApplication * Unit::GetVisibleAura(uint8 slot) const
@@ -13787,6 +13881,13 @@ void Unit::AddToWorld()
     RebuildTerrainSwaps();
 }
 
+void Unit::RemoveAllFollowers()
+{
+    // detach chase/follow/formation generators targeting us, they stop on their next update
+    while (!_followers.empty())
+        (*_followers.begin())->SetTarget(nullptr);
+}
+
 void Unit::RemoveFromWorld()
 {
     // cleanup
@@ -13806,6 +13907,7 @@ void Unit::RemoveFromWorld()
         RemoveCharmAuras();
         RemoveBindSightAuras();
         RemoveBoundAuras();
+        RemoveAllFollowers();
 
         RemoveAllGameObjects();
         RemoveAllDynObjects();
@@ -16066,7 +16168,19 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
             if (uint32 lootid = creature->GetCreatureTemplate()->lootid)
                 loot->FillLoot(creature, lootid, LootTemplates_Creature, looter, false, false, creature->GetMap()->GetDifficulty());
 
-            loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
+            // The difficulty row's gold, when it has one, as Creature::SelectLevel takes its level: the dungeon revamps keep
+            // their heroic gold in creature_template and run normal mode at a far lower level.
+            uint32 minGold = creature->GetCreatureTemplate()->mingold;
+            uint32 maxGold = creature->GetCreatureTemplate()->maxgold;
+            if (creature->GetMap()->GetDifficulty() > REGULAR_DIFFICULTY || creature->GetMap()->IsBattleground())
+                if (CreatureDifficultyInfo const* difficultyInfo = sObjectMgr->SelectDifficultyInfo(creature->GetMap(), creature->GetEntry()))
+                    if (difficultyInfo->HasGold)
+                    {
+                        minGold = difficultyInfo->MinGold;
+                        maxGold = difficultyInfo->MaxGold;
+                    }
+
+            loot->generateMoneyLoot(minGold, maxGold);
         }
 
         player->RewardPlayerAndGroupAtKill(victim, false);

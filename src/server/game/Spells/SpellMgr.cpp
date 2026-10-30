@@ -2956,6 +2956,8 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 case 138080:
                 case 138081:
                 case 138083:
+                case 91938: // Summon Darnell, spell_area casts it again (and so summons Darnell) on login
+                case 73306: // Summon Lilian Voss (Guardian), same
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB;
                     break;
                 case 3600:   // Earthbind Totem
@@ -3012,6 +3014,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 spellInfo->HasEffect(SPELL_EFFECT_APPLY_AREA_AURA_PET) ||
                 spellInfo->HasAura(SPELL_AURA_SET_VEHICLE_ID) ||
                 spellInfo->HasAura(SPELL_AURA_AREA_TIRGGER) ||
+                spellInfo->HasAura(SPELL_AURA_CONTROL_VEHICLE) || // the ride is never restored at login, nor should what comes with it (phases, invisibility)
                 spellInfo->IsChanneled())
                 spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB;
 

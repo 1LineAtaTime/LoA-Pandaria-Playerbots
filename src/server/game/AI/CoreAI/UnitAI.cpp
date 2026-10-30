@@ -42,7 +42,7 @@ void UnitAI::AttackStart(Unit* victim)
 void UnitAI::AttackStartCaster(Unit* victim, float dist)
 {
     if (victim && me->Attack(victim, false))
-        me->GetMotionMaster()->MoveChase(victim, dist, 0.0f);
+        me->GetMotionMaster()->MoveChase(victim, dist);
 }
 
 void UnitAI::DoMeleeAttackIfReady(bool ignoreLos)

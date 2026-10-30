@@ -262,7 +262,9 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, uint32 vehId, uint32 team, float x, float y, float z, float ang, const CreatureData* data = NULL);
         bool LoadCreaturesAddon(bool reload = false);
-        void SelectLevel(const CreatureTemplate* cinfo);
+        // keepLevel: keep the level picked last time when it is still in the template's range. The client plays the
+        // level-up effect whenever a unit it knows comes back with another level. Respawn does NOT keep it (AC re-rolls).
+        void SelectLevel(const CreatureTemplate* cinfo, bool keepLevel = false);
         void LoadEquipment(int8 id = 1, bool force = false);
 
         uint32 GetDBTableGUIDLow() const { return m_spawnId; }
@@ -474,6 +476,14 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         void SetWanderDistance(float dist) { m_wanderDistance = dist; }
 
         void DoImmediateBoundaryCheck() { m_boundaryCheckTime = 0; }
+
+        // Melee repositioning (backing out of the victim, spreading around it), from AzerothCore
+        bool IsFreeToMove();
+        static constexpr uint32 MOVE_CIRCLE_CHECK_INTERVAL = 3000;
+        static constexpr uint32 MOVE_BACKWARDS_CHECK_INTERVAL = 2000;
+        uint32 m_moveCircleMovementTime = MOVE_CIRCLE_CHECK_INTERVAL;
+        uint32 m_moveBackwardsMovementTime = MOVE_BACKWARDS_CHECK_INTERVAL;
+
         uint32 GetCombatPulseDelay() const { return m_combatPulseDelay; }
         void SetCombatPulseDelay(uint32 delay) // (secs) interval at which the creature pulses the entire zone into combat (only works in dungeons)
         {
@@ -533,7 +543,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         void SetDisableReputationGain(bool disable) { DisableReputationGain = disable; }
         bool IsReputationGainDisabled() { return DisableReputationGain; }
-        bool IsDamageEnoughForLootingAndReward() const { return m_PlayerDamageReq == 0; }
+        bool IsDamageEnoughForLootingAndReward() const { return (m_creatureInfo->flags_extra & CREATURE_FLAG_EXTRA_NO_PLAYER_DAMAGE_REQ) || m_PlayerDamageReq == 0; }
         void LowerPlayerDamageReq(uint32 unDamage);
         void ResetPlayerDamageReq() { m_PlayerDamageReq = GetHealth() / 2; }
         uint32 m_PlayerDamageReq;
@@ -616,6 +626,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
+        uint8 m_rolledLevel = 0;                                // SelectLevel's pick before AutoBalance scaling
+        bool m_levelRolled = false;                             // m_rolledLevel is valid
 
         Position m_homePosition;
         Position m_transportHomePosition;

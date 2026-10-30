@@ -615,7 +615,7 @@ void MotionMaster::MoveConfused()
     }
 }
 
-void MotionMaster::MoveChase(Unit* target, float dist, float angle)
+void MotionMaster::MoveChase(Unit* target, Optional<ChaseRange> dist, Optional<ChaseAngle> angle)
 {
     // ignore movement request if target not exist
     if (!target || target == _owner || _owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
@@ -627,7 +627,7 @@ void MotionMaster::MoveChase(Unit* target, float dist, float angle)
             _owner->GetGUID().GetCounter(),
             target->GetTypeId() == TYPEID_PLAYER ? "player" : "creature",
             target->GetTypeId() == TYPEID_PLAYER ? target->GetGUID().GetCounter() : target->ToCreature()->GetDBTableGUIDLow());
-        Mutate(new ChaseMovementGenerator(target, ChaseRange(dist), ChaseAngle(angle)), MOTION_SLOT_ACTIVE);
+        Mutate(new ChaseMovementGenerator(target, dist, angle), MOTION_SLOT_ACTIVE);
     }
     else
     {
@@ -635,8 +635,55 @@ void MotionMaster::MoveChase(Unit* target, float dist, float angle)
             _owner->GetEntry(), _owner->GetGUID().GetCounter(),
             target->GetTypeId() == TYPEID_PLAYER ? "player" : "creature",
             target->GetTypeId() == TYPEID_PLAYER ? target->GetGUID().GetCounter() : target->ToCreature()->GetDBTableGUIDLow());
-        Mutate(new ChaseMovementGenerator(target, ChaseRange(dist), ChaseAngle(angle)), MOTION_SLOT_ACTIVE);
+        Mutate(new ChaseMovementGenerator(target, dist, angle), MOTION_SLOT_ACTIVE);
     }
+}
+
+void MotionMaster::MoveBackwards(Unit* target, float dist)
+{
+    if (!target)
+    {
+        return;
+    }
+
+    Position const& pos = target->GetPosition();
+    float angle = target->GetAngle(_owner);
+    G3D::Vector3 point;
+    point.x = pos.m_positionX + dist * cosf(angle);
+    point.y = pos.m_positionY + dist * sinf(angle);
+    point.z = pos.m_positionZ;
+
+    if (!_owner->GetMap()->CanReachPositionAndGetValidCoords(_owner, point.x, point.y, point.z, true, true))
+    {
+        return;
+    }
+
+    Movement::MoveSplineInit init(_owner);
+    init.MoveTo(point.x, point.y, point.z, false);
+    init.SetWalk(true);
+    init.SetFacing(target);
+    init.SetOrientationInversed();
+    init.Launch();
+}
+
+void MotionMaster::MoveCircleTarget(Unit* target)
+{
+    if (!target)
+    {
+        return;
+    }
+
+    Position pos;
+    if (!target->GetMeleeAttackPoint(_owner, pos))
+    {
+        return;
+    }
+
+    Movement::MoveSplineInit init(_owner);
+    init.MoveTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), false);
+    init.SetWalk(true);
+    init.SetFacing(target);
+    init.Launch();
 }
 
 void MotionMaster::MoveFollow(Unit* target, float dist, float angle, MovementSlot slot)

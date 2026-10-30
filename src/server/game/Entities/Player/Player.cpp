@@ -16225,8 +16225,9 @@ bool Player::CanCompleteRepeatableQuest(Quest const* quest)
 
 bool Player::CanRewardQuest(Quest const* quest, bool msg)
 {
-    // not auto complete quest and not completed quest (only cheating case, then ignore without message)
-    if (!quest->IsDFQuest() && !quest->IsTurnIn() && !(quest->GetFlags() & QUEST_FLAGS_AUTO_COMPLETE) && GetQuestStatus(quest->GetQuestId()) != QUEST_STATUS_COMPLETE)
+    // not a turn-in quest and not completed quest (only cheating case, then ignore without message). A quest handed in from the
+    // log (QUEST_FLAGS_AUTO_COMPLETE) must be completed too: the flag does not waive its objectives.
+    if (!quest->IsDFQuest() && !quest->IsTurnIn() && GetQuestStatus(quest->GetQuestId()) != QUEST_STATUS_COMPLETE)
         return false;
 
     // daily quest can't be rewarded (25 daily quest already completed)
@@ -18262,8 +18263,8 @@ void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
     if (questId)
     {
         WorldPacket data(SMSG_QUESTGIVER_QUEST_FAILED, 4 + 4);
-        data << uint32(reason);                             // failed reason (valid reasons: 4, 16, 50, 17, 74, other values show default message)
         data << uint32(questId);
+        data << uint32(reason);                             // failed reason (valid reasons: 4, 16, 50, 17, 74, other values show default message)
         GetSession()->SendPacket(&data);
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_FAILED");
     }
@@ -26423,9 +26424,11 @@ void Player::UpdateForQuestWorldObjects()
             {
                 if (sConditionMgr->GetConditionsForSpellClickEvent(obj->GetEntry(), _itr->second.spellId))
                 {
-                    obj->BuildValuesUpdateBlockForPlayer(&udata, this);
+                    // (quest-click-refresh) a values update only carries changed fields and the NPC flags did not change:
+                    // mark the field, the next update of the creature works it out again for every player who sees it
+                    obj->ForceValuesUpdateAtIndex(UNIT_FIELD_NPC_FLAGS);
                     break;
-                }                
+                }
             }
         }
     }

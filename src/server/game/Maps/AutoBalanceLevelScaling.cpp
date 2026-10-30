@@ -2035,7 +2035,7 @@ void AutoBalance::OnCreatureUpdate(Creature* creature)
     bool const manaUser = creature->GetPowerType() == POWER_MANA && creature->GetMaxPower(POWER_MANA) > 0;
     float const manaPct = manaUser ? float(creature->GetPower(POWER_MANA)) / float(creature->GetMaxPower(POWER_MANA)) : 1.0f;
     CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
-    creature->SelectLevel(cinfo);                                       // re-enters OnCreatureSelectLevel / ModifyCreatureHealthMana
+    creature->SelectLevel(cinfo, true);                                 // keeps the roll; re-enters OnCreatureSelectLevel / ModifyCreatureHealthMana
     if (!creature->IsPet())
     {
         float const armor = float(sObjectMgr->GetCreatureBaseStats(creature->GetLevel(), cinfo->unit_class)->GenerateArmor(cinfo));

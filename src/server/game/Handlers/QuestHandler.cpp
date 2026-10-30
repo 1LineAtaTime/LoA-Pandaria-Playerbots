@@ -295,12 +295,16 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
             switch (object->GetTypeId())
             {
                 case TYPEID_UNIT:
+                    // the hook of the script class as well, as Player::AddQuestAndCheckCompletion does:
+                    // without it the accept scripts of the old kind (escorts, start zone events) never ran for a real player
+                    sScriptMgr->OnQuestAccept(_player, object->ToCreature(), quest);
                     object->ToCreature()->AI()->OnQuestAccept(_player, quest);
                     break;
                 case TYPEID_ITEM:
                 case TYPEID_CONTAINER:
                 {
                     Item* item = (Item*)object;
+                    sScriptMgr->OnQuestAccept(_player, item, quest);
 
                     // destroy not required for quest finish quest starting item
                     bool destroyItem = true;
@@ -341,6 +345,7 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
                     break;
                 }
                 case TYPEID_GAMEOBJECT:
+                    sScriptMgr->OnQuestAccept(_player, object->ToGameObject(), quest);
                     object->ToGameObject()->AI()->OnQuestAccept(_player, quest);
                     break;
                 default:
@@ -749,7 +754,8 @@ void WorldSession::HandleQuestgiverCompleteQuest(WorldPacket& recvData)
                 _player->PlayerTalkClass->SendQuestGiverOfferReward(quest, playerGuid, true);
         }
 
-        if (Creature* creature = object->ToCreature())
+        // object is null when a quest handed in from the log names no giver in reach
+        if (Creature* creature = object ? object->ToCreature() : nullptr)
             sScriptMgr->OnQuestComplete(_player, creature, quest);
     }
 }
@@ -827,7 +833,8 @@ void WorldSession::HandlePushQuestToParty(WorldPacket& recvPacket)
         if (quest->IsAutoAccept() && receiver->CanAddQuest(quest, true) && receiver->CanTakeQuest(quest, true))
             receiver->AddQuestAndCheckCompletion(quest, sender);
 
-        if ((quest->IsTurnIn() && quest->IsRepeatable() && !quest->IsDailyOrWeekly()) || quest->HasFlag(QUEST_FLAGS_AUTO_COMPLETE))
+        // A quest handed in from the log (QUEST_FLAGS_AUTO_COMPLETE) is shared like any other: the receiver gets its details
+        if (quest->IsTurnIn() && quest->IsRepeatable() && !quest->IsDailyOrWeekly())
             receiver->PlayerTalkClass->SendQuestGiverRequestItems(quest, sender->GetGUID(), receiver->CanCompleteRepeatableQuest(quest), true);
         else
         {
