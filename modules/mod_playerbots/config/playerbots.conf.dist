@@ -1394,6 +1394,14 @@ AiPlayerbot.DuelSpotSeedRelevel = 1
 AiPlayerbot.DuelSpotSeedRegear = 1
 AiPlayerbot.DuelSpotActiveDistance = 1500
 
+# Whether a bot standing a duel spot (seeded or on the duel-spot status) may take a battleground or arena
+# queue on its own. When it does, it leaves the spot and the seeder fills the slot with another random bot,
+# re-levelled and teleported from anywhere in the world; while a real player queues for PvP that repeats and
+# empties the questing and hunting zones. 0 = duel-spot bots stay at their spot and the queues are filled by
+# the other random bots. Forced queues and invites are not affected.
+# Default: 0
+AiPlayerbot.DuelSpotBotsJoinBG = 0
+
 # Per-spot keys: AiPlayerbot.DuelSpot.<Name>.
 #   Enable                  0/1
 #   Map X Y Z Radius        anchor and radius in yards

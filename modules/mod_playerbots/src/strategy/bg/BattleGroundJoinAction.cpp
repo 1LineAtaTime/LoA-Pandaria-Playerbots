@@ -35,6 +35,7 @@
 #include "GroupMgr.h"
 #include "LFGMgr.h"
 #include "MotionMaster.h"
+#include "NewRpgDuelSpot.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
@@ -51,6 +52,39 @@
 namespace BotScenario { bool BotScenarioHoldsArenaRoster(Player* bot); }
 
 #include <algorithm>
+
+namespace
+{
+// Duel spots are not in AC. A bot standing a duel spot (seeded, hand-off pending, or on its own duel-spot status) is
+// registered with the duel spot manager; when it takes a natural battleground or arena queue it leaves the spot and
+// the seeder refills the slot by re-levelling and teleporting another random bot from anywhere in the world. With a
+// real player queued for PvP that loops: every refill queues again and the next refill is pulled out of the world, so
+// questing and hunting bots end up as max-level bots at the city gates. AiPlayerbot.DuelSpotBotsJoinBG = 0 (default)
+// keeps duel-spot bots out of the natural queue; the queue is filled by the other random bots as in AC.
+// Read once through sConfigMgr so PlayerbotAIConfig.h is not touched.
+bool DuelSpotBotsJoinBg()
+{
+    static bool const v = sConfigMgr->GetBoolDefault("AiPlayerbot.DuelSpotBotsJoinBG", false);
+    return v;
+}
+
+// Registered with the duel spot manager and either on the duel-spot status or still at a spot (a fresh seed waits for
+// its hand-off on another status). A stale registry entry of a bot that walked away does not hold it.
+bool HeldByDuelSpot(Player* bot, PlayerbotAI* botAI)
+{
+    if (!sPlayerbotAIConfig->duelSpotEnable || DuelSpotBotsJoinBg() || !sDuelSpotMgr->IsRegistered(bot->GetGUID()))
+        return false;
+
+    if (botAI->GetRpgInfo().GetStatus() == RPG_DUEL_SPOT)
+        return true;
+
+    for (uint32 idx = 0; idx < sPlayerbotAIConfig->duelSpots.size(); ++idx)
+        if (sDuelSpotMgr->InSpot(bot, idx, 40.0f))
+            return true;
+
+    return false;
+}
+}  // namespace
 
 bool IsSupportedBgQueue(BattlegroundQueueTypeId queueTypeId)
 {
@@ -294,6 +328,10 @@ bool BGJoinAction::isUseful()
 
     // can't queue while already in a battleground or already queued
     if (bot->InBattleground() || bot->InBattlegroundQueue())
+        return false;
+
+    // beyond AC: a bot held by a duel spot does not take a natural queue (see DuelSpotBotsJoinBg)
+    if (HeldByDuelSpot(bot, botAI))
         return false;
 
     // do not try right after login - the bot is still being set up
