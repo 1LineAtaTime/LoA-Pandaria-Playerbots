@@ -23,6 +23,7 @@
 #include "IVMapManager.h"  // VMAP_INVALID_HEIGHT_VALUE (AC :152 parachute cleanup)
 #include "Map.h"           // INVALID_HEIGHT
 #include "NewRpgInfo.h"
+#include "NewRpgRoamTransport.h"
 #include "PlayerbotSpec.h"  // #742: PlayerBotSpec::IsMelee (AC PlayerbotAI::IsMelee)
 #include "Playerbots.h"
 #include "Random.h"
@@ -218,6 +219,12 @@ bool CheckMountStateAction::isUseful()
         return false;
 
     if (bot->HasAuraType(SPELL_AURA_TRANSFORM) && bot->IsInDisallowedMountForm())
+        return false;
+
+    // Beyond AC (AC bots do not plan boat / zeppelin trips): no mounting up while a roaming trip waits at a dock, boards,
+    // rides or steps off. The board step dismounts a flying mount before it walks onto the deck; mounting again cast
+    // over that walk and stopped it a yard or two in, so the bot was attached at the deck's rim instead of inside.
+    if (!bot->IsMounted() && RoamTransport::HoldsForTransportLeg(bot))
         return false;
 
     if (bot->InBattleground())

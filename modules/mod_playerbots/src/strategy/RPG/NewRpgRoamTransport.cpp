@@ -113,6 +113,9 @@ namespace
     constexpr uint32 kDeferTeleportCapMs = 30 * MINUTE * IN_MILLISECONDS;
     constexpr uint32 kDockWaitMs = 12 * MINUTE * IN_MILLISECONDS;   // longest MoP boat/zeppelin round trip is ~6 min
     constexpr uint32 kBoardMs = 45 * IN_MILLISECONDS;
+    // A boat / zeppelin board walk that stops short of the deck point (a cast or another action stopped it) is issued
+    // again; only after this many walks is the bot attached wherever it stopped on the deck.
+    constexpr uint8 kBoardWalks = 3;
     constexpr uint32 kRideMs = 15 * MINUTE * IN_MILLISECONDS;
     constexpr uint32 kLeaveMs = 30 * IN_MILLISECONDS;
     constexpr uint32 kTaxiStartMs = 60 * IN_MILLISECONDS;
@@ -199,6 +202,7 @@ namespace
         float boardX = 0.0f, boardY = 0.0f, boardZ = 0.0f;
         float edgeX = 0.0f, edgeY = 0.0f;  // #848: where the deck starts on the bot's way to (boardX, boardY)
         bool boardMoveIssued = false;
+        uint8 boardWalks = 0;           // board walks issued in this Board phase (an interrupted walk is issued again)
         float leaveX = 0.0f, leaveY = 0.0f, leaveZ = 0.0f;
         uint32 legs = 0;                // transport / flight / portal legs completed
         uint32 failAtMs = 0;            // last abandon or empty route (retry gate)
@@ -533,6 +537,7 @@ namespace
     // #948: the march starts from any point (bx, by, bz) - the bot's feet, or a pier candidate (FindPierPoint).
     constexpr float kMoBoardDepth = 10.0f;  // a boat / zeppelin deck point: at most this far in from the deck edge
     constexpr float kMoBoardLevel = 1.5f;   // ... on deck no more than this above / below the edge
+    constexpr uint32 kMoBoardGap = 3;       // ... stepping over at most this many non-level 1 yd samples in a row
     bool FindDeckPointFrom(Transport* t, float bx, float by, float bz, float& ox, float& oy, float& oz, float& ex, float& ey)
     {
         // #218 (w90 Z4 Darcellis, Iron Eagle 175080 at the Orgrimmar tower): a boat / zeppelin deck is boarded from a
@@ -569,16 +574,25 @@ namespace
                 iz = z;
             // A boat / zeppelin deck is boarded well inside its edge: 3 yd in left zeppelin riders 12-14 yd from the
             // transport origin, on the rim of the deck. Keep marching toward the origin (never past it) while the deck
-            // stays on the edge's level - a cabin, mast or stairs ends the march - up to kMoBoardDepth from the edge.
+            // stays on the edge's level, up to kMoBoardDepth from the edge. A rail, crate or hatch under up to kMoBoardGap
+            // samples in a row is stepped over (the deck point is the farthest level sample); a longer run of them - a
+            // cabin, mast or stairs - ends the march. Breaking at the first such sample left some approach lines to the
+            // Borean and Grom'gol zeppelins 12-15 yd from the origin while a line half a yard beside them went 6 yd in.
             if (mo)
             {
                 float const deepest = std::min(s + kMoBoardDepth, len);
+                uint32 misses = 0;
                 for (float d = std::floor(inner) + 1.0f; d <= deepest; d += 1.0f)
                 {
                     float const qx = bx + ux * d, qy = by + uy * d;
                     float qz = 0.0f;
                     if (!DeckZAt(t, qx, qy, rayFrom, rayDown, qz) || std::fabs(qz - z) > kMoBoardLevel)
-                        break;
+                    {
+                        if (++misses > kMoBoardGap)
+                            break;
+                        continue;
+                    }
+                    misses = 0;
                     ix = qx; iy = qy; iz = qz;
                 }
             }
@@ -2108,6 +2122,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         trip.transportEntry = 0;
         trip.transportGuid = ObjectGuid::Empty;
         trip.boardMoveIssued = false;
+        trip.boardWalks = 0;
         trip.lookupMs = 0;
         trip.portalMs = 0;
         trip.stuckTpIdx = size_t(-1);
@@ -2881,6 +2896,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 trip.dockY = bot->GetPositionY();
                 trip.dockZ = bot->GetPositionZ();
                 trip.boardMoveIssued = false;
+                trip.boardWalks = 0;
                 trip.phase = TripPhase::Board;
                 trip.phaseMs = now;
                 [[fallthrough]];
@@ -2897,9 +2913,11 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     StopHere(bot);
                     trip.phase = TripPhase::Ride;
                     trip.phaseMs = trip.progressMs = now;
-                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board transport=%u type=%u map=%u (%.1f,%.1f,%.1f)", bot->GetName().c_str(),
-                                 t->GetEntry(), uint32(t->GetGoType()), bot->GetMapId(), bot->GetPositionX(),
-                                 bot->GetPositionY(), bot->GetPositionZ());
+                    // origin= 2D yards from the transport origin, aim= from the deck point, walks= board walks issued
+                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board transport=%u type=%u map=%u (%.1f,%.1f,%.1f) origin=%.1f aim=%.1f walks=%u",
+                                 bot->GetName().c_str(), t->GetEntry(), uint32(t->GetGoType()), bot->GetMapId(),
+                                 bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), t->GetExactDist2d(bot),
+                                 bot->GetExactDist2d(trip.boardX, trip.boardY), uint32(trip.boardWalks));
                     return 1;
                 }
                 // It left (or we could not get on): back to the dock and wait for the next one. A bot that had
@@ -2914,6 +2932,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                         bot->GetExactDist2d(trip.dockX, trip.dockY) > 1.0f)
                         bot->GetMotionMaster()->MovePoint(0, trip.dockX, trip.dockY, trip.dockZ, false);
                     trip.boardMoveIssued = false;
+                    trip.boardWalks = 0;
                     return 1;
                 };
                 bool const atStop = AtStop(t, from.point);
@@ -2941,7 +2960,8 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 float const toDeck = bot->GetExactDist2d(trip.boardX, trip.boardY);
                 // #848: on a static platform the attach happens as soon as the deck is under the bot (at its edge).
                 if (toDeck < 1.5f || (staticDeck && DeckUnder(t, bot)) ||
-                    (trip.boardMoveIssued && !bot->isMoving() && DeckUnder(t, bot)))
+                    (trip.boardMoveIssued && !bot->isMoving() && DeckUnder(t, bot) &&
+                     (staticDeck || trip.boardWalks >= kBoardWalks)))
                 {
                     if (DeckUnder(t, bot))
                     {
@@ -2977,6 +2997,8 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     // Straight line (no navmesh on a deck) - the S9 boarding assist (FollowActions.cpp #206 B2).
                     bot->GetMotionMaster()->MovePoint(0, trip.boardX, trip.boardY, trip.boardZ, false);
                     trip.boardMoveIssued = true;
+                    if (trip.boardWalks < 255)
+                        ++trip.boardWalks;
                 }
                 return 1;
             }
