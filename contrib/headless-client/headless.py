@@ -4300,7 +4300,7 @@ def run_verb(w, args_cli, line):
         # `npcguid` harness verb's SOAP reply ("guid=<N>", BotScenario.cpp's
         # non-bot npcguid case) - already a full HighGuid-typed value, so
         # resolve_target() passes it through unchanged (it is > 0xFFFFFFFF).
-        g = resolve(rest[0])
+        g = w.obj_guid(rest[0]) if rest[0].lower() in ("npc", "go", "corpse") else resolve(rest[0])
         if g:
             w.set_selection(g)
     elif verb == "invite":
