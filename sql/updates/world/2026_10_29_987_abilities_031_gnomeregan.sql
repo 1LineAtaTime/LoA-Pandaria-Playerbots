@@ -1,0 +1,70 @@
+-- #987 wave 1 (pure additions): Gnomeregan creature abilities, imported from DeltaTho PR 15 file 2026_10_24_36_world.sql.
+-- 18 creatures, 58 smart_scripts rows. Only creatures that have NO source_type 0 rows today are written here;
+-- scripts that would replace existing rows are wave 2. Filters/fixes: see (not shipped)
+-- Idempotent: DELETE of the listed entries then INSERT. AIName is set to SmartAI only where AIName and ScriptName are empty.
+-- Undo: DELETE FROM smart_scripts WHERE source_type=0 AND FIND_IN_SET(entryorguid, <entries below>); and
+--   UPDATE creature_template SET AIName='' WHERE FIND_IN_SET(entry, <entries below>); (entries that already had AIName SmartAI: see backup in (not shipped).
+
+SET @ENTRIES := '6206,6211,6218,6219,6220,6223,6224,6225,6226,6227,6232,6233,6234,6329,6392,6407,7603,7738';
+
+UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE `AIName` = '' AND `ScriptName` = '' AND FIND_IN_SET(`entry`, @ENTRIES);
+DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND FIND_IN_SET(`entryorguid`, @ENTRIES);
+INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
+(6206, 0, 0, 0, 0, 0, 100, 0, 3000, 5000, 9000, 13000, 11, 1604, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Burrower - In Combat - Cast ''Dazed'''),
+(6206, 0, 1, 0, 0, 0, 100, 0, 2000, 4000, 4000, 6000, 11, 9770, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Burrower - In Combat CMC - Cast ''Radiation'''),
+(6206, 0, 2, 0, 0, 0, 100, 0, 6000, 7000, 4000, 8000, 11, 16145, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Burrower - In Combat - Cast ''Sunder Armor'''),
+(6206, 0, 3, 0, 2, 0, 100, 1, 0, 15, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Burrower - Between 0-15% Health - Flee For Assist (No Repeat)'),
+(6206, 0, 4, 0, 8, 0, 100, 0, 9798, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Burrower - On Spellhit ''Radiation'' - Say Line 0'),
+(6211, 0, 0, 0, 4, 0, 100, 1, 0, 0, 0, 0, 11, 7366, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Reaver - On Aggro - Cast ''Berserker Stance'' (No Repeat)'),
+(6211, 0, 1, 0, 0, 0, 100, 0, 2000, 6000, 5000, 8000, 11, 8374, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Reaver - In Combat - Cast ''Arcing Smash'''),
+(6211, 0, 2, 0, 0, 0, 100, 0, 4000, 4000, 4000, 4000, 11, 845, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Reaver - In Combat - Cast ''Cleave'''),
+(6211, 0, 3, 0, 2, 0, 100, 1, 0, 15, 0, 0, 25, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Reaver - Between 0-15% Health - Flee For Assist (No Repeat)'),
+(6211, 0, 4, 0, 8, 0, 100, 0, 9798, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Caverndeep Reaver - On Spellhit ''Radiation'' - Say Line 0'),
+(6218, 0, 0, 0, 0, 0, 100, 1, 1000, 2000, 0, 0, 75, 10341, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Slime - In Combat - Add Aura ''Radiation Cloud'''),
+(6218, 0, 1, 0, 0, 0, 100, 0, 2000, 9000, 11000, 14000, 11, 9459, 0, 0, 0, 0, 0, 17, 0, 50, 0, 0, 0, 0, 0, 'Irradiated Slime - In Combat - Cast ''Corrosive Ooze'''),
+(6218, 0, 2, 0, 0, 0, 100, 0, 4000, 6000, 8000, 9000, 11, 1604, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Slime - In Combat CMC - Cast ''Dazed'''),
+(6219, 0, 0, 0, 0, 0, 100, 1, 1000, 2000, 0, 0, 75, 10341, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Corrosive Lurker - In Combat - Add Aura ''Radiation Cloud'' (No Repeat)'),
+(6219, 0, 1, 0, 0, 0, 100, 0, 2000, 9000, 11000, 14000, 11, 9459, 0, 0, 0, 0, 0, 17, 0, 50, 0, 0, 0, 0, 0, 'Corrosive Lurker - In Combat - Cast ''Corrosive Ooze'''),
+(6219, 0, 2, 0, 0, 0, 100, 0, 4000, 6000, 8000, 9000, 11, 1604, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Corrosive Lurker - In Combat CMC - Cast ''Dazed'''),
+(6220, 0, 0, 0, 0, 0, 100, 1, 1000, 2000, 0, 0, 75, 10341, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Horror - In Combat - Add Aura ''Radiation Cloud'' (No Repeat)'),
+(6220, 0, 1, 0, 0, 0, 100, 0, 4000, 5000, 10000, 12000, 11, 8211, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Horror - In Combat - Cast ''Chain Burn'''),
+(6220, 0, 2, 0, 0, 0, 100, 0, 2000, 9000, 11000, 14000, 11, 9459, 0, 0, 0, 0, 0, 17, 0, 50, 0, 0, 0, 0, 0, 'Irradiated Horror - In Combat - Cast ''Corrosive Ooze'''),
+(6220, 0, 3, 0, 0, 0, 100, 0, 4000, 6000, 8000, 9000, 11, 1604, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Horror - In Combat CMC - Cast ''Dazed'''),
+(6223, 0, 0, 0, 0, 0, 100, 0, 1000, 1500, 2300, 3900, 11, 6660, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Leprous Defender - Combat CMC - Cast ''Shoot'''),
+(6223, 0, 1, 0, 9, 0, 100, 0, 5, 30, 7000, 9000, 11, 14443, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Leprous Defender - Within 5-30 Range - Cast ''Multi-Shot'''),
+(6223, 0, 2, 0, 9, 0, 100, 0, 5, 30, 9000, 11000, 11, 5116, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Leprous Defender - Within 5-30 Range - Cast ''Concussive Shot'''),
+(6223, 0, 3, 0, 2, 0, 100, 1, 0, 15, 0, 0, 25, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Leprous Defender - Between 0-15% Health - Flee For Assist (No Repeat)'),
+(6223, 0, 4, 0, 8, 0, 100, 0, 9798, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Leprous Defender - On Spellhit ''Radiation'' - Say Line 0'),
+(6223, 0, 5, 0, 4, 0, 20, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Leprous Defender - On Aggro - Say Line 1'),
+(6224, 0, 0, 0, 0, 0, 100, 0, 4000, 5000, 20000, 25000, 11, 10732, 0, 0, 0, 0, 0, 19, 6224, 50, 0, 0, 0, 0, 0, 'Leprous Machinesmith - In Combat - Cast ''Supercharge'''),
+(6224, 0, 1, 0, 0, 0, 100, 0, 2000, 5000, 4000, 6000, 11, 13398, 64, 0, 0, 0, 0, 21, 30, 0, 0, 0, 0, 0, 0, 'Leprous Machinesmith - In Combat CMC - Cast ''Throw Wrench'''),
+(6224, 0, 2, 0, 2, 0, 100, 1, 0, 90, 0, 0, 11, 10348, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Leprous Machinesmith - Between 0-90% Health - Cast ''Tune Up'' (No Repeat)'),
+(6224, 0, 3, 0, 8, 0, 100, 0, 9798, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Leprous Machinesmith - On Spellhit ''Radiation'' - Say Line 0'),
+(6224, 0, 4, 0, 4, 0, 20, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Leprous Machinesmith - On Aggro - Say Line 1'),
+(6225, 0, 0, 0, 0, 0, 100, 0, 5, 30, 2300, 3900, 11, 1604, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Tank - Combat CMC - Cast ''Dazed'''),
+(6225, 0, 1, 0, 9, 0, 100, 0, 5, 30, 7000, 9000, 11, 10346, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Tank - Within 5-30 Range - Cast ''Multi-Shot'''),
+(6225, 0, 2, 0, 9, 0, 100, 0, 5, 30, 9000, 11000, 11, 5116, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Tank - Within 5-30 Range - Cast ''Concussive Shot'''),
+(6225, 0, 3, 0, 2, 0, 100, 1, 0, 15, 0, 0, 25, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Tank - Between 0-15% Health - Flee For Assist (No Repeat)'),
+(6226, 0, 0, 0, 0, 0, 100, 0, 2000, 6000, 6000, 10000, 11, 11970, 64, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Flamewalker - In Combat CMC - Cast ''Fire Nova'''),
+(6226, 0, 1, 0, 0, 0, 100, 0, 3000, 6000, 10000, 12000, 11, 10733, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Flamewalker - In Combat - Cast ''Flame Spray'''),
+(6227, 0, 0, 0, 2, 0, 100, 1, 0, 40, 0, 0, 11, 22519, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Frostwalker - Between 0-40% Health - Cast ''Ice Nova'' (No Repeat)'),
+(6227, 0, 1, 0, 0, 0, 100, 0, 2000, 6000, 8000, 9000, 11, 11264, 64, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Mechano-Frostwalker - In Combat CMC - Cast ''Ice Blast'''),
+(6232, 0, 0, 0, 0, 0, 100, 0, 4000, 6000, 20000, 20000, 11, 10831, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Arcane Nullifier X-21 - In Combat - Cast Reflection Field'),
+(6232, 0, 1, 0, 0, 0, 100, 0, 8000, 9000, 15000, 15000, 11, 10832, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Arcane Nullifier X-21 - In Combat - Cast Mass Nullify'),
+(6233, 0, 0, 0, 0, 0, 100, 0, 3000, 5000, 8000, 9000, 11, 1604, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mechanized Sentry - In Combat - Cast ''Dazed'''),
+(6234, 0, 0, 0, 0, 0, 100, 0, 2000, 5000, 6000, 7000, 11, 1604, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mechanized Guardian - In Combat - Cast ''Dazed'''),
+(6234, 0, 1, 0, 0, 0, 100, 0, 3000, 6000, 6000, 7000, 11, 11820, 0, 0, 0, 0, 0, 21, 40, 0, 0, 0, 0, 0, 0, 'Mechanized Guardian - In Combat - Cast ''Field'''),
+(6329, 0, 0, 0, 25, 0, 100, 0, 0, 0, 0, 0, 75, 9798, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Pillager - On Reset - Add Aura ''Radiation'''),
+(6329, 0, 1, 0, 0, 0, 100, 0, 3000, 5000, 10000, 11000, 11, 9771, 64, 0, 0, 0, 0, 17, 0, 50, 0, 0, 0, 0, 0, 'Irradiated Pillager - In Combat CMC - Cast ''Radiation Bolt'''),
+(6329, 0, 2, 0, 2, 0, 100, 1, 0, 50, 0, 0, 11, 8269, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Pillager - Between 0-50% Health - Cast ''Frenzy'' (No Repeat)'),
+(6329, 0, 3, 0, 25, 0, 100, 0, 0, 0, 0, 0, 11, 21862, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Pillager - On Reset - Cast ''Radiation'''),
+(6329, 0, 4, 5, 6, 0, 100, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Pillager - On Just Died - Say Line 0'),
+(6329, 0, 5, 0, 61, 0, 100, 0, 0, 0, 0, 0, 11, 9798, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Irradiated Pillager - On Just Died - Cast ''Radiation'''),
+(6392, 0, 0, 0, 2, 0, 100, 1, 0, 60, 0, 0, 11, 22167, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Holdout Medic - Between 0-60% Health - Cast ''Heal'' (No Repeat)'),
+(6392, 0, 1, 0, 4, 0, 100, 1, 0, 0, 0, 0, 11, 22168, 64, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Holdout Medic - On Aggro CMC - Cast ''Renew'' (No Repeat)'),
+(6392, 0, 2, 0, 1, 0, 100, 0, 5000, 5000, 8000, 10000, 11, 22167, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Holdout Medic - Out of Combat - Cast ''Heal'''),
+(6392, 0, 3, 0, 1, 0, 100, 0, 4000, 10000, 15000, 20000, 11, 22168, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Holdout Medic - Out of Combat - Cast ''Renew'''),
+(6407, 0, 0, 0, 0, 0, 100, 0, 500, 1000, 2000, 2500, 11, 6660, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Holdout Technician - In Combat - Cast Shoot'),
+(6407, 0, 1, 0, 0, 0, 100, 0, 5000, 12000, 9000, 18000, 11, 8858, 0, 0, 0, 0, 0, 5, 30, 0, 0, 0, 0, 0, 0, 'Holdout Technician - In Combat - Cast Bomb'),
+(7603, 0, 0, 0, 0, 0, 100, 0, 5000, 12000, 9000, 18000, 11, 12024, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Leprous Assistant - In Combat - Cast Net'),
+(7738, 0, 0, 0, 0, 0, 100, 2, 2000, 2000, 20000, 30000, 11, 10869, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Every 20 - 30 seconds (2 - 2s initially) - Self: Cast spell Summon Embers (10869) on Self');

@@ -1,0 +1,73 @@
+-- #987 wave 1 (pure additions): The Jade Forest creature abilities, imported from DeltaTho PR 15 file 2026_10_25_32_world.sql.
+-- 27 creatures, 61 smart_scripts rows. Only creatures that have NO source_type 0 rows today are written here;
+-- scripts that would replace existing rows are wave 2. Filters/fixes: see (not shipped)
+-- Idempotent: DELETE of the listed entries then INSERT. AIName is set to SmartAI only where AIName and ScriptName are empty.
+-- Undo: DELETE FROM smart_scripts WHERE source_type=0 AND FIND_IN_SET(entryorguid, <entries below>); and
+--   UPDATE creature_template SET AIName='' WHERE FIND_IN_SET(entry, <entries below>); (entries that already had AIName SmartAI: see backup in (not shipped).
+
+SET @ENTRIES := '56726,58811,59037,59084,59363,59754,59772,60969,61760,62596,63351,63467,65906,66106,66153,66267,66268,66270,66271,66272,66273,66274,66275,66425,66666,66911,66917';
+
+UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE `AIName` = '' AND `ScriptName` = '' AND FIND_IN_SET(`entry`, @ENTRIES);
+DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND FIND_IN_SET(`entryorguid`, @ENTRIES);
+INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
+(56726, 0, 0, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 106718, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Pearlfin Mystic - In Combat - Cast ''Bubble Beam'''),
+(56726, 0, 1, 0, 0, 0, 100, 0, 5000, 8000, 12000, 16000, 11, 32011, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Pearlfin Mystic - In Combat - Cast ''Water Bolt'''),
+(58811, 0, 0, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 114965, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Jade Snapping Turtle - In Combat - Cast ''Bubble Blast'''),
+(59037, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 18000, 24000, 11, 53148, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Kung Din - In Combat - Cast ''Charge'''),
+(59037, 0, 1, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 16827, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Kung Din - In Combat - Cast ''Claw'''),
+(59037, 0, 2, 0, 0, 0, 100, 0, 3000, 6000, 21000, 26000, 11, 61684, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Kung Din - In Combat - Cast ''Dash'''),
+(59037, 0, 3, 0, 11, 0, 100, 1, 0, 0, 0, 0, 11, 24450, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Kung Din - On Respawn - Cast ''Prowl'' (No Repeat)'),
+(59037, 0, 4, 0, 7, 0, 100, 1, 0, 0, 0, 0, 11, 24450, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Kung Din - On Evade - Cast ''Prowl'' (No Repeat)'),
+(59037, 0, 5, 0, 4, 0, 100, 1, 0, 0, 0, 0, 11, 93435, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Kung Din - On Aggro - Cast ''Roar of Courage'' (No Repeat)'),
+(59084, 0, 0, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 114965, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Pearly Tortoise - In Combat - Cast ''Bubble Blast'''),
+(59084, 0, 1, 0, 0, 0, 100, 0, 3000, 6000, 18000, 24000, 11, 53148, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Pearly Tortoise - In Combat - Cast ''Charge'''),
+(59363, 0, 0, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 106718, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Pearlfin Mystic - In Combat - Cast ''Bubble Beam'''),
+(59363, 0, 1, 0, 0, 0, 100, 0, 5000, 8000, 12000, 16000, 11, 32011, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Pearlfin Mystic - In Combat - Cast ''Water Bolt'''),
+(59363, 0, 2, 0, 1, 0, 100, 0, 1000, 2000, 30000, 30000, 11, 79949, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Pearlfin Mystic - Out of Combat - Cast ''Water Shield'''),
+(59754, 0, 0, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 55749, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mottled Caterpillar - In Combat - Cast ''Acid Spit'''),
+(59754, 0, 1, 0, 0, 0, 100, 0, 5000, 8000, 12000, 16000, 11, 126026, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Mottled Caterpillar - In Combat - Cast ''Sticky Goo'''),
+(59772, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 18000, 24000, 11, 53148, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Smoky Porcupine - In Combat - Cast ''Charge'''),
+(59772, 0, 1, 0, 0, 0, 100, 0, 3000, 6000, 18000, 24000, 11, 24394, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Smoky Porcupine - In Combat - Cast ''Intimidation'''),
+(59772, 0, 2, 0, 9, 0, 100, 0, 0, 8, 12000, 18000, 11, 126355, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Smoky Porcupine - Within 0-8 Range - Cast ''Paralyzing Quill'''),
+(60969, 0, 0, 0, 9, 0, 100, 0, 0, 8, 12000, 18000, 11, 18328, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Furious Paw''don Defender - Within 0-8 Range - Cast ''Incapacitating Shout'''),
+(60969, 0, 1, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 19643, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Furious Paw''don Defender - In Combat - Cast ''Mortal Strike'''),
+(60969, 0, 2, 0, 0, 0, 100, 0, 3000, 6000, 18000, 24000, 11, 81210, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Furious Paw''don Defender - In Combat - Cast ''Net'''),
+(60969, 0, 3, 0, 0, 0, 100, 0, 4000, 7000, 12000, 16000, 11, 23337, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Furious Paw''don Defender - In Combat - Cast ''Shoot'''),
+(60969, 0, 4, 0, 0, 0, 100, 0, 6000, 8000, 12000, 16000, 11, 15618, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Furious Paw''don Defender - In Combat - Cast ''Snap Kick'''),
+(61760, 0, 0, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 115065, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Slingtail Recruit - In Combat - Cast ''Mudseer''s Chant'''),
+(62596, 0, 0, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 127373, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Ancient Haunt - In Combat - Cast ''Unstable Serum'''),
+(63351, 0, 0, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 40505, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Guardian of the Dawn - In Combat - Cast ''Cleave'''),
+(63351, 0, 1, 0, 0, 0, 100, 0, 4000, 7000, 12000, 16000, 11, 23337, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Guardian of the Dawn - In Combat - Cast ''Shoot'''),
+(63467, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 17000, 22000, 11, 123914, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Enraged Treant - In Combat - Cast ''Treant''s Rage'''),
+(63467, 0, 1, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 113806, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Enraged Treant - In Combat - Cast ''Wrath Storm'''),
+(65906, 0, 0, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 131066, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Strongarm Laborer - In Combat - Cast ''Strongarm Punch'''),
+(66106, 0, 0, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 130803, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Hozen Scavenger - In Combat - Cast ''Banana Toss'''),
+(66106, 0, 1, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 114974, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Hozen Scavenger - In Combat - Cast ''Impale'''),
+(66106, 0, 2, 0, 0, 0, 100, 0, 4000, 7000, 12000, 16000, 11, 127558, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Hozen Scavenger - In Combat - Cast ''Slipped!'''),
+(66153, 0, 0, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 130803, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Hozen Scavenger - In Combat - Cast ''Banana Toss'''),
+(66153, 0, 1, 0, 0, 0, 100, 0, 2000, 4000, 8000, 12000, 11, 114974, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Hozen Scavenger - In Combat - Cast ''Impale'''),
+(66153, 0, 2, 0, 0, 0, 100, 0, 4000, 7000, 12000, 16000, 11, 127558, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Hozen Scavenger - In Combat - Cast ''Slipped!'''),
+(66267, 0, 0, 0, 0, 0, 100, 0, 0, 0, 3400, 4700, 11, 32197, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Gatrul''lon Curseweaver - In Combat - Cast ''Corruption'''),
+(66267, 0, 1, 0, 0, 0, 100, 0, 5000, 8000, 12000, 16000, 11, 131379, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Gatrul''lon Curseweaver - In Combat - Cast ''Curse of Ga''trul'''),
+(66267, 0, 2, 0, 0, 0, 100, 0, 4000, 7000, 12000, 16000, 11, 74402, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Gatrul''lon Curseweaver - In Combat - Cast ''Drain Soul'''),
+(66268, 0, 0, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 131492, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Gatrul''lon Flamecaller - In Combat - Cast ''Rain of Fire'''),
+(66268, 0, 1, 0, 0, 0, 100, 0, 0, 0, 3400, 4700, 11, 131381, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Gatrul''lon Flamecaller - In Combat - Cast ''Soul Fire'''),
+(66270, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 15000, 20000, 11, 131385, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Felstorm Warlock - In Combat - Cast ''Felfire'''),
+(66270, 0, 1, 0, 0, 0, 100, 0, 0, 0, 3400, 4700, 11, 9613, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Felstorm Warlock - In Combat - Cast ''Shadow Bolt'''),
+(66271, 0, 0, 0, 0, 0, 100, 0, 0, 0, 3400, 4700, 11, 131390, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Felstorm Summoner - In Combat - Cast ''Felbolt'''),
+(66271, 0, 1, 0, 0, 0, 100, 0, 4000, 7000, 12000, 16000, 11, 131391, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Felstorm Summoner - In Combat - Cast ''Ga''trul''s Doom'''),
+(66271, 0, 2, 0, 1, 0, 100, 1, 1000, 3000, 0, 0, 11, 11939, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Felstorm Summoner - Out of Combat - Cast ''Summon Imp'' (No Repeat)'),
+(66272, 0, 0, 0, 1, 0, 100, 0, 1000, 2000, 30000, 30000, 11, 131399, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Twinspire Deathguard - Out of Combat - Cast ''Defensive Pose'''),
+(66273, 0, 0, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 131409, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Twinspire Demolitionist - In Combat - Cast ''Spiteful End'''),
+(66273, 0, 1, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 131414, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Twinspire Demolitionist - In Combat - Cast ''Throw Grenade'''),
+(66274, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 15000, 20000, 11, 131429, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Dalgan - In Combat - Cast ''Blade Storm'''),
+(66274, 0, 1, 0, 9, 0, 100, 0, 0, 8, 12000, 18000, 11, 130530, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Dalgan - Within 0-8 Range - Cast ''Leap into the Fray'''),
+(66275, 0, 0, 0, 1, 0, 100, 0, 1000, 2000, 30000, 30000, 11, 131446, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Bellandra Felstorm - Out of Combat - Cast ''Fel Energies'''),
+(66275, 0, 1, 0, 0, 0, 100, 0, 6000, 9000, 15000, 20000, 11, 131447, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Bellandra Felstorm - In Combat - Cast ''Fel Storm'''),
+(66275, 0, 2, 0, 0, 0, 100, 0, 0, 0, 3400, 4700, 11, 131390, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Bellandra Felstorm - In Combat - Cast ''Felbolt'''),
+(66425, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 15000, 20000, 11, 131627, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Sha Haunt - In Combat - Cast ''Sha Breath'''),
+(66666, 0, 0, 0, 0, 0, 100, 0, 0, 0, 2300, 3900, 11, 95826, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Paw''don Defender - In Combat - Cast ''Shoot'''),
+(66911, 0, 0, 0, 0, 0, 100, 0, 0, 0, 3400, 4700, 11, 12471, 64, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Lorbu Sadsummon - In Combat - Cast ''Shadow Bolt'''),
+(66911, 0, 1, 0, 0, 0, 100, 0, 5000, 8000, 12000, 16000, 11, 131488, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 'Lorbu Sadsummon - In Combat - Cast ''Summon'''),
+(66917, 0, 0, 0, 0, 0, 100, 0, 3000, 6000, 17000, 22000, 11, 115006, 32, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hozen Groundpounder - In Combat - Cast ''Hozen Rage'''),
+(66917, 0, 1, 0, 9, 0, 100, 0, 0, 8, 12000, 18000, 11, 121484, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hozen Groundpounder - Within 0-8 Range - Cast ''Ook''em''');
