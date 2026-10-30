@@ -58,6 +58,18 @@ are published at most once a day:
 For a tested package, use the
 [releases](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases).
 
+The beta pre-release is optional. It has five assets:
+
++ `playerbot-beta-ci-win64.zip`, `playerbot-beta-ci-linux-x64.zip`,
+  `playerbot-beta-ci-macos-arm64.zip`: the binaries.
++ `playerbot-beta-ci-database.zip`: full dumps (`auth`, `characters`, `world`, `playerbots`)
+  with every update up to that commit applied, for a **new install only**.
++ `playerbot-beta-ci-sql.zip`: the `sql-sources` folder the built-in updater reads, for
+  **upgrading** an install you play on.
+
+Downloading a run's Actions artifact gives you a GitHub wrapper zip with both database files
+inside; use the release assets instead.
+
 A fresh install takes every package (server, extractors, database) from the same release.
 Each package is complete on its own: never unpack one over another, or a development build
 over a release.
@@ -92,8 +104,9 @@ Copy `dbc`, `maps`, `vmaps`, `mmaps` and `cameras` into one folder and point `Da
 `worldserver.conf` at it. Bots need the enUS DBC files.
 
 ### 3. Databases
-Create four databases (for example `auth`, `characters`, `world`, `playerbots`), give one MySQL
-user access to all four, and import the release dumps:
+For a new install: create four empty databases (for example `auth`, `characters`, `world`,
+`playerbots`), give one MySQL user access to all four, and import the four dumps
+of the release's `database` zip:
 
 ```
 mysql -u<user> -p auth       < auth.sql
@@ -102,8 +115,12 @@ mysql -u<user> -p world      < world.sql
 mysql -u<user> -p playerbots < playerbots.sql
 ```
 
-The auth, characters and playerbots databases fill themselves on the first start: the bot
-accounts, characters and bot data are created by the worldserver.
+Leave `Updates.EnableDatabases = 0` (the shipped default). The auth, characters and playerbots
+databases fill themselves on the first start: the bot accounts, characters and bot data are
+created by the worldserver.
+
+To upgrade an install you already play on, import nothing: see
+[6. Upgrading an existing install](#6-upgrading-an-existing-install-keeps-characters-accounts-and-bot-data).
 
 ### 4. Configuration
 Copy the `.conf.dist` files next to the binaries and drop the `.dist` suffix:
@@ -135,12 +152,18 @@ database if clients connect from other machines.
    `.conf.dist` files.
 3. Extract the SQL sources (the `Source code` zip of the release you upgrade to) and set, in
    `worldserver.conf`: `Updates.EnableDatabases = 7` (1 auth + 2 characters + 4 world; 15
-   with 8 playerbots from v1.1.0-beta on), `SourceDirectory` = the extracted folder,
+   with 8 playerbots from v1.1.0-beta on), `SourceDirectory` = the extracted folder that
+   contains `sql/` and `modules/` (the top folder of the `Source code` zip),
    `MySQLExecutable` = your `mysql` client (`mysql.exe` on Windows). With v1.0.x binaries,
    apply new files from `modules/mod_playerbots/data/sql/playerbots/updates` to the
    playerbots database by hand.
 4. Start the worldserver once: the updater applies only the missing updates, in order, and
    records them.
+
+   **4b.** Before playing, check the worldserver log: `>> Applying update "<file>"` for each new
+   file (`>> Re-hashing update` for files already applied), `>> ... database is up-to-date!`
+   or `>> Applied N queries.` for each database, and no errors. If anything fails, stop the
+   server and restore the backup from step 1.
 5. Never import `characters.sql`, `auth.sql` or `playerbots.sql` from a database zip over an
    existing install: they replace your saves. Replacing `world.sql` alone is safe for player
    progress but drops your own world edits.
