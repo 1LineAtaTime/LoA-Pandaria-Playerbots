@@ -503,6 +503,18 @@ jobs:
       run: |
         set -euo pipefail
         TITLE="Latest beta CI build (playerbot-beta)"
+        # GITHUB_TOKEN may not move a ref across commits that change .github/workflows
+        # (HTTP 403, it has no "workflows" permission); creating the ref is allowed, so
+        # the tag is then deleted and created again at the new commit.
+        move_tag() {
+          if ! gh api "repos/$REPO/git/ref/tags/$TAG" > /dev/null 2>&1; then
+            gh api -X POST "repos/$REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SHA" > /dev/null
+          elif ! gh api -X PATCH "repos/$REPO/git/refs/tags/$TAG" -f sha="$SHA" -F force=true > /dev/null; then
+            echo "Moving the tag was refused; recreating it at $SHA."
+            gh api -X DELETE "repos/$REPO/git/refs/tags/$TAG"
+            gh api -X POST "repos/$REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SHA" > /dev/null
+          fi
+        }
         if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
           gh release upload "$TAG" -R "$REPO" --clobber out/*.zip
           keep=" $(cd out && echo *.zip) "
@@ -510,13 +522,13 @@ jobs:
             case "$keep" in *" $name "*) ;; *) gh release delete-asset "$TAG" "$name" -R "$REPO" --yes ;; esac
           done
           gh release edit "$TAG" -R "$REPO" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
-          gh api -X PATCH "repos/$REPO/git/refs/tags/$TAG" -f sha="$SHA" -F force=true > /dev/null
-        else
-          if gh api "repos/$REPO/git/ref/tags/$TAG" > /dev/null 2>&1; then
-            gh api -X PATCH "repos/$REPO/git/refs/tags/$TAG" -f sha="$SHA" -F force=true > /dev/null
-          else
-            gh api -X POST "repos/$REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SHA" > /dev/null
+          move_tag
+          # A release whose tag was deleted turns into a draft: publish it again.
+          if [ "$(gh release view "$TAG" -R "$REPO" --json isDraft --jq .isDraft)" = "true" ]; then
+            gh release edit "$TAG" -R "$REPO" --draft=false --prerelease --latest=false
           fi
+        else
+          move_tag
           gh release create "$TAG" -R "$REPO" --title "$TITLE" --notes-file notes.md --prerelease --latest=false out/*.zip
         fi
         gh release view "$TAG" -R "$REPO" --json tagName,isPrerelease,assets \
