@@ -3642,6 +3642,41 @@ private:
     ObjectGuid _kormGuid;
 };
 
+// #1024 - Rope 204428 (the two ropes on the top deck of the static gunship). This is the way down for the player.
+// Lorna yells "Everyone else, use the ropes to rappel down", and Wowpedia "Endgame (quest)" Notes (MediaWiki API,
+// 2026-10-30) say the boarding party rappels down and the player follows it to the captain's quarters, then down to
+// the engine room. In the ship's collision model (Nd_Hordegunship.wmo) the top deck (z 178.6) has no walkable link to
+// the rafters (z ~128.5). The rafters reach the furnace room (z 105.4, Korm Bonegrind) by a ramp. The DBC chain
+// 81425 -> 81422 "Jump 2" (control vehicle on a nearby rope 43793) + 81992 "Rope 2" has no target conditions and no
+// rope-vehicle movement in any source we have. So a click only cast 81422 and the player stayed on the top deck,
+// where Korm (released at the furnace beat) never got a player within reach, and Lorna's timeline waited for his death
+// indefinitely. Instead, the click moves the player to the rope-bottom mark under that rope, the same marks
+// SquadDescend uses for the squad.
+class go_gilneas_gunship_rope : public GameObjectScript
+{
+public:
+    go_gilneas_gunship_rope() : GameObjectScript("go_gilneas_gunship_rope") { }
+
+    bool OnGossipHello(Player* player, GameObject* go) override
+    {
+        using namespace GilneasEndgame;
+
+        if (go->GetMapId() != 654 || go->GetPositionZ() < 170.0f)
+            return false; // not a top-deck rope of the static gunship: default use
+
+        if (!player->IsAlive() || player->GetVehicle())
+            return true;
+
+        Position const* bottom = nullptr;
+        for (Position const& pos : SquadMidLevelPos)
+            if (!bottom || go->GetExactDist2dSq(&pos) < go->GetExactDist2dSq(bottom))
+                bottom = &pos;
+
+        player->NearTeleportTo(bottom->GetPositionX(), bottom->GetPositionY(), bottom->GetPositionZ() + 0.5f, bottom->GetOrientation());
+        return true;
+    }
+};
+
 // #506 - Wyvern 43713 (vehicle 983, summoned and ridden through 81779): loop off the ship, then the escape to Keel
 // Harbor. Port of ShatterCore npc_gilneas_endgame_wyvern (gilneas_chapter_4.cpp:1923-2014), written like the
 // hippogryph above: vehicle 983's seat can control (VEHICLE_SEAT_FLAG_CAN_CONTROL), so OnCharmed is kept and client
@@ -4710,6 +4745,7 @@ void AddSC_gilneas()
     new npc_hippogryph_endgame();
     new creature_script<npc_hippogryph>("npc_hippogryph");
     new creature_script<npc_lorna_crowley_endgame>("npc_lorna_crowley_endgame");
+    new go_gilneas_gunship_rope();
     new creature_script<npc_wyvern_endgame>("npc_wyvern_endgame");
     new creature_script<npc_stout_mountain_horse>("npc_stout_mountain_horse");
     new npc_krennan_aranas_battle();
