@@ -11,13 +11,13 @@ Status of every commit of pull request #15 (310 commits).
 - **had**: this fork already had the change before the PR.
 - **rejected**: not taken, with the reason.
 
-Totals: changed 131, had 8, included 19, partial 145, rejected 7
+Totals: changed 131, had 8, included 20, partial 145, rejected 6
 
 | PR commit | author | subject | status | commit | reason |
 |---|---|---|---|---|---|
 | 918a238c | Dmitry | Fix multiple null pointer dereference issues and redundant checks (#448) | **included** | own commit, same subject and author | Taken unchanged. |
 | 37175823 | quietpatcher | Core/Groups: fix group instance saves query with ONLY_FULL_GROUP_BY (#442) | **had** | - | Already fixed in this fork by its own change. |
-| a0f6c531 | quietpatcher | CI/GitHub: fix the macOS arm64 build (#456) | **rejected** | - | Not taken: CI workflow changes are not part of this branch. |
+| a0f6c531 | quietpatcher | CI/GitHub: fix the macOS arm64 build (#456) | **included** | own commit, same subject and author | Taken unchanged (added after v1.1.0-beta with the CI fixes). |
 | 5e6866b3 | quietpatcher | Chat: give ChatCommandHolder a virtual destructor (#457) | **included** | own commit, same subject and author | Taken unchanged. |
 | 985a1594 | quietpatcher | Core/Creature: neutral creatures fight back against ranged attackers (#452) | **included** | own commit, same subject and author | Taken unchanged. |
 | f4a706a6 | quietpatcher | Core/Groups: fix null dereference in Group::IsGuildGroup (#441) | **included** | own commit, same subject and author | Taken unchanged. |
