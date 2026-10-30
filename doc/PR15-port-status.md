@@ -325,3 +325,14 @@ Totals: changed 131, had 8, included 20, partial 145, rejected 6
 | da2bcb43 | DeltaTho | Playerbots: Log the random bot refresh at debug level | **had** | - | Already fixed in this fork by its own change. |
 | 2523e47d | DeltaTho | Playerbots: Log random bots in and out with the real players | **changed** | "Playerbots: port the PR 15 playerbot changes (adapted), two of them as opt-in toggles" | Included, adapted to this tree. |
 | d1576eb2 | DeltaTho | Playerbots: Port the chat command filters | **changed** | "Playerbots: port the PR 15 playerbot changes (adapted), two of them as opt-in toggles" | Included, adapted to this tree. |
+
+## Follow-up commits after PR 15
+
+Commits DeltaTho published after pull request #15 was closed, with the same status keys as above.
+
+| follow-up commit | author | subject | status | commit | reason |
+|---|---|---|---|---|---|
+| 074379fe | DeltaTho | Core: Fix assorted creature, movement and logout issues | **had** | - | Already in this branch: follower cleanup and shutdown CombatStop (PR 15 core port), dead-flyer height search; the UpdateVictim evade is covered by our engaged-but-out-of-combat evade (AC IsEngaged gate). EngagementStopped in CombatStop not taken: AC's CombatStop does not clear engagement. |
+| 49114fe3 | DeltaTho | DB/Scripts: Fix assorted world, script and character issues | **partial** | "db: Ruul the Darkener - one stationary spawn at the AzerothCore position" | Ruul the Darkener taken (one stationary spawn at the AzerothCore position, 300 s respawn). Hallow's End fires, training dummy, corpse key, respawn times and turn-in scripts were already in this branch, row for row. |
+| f40d712b | DeltaTho | Playerbots: Fix the playerbots database setup and the graveyard lookup of dead bots | **had** | - | Already in this branch: the playerbots DB updater, the base SQL split, the config keys and the dead-bot graveyard lookup (PR 15 playerbots port). First-boot DB population unchanged. |
+| aaafc3e1 | DeltaTho | Scripts/Tirisfal Glades: Fix the Forsaken starting zone | **partial** | "db(smartai): Tirisfal - Scarlet Zealot and Sri'skulk get their abilities" | Scarlet Zealot and Sri'skulk abilities taken. Spell scripts, Darnell and the character SQL were already in this branch; Deathguard AI changes not taken (AzerothCore keeps GuardAI); existing creature texts and timings kept. |
