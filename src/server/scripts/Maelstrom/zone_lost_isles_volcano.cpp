@@ -173,11 +173,23 @@ namespace
     public:
         lovolc_npc_ceint() : CreatureScript("npc_ceint") { }
 
+        // 72889 "Summon Spell" is a vehicle-category summon of 38802 whose effect value is the ride aura
+        // 72887, so one cast spawns the boots and boards the player (which also starts the damage ticks
+        // 72885 through spell_linked_spell). The spell is restricted by its area group to the Oostan
+        // areas, where Crosscheck stands for this quest; nothing in the quest data cast it before.
+        bool OnQuestAccept(Player* player, Creature* /*creature*/, Quest const* quest) override
+        {
+            if (quest->GetQuestId() == QUEST_ZOMBIES_VS_ROCKET_BOOTS && !player->HasAura(SPELL_BOOTS_VEHICLE_AURA))
+                player->CastSpell(player, SPELL_BOOTS_QUEST_AURA, true);
+
+            return false;
+        }
+
         bool OnQuestReward(Player* player, Creature* /*creature*/, Quest const* quest, uint32 /*opt*/) override
         {
             if (quest->GetQuestId() == QUEST_ZOMBIES_VS_ROCKET_BOOTS)
             {
-                player->RemoveAurasDueToSpell(SPELL_BOOTS_QUEST_AURA);
+                player->RemoveAurasDueToSpell(SPELL_BOOTS_VEHICLE_AURA);
                 player->RemoveAurasDueToSpell(SPELL_BOOTS_DAMAGE_TRIGGER);
                 if (Creature* boots = player->FindNearestCreature(NPC_SUPER_BOOSTER_ROCKET_BOOTS, 10.0f))
                     boots->DespawnOrUnsummon();
