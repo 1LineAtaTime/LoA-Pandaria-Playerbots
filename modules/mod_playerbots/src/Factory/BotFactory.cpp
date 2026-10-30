@@ -851,7 +851,10 @@ void BotFactory::Randomize(bool incremental)
 
     // issue #136: a full randomize at the bot's current level strips its gear (Prepare) but GiveLevel
     // sends no levelup when the level does not change, so the levelup re-gear never runs.
-    if (!incremental && bot->GetLevel() == oldLevel)
+    // #946, AC PlayerbotFactory::Randomize (Bot/Factory/PlayerbotFactory.cpp:915-919): a full randomize always re-gears
+    // here, before SaveToDB. Gating it on an unchanged level left the gear to the async levelup action, so the save wrote the
+    // bot naked, and a stop or an overload before that tick left it naked for days (102 bots of the 2026-10-25 2500-bot run).
+    if (!incremental)
         InitEquipment(false);
     // #623, AC PlayerbotFactory::Randomize (Bot/Factory/PlayerbotFactory.cpp:915-920) runs InitEquipment(incremental)
     // on every randomize. The incremental path here never did, so a random bot already at the start level (level 90)

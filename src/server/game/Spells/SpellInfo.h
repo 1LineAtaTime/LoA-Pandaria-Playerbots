@@ -41,6 +41,14 @@ struct SpellEntry;
 struct SpellCastTimesEntry;
 struct Condition;
 
+// #970: the implicit target a SpellEffect.dbc radius belongs to (EffectRadiusIndex -> TargetA, EffectRadiusMaxIndex -> TargetB).
+// TrinityCore master / CPP 4.3.4: SharedDefines.h SpellTargetIndex (CPP src/server/shared/SharedDefines.h:35).
+enum class SpellTargetIndex : uint8
+{
+    TargetA = 0,
+    TargetB = 1
+};
+
 enum SpellTargetSelectionCategories
 {
     TARGET_SELECT_CATEGORY_NYI,
@@ -229,8 +237,8 @@ public:
     Mechanics Mechanic;
     SpellImplicitTargetInfo TargetA;
     SpellImplicitTargetInfo TargetB;
-    SpellRadiusEntry const* RadiusEntry;
-    SpellRadiusEntry const* MaxRadiusEntry;
+    SpellRadiusEntry const* RadiusEntry;    // TargetA's radius (TC/CPP TargetARadiusEntry)
+    SpellRadiusEntry const* MaxRadiusEntry; // TargetB's radius (TC/CPP TargetBRadiusEntry)
     uint32    ChainTarget;
     uint32    ItemType;
     uint32    TriggerSpell;
@@ -245,6 +253,7 @@ public:
     SpellEffectInfo(SpellInfo const* spellInfo, uint8 effIndex, SpellEffectEntry const* effect);
 
     bool IsEffect() const;
+    bool HasNoData() const;  // #924: every field as for an effect index the spell does not use
     bool IsEffect(SpellEffects effectName) const;
     bool IsAura() const;
     bool IsPersistenAura() const;
@@ -264,9 +273,13 @@ public:
     float CalcValueMultiplier(Unit* caster, Spell* spell = NULL) const;
     float CalcDamageMultiplier(Unit* caster, Spell* spell = NULL) const;
 
-    bool HasRadius() const;
+    bool HasRadius(SpellTargetIndex targetIndex = SpellTargetIndex::TargetA) const;
     bool HasMaxRadius() const;
-    float CalcRadius(Unit* caster = NULL, Spell* = NULL) const;
+    // #970: radius of one implicit target, as TC master / CPP CalcRadius(caster, targetIndex, spell); used by target selection.
+    float CalcRadius(Unit* caster, SpellTargetIndex targetIndex, Spell* spell = NULL) const;
+    // Effect radius for callers without a target (auras, dynamic objects, effect handlers, scripts): TargetA's, or TargetB's
+    // when the effect has no TargetA radius (12k+ 5.4.8 effects, e.g. Consecration 81298, only fill EffectRadiusMaxIndex).
+    float CalcRadius(Unit* caster = NULL, Spell* spell = NULL) const;
 
     uint32 GetProvidedTargetMask() const;
     uint32 GetMissingTargetMask(bool srcSet = false, bool destSet = false, uint32 mask = 0) const;
@@ -281,6 +294,60 @@ private:
         SpellTargetObjectTypes UsedTargetObjectType; // defines valid target object type for spell effect
     };
     static StaticData _data[TOTAL_SPELL_EFFECTS];
+};
+
+// #924: storage for SpellInfo::Effects. Every spell used to carry MAX_SPELL_EFFECTS (32) SpellEffectInfo of 144 bytes
+// (4.6 KB per SpellInfo, ~0.5 GB in total) although almost all spells use up to 3. Slots 0..MIN_SLOTS-1 are always real
+// objects (spell mods address effects by index), higher slots only when they hold data; every other index reads one
+// per-spell empty effect that has the right owner. Reads past the stored slots never allocate; a write through the
+// non-const operator[] (load-time corrections, scripts) grows the storage first. Shrink() is called once after the world
+// finished loading (SpellMgr::ShrinkSpellInfoEffects), so loading behaves exactly as with the old fixed array.
+class SpellEffectSlots
+{
+public:
+    static constexpr size_t MIN_SLOTS = 5;
+
+    class const_iterator
+    {
+    public:
+        const_iterator(SpellEffectSlots const* array, size_t index) : _array(array), _index(index) { }
+        SpellEffectInfo const& operator*() const { return (*_array)[_index]; }
+        SpellEffectInfo const* operator->() const { return &(*_array)[_index]; }
+        const_iterator& operator++() { ++_index; return *this; }
+        bool operator==(const_iterator const& other) const { return _index == other._index; }
+        bool operator!=(const_iterator const& other) const { return _index != other._index; }
+
+    private:
+        SpellEffectSlots const* _array;
+        size_t _index;
+    };
+
+    void Init(SpellInfo const* owner);
+    SpellEffectInfo const& operator[](size_t index) const
+    {
+        ASSERT(index < MAX_SPELL_EFFECTS);
+        return index < _count ? _data[index] : _tail;
+    }
+    SpellEffectInfo& operator[](size_t index)
+    {
+        ASSERT(index < MAX_SPELL_EFFECTS);
+        if (index >= _count)
+            Grow(index + 1);
+        return _data[index];
+    }
+    const_iterator begin() const { return const_iterator(this, 0); }
+    const_iterator end() const { return const_iterator(this, MAX_SPELL_EFFECTS); }
+    static constexpr size_t size() { return MAX_SPELL_EFFECTS; }
+    size_t StoredSlots() const { return _count; }
+    void Shrink();
+
+private:
+    void Grow(size_t count);
+
+    SpellInfo const* _owner = nullptr;
+    std::unique_ptr<SpellEffectInfo[]> _data;
+    uint8 _count = 0;
+    SpellEffectInfo _tail;
 };
 
 class SpellInfo
@@ -383,10 +450,9 @@ class SpellInfo
         int32  ScalingClass;
         float  CoefBase;
         int32  CoefLevelBase;
-        SpellEffectInfo Effects[MAX_SPELL_EFFECTS];
+        SpellEffectSlots Effects;
         uint32 ExplicitTargetMask;
         SpellChainNode const* ChainEntry;
-        std::array<SpellEffectInfo, MAX_SPELL_EFFECTS> _effects;
 
         // SpecializationSpellsEntry
         std::list<uint32> SpecializationIdList;
@@ -519,8 +585,10 @@ class SpellInfo
         bool IsDifferentRankOf(SpellInfo const* spellInfo) const;
         bool IsHighRankOf(SpellInfo const* spellInfo) const;
 
-        std::array<SpellEffectInfo, MAX_SPELL_EFFECTS> const& GetEffects() const { return _effects; }
-        SpellEffectInfo const& GetEffect(SpellEffIndex index) const { ASSERT(index < _effects.size()); return _effects[index]; }
+        // #924: these returned a second array of MAX_SPELL_EFFECTS effects that was never filled (32 default effects in
+        // every SpellInfo, ~0.5 GB in total, and Aura::CanBeSaved saw no effects through it). They now return Effects.
+        SpellEffectSlots const& GetEffects() const { return Effects; }
+        SpellEffectInfo const& GetEffect(SpellEffIndex index) const { ASSERT(index < MAX_SPELL_EFFECTS); return Effects[index]; }
 
         bool IsRequireAdditionalTargetCheck() const;
 
@@ -560,9 +628,6 @@ class SpellInfo
 
         bool CanBeBlockedByAntiMagicShell(uint32 effectIndex) const;
 
-    private:
-        std::array<SpellEffectInfo, MAX_SPELL_EFFECTS>& _GetEffects() { return _effects; }
-        SpellEffectInfo& _GetEffect(SpellEffIndex index) { ASSERT(index < _effects.size()); return _effects[index]; }
 };
 
 #endif // _SPELLINFO_H

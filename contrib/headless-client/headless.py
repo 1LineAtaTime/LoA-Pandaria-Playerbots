@@ -233,6 +233,21 @@ OBSERVED_470 = {0x0B01: "SMSG_TRIGGER_CINEMATIC", 0x1A9E: "SMSG_ATTACKSTART", 0x
                 0x15E0: "SMSG_SHOW_NEURTRAL_PLAYER_FACTION_SELECT_UI",
                 0x1AAE: "SMSG_LIST_INVENTORY", 0x189F: "SMSG_TRAINER_LIST", 0x09D8: "SMSG_SPELL_GO"}
 
+# --- #969 additions: BattlePay (in-game shop). Wire numbers from src/server/game/Server/Protocol/Opcodes.h:77-81
+# and :589-599; layouts replayed from Handlers/BattlePayHandler.cpp (read order) and BattlePay/BattlePayMgr.cpp
+# (SendBattlePayPurchaseUpdate write order). Verbs: bp-products, bp-buy (see run_verb).
+CMSG_BATTLE_PAY_GET_PRODUCT_LIST = 0x0DE0            # empty body
+CMSG_BATTLE_PAY_START_PURCHASE = 0x1886              # u32 productId, u32 clientToken, guid bits [2,3,5,1,4,7,0,6], bytes [5,3,7,1,4,0,6,2]
+CMSG_BATTLE_PAY_CONFIRM_PURCHASE_RESPONSE = 0x0812   # u64 currentPrice, u32 serverToken, u8 confirm
+SMSG_BATTLE_PAY_GET_PRODUCT_LIST_RESPONSE = 0x1ABF
+SMSG_BATTLE_PAY_START_PURCHASE_RESPONSE = 0x0612     # u64 purchaseId, u32 result, u32 clientToken
+SMSG_BATTLE_PAY_CONFIRM_PURCHASE = 0x14E3            # u32 serverToken, u64 currentPrice, u64 purchaseId
+SMSG_BATTLE_PAY_PURCHASE_UPDATE = 0x14E2             # bits19 count, per: bits8 walletLen; per: u32 result, u64 purchaseId, u32 product, u32 status, wallet
+SMSG_BATTLE_PAY_DELIVERY_ENDED = 0x020B
+SMSG_BATTLE_PAY_DISTRIBUTION_UPDATE = 0x1E1B
+BATTLE_PAY_STATUS_NAMES = {2: "READY", 3: "ALLOWED_TO_BUY", 5: "BUYING", 6: "BUYED"}   # BattlePayMgr.h:143-146
+BATTLE_PAY_RESULT_NAMES = {0: "OK", 3: "SHOP_ERROR", 4: "DECLINED", 25: "UNAVAILABLE"}  # BattlePayMgr.h:151-154
+
 # Group.h GROUP_UPDATE_FLAG_* (ascending bit order == field write order)
 GROUP_UPDATE_FIELDS = [
     ("status", 0x00000001, "u16"), ("mop_unk", 0x00000002, "u8u8"),
@@ -963,6 +978,8 @@ class WorldClient:
         self.lfg_client_queue_id = None
         self.duel_request = None
         self.events = []          # notable observation events for the runner
+        self.bp_confirm = None    # #969: last SMSG_BATTLE_PAY_CONFIRM_PURCHASE (server token + price)
+        self.bp_updates = []      # #969: every SMSG_BATTLE_PAY_PURCHASE_UPDATE entry seen
         self.world_states = {}    # field id -> latest value (battleground objectives)
         self.bf_accept = False    # #900/#898 --bf-accept: answer battlefield-manager entry/queue invites with accept
         self.ws_log = []          # (seconds since login, name, value) on every change
@@ -1576,6 +1593,13 @@ class WorldClient:
             self._parse_resurrect_request(body)
         elif op == SMSG_SUMMON_REQUEST:
             self._parse_summon_request(body)
+        elif op in (SMSG_BATTLE_PAY_GET_PRODUCT_LIST_RESPONSE, SMSG_BATTLE_PAY_START_PURCHASE_RESPONSE,
+                    SMSG_BATTLE_PAY_CONFIRM_PURCHASE, SMSG_BATTLE_PAY_PURCHASE_UPDATE,
+                    SMSG_BATTLE_PAY_DELIVERY_ENDED, SMSG_BATTLE_PAY_DISTRIBUTION_UPDATE):
+            try:
+                self._parse_battle_pay(op, body)
+            except (IndexError, struct.error) as exc:
+                log("BattlePay 0x%04X parse failed: %s (body=%s)" % (op, exc, body[:48].hex()))
         elif op in OBSERVED_470:
             log("%s (%d bytes) %s" % (OBSERVED_470[op], len(body), body[:16].hex()))
             self.emit("observed", op=OBSERVED_470[op], size=len(body))
@@ -2050,6 +2074,90 @@ class WorldClient:
             log("  gossip quest id=%d level=%d icon=%d title=%r" % (q["id"], q["level"], q["icon"], q["title"]))
         self.emit("gossip", guid=raw, menu=menu, options=len(olist), quests=len(qlist),
                   ids=",".join(str(o["id"]) for o in olist))
+
+    # --- #969: BattlePay (in-game shop) -------------------------------------------------------------
+    def _parse_battle_pay(self, op, body):
+        """Decode the BattlePay server packets this client cares about and record them in self.events
+        (kinds bp_products / bp_start / bp_confirm / bp_update / bp_delivery / bp_distribution)."""
+        if op == SMSG_BATTLE_PAY_GET_PRODUCT_LIST_RESPONSE:
+            # BattlePayMgr::SendBattlePayProductList: bits19 shop entries, bits19 products, ... (store disabled:
+            # 0,0,0 counts then u32 currency, u32 status=1 UNAVAILABLE). Only the counts are decoded here.
+            r = ByteReader(body)
+            entries, products = r.read_bits(19), r.read_bits(19)
+            log("SMSG_BATTLE_PAY_GET_PRODUCT_LIST_RESPONSE entries=%d products=%d (%d bytes)" % (entries, products, len(body)))
+            self.emit("bp_products", entries=entries, products=products, size=len(body))
+            self.events.append(("bp_products", products))
+        elif op == SMSG_BATTLE_PAY_START_PURCHASE_RESPONSE:
+            purchase_id, result, client_token = struct.unpack_from("<QII", body, 0)
+            log("SMSG_BATTLE_PAY_START_PURCHASE_RESPONSE purchase=%d result=%d clientToken=%d" % (purchase_id, result, client_token))
+            self.emit("bp_start", purchase=purchase_id, result=result, client_token=client_token)
+            self.events.append(("bp_start", purchase_id))
+        elif op == SMSG_BATTLE_PAY_CONFIRM_PURCHASE:
+            server_token, price, purchase_id = struct.unpack_from("<IQQ", body, 0)
+            self.bp_confirm = {"server_token": server_token, "price": price, "purchase": purchase_id}
+            log("SMSG_BATTLE_PAY_CONFIRM_PURCHASE serverToken=%d price=%d (%.2f points) purchase=%d"
+                % (server_token, price, price / 10000.0, purchase_id))
+            self.emit("bp_confirm", server_token=server_token, price=price, purchase=purchase_id)
+            self.events.append(("bp_confirm", self.bp_confirm))
+        elif op == SMSG_BATTLE_PAY_PURCHASE_UPDATE:
+            r = ByteReader(body)
+            n = r.read_bits(19)
+            wlens = [r.read_bits(8) for _ in range(n)]
+            for wl in wlens:
+                result = r.read_u32()
+                r._reset_bits()
+                purchase_id = struct.unpack_from("<Q", r.data, r.pos)[0]
+                r.pos += 8
+                product, status = r.read_u32(), r.read_u32()
+                wallet = r.read_string(wl).decode("utf-8", "replace")
+                upd = {"status": status, "result": result, "product": product, "purchase": purchase_id}
+                self.bp_updates.append(upd)
+                log("SMSG_BATTLE_PAY_PURCHASE_UPDATE product=%d purchase=%d status=%s result=%s wallet=%r"
+                    % (product, purchase_id, BATTLE_PAY_STATUS_NAMES.get(status, status),
+                       BATTLE_PAY_RESULT_NAMES.get(result, result), wallet))
+                self.emit("bp_update", product=product, purchase=purchase_id,
+                          status=BATTLE_PAY_STATUS_NAMES.get(status, status),
+                          result=BATTLE_PAY_RESULT_NAMES.get(result, result))
+                self.events.append(("bp_update", upd))
+        elif op == SMSG_BATTLE_PAY_DELIVERY_ENDED:
+            # bits22 item count, then u32 itemId each, then u64 DistributionID (BattlePayMgr.cpp BUYING step)
+            r = ByteReader(body)
+            n = r.read_bits(22)
+            items = [r.read_u32() for _ in range(n)]
+            log("SMSG_BATTLE_PAY_DELIVERY_ENDED items=%s" % items)
+            self.emit("bp_delivery", items=",".join(str(i) for i in items))
+            self.events.append(("bp_delivery", items))
+        else:
+            log("SMSG_BATTLE_PAY_DISTRIBUTION_UPDATE (%d bytes)" % len(body))
+            self.emit("bp_distribution", size=len(body))
+            self.events.append(("bp_distribution", len(body)))
+
+    def bp_get_products(self):
+        """CMSG_BATTLE_PAY_GET_PRODUCT_LIST (empty). The server answers with the product list and, when the store
+        is enabled, the balance as a system chat line (BattlePayMgr::SendPointsBalance, trinity_string 15005)."""
+        self.send_packet(CMSG_BATTLE_PAY_GET_PRODUCT_LIST, b"")
+        log("sent CMSG_BATTLE_PAY_GET_PRODUCT_LIST")
+
+    def bp_start_purchase(self, product_id, client_token=None):
+        """CMSG_BATTLE_PAY_START_PURCHASE (BattlePayHandler.cpp HandleBattlePayStartPurchase): u32 productId,
+        u32 clientToken, guid mask [2,3,5,1,4,7,0,6], byteseq [5,3,7,1,4,0,6,2]; the guid is the target
+        character (this client's own)."""
+        token = int(client_token) if client_token else random.randint(1, 0x7FFFFFFF)
+        g = int(self.char_guid or 0)
+        body = struct.pack("<II", int(product_id), token) + packed_guid(g, (2, 3, 5, 1, 4, 7, 0, 6), (5, 3, 7, 1, 4, 0, 6, 2))
+        self.send_packet(CMSG_BATTLE_PAY_START_PURCHASE, body)
+        log("sent CMSG_BATTLE_PAY_START_PURCHASE product=%d clientToken=%d guid=%d" % (int(product_id), token, g))
+        self.emit("bp_start_sent", product=int(product_id), client_token=token)
+        return token
+
+    def bp_confirm_response(self, price, server_token, confirm=True):
+        """CMSG_BATTLE_PAY_CONFIRM_PURCHASE_RESPONSE (HandleBattlePayConfirmPurchaseResponse): u64 currentPrice,
+        u32 serverToken, u8 confirm."""
+        self.send_packet(CMSG_BATTLE_PAY_CONFIRM_PURCHASE_RESPONSE,
+                         struct.pack("<QIB", int(price), int(server_token), 1 if confirm else 0))
+        log("sent CMSG_BATTLE_PAY_CONFIRM_PURCHASE_RESPONSE price=%d serverToken=%d confirm=%d"
+            % (int(price), int(server_token), 1 if confirm else 0))
+        self.emit("bp_confirm_sent", price=int(price), server_token=int(server_token), confirm=int(bool(confirm)))
 
     def select_faction(self, choice):
         """CMSG_SELECT_FACTION (MiscHandler.cpp:2709): a single u32; 0 = JOIN_THE_HORDE,
@@ -4478,6 +4586,63 @@ def run_verb(w, args_cli, line):
                 "it cannot look an itemEntry up for you); optional guid=<item guid>")
             return
         w.use_item(int(pos_args[0]), int(pos_args[1]), int(kv.get("guid", 0)))
+    elif verb == "pump":
+        # pump <seconds> - just keep the session alive and process packets (gossip menus, chat, shop steps).
+        w.pump(float(rest[0]) if rest else 5.0)
+    elif verb == "bp-products":
+        # bp-products [timeout=S] (#969) - CMSG_BATTLE_PAY_GET_PRODUCT_LIST; logs the product count and the balance
+        # system line ("Your new balance is: | <dp/10000> | ") the server sends with it.
+        kv = dict(t.split("=", 1) for t in rest if "=" in t)
+        w.bp_get_products()
+        w.pump(float(kv.get("timeout", 10)), stop_on=(SMSG_BATTLE_PAY_GET_PRODUCT_LIST_RESPONSE,))
+        w.pump(2)   # the balance chat line follows the list
+    elif verb == "bp-buy":
+        # bp-buy <productId> [confirms=N] [gap=S] [decline=1] [timeout=S] [tail=S] (#969)
+        # The whole shop purchase a real client makes: START_PURCHASE -> (server) START_PURCHASE_RESPONSE +
+        # PURCHASE_UPDATE READY -> ALLOWED_TO_BUY + CONFIRM_PURCHASE(serverToken, price) -> N x CONFIRM_PURCHASE_RESPONSE
+        # (confirms=3 spams the confirm, gap=S between them; decline=1 answers "no") -> BUYING (8 s) -> DELIVERY_ENDED ->
+        # BUYED. tail=S keeps pumping after the end to catch a second delivery. Prints one BP-BUY summary line.
+        kv = dict(t.split("=", 1) for t in rest if "=" in t)
+        pos_args = [t for t in rest if "=" not in t]
+        if not pos_args:
+            log("bp-buy: need <productId>")
+            return
+        product = int(pos_args[0])
+        confirms = int(kv.get("confirms", 1))
+        gap = float(kv.get("gap", 0))
+        decline = kv.get("decline", "0") == "1"
+        timeout = float(kv.get("timeout", 30))
+        tail = float(kv.get("tail", 12))
+        w.bp_confirm = None
+        first_update = len(w.bp_updates)
+        w.bp_start_purchase(product)
+
+        def _failed():
+            return any(u["result"] != 0 for u in w.bp_updates[first_update:])
+
+        deadline = time.time() + timeout
+        while time.time() < deadline and w.bp_confirm is None and not _failed():
+            w.pump(0.5)
+        if w.bp_confirm is not None and not _failed():
+            for i in range(max(1, confirms)):
+                w.bp_confirm_response(w.bp_confirm["price"], w.bp_confirm["server_token"], confirm=not decline)
+                if gap and i + 1 < confirms:
+                    w.pump(gap)
+            deadline = time.time() + timeout
+            while time.time() < deadline and not decline and not _failed() \
+                    and not any(u["status"] == 6 for u in w.bp_updates[first_update:]):
+                w.pump(0.5)
+        elif _failed():
+            log("bp-buy: the server refused the purchase (error update), no confirm sent")
+        else:
+            log("bp-buy: no SMSG_BATTLE_PAY_CONFIRM_PURCHASE within %.0fs" % timeout)
+        w.pump(tail)
+        ups = w.bp_updates[first_update:]
+        summary = {"product": product, "confirm": w.bp_confirm, "confirms_sent": confirms if w.bp_confirm else 0,
+                   "updates": ["%s/%s" % (BATTLE_PAY_STATUS_NAMES.get(u["status"], u["status"]),
+                                          BATTLE_PAY_RESULT_NAMES.get(u["result"], u["result"])) for u in ups],
+                   "buyed": sum(1 for u in ups if u["status"] == 6 and u["result"] == 0)}
+        print("BP-BUY " + json.dumps(summary), flush=True)
     elif verb == "use-item-at":
         # use-item-at <bag> <slot> <x> <y> <z> [guid=<N>] - ground-targeted CMSG_USE_ITEM
         # (TARGET_FLAG_DEST_LOCATION 0x40, hasDestLocation=1), e.g. a placed/thrown item or an
@@ -5900,7 +6065,9 @@ def main():
                          "gameobject-use|gameobject-report-use <rawguid|entry:spawnId> (CMSG_GAMEOBJ_USE/REPORT_USE; "
                          "entry:spawnId builds the static GO guid); "
                          "attack <npc|rawguid> / attack-stop (CMSG_ATTACKSWING / CMSG_ATTACKSTOP); "
-                         "spellclick <npc|rawguid> (CMSG_SPELLCLICK). 'npc' = guid cached by the npcguid verb.")
+                         "spellclick <npc|rawguid> (CMSG_SPELLCLICK). 'npc' = guid cached by the npcguid verb. "
+                         "#969: pump <s>; bp-products (shop list + balance line); "
+                         "bp-buy <productId> [confirms=N] [gap=S] [decline=1] [timeout=S] [tail=S] (full shop purchase).")
     ap.add_argument("--log-movement", default="",
                     help="#747: log every movement packet received for these movers as MOVEPKT lines: 'all' (every "
                          "other player), 'units' (every unit), or a comma list of names and/or DB guid counters")

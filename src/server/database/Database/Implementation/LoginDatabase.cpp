@@ -133,7 +133,7 @@ void LoginDatabaseConnection::DoPrepareStatements()
 
     // BattlePay
     PrepareStatement(LOGIN_SEL_BATTLEPAY_COINS, "SELECT dp FROM account WHERE id = ?", CONNECTION_SYNCH);
-    PrepareStatement(LOGIN_UPD_BATTLEPAY_INCREMENT_COINS, "UPDATE account SET dp = dp - ? WHERE id = ?;", CONNECTION_SYNCH);
+    PrepareStatement(LOGIN_UPD_BATTLEPAY_INCREMENT_COINS, "UPDATE account SET dp = dp + ? WHERE id = ?;", CONNECTION_SYNCH);
     PrepareStatement(LOGIN_UPD_BATTLEPAY_DECREMENT_COINS, "UPDATE account SET dp = dp - ? WHERE id = ?;", CONNECTION_SYNCH);
 
     // Custom Reward

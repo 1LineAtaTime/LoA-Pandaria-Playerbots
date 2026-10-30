@@ -3082,7 +3082,8 @@ class achievement_im_on_a_boat : public AchievementCriteriaScript
 
         bool OnCheck(Player* /*source*/, Unit* target) override
         {
-            return target && !target->GetAI()->GetData(TIMES_IN_A_BOAT);
+            // #963: AI null check as in AC boss_icecrown_gunship_battle.cpp:2607-2610 (the criteria target can be a player).
+            return target && target->GetAI() && !target->GetAI()->GetData(TIMES_IN_A_BOAT);
         }
 };
 
@@ -3118,5 +3119,7 @@ void AddSC_boss_gunship_battle()
     new spell_gb_rocket_artillery_explosion();
     new spell_rocket_pack();
     new spell_rocket_pack_periodic();
-    //new achievement_im_on_a_boat(); // check if no achiv
+    // #963: registered again (DB criteria 12777/13079/13080/13081 name it). The achievement itself is still granted by
+    // DoCompleteAchievement in EVENT_OUTRO_1; this only lets the criteria-data script check load (AC registers it too).
+    new achievement_im_on_a_boat();
 }

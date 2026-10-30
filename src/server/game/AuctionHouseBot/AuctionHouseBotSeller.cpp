@@ -23,6 +23,7 @@
 #include "DB2Stores.h"
 #include "GameTime.h"
 #include "Item.h"
+#include "ItemEnchantmentMgr.h"
 #include "Log.h"
 #include "ObjectMgr.h"
 //#include "Random.h"
@@ -38,6 +39,10 @@ AuctionBotSeller::AuctionBotSeller()
 AuctionBotSeller::~AuctionBotSeller()
 {
 }
+
+// #1012: defined in ItemEnchantmentMgr.cpp; declared here rather than in ItemEnchantmentMgr.h, which LootMgr.h pulls into most of
+// the game library (a header change there rebuilds ~1800 files)
+bool HasItemEnchantPool(int32 entry, ItemRandomEnchantmentType type);
 
 bool AuctionBotSeller::Initialize()
 {
@@ -116,6 +121,22 @@ bool AuctionBotSeller::Initialize()
 
         // skip items with too high quality (code can't properly work with its)
         if (prototype->GetQuality() >= MAX_AUCTION_QUALITY)
+            continue;
+
+        // internal items: AC RandomItemMgr::IsInternalItem (RandomItemMgr.cpp:1368) - deprecated flag, test/placeholder names (Refs #1012)
+        if (prototype->GetFlags() & ITEM_PROTO_FLAG_DEPRECATED)
+            continue;
+        {
+            char const* name = prototype->Name1.c_str();
+            if (strstr(name, "NPC ") || strstr(name, "Monster ") || strstr(name, "Test") || strstr(name, "Deprecated ") ||
+                strstr(name, "[PH]") || strstr(name, "TEST") || strstr(name, "Unused ") || strstr(name, "zzOLD") ||
+                strstr(name, "(test)") || strstr(name, "(OLD)") || strstr(name, "QR") || strstr(name, "2200 "))
+                continue;
+        }
+
+        // random property/suffix pool missing from item_enchantment_template (45630 Invisible Axe): cannot be rolled, skip
+        if (!HasItemEnchantPool(prototype->RandomProperty, ItemRandomEnchantmentType::Property) ||
+            !HasItemEnchantPool(prototype->RandomSuffix, ItemRandomEnchantmentType::Suffix))
             continue;
 
         // forced exclude filter

@@ -20,6 +20,7 @@
 #include "WorldSession.h"
 #include "Packets/AllPackets.h"
 #include <iomanip>
+#include <cstring>
 #include <sstream>
 
 template<class PacketClass, void(WorldSession::*HandlerFunction)(PacketClass&)>
@@ -120,6 +121,11 @@ void OpcodeTable::ValidateAndSetServerOpcode(OpcodeServer opcode, char const* na
 
     if (_internalTableServer[opcode] != nullptr)
     {
+        // #962: in 5.4.8 the MSG_MOVE_* values are client-to-server movement opcodes whose numbers coincide with unrelated
+        // SMSG values (SMSG_PET_SPELLS_MESSAGE/SPELL_EXECUTE_LOG/SPELL_GO). The server never sends them, so the SMSG owns the slot.
+        if (strncmp(name, "MSG_MOVE_", 9) == 0)
+            return;
+
         TC_LOG_ERROR("network", "Tried to override server handler of %s with %s (opcode %u)", opcodeTable[opcode]->Name, name, opcode);
         return;
     }

@@ -26,13 +26,13 @@
 #include "ServiceBoost.h"
 #include "BattlePetMgr.h"
 #include "Realm.h"
+#include "Mail.h"
 
 #pragma execution_character_set("UTF-8")
 
 
-BattlePayMgr::BattlePayMgr() : m_enabled(false), m_currency(BATTLE_PAY_CURRENCY_BETA)
+BattlePayMgr::BattlePayMgr() : m_currency(BATTLE_PAY_CURRENCY_BETA), m_enabled(false)
 {
-    m_purchase = new PurchaseInfo();
 }
 
 BattlePayMgr::~BattlePayMgr()
@@ -49,8 +49,6 @@ BattlePayMgr::~BattlePayMgr()
     m_productStore.clear();
     m_groupStore.clear();
     m_shopEntryStore.clear();
-
-    delete m_purchase;
 }
 
 BattlePayMgr* BattlePayMgr::instance()
@@ -514,22 +512,51 @@ bool BattlePayMgr::HasPointsBalance(WorldSession* session, uint64 points)
 void BattlePayMgr::RegisterPurchase(PurchaseInfo* purchase, uint32 item, uint64 price)
 {
   // Register Purchase
-    LoginDatabase.PExecute("INSERT INTO battlepay_log (accountId, characterGuid, realm, item, price) VALUES (%u, %u, %u, %u, %u);", purchase->GetSession()->GetAccountId(), purchase->SelectedPlayer.GetCounter(), realm.Id.Realm, item, price);
+    LoginDatabase.PExecute("INSERT INTO battlepay_log (accountId, characterGuid, realm, item, price) VALUES (%u, %u, %u, %u, %u);", purchase->GetSession()->GetAccountId(), purchase->SelectedPlayer.GetCounter(), realm.Id.Realm, item, uint32(price));
 }
 
-void BattlePayMgr::Update(uint32 diff)
+void BattlePayMgr::AddQuenedPurchaseResponse(PurchaseInfo const& purchase, uint32 timer)
 {
-    if (m_sendPacket)
+    if (!purchase.Session)
+        return;
+
+    PendingPurchase& pending = m_purchases[purchase.Session->GetAccountId()];
+    pending.Info = purchase;
+    pending.Timer = timer;
+    pending.Queued = true;
+}
+
+PurchaseInfo* BattlePayMgr::GetPurchaseInfo(WorldSession* session)
+{
+    auto itr = m_purchases.find(session->GetAccountId());
+    if (itr == m_purchases.end())
+        return nullptr;
+
+    itr->second.Info.Session = session; // the stored step may come from an earlier session of the account
+    return &itr->second.Info;
+}
+
+void BattlePayMgr::Update(WorldSession* session, uint32 diff)
+{
+    if (m_purchases.empty()) // called for every session (bots too) every tick
+        return;
+
+    auto itr = m_purchases.find(session->GetAccountId());
+    if (itr == m_purchases.end() || !itr->second.Queued)
+        return;
+
+    PendingPurchase& pending = itr->second;
+    if (pending.Timer > diff)
     {
-        if (m_timer <= diff)
-        {
-            m_sendPacket = false;
-            if (GetPurchaseInfo()->GetSession())
-                SendBattlePayPurchaseUpdate(GetPurchaseInfo());
-        }
-        else
-            m_timer -= diff;
+        pending.Timer -= diff;
+        return;
     }
+
+    // Send a copy: SendBattlePayPurchaseUpdate may queue the next step, which overwrites pending.Info.
+    pending.Queued = false;
+    pending.Info.Session = session;
+    PurchaseInfo current = pending.Info;
+    SendBattlePayPurchaseUpdate(&current);
 }
 
 void BattlePayMgr::SendBattlePayDistributionList(WorldSession* session)
@@ -904,9 +931,19 @@ void BattlePayMgr::SendBattlePayDistributionUpdate(WorldSession* session, uint32
     session->SendPacket(&data);
 }
 
+// #969: price in the client's fixed-point unit (BATTLE_PAY_CURRENCY_PRECISION = 1.0), the
+// same unit as auth.account.dp. A product price of 100 is 1000000 dp.
+static uint64 GetBattlePayProductCurrentPrice(BattlePayProduct const* product)
+{
+    uint64 price = product->Price * BATTLE_PAY_CURRENCY_PRECISION;
+    float discount = float(product->Discount) / 100;
+    return price - (price * discount);
+}
+
 void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
 {
-    if (!purchase->GetSession())
+    WorldSession* session = purchase->GetSession();
+    if (!session)
         return;
 
     if (purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_READY && purchase->ResultCode == BATTLE_PAY_RESULT_OK)
@@ -915,7 +952,7 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
         data << uint64(purchase->PurchaseId);
         data << uint32(1); // PurchaseResult
         data << uint32(purchase->ClientToken);
-        purchase->GetSession()->SendPacket(&data);
+        session->SendPacket(&data);
     }
 
     std::string wallet = purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY || purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_BUYING || purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_BUYED ? "Account" : "";
@@ -933,97 +970,143 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
         data << uint32(purchase->PurchaseStatus);
         data.WriteString(wallet);
     }
-    purchase->GetSession()->SendPacket(&data);
+    session->SendPacket(&data);
 
     if (purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_READY && purchase->ResultCode == BATTLE_PAY_RESULT_OK)
     {
-        if (sBattlePayMgr->IsStoreEnabled())
-            sBattlePayMgr->AddQuenedPurchaseResponse(new PurchaseInfo(purchase->GetSession(), purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_OK, purchase->ClientToken, 0, false), 500, true);
+        if (IsStoreEnabled())
+            AddQuenedPurchaseResponse(PurchaseInfo(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_OK, purchase->ClientToken, 0, false), 500);
         else
-            sBattlePayMgr->AddQuenedPurchaseResponse(new PurchaseInfo(purchase->GetSession(), purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_READY, BATTLE_PAY_RESULT_UNAVAILABLE, purchase->ClientToken, 0, false), 500, true);
+            AddQuenedPurchaseResponse(PurchaseInfo(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_READY, BATTLE_PAY_RESULT_UNAVAILABLE, purchase->ClientToken, 0, false), 500);
     }
 
     if (purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY && purchase->ResultCode == BATTLE_PAY_RESULT_OK)
     {
-        bool validPurchase = true;
         BattlePayProduct* product = GetProductId(purchase->ProductId);
-        if (product->Id == BATTLE_PAY_SERVICE_BOOST && purchase->GetSession()->HasBoost())
+        BattlePayProductItemsVector const* items = GetItemsByProductId(purchase->ProductId);
+        if (!product || !items || items->empty())
+        {
+            AddQuenedPurchaseResponse(PurchaseInfo(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_SHOP_ERROR, purchase->ClientToken, 0, false), 200);
+            return;
+        }
+
+        bool validPurchase = true;
+        if (product->Id == BATTLE_PAY_SERVICE_BOOST && session->HasBoost())
             validPurchase = false;
 
         uint32 serverToken = irand(1, 999999); // temp solution
-        
-        uint64 price = product->Price * BATTLE_PAY_CURRENCY_PRECISION;
-        float discount = float(product->Discount) / 100;
-        uint64 currentPrice = price - (price * discount);
+
+        uint64 currentPrice = GetBattlePayProductCurrentPrice(product);
 
         data.Initialize(SMSG_BATTLE_PAY_CONFIRM_PURCHASE);
         data << uint32(serverToken);
         data << uint64(currentPrice);
         data << uint64(purchase->PurchaseId);
-        purchase->GetSession()->SendPacket(&data);
+        session->SendPacket(&data);
 
-        GetPurchaseInfo()->ServerToken = serverToken;
+        // The confirm handler checks the token against the stored step of this account.
+        if (PurchaseInfo* stored = GetPurchaseInfo(session))
+            if (stored->PurchaseId == purchase->PurchaseId)
+                stored->ServerToken = serverToken;
 
         if(product->Flags == BATTLE_PAY_PRODUCT_DISABLES)
             validPurchase = false;
         else
         {
-            bool confirmBalance = HasPointsBalance(purchase->GetSession(), (currentPrice));
+            bool confirmBalance = HasPointsBalance(session, (currentPrice));
             if(!confirmBalance)
                 validPurchase = false;
-        }        
+        }
 
         if (!validPurchase)
-            sBattlePayMgr->AddQuenedPurchaseResponse(new PurchaseInfo(purchase->GetSession(), purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_SHOP_ERROR, purchase->ClientToken, 0, false), 200, true);
+            AddQuenedPurchaseResponse(PurchaseInfo(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_SHOP_ERROR, purchase->ClientToken, 0, false), 200);
     }
 
     if (purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_BUYING && !purchase->Buyed)
     {
+        BattlePayProductItemsVector const* items = GetItemsByProductId(purchase->ProductId);
+        if (!items || items->empty())
+            return;
+
         data.Initialize(SMSG_BATTLE_PAY_DELIVERY_ENDED);
         data.WriteBits(1, 22); // count
         for (uint8 i = 0; i < 1; i++)
-        {
-            BattlePayProductItemsVector const* items = GetItemsByProductId(purchase->ProductId);
             data << uint32(items->front().ItemId);
-        }
         data << uint64(0); // DistributionID
-        purchase->GetSession()->SendPacket(&data);
+        session->SendPacket(&data);
 
-        AddQuenedPurchaseResponse(new PurchaseInfo(purchase->GetSession(), purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_BUYING, BATTLE_PAY_RESULT_OK, purchase->ClientToken, purchase->ServerToken, true), 1000, true);
+        AddQuenedPurchaseResponse(PurchaseInfo(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_BUYING, BATTLE_PAY_RESULT_OK, purchase->ClientToken, purchase->ServerToken, true), 1000);
     }
 
     if (purchase->PurchaseStatus == BATTLE_PAY_PURCHASE_STATUS_BUYING && purchase->Buyed)
     {
         BattlePayProduct* product = GetProductId(purchase->ProductId);
-        uint32 itemid = GetItemsByProductId(purchase->ProductId)->front().ItemId;
+        BattlePayProductItemsVector const* items = GetItemsByProductId(purchase->ProductId);
+        if (!product || !items || items->empty())
+            return;
+
+        uint32 itemid = items->front().ItemId;
+        uint64 currentPrice = GetBattlePayProductCurrentPrice(product);
+
+        // #969: re-check before delivering and charging. The balance may have been spent and a
+        // boost may have been granted since ALLOWED_TO_BUY; the old code charged in both cases
+        // and only skipped the boost.
+        bool deliverable = HasPointsBalance(session, currentPrice);
+        if (deliverable && product->Type == BATTLE_PAY_PRODUCT_TYPE_SERVICE && product->Id == BATTLE_PAY_SERVICE_BOOST && session->HasBoost())
+            deliverable = false;
+
+        if (!deliverable)
+        {
+            PurchaseInfo failed(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_SHOP_ERROR, purchase->ClientToken, 0, false);
+            SendBattlePayPurchaseUpdate(&failed);
+            return;
+        }
 
         if (product->Type == BATTLE_PAY_PRODUCT_TYPE_SERVICE)
         {
             if (product->Id == BATTLE_PAY_SERVICE_BOOST)
-                if (!purchase->GetSession()->HasBoost())
-                {
-                    SetBoosting(purchase->GetSession(), purchase->GetSession()->GetAccountId(), true);
-                    SendBattlePayDistributionUpdate(purchase->GetSession(), BATTLE_PAY_SERVICE_BOOST, CHARACTER_BOOST_ALLOW);
-                }
+            {
+                SetBoosting(session, session->GetAccountId(), true);
+                SendBattlePayDistributionUpdate(session, BATTLE_PAY_SERVICE_BOOST, CHARACTER_BOOST_ALLOW);
+            }
         }
         else if (product->Type == BATTLE_PAY_PRODUCT_TYPE_ITEM)
         {
-            if (!purchase->GetSession()->GetPlayer())
+            // not blizzlike, but who cares (temp solution)
+            std::string productTitle = product->Title;
+            std::string productDescription = product->Description;
+            LocaleConstant localeConstant = session->GetSessionDbLocaleIndex();
+            if (localeConstant != LOCALE_enUS)
+                if (BattlePayProductLocale const* locProd = GetProductLocale(product->Id))
+                {
+                    ObjectMgr::GetLocaleString(locProd->Title, localeConstant, productTitle);
+                    ObjectMgr::GetLocaleString(locProd->Description, localeConstant, productDescription);
+                }
+
+            Player* player = session->GetPlayer();
+            if (player && player->AddItem(itemid, 1))
+            {
+                // save PJ
+                player->SaveToDB();
+            }
+            else if (player)
+            {
+                // #969: bags full - mail the paid item instead of losing it (Player::AddItem drops it).
+                CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                MailDraft draft(productTitle, productDescription);
+                if (Item* item = Item::CreateItem(itemid, 1, player))
+                {
+                    item->SaveToDB(trans);
+                    draft.AddItem(item);
+                }
+                draft.SendMailTo(trans, MailReceiver(player, player->GetGUID().GetCounter()), MailSender(MAIL_NORMAL, 0, MAIL_STATIONERY_GM));
+                CharacterDatabase.CommitTransaction(trans);
+            }
+            else
             {
                 uint32 mailId = sObjectMgr->GenerateMailID();
 
                 CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-
-                // not blizzlike, but who cares (temp solution)
-                std::string productTitle = product->Title;
-                std::string productDescription = product->Description;
-                LocaleConstant localeConstant = purchase->GetSession()->GetSessionDbLocaleIndex();
-                if (localeConstant != LOCALE_enUS)
-                    if (BattlePayProductLocale const* locProd = GetProductLocale(product->Id))
-                    {
-                        ObjectMgr::GetLocaleString(locProd->Title, localeConstant, productTitle);
-                        ObjectMgr::GetLocaleString(locProd->Description, localeConstant, productDescription);
-                    }
 
                 CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL);
                 stmt->setUInt32(0, mailId);
@@ -1049,28 +1132,20 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
                     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL_ITEM);
                     stmt->setUInt32(0, mailId);
                     stmt->setUInt32(1, item->GetGUID().GetCounter());
-                    stmt->setUInt32(2, purchase->SelectedPlayer);
+                    stmt->setUInt32(2, purchase->SelectedPlayer.GetCounter());
                     trans->Append(stmt);
+
                 }
 
                 CharacterDatabase.CommitTransaction(trans);
             }
-            else
-            {
-                purchase->GetSession()->GetPlayer()->AddItem(itemid, 1);
-                // save PJ
-                purchase->GetSession()->GetPlayer()->SaveToDB();
-            }
         }
 
-        uint64 price = product->Price * BATTLE_PAY_CURRENCY_PRECISION;
-        float discount = float(product->Discount) / 100;
-        uint64 currentPrice = price - (price * discount);
-
-        UpdatePointsBalance(purchase->GetSession(), (currentPrice));
+        UpdatePointsBalance(session, (currentPrice));
 
         RegisterPurchase(purchase, itemid, currentPrice);
-        
-        SendBattlePayPurchaseUpdate(new PurchaseInfo(purchase->GetSession(), purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_BUYED, BATTLE_PAY_RESULT_OK, purchase->ClientToken, purchase->ServerToken, true));
+
+        PurchaseInfo buyed(session, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_BUYED, BATTLE_PAY_RESULT_OK, purchase->ClientToken, purchase->ServerToken, true);
+        SendBattlePayPurchaseUpdate(&buyed);
     }
 }

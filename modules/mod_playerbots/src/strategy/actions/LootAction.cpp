@@ -54,6 +54,24 @@ namespace
         return v;
     }
 
+    // #958: the bot's stand-in for AC's queued CMSG_LOOT_RELEASE. AC's HandleLootReleaseOpcode
+    // (AC Handlers/LootHandler.cpp:322-324) only releases a guid that is still the open loot, so a
+    // container item the core already released and destroyed (autostore of its last item or its
+    // money: core Handlers/LootHandler.cpp:147-148, :305-312) is a no-op there. This core's
+    // DoLootRelease does not re-check, and a second call logs "RemoveLootedObject ... not found in
+    // view"; release only a source that is still one of the bot's open loot views.
+    void ReleaseIfStillOpen(Player* bot, ObjectGuid srcGuid)
+    {
+        for (auto const& view : bot->GetLootView())
+        {
+            if (view.second == srcGuid)
+            {
+                bot->GetSession()->DoLootRelease(srcGuid);
+                return;
+            }
+        }
+    }
+
     // AC PlayerbotAI::HasSkill(SkillType) (Bot/PlayerbotAI.cpp:5427) has no equivalent on this
     // fork's PlayerbotAI - see LootObjectStack.cpp for the same local substitute.
     bool BotHasSkill(Player* bot, uint32 skillId)
@@ -532,8 +550,9 @@ bool StoreLootAction::Execute(Event /*event*/)
         }
     }
 
+    // #958: autostore/money above already released (and destroyed) a container item they emptied.
     for (auto const& view : lootView)
-        bot->GetSession()->DoLootRelease(view.second);
+        ReleaseIfStillOpen(bot, view.second);
 
     LootObject target = context->GetValue<LootObject>("loot target")->Get();
     if (!target.IsEmpty())
@@ -576,8 +595,11 @@ bool ReleaseLootAction::Execute(Event /*event*/)
     // AC blindly releases every nearby GO/corpse guid, whether or not it is an open loot view; this
     // core's DoLootRelease does not re-check membership the way HandleLootReleaseOpcode does, so
     // only release the bot's actually-open views (loot-stack-port.md section 2 step 4.2).
-    for (auto const& view : bot->GetLootView())
-        bot->GetSession()->DoLootRelease(view.second);
+    // #958: DoLootRelease erases from the live view map, so walk a copy (iterating the live map
+    // erased the element under the range-for iterator).
+    auto const lootView = bot->GetLootView();
+    for (auto const& view : lootView)
+        ReleaseIfStillOpen(bot, view.second);
 
     return true;
 }

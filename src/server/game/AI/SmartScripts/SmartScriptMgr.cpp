@@ -1224,6 +1224,7 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
         case SMART_ACTION_STOP_FOLLOW:
         case SMART_ACTION_SPELL_VISUAL_KIT:
         case SMART_ACTION_SET_INGAME_PHASE_ID:
+        case SMART_ACTION_SET_EVENT_FLAG_RESET:
             break;
         default:
             TC_LOG_ERROR("sql.sql", "SmartAIMgr: Not handled action_type(%u), event_type(%u), Entry %d SourceType %u Event %u, skipped.", e.GetActionType(), e.GetEventType(), e.entryOrGuid, e.GetScriptType(), e.event_id);
@@ -1281,29 +1282,50 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
 //     return true;
 // }
 
-bool SmartAIMgr::IsTextValid(SmartScriptHolder const& e, uint32 id) 
+// #963 (AC parity, AC SmartScriptMgr.cpp:2117-2162 = the TC version kept commented out above): a talk aimed at another
+// creature (creature range / distance / closest targets) is not validated against the script owner's texts, and a
+// TEXT_OVER event uses its own creature entry. The MoP version always checked the owner's entry, so ~30 rows that make
+// another creature talk (Obsidion -> Dorius, Uther's Tomb trigger -> 17233, Machine -> Brann ...) were dropped at load.
+bool SmartAIMgr::IsTextValid(SmartScriptHolder const& e, uint32 id)
 {
     if (e.GetScriptType() != SMART_SCRIPT_TYPE_CREATURE)
         return true;
 
     uint32 entry = 0;
-    if (e.entryOrGuid >= 0)
-        entry = uint32(e.entryOrGuid);
-    else {
-        entry = uint32(abs(e.entryOrGuid));
-        CreatureData const* data = sObjectMgr->GetCreatureData(entry);
-        if (!data)
+
+    if (e.GetEventType() == SMART_EVENT_TEXT_OVER)
+    {
+        entry = e.event.textOver.creatureEntry;
+    }
+    else
+    {
+        switch (e.GetTargetType())
         {
-            TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Creature guid %d, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), entry);
-            return false;
+            case SMART_TARGET_CREATURE_DISTANCE:
+            case SMART_TARGET_CREATURE_RANGE:
+            case SMART_TARGET_CLOSEST_CREATURE:
+                return true; // ignore
+            default:
+                if (e.entryOrGuid < 0)
+                {
+                    uint32 const guid = uint32(-e.entryOrGuid);
+                    CreatureData const* data = sObjectMgr->GetCreatureData(guid);
+                    if (!data)
+                    {
+                        TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Creature guid %u, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), guid);
+                        return false;
+                    }
+                    entry = data->id;
+                }
+                else
+                    entry = uint32(e.entryOrGuid);
+                break;
         }
-        else
-            entry = data->id;
     }
 
     if (!entry || !sCreatureTextMgr->TextExist(entry, uint8(id)))
     {
-        TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Text id %d, skipped.", e.entryOrGuid, e.GetScriptType(), e.source_type, e.GetActionType(), id);
+        TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Text id %d, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), id);
         return false;
     }
 

@@ -93,6 +93,14 @@ void LoadRandomEnchantmentsTable()
         TC_LOG_ERROR("server.loading", ">> Loaded 0 Item Enchantment definitions. DB table `item_enchantment_template` is empty.");
 }
 
+bool HasItemEnchantPool(int32 entry, ItemRandomEnchantmentType type)
+{
+    if (!entry || entry == -1)
+        return true;
+
+    return type == ItemRandomEnchantmentType::Property ? RandomPropertyItemEnch.count(entry) > 0 : RandomSuffixItemEnch.count(entry) > 0;
+}
+
 uint32 GetItemEnchantMod(int32 entry, ItemRandomEnchantmentType type)
 {
     if (!entry)

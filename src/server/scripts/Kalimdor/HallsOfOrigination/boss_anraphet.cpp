@@ -324,7 +324,7 @@ class spell_omega_stance_spider : public SpellScriptLoader
 
             void Register() override
             {
-                OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_omega_stance_spider_SpellScript::SelectTargets, EFFECT_0, TARGET_DEST_DEST_RANDOM);
+                OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_omega_stance_spider_SpellScript::SelectTargets, EFFECT_0, TARGET_DEST_CASTER_RANDOM);
             }
 
             private:
@@ -355,7 +355,7 @@ class spell_alpha_beam : public SpellScriptLoader
 
             void Register() override
             {
-                OnEffectRemove += AuraEffectRemoveFn(spell_alpha_beam_AuraScript::OnAuraEffectRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_alpha_beam_AuraScript::OnAuraEffectRemove, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
             }
         };
 

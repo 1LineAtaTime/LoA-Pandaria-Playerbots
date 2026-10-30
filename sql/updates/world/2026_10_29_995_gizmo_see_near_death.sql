@@ -1,0 +1,21 @@
+-- #995 quests(lost isles): 14239 "Don't Go Into the Light!" - the waking goblin cannot see Doc Zapnozzle or Geargrinder Gizmo.
+--
+-- Cause: 69010 "Near Death!" (linked to the 14126 reward spell 91847) is stun + SPELL_AURA_MOD_INVISIBILITY type 7, amount
+-- 100000 (SpellEffect.dbc 5.4.8). WorldObject::CanDetectInvisibilityOf (Object.cpp:2468-2471; AC has the same rule) lets an
+-- invisible seer see a unit only if that unit detects the seer's invisibility. Doc's private copy (zone_lost_isles.cpp) and
+-- Gizmo 36600 have no detection, so the player sees neither of them while Near Death is on.
+-- Live evidence (MoP test server v17, 2026-10-29, fresh goblin Kzdoca, a headless client, after `questreward 14126`):
+--   cansee 36608: copy summoned at t+3 s, samephase=2 seen=0 for its whole 158 s life, and again after the re-summon;
+--   relogged (Near Death is not saved) -> seen=1; `addaura 69010` -> seen=0; `unaura 69010` -> seen=1.
+--
+-- Fix (with the zone_lost_isles.cpp change of #995, which gives the private Doc the same aura): the beach Gizmo 375711
+-- (phase 2) gets 76226 "See Invis (Normal)" (detect type 7, amount 999999, permanent) next to its two existing auras.
+-- Same pattern as #999 (Gilneas pillory, 60922). Players without Near Death are not affected.
+--
+-- Backup (state before this file): creature_addon 375711 = (375711,0,0,0,0,0,0,0,0,0,0,0,0,0,'68327 91298')
+-- (not shipped).
+-- Undo:
+--   UPDATE `creature_addon` SET `auras` = '68327 91298' WHERE `guid` = 375711;
+-- Re-runnable: sets the full aura list.
+
+UPDATE `creature_addon` SET `auras` = '68327 91298 76226' WHERE `guid` = 375711;

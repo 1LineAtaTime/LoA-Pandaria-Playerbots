@@ -261,7 +261,10 @@ class boss_foereaper5000 : public CreatureScript
                     return;
                 }
 
-                BossAI::JustSummoned(summon);
+                if (summon->GetEntry() == NPC_TARGETING_BUNNY)
+                    summons.Summon(summon);   // a non-combat aim point: BossAI::JustSummoned zones it in ("empty threat list")
+                else
+                    BossAI::JustSummoned(summon);
                 if (summon->GetEntry()== NPC_TARGETING_BUNNY)
                 {
                     harvestTargetGuid = summon->GetGUID();

@@ -114,7 +114,7 @@ public:
 
     Player* GetPlayer() const;
 
-    std::unordered_map<uint32, CooldownEntry> const& GetCooldowns() const { return _cooldowns; }
+    std::map<uint32, CooldownEntry> const& GetCooldowns() const { return _cooldowns; }
 
     void ClearAllSpellCharges();
     void ClearChargesForSpell(uint32 spell);
@@ -129,10 +129,12 @@ private:
 
 private:
     Unit* _owner;
-    std::unordered_map<uint32, CooldownEntry> _cooldowns;
-    std::unordered_map<uint32, CooldownEntry> _categoryCooldowns;
-    std::unordered_map<uint32, ChargeData> _spellCharges;
-    std::unordered_map<uint32, TimeValue> _procCooldowns;
+    // #924: std::map, not std::unordered_map - MSVC allocates a bucket array for every unordered_map when it is
+    // constructed, and every unit carries four of these (usually empty).
+    std::map<uint32, CooldownEntry> _cooldowns;
+    std::map<uint32, CooldownEntry> _categoryCooldowns;
+    std::map<uint32, ChargeData> _spellCharges;
+    std::map<uint32, TimeValue> _procCooldowns;
     std::multimap<uint32, RppmProcEntry> _procHistory;
 };
 

@@ -457,7 +457,7 @@ enum SMART_ACTION
     SMART_ACTION_ACTIVATE_GOBJECT                   = 9,      //
     SMART_ACTION_RANDOM_EMOTE                       = 10,     // EmoteId1, EmoteId2, EmoteId3...
     SMART_ACTION_CAST                               = 11,     // SpellId, CastFlags
-    SMART_ACTION_SUMMON_CREATURE                    = 12,     // CreatureID, summonType, duration in ms, attackInvoker
+    SMART_ACTION_SUMMON_CREATURE                    = 12,     // CreatureID, summonType, duration in ms, attackInvoker, attackScriptOwner (AC)
     SMART_ACTION_THREAT_SINGLE_PCT                  = 13,     // Threat%
     SMART_ACTION_THREAT_ALL_PCT                     = 14,     // Threat%
     SMART_ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS    = 15,     // QuestID
@@ -575,7 +575,8 @@ enum SMART_ACTION
     SMART_ACTION_SPELL_VISUAL_KIT                   = 206,
     SMART_ACTION_CAST_RANDOM_SPELL                  = 207,
     SMART_ACTION_SET_INGAME_PHASE_ID                = 208,    // phaseid, apply
-    SMART_ACTION_END_project                        = 209
+    SMART_ACTION_SET_EVENT_FLAG_RESET               = 211,    // 0/1 (AC SmartScriptMgr.h:697, same id)
+    SMART_ACTION_END_project                        = 212
 };
 
 struct SmartAction
@@ -663,6 +664,7 @@ struct SmartAction
             uint32 type;
             uint32 duration;
             uint32 attackInvoker;
+            uint32 attackScriptOwner;
         } summonCreature;
 
         struct

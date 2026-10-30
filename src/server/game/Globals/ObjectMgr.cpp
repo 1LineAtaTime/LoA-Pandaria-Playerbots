@@ -11018,7 +11018,7 @@ void ObjectMgr::LoadRealmCompletedChallenges()
                                                  "member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec FROM group_completed_challenges");
     if (!result)
     {
-        TC_LOG_ERROR("server.loading", ">> Loaded 0 group completed challenges. DB table `group_completed_challenges` is empty.");
+        TC_LOG_INFO("server.loading", ">> Loaded 0 group completed challenges. DB table `group_completed_challenges` is empty (expected on a fresh character DB).");
         return;
     }
 
@@ -11119,7 +11119,7 @@ void ObjectMgr::LoadChallengeRewards()
     }
     while (result->NextRow());
 
-    TC_LOG_ERROR("server.loading", ">> Loaded %u challenge mode rewards in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u challenge mode rewards in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::AddGroupCompletedChallenge(uint32 mapId, RealmCompletedChallenge challengers)

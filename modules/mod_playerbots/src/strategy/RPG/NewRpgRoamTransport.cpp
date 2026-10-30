@@ -30,6 +30,7 @@
 #include "DBCStructure.h"
 #include "GameObject.h"
 #include "GameObjectModel.h"
+#include "MMapFactory.h"
 #include "Map.h"
 #include "MapManager.h"
 #include "MotionMaster.h"
@@ -60,8 +61,21 @@
 #include <mutex>
 #include <set>
 #include <shared_mutex>
+#include <string>
 #include <unordered_map>
 #include <vector>
+
+// Manager/RandomPlayerbotMgr.cpp (#949 / #951): grant the quest a gated map needs before a far teleport.
+void PlayerbotPrepareFarTeleport(Player* bot, uint32 destMapId);
+// Travel/TravelNode.cpp (#948): make portal legs expensive for the next route search on this thread.
+void PlayerbotSetPreferShipRoute(bool prefer);
+// Travel/TravelNode.cpp (#956): transport links (object entries) the next route search on this thread may not use.
+void PlayerbotSetRoamAvoidTransports(std::vector<uint32> const* avoid);
+// NewRpgBaseAction.cpp (#945): a bot on a running town errand stays active (OnTransportLeg is AllowActive's hook).
+namespace TownErrand
+{
+bool KeepsActive(Player* bot);
+}  // namespace TownErrand
 
 namespace
 {
@@ -74,7 +88,14 @@ namespace
 
     uint32 CfgCampChance()
     {
-        static uint32 const v = std::min<uint32>(100, uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RoamTransportCampChance", 10))));
+        static uint32 const v = std::min<uint32>(100, uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RoamTransportCampChance", 45))));
+        return v;
+    }
+
+    // #948 (owner 2026-10-27): percent of cross-map trips routed by boat/zeppelin even when a portal route is shorter.
+    uint32 CfgShipRouteChance()
+    {
+        static uint32 const v = std::min<uint32>(100, uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RoamTransportShipRouteChance", 35))));
         return v;
     }
 
@@ -82,11 +103,37 @@ namespace
     constexpr uint32 kRouteBuildGapMs = 250;            // at most ~4 A* route builds per second, all bots together
     constexpr uint32 kRetryAfterFailMs = 10 * MINUTE * IN_MILLISECONDS;
     constexpr uint32 kWalkStallMs = 120 * IN_MILLISECONDS;
+    // #948: a trip not driven for longer than this (a throttled bot's minimal ticks) does not count the gap as a stall.
+    constexpr uint32 kDriveGapMs = 5 * IN_MILLISECONDS;
+    // #954: how long a trip without a boat / zeppelin leg keeps its bot active in the Walk phase and the landed Taxi
+    // phase (OnTransportLeg). Ship trips (#948) keep theirs for the whole trip, as before.
+    constexpr uint32 kActiveWalkCapMs = 15 * MINUTE * IN_MILLISECONDS;
+    // #954: how long a trip holds off RandomPlayerbotMgr's periodic refresh teleport (DefersRandomTeleport).
+    constexpr uint32 kDeferTeleportCapMs = 30 * MINUTE * IN_MILLISECONDS;
     constexpr uint32 kDockWaitMs = 12 * MINUTE * IN_MILLISECONDS;   // longest MoP boat/zeppelin round trip is ~6 min
     constexpr uint32 kBoardMs = 45 * IN_MILLISECONDS;
     constexpr uint32 kRideMs = 15 * MINUTE * IN_MILLISECONDS;
     constexpr uint32 kLeaveMs = 30 * IN_MILLISECONDS;
     constexpr uint32 kTaxiStartMs = 60 * IN_MILLISECONDS;
+    // #956 (2.5 h + 1 h runs at 1000 bots, 2026-10-28): 38 of the 43 flights started less than ~0.6 s after the previous
+    // leg's landing (60-635 log lines at ~700-1000 lines/s) were cut short in mid-air - the bot dropped out of the taxi a
+    // few hundred yards along the path (Adalos / Losco / Parius on path 852 all at (4728,1177), z 224 / 253 / 136:
+    // falling) - against 1 of the 50 started later, and 3 of 186 first flights. The trip then took the cut for a landing
+    // and walked toward the arrival 450-5600 yd away: 19 of the 22 "abandon off-route". A flight that follows a landing
+    // waits until the bot has settled (kTaxiSettleMs, then no spline / fall / controlled movement, at most
+    // kTaxiSettleCapMs); a flight that still ends kTaxiCutDist or more from its arrival is re-planned ("taxi-cut").
+    constexpr uint32 kTaxiSettleMs = 2500;
+    constexpr uint32 kTaxiSettleCapMs = 10 * IN_MILLISECONDS;
+    constexpr float kTaxiCutDist = 300.0f;
+    constexpr uint32 kTaxiCutFallMs = 15 * IN_MILLISECONDS;   // a cut rider still falling is waited for this long
+    // #956: a bot whose dock wait failed (dock-wait-timeout / dock-not-found) leaves that transport out of its own route
+    // searches for this long (per bot; other bots keep using it). The destination retry gate (kRetryAfterFailMs) let
+    // Astias wait 12 min at the Deeprun Tram six times in 2 h, each time for another destination.
+    constexpr uint32 kTransportAvoidMs = 30 * MINUTE * IN_MILLISECONDS;
+    constexpr size_t kTransportAvoidMax = 4;
+    // #956: a static (type-11) platform is a `gameobject` spawn that never leaves its map; not found for this long in a
+    // dock wait, it does not exist here (MO ships are looked up again until kDockWaitMs, they change maps).
+    constexpr uint32 kStaticNotFoundMs = 60 * IN_MILLISECONDS;
     constexpr float kArriveDist = 10.0f;                 // AC's GO_GRIND / GO_CAMP arrival distance
     constexpr float kPointReached = 4.0f;
     constexpr float kWalkLookAhead = 60.0f;
@@ -101,6 +148,12 @@ namespace
     // (60 s keyframe stops) keep the old margins.
     constexpr uint32 kStaticStepMarginMs = 500;
     constexpr float kStandbyFromEdge = 1.5f;             // the DockWait standby point, short of a static deck's edge
+    // #974: the standby walk is issued until the bot stands within kStandbyReached of the standby point (at most
+    // kStandbyTries walks per wait, kStandbyRetryMs apart); a refused MoveTo walks straight when within kStandbyStraightMax.
+    constexpr float kStandbyReached = 1.5f;
+    constexpr uint8 kStandbyTries = 4;
+    constexpr uint32 kStandbyRetryMs = 3 * IN_MILLISECONDS;
+    constexpr float kStandbyStraightMax = 15.0f;
     // #890 (w88 Z3 Eraimo, Orgrimmar elevator 206610): a bot that is waiting goes back to walking only this much
     // farther out than kDockRadius (it entered DockWait at 34 yd on the ramp below and logged "wait" 15+ times).
     constexpr float kDockRadiusSlack = 10.0f;
@@ -168,6 +221,35 @@ namespace
         uint32 dockWaitTripMs = 0;      // ... and the trip (startMs) it belongs to
         uint32 dockWaitAgain = 0;       // re-entries of that wait ("wait-again")
         bool levelApproached = false;   // #890: the walk up to a static platform's landing was issued in this wait
+        // #948: the boat / zeppelin pier point of this wait (FindPierPoint, searched once) and whether the walk there
+        // was issued; ambient attaches refused in this wait (HullSwimmer).
+        bool pierSearched = false;
+        bool pierFound = false;
+        bool pierApproached = false;
+        bool pierReachable = false;     // #974: the pier point passed WalkReachable (FindPierPoint)
+        uint32 pierWalkMs = 0;          // #974: the last pier walk re-issued from the Walk phase (every 2 s at most)
+        float pierX = 0.0f, pierY = 0.0f, pierZ = 0.0f;
+        uint32 ambientRefused = 0;
+        uint8 pierRetries = 0;          // #964: pier walks re-issued in this wait while the ship was still docked
+        size_t repathIdx = size_t(-1);  // #964: the route index a walk stall last re-pathed ahead from (once each)
+        // #974: the static standby point of this wait (dockApproached: measured), whether it passed, the walks issued to
+        // it and when the last one was; the boat deck point taken from the pier point (logged once); Board attaches of a
+        // swimmer refused in this wait.
+        bool standbyOk = false;
+        float standbyX = 0.0f, standbyY = 0.0f, standbyZ = 0.0f;
+        uint8 standbyTries = 0;
+        uint32 standbyMs = 0;
+        bool deckFromPier = false;
+        uint32 boardRefused = 0;
+        // #948 (1 h run at 1000 bots, 2026-10-27): the route has a boat / zeppelin leg (OnTransportLeg keeps such a trip
+        // active on its way to the dock), and when RoamTransportMove last drove the trip (the walk stall clock skips
+        // the time between, see kDriveGapMs).
+        bool shipTrip = false;
+        uint32 lastDriveMs = 0;
+        // #956: transports this bot failed a dock wait at (entry, when), kept across trips (kTransportAvoidMs), and when
+        // the trip's last flight leg landed (kTaxiSettleMs).
+        std::vector<std::pair<uint32, uint32>> avoidTransports;
+        uint32 landMs = 0;
     };
 
     constexpr uint32 kMaxHops = 3;
@@ -446,9 +528,9 @@ namespace
     // model is under the march point no more than 2.5 yd above / 8 yd below the bot's feet, then go 3 yd further in.
     // #848: (ex, ey) is where the deck starts on that line (the march point it was first found under), the spot where
     // Board attaches a bot walking onto a static platform.
-    bool FindDeckPoint(Transport* t, Player* bot, float& ox, float& oy, float& oz, float& ex, float& ey)
+    // #948: the march starts from any point (bx, by, bz) - the bot's feet, or a pier candidate (FindPierPoint).
+    bool FindDeckPointFrom(Transport* t, float bx, float by, float bz, float& ox, float& oy, float& oz, float& ex, float& ey)
     {
-        float const bx = bot->GetPositionX(), by = bot->GetPositionY(), bz = bot->GetPositionZ();
         // #218 (w90 Z4 Darcellis, Iron Eagle 175080 at the Orgrimmar tower): a boat / zeppelin deck is boarded from a
         // dock on its level. The static-platform window (2.5 yd above the feet down to 8 yd below) took a hull part 6.5 yd
         // under a zeppelin that was still settling ("board ... (1872.7,-4425.8,129.1)" from the 135.6 dock, stored local
@@ -486,6 +568,297 @@ namespace
             return true;
         }
         return false;
+    }
+
+    bool FindDeckPoint(Transport* t, Player* bot, float& ox, float& oy, float& oz, float& ex, float& ey)
+    {
+        return FindDeckPointFrom(t, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), ox, oy, oz, ex, ey);
+    }
+
+    // #948 (owner session 2026-10-26/27, 3000 bots: Lentha x2 and Gronlor waited for Stormwind's Pride 190536 at
+    // (2222,5116-5121,z 0.6), "wait-why no-deck-point ... platform=(2218.4,5119.6,0.0) d3=0.0"): a boat's travel node
+    // is its TaxiPathNode stop, the ship's origin on the water (TravelNode.cpp generateTransportNodes), and the
+    // generated walk path into it can end swimming 4-8 yd from that origin: every path into 2032 (Stormwind) and 2033
+    // (Valiance Keep), and some into 20808 / 176310 / 181646 / 181688 / 187568 / 188511. The Icebreaker deck is at
+    // ~z 5.4, so the MO window (feet+4 down to feet-4) never sees it from z 0.6, and a swimmer cannot climb a hull
+    // anyway. True when the bot (or a point) is in liquid or stands less than `above` yd over its surface.
+    bool NearSeaSurface(Map* map, uint32 phaseMask, float x, float y, float z, float above)
+    {
+        if (!map)
+            return false;
+        LiquidData liq;
+        ZLiquidStatus const st = map->GetLiquidStatus(phaseMask, x, y, z, MAP_ALL_LIQUIDS, &liq);
+        return st != LIQUID_MAP_NO_WATER && liq.level > z - above;
+    }
+
+    // #974: a boat floating at its stop: an MO transport whose origin is at or within 1 yd over the sea surface (a
+    // zeppelin's origin is in the air).
+    bool ShipAfloat(Transport* t)
+    {
+        return t && t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT &&
+               NearSeaSurface(t->GetMap(), t->GetPhaseMask(), t->GetPositionX(), t->GetPositionY(), t->GetPositionZ(), 1.0f);
+    }
+
+    // #974: does the straight line Board walks from (bx, by, bz) to the deck edge (ex, ey) stay on dry ground? Every 1 yd
+    // sample needs a floor (terrain, WMO or a GO such as the hull) no more than kBoardLineDrop under bz, and that floor
+    // not at or under the sea surface; up to kBoardLineGap samples in a row may miss (the gap between a pier and a hull).
+    // Rogrormuth (Stormwind 176310, run mop1k-v8-1028): on its pier walk it came out of the water on the beach at
+    // (-8609.6,1304.5,4.0), 58 yd from the ship; FindDeckPoint's 45 yd march saw the deck from there, so Board walked the
+    // straight line across the harbour (Board has no navmesh: the deck has none), swam, and attached at z -0.2.
+    // With stepOnly (the static standby walk, #974 Brougos) every sample only needs a floor within kBoardLineDrop.
+    constexpr float kBoardLineDrop = 3.0f;
+    constexpr uint32 kBoardLineGap = 4;
+    bool StraightLineDryFrom(Map* map, uint32 phase, float bx, float by, float bz, float ex, float ey, bool stepOnly)
+    {
+        if (!map)
+            return false;
+        float const len = std::sqrt((ex - bx) * (ex - bx) + (ey - by) * (ey - by));
+        uint32 miss = 0;
+        for (float s = 1.0f; s < len; s += 1.0f)
+        {
+            float const x = bx + (ex - bx) * s / len, y = by + (ey - by) * s / len;
+            float const gz = map->GetHeight(phase, x, y, bz + 2.0f, true, kBoardLineDrop + 2.0f);
+            bool const ok = gz > INVALID_HEIGHT && gz >= bz - kBoardLineDrop &&
+                            (stepOnly || !NearSeaSurface(map, phase, x, y, gz, 0.5f));
+            miss = ok ? 0 : miss + 1;
+            if (miss > (stepOnly ? 0u : kBoardLineGap))
+                return false;
+        }
+        return true;
+    }
+
+    // #964: can the bot walk to (x, y, z) on the navmesh - the MMAP PathGenerator MoveTo walks with? A complete path
+    // (NORMAL, not INCOMPLETE / NOPATH / SHORT / the no-navmesh shortcut) of at most maxLen yards whose end is the point
+    // itself (within kReachEnd 2D and kReachEndZ), not the nearest poly under or beside it. Kamagua 181688 (Guine,
+    // 1000-bot run 2026-10-28): the pier point (587.6,-5105.3,5.3) is a vmap ground point on the pier rim whose only
+    // navmesh poly is the sea at z 0.1, so the pier walk took the bot into the water ("dock-approach-pier go", then
+    // "wait-why in-water" 14 s later); Stormwind 190536 (Elanlanea): (-8288.8,1410.7,4.8) is 0.5 yd off the pier's
+    // navmesh edge (y <= 1410) with only the sea under it, and both pier walks ended swimming until dock-wait-timeout.
+    constexpr float kReachEnd = 2.5f;
+    constexpr float kReachEndZ = 2.5f;
+    // A bot under the surface is tested from the surface above it (Elanlanea at (-8257.5,1437.9,-7.2): more than 7 yd
+    // under the sea poly, PathGenerator answers with the straight swim shortcut, which never climbs out); the navmesh
+    // links the surface to the pier by the shore (Stormwind 115 yd, Kamagua 111 yd offline).
+    bool WalkReachable(Player* bot, float x, float y, float z, float maxLen)
+    {
+        float bx = bot->GetPositionX(), by = bot->GetPositionY(), bz = bot->GetPositionZ();
+        LiquidData liq;
+        if (bot->GetMap()->GetLiquidStatus(bot->GetPhaseMask(), bx, by, bz, MAP_ALL_LIQUIDS, &liq) != LIQUID_MAP_NO_WATER &&
+            liq.level > bz)
+            bz = liq.level;
+        PathGenerator gen(bot);
+        gen.CalculatePath(bx, by, bz, x, y, z, false);
+        PathType const type = gen.GetPathType();
+        if (!(type & PATHFIND_NORMAL) ||
+            (type & (PATHFIND_INCOMPLETE | PATHFIND_NOPATH | PATHFIND_SHORT | PATHFIND_NOT_USING_PATH)))
+            return false;
+        G3D::Vector3 const& e = gen.GetActualEndPosition();
+        if (std::fabs(e.z - z) > kReachEndZ || std::sqrt((e.x - x) * (e.x - x) + (e.y - y) * (e.y - y)) > kReachEnd)
+            return false;
+        return gen.getPathLength() <= maxLen;
+    }
+
+    // #964: is (x, y, z) on a walkable navmesh poly (the bot filter: ground + water, no magma / slime; the 3 / 5 / 3 yd
+    // box PathGenerator::GetPolyByLocation tries first, closest point within 3 yd)? No navmesh for the map: true.
+    bool OnNavmesh(Player* bot, float x, float y, float z)
+    {
+        dtNavMeshQuery const* q = MMAP::MMapFactory::createOrGetMMapManager()->GetNavMeshQuery(bot->GetMapId(), bot->GetInstanceId());
+        if (!q)
+            return true;
+        dtQueryFilter filter;
+        filter.setIncludeFlags(NAV_GROUND | NAV_WATER);
+        filter.setExcludeFlags(NAV_MAGMA | NAV_SLIME);
+        float const p[3] = {y, z, x};
+        float const ext[3] = {3.0f, 5.0f, 3.0f};
+        float cp[3] = {0.0f, 0.0f, 0.0f};
+        dtPolyRef ref = 0;
+        if (dtStatusFailed(q->findNearestPoly(p, ext, &filter, &ref, cp)) || !ref)
+            return false;
+        return (cp[0] - p[0]) * (cp[0] - p[0]) + (cp[1] - p[1]) * (cp[1] - p[1]) + (cp[2] - p[2]) * (cp[2] - p[2]) <= 9.0f;
+    }
+
+    // #964: the walk-stall re-path window: route points of the current walk up to kRepathAhead yd of route ahead, one
+    // tested every kRepathStep yd, at most kRepathTests navmesh path queries per stall.
+    constexpr float kRepathAhead = 400.0f;
+    constexpr float kRepathStep = 25.0f;
+    constexpr uint32 kRepathTests = 16;
+    constexpr float kRepathMaxLen = 800.0f;  // PathGenerator's 200 smooth points of 4 yd
+
+    // #964: the farthest route point of this walk (same map, no leg in between) within kRepathAhead that the bot can
+    // walk to from where it stalled (WalkReachable; path at most 3x the straight line + 60 yd).
+    bool ReachableAhead(RoamTrip const& trip, Player* bot, size_t& ahead, float& pathLen)
+    {
+        bool found = false;
+        float acc = 0.0f, lastTested = -kRepathStep;
+        uint32 tests = 0;
+        for (size_t j = trip.idx + 1; j < trip.pts.size() && tests < kRepathTests; ++j)
+        {
+            if (IsLegStart(trip.pts, j) || !IsWalkPoint(trip.pts[j]) || trip.pts[j].point.GetMapId() != bot->GetMapId())
+                break;
+            acc += WorldPosition(trip.pts[j - 1].point).distance(trip.pts[j].point);  // distance() is not const
+            if (acc > kRepathAhead)
+                break;
+            bool const lastOfWalk = j + 1 >= trip.pts.size() || IsLegStart(trip.pts, j + 1) || !IsWalkPoint(trip.pts[j + 1]);
+            if (acc - lastTested < kRepathStep && !lastOfWalk)
+                continue;
+            WorldPosition const& p = trip.pts[j].point;
+            float const straight = Dist3d(bot, p);
+            if (straight < kPointReached * 2.0f)
+                continue;
+            lastTested = acc;
+            ++tests;
+            float const maxLen = std::min(kRepathMaxLen, straight * 3.0f + 60.0f);
+            if (WalkReachable(bot, p.GetPositionX(), p.GetPositionY(), p.GetPositionZ(), maxLen))
+            {
+                found = true;
+                ahead = j;
+                pathLen = straight;
+            }
+        }
+        return found;
+    }
+
+    // #964: the stuck teleport's target: the first route point from `target` on (same walk, within kRepathAhead yd of
+    // route) that stands on the navmesh, so the bot is not put inside a mountain (Violeni / Zancan teleported to
+    // (1590.5,-576.7,77.1) in the Talondeep Path rock and stalled there again). `target` itself when none is.
+    size_t NavmeshPointAhead(RoamTrip const& trip, Player* bot, size_t target)
+    {
+        float acc = 0.0f;
+        for (size_t j = target; j < trip.pts.size(); ++j)
+        {
+            if (j > target)
+            {
+                if (IsLegStart(trip.pts, j) || !IsWalkPoint(trip.pts[j]) || trip.pts[j].point.GetMapId() != bot->GetMapId())
+                    break;
+                acc += WorldPosition(trip.pts[j - 1].point).distance(trip.pts[j].point);  // distance() is not const
+                if (acc > kRepathAhead)
+                    break;
+            }
+            WorldPosition const& p = trip.pts[j].point;
+            if (OnNavmesh(bot, p.GetPositionX(), p.GetPositionY(), p.GetPositionZ()))
+                return j;
+        }
+        return target;
+    }
+
+    // #948: a dry point at the dock (the pier) from which FindDeckPoint's MO window sees the docked ship's deck. Rings
+    // of kPierMinR..kPierMaxR yd around the ship's origin (kPierAngles points each), innermost ring first; in a ring
+    // the point nearest the bot. A point counts when its ground is on the dock's level (nodeZ + kPierBandLow ..
+    // kPierBandHigh: a ship's node is on the water, z 0, and its piers at z 5.0-5.5 - Stormwind (-8288.8,1410.4,5.0)
+    // 14 yd from 2032, Valiance Keep at Nelno Copperbeam (2235.9,5129.8,5.3) 20 yd from 2033, Menethil
+    // (-3867.1,-656.7,5.2) 18 yd from 1957; a zeppelin's node is its tower floor), at least kPierAboveWater yd over
+    // any liquid (not the beach), not over the deck itself, and the deck it sees is within kPierDeckLevel yd of it.
+    // Runs only in DockWait's no-deck-point branch, once per wait, while the ship is docked.
+    constexpr float kPierMinR = 8.0f;
+    constexpr float kPierMaxR = 30.0f;
+    constexpr float kPierStep = 2.0f;
+    constexpr uint32 kPierAngles = 24;
+    constexpr float kPierBandLow = -4.0f;
+    constexpr float kPierBandHigh = 10.0f;
+    constexpr float kPierAboveWater = 2.0f;
+    constexpr float kPierDeckLevel = 2.5f;
+    // #964: the pier point must be walkable from the bot (WalkReachable, at most this long; at most kPierPathTests
+    // navmesh queries per search). When no candidate passes, the nearest unchecked one is kept (the #948 pick).
+    constexpr float kPierPathMax = 250.0f;
+    constexpr uint32 kPierPathTests = 10;
+    constexpr uint8 kPierRetries = 2;      // #964: pier walks re-issued per wait while the ship is docked
+    // #974: `reachable` tells whether the point passed WalkReachable (else it is the #948 fallback pick).
+    bool FindPierPoint(Transport* t, Player* bot, float nodeZ, float& outX, float& outY, float& outZ, bool& reachable)
+    {
+        reachable = false;
+        Map* map = bot->GetMap();
+        if (!t || !map)
+            return false;
+        uint32 const phase = bot->GetPhaseMask();
+        float const px = t->GetPositionX(), py = t->GetPositionY();
+        bool const afloat = ShipAfloat(t);
+        bool fallback = false;
+        float fbX = 0.0f, fbY = 0.0f, fbZ = 0.0f;
+        uint32 tests = 0;
+        for (float r = kPierMinR; r <= kPierMaxR + 0.01f; r += kPierStep)
+        {
+            std::vector<std::pair<float, G3D::Vector3>> ring;
+            for (uint32 a = 0; a < kPierAngles; ++a)
+            {
+                float const ang = float(a) * 2.0f * float(M_PI) / float(kPierAngles);
+                float const sx = px + r * std::cos(ang), sy = py + r * std::sin(ang);
+                float const gz = map->GetHeight(phase, sx, sy, nodeZ + kPierBandHigh + 2.0f, true,
+                                                kPierBandHigh - kPierBandLow + 4.0f);
+                if (gz <= INVALID_HEIGHT || gz < nodeZ + kPierBandLow || gz > nodeZ + kPierBandHigh)
+                    continue;
+                if (NearSeaSurface(map, phase, sx, sy, gz, kPierAboveWater))
+                    continue;
+                float deckZ = 0.0f;
+                if (DeckZAt(t, sx, sy, gz + 2.0f, 4.0f, deckZ))
+                    continue;  // on the deck (or right over it), not beside it
+                float dx = 0.0f, dy = 0.0f, dz = 0.0f, ex = 0.0f, ey = 0.0f;
+                if (!FindDeckPointFrom(t, sx, sy, gz, dx, dy, dz, ex, ey) || std::fabs(dz - gz) > kPierDeckLevel)
+                    continue;
+                // #974: and Board's straight line from it to the deck edge stays dry (DockWait refuses a wet one).
+                if (afloat && !StraightLineDryFrom(map, phase, sx, sy, gz, ex, ey, false))
+                    continue;
+                ring.emplace_back(bot->GetExactDist2d(sx, sy), G3D::Vector3(sx, sy, gz));
+            }
+            // In a ring the point nearest the bot first (#948), now the first one the bot can walk to (#964).
+            std::sort(ring.begin(), ring.end(),
+                      [](std::pair<float, G3D::Vector3> const& a, std::pair<float, G3D::Vector3> const& b)
+                      { return a.first < b.first; });
+            for (auto const& c : ring)
+            {
+                if (!fallback)
+                {
+                    fallback = true;
+                    fbX = c.second.x; fbY = c.second.y; fbZ = c.second.z;
+                }
+                if (tests >= kPierPathTests)
+                    break;
+                ++tests;
+                if (WalkReachable(bot, c.second.x, c.second.y, c.second.z, kPierPathMax))
+                {
+                    outX = c.second.x; outY = c.second.y; outZ = c.second.z;
+                    reachable = true;
+                    return true;
+                }
+            }
+            if (tests >= kPierPathTests)
+                break;
+        }
+        if (!fallback)
+            return false;
+        outX = fbX; outY = fbY; outZ = fbZ;
+        return true;
+    }
+
+    // #948 (Lentha, 2026-10-26: "board transport=190536 type=15 map=571 (2222.0,5121.3,0.6) via=ambient", then
+    // "ride-arrived ... map=0 (-8240.6,1421.6,0.6)"; Terido, Ratchet 20808, z 0.1): PlayerbotAI's ambient check (#879
+    // 4 yd deck ray) attaches a bot swimming at a docked ship's waterline when a hull floor is right under it, and the
+    // bot then rides INSIDE the hull. Not aboard: in the water, or within 1 yd over its surface (the deck of a docked
+    // boat is ~5 yd over it). A "surface over the head" test was left out on purpose: on a real deck a boom, sail or
+    // forecastle 2.5-6 yd above the feet would refuse a bot that stands on the deck, and it would fall in at departure.
+    // #974: HullSwimmer now also guards Board's attach (the four swimmer boardings of run mop1k-v8-1028 were Board's,
+    // see there). Besides the liquid query at the bot - which answers from the WMO group over the point when there is one,
+    // so a swimmer under or against a pier is not certain to be reported - a bot also counts as a swimmer when the ship
+    // floats here (its origin at or within 1 yd over the sea surface: a boat; a zeppelin's origin is in the air) and the
+    // bot is less than kShipWaterline over that origin (the #948 swimmer metric is z < 2 at docks whose origin is z 0;
+    // the lowest real deck boarding seen is 2.5 over it, Terenelli at Stormwind 190536).
+    constexpr float kShipWaterline = 2.0f;
+    char const* HullSwimmer(Transport* t, Player* bot)
+    {
+        if (!t || t->GetGoType() != GAMEOBJECT_TYPE_MO_TRANSPORT)
+            return nullptr;
+        if (NearSeaSurface(bot->GetMap(), bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(),
+                           bot->GetPositionZ(), 1.0f))
+            return "in-water";
+        if (bot->GetPositionZ() < t->GetPositionZ() + kShipWaterline && ShipAfloat(t))
+            return "waterline";
+        return nullptr;
+    }
+
+    // #974: StraightLineDryFrom from where the bot stands.
+    bool StraightLineDry(Player* bot, float ex, float ey, bool stepOnly)
+    {
+        return StraightLineDryFrom(bot->GetMap(), bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(),
+                                   bot->GetPositionZ(), ex, ey, stepOnly);
     }
 
     // #848: how far a rider standing on a static platform walks toward (tx, ty) before the deck is no longer under it
@@ -673,6 +1046,42 @@ namespace
         trip.pts.clear();
     }
 
+    // #956: a dock wait on `entry` failed. For kTransportAvoidMs this bot's route searches leave that transport out
+    // (RoamTransportMove -> PlayerbotSetRoamAvoidTransports -> TravelNode.cpp getCost); other bots are not affected.
+    void RememberTransportFail(RoamTrip& trip, Player* bot, uint32 entry, uint32 now)
+    {
+        if (!entry)
+            return;
+        std::vector<std::pair<uint32, uint32>>& v = trip.avoidTransports;
+        v.erase(std::remove_if(v.begin(), v.end(), [entry, now](std::pair<uint32, uint32> const& a)
+                               { return a.first == entry || getMSTimeDiff(a.second, now) >= kTransportAvoidMs; }),
+                v.end());
+        if (v.size() >= kTransportAvoidMax)
+            v.erase(v.begin());
+        v.emplace_back(entry, now ? now : 1);
+        TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s avoid-transport transport=%u for=%us", bot->GetName().c_str(), entry,
+                     kTransportAvoidMs / IN_MILLISECONDS);
+    }
+
+    // #956: the transports the bot's next route search may not use (expired entries are dropped).
+    void AvoidedTransports(RoamTrip& trip, uint32 now, std::vector<uint32>& out)
+    {
+        out.clear();
+        std::vector<std::pair<uint32, uint32>>& v = trip.avoidTransports;
+        v.erase(std::remove_if(v.begin(), v.end(), [now](std::pair<uint32, uint32> const& a)
+                               { return getMSTimeDiff(a.second, now) >= kTransportAvoidMs; }),
+                v.end());
+        for (std::pair<uint32, uint32> const& a : v)
+            out.push_back(a.first);
+    }
+
+    // #956: a GAMEOBJECT_TYPE_MO_TRANSPORT entry (boat / zeppelin), judged from the template (the GO may be on another map).
+    bool IsMoTransportEntry(uint32 entry)
+    {
+        GameObjectTemplate const* gt = entry ? sObjectMgr->GetGameObjectTemplate(entry) : nullptr;
+        return gt && gt->type == GAMEOBJECT_TYPE_MO_TRANSPORT;
+    }
+
     char const* StatusChangedReason(NewRpgStatus s)
     {
         switch (s)
@@ -740,7 +1149,10 @@ namespace
         if (Transport* t = bot->GetTransport())
             if (!StaysFor(t, 1000))
                 return false;
-        EndTrip(trip, bot, now, StatusChangedReason(status));
+        // #954: "status-reset" is the IDLE of a freshly built NewRpgInfo (startT 0): PlayerbotAI::Reset(true), i.e. a
+        // RandomPlayerbotMgr teleport (level / refresh / revive) or a far teleport the trip did not cause. "status-idle"
+        // stays for an RPG action's own ChangeToIdle (e.g. AC's TRAVEL_FLIGHT landing, NewRpgAction.cpp flight arrival).
+        EndTrip(trip, bot, now, (status == RPG_IDLE && info.startT == 0) ? "status-reset" : StatusChangedReason(status));
         return true;
     }
 
@@ -765,6 +1177,23 @@ namespace
             ++i;
         }
         return transportLegs + flightLegs + portalLegs;
+    }
+
+    // #948: true when one of the route's transport legs is a boat / zeppelin (GAMEOBJECT_TYPE_MO_TRANSPORT), not an
+    // elevator / tram.
+    bool HasShipLeg(std::vector<PathNodePoint> const& pts)
+    {
+        for (size_t i = 0; i + 1 < pts.size(); ++i)
+        {
+            if (!IsLegStart(pts, i))
+                continue;
+            if (pts[i].type == NODE_TRANSPORT && pts[i].entry)
+                if (GameObjectTemplate const* gt = sObjectMgr->GetGameObjectTemplate(pts[i].entry))
+                    if (gt->type == GAMEOBJECT_TYPE_MO_TRANSPORT)
+                        return true;
+            ++i;
+        }
+        return false;
     }
 
     // Maps the travel graph has nodes on (built once the graph is loaded; Pandaria 870 has none). A bot on a map
@@ -1146,10 +1575,27 @@ namespace
                     toStart = startPos.getPathTo(startNodePos, nullptr);
                 // #846: the route opens with a transport leg at a dock on another level than the bot: walk to the
                 // dock's landing first (DockLandPoint).
+                // #956: for a static platform (elevator / tram) also when the bot is off the landing's level by more
+                // than kStopLevelZ or more than 10 yd from the stop. Such a route started DockWait where the bot stood
+                // (it is inside kDockRadius) and the bot never got onto the landing: Ooahpa 35 yd from the Orgrimmar
+                // elevator 206610's top stop on the z 102.9 floor (stop 109.3), Jogu 12 yd from its bottom stop on the
+                // ramp below (39.0 vs 42.3); both "dock-approach(-level) no-ground", then dock-wait-timeout after 720 s.
+                // Jogu's later trip walked a navmesh path onto the landing at (1748.2,-4389.6,42.5) and boarded.
                 std::vector<TravelNode*> const& rn = route.getNodes();
-                if (rn.size() > 1 && startNode->hasLinkTo(rn[1]) &&
-                    startNode->getPathTo(rn[1])->getPathType() == TravelNodePathType::transport &&
-                    std::fabs(startPos.GetPositionZ() - startNodePos.GetPositionZ()) > kDockHeight)
+                TravelNodePath* firstLink = nullptr;
+                if (rn.size() > 1)
+                {
+                    auto const linkItr = startNode->getLinks()->find(rn[1]);
+                    if (linkItr != startNode->getLinks()->end())
+                        firstLink = linkItr->second;
+                }
+                bool const staticFirst = firstLink && firstLink->getPathType() == TravelNodePathType::transport &&
+                                         !IsMoTransportEntry(firstLink->getPathObject());
+                float const startDz = std::fabs(startPos.GetPositionZ() - startNodePos.GetPositionZ());
+                if (firstLink && firstLink->getPathType() == TravelNodePathType::transport &&
+                    (startDz > kDockHeight ||
+                     (staticFirst && (startDz > kStopLevelZ ||
+                                      startPos.GetExactDist2d(startNodePos.GetPositionX(), startNodePos.GetPositionY()) > 10.0f))))
                 {
                     WorldPosition land;
                     if (DockLandPoint(startNode, startPos, land))
@@ -1177,6 +1623,17 @@ namespace
         return TravelPath();
     }
 }  // namespace
+
+// #948 (1 h run at 1000 bots, 2026-10-27): 25 routes per hour were rejected "noroute flightmaster-unusable" (11 of them
+// ship-route rolls: Davigor at the Orgrimmar zeppelin tower, Branueliam and Mastorin in Stonetalon, Stanne, Jeduck). A*
+// (TravelNode.cpp getCost) checks only the taxi nodes' mount per team and whether the bot knows the destination node,
+// so it kept handing back the same route, and the trip was gated for 10 minutes each time. Called from
+// TravelNodeMap::getRoute for a roam trip's flight link that departs on the bot's own map (the map this thread
+// updates, as in ValidateRoute): the same FlightMasterUsable test, so A* takes another way (a walk, a boat) instead.
+bool PlayerbotRoamFlightMasterUsable(Player* bot, WorldPosition const& departure)
+{
+    return !bot || departure.GetMapId() != bot->GetMapId() || FlightMasterUsable(bot, departure);
+}
 
 namespace RoamTransport
 {
@@ -1318,17 +1775,44 @@ namespace RoamTransport
     // AllowActive can run for this bot from a group member's thread (PARTY_ACTIVITY), so only the phase byte is read
     // here, never the route vector its own map thread may be rebuilding; a walking bot that is aboard any transport
     // counts (its next tick rides that leg, or drops the attachment).
+    //
+    // #948 (1 h run at 1000 bots, 2026-10-27: 86 trips started, 25 dock waits, 7 boardings): a boat / zeppelin trip
+    // (shipTrip) stays active on its way to the dock too, in the Walk phase and in the Taxi phase once landed. Throttled,
+    // a trip advanced only in its ~10% active windows: Alaine reached route point 248/511 after 2003 s, Omje point
+    // 1/411 after 1480 s, Erisen 29/1826 after 592 s, and 26 of the hour's ship trips were still walking when the log
+    // ended. That 10x longer walk is what exposed them to the periodic "teleport for level and refresh"
+    // (RandomPlayerbotMgr.cpp ProcessBot teleport event), the level-up teleport and deaths: 10 of the 14 "abandon
+    // status-idle" (Ginervanna t=24s, Ascilla, Ywaehgin, Cartold, Catheenk, Charaldric, Zhaya, Julfunuk, Vannie,
+    // Kahsish) were such a teleport during the walk.
+    //
+    // #954 (2 h run at 1000 bots, 2026-10-28): the same for the trips without a ship leg (flight / portal / elevator),
+    // for their first kActiveWalkCapMs. 30 of the 34 "abandon status-idle" were again RandomPlayerbotMgr's "teleport
+    // for level and refresh" / level-up / revive teleport (PlayerbotAI::Reset(true) -> RPG_IDLE, AC Bot/
+    // RandomPlayerbotMgr.cpp:1588-1597 and 1604-1613) landing on a throttled walk: Tomar point 290/1021 at t=371 s,
+    // Camin 348/1482 at 643 s, Florent 585/1354 at 1025 s, Solarane 530/1258 at 1219 s, Laryl 200/690 at 4725 s. AC's
+    // GO_CAMP / GO_GRIND have no status timer either (AC NewRpgAction.cpp:291-315: only the 10 yd arrival ends them),
+    // so the walk itself is AC's; only its 10x throttled length is not.
+    //
+    // #945 (2026-10-28): a bot on a running town errand stays active too (TownErrand::KeepsActive, capped there).
     bool OnTransportLeg(Player* bot)
     {
-        if (!bot || g_activeTrips.load(std::memory_order_relaxed) <= 0)
+        if (!bot)
+            return false;
+        if (TownErrand::KeepsActive(bot))
+            return true;
+        if (g_activeTrips.load(std::memory_order_relaxed) <= 0)
             return false;
         TripPhase phase = TripPhase::Walk;
+        bool shipTrip = false;
+        bool walkCap = false;
         {
             std::lock_guard<std::mutex> lock(g_tripMutex);
             auto itr = g_trips.find(bot->GetGUID());
             if (itr == g_trips.end() || !itr->second.active)
                 return false;
             phase = itr->second.phase;
+            shipTrip = itr->second.shipTrip;
+            walkCap = getMSTimeDiff(itr->second.startMs, getMSTime()) < kActiveWalkCapMs;
         }
         switch (phase)
         {
@@ -1338,7 +1822,9 @@ namespace RoamTransport
             case TripPhase::Leave:
                 return true;
             case TripPhase::Walk:
-                return bot->GetTransport() != nullptr;
+                return shipTrip || walkCap || bot->GetTransport() != nullptr;
+            case TripPhase::Taxi:
+                return (shipTrip || walkCap) && !bot->IsInFlight();
             default:
                 return false;
         }
@@ -1352,6 +1838,18 @@ namespace RoamTransport
     // (dock wait, boarding, riding, stepping off) or walking its last kDockRadius + kDockRadiusSlack yards to one: the
     // quest-giver detour waits until the leg is done. BEYOND AC (AC has no roam trip; outside a trip nothing changes).
     // Called from the bot's own action (own map thread), so the route vector may be read.
+    // #954 (beyond AC): RandomPlayerbotMgr's "teleport for level and refresh" waits while the bot's trip is younger
+    // than kDeferTeleportCapMs; the trip is already moving the bot somewhere level-appropriate. Any thread.
+    bool DefersRandomTeleport(Player* bot)
+    {
+        if (!bot || g_activeTrips.load(std::memory_order_relaxed) <= 0)
+            return false;
+        std::lock_guard<std::mutex> lock(g_tripMutex);
+        auto itr = g_trips.find(bot->GetGUID());
+        return itr != g_trips.end() && itr->second.active &&
+               getMSTimeDiff(itr->second.startMs, getMSTime()) < kDeferTeleportCapMs;
+    }
+
     bool HoldsForTransportLeg(Player* bot)
     {
         if (!bot || g_activeTrips.load(std::memory_order_relaxed) <= 0)
@@ -1487,7 +1985,28 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
             return needSpecialLeg ? -1 : 0;  // cross-map: wait for a slot instead of letting AC's code path to it
 
         WorldPosition const botPos(bot);
+        // #948: for RoamTransportShipRouteChance % of cross-map trips, portal legs cost extra (TravelNode.cpp getCost),
+        // so the route takes a boat/zeppelin when the graph has one.
+        bool const preferShip = botPos.GetMapId() != dest.GetMapId() && urand(1, 100) <= CfgShipRouteChance();
+        // #956: the transports this bot failed a dock wait at (RememberTransportFail) and static transports that are
+        // not spawned here are no links for this search (TravelNode.cpp getCost).
+        std::vector<uint32> avoid;
+        AvoidedTransports(trip, now, avoid);
+        if (!avoid.empty())
+        {
+            std::string list;
+            for (uint32 e : avoid)
+                list += (list.empty() ? "" : ",") + std::to_string(e);
+            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s route-avoid transports=%s", bot->GetName().c_str(), list.c_str());
+        }
+        PlayerbotSetPreferShipRoute(preferShip);
+        PlayerbotSetRoamAvoidTransports(&avoid);
         TravelPath path = BuildRoute(botPos, dest, bot);
+        PlayerbotSetRoamAvoidTransports(nullptr);
+        PlayerbotSetPreferShipRoute(false);
+        if (preferShip)
+            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s ship-route roll map=%u -> map=%u", bot->GetName().c_str(),
+                         botPos.GetMapId(), dest.GetMapId());
         std::vector<PathNodePoint> pts = path.getPath();
         uint32 tl = 0, fl = 0, pl = 0, hl = 0;
         size_t const special = CountLegs(pts, tl, fl, pl, hl);
@@ -1545,8 +2064,12 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         trip.lookupMs = 0;
         trip.portalMs = 0;
         trip.stuckTpIdx = size_t(-1);
+        trip.repathIdx = size_t(-1);
         trip.routeStartMap = bot->GetMapId();
         trip.grind = botAI->GetRpgInfo().GetStatus() == RPG_GO_GRIND;
+        trip.shipTrip = HasShipLeg(trip.pts);
+        trip.lastDriveMs = now;
+        trip.landMs = 0;
         TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s start map=%u zone=%u (%.1f,%.1f,%.1f) -> map=%u (%.1f,%.1f,%.1f) points=%u transport=%u flight=%u portal=%u hop=%u end-map=%u startpath=%u",
                      bot->GetName().c_str(), bot->GetMapId(), bot->GetZoneId(), bot->GetPositionX(), bot->GetPositionY(),
                      bot->GetPositionZ(), dest.GetMapId(), dest.GetPositionX(), dest.GetPositionY(), dest.GetPositionZ(),
@@ -1559,6 +2082,22 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         trip.driverT = info.startT;
         trip.driverStatus = int32(info.GetStatus());
     }
+
+    // #948 (1 h run at 1000 bots, 2026-10-27): 51 "stuck-teleport walk-stall" and 4 "abandon walk-stall" in the hour,
+    // mostly bots that were not stuck but throttled (PlayerbotAI::AllowActive, BotActiveAlone 10: only "new rpg" ticks
+    // of an active window drive the trip). The stall clocks below compare wall time with the last tick that saw
+    // progress, so a bot that slept through two minutes of minimal ticks was "stalled" on its first active tick and
+    // teleported (Omje: point 1/411 at t=1480 s, then "abandon walk-stall" at point 11, t=2080 s). AC's own
+    // MoveFarTo stuck test also needs 5 tries without progress, not only elapsed time (AC Ai/World/Rpg/Action/
+    // NewRpgBaseAction.cpp:107 stuckAttempts). The time
+    // between two drives of the trip is not walking time: the walk clocks skip it.
+    if (trip.lastDriveMs && getMSTimeDiff(trip.lastDriveMs, now) > kDriveGapMs &&
+        (trip.phase == TripPhase::Walk || trip.phase == TripPhase::Taxi))
+    {
+        uint32 const gap = getMSTimeDiff(trip.lastDriveMs, now);
+        trip.progressMs = getMSTimeDiff(trip.progressMs, now) > gap ? trip.progressMs + gap : now;
+    }
+    trip.lastDriveMs = now;
 
     // ---- arrived? -------------------------------------------------------------------------------------------------
     if (AtDest(bot, dest))
@@ -1639,6 +2178,8 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
             trip.portalMs = now ? now : 1;  // a far teleport resets the bot's RPG status: ResumeAfterReset
             bot->RemoveAurasWithInterruptFlags(
                 SpellAuraInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED | AURA_INTERRUPT_FLAG_CHANGE_MAP));
+            // #951: the Isle of Thunder gate (and the #949 start-zone exits) would bounce or refuse this teleport.
+            PlayerbotPrepareFarTeleport(bot, to.point.GetMapId());
             return bot->TeleportTo(to.point.GetMapId(), to.point.GetPositionX(), to.point.GetPositionY(),
                                    to.point.GetPositionZ(), bot->GetOrientation()) ? 1 : 0;
         }
@@ -1663,12 +2204,29 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 // is left for a flight too short to be seen by any tick.
                 if (to.point.GetMapId() == bot->GetMapId() && (trip.flew || Dist2d(bot, to.point) < 60.0f))
                 {
+                    // #956: a flight that ended kTaxiCutDist or more from its arrival was cut short (kTaxiSettleMs):
+                    // the route after it starts at the arrival, hundreds of yards off, and the walk gave up "off-route"
+                    // on its first tick. Let a falling rider land first, then end the trip without the retry gate:
+                    // the next MoveFarTo plans a new route from where the bot is.
+                    float const toArrival = Dist2d(bot, to.point);
+                    if (toArrival >= kTaxiCutDist)
+                    {
+                        if ((!bot->movespline->Finalized() || bot->IsFalling()) &&
+                            getMSTimeDiff(trip.progressMs, now) < kTaxiCutFallMs)
+                            return 1;
+                        TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s taxi-cut path=%u map=%u (%.1f,%.1f,%.1f) arrival=%.0f yd",
+                                     bot->GetName().c_str(), from.entry, bot->GetMapId(), bot->GetPositionX(),
+                                     bot->GetPositionY(), bot->GetPositionZ(), toArrival);
+                        EndTrip(trip, bot, now, "taxi-cut", false);
+                        return 0;
+                    }
                     TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s landed path=%u map=%u (%.1f,%.1f,%.1f)", bot->GetName().c_str(),
                                  from.entry, bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
                     trip.idx += 2;
                     trip.legs++;
                     trip.phase = TripPhase::Walk;
                     trip.progressMs = trip.phaseMs = now;
+                    trip.landMs = now ? now : 1;
                     trip.bestDist = -1.0f;
                     return 1;
                 }
@@ -1739,7 +2297,31 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
             if (!flightMaster)
                 return abandon("taxi-no-flightmaster");  // AC: no live flight master at the spot -> give up
 
+            // #956: right after a landing, let the bot settle before the next flight (kTaxiSettleMs): a flight started
+            // within ~0.6 s of the previous landing was cut short in mid-air 38 times out of 43.
+            if (trip.landMs)
+            {
+                uint32 const sinceLand = getMSTimeDiff(trip.landMs, now);
+                if (sinceLand < kTaxiSettleMs)
+                    return 1;
+                if (sinceLand < kTaxiSettleCapMs &&
+                    (!bot->movespline->Finalized() || bot->IsFalling() ||
+                     bot->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_CONTROLLED) != NULL_MOTION_TYPE ||
+                     bot->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE))
+                    return 1;
+            }
+
             botAI->RemoveShapeshift();
+            // #957 (MoP-only, the #843 rule of NewRpgTravelFlightAction::Execute): Unit::Dismount() leaves the
+            // SPELL_AURA_MOUNTED aura on this core, so the bot took the flight still holding its mount aura. After the
+            // landing, PlayerbotAI::DoNextAction drops that mount's speed aura (bot not mounted), and on the next flight
+            // (taxi mount -> IsMounted()) Unit::GetMountCapability finds no capability without its speed aura: the first
+            // area change removes the mount aura (UpdateAreaDependentAuras -> SpellInfo::CheckLocation), HandleAuraMounted
+            // dismounts the taxi rider and CompleteDismount's MoveFall replaced the flight generator - 50 of 51 such chained
+            // flights fell mid-air at the same spot per path. Drop the mount aura itself, also a stale one on a bot that is
+            // no longer mounted (HandleAuraMounted -> Dismount, as CMSG_CANCEL_MOUNT_AURA does).
+            if (bot->HasAuraType(SPELL_AURA_MOUNTED))
+                bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
             if (bot->IsMounted())
                 bot->Dismount();
             bot->GetSession()->SendLearnNewTaxiNode(flightMaster);
@@ -1768,6 +2350,28 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         if (!trip.transportGuid.IsEmpty())
             t = bot->GetMap() ? bot->GetMap()->GetTransport(trip.transportGuid) : nullptr;
 
+        // #974: the pier walk. MoveTo walks a swimming bot in a straight line (MovementAction::MoveTo: no path while
+        // swimming), so from the water it swam straight at the pier point and ended under or beside the pier (Delphilla,
+        // Booty Bay 20808: "dock-pier-retry n=2 at=(-14281.9,567.4,0.0)", the pier point's own x/y 6.9 yd under it; Lentha
+        // at Valiance Keep came up on the pier 3.7 yd short of it). A swimmer whose pier point passed WalkReachable - the
+        // navmesh path FindPierPoint measured, out of the water by the shore and onto the pier - is sent along that path
+        // (the core's MovePoint with path generation); on land, and for a fallback point, MoveTo as before.
+        auto pierWalk = [&]() -> bool
+        {
+            if (bot->IsSitState())
+                bot->SetStandState(UNIT_STAND_STATE_STAND);
+            if (trip.pierReachable && bot->isSwimming() && !bot->IsFlying())
+            {
+                MotionMaster* mm = bot->GetMotionMaster();
+                if (!mm)
+                    return false;
+                mm->Clear();
+                mm->MovePoint(0, trip.pierX, trip.pierY, trip.pierZ, true);
+                return true;
+            }
+            return MoveTo(bot->GetMapId(), trip.pierX, trip.pierY, trip.pierZ, false, false, false, true);
+        };
+
         // PlayerbotAI's ambient check (AC parity) may already have attached the bot while it waited on the dock - its
         // 30 yd hull ray (#206 BotBesideMasterOffPlatform notes). Aboard the right transport is aboard: ride it.
         // #879 (w86): not in the Board phase - Board's own AddPassenger is seen on the next tick by Board itself
@@ -1775,8 +2379,32 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         // evaluator's R5 counted the trip's own attach as an ambient one.
         if (Transport* on = bot->GetTransport())
         {
-            if (on->GetEntry() == from.entry && (trip.phase == TripPhase::Walk || trip.phase == TripPhase::DockWait ||
-                                                 (trip.phase == TripPhase::Board && on != t)))
+            bool const legTransport = on->GetEntry() == from.entry &&
+                                      (trip.phase == TripPhase::Walk || trip.phase == TripPhase::DockWait ||
+                                       (trip.phase == TripPhase::Board && on != t));
+            // #948: a boat / zeppelin attach of a bot swimming at the waterline (HullSwimmer) is refused:
+            // the bot is taken off again and goes on with its dock wait (the pier walk below, or the one already found).
+            // The ambient check may attach it again a second later while it is still under the hull; each refusal
+            // re-issues the pier walk, so it gets out from under the ship. PlayerbotAI's own #879 gate is not changed.
+            char const* const swimmer = legTransport ? HullSwimmer(on, bot) : nullptr;
+            if (swimmer)
+            {
+                ++trip.ambientRefused;
+                if (trip.ambientRefused == 1 || trip.ambientRefused % 10 == 0)
+                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s ambient-refused %s transport=%u type=%u map=%u (%.1f,%.1f,%.1f) n=%u pier=%s",
+                                 bot->GetName().c_str(), swimmer, on->GetEntry(), uint32(on->GetGoType()), bot->GetMapId(),
+                                 bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), trip.ambientRefused,
+                                 trip.pierFound ? "yes" : "no");
+                StopHere(bot);
+                on->RemovePassenger(bot, true);
+                bot->ClearUnitState(UNIT_STATE_IGNORE_PATHFINDING);
+                if (trip.pierFound)
+                {
+                    pierWalk();
+                    return 1;
+                }
+            }
+            else if (legTransport)
             {
                 trip.transportGuid = on->GetGUID();
                 trip.transportEntry = from.entry;
@@ -1809,6 +2437,13 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     if (trip.idx > 0 && IsWalkPoint(trip.pts[trip.idx - 1]) &&
                         trip.pts[trip.idx - 1].point.GetMapId() == bot->GetMapId())
                         target = trip.pts[trip.idx - 1].point;
+                    // #948: the pier walk of this leg's wait leaves the dock radius (Valiance Keep: out of the water
+                    // via the beach ~70 yd from the ship's origin). Keep heading for the pier, not back to the route's
+                    // last point (the swimming spot); within kDockRadius the wait resumes ("wait-again").
+                    bool const pierLeg = trip.pierFound && trip.pierApproached && trip.dockWaitIdx == trip.idx &&
+                                         trip.dockWaitTripMs == trip.startMs;
+                    if (pierLeg)
+                        target = WorldPosition(bot->GetMapId(), trip.pierX, trip.pierY, trip.pierZ, 0.0f);
                     float const d = Dist3d(bot, target);
                     if (trip.bestDist < 0.0f || d + 3.0f < trip.bestDist)
                     {
@@ -1819,6 +2454,15 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                         // #847: only to the land point before the dock (the board node itself is the deck / the
                         // ship's origin at its stop, in the shaft or on the water while the transport is away)
                         return target != from.point ? stall("dock-walk-stall", target) : abandon("dock-walk-stall");
+                    // #974: the pier walk (pierWalk: along the navmesh even while swimming) is left to run; a MoveTo
+                    // here every tick would turn a swimmer's walk into the straight swim at the pier again.
+                    if (pierLeg && d >= kPointReached)
+                    {
+                        if (bot->isMoving() || (trip.pierWalkMs && getMSTimeDiff(trip.pierWalkMs, now) < 2 * IN_MILLISECONDS))
+                            return 1;
+                        trip.pierWalkMs = now ? now : 1;
+                        return pierWalk() ? 1 : 0;
+                    }
                     if (d < kPointReached)
                     {
                         // At the last land point but still outside the dock radius (a long pier): head for the node.
@@ -1845,7 +2489,10 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     if (!again)
                         trip.progressMs = now;
                     trip.transportEntry = from.entry;
-                    StopHere(bot);
+                    // #948: a bot on its pier walk (back inside kDockRadius on the way) keeps walking to the pier.
+                    if (!(again && trip.pierFound && trip.pierApproached &&
+                          bot->GetExactDist2d(trip.pierX, trip.pierY) > kPointReached))
+                        StopHere(bot);
                     if (!again)
                     {
                         trip.dockWaitStartMs = now ? now : 1;
@@ -1856,7 +2503,14 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                                      from.entry, bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
                         trip.dockApproached = false;
                         trip.levelApproached = false;
+                        trip.pierSearched = trip.pierFound = trip.pierApproached = false;
+                        trip.pierRetries = 0;
+                        trip.ambientRefused = 0;
                         trip.waitWhy = 0;
+                        trip.standbyOk = trip.deckFromPier = false;
+                        trip.standbyTries = 0;
+                        trip.standbyMs = 0;
+                        trip.boardRefused = 0;
                     }
                     else
                     {
@@ -1867,7 +2521,10 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     }
                 }
                 if (getMSTimeDiff(trip.dockWaitStartMs ? trip.dockWaitStartMs : trip.phaseMs, now) > kDockWaitMs)
+                {
+                    RememberTransportFail(trip, bot, from.entry, now);  // #956
                     return abandon("dock-wait-timeout");
+                }
 
                 // Wave 51 (#218): w50's two dock waits (Blanuel 867 s, Ophele 650+ s, Telredor 183177) and w47's
                 // Charlest (720 s, Scaffold Cars 149045) ended without one line saying why. Log each reason the wait
@@ -1897,10 +2554,31 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     t = FindTransport(bot, from.entry, from.point);
                     trip.transportGuid = t ? t->GetGUID() : ObjectGuid::Empty;
                     if (!t)
+                    {
                         waitWhy(1, "not-found", nullptr, 0, 0);
+                        // #956: a static platform never leaves its map, so one not found for kStaticNotFoundMs is not
+                        // spawned here (the AC graph's Deeprun Tram cars 176080-176085; TravelNode.cpp now also skips
+                        // such links). Give up now instead of after kDockWaitMs.
+                        if (!IsMoTransportEntry(from.entry) && trip.dockWaitStartMs &&
+                            getMSTimeDiff(trip.dockWaitStartMs, now) > kStaticNotFoundMs)
+                        {
+                            RememberTransportFail(trip, bot, from.entry, now);
+                            return abandon("dock-not-found");
+                        }
+                    }
                 }
                 if (!t || !AtStop(t, from.point))
                 {
+                    // #956 (Jilleklo at Valiance Keep 190536 (2223.7,5126.8,-0.8), Barista at Booty Bay 20808
+                    // (-14282.4,566.5,0.0): the one pier walk of the wait ended in the water, the ship left, and every
+                    // later stop of the same wait found the bot still swimming - "in-water" until dock-wait-timeout).
+                    // While the ship is away, a bot that is not standing on its pier point may search and walk again at
+                    // the next stop (not while the pier walk is still under way).
+                    if (trip.pierApproached && !bot->isMoving() && IsMoTransportEntry(from.entry) &&
+                        (!trip.pierFound || bot->GetExactDist2d(trip.pierX, trip.pierY) > kPointReached ||
+                         NearSeaSurface(bot->GetMap(), bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(),
+                                        bot->GetPositionZ(), 1.0f)))
+                        trip.pierSearched = trip.pierFound = trip.pierApproached = false;
                     // Paused near this dock (MO: docked within 200 yd; static: paused on this level) but not "at stop".
                     if (t && (t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT
                                   ? MoDockedNow(t) && t->GetExactDist2d(from.point.GetPositionX(), from.point.GetPositionY()) < 200.0f
@@ -1910,9 +2588,93 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 }
 
                 float dx = 0.0f, dy = 0.0f, dz = 0.0f, ex = 0.0f, ey = 0.0f;
-                if (!FindDeckPoint(t, bot, dx, dy, dz, ex, ey))
+                // #948: a bot swimming at a boat's waterline never boards from there (no climbing a hull), whatever
+                // hull part the deck window might hit under it: it is treated as no-deck-point ("wait-why in-water").
+                bool const moLeg = t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT;
+                // #974: HullSwimmer (the liquid test, now with the ship-waterline test).
+                bool const inSea = moLeg && HullSwimmer(t, bot) != nullptr;
+                bool deck = !inSea && FindDeckPoint(t, bot, dx, dy, dz, ex, ey);
+                // #974 (Rogrormuth, Stormwind 176310: board at (-8639.6,1341.2,-0.2) after a Board walk across the harbour
+                // from the beach, see StraightLineDry): a boat is boarded only when the straight line to the deck edge
+                // stays dry; otherwise the wait goes on as no-deck-point (the pier walk below). Zeppelins (origin in
+                // the air, ShipAfloat false) are boarded as before.
+                bool const afloat = moLeg && ShipAfloat(t);
+                bool wetLine = false;
+                if (deck && afloat && !StraightLineDry(bot, ex, ey, false))
                 {
-                    waitWhy(4, "no-deck-point", t, 0, 0);
+                    deck = false;
+                    wetLine = true;
+                }
+                // #974 (Lentha, Valiance Keep 190536, run mop1k-v8-1028: "dock-approach-pier go ... to=(2225.4,5131.7,5.3)",
+                // the walk ended on the pier at (2223.6,5128.4,5.0), 3.7 yd short of that point - inside kPointReached, so
+                // neither pier retry ran - and FindDeckPoint from there never saw the deck: "no-deck-point" at t=522 s,
+                // the ship docked again (Terenelli boarded it there in the same wait) and Lentha stood still until
+                // dock-wait-timeout at 1236 s). The pier point was chosen because its deck point is on its level
+                // (FindPierPoint), so a bot that stopped on the pier near it boards from that deck point.
+                if (!deck && moLeg && !inSea && trip.pierFound && trip.pierApproached && !bot->isMoving() &&
+                    bot->GetExactDist2d(trip.pierX, trip.pierY) <= kPointReached &&
+                    std::fabs(bot->GetPositionZ() - trip.pierZ) <= kPierDeckLevel &&
+                    FindDeckPointFrom(t, trip.pierX, trip.pierY, trip.pierZ, dx, dy, dz, ex, ey) &&
+                    (!afloat || StraightLineDry(bot, ex, ey, false)))
+                {
+                    deck = true;
+                    wetLine = false;
+                    if (!trip.deckFromPier)
+                    {
+                        trip.deckFromPier = true;
+                        TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s dock-deck-from-pier transport=%u bot=(%.1f,%.1f,%.1f) pier=(%.1f,%.1f,%.1f) deck=(%.1f,%.1f,%.1f)",
+                                     bot->GetName().c_str(), from.entry, bot->GetPositionX(), bot->GetPositionY(),
+                                     bot->GetPositionZ(), trip.pierX, trip.pierY, trip.pierZ, dx, dy, dz);
+                    }
+                }
+                if (!deck)
+                {
+                    if (inSea)
+                        waitWhy(16, "in-water", t, 0, 0);
+                    else if (wetLine)
+                        waitWhy(32, "board-line-wet", t, 0, 0);
+                    else
+                        waitWhy(4, "no-deck-point", t, 0, 0);
+                    // #948: the boat / zeppelin counterpart of the #890 level walk below. While the ship is docked here,
+                    // search once per wait for a pier point the deck can be seen from (FindPierPoint) and walk there
+                    // (navmesh: out of the water, up the shore, onto the pier). The next ticks find the deck point
+                    // from the pier. The point is kept for the wait, so a refused ambient attach (HullSwimmer) walks
+                    // back to it without a new search.
+                    // #964 (Guine, Kamagua 181688, t=535 s "dock-approach-pier go", t=549 s "wait-why in-water" while the
+                    // ship was still docked; it next docked after the 12 min wait had run out): a pier walk that ended in
+                    // the water while the ship is here is searched and walked again (kPierRetries per wait), from where
+                    // the bot now swims (the #956 retry above only runs while the ship is away).
+                    if (moLeg && trip.pierApproached && inSea && !bot->isMoving() && trip.pierRetries < kPierRetries)
+                    {
+                        ++trip.pierRetries;
+                        trip.pierSearched = trip.pierFound = trip.pierApproached = false;
+                        TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s dock-pier-retry n=%u transport=%u at=(%.1f,%.1f,%.1f) docked",
+                                     bot->GetName().c_str(), uint32(trip.pierRetries), from.entry, bot->GetPositionX(),
+                                     bot->GetPositionY(), bot->GetPositionZ());
+                    }
+                    if (moLeg && !trip.pierApproached)
+                    {
+                        if (!trip.pierSearched)
+                        {
+                            trip.pierSearched = true;
+                            trip.pierFound = FindPierPoint(t, bot, from.point.GetPositionZ(), trip.pierX, trip.pierY, trip.pierZ,
+                                                           trip.pierReachable);
+                        }
+                        // w90 (#890 below): MoveTo can refuse a walk; the one try per wait is spent once it started.
+                        bool moved = false;
+                        if (trip.pierFound)
+                            moved = pierWalk();
+                        if (!trip.pierFound || moved)
+                        {
+                            trip.pierApproached = true;
+                            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s dock-approach-pier %s transport=%u from=(%.1f,%.1f,%.1f) to=(%.1f,%.1f,%.1f) platform=(%.1f,%.1f,%.1f) d=%.1f reach=%u swim=%u",
+                                         bot->GetName().c_str(), trip.pierFound ? "go" : "no-ground", from.entry,
+                                         bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), trip.pierX, trip.pierY,
+                                         trip.pierZ, t->GetPositionX(), t->GetPositionY(), t->GetPositionZ(),
+                                         trip.pierFound ? t->GetExactDist2d(trip.pierX, trip.pierY) : -1.0f,
+                                         uint32(trip.pierReachable), uint32(bot->isSwimming()));
+                        }
+                    }
                     // #890 (w88 Z3 Eraimo at (1738.7,-4367.9,39.6), 34 yd from 206610 on the ramp below its landing,
                     // platform z 45.5): FindDeckPoint only looks 2.5 yd above the bot's feet and down, so a static deck
                     // above a bot that waits on a lower level is never found and the bot waited for nothing. While the
@@ -1977,25 +2739,90 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     float const toEdge = bot->GetExactDist2d(ex, ey);
                     if (isStatic && !trip.dockApproached && toDeck > 0.5f && toEdge > kStandbyFromEdge + 1.0f)
                     {
+                        // #974: the standby point is measured once per wait; the walk to it is issued below.
                         float const ux = (dx - bot->GetPositionX()) / toDeck, uy = (dy - bot->GetPositionY()) / toDeck;
                         float const back = toDeck - toEdge + kStandbyFromEdge;  // standby distance short of the deck point
                         float const sx = dx - ux * back, sy = dy - uy * back;
                         float const gz = bot->GetMap()->GetHeight(bot->GetPhaseMask(), sx, sy, bot->GetPositionZ() + 3.0f, true, 8.0f);
                         float deckZ = 0.0f;
-                        bool const ok = std::fabs(gz - bot->GetPositionZ()) <= 3.0f &&
+                        // #956 (Caemillan, Orgrimmar elevator 206608, deck z 34.9: the standby was (1700.2,-4260.9,30.6)
+                        // on the ramp 2.2 yd below the bot and 4.3 yd below the deck; from there FindDeckPoint, which
+                        // looks 2.5 yd above the feet, never saw the deck again - "no-deck-point" until
+                        // dock-wait-timeout). The standby ground must also be on the deck's level.
+                        // #964 (Bonin, Borean elevator 152614, "wait-why stop-too-short ... platform z 35.6 dz=-3.9": the
+                        // deck point is measured while the platform still rises to its stop, 3.9 yd under it, so the
+                        // landing (39.6) failed the level test - "dock-approach no-ground", 12 yd from the deck, and no
+                        // 1.33 s pause fits that walk: dock-wait-timeout. Before bebc7388 the same spot went "go" and
+                        // boarded (Stevin, Balaok). Eliames / Adalan / Bianna / Delyna (206608 / 206610 / 4171, dz -2.8..
+                        // -3.4) also went no-ground.) The deck's level is taken at the stop: the deck point shifted by the
+                        // platform's offset from the node. Caemillan's case (dz 0.0, standby 4.3 yd under) is still refused.
+                        float const deckAtStopZ = dz + (from.point.GetPositionZ() - t->GetPositionZ());
+                        bool const ok = std::fabs(gz - bot->GetPositionZ()) <= 3.0f && std::fabs(gz - deckAtStopZ) <= 2.5f &&
                                         !bot->GetMap()->IsInWater(bot->GetPhaseMask(), sx, sy, gz) &&
                                         !DeckZAt(t, sx, sy, gz + 2.0f, 4.0f, deckZ);
-                        trip.dockApproached = true;  // once per wait, whatever the outcome
+                        trip.dockApproached = true;  // measured once per wait, whatever the outcome
+                        trip.standbyOk = ok;
+                        trip.standbyX = sx;
+                        trip.standbyY = sy;
+                        trip.standbyZ = gz;
                         TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s dock-approach %s transport=%u from=(%.1f,%.1f,%.1f) to=(%.1f,%.1f,%.1f) deck=%.1f yd need=%ums",
                                      bot->GetName().c_str(), ok ? "go" : "no-ground", from.entry, bot->GetPositionX(),
                                      bot->GetPositionY(), bot->GetPositionZ(), sx, sy, gz, toDeck, needMs);
-                        if (ok)
-                        {
-                            if (bot->IsSitState())
-                                bot->SetStandState(UNIT_STAND_STATE_STAND);
-                            MoveTo(bot->GetMapId(), sx, sy, gz, false, false, false, true);
-                        }
                     }
+                    // #974 (Brougos, Borean elevator 152614, run mop1k-v8-1028: "dock-approach go ... from=(4172.5,5279.7,40.6)
+                    // to=(4181.9,5281.3,39.6) deck=12.1 yd" at t=3 s, then "dock-wait-timeout ... (4172.5,5279.7,40.6)" at
+                    // 720 s - not one step). The standby walk was fire-and-forget: dockApproached was spent before MoveTo,
+                    // whose result was ignored (MoveTo refuses on the last move's wait, a duplicate target or PathIsWalkable,
+                    // and any later action may clear the walk), and nothing checked that the bot ever stood there; the
+                    // offline navmesh joins the two points in one straight 9.6 yd segment (polys 2899 -> 3105, tile 24_22).
+                    // Now the walk is issued until the bot stands at the standby point: again when it is not moving and
+                    // still more than kStandbyReached away, every kStandbyRetryMs, at most kStandbyTries times per wait. A
+                    // refused MoveTo falls back to the straight walk Board itself uses, when the line is short and keeps
+                    // a floor under it (StraightLineDry, stepOnly).
+                    if (isStatic && trip.dockApproached && trip.standbyOk && toEdge > kStandbyFromEdge + 1.0f &&
+                        !bot->isMoving() && bot->GetExactDist2d(trip.standbyX, trip.standbyY) > kStandbyReached &&
+                        trip.standbyTries < kStandbyTries &&
+                        (!trip.standbyTries || getMSTimeDiff(trip.standbyMs, now) >= kStandbyRetryMs))
+                    {
+                        ++trip.standbyTries;
+                        trip.standbyMs = now ? now : 1;
+                        if (bot->IsSitState())
+                            bot->SetStandState(UNIT_STAND_STATE_STAND);
+                        bool moved = MoveTo(bot->GetMapId(), trip.standbyX, trip.standbyY, trip.standbyZ, false, false, false, true);
+                        bool straight = false;
+                        if (!moved && bot->GetExactDist2d(trip.standbyX, trip.standbyY) <= kStandbyStraightMax &&
+                            StraightLineDry(bot, trip.standbyX, trip.standbyY, true))
+                        {
+                            bot->GetMotionMaster()->Clear();
+                            bot->GetMotionMaster()->MovePoint(0, trip.standbyX, trip.standbyY, trip.standbyZ, false);
+                            moved = straight = true;
+                        }
+                        if (trip.standbyTries > 1 || !moved || straight)
+                            TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s dock-approach-walk n=%u %s transport=%u from=(%.1f,%.1f,%.1f) to=(%.1f,%.1f,%.1f)",
+                                         bot->GetName().c_str(), uint32(trip.standbyTries), !moved ? "refused" : straight ? "straight" : "path", from.entry,
+                                         bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), trip.standbyX,
+                                         trip.standbyY, trip.standbyZ);
+                    }
+                    // #974 (Badeon, Borean elevator 152614, live run 2026-10-28 with the retries above: "dock-approach-walk
+                    // n=2 straight / n=3 path / n=4 straight" from (4172.5,5279.7,40.6), then "abandon dock-wait-timeout" at
+                    // 720 s on the same spot; Brougos in mop1k-v8-1028 the same). Both bots had flown up to Fizzcrank
+                    // Fullthrottle 25590 on the Fizzcrank tower top (a 22-poly navmesh island whose only exit is 152614) and
+                    // were parked on its west corner vertex (polys 2898/2899, a raised edge 1.6 yd over the 39.7 floor) by
+                    // MoveFarTo's partial path toward a destination off the tower. From that corner the walk to the standby
+                    // point was issued four times and the bot never moved. After the last walk the bot is put on the standby
+                    // point instead, with the trip's walk-stall recovery (stall: once per route point, "stuck-teleport", the
+                    // "[New RPG] Teleport ... stuck" line; a second stall at the same point abandons the trip at once instead of
+                    // after kDockWaitMs). The standby point is the one measured above: on the deck's level, dry, off the deck.
+                    // #975 (run mop1k-v10-1028, Guine / Peragon: teleported onto the standby point, back on the corner 6 s
+                    // later): what parked the bots on that corner and undid every walk was not MoveFarTo but DO_QUEST's
+                    // quest-giver detour (SearchQuestGiverAndAcceptOrReward -> MoveWorldObjectTo a giver below the tower, the
+                    // corner being the island point nearest it), which #890 had gated for GO_GRIND / GO_CAMP only. It is now
+                    // gated inside SearchQuestGiverAndAcceptOrReward for every caller while HoldsForTransportLeg is true.
+                    if (isStatic && trip.dockApproached && trip.standbyOk && toEdge > kStandbyFromEdge + 1.0f &&
+                        !bot->isMoving() && bot->GetExactDist2d(trip.standbyX, trip.standbyY) > kStandbyReached &&
+                        trip.standbyTries >= kStandbyTries && getMSTimeDiff(trip.standbyMs, now) >= kStandbyRetryMs)
+                        return stall("dock-approach-stall",
+                                     WorldPosition(bot->GetMapId(), trip.standbyX, trip.standbyY, trip.standbyZ, bot->GetOrientation()));
                     return 1;
                 }
                 trip.boardX = dx;
@@ -2058,6 +2885,21 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 {
                     if (DeckUnder(t, bot))
                     {
+                        // #974 (run mop1k-v8-1028, 4 per hour: Standrin / Delphilla / Taralas at Booty Bay 20808 z -0.9 /
+                        // -0.0 / -1.3, Rogrormuth at Stormwind 176310 z -0.2, all "board" without via): the #948 swimmer
+                        // refusal guarded only the ambient attach; Board attached a bot that had swum to the deck point
+                        // because a hull floor was within DeckUnder's 4 yd ray. A swimmer is not attached here either: it
+                        // goes back to the dock wait (in-water: pier walk / pier retry).
+                        if (char const* const swimmer = HullSwimmer(t, bot))
+                        {
+                            ++trip.boardRefused;
+                            if (trip.boardRefused == 1 || trip.boardRefused % 10 == 0)
+                                TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board-refused %s transport=%u type=%u map=%u (%.1f,%.1f,%.1f) n=%u",
+                                             bot->GetName().c_str(), swimmer, t->GetEntry(), uint32(t->GetGoType()),
+                                             bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
+                                             trip.boardRefused);
+                            return backToDock();
+                        }
                         // #223 P2: stop BEFORE boarding, then attach with the offset of where the bot stands.
                         StopHere(bot);
                         t->AddPassenger(bot, true);
@@ -2273,7 +3115,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
     {
         if (IsLegStart(trip.pts, j) || !IsWalkPoint(trip.pts[j]) || trip.pts[j].point.GetMapId() != bot->GetMapId())
             break;
-        acc += trip.pts[j - 1].point.distance(trip.pts[j].point);
+        acc += WorldPosition(trip.pts[j - 1].point).distance(trip.pts[j].point);  // distance() is not const
         if (acc > kWalkLookAhead)
             break;
         target = j;
@@ -2286,7 +3128,41 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         trip.progressMs = now;
     }
     if (getMSTimeDiff(trip.progressMs, now) > kWalkStallMs)
-        return stall("walk-stall", tp);
+    {
+        // #964 (1000-bot run 2026-10-28, "stuck-teleport walk-stall" x28 / "abandon walk-stall" x10 in the hour): most
+        // stalls sit on AC-era graph paths that cross 3.3.5 geometry Cataclysm reshaped - the Talondeep Path tunnel
+        // (links 2328 <-> 2324 / 2249 / 3008: no navmesh between x 1540 and 1905; Violeni, Zancan, Denest stalled at
+        // point 471/854 (1590.5,-576.7,77.1), and the stuck teleport put them inside the mountain, where the next
+        // stall abandoned the trip). Before that teleport, look further along this walk for a route point the navmesh
+        // reaches from here (WalkReachable) and go on from the farthest one: the broken stretch is skipped on foot.
+        // Once per stalled route index; when none is reachable the stall recovery below runs as before.
+        if (trip.repathIdx != trip.idx)
+        {
+            trip.repathIdx = trip.idx;
+            size_t ahead = 0;
+            float pathLen = 0.0f;
+            if (ReachableAhead(trip, bot, ahead, pathLen))
+            {
+                TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s walk-repath point=%u->%u/%u map=%u (%.1f,%.1f,%.1f) -> (%.1f,%.1f,%.1f) d=%.0f t=%us",
+                             bot->GetName().c_str(), uint32(trip.idx), uint32(ahead), uint32(trip.pts.size()), bot->GetMapId(),
+                             bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
+                             trip.pts[ahead].point.GetPositionX(), trip.pts[ahead].point.GetPositionY(),
+                             trip.pts[ahead].point.GetPositionZ(), pathLen, getMSTimeDiff(trip.startMs, now) / IN_MILLISECONDS);
+                trip.idx = ahead;
+                trip.walkTarget = ahead;
+                trip.progressMs = now;
+                trip.bestDist = -1.0f;
+                WorldPosition const& ap = trip.pts[ahead].point;
+                return MoveTo(ap.GetMapId(), ap.GetPositionX(), ap.GetPositionY(), ap.GetPositionZ(), false, false, false, true) ? 1 : 0;
+            }
+        }
+        // #964: the stuck teleport goes to a route point on the navmesh (the first one at or after the stalled target),
+        // and the walk goes on from that point (walkTarget: the catch-up above moves the route index there).
+        size_t const tpIdx = NavmeshPointAhead(trip, bot, target);
+        if (trip.stuckTpIdx != trip.idx)
+            trip.walkTarget = tpIdx;
+        return stall("walk-stall", trip.pts[tpIdx].point);
+    }
 
     if (IsWaitingForLastMove(MovementPriority::MOVEMENT_NORMAL))
         return 0;

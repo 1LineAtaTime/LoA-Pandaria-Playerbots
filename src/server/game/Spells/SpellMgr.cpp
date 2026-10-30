@@ -2594,6 +2594,25 @@ struct SpellEffectArray
     SpellEffectEntry const* effects[MAX_SPELL_EFFECTS];
 };
 
+void SpellMgr::ShrinkSpellInfoEffects()
+{
+    // #924: see SpellEffectSlots (SpellInfo.h) - called once at the end of World::SetInitialWorldSettings
+    uint32 oldMSTime = getMSTime();
+    uint64 before = 0, after = 0;
+    for (auto&& spellInfoMap : mSpellInfoMap)
+        for (SpellInfo* spellInfo : spellInfoMap)
+        {
+            if (!spellInfo)
+                continue;
+            before += spellInfo->Effects.StoredSlots();
+            spellInfo->Effects.Shrink();
+            after += spellInfo->Effects.StoredSlots();
+        }
+    TC_LOG_INFO("server.loading", ">> Spell effects: %llu stored slots -> %llu (%llu KB saved) in %u ms",
+        (unsigned long long)before, (unsigned long long)after,
+        (unsigned long long)((before - after) * sizeof(SpellEffectInfo) / 1024), GetMSTimeDiffToNow(oldMSTime));
+}
+
 void SpellMgr::LoadSpellInfoStore()
 {
     uint32 oldMSTime = getMSTime();
@@ -3077,6 +3096,8 @@ void SpellMgr::LoadSpellInfoCorrections()
             if (spellInfo->ActiveIconID == 2158)  // flight
                 spellInfo->Attributes |= SPELL_ATTR0_PASSIVE;
 
+            // #970: RadiusEntry is TargetA's radius and MaxRadiusEntry TargetB's (SpellEffectInfo::CalcRadius(caster, targetIndex)).
+            // A correction for an area/cone/dest TargetB sets MaxRadiusEntry, like TC/CPP set TargetBRadiusEntry.
             switch (spellInfo->Id)
             {
                 case 42730: // Woe Strike
@@ -3456,19 +3477,19 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 71160: // Plague Stench (Stinky)
                 case 71161: // Plague Stench (Stinky)
                 case 71123: // Decimate (Stinky & Precious)
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);   // 100yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);   // 100yd
                     break;
                 case 72378: // Blood Nova (Deathbringer Saurfang)
                 case 73058: // Blood Nova (Deathbringer Saurfang)
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
                     break;
                 case 72769: // Scent of Blood (Deathbringer Saurfang)
                             //spellInfo->Effect[0] = 0;
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
                     break; // no break
                 case 72771: // Scent of Blood (Deathbringer Saurfang)
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
                     break;
                 case 72723: // Resistant Skin (Deathbringer Saurfang adds)
                             // this spell initially granted Shadow damage immunity, however it was removed but the data was left in client
@@ -3484,8 +3505,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(21);
                     break;
                 case 57055: // Mini (Amanitar)
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
                     spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);
                     break;
                     // This is here because cooldown on creature procs is not implemented
@@ -3523,7 +3544,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 71518: // Unholy Infusion Quest Credit (Professor Putricide)
                 case 72934: // Blood Infusion Quest Credit (Blood-Queen Lana'thel)
                 case 72289: // Frost Infusion Quest Credit (Sindragosa)
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_50000_YARDS);   // another missing radius
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_50000_YARDS);   // another missing radius
                     break;
                 case 71708: // Empowered Flare (Blood Prince Council)
                 case 72785: // Empowered Flare (Blood Prince Council)
@@ -3556,7 +3577,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 72706: // Achievement Check (Valithria Dreamwalker)
                 case 71357: // Order Whelp
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
                     break;
                 case 70598: // Sindragosa's Fury
                     spellInfo->Effects[0].TargetA = TARGET_DEST_DEST;
@@ -3581,12 +3602,12 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 73708: // Defile
                 case 73709: // Defile
                 case 73710: // Defile
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
                     break;
                 case 69030: // Val'kyr Target Search
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
                     break;
                 case 69198: // Raging Spirit Visual
                     spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);             // 50000yd
@@ -3657,14 +3678,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);   // 10yd
                     break;
                 case 74282: // Shadow Trap (searcher)
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_YARDS);   // 3yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_YARDS);   // 3yd
                     break;
                 case 72595: // Restore Soul
                 case 73650: // Restore Soul
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
                     break;
                 case 74086: // Destroy Soul
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
                     spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
                     spellInfo->AttributesEx |= SPELL_ATTR1_CANT_BE_REDIRECTED | SPELL_ATTR1_CANT_BE_REFLECTED;
                     spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
@@ -3672,7 +3693,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 74302: // Summon Spirit Bomb
                 case 74342: // Summon Spirit Bomb
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS);   // 200yd
                     spellInfo->MaxAffectedTargets = 1;
                     break;
                 case 74341: // Summon Spirit Bomb
@@ -3882,8 +3903,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].Effect = 0;
                     break;
                 case 75690: // Waterspout knock
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(7);
                     break;
                 case 75700: // Geyser Errupt
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -3897,7 +3918,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 75993: // Lightning Surge dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 80564: // Fungal Spores dmg
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -3905,7 +3926,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // Commander Ulthok
                 case 76085: // Dark Fissure dmg
                 case 91375:
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(29);
                     break;
                 case 76047:
                     spellInfo->Effects[0].TargetB = 0;
@@ -3966,8 +3987,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //
                 // Rom'ogg Bonecrusher
                 case 75272: // Quake
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(23);
                     break;
                 case 82189: // Chains of Woe
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
@@ -3981,9 +4002,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
                     break;
                 // Ascendant Lord Obsidius
-                case 76186: // Thinderclap
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
-                    break;
                 case 76164: // Shadow of Obsidius
                     spellInfo->Effects[0].BasePoints = 10000000;
                     break;
@@ -3993,9 +4011,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //
                 // Grand Vizier Ertan
                 case 86292: // Cyclone Shield dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
-                    spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                    spellInfo->Effects[2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(26);
                     break;
                 // Asaad
                 case 87551: // Supremacy of the Storm dmg
@@ -4022,7 +4040,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 88282: // Upwind of Altairus
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(9);
                     break;
                 // Trash
                 case 87854: // Arcane Barrage
@@ -4030,29 +4048,23 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->MaxAffectedTargets = 1;
                     break;
                 case 88073: // Starfall
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 87761: // Rally
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
-                    break;
-                case 87933: // Air Nova
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
-                    break;
-                case 85159: // Howling Gale dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 85084: // Howling Gale
                     spellInfo->Effects[0].TriggerSpell = 85159;
                     break;
                 case 87765: // Lightning Lash Dummy
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 87768: // Lightning Nova
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 88170: // Cloudburst
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 89522: // Catch Fall
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_CASTER;
@@ -4070,20 +4082,20 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 96872: // Focused Fire
                     spellInfo->MaxAffectedTargets = 1;
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 96883: // Focused Fire dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(17);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(17);
                     break;
                 case 96920: // Eye of Occu'thar
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 96931: // Eye of Occu'thar script
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[0].TargetB = 0;
                     break;
                 case 96968: // Occu'thar's Destruction
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 96946: // Eye of Occu'thar dmg
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
@@ -4091,13 +4103,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // Alizabal
                 case 105065: // Seething Hate Dummy
                     spellInfo->MaxAffectedTargets = 1;
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 105069: // Seething Hate dmg
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
                     break;
                 case 106248: // Blade Dance Dummy
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     spellInfo->MaxAffectedTargets = 1;
                     break;
                 case 104994: // Blade Dance dmg
@@ -4117,8 +4129,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //
                 // Corborus
                 case 82415: // Dumpening Wave
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 92122: // Crystal Shard dmg
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -4156,8 +4168,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //
                 // Trash
                 case 77262: // Raging Inferno dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 77273: // Lava Eruption
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -4171,7 +4183,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 // Earthrager Ptah
                 case 75540: // Flame Bolt dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 83650: // Raging Smash
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -4192,10 +4204,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 76956: // Alpha Beams dmg
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    break;
-                case 75609: // Crumbling Ruin
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 // Isiset
                 case 74374: // Arcane Barrage
@@ -4203,15 +4212,17 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 // Setesh
                 case 76146: // Shadow Bolt Volley
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 // Ammunae
                 case 75702: // Noxious Spore
+                    // #970: the area (TargetB) now reads its own 6 yd from the DBC; this TargetA value only reaches target-less
+                    // CalcRadius() readers (mod_playerbots CataHoo EffectRadius), which would otherwise get TargetA's 40 yd
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     spellInfo->Effects[EFFECT_1].Effect = 0;
                     break;
                 case 75790: // Rampant Growth
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 // Rajh
                 case 73872: // Sun Strike
@@ -4222,15 +4233,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].TargetA = 0;
                     break;
                 case 76355: // Blessing of the Sun aura
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    break;
-                case 74108: // Solar Winds dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
-                    break;
-                case 89133: // Solar Fire dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 // ENDOF HALLS OF ORIGINATION SPELLS
                 //
@@ -4266,7 +4270,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Targets = TARGET_FLAG_DEST_LOCATION;
                     break;
                 case 83454: // Shockwave N
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(15);
                     break;
                 case 81690: // Scent of Blood N
                     spellInfo->MaxAffectedTargets = 1;
@@ -4282,18 +4286,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 82430: // Repentance
                     spellInfo->Effects[EFFECT_0].MiscValue = 250;
-                    break;
-                case 91196: // Blaze of the Heavens
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
-                    break;
-                case 88814: // Hallowed Ground N
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
-                    break;
-                case 81942: // Heaven's Fury N
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
                     break;
                 case 82622: // Plague of Ages N
                     spellInfo->MaxAffectedTargets = 1;
@@ -4342,11 +4334,12 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 83790: // Cloud Burst
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
                     spellInfo->Effects[EFFECT_0].TargetB = TARGET_DEST_DEST_RANDOM;
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = spellInfo->Effects[EFFECT_0].RadiusEntry; // #970: keep the 7 yd scatter (DBC TargetB 40 yd was a unit search)
                     spellInfo->Targets = TARGET_FLAG_DEST_LOCATION;
                     break;
                 case 83051: // Cloud Burst
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(7);
                     break;
                 case 83566: // Wailing Winds
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
@@ -4377,28 +4370,28 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // SHADOWFANG KEEP SPELLS
                 // Baron Ashbury
                 case 93720: // Wracking Pain
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 93810: // Calamity dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 93423: // Asphyxiate
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 93468: // Stay of Execution
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 93706: // Stay of Execution t
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 // Baron Silverlaine
                 case 93956: // Cursed Veil
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(18);
                     spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
                     break;
                 // Commander Springvale
@@ -4408,18 +4401,15 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // Lord Valden
                 // #668: the 15 yd widening of Conjure Poisonous Mixture (93697) is dropped - Wowpedia "Lord Walden (tactics)"
                 // (read 2026-10-14) gives 4 yd, the DBC radius; the override hit the whole group every 8-14 s (w35 wipe at 51%).
-                case 93505: // Conjure Frost Mixture
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
-                    break;
                 case 93617: // Toxic Coagulant dmg
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     break;
                 case 93689: // Toxic Catalyst dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     break;
                 case 93527: // Ice Shards
                     spellInfo->AttributesEx &= ~SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR;
@@ -4431,22 +4421,22 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //
                 // Trash
                 case 76517: // Eruption Fire
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(15);
                     break;
                 case 76782: // Rock Smash dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 76786: // Fissure dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 76101: // Lightning Strike dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 76392: // Arcane Slash
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
                     break;
                 case 76370: // Warped Twilight
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 76620: // Azure Blast
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
@@ -4460,11 +4450,11 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 76327: // Blaze
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 76693: // Empowering Twilight dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 76627: // Mortal Strike
                     spellInfo->EquippedItemClass = -1;
@@ -4487,8 +4477,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 // General Umbriss
                 case 74675: // Blitz dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     break;
                 case 74837: // Modgud Malady
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
@@ -4501,7 +4491,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 // Forgemaster Throngus
                 case 74976: // Disorenting Roar
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 90754: // Lava Patch dmg
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -4510,19 +4500,19 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 74984: // Mighty Stomp
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 // Drahga Shadowburner
                 case 75238: // Supernova
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
-                    spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     break;
                 case 75245: // Burning Shadowbolt
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 75317: // Seeping Twilight dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     break;
                 // ENDOF GRIM BATOL SPELLS
                 //
@@ -4567,13 +4557,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //
                 // Trash
                 case 79604: // Thunderclap
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 80035: // Vengeful Rage
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     break;
                 case 79589: // Constricting Chains
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(27);
@@ -4582,13 +4572,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 80336: // Frost Burn
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
                     spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(9);
                     break;
                 case 80878: // Bestowal of Angerforge
                 case 80871: // Bestowal of Thaurissan
                 case 80875: // Bestowal of Ironstar
                 case 80872: // Bestowal of Burningeye
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     break;
                 case 80638: // Stormbolt
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -4607,7 +4597,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 92051: // Shadow Conductor
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 92023: // Encasing Shadows
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
@@ -4617,7 +4607,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Speed = 6;
                     break;
                 case 92154: // Blazing Inferno dmg
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 92173: // Shadow Breath
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -4650,13 +4640,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
                     break;
                 case 91858: // Overcharged Power Generator aoe
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8); // #970: 5 yd like EFFECT_1 and Power Generator 79629 (DBC TargetB 100 yd)
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 91879: // Arcane Blowback
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 79912: // Static Shock dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 79035: // Inseneration Security Missure
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
@@ -4672,16 +4663,16 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 80092: // Poison Bomb
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 80164: // Chemical Cloud aoe a
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(18);
                     break;
                 case 80161: // Chemocal Cloud aoe b
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(18);
                     break;
                 case 80097: // Poison Pubble aoe
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 // Maloriak
                 case 89798: // Master Adventurer Award
@@ -4798,20 +4789,20 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 92553: // Sonar Bomb dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 77966: // Searing Flame Missile
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(23);
                     break;
                 case 78353: // Roaring Flame dmg
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 78023: // Roaring Flame aura dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 78875: // Devastation
                     spellInfo->TargetAuraSpell = 0;
@@ -5170,7 +5161,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 // Theralion & Valiona
                 case 86380: // Dazzling Destruction Summon Missile
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 86369: // Twilight Blast
                     spellInfo->Speed = 15;
@@ -5191,7 +5182,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Speed = 15;
                     break;
                 case 86014: // Twilight Meteorite dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     break;
                 case 88518: // Twilight Meteorite Mark
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
@@ -5199,7 +5190,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 86199: // Twilight Flame dmg1
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     spellInfo->Effects[1].Effect = 0;
-                    spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->Effects[2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     break;
                 case 86228: // Twilight Flame dmg2
                     spellInfo->TargetAuraSpell = 0;
@@ -5221,14 +5212,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 93019: // Rift Blast
                     spellInfo->MaxAffectedTargets = 1;
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 93055: // Shifting Reality
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
                     break;
                 // Cho'gall
                 case 91303: // Conversion
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 81571: // Unleashed Shadows dmg
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
@@ -5244,7 +5235,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 82919: // Sprayed Corruption
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(9);
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
                     break;
                 case 82299: // Fester Blood
@@ -5272,7 +5263,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 82151: // Shadow Bolt
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 91317: // Worshipping
                     spellInfo->Effects[2].Effect = 0;
@@ -5288,10 +5279,10 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 95855: // Call of Flames
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 89435: // Wrack aoe
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
                 case 89421: // Wrack dmg
@@ -5309,14 +5300,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
                 case 87231: // Fiery Barrier aura
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(10);
                     break;
                 case 88146: // Twilight Essence dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(22);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(22);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(22);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(22);
                     break;
                 case 92852: // Twilight Slicer dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 95564: // Twilight Infusion missile
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
@@ -5324,16 +5315,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 89299: // Twilight Spit dmg
                     spellInfo->AttributesEx3  |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
-                case 92958: // Twilight Pulse dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    break;
                 // Council of Ascendents
                 case 82746: // Glaciate
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 92548: // Glaciate 2
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 82699: // Water Bomb
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
@@ -5342,7 +5330,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
                     break;
                 case 77347: // Water Bomb Summon
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     break;
                 case 82666: // Frost Imbued
@@ -5358,13 +5346,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 83067: // Thundershock
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 83099: // Lightning Rod
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 83300: // Chain Lightning dummy
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 83282: // Chain Lightning
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
@@ -5378,28 +5366,25 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].Effect = 0;
                     break;
                 case 83565: // Quake
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 84915: // Liquid Ice dmg
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(8);
                     break;
                 case 84948: // Gravity Crush
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
-                    spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 case 84913: // Lava Seed
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(28);
                     break;
                 // ENDOF BASTION OF TWILIGHT SPELLS
                 //
                 // ZUL'GURUB SPELLS
                 //
                 // Venoxis
-                case 96489: // Toxic Explosion
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
-                    break;
                 case 96560: // Word of Hethiss
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
@@ -5444,9 +5429,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 96909: // Wail of Sorrow
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
-                    break;
-                case 96422: // Tears of Blood dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
                     break;
                 case 97355: // Gaping Wound jump
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ENEMY;
@@ -5513,9 +5495,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
                     spellInfo->MaxAffectedTargets = 3;
                     break;
-                case 42630: // Fire Bomb dmg
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
-                    break;
                 case 43140: // Flame Breath
                     spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
                     spellInfo->ChannelInterruptFlags[0] &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
@@ -5529,7 +5508,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
                 case 43095: // Creeping Paralysis
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(12);
                     break;
                 case 43121: // Feather Storm
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
@@ -5579,6 +5558,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 102151: // Moonlance summon 1
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_5_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_5_YARDS); // #970: TargetB DEST_CASTER_FRONT
                     break;
                 // Echo of Sylvanas
                 case 101397: // Death Grip aoe
@@ -5623,7 +5603,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 101815: // Pulverize gobject
                     spellInfo->AttributesEx4 |= SPELL_ATTR4_TRIGGERED;
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
                     spellInfo->MaxAffectedTargets = 1;
                     break;
                 // Echo of Jaina
@@ -5700,7 +5680,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 // Mannoroth
                 case 104648: // Nether Portal
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_YARDS);
                     break;
                 case 104678: // Debilitating Flay
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
@@ -5767,9 +5747,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 103821: // Earthen Vortex
                     spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_APPLY_AURA;
                     spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_STUN;
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_60_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_60_YARDS);
                     spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_60_YARDS);
-                    spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_60_YARDS);
+                    spellInfo->Effects[EFFECT_2].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_60_YARDS);
                     break;
                 case 103178: // Earths Vengeance dmg
                     spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(618);
@@ -5947,7 +5927,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_CAN_STACK_FROM_DIFF_CASTERS;
                     break;
                 case 105241: // Absorb Blood
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(26); // 4 yards
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(26); // 4 yards
                     break;
                 case 105845: // Nuclear Blast
                     spellInfo->InterruptFlags = 0;
@@ -6154,7 +6134,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].Effect = 0;
                     break;
                 case 120027: // Burn
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS); // #970: the TargetB cone
                     break;
                 case 114874: // Potion of Brutish Force
                     spellInfo->Attributes &= ~SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
@@ -6184,14 +6164,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // GATE OF THE SETTING SUN
                 //
                 case 118787: // Resin Burst
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
                 case 111671: // Battering Headbutt
                     spellInfo->Effects[EFFECT_1].Effect = 0;
                     spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_CASTER;
                     break;
                 case 124656: // Great wall corner B
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
                     break;
                 case 107078: // Viscous Fluid
                     spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
@@ -6329,7 +6309,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 }
                 case 106267: // Hydrolance Pulse
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(16);
                     break;
                 case 106113: // Touch of Nothingness
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
@@ -6378,14 +6358,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 106105: // Hydrolance Pulse
                 case 106104: // Hydrolance Pulse
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(16);
                     break;
                 // ENDOF TEMPLE OF THE JADE SERPENT
                 //
                 // SCENARIOS:
                 //
                 case 131641: // Rain of Sha
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
                     break;
                 case 125510: // Speed of Jinja
                     spellInfo->Effects[EFFECT_0].Effect = 0;
@@ -6403,6 +6383,12 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 133557: // Bombard damage
                     spellInfo->Attributes |= SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
+                    spellInfo->Effects[EFFECT_0].RadiusEntry = spellInfo->Effects[EFFECT_0].MaxRadiusEntry; // #970: see 132715
+                    break;
+                case 132715: // Spike Bomb
+                    // #970: TargetA is an area with no radius of its own (0) and TargetB the same area with one. TC master selects
+                    // both targets; this core (like CPP) skips TargetB once TargetA selected the effect, so TargetA gets TargetB's radius.
+                    spellInfo->Effects[EFFECT_0].RadiusEntry = spellInfo->Effects[EFFECT_0].MaxRadiusEntry;
                     break;
                 case 122142: // Earth Shattering
                     spellInfo->Effects[EFFECT_1].Effect = 0;
@@ -6569,7 +6555,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
                     break;
                 case 117558:
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13); // 10 yards
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(13); // 10 yards
                     break;
                 case 117829: // Cowardice (DoT)
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
@@ -6617,7 +6603,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 116561: // Energized Tiles
                     spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_1_YARD);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_1_YARD);
                     break;
                 case 116510: // Explosion
                     spellInfo->Effects[EFFECT_1].TargetB = TARGET_UNIT_SRC_AREA_ALLY;
@@ -6652,27 +6638,28 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // HEART OF FEAR
                 //
                 case 122336: // Sonic Ring
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
-                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
                     break;
                 case 124673: // Sonic Pulse
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
                     break;
                 case 123100: // Pheromones Switch
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_5_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_5_YARDS);
                     break;
                 case 122761: // exhale
                     spellInfo->MaxAffectedTargets = 1;
                     break;
                 case 121898: // Whirling blade
-                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_8_YARDS);
+                    spellInfo->Effects[0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_8_YARDS);
                     break;
                 case 123735: // Dread Scretch
                 case 125464: // Sha Energy
                     spellInfo->MaxAffectedTargets = 2;
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_SRC_AREA_ENEMY;
+                    spellInfo->Effects[EFFECT_0].RadiusEntry = spellInfo->Effects[EFFECT_0].MaxRadiusEntry; // #970: the area moved to TargetA, so does its radius
                     break;
                 case 123471: // intensify
                 case 123470:
@@ -6706,13 +6693,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 123596: // Dissonance Field
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_4_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_4_YARDS);
                     break;
                 case 124845: // Calamity
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
                     break;
                 case 124258: // Storm Unleashed Ride
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_5_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_5_YARDS);
                     break;
                 case 123430: // Ride vehicle legs
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
@@ -6934,7 +6921,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 137261: // Lightning Storm(damage)
                     spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_SRC_CASTER);
                     spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_500_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_500_YARDS);
                     break;
                 case 137162: // Static Burst
                     spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(5); // 40 yds
@@ -6959,7 +6946,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
                     break;
                 case 137390: // Shadowed Loa Spirit
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
                     break;
                 case 140636: // Conjure Elementals [missed implict]
                     spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
@@ -7089,6 +7076,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 136413: // Force Will
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CONE_ENEMY_110;
                     spellInfo->Effects[EFFECT_0].TargetB = 0;
+                    spellInfo->Effects[EFFECT_0].RadiusEntry = spellInfo->Effects[EFFECT_0].MaxRadiusEntry; // #970: the cone moved to TargetA, so does its radius
                     break;
                 case 112844: // Cocoon
                     spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(8);
@@ -7527,7 +7515,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 147126: // Clump Check (unk 127)
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
                     spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
-                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_50000_YARDS);
+                    spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS); // #970: was 50000 yd, never read while RadiusEntry won
                     spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
                     spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
                     break;
@@ -7832,9 +7820,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 110790: // Cloak of Shadows
                     spellInfo->AttributesEx |= SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
                     break;
-                case 119607: // Renewing Mist TODO: RadiusEntry > MaxRadiusEntry may be fix this in another way?
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = spellInfo->Effects[EFFECT_1].MaxRadiusEntry;
-                    break;
                 case 80240:  // Havoc
                     spellInfo->Effects[EFFECT_1].SpellClassMask[1] |= 0x200;    // Needs for Curse of the Elements
                     break;
@@ -8036,11 +8021,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 57415: // The Reckoning
                 case 57544: // Ashbringer
                     spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS; // These should target GameObjects at destination, when cast from various angles dest might end up being inside their model and the cast will fail
-                    break;
-                case 147500: // Stomp
-                case 147512: // Stomp
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
-                    spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
                     break;
                 case 148429: // Fire-Watcher's Oath
                     spellInfo->ProcChance = 100; // 5.4.8 hotfix

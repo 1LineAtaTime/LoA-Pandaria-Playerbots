@@ -398,6 +398,52 @@ bool SpellEffectInfo::IsEffect() const
     return Effect != 0;
 }
 
+bool SpellEffectInfo::HasNoData() const
+{
+    return !Effect && !ApplyAuraName && !ApplyAuraTickCount && !DieSides && RealPointsPerLevel == 0.0f && !BasePoints
+        && PointsPerComboPoint == 0.0f && ValueMultiplier == 0.0f && DamageMultiplier == 0.0f && BonusMultiplier == 0.0f
+        && !MiscValue && !MiscValueB && !Mechanic && !TargetA.GetTarget() && !TargetB.GetTarget() && !RadiusEntry
+        && !MaxRadiusEntry && !ChainTarget && !ItemType && !TriggerSpell && SpellClassMask == flag128(0)
+        && !ImplicitTargetConditions && ScalingMultiplier == 0.0f && DeltaScalingMultiplier == 0.0f
+        && ComboScalingMultiplier == 0.0f;
+}
+
+void SpellEffectSlots::Init(SpellInfo const* owner)
+{
+    _owner = owner;
+    _tail = SpellEffectInfo(owner, MAX_SPELL_EFFECTS - 1, nullptr);
+}
+
+void SpellEffectSlots::Grow(size_t count)
+{
+    std::unique_ptr<SpellEffectInfo[]> data(new SpellEffectInfo[count]);
+    for (size_t i = 0; i < count; ++i)
+        data[i] = i < _count ? _data[i] : SpellEffectInfo(_owner, uint8(i), nullptr);
+    _data = std::move(data);
+    _count = uint8(count);
+}
+
+void SpellEffectSlots::Shrink()
+{
+    size_t keep = MIN_SLOTS;
+    for (size_t i = _count; i > MIN_SLOTS; --i)
+    {
+        if (!_data[i - 1].HasNoData())
+        {
+            keep = i;
+            break;
+        }
+    }
+    if (keep >= _count)
+        return;
+
+    std::unique_ptr<SpellEffectInfo[]> data(new SpellEffectInfo[keep]);
+    for (size_t i = 0; i < keep; ++i)
+        data[i] = _data[i];
+    _data = std::move(data);
+    _count = uint8(keep);
+}
+
 bool SpellEffectInfo::IsEffect(SpellEffects effectName) const
 {
     return Effect == uint32(effectName);
@@ -691,26 +737,40 @@ float SpellEffectInfo::CalcDamageMultiplier(Unit* caster, Spell* spell) const
     return multiplier;
 }
 
-bool SpellEffectInfo::HasRadius() const
+// #970: port of TC master SpellInfo.cpp SpellEffectInfo::HasRadius (CPP SpellInfo.cpp:641-652).
+bool SpellEffectInfo::HasRadius(SpellTargetIndex targetIndex) const
 {
-    return RadiusEntry != NULL;
+    switch (targetIndex)
+    {
+        case SpellTargetIndex::TargetA:
+            return RadiusEntry != NULL;
+        case SpellTargetIndex::TargetB:
+            return MaxRadiusEntry != NULL;
+        default:
+            return false;
+    }
 }
 
 bool SpellEffectInfo::HasMaxRadius() const
 {
-    return MaxRadiusEntry != NULL;
+    return HasRadius(SpellTargetIndex::TargetB);
 }
 
-float SpellEffectInfo::CalcRadius(Unit* caster, Spell* spell) const
+// #970: port of TC master / CPP SpellEffectInfo::CalcRadius(caster, targetIndex, spell) (CPP SpellInfo.cpp:654-690): TargetA reads
+// TargetA's radius (none -> 0), TargetB reads TargetB's and falls back to TargetA's when it has none. The radius value itself is
+// unchanged (SpellRadius.dbc "nffxf": base + per level * level, capped at RadiusMax, then SPELLMOD_RADIUS); CPP's random distance
+// for *_RANDOM dests stays in Spell.cpp here.
+float SpellEffectInfo::CalcRadius(Unit* caster, SpellTargetIndex targetIndex, Spell* spell) const
 {
+    // TargetA -> RadiusEntry
+    // TargetB -> MaxRadiusEntry
+    // Aura effects have RadiusEntry == MaxRadiusEntry (mostly)
     SpellRadiusEntry const* entry = RadiusEntry;
-    if (!HasRadius())
-    {
-        // TODO: Check this
-        if (!HasMaxRadius())
-            return 0.0f;
+    if (targetIndex == SpellTargetIndex::TargetB && HasRadius(targetIndex))
         entry = MaxRadiusEntry;
-    }
+
+    if (!entry)
+        return 0.0f;
 
     float radius = entry->RadiusMin;
     if (caster)
@@ -722,6 +782,17 @@ float SpellEffectInfo::CalcRadius(Unit* caster, Spell* spell) const
     }
 
     return radius;
+}
+
+float SpellEffectInfo::CalcRadius(Unit* caster, Spell* spell) const
+{
+    // #970: TC master / CPP have no target-less form; their default is TargetA, which is 0 when only EffectRadiusMaxIndex is
+    // filled. 5.4.8 data leaves EffectRadiusIndex empty on 12k+ effects whose area belongs to TargetB, among them persistent and
+    // area auras (Consecration 81298, Healing Well 88201, Starfall 88073), so callers without a target keep the TargetB fallback.
+    if (!HasRadius(SpellTargetIndex::TargetA) && HasRadius(SpellTargetIndex::TargetB))
+        return CalcRadius(caster, SpellTargetIndex::TargetB, spell);
+
+    return CalcRadius(caster, SpellTargetIndex::TargetA, spell);
 }
 
 uint32 SpellEffectInfo::GetProvidedTargetMask() const
@@ -1040,6 +1111,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty, uint32 tar
     ResearchProject = spellEntry->ResearchProject;
 
     // SpellEffectEntry
+    Effects.Init(this);
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         Effects[i] = SpellEffectInfo(this, i, GetSpellEffectEntry(Id, i, difficulty));
 

@@ -189,8 +189,17 @@ static uint8 GetOtherRune(uint8 index)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
+#include "HeapProfConfig.h"
+#if LOA_HEAPPROF
+#include <atomic>
+std::atomic<int64_t> g_heapprofLivePlayers{0}; // #924 profiling branch: live count for HeapProfiler dumps
+#endif
+
 Player::Player(WorldSession* session) : Unit(true), phaseMgr(this), hasForcedMovement_(), m_sceneMgr(this), m_VignetteMgr(this)
 {
+#if LOA_HEAPPROF
+    ++g_heapprofLivePlayers; // #924 profiling branch
+#endif
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
@@ -422,6 +431,9 @@ Player::Player(WorldSession* session) : Unit(true), phaseMgr(this), hasForcedMov
 
 Player::~Player()
 {
+#if LOA_HEAPPROF
+    --g_heapprofLivePlayers; // #924 profiling branch
+#endif
     // it must be unloaded already in PlayerLogout and accessed only for loggined player
     //m_social = nullptr;
 
@@ -1905,6 +1917,13 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         GetMotionMaster()->MovementExpired();
         CleanupAfterTaxiFlight();
     }
+    // #960: a route left behind by a flight that already ended without CleanupAfterTaxiFlight (this core's
+    // FlightPathMovementGenerator::DoFinalize keeps m_taxi for the next leg, unlike AC's DoFinalize which clears it,
+    // AC WaypointMovementGenerator.cpp:670; MotionMaster::Clear before a bot's random teleport, Unit::RemoveFromWorld
+    // at a far teleport) would otherwise ride along to the new place and be saved there. AC never has a route without
+    // a flight, so it is dropped here too.
+    else if (!(options & TELE_TO_NOT_LEAVE_TAXI) && !m_taxi.empty())
+        m_taxi.ClearTaxiDestinations();
 
     if (m_vehicle)
         ExitVehicle();
@@ -9850,9 +9869,6 @@ void Player::SendLoot(ObjectGuid guid, LootType lootType, bool isAoE)
         }
     }
 
-    if (!isAoE)
-        SetLootGUID(guid);
-
     // LOOT_INSIGNIA and LOOT_FISHINGHOLE unsupported by client
     switch (lootType)
     {
@@ -9869,8 +9885,13 @@ void Player::SendLoot(ObjectGuid guid, LootType lootType, bool isAoE)
     SendDirectMessage(&data);
 
     // add 'this' player as one of the players that are looting 'loot'
+    // #958 (AC parity, AC Player.cpp:8375-8377): the loot guid is set only with a loot permission. Set unconditionally,
+    // a corpse the player may not loot left a stale loot guid with no loot view, and the next SendLoot released it
+    // ("RemoveLootedObject ... not found in view of player").
     if (permission != NONE_PERMISSION)
     {
+        if (!isAoE)
+            SetLootGUID(guid);
         loot->AddLooter(GetGUID());
         m_lootView.emplace(loot->GetGUID(), guid);
     }
@@ -16150,8 +16171,14 @@ bool Player::CanCompleteQuest(uint32 questId)
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT) && !questStatus.Explored)
                 return false;
 
+            // #1016: an objective flagged optional (QuestObjective.db2 flag 0x4, e.g. 8488 '[Optional] Speak with Apprentice
+            // Mirveda') never blocks completion - TrinityCore QUEST_OBJECTIVE_FLAG_OPTIONAL; kept local so QuestDef.h is untouched
+            constexpr uint32 QUEST_OBJECTIVE_FLAG_OPTIONAL_LOCAL = 0x4;
             for (const auto& questObjective : qInfo->Objectives)
             {
+                if (questObjective.Flags & QUEST_OBJECTIVE_FLAG_OPTIONAL_LOCAL)
+                    continue;
+
                 if (!IsQuestObjectiveComplete(qInfo, questObjective))
                     return false;
             }
@@ -16374,21 +16401,17 @@ void Player::AddQuestAndCheckCompletion(Quest const* quest, Object* questGiver)
     if (!questGiver)
         return;
 
+    // #998: the script-class hooks (sScriptMgr->OnQuestAccept) already ran in AddQuest above ("script managment for every
+    // quest"); calling them here too ran every old-style accept script twice (escorts started twice). Only the AI hooks here.
     switch (questGiver->GetTypeId())
     {
         case TYPEID_UNIT:
-            sScriptMgr->OnQuestAccept(this, (questGiver->ToCreature()), quest);
             questGiver->ToCreature()->AI()->OnQuestAccept(this, quest);
             break;
         case TYPEID_ITEM:
         case TYPEID_CONTAINER:
-        {
-            Item* item = (Item*)questGiver;
-            sScriptMgr->OnQuestAccept(this, item, quest);
             break;
-        }
         case TYPEID_GAMEOBJECT:
-            sScriptMgr->OnQuestAccept(this, questGiver->ToGameObject(), quest);
             questGiver->ToGameObject()->AI()->OnQuestAccept(this, quest);
             break;
         default:
@@ -17017,8 +17040,10 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
     if (qInfo->GetPrevQuestId() > 0 && IsQuestRewarded(prevId))
         return true;
 
-    // If negative previous quest active, return true
-    if (qInfo->GetPrevQuestId() < 0 && GetQuestStatus(prevId) == QUEST_STATUS_INCOMPLETE)
+    // If negative previous quest taken (in the log, complete or rewarded), return true. #982: AC meaning
+    // (AC PlayerQuest.cpp:1086 `!= QUEST_STATUS_NONE`). cba8d60e narrowed it to INCOMPLETE only, but our data's 165
+    // negative PrevQuestIDs were written for "taken", so a quest whose breadcrumb was already handed in became untakeable.
+    if (qInfo->GetPrevQuestId() < 0 && GetQuestStatus(prevId) != QUEST_STATUS_NONE)
         return true;
 
     // Has only positive prev. quests in non-rewarded state
@@ -20439,10 +20464,42 @@ void Player::_LoadSpells(PreparedQueryResult result)
 {
     //QueryResult* result = CharacterDatabase.PQuery("SELECT spell, active, disabled FROM character_spell WHERE guid = '%u'", GetGUID().GetCounter());
 
+    // #922: AddSpell refuses a recipe of a primary profession the character does not know (the AcquireMethod 0 gate in
+    // Player::AddSpell), so the recipe never enters m_spells and its character_spell row stays behind. When the
+    // profession is learned again (bots: BotFactory InitTradeSkills + the trainer spells at every login/refresh) the
+    // recipe comes back as PLAYERSPELL_NEW, _SaveSpells INSERTs it, MySQL 1062 rolls back the whole save - the skill
+    // row with it - and the same happens at every login. AC deletes such an orphan row at load
+    // (AC PlayerStorage.cpp:6670-6682, Player::_LoadSpells, "orphan character_spell row (MySQL 1062 on later re-learn)").
+    auto isRecipeOfUnknownProfession = [this](uint32 spellId) -> bool
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo || spellInfo->IsAccountWide() || spellInfo->HasEffect(SPELL_EFFECT_SKILL))
+            return false;
+
+        SkillLineAbilityMapBounds const bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellId);
+        for (auto itr = bounds.first; itr != bounds.second; ++itr)
+            if (!itr->second->AcquireMethod && IsPrimaryProfessionSkill(itr->second->SkillLine) && !HasSkill(itr->second->SkillLine))
+                return true;
+        return false;
+    };
+
     if (result)
     {
         do
-            AddSpell((*result)[0].GetUInt32(), (*result)[1].GetBool(), false, false, (*result)[2].GetBool(), true);
+        {
+            uint32 const spellId = (*result)[0].GetUInt32();
+            AddSpell(spellId, (*result)[1].GetBool(), false, false, (*result)[2].GetBool(), true);
+
+            if (m_spells.find(spellId) == m_spells.end() && isRecipeOfUnknownProfession(spellId))
+            {
+                TC_LOG_DEBUG("entities.player.loading", "Player::_LoadSpells: %s (guid %u) has recipe %u of a profession it does not know - deleting the orphan character_spell row",
+                    GetName().c_str(), GetGUID().GetCounter(), spellId);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SPELL_BY_SPELL);
+                stmt->setUInt32(0, spellId);
+                stmt->setUInt32(1, GetGUID().GetCounter());
+                CharacterDatabase.Execute(stmt);
+            }
+        }
         while (result->NextRow());
     }
 }
@@ -21212,11 +21269,18 @@ void Player::SaveToDB(bool create /*=false*/)
         stmt->setUInt16(index++, GetZoneId());
         stmt->setUInt32(index++, uint32(m_deathExpireTime));
 
+        // #960: save a route only while it is being flown. A route still in m_taxi after its flight ended (the flight
+        // generator was finalized by MotionMaster::Clear or a far teleport's Unit::RemoveFromWorld, or a cross-map hop
+        // that never resumed) can never resume from here: at the next login ContinueTaxiFlight replayed it from a node
+        // on another map or past the end (74 '... dropped' lines per boot at 1000 bots) or flew the bot from wherever it
+        // stood. AC saves its route only in flight too (AC DoFinalize clears m_taxi, WaypointMovementGenerator.cpp:670).
+        bool const saveTaxiRoute = IsInFlight() && !m_taxi.empty();
         ss.str("");
-        ss << m_taxi.SaveTaxiDestinationsToString();
+        if (saveTaxiRoute)
+            ss << m_taxi.SaveTaxiDestinationsToString();
 
         stmt->setString(index++, ss.str());
-        stmt->setUInt16(index++, uint16(m_taxi.GetLastNodeIndex()));
+        stmt->setUInt16(index++, saveTaxiRoute ? uint16(m_taxi.GetLastNodeIndex()) : uint16(0));
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS));
         stmt->setUInt16(index++, GetUInt16Value(PLAYER_FIELD_YESTERDAY_HONORABLE_KILLS, 0));
         stmt->setUInt16(index++, GetUInt16Value(PLAYER_FIELD_YESTERDAY_HONORABLE_KILLS, 1));
@@ -23680,9 +23744,20 @@ void Player::ContinueTaxiFlight()
     TaxiPathNodeList const& nodeList = sTaxiPathNodesByPath[path];
 
     uint32 startNode = m_taxi.GetLastNodeIndex() + 1;
-    if (startNode >= nodeList.size())
+    // #953 (AC Player::ContinueTaxiFlight skips nodes at another map, AC Player.cpp:10655-10657): a saved flight whose
+    // next node is on another map (a cross-map route interrupted at the hop) was replayed on the player's own map, so
+    // it flew the other map's leg here and landed off the world (zone 0; 85 random bots after 9 h at 1000 bots). A
+    // route that cannot continue from this map is dropped, and so is one already past its last node.
+    // #960: AC drops such a route silently (AC Player.cpp:10676-10681, "no proper node was found" ->
+    // ClearTaxiDestinations). Since SaveToDB stores a route only in flight, what still reaches this is rows saved before
+    // #960 and a flight saved while it waited at a map border for its cross-map hop (AC drops that one too).
+    if (startNode >= nodeList.size() || nodeList[startNode].MapId != GetMapId())
     {
-        TC_LOG_ERROR("shitlog","Player::ContinueTaxiFlight node %u, path : %u", startNode, path);
+        TC_LOG_DEBUG("entities.unit", "Player::ContinueTaxiFlight %s (guid %u) node %u, path : %u, map %u - dropped",
+            GetName().c_str(), GetGUID().GetCounter(), startNode, path, GetMapId());
+        if (IsInFlight())
+            GetMotionMaster()->MovementExpired();
+        CleanupAfterTaxiFlight();
         return;
     }
 

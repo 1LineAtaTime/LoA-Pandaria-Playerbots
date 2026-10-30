@@ -684,5 +684,7 @@ void AddSC_boss_archimonde()
     new npc_doomfire();
     new npc_doomfire_targetting();
     new npc_ancient_wisp();
-    new spell_protection_of_elune();
+    // #963: a bare `new` of an AuraScript registers nothing ("ScriptName 'spell_protection_of_elune' exists in database,
+    // but no core script found"); bind it through the loader like the other aura scripts in this tree.
+    new aura_script<spell_protection_of_elune>("spell_protection_of_elune");
 }

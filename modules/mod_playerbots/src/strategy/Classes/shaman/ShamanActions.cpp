@@ -87,8 +87,24 @@ bool CastShamanEnchantMainHandAction::Execute(Event /*event*/)
     return item && botAI->CastSpell(spell, bot, item);
 }
 
+// #966 (AC NonCombatActions.cpp:81-83 / :136-138 DrinkAction / EatAction::isPossible: "IsInCombat() || IsMounted()
+// ... return false" before any cast check): an imbue cannot be cast mounted (Spell::CheckCast SPELL_FAILED_NOT_MOUNTED
+// 67, core Spell.cpp:6534-6540) and PlayerbotAI::CastSpell silently refuses a flying / taxi bot (PlayerbotAI.cpp:3885).
+// The "main hand / off hand weapon no imbue" triggers stay active while the weapon has no imbue, so a bot that
+// waited mounted at a dock (Guine, mop1k-v4-1028, Kamagua boat 181688, ~7 min) built a Spell and ran CheckCast on
+// every tick: 2,174 "[CAST] Guine spell=8024 ... result=67" lines, then 261 silent Execute()s once the mount was gone
+// but the bot was still flagged flying. Say "not possible" before the cast check in those states, as AC's
+// out-of-combat drink / eat actions do; the imbue lands on the first tick the bot is on foot.
+static bool ShamanCannotImbueNow(Player* bot)
+{
+    return bot->IsMounted() || bot->IsFlying() || bot->IsInFlight();
+}
+
 bool CastShamanEnchantMainHandAction::isPossible()
 {
+    if (ShamanCannotImbueNow(bot))
+        return false;
+
     Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
     if (!item || item->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_MISCELLANEOUS ||
         item->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE ||
@@ -108,6 +124,9 @@ bool CastShamanEnchantOffHandAction::Execute(Event /*event*/)
 
 bool CastShamanEnchantOffHandAction::isPossible()
 {
+    if (ShamanCannotImbueNow(bot))  // #966, see CastShamanEnchantMainHandAction::isPossible
+        return false;
+
     Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
     if (!item || item->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_MISCELLANEOUS ||
         item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))

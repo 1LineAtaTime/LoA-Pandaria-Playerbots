@@ -35,6 +35,10 @@
 #include <unordered_map>
 #include <vector>
 
+// #968: defined in MovementActions.cpp - whether "reach melee"/"reach spell" (MovementAction::ReachCombatTo) can move
+// the bot towards the target at all (a usable navmesh path, or a straight flight). Forward-declared, no header change.
+bool CombatReachHasPath(Player* bot, Unit* target);
+
 // #134 AC parity (CheckMountStateAction::Dismount, AC :345-356): dismount the way the client does, via
 // CMSG_CANCEL_MOUNT_AURA, which removes the mount aura. Unit::Dismount() alone only clears the mount
 // display on this core; the aura stays, the next mount cast then only refreshes it (HandleAuraMounted
@@ -64,6 +68,15 @@ void ClearStaleFlightFlags(Player* bot)
 void CheckMountStateAction::CompleteDismount(Player* bot)
 {
     if (!bot || !bot->IsInWorld())
+        return;
+
+    // #957: a dismount while a taxi flight is still running (UNIT_STATE_IN_FLIGHT; the flight generator's own landing,
+    // FlightPathMovementGenerator::DoFinalize, clears it before it dismounts) has no fall to complete. AC's
+    // MotionMaster::MoveFall returns for a UNIT_FLAG_DISABLE_MOVE rider (AC MotionMaster.cpp:700-701); this core's has
+    // no such guard (MotionMaster.cpp MoveFall), so its EffectMovementGenerator replaced the same-priority flight
+    // generator (MotionMaster::DirectAdd) and the bot dropped out of the flight, and HandleFall below charged fall
+    // damage from flight height. Leave the flight to the generator.
+    if (bot->IsInFlight())
         return;
 
     float const x = bot->GetPositionX();
@@ -551,7 +564,8 @@ bool CheckMountStateAction::Execute(Event /*event*/)
     // CheckMountStateAction.cpp:131-139); logged below as tdist= so both cores can be bucketed by distance.
     float targetDist = -1.0f;
 
-    if (Unit* currentTarget = AI_VALUE(Unit*, "current target"))
+    Unit* const currentTarget = AI_VALUE(Unit*, "current target");
+    if (currentTarget)
     {
         float const dismountDistance = CalculateDismountDistance();
         float const mountDistance = CalculateMountDistance();
@@ -589,6 +603,24 @@ bool CheckMountStateAction::Execute(Event /*event*/)
                      "[MOUNT] %s dismount (combat=%d indoors=%d water=%d vehicle=%d tdist=%.1f travelDist=%.0f status=%s)",
                      bot->GetName().c_str(), bot->IsInCombat() ? 1 : 0, bot->IsOutdoors() ? 0 : 1,
                      bot->IsUnderWater() ? 1 : 0, botAI->IsInVehicle() ? 1 : 0, targetDist, travelDist,
+                     info.ToString().c_str());
+        DismountBot(bot);
+        return true;
+    }
+
+    // #968 (beyond AC; AC :163-186 has the same gap): in combat with a target between the dismount and the mount
+    // distance a mounted bot keeps its mount and lets "reach melee"/"reach spell" ride it in (AC's model, kept above).
+    // When that reach can never move it - the bot stands off the navmesh, PathGenerator answers NOPATH and the bot cannot
+    // fly straight in (MovementActions.cpp CombatReachHasPath) - it would sit mounted for good: Unit::Attack refuses a
+    // mounted player, every cast fails SPELL_FAILED_NOT_MOUNTED (result=67), and "combat stuck" needs IsInCombat. Soak
+    // mop1k-v4-1028: Florenia and Itthul kept their mount for the whole hour at tdist 18.4 / 36.0 (42,503 of 57,171
+    // result=67 checks). Such a bot dismounts and fights from where it stands. The path check runs only in this state.
+    if (!shouldDismount && inCombat && currentTarget && bot->IsMounted() && !CombatReachHasPath(bot, currentTarget))
+    {
+        if (ShouldLogMountDiagnostics(bot))
+        TC_LOG_DEBUG("playerbots",
+                     "[MOUNT] %s dismount (unreachable target, combat=%d tdist=%.1f travelDist=%.0f status=%s)",
+                     bot->GetName().c_str(), bot->IsInCombat() ? 1 : 0, targetDist, travelDist,
                      info.ToString().c_str());
         DismountBot(bot);
         return true;

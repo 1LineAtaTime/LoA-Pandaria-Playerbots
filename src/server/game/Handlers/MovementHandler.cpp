@@ -194,7 +194,11 @@ void WorldSession::HandleMoveWorldportAck()
     // teleport, zone change, .summon). MoP's old source-node gate skipped the whole block for
     // exactly that state, so the flight was never resumed and never cleaned up, and the
     // UNIT_STATE_IN_FLIGHT bit (playerbot [PROBE] flags=taxi) stayed set for the rest of the session.
-    if (GetPlayer()->IsInFlight())
+    // #960: or a route without the flight state. On this core Unit::RemoveFromWorld clears the motion master at every far
+    // teleport (Unit.cpp, no such call on AC), so a cross-map taxi hop (TELE_TO_NOT_LEAVE_TAXI) arrives NOT in flight and
+    // was never resumed (36 of 36 hops in a 1 h run at 1000 bots ended "[TELEPORT] pos-mismatch ... corrected").
+    // Player::TeleportTo now drops a leftover route on every other teleport, so a route here is a hop's.
+    if (GetPlayer()->IsInFlight() || GetPlayer()->m_taxi.GetTaxiSource())
     {
         if (!GetPlayer()->InBattleground())
         {

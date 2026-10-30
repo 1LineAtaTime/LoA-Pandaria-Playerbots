@@ -18,6 +18,8 @@
 #include"ScriptPCH.h"
 #include "MoveSplineInit.h"
 #include "Vehicle.h"
+#include "PassiveAI.h"
+#include "SpellMgr.h"
 #include "the_vortex_pinnacle.h"
 
 // �������������� � ������ ���� �� �����������
@@ -119,12 +121,12 @@ enum Spells
     // Skyfall Star
     SPELL_ARCANE_BARRAGE            = 87854,
 
-    // Howling Gale
-    SPELL_HOWLING_GALE              = 85084,
-    SPELL_HOWLING_GALE_1            = 85086,
-    SPELL_HOWLING_GALE_2            = 85136,
-    SPELL_HOWLING_GALE_3            = 85086,
-    SPELL_HOWLING_GALE_DMG          = 85159,
+    // Howling Gale (ids as in The Cataclysm Preservation Project vortex_pinnacle.cpp:57-61, checked against our Spell/SpellEffect.dbc)
+    SPELL_HOWLING_GALE                  = 85084, // periodic 0.5 s aura from creature_template_addon, procs on direct damage taken
+    SPELL_HOWLING_GALE_VISUAL_STRONG    = 85086,
+    SPELL_HOWLING_GALE_KNOCKBACK_STRONG = 85159, // knockback 10/20, enemies within 17 yd, 2.5 s aura state 22 on the target
+    SPELL_HOWLING_GALE_VISUAL_WEAK      = 85137,
+    SPELL_HOWLING_GALE_KNOCKBACK_WEAK   = 85085, // the same, within 5 yd
 
     // Fall Catcher
     SPELL_SLIPSTREAM_BUFF           = 87740,
@@ -164,8 +166,6 @@ enum Events
     EVENT_CYCLONE                   = 24,
     EVENT_WIND_SHOCK                = 25,
     EVENT_WV_LIGHTNING_BOLT         = 26,
-    EVENT_HOWLING_GALE              = 27,
-    EVENT_HOWLING_GALE_DEACTIVATE   = 28,
 };
 
 const Position teleportPos[2] = 
@@ -1025,92 +1025,25 @@ private:
     }
 };
 
+// 45572 - Howling Gale
+// Port of The Cataclysm Preservation Project npc_vp_howling_gale (src/server/scripts/Kalimdor/VortexPinnacle/vortex_pinnacle.cpp:129-137,
+// commit 164289b, read 2026-10-28). The gale does nothing by itself: its creature_template_addon aura Howling Gale 85084 drives the
+// knockbacks (spell_vp_howling_gale below). It never fights back; creature_template.flags_extra carries NO_COMBAT like CPP, and a
+// combat that starts anyway is dropped at once so neither the gale nor the players stay in combat.
+// The old AI here cast the visuals on a 2.5 s timer and removed the aura for good on the first hit until no player was within 30 yd.
 class npc_howling_gale : public CreatureScript
 {
     public:
         npc_howling_gale() : CreatureScript("npc_howling_gale") { }
 
-        struct npc_howling_galeAI : public ScriptedAI
+        struct npc_howling_galeAI : public NullCreatureAI
         {
-            npc_howling_galeAI(Creature* creature) : ScriptedAI(creature)
+            npc_howling_galeAI(Creature* creature) : NullCreatureAI(creature) { }
+
+            void JustEnteredCombat(Unit* /*who*/) override
             {
-                me->SetReactState(REACT_PASSIVE);
-                SetCombatMovement(false);
-            }
-
-            EventMap events;
-            bool bCombat, HasDeactivate;
-
-            void Reset() override
-            {
-                bCombat = false;
-                HasDeactivate = false;
-                events.Reset();
-                DoCast(me, SPELL_HOWLING_GALE);
-                events.ScheduleEvent(EVENT_HOWLING_GALE, 1000);
-            }
-
-            void JustReachedHome() override
-            {
-                bCombat = false;
-                HasDeactivate = false;
-            }
-
-            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
-            {
-                bCombat = false;
-                HasDeactivate = false;
-                _EnterEvadeMode();
-                Reset();
-            }
-
-            void DamageTaken(Unit* /*attacker*/, uint32& /*damage*/) override
-            {
-                if (!HasDeactivate)
-                {
-                    HasDeactivate = true;
-                    events.ScheduleEvent(EVENT_HOWLING_GALE_DEACTIVATE, urand(1500, 2000));
-                }
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (bCombat)
-                {
-                    if (!me->GetMap()->GetPlayers().isEmpty())
-                    {
-                        uint8 _attackersnum = 0;
-                        for (Map::PlayerList::const_iterator itr = me->GetMap()->GetPlayers().begin(); itr != me->GetMap()->GetPlayers().end(); ++itr)
-                            if (me->GetDistance2d(itr->GetSource()) < 30.0f)
-                                _attackersnum++;
-
-                        if (_attackersnum == 0)
-                        {
-                            EnterEvadeMode();
-                            return;
-                        }
-                    }
-                }
-
-                events.Update(diff);
-
-                while (uint32 eventId = events.ExecuteEvent())
-                {
-                    switch (eventId)
-                    {
-                        case EVENT_HOWLING_GALE:
-                            DoCast(me, SPELL_HOWLING_GALE_1, true);
-                            DoCast(me, SPELL_HOWLING_GALE_2, true);
-                            DoCast(me, SPELL_HOWLING_GALE_3, true);
-                            events.ScheduleEvent(EVENT_HOWLING_GALE, 2500);
-                            break;
-                        case EVENT_HOWLING_GALE_DEACTIVATE:
-                            bCombat = true;
-                            events.CancelEvent(EVENT_HOWLING_GALE);
-                            me->RemoveAurasDueToSpell(SPELL_HOWLING_GALE);
-                            break;
-                    }
-                }
+                me->GetThreatManager().ClearAllThreat();
+                me->CombatStop(false);
             }
         };
 
@@ -1560,34 +1493,107 @@ class spell_minister_of_air_lightning_lash : public SpellScriptLoader
         }
 };
 
-class spell_howling_gale_howling_gale : public SpellScriptLoader
+// 85084 - Howling Gale
+// Port of CPP spell_vp_howling_gale (vortex_pinnacle.cpp:642-693, commit 164289b; behaviour from Ovahlord's commits df60a4d
+// 2020-09-28 "When damaging a Howling Gale, the target will now stop casting any knockbacks for 10 seconds before slowly starting
+// to build up again" and 8fc4b59 2022-10-09). Every 0.5 s tick the gale knocks back enemies within 17 yd. Direct damage taken
+// (melee, ranged, spells; not periodic damage: DBC proc flags 0x222A8) procs the aura, at most once per 10 s (spell_proc_event
+// Cooldown 10000, CPP spell_proc): the gale is then quiet for 20 ticks (10 s) and weak for 10 ticks (5 s, 5 yd knockback) before it
+// is strong again. Damage that keeps coming keeps it quiet. The default action is prevented: SpellMgr.cpp sets the aura's trigger
+// spell to 85159, which would knock back every tick whatever happened.
+class spell_vp_howling_gale : public AuraScript
+{
+    PrepareAuraScript(spell_vp_howling_gale);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo(
+            {
+                SPELL_HOWLING_GALE_VISUAL_STRONG,
+                SPELL_HOWLING_GALE_KNOCKBACK_STRONG,
+                SPELL_HOWLING_GALE_VISUAL_WEAK,
+                SPELL_HOWLING_GALE_KNOCKBACK_WEAK
+            });
+    }
+
+    void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
+    {
+        PreventDefaultAction();
+        _inactiveTicks = 20;
+        _weakTicks = 10;
+    }
+
+    void HandlePeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+        Unit* caster = GetTarget();
+        if (!caster->IsAlive())
+            return;
+
+        if (_inactiveTicks > 0)
+        {
+            --_inactiveTicks;
+            return;
+        }
+
+        if (_weakTicks > 0)
+        {
+            --_weakTicks;
+            caster->CastSpell(caster, SPELL_HOWLING_GALE_VISUAL_WEAK, true);
+            caster->CastSpell(caster, SPELL_HOWLING_GALE_KNOCKBACK_WEAK, true);
+        }
+        else
+        {
+            caster->CastSpell(caster, SPELL_HOWLING_GALE_VISUAL_STRONG, true);
+            caster->CastSpell(caster, SPELL_HOWLING_GALE_KNOCKBACK_STRONG, true);
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectProc += AuraEffectProcFn(spell_vp_howling_gale::HandleProc, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_vp_howling_gale::HandlePeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+
+private:
+    uint8 _inactiveTicks = 0;
+    uint8 _weakTicks = 0;
+};
+
+// 85159, 85085 - Howling Gale (knockback)
+// Port of CPP spell_vp_howling_gale_knockback (vortex_pinnacle.cpp:695-713; commit 9eeb4cc 2020-03-29 "Howling Gale will now
+// correctly apply its aurastate to players upon hit to prevent multiple knockbacks in quick succession"). The 2.5 s dummy aura sets
+// aura state 22 on the target, and both spells exclude targets in that state (SpellAuraRestrictions TargetAuraStateNot 22). The
+// reach is the TargetB radius of SpellEffect.dbc (85085: 5 yd, 85159: 17 yd), read per target since #970 like CPP.
+class spell_vp_howling_gale_knockback : public SpellScriptLoader
 {
     public:
-        spell_howling_gale_howling_gale() : SpellScriptLoader("spell_howling_gale_howling_gale") { }
- 
-        class spell_howling_gale_howling_gale_AuraScript : public AuraScript
+        spell_vp_howling_gale_knockback() : SpellScriptLoader("spell_vp_howling_gale_knockback") { }
+
+        class spell_vp_howling_gale_knockback_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_howling_gale_howling_gale_AuraScript)
+            PrepareAuraScript(spell_vp_howling_gale_knockback_AuraScript);
 
-            void OnPeriodic(AuraEffect const* /*aurEff*/)
+            void AfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
-                if (!GetCaster())
-                    return;
-
-                //GetCaster()->CastSpell(GetCaster(), SPELL_HOWLING_GALE_1, true);
-                //GetCaster()->CastSpell(GetCaster(), SPELL_HOWLING_GALE_2, true);
-                //GetCaster()->CastSpell(GetCaster(), SPELL_HOWLING_GALE_3, true);
+                GetTarget()->ModifyAuraState(AURA_STATE_UNKNOWN22, true);
             }
- 
+
+            void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                GetTarget()->ModifyAuraState(AURA_STATE_UNKNOWN22, false);
+            }
+
             void Register() override
             {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_howling_gale_howling_gale_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+                OnEffectApply += AuraEffectApplyFn(spell_vp_howling_gale_knockback_AuraScript::AfterApply, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                AfterEffectRemove += AuraEffectRemoveFn(spell_vp_howling_gale_knockback_AuraScript::AfterRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
             }
         };
- 
+
         AuraScript* GetAuraScript() const override
         {
-            return new spell_howling_gale_howling_gale_AuraScript();
+            return new spell_vp_howling_gale_knockback_AuraScript();
         }
 };
 
@@ -1658,7 +1664,8 @@ void AddSC_the_vortex_pinnacle()
     new npc_golden_orb();
     new npc_fall_catcher_5();
     new spell_minister_of_air_lightning_lash();
-    //new spell_howling_gale_howling_gale();
+    new aura_script<spell_vp_howling_gale>("spell_vp_howling_gale");
+    new spell_vp_howling_gale_knockback();
     new aura_script<spell_vp_lurk>("spell_vp_lurk");
     new at_catch_fall_5();
 };

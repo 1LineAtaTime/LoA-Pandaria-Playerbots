@@ -10,11 +10,17 @@
 
 #include <algorithm>
 #include <cmath>
-#include <mutex>  // #843 quest hub search
+#include <list>
+#include <set>    // #945
+#include "GameObject.h"  // #945 mailbox errands
+#include <mutex>  // #843 quest hub search, #945 town errands
 #include <unordered_map>
+#include <unordered_set>  // #975 navmesh reach fill
 #include <vector>
 
 #include "BotScenario.h"
+#include "BudgetValues.h"  // #945: NeedMoneyFor
+#include "Config.h"  // #945: sConfigMgr
 #include "BroadcastHelper.h"
 #include "DBCEnums.h"
 #include "GossipDef.h"
@@ -27,6 +33,7 @@
 #include "NewRpgRoamTransport.h"  // #218 (beyond AC)
 #include "Map.h"
 #include "MapDefines.h"
+#include "MMapFactory.h"  // #975 quest hub navmesh reach
 #include "PathGenerator.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
@@ -39,6 +46,8 @@
 #include "RandomPlayerbotMgr.h"
 #include "StatsWeightCalculator.h"
 #include "Timer.h"
+#include "TravelMgr.h"   // #1004
+#include "TravelNode.h"  // #1004: sTravelNodeMap.FindTaxiPath
 #include "Unit.h"
 #include "World.h"
 #include "WorldSession.h"
@@ -61,6 +70,13 @@ namespace QuestHubSearch
 void ClearTrip(Player* bot);
 bool TakeTrip(Player* bot);
 }  // namespace QuestHubSearch
+
+// #945: MoveFarTo tells the town errand (defined further down) about a stuck teleport / an abandoned trip, for its end reason.
+namespace TownErrand
+{
+void NoteStuckTeleport(Player* bot);
+void NoteAbandon(Player* bot);
+}  // namespace TownErrand
 
 // MoP-only data compensation. On an INCOMPLETE path the core's smoothing
 // can append the raw, unreachable destination as the last point (PathGenerator::FindSmoothPath end-step 1 yd
@@ -205,6 +221,7 @@ bool NewRpgBaseAction::MoveFarTo(WorldPosition dest)
         {
             // No route (or the trip was abandoned): walking cannot reach another map, so drop the objective the way
             // AC drops a status it cannot serve (back to IDLE, a fresh roll on the next status update).
+            TownErrand::NoteAbandon(bot);  // #945
             info.ChangeToIdle();
             return true;
         }
@@ -278,6 +295,7 @@ bool NewRpgBaseAction::MoveFarTo(WorldPosition dest)
         // its RPG objective instead of oscillating indefinitely.
         info.stuckTs = getMSTime();
         info.stuckAttempts = 0;
+        TownErrand::NoteStuckTeleport(bot);  // #945
         // #814: the logged "to" stays the destination (the field counters key on it); the landing z is logged apart,
         // and fly=1 marks a bot that was flying (the field run splits the count by flying vs ground).
         WorldPosition const landing = StuckTeleportTarget(bot, info, dest);
@@ -978,6 +996,21 @@ bool NewRpgBaseAction::OrganizeQuestLog()
 
 bool NewRpgBaseAction::SearchQuestGiverAndAcceptOrReward()
 {
+    // #975 (BEYOND AC, the #890 rule for every caller): no quest-giver detour while the bot's roam trip holds it for a
+    // transport leg. #890 gated only GO_GRIND / GO_CAMP (NewRpgAction.cpp:513,533); DO_QUEST (NewRpgAction.cpp:927) and
+    // WANDER_RANDOM / WANDER_NPC (794,802) still ran it first. Run mop1k-v10-1028: Guine and Peragon (DO_QUEST 11725,
+    // POI (3522,5016)) waited for elevator 152614 on the Fizzcrank tower top; every tick the detour picked a giver
+    // below (Abner Fizzletorque 25780 at (4125.4,5281.3,25.2), 48 yd west, 13 yd down: Brougos took his 11713 the
+    // moment he reached the ground in v8) and MoveWorldObjectTo walked the bot to the island point nearest it, the west
+    // corner (4172.5,5279.7,40.6). That cancelled the four standby walks and, 6 s after the trip's stuck-teleport onto
+    // the standby point (4181.9,5281.3,39.6), had the bot back on the corner ("abandon dock-approach-stall", t=36 s /
+    // 31 s). Estanza (GO_CAMP to the Valiance Keep inn, gated) boarded from the same corner in the same run; every
+    // corner trip that never boarded in v8/v9/v10 (Brougos, Badeon, Estanza in v9, Guine, Peragon) was a DO_QUEST trip
+    // to (3522,5016), all of them sent up there by the quest hub search ("giver 25590 quest 11725 dist 1"). AC has no
+    // roam trip: outside a trip this changes nothing.
+    if (RoamTransport::HoldsForTransportLeg(bot))
+        return false;
+
     OrganizeQuestLog();
 
     if (ObjectGuid npcOrGo = ChooseNpcOrGameObjectToInteract(true, 80.0f))
@@ -1509,11 +1542,199 @@ constexpr uint32 NONE_COOLDOWN_MS = 2 * MINUTE * IN_MILLISECONDS;      // no tak
 constexpr uint32 RETARGET_COOLDOWN_MS = 30 * MINUTE * IN_MILLISECONDS; // never re-pick a giver/quest it just went to
 constexpr size_t MAX_GIVERS_CHECKED = 24;                              // nearest spawns whose quests are evaluated
 constexpr uint32 MAX_ZONE_LOOKUPS = 8;                                 // terrain zone lookups per search
+constexpr uint32 MAX_REACH_CHECKS = 4;                                 // #975: uncached walk-reach checks per search
+constexpr float REACH_TALK_DIST = 7.0f;                                // #975: a poly this close (3D) can talk to the giver
+constexpr float REACH_ESCAPE_DIST = 80.0f;                             // #975: a region reaching this far is not an island
+constexpr size_t REACH_FILL_CAP = 2048;                                // #975: polys one fill may visit (reached = open)
 
 std::once_flag indexOnce;
 std::unordered_map<uint32, std::vector<StarterSpawn>> spawnsByMap;  // written once under indexOnce, then read-only
 std::mutex stateLock;
 std::unordered_map<ObjectGuid, BotState> states;
+std::mutex reachLock;                            // #975
+std::unordered_map<uint32, bool> reachBySpawn;   // #975: spawnId -> walk-reachable (the navmesh is static)
+
+// #975 (BEYOND AC, part of this extension): the search measured 2D distance and never asked whether the giver can be
+// walked to. Run mop1k-v10-1028: Guine (inn below the Fizzcrank tower, Borean Tundra) "quest hub search -> giver 25590
+// quest 11725 dist 1" - Fizzcrank Fullthrottle 25590 stands 13 yd up on the tower top (4178.3,5283.1,39.6), a 22-poly
+// navmesh island whose only exit is elevator 152614; the bot flew up, took the quest and was then stuck on the island
+// (Guine and Peragon in v10, Brougos in v8, Badeon and Estanza in v9). AC has no such check: its quest flow walks to
+// quest givers within 80 yd 3D (AC Ai/World/Rpg/Action/NewRpgBaseAction.cpp:735,773 ChooseNpcOrGameObjectToInteract
+// GetDistance) out of "possible new rpg targets", which skips line of sight (AC
+// Ai/Base/Value/PossibleRpgTargetsValue.cpp:115-117, NearestUnitsValue ignoreLos = true); this search sends bots up to
+// RpgQuestHubSearchRadius (2500 yd) away, so it skips givers that only a navmesh island can talk to.
+// The rule is the navmesh region around the giver, not a path: the walkable polys (bot filter) within REACH_TALK_DIST
+// (3D) of the spawn - the bot can talk to the giver from any of them (INTERACTION_DISTANCE 5 plus both combat reaches)
+// - are flood-filled over the poly links; the giver is on an island when the fill ends before any visited poly has a
+// vertex REACH_ESCAPE_DIST (3D) away from the spawn. Fizzcrank's tower top is a closed 24-poly region within 9.6 yd.
+// The first version (paths toward the giver from 4 ground anchors 30 yd out, anchor height from Map::GetHeight)
+// rejected reachable givers for every bot: Innkeeper Norman 6741 under Undercity (v11, anchors on the surface lake),
+// Rin Duoctane 30490 in Dalaran (v12, anchors on the forest 460 yd below the city) and Muigin 9119 at Marshal's Refuge
+// (v12, the spawn is 19 yd above the navmesh). Offline (a Python Detour reader over the test server's mmaps, every
+// quest-giver spawn of the hub index on the continents and open-world maps): the closed regions are tower / platform
+// tops (Fizzcrank, Archmage Vargoth's Violet Citadel retreat, the Wyrmrest Temple top, Image of Archmage Xylem), ship
+// decks, regions the mmaps cut off (Maginor Dumas / Coridormi in Stormwind, 76 yd from any open poly; two Revantusk
+// huts) and the underwater Vashj'ir bases (kept, see Submerged); Norman, Rin Duoctane and every city / town giver are
+// open, Muigin has no poly within reach and is kept.
+// Verdicts: Open and NoPoly keep the giver and are cached (the navmesh is static); Island skips it and is cached,
+// except for a submerged giver (a swimmer reaches it: cached as kept) and for a bot standing inside the island itself
+// (kept for that bot only, not cached); Unknown (no mmaps, a tile in reach of the spawn or at the fill's edge not
+// loaded) keeps the giver without caching, as AC sends bots to givers without any check.
+enum class Reach : uint8 { Open, NoPoly, Island, Unknown };
+
+// The flood fill (see above). botInside: the bot's own poly is part of an Island. Called from the bot's map thread
+// (the per-instance dtNavMeshQuery is the one PathGenerator uses there).
+Reach NavmeshReach(Player* bot, StarterSpawn const& spawn, bool& botInside)
+{
+    botInside = false;
+    MMAP::MMapManager* mgr = MMAP::MMapFactory::createOrGetMMapManager();
+    dtNavMesh const* nav = mgr->GetNavMesh(bot->GetMapId());
+    dtNavMeshQuery const* query = mgr->GetNavMeshQuery(bot->GetMapId(), bot->GetInstanceId());
+    if (!nav || !query)
+        return Reach::Unknown;
+
+    float const center[3] = {spawn.y, spawn.z, spawn.x};  // Detour order
+    // Every tile under the talk box must be loaded (tiles load with their grid), or "no poly" may only mean "not yet".
+    for (uint32 i = 0; i < 4; ++i)
+    {
+        float const corner[3] = {spawn.y + ((i & 1) ? REACH_TALK_DIST : -REACH_TALK_DIST), spawn.z,
+                                 spawn.x + ((i & 2) ? REACH_TALK_DIST : -REACH_TALK_DIST)};
+        int tx = -1, ty = -1;
+        nav->calcTileLoc(corner, &tx, &ty);
+        if (tx < 0 || ty < 0 || !nav->getTileAt(tx, ty, 0))
+            return Reach::Unknown;
+    }
+
+    dtQueryFilter filter;  // the bot filter of PathGenerator::CreateFilter
+    filter.setIncludeFlags(NAV_GROUND | NAV_WATER);
+    filter.setExcludeFlags(NAV_MAGMA | NAV_SLIME);
+
+    float const ext[3] = {REACH_TALK_DIST, REACH_TALK_DIST, REACH_TALK_DIST};
+    dtPolyRef nearPolys[128];
+    int nearCount = 0;
+    query->queryPolygons(center, ext, &filter, nearPolys, &nearCount, 128);  // a full buffer keeps the first 128
+
+    std::vector<dtPolyRef> pending;
+    std::unordered_set<dtPolyRef> seen;
+    float const talkSq = REACH_TALK_DIST * REACH_TALK_DIST;
+    for (int i = 0; i < nearCount; ++i)
+    {
+        float cp[3];
+        if (dtStatusFailed(query->closestPointOnPoly(nearPolys[i], center, cp, nullptr)))
+            continue;
+        float const dx = cp[0] - center[0], dy = cp[1] - center[1], dz = cp[2] - center[2];
+        if (dx * dx + dy * dy + dz * dz <= talkSq && seen.insert(nearPolys[i]).second)
+            pending.push_back(nearPolys[i]);
+    }
+    if (pending.empty())
+        return Reach::NoPoly;
+
+    float const escapeSq = REACH_ESCAPE_DIST * REACH_ESCAPE_DIST;
+    bool unloadedEdge = false;
+    while (!pending.empty())
+    {
+        dtPolyRef const ref = pending.back();
+        pending.pop_back();
+        dtMeshTile const* tile = nullptr;
+        dtPoly const* poly = nullptr;
+        if (dtStatusFailed(nav->getTileAndPolyByRef(ref, &tile, &poly)))
+            continue;
+
+        for (uint8 v = 0; v < poly->vertCount; ++v)
+        {
+            float const* p = &tile->verts[poly->verts[v] * 3];
+            float const dx = p[0] - center[0], dy = p[1] - center[1], dz = p[2] - center[2];
+            if (dx * dx + dy * dy + dz * dz > escapeSq)
+                return Reach::Open;
+        }
+        if (seen.size() >= REACH_FILL_CAP)
+            return Reach::Open;
+
+        uint32 linkedEdges = 0;
+        for (unsigned int l = poly->firstLink; l != DT_NULL_LINK; l = tile->links[l].next)
+        {
+            dtLink const& link = tile->links[l];
+            if (link.edge < DT_VERTS_PER_POLYGON)
+                linkedEdges |= 1u << link.edge;
+            if (!link.ref || seen.count(link.ref))
+                continue;
+            dtMeshTile const* nextTile = nullptr;
+            dtPoly const* nextPoly = nullptr;
+            nav->getTileAndPolyByRefUnsafe(link.ref, &nextTile, &nextPoly);
+            if (!filter.passFilter(link.ref, nextTile, nextPoly))
+                continue;
+            seen.insert(link.ref);
+            pending.push_back(link.ref);
+        }
+
+        // A tile-border edge with no link toward a tile that is not loaded: the region may go on there.
+        for (uint8 e = 0; e < poly->vertCount; ++e)
+        {
+            if (!(poly->neis[e] & DT_EXT_LINK) || (linkedEdges & (1u << e)))
+                continue;
+            int nx = tile->header->x, ny = tile->header->y;
+            switch (poly->neis[e] & 0xff)
+            {
+                case 0: ++nx; break;
+                case 2: ++ny; break;
+                case 4: --nx; break;
+                case 6: --ny; break;
+                default: break;
+            }
+            if (!nav->getTileAt(nx, ny, 0))
+                unloadedEdge = true;
+        }
+    }
+    if (unloadedEdge)
+        return Reach::Unknown;
+
+    float const botPos[3] = {bot->GetPositionY(), bot->GetPositionZ(), bot->GetPositionX()};
+    float const botExt[3] = {3.0f, 5.0f, 3.0f};  // PathGenerator::GetPolyByLocation's first box
+    float botPoint[3];
+    dtPolyRef botRef = 0;
+    if (dtStatusSucceed(query->findNearestPoly(botPos, botExt, &filter, &botRef, botPoint)) && botRef)
+        botInside = seen.count(botRef) != 0;
+    return Reach::Island;
+}
+
+// An island giver under at least 2 yd of water (the Vashj'ir bases: their navmesh is closed, the sea above is not
+// navmesh, a swimmer gets there).
+bool Submerged(Player* bot, StarterSpawn const& spawn)
+{
+    return bot->GetMap()->IsInWater(bot->GetPhaseMask(), spawn.x, spawn.y, spawn.z + 2.0f);
+}
+
+// Returns false only for a giver on a navmesh island (see above). Called from the bot's map thread.
+bool WalkReachable(Player* bot, StarterSpawn const& spawn, uint32& checks)
+{
+    {
+        std::lock_guard<std::mutex> guard(reachLock);
+        auto itr = reachBySpawn.find(spawn.spawnId);
+        if (itr != reachBySpawn.end())
+            return itr->second;
+    }
+    if (++checks > MAX_REACH_CHECKS)
+        return false;  // this search spent its budget; the giver stays unjudged for the next one
+
+    bool botInside = false;
+    Reach const reach = NavmeshReach(bot, spawn, botInside);
+    if (reach == Reach::Unknown)
+        return true;  // not judged: keep the giver (AC sends bots to givers without any check)
+    if (reach == Reach::Island && botInside)
+        return true;  // this bot stands on the island itself; says nothing for the bots outside it
+
+    bool const keep = reach != Reach::Island || Submerged(bot, spawn);
+    {
+        std::lock_guard<std::mutex> guard(reachLock);
+        reachBySpawn[spawn.spawnId] = keep;
+    }
+    if (!keep)
+        TC_LOG_DEBUG("playerbots",
+                     "[New RPG] quest hub search skips giver %u spawn %u (%.1f,%.1f,%.1f map %u): navmesh island "
+                     "(closed within %.0f yd)",
+                     spawn.entry, spawn.spawnId, spawn.x, spawn.y, spawn.z, bot->GetMapId(), REACH_ESCAPE_DIST);
+    return keep;
+}
 
 void BuildIndex()
 {
@@ -1572,9 +1793,11 @@ bool Search(Player* bot, std::unordered_map<uint64, uint32> const& targeted, Can
         if (!(spawn.phaseMask & botPhase))
             continue;
 
+        // #975: 3D, like AC's quest-giver distance (GetDistance); the 2D "dist 1" hid a giver 13 yd up a tower.
         float const dx = spawn.x - bot->GetPositionX();
         float const dy = spawn.y - bot->GetPositionY();
-        float const distSq = dx * dx + dy * dy;
+        float const dz = spawn.z - bot->GetPositionZ();
+        float const distSq = dx * dx + dy * dy + dz * dz;
         if (distSq > radiusSq)
             continue;
 
@@ -1589,6 +1812,7 @@ bool Search(Player* bot, std::unordered_map<uint64, uint32> const& targeted, Can
     FactionTemplateEntry const* botFaction = bot->GetFactionTemplateEntry();
     uint32 const botZone = bot->GetZoneId();
     uint32 zoneLookups = 0;
+    uint32 reachChecks = 0;  // #975
 
     for (size_t i = 0; i < count; ++i)
     {
@@ -1623,6 +1847,10 @@ bool Search(Player* bot, std::unordered_map<uint64, uint32> const& targeted, Can
         if (++zoneLookups > MAX_ZONE_LOOKUPS)
             break;
         if (bot->GetMap()->GetZoneId(botPhase, spawn.x, spawn.y, spawn.z) != botZone)
+            continue;
+
+        // #975: only a giver the navmesh joins to the ground around it (see WalkReachable).
+        if (!WalkReachable(bot, spawn, reachChecks))
             continue;
 
         out.entry = spawn.entry;
@@ -1717,6 +1945,1049 @@ bool TakeTrip(Player* bot)
 }  // namespace QuestHubSearch
 // ============================== end MoP/Cata extension #843 (quest hub search) ==============================
 
+// =====================================================================================================================
+// #945 (BEYOND AC, this fork only): town errands. AC bots reach repairers, vendors, trainers, auctioneers, bankers and
+// stable masters only by chance (WANDER_NPC picks a random NPC within 150 yd, AC PossibleRpgTargetsValue.cpp:88-108).
+// Same pattern as the quest hub search above: at the IDLE status draw (RandomChangeStatus) a bot with a need - repair,
+// sell, profession training near its skill cap - or, with RpgTownErrandChance %, a random errand (auctioneer, banker,
+// own-class trainer, stable master for hunters, guild banker for guilded bots) travels to a matching NPC with AC's
+// GO_CAMP (MoveFarTo). On the GO_CAMP arrival NewRpgAction.cpp seeds WANDER_NPC with that NPC, whose arrival code does
+// the work (sell/buy/repair as AC test-staging PR #2949, trainer learn) and stays RpgTownErrandStayMin..Max seconds at
+// the pure-visit NPCs. No new status, no NewRpgInfo change. Gate: AiPlayerbot.RpgTownErrandEnable (0 = exactly AC);
+// off in a deterministic .botscenario (pick=nearest). Config is read once through sConfigMgr, like CfgCampChance in
+// NewRpgRoamTransport.cpp, so PlayerbotAIConfig.h is not touched.
+// =====================================================================================================================
+namespace TownErrand
+{
+enum Cat : uint32
+{
+    CAT_REPAIR = 0x01,
+    CAT_VENDOR = 0x02,
+    CAT_PROF = 0x04,       // profession trainer (npc_trainer rows for a profession skill, trainerType 2)
+    CAT_AUCTION = 0x08,
+    CAT_BANK = 0x10,
+    CAT_CLASS = 0x20,      // class trainer: creature_template.trainer_class (MoP class trainers carry npcflag 1/3 only)
+    CAT_STABLE = 0x40,
+    CAT_GUILDBANK = 0x80,
+    CAT_MAILBOX = 0x100,   // GAMEOBJECT_TYPE_MAILBOX spawn (a gameobject, not a creature)
+};
+
+// Creature and gameobject spawn ids overlap, so a gameobject spawn is keyed (targeted / npcLoad / Errand::spawnId) with this bit.
+constexpr uint32 GO_KEY_BIT = 0x80000000u;
+
+enum Need : uint32
+{
+    NEED_NONE = 0,
+    NEED_REPAIR = 1,
+    NEED_SELL = 2,
+    NEED_PROF = 3,
+    NEED_ERRAND = 4,
+};
+
+struct Spawn
+{
+    uint32 entry;
+    uint32 spawnId;
+    uint32 phaseMask;
+    float x;
+    float y;
+    float z;
+    float o;                 // orientation: the errand stand point is in front of the NPC
+    uint32 cats;
+    uint8 trainerClass;
+    uint32 profSkill;        // CAT_PROF: the profession (skill id) the trainer teaches
+    bool isGo = false;       // gameobject spawn (CAT_MAILBOX); spawnId then carries GO_KEY_BIT
+};
+
+struct Errand
+{
+    bool active = false;
+    uint32 need = NEED_NONE;
+    uint32 cat = 0;
+    uint32 entry = 0;
+    uint32 spawnId = 0;
+    WorldPosition pos{};     // the NPC spawn
+    WorldPosition stand{};   // GO_CAMP target: ~STAND_DIST yd in front of the NPC
+    bool sawDeath = false;   // end-reason hints, set while the errand is active
+    bool sawCombat = false;
+    bool teleported = false; // MoveFarTo's stuck teleport fired
+    bool abandoned = false;  // MoveFarTo dropped the trip
+    ObjectGuid npc;          // set on the GO_CAMP arrival
+    uint32 startMs = 0;      // pick time
+    uint32 arriveMs = 0;     // GO_CAMP arrival (WANDER_NPC seeded)
+    uint32 reachedMs = 0;    // interaction distance reached
+    uint32 stayMs = 0;
+    // #1004 (BEYOND AC): far legs. legMs restarts the timeout when a flight lands; budgetMs is the time allowed for the
+    // current leg (pick -> landing, then landing -> done), scaled with the distance.
+    uint32 legMs = 0;
+    uint32 budgetMs = 0;
+    uint32 zoneId = 0;           // zone of the NPC
+    uint32 zoneMs = 0;           // first time the bot was seen in that zone
+    bool flightPending = false;  // a flight to the NPC's town is planned / running
+    uint32 landedMs = 0;
+    uint32 flightFmEntry = 0;
+    WorldPosition flightFmPos{};
+    std::vector<uint32> flightPath;
+};
+
+struct BotState
+{
+    bool init = false;
+    uint32 lastMs = 0;       // last errand pick (cooldown start); staggered at first sight
+    bool hasNone = false;
+    uint32 noneMs = 0;
+    std::unordered_map<uint32, uint32> targeted;  // spawnId -> getMSTime() of the pick
+    bool profValid = false;  // per-bot cache of "a trainer of a known profession offers a spell learnable now"
+    bool profUseful = false;
+    uint32 profMs = 0;
+    Errand errand;
+};
+
+constexpr uint32 NONE_COOLDOWN_MS = 2 * MINUTE * IN_MILLISECONDS;
+constexpr uint32 RETARGET_COOLDOWN_MS = 30 * MINUTE * IN_MILLISECONDS;
+// #1004 (BEYOND AC): the time allowed for one leg scales with its distance: base + dist / speed, capped. v16 soak: the old
+// fixed 25 min timed out 57-68% of the auction errands beyond 1000 yd (3500 yd on foot, with combat and other states between).
+constexpr uint32 LEG_BASE_MS = 10 * MINUTE * IN_MILLISECONDS;
+constexpr float LEG_SPEED = 3.0f;                                      // yd/s, an average that includes detours and fights
+constexpr uint32 LEG_CAP_MS = 45 * MINUTE * IN_MILLISECONDS;
+constexpr uint32 FLIGHT_ALLOW_MS = 6 * MINUTE * IN_MILLISECONDS;       // pick -> landing allowance on top of the walk to the flight master
+uint32 LegBudgetMs(float dist, uint32 extraMs = 0)
+{
+    uint32 const ms = LEG_BASE_MS + extraMs + uint32(dist / LEG_SPEED) * IN_MILLISECONDS;
+    return std::min(ms, LEG_CAP_MS);
+}
+constexpr uint32 REACH_TIMEOUT_MS = 3 * MINUTE * IN_MILLISECONDS;     // arrival at the camp pos -> interaction distance
+// #945 (2 h run at 1000 bots, 2026-10-28): how long an errand keeps its bot out of AC's activity rotation (KeepsActive).
+// Throttled (BotActiveAlone 10: "new rpg" actions run only in a bot's ~10% active 30 s windows), Zinor walked 82 yd to
+// banker 44853 in ~16 min and then slept 14 min at 4 yd from it until the 25 min timeout. Active, a 1200 yd far-ring
+// walk takes ~3-5 min; past this cap the errand falls back to the rotation (and still ends by ERRAND_MAX_MS).
+constexpr uint32 ACTIVE_CAP_MS = 10 * MINUTE * IN_MILLISECONDS;
+constexpr size_t MAX_CHECKED = 40;                                    // nearest spawns whose extra test is evaluated
+constexpr size_t NEAREST_N = 3;
+constexpr float STAND_DIST = 4.0f;                                    // GO_CAMP stand point in front of the NPC (TravelMgr hubs)
+
+std::once_flag indexOnce;
+std::unordered_map<uint32, std::vector<Spawn>> spawnsByMap;  // written once under indexOnce, then read-only
+std::mutex stateLock;
+std::unordered_map<ObjectGuid, BotState> states;
+
+bool CfgEnable()
+{
+    static bool const v = sConfigMgr->GetBoolDefault("AiPlayerbot.RpgTownErrandEnable", true);
+    return v;
+}
+float CfgRadius()
+{
+    static float const v = float(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandRadius", 1200)));
+    return v;
+}
+
+// Owner 2026-10-28 ("more should go to the auction house"): auction houses stand only in capitals and a few goblin towns,
+// so a drawn auction errand searches this far (outer ring) before falling through to the next category - with 1200 yd
+// the first weighted run picked mailboxes 44 times and auctioneers 3 times out of 72 errands.
+float CfgAuctionRadius()
+{
+    static float const v = float(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandAuctionRadius", 4000)));
+    return v;
+}
+// #1004 (BEYOND AC): a pick farther than this (yd) flies to the flight node nearest the NPC first (the bot's existing
+// TRAVEL_FLIGHT), then walks the rest. 0 = never fly.
+float CfgFlightMin()
+{
+    static float const v = float(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandFlightMinDistance", 800)));
+    return v;
+}
+float CfgNearRadius()
+{
+    static float const v = float(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandNearRadius", 400)));
+    return v;
+}
+uint32 CfgCooldownMs()
+{
+    static uint32 const v = uint32(std::min(3600 * 24, std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandCooldown", 1800)))) * IN_MILLISECONDS;
+    return v;
+}
+uint32 CfgChance()
+{
+    static uint32 const v = uint32(std::min(100, std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandChance", 10))));
+    return v;
+}
+uint32 CfgStayMinS()
+{
+    static uint32 const v = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandStayMin", 15)));
+    return v;
+}
+uint32 CfgStayMaxS()
+{
+    static uint32 const v = std::max(CfgStayMinS(), uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandStayMax", 45))));
+    return v;
+}
+uint32 CfgMaxBotsPerNpc()
+{
+    static uint32 const v = uint32(std::max(1, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandMaxBotsPerNpc", 3)));
+    return v;
+}
+
+// Owner request 2026-10-28: a random errand first draws ONE category by these weights (0 = never), not an NPC by abundance.
+uint32 CfgCategoryWeight(uint32 cat)
+{
+    static uint32 const weights[9] = {
+        0,  // repair (a need, not a random errand)
+        0,  // vendor (a need)
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightProfession", 25))),
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightAuction", 40))),
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightBank", 20))),
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightClassTrainer", 5))),
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightStable", 3))),
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightGuildBank", 2))),
+        uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RpgTownErrandWeightMailbox", 6)))};
+    for (uint32 i = 0; i < 9; ++i)
+        if (cat == (1u << i))
+            return weights[i];
+    return 0;
+}
+
+// primary professions a trainer visit can raise
+constexpr uint32 PRIMARY_PROFESSIONS[] = {SKILL_ALCHEMY,      SKILL_BLACKSMITHING, SKILL_ENCHANTING,  SKILL_ENGINEERING,
+                                          SKILL_HERBALISM,    SKILL_INSCRIPTION,   SKILL_JEWELCRAFTING, SKILL_LEATHERWORKING,
+                                          SKILL_MINING,       SKILL_SKINNING,      SKILL_TAILORING};
+// secondary skills with trainers
+constexpr uint32 SECONDARY_PROFESSIONS[] = {SKILL_COOKING, SKILL_FIRST_AID, SKILL_FISHING};
+
+bool IsProfessionSkill(uint32 skill)
+{
+    return std::find(std::begin(PRIMARY_PROFESSIONS), std::end(PRIMARY_PROFESSIONS), skill) != std::end(PRIMARY_PROFESSIONS) ||
+           std::find(std::begin(SECONDARY_PROFESSIONS), std::end(SECONDARY_PROFESSIONS), skill) != std::end(SECONDARY_PROFESSIONS);
+}
+
+char const* NeedName(uint32 need)
+{
+    switch (need)
+    {
+        case NEED_REPAIR: return "repair";
+        case NEED_SELL: return "sell";
+        case NEED_PROF: return "profession";
+        case NEED_ERRAND: return "errand";
+        default: return "none";
+    }
+}
+
+void BuildIndex()
+{
+    uint32 counts[9] = {};
+    uint32 total = 0;
+    for (auto const& itr : sObjectMgr->GetAllCreatureData())
+    {
+        CreatureData const& data = itr.second;
+        // Event-only and phase-id / phase-group spawns are not reliably there for a roaming bot (as the quest hub index).
+        if (!data.dbData || data.gameEventId || data.phaseid || data.phaseGroup)
+            continue;
+
+        MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapId);
+        if (!mapEntry || mapEntry->Instanceable())
+            continue;
+
+        CreatureTemplate const* tmpl = sObjectMgr->GetCreatureTemplate(data.id);
+        if (!tmpl)
+            continue;
+
+        uint32 const flags = tmpl->npcflag | data.npcflag;
+        uint32 cats = 0;
+        if (flags & UNIT_NPC_FLAG_REPAIR)
+            cats |= CAT_REPAIR;
+        if (flags & UNIT_NPC_FLAG_VENDOR)
+            cats |= CAT_VENDOR;
+        if (flags & UNIT_NPC_FLAG_AUCTIONEER)
+            cats |= CAT_AUCTION;
+        if (flags & UNIT_NPC_FLAG_BANKER)
+            cats |= CAT_BANK;
+        if (flags & UNIT_NPC_FLAG_STABLEMASTER)
+            cats |= CAT_STABLE;
+        if (flags & UNIT_NPC_FLAG_GUILD_BANKER)
+            cats |= CAT_GUILDBANK;
+        if (tmpl->trainer_class)
+            cats |= CAT_CLASS;
+        uint32 profSkill = 0;
+        if ((flags & (UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_TRAINER_PROFESSION)))
+        {
+            TrainerSpellData const* trainer = sObjectMgr->GetNpcTrainerSpells(data.id);
+            if (trainer && trainer->trainerType == 2)
+            {
+                // the profession it teaches: the first profession skill any of its spells requires
+                for (auto const& spellItr : trainer->spellList)
+                {
+                    if (IsProfessionSkill(spellItr.second.reqSkill))
+                    {
+                        profSkill = spellItr.second.reqSkill;
+                        break;
+                    }
+                }
+                if (profSkill)
+                    cats |= CAT_PROF;
+            }
+        }
+
+        if (!cats)
+            continue;
+
+        spawnsByMap[data.mapId].push_back({data.id, itr.first, data.phaseMask, data.posX, data.posY, data.posZ, data.orientation,
+                                           cats, uint8(tmpl->trainer_class), profSkill});
+        ++total;
+        for (uint32 i = 0; i < 9; ++i)
+            if (cats & (1u << i))
+                ++counts[i];
+    }
+
+    // Mailboxes (GAMEOBJECT_TYPE_MAILBOX) are gameobject spawns: same filters as the creature spawns above.
+    for (auto const& itr : sObjectMgr->GetAllGOData())
+    {
+        GameObjectData const& data = itr.second;
+        if (!data.dbData || data.gameEventId || data.phaseid || data.phaseGroup)
+            continue;
+
+        MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapid);
+        if (!mapEntry || mapEntry->Instanceable())
+            continue;
+
+        GameObjectTemplate const* tmpl = sObjectMgr->GetGameObjectTemplate(data.id);
+        if (!tmpl || tmpl->type != GAMEOBJECT_TYPE_MAILBOX)
+            continue;
+
+        Spawn spawn{data.id, itr.first | GO_KEY_BIT, data.phaseMask, data.posX, data.posY, data.posZ, data.orientation,
+                    uint32(CAT_MAILBOX), 0, 0};
+        spawn.isGo = true;
+        spawnsByMap[data.mapid].push_back(spawn);
+        ++total;
+        ++counts[8];
+    }
+
+    TC_LOG_INFO("playerbots",
+                "[New RPG] town errand index: %u spawns on %u maps (repair %u vendor %u profession %u auction %u bank %u class %u "
+                "stable %u guildbank %u mailbox %u)",
+                total, uint32(spawnsByMap.size()), counts[0], counts[1], counts[2], counts[3], counts[4], counts[5], counts[6],
+                counts[7], counts[8]);
+}
+
+bool Enabled(Player* bot)
+{
+    return CfgEnable() && CfgRadius() > 0.0f && !BotScenario::PickNearest(bot) && bot->GetMap() &&
+           !bot->GetMap()->Instanceable() && !bot->InBattleground();
+}
+
+// Professions the bot knows (primary or cooking / first aid / fishing), as a skill id list. #945 follow-up: the old trigger
+// ("within 25 of the skill cap") was almost never true - random bots get skill value = max = level * 5 and every eligible
+// trainer spell from BotFactory InitAvailableSpells at randomize / refresh / level-up - so the trigger is now "a trainer of a
+// known profession offers something learnable now" (ProfessionLearnableNow, cached per bot).
+std::vector<uint32> KnownProfessions(Player* bot)
+{
+    std::vector<uint32> out;
+    for (uint32 skill : PRIMARY_PROFESSIONS)
+        if (bot->HasSkill(skill))
+            out.push_back(skill);
+    for (uint32 skill : SECONDARY_PROFESSIONS)
+        if (bot->HasSkill(skill))
+            out.push_back(skill);
+    return out;
+}
+
+// True when the trainer teaches the bot a rank of one of `skills` it can learn and afford right now.
+bool ProfessionTrainerUseful(PlayerbotAI* botAI, Player* bot, uint32 entry, std::vector<uint32> const& skills)
+{
+    TrainerSpellData const* trainer = sObjectMgr->GetNpcTrainerSpells(entry);
+    if (!trainer)
+        return false;
+
+    uint32 const money = botAI->GetAiObjectContext()->GetValue<uint32>("free money for", std::to_string(uint32(NeedMoneyFor::spells)))->Get();
+    for (auto const& itr : trainer->spellList)
+    {
+        TrainerSpell const& spell = itr.second;
+        if (!spell.reqSkill || std::find(skills.begin(), skills.end(), spell.reqSkill) == skills.end())
+            continue;
+        if (spell.spellCost <= money && bot->GetTrainerSpellState(&spell) == TRAINER_SPELL_GREEN)
+            return true;
+    }
+    return false;
+}
+
+// True when a trainer of one of `skills` on the bot's map (within the errand radius) offers a spell learnable now. The
+// answer is cached per bot for RpgTownErrandCooldown (TryStart is the only caller and is itself cooldown-gated).
+bool ProfessionLearnableNow(PlayerbotAI* botAI, Player* bot, std::vector<uint32> const& skills)
+{
+    if (skills.empty())
+        return false;
+    {
+        std::lock_guard<std::mutex> guard(stateLock);
+        BotState& state = states[bot->GetGUID()];
+        if (state.profValid && GetMSTimeDiffToNow(state.profMs) < CfgCooldownMs())
+            return state.profUseful;
+    }
+
+    std::call_once(indexOnce, BuildIndex);
+    bool useful = false;
+    auto mapItr = spawnsByMap.find(bot->GetMapId());
+    if (mapItr != spawnsByMap.end())
+    {
+        float const radiusSq = CfgRadius() * CfgRadius();
+        std::set<uint32> checkedEntries;
+        for (Spawn const& spawn : mapItr->second)
+        {
+            if (!(spawn.cats & CAT_PROF) || std::find(skills.begin(), skills.end(), spawn.profSkill) == skills.end() ||
+                !(spawn.phaseMask & bot->GetPhaseMask()))
+                continue;
+            float const dx = spawn.x - bot->GetPositionX();
+            float const dy = spawn.y - bot->GetPositionY();
+            if (dx * dx + dy * dy > radiusSq || !checkedEntries.insert(spawn.entry).second)
+                continue;
+            if (ProfessionTrainerUseful(botAI, bot, spawn.entry, skills))
+            {
+                useful = true;
+                break;
+            }
+        }
+    }
+
+    std::lock_guard<std::mutex> guard(stateLock);
+    BotState& state = states[bot->GetGUID()];
+    state.profValid = true;
+    state.profUseful = useful;
+    state.profMs = getMSTime();
+    return useful;
+}
+
+struct Pick
+{
+    Spawn const* spawn = nullptr;
+    uint32 cat = 0;
+    float dist = 0.0f;
+};
+
+// `wanted`: categories the need accepts. The nearest NEAREST_N eligible spawns are candidates, one is picked at random.
+bool Search(PlayerbotAI* botAI, Player* bot, uint32 need, uint32 wanted, std::vector<uint32> const& profSkills,
+            std::unordered_map<uint32, uint32> const& targeted, std::unordered_map<uint32, uint32> const& npcLoad, float radius,
+            Pick& out)
+{
+    std::call_once(indexOnce, BuildIndex);
+
+    auto mapItr = spawnsByMap.find(bot->GetMapId());
+    if (mapItr == spawnsByMap.end())
+        return false;
+
+    float const radiusSq = radius * radius;
+    uint32 const botPhase = bot->GetPhaseMask();
+    uint8 const botClass = bot->GetClass();
+    bool const guilded = bot->GetGuildId() != 0;
+    uint32 const perNpc = CfgMaxBotsPerNpc();
+
+    // Hostile spawns are dropped here, before the nearest-N cut: in a contested zone (Dragonblight, Hellfire) the
+    // nearest MAX_CHECKED repairers or vendors could all be the other faction's, and the search found nothing at all
+    // (combined run 2026-10-27: 15 "no matching NPC" for 3 picks).
+    FactionTemplateEntry const* botFaction = bot->GetFactionTemplateEntry();
+    std::vector<std::pair<float, Spawn const*>> nearby;
+    for (Spawn const& spawn : mapItr->second)
+    {
+        if (!(spawn.phaseMask & botPhase))
+            continue;
+
+        uint32 cats = spawn.cats & wanted;
+        // class trainer: only the bot's own class; stable master: hunters; guild bank: guilded bots
+        if ((cats & CAT_CLASS) && spawn.trainerClass != botClass)
+            cats &= ~uint32(CAT_CLASS);
+        // profession trainer: only a profession the bot knows (profSkills is empty when it knows none)
+        if ((cats & CAT_PROF) && std::find(profSkills.begin(), profSkills.end(), spawn.profSkill) == profSkills.end())
+            cats &= ~uint32(CAT_PROF);
+        if ((cats & CAT_STABLE) && botClass != CLASS_HUNTER)
+            cats &= ~uint32(CAT_STABLE);
+        if ((cats & CAT_GUILDBANK) && !guilded)
+            cats &= ~uint32(CAT_GUILDBANK);
+        if (!cats)
+            continue;
+
+        float const dx = spawn.x - bot->GetPositionX();
+        float const dy = spawn.y - bot->GetPositionY();
+        float const distSq = dx * dx + dy * dy;
+        if (distSq > radiusSq || distSq < 25.0f * 25.0f)  // already standing at it: GO_CAMP would be a no-op
+            continue;
+        if (targeted.count(spawn.spawnId))
+            continue;
+        auto load = npcLoad.find(spawn.spawnId);
+        if (load != npcLoad.end() && load->second >= perNpc)
+            continue;
+        if (botFaction && !spawn.isGo)
+        {
+            CreatureTemplate const* tmpl = sObjectMgr->GetCreatureTemplate(spawn.entry);
+            FactionTemplateEntry const* faction = tmpl ? sFactionTemplateStore.LookupEntry(tmpl->faction) : nullptr;
+            if (faction && faction->IsHostileTo(*botFaction))
+                continue;
+        }
+
+        nearby.emplace_back(distSq, &spawn);
+    }
+
+    size_t const count = std::min(nearby.size(), MAX_CHECKED);
+    std::partial_sort(nearby.begin(), nearby.begin() + count, nearby.end(),
+                      [](std::pair<float, Spawn const*> const& a, std::pair<float, Spawn const*> const& b)
+                      { return a.first < b.first; });
+
+    std::vector<std::pair<float, Spawn const*>> candidates;
+    for (size_t i = 0; i < count && candidates.size() < NEAREST_N; ++i)
+    {
+        Spawn const& spawn = *nearby[i].second;
+
+        if (need == NEED_PROF && !ProfessionTrainerUseful(botAI, bot, spawn.entry, profSkills))
+            continue;
+
+        if (bot->GetMap()->IsInWater(botPhase, spawn.x, spawn.y, spawn.z))
+            continue;
+
+        candidates.push_back(nearby[i]);
+    }
+
+    if (candidates.empty())
+        return false;
+
+    auto const& chosen = candidates[urand(0, uint32(candidates.size() - 1))];
+    out.spawn = chosen.second;
+    out.dist = std::sqrt(chosen.first);
+    uint32 const cats = chosen.second->cats & wanted;
+    // the category that explains the visit, most specific first
+    for (uint32 bit : {CAT_PROF, CAT_REPAIR, CAT_VENDOR, CAT_AUCTION, CAT_BANK, CAT_CLASS, CAT_STABLE, CAT_GUILDBANK, CAT_MAILBOX})
+    {
+        if (cats & bit)
+        {
+            out.cat = bit;
+            break;
+        }
+    }
+    return true;
+}
+
+char const* StatusName(NewRpgStatus status)
+{
+    switch (status)
+    {
+        case RPG_IDLE: return "IDLE";
+        case RPG_GO_GRIND: return "GO_GRIND";
+        case RPG_GO_CAMP: return "GO_CAMP";
+        case RPG_WANDER_NPC: return "WANDER_NPC";
+        case RPG_WANDER_RANDOM: return "WANDER_RANDOM";
+        case RPG_REST: return "REST";
+        case RPG_DO_QUEST: return "DO_QUEST";
+        case RPG_TRAVEL_FLIGHT: return "TRAVEL_FLIGHT";
+        case RPG_OUTDOOR_PVP: return "OUTDOOR_PVP";
+        case RPG_DUEL_SPOT: return "DUEL_SPOT";
+        default: return "?";
+    }
+}
+
+// Ends the active errand without `done` and logs why (stateLock held). Completion rate = done / pick; the end lines say where
+// the rest went. reason: status-changed-to X | combat | death | reset | stuck-teleport | trip-abandon | unreachable | timeout |
+// replaced. #945 (2026-10-28): reached= (interaction distance seen) and since-arrive= (s from the GO_CAMP arrival) say
+// where an arrived errand stopped.
+void EndErrand(Player* bot, Errand& errand, char const* reason, char const* extra = "")
+{
+    TC_LOG_DEBUG("playerbots", "[ERRAND] %s end reason=%s%s need=%s npc=%u age=%u s arrived=%d reached=%d since-arrive=%u s "
+                 "travel=%s zone-at=%d s landed-at=%d s budget=%u s",
+                 bot->GetName().c_str(), reason, extra, NeedName(errand.need), errand.entry,
+                 GetMSTimeDiffToNow(errand.startMs) / IN_MILLISECONDS, errand.arriveMs ? 1 : 0, errand.reachedMs ? 1 : 0,
+                 errand.arriveMs ? GetMSTimeDiffToNow(errand.arriveMs) / IN_MILLISECONDS : 0,
+                 errand.landedMs ? "flight" : errand.flightFmEntry ? "flight-planned" : "walk",
+                 errand.zoneMs ? int(getMSTimeDiff(errand.startMs, errand.zoneMs) / IN_MILLISECONDS) : -1,
+                 errand.landedMs ? int(getMSTimeDiff(errand.startMs, errand.landedMs) / IN_MILLISECONDS) : -1,
+                 errand.budgetMs / IN_MILLISECONDS);
+    errand.active = false;
+}
+
+// The end reason when the status left GO_CAMP / WANDER_NPC (or an IDLE draw found the errand still active).
+// reset: the status is the IDLE of a freshly built NewRpgInfo (startT 0), i.e. PlayerbotAI::Reset(true) - the
+// RandomPlayerbotMgr teleport for level / refresh / revive teleport (AC Bot/RandomPlayerbotMgr.cpp:1588-1597, 1604-1613).
+void EndForStatus(Player* bot, Errand& errand, NewRpgStatus status, bool reset = false)
+{
+    if (errand.sawDeath || !bot->IsAlive())
+        EndErrand(bot, errand, "death");
+    else if (reset)
+        EndErrand(bot, errand, "reset");
+    else if (errand.teleported)
+        EndErrand(bot, errand, "stuck-teleport");
+    else if (errand.abandoned)
+        EndErrand(bot, errand, "trip-abandon");
+    else if (errand.sawCombat)
+        EndErrand(bot, errand, "combat");
+    else if (status == RPG_IDLE && errand.arriveMs)
+        EndErrand(bot, errand, "replaced");
+    else
+        EndErrand(bot, errand, "status-changed-to ", StatusName(status));
+}
+
+void NoteStuckTeleport(Player* bot)
+{
+    if (!CfgEnable())
+        return;
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr != states.end() && itr->second.errand.active)
+        itr->second.errand.teleported = true;
+}
+
+void NoteAbandon(Player* bot)
+{
+    if (!CfgEnable())
+        return;
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr != states.end() && itr->second.errand.active)
+        itr->second.errand.abandoned = true;
+}
+
+// Every NewRpgStatusUpdateAction tick (NewRpgAction.cpp): while an errand is active its status must stay GO_CAMP (walking)
+// or WANDER_NPC (at the NPC). Anything else ends it, with the reason logged; the pick time keeps the normal cooldown.
+void Watch(Player* bot, NewRpgStatus status)
+{
+    if (!CfgEnable())
+        return;
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr == states.end() || !itr->second.errand.active)
+        return;
+    Errand& errand = itr->second.errand;
+    if (!bot->IsAlive())
+        errand.sawDeath = true;
+    if (bot->IsInCombat())
+        errand.sawCombat = true;
+    if (GetMSTimeDiffToNow(errand.legMs) > errand.budgetMs)
+    {
+        EndErrand(bot, errand, "timeout");
+        return;
+    }
+    if (!errand.zoneMs && errand.zoneId && bot->GetZoneId() == errand.zoneId)
+    {
+        errand.zoneMs = getMSTime();
+        TC_LOG_DEBUG("playerbots", "[ERRAND] %s zone-arrival npc=%u zone=%u after %u s", bot->GetName().c_str(), errand.entry,
+                     errand.zoneId, GetMSTimeDiffToNow(errand.startMs) / IN_MILLISECONDS);
+    }
+    if (status == RPG_GO_CAMP || status == RPG_WANDER_NPC || (status == RPG_TRAVEL_FLIGHT && errand.flightPending))
+        return;
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    EndForStatus(bot, errand, status, status == RPG_IDLE && botAI && botAI->GetRpgInfo().startT == 0);
+}
+
+// #945 (BEYOND AC, 2026-10-28): PlayerbotAI::AllowActive keeps a bot on a running errand active for its first
+// ACTIVE_CAP_MS (through RoamTransport::OnTransportLeg, the activity hook AllowActive already has for roam trips), as AC
+// keeps a bot in combat / a BG / an LFG queue active. Throttled, the errand's walk, its WANDER_NPC seed and the work at
+// the NPC only ran in the ~10% active windows: 2 h run, 80 of 150 errand ends were the 25 min timeout (36 of the 61
+// never-arrived ones were >500 yd far-ring picks), 43 "replaced" (the WANDER_NPC 5 min timer of AC NewRpgAction.cpp:327
+// fired in the first active window after a sleep at the NPC). Bots without an errand keep AC's rotation. May run from a
+// group member's thread (PARTY_ACTIVITY): only reads this bot's entry under stateLock.
+bool KeepsActive(Player* bot)
+{
+    if (!CfgEnable())
+        return false;
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    return itr != states.end() && itr->second.errand.active && GetMSTimeDiffToNow(itr->second.errand.legMs) < ACTIVE_CAP_MS;
+}
+
+// Called at every IDLE draw: a new draw ends any errand the previous one started (Watch normally logged it already).
+void Clear(Player* bot)
+{
+    if (!CfgEnable())
+        return;
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr != states.end() && itr->second.errand.active)
+        EndForStatus(bot, itr->second.errand, RPG_IDLE);
+}
+
+// #1004 (BEYOND AC): a far pick flies to the flight node nearest the NPC first, the way a player gets to a capital. Uses
+// the bot's own TRAVEL_FLIGHT (walk to the nearest flight master, SendLearnNewTaxiNode, ActivateTaxiPathTo), only with a
+// fixed destination instead of the random one. Worth it only when the walk to the flight master plus the walk from the
+// destination node is well under the direct walk, and every node on the route has a mount for the bot's team (#887).
+bool PlanFlight(Player* bot, Pick const& pick, Errand& errand)
+{
+    float const minDist = CfgFlightMin();
+    if (minDist <= 0.0f || pick.dist <= minDist)
+        return false;
+    TravelMgr::FlightMasterInfo const* fm = sTravelMgr.GetNearestFlightMasterInfo(bot);
+    if (!fm || !fm->taxiNodeId)
+        return false;
+    uint32 const team = bot->GetTeam();
+    uint32 const mountIdx = team == ALLIANCE ? 1 : 0;
+    TaxiNodesEntry const* fromNode = sTaxiNodesStore.LookupEntry(fm->taxiNodeId);
+    if (!fromNode || !fromNode->MountCreatureID[mountIdx])
+        return false;
+    float const fmDist = bot->GetExactDist2d(fm->pos.GetPositionX(), fm->pos.GetPositionY());
+
+    uint32 bestNode = 0;
+    float bestDist = 0.0f;
+    for (uint32 nodeId : sTravelMgr.GetFlightNodesInZone(errand.zoneId, team, fm->taxiNodeId))
+    {
+        TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(nodeId);
+        if (!node || node->map_id != bot->GetMapId() || !node->MountCreatureID[mountIdx])
+            continue;
+        float const d = std::hypot(node->x - pick.spawn->x, node->y - pick.spawn->y);
+        if (!bestNode || d < bestDist)
+        {
+            bestNode = nodeId;
+            bestDist = d;
+        }
+    }
+    if (!bestNode || fmDist + bestDist > pick.dist * 0.6f)
+        return false;
+
+    std::vector<uint32> path = sTravelNodeMap.FindTaxiPath(fm->taxiNodeId, bestNode);
+    if (path.empty())
+        return false;
+    for (uint32 nodeId : path)
+    {
+        TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(nodeId);
+        if (!node || !node->MountCreatureID[mountIdx])
+            return false;
+    }
+
+    errand.flightPending = true;
+    errand.flightFmEntry = fm->templateEntry;
+    errand.flightFmPos = fm->pos;
+    errand.flightPath = std::move(path);
+    errand.budgetMs = LegBudgetMs(fmDist + bestDist, FLIGHT_ALLOW_MS);
+    TC_LOG_DEBUG("playerbots", "[ERRAND] %s flight planned fm=%u node %u -> %u fm-dist=%.0f node-to-npc=%.0f hops=%u", bot->GetName().c_str(),
+                 fm->templateEntry, fm->taxiNodeId, bestNode, fmDist, bestDist, uint32(errand.flightPath.size()));
+    return true;
+}
+
+// #1004: the flight to take for the errand TryStart just picked (the caller then runs TRAVEL_FLIGHT instead of GO_CAMP).
+bool TakeFlight(Player* bot, uint32& fmEntry, WorldPosition& fmPos, std::vector<uint32>& path)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr == states.end() || !itr->second.errand.active || !itr->second.errand.flightPending || itr->second.errand.landedMs)
+        return false;
+    Errand& errand = itr->second.errand;
+    fmEntry = errand.flightFmEntry;
+    fmPos = errand.flightFmPos;
+    path = errand.flightPath;
+    return true;
+}
+
+// #1004: TRAVEL_FLIGHT landed (NewRpgAction.cpp): true and `stand` set when it was an errand's flight, which resumes as
+// GO_CAMP to the NPC with a fresh time budget for the remaining walk.
+bool OnFlightLanded(Player* bot, WorldPosition& stand)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr == states.end() || !itr->second.errand.active || !itr->second.errand.flightPending)
+        return false;
+    Errand& errand = itr->second.errand;
+    errand.flightPending = false;
+    errand.landedMs = getMSTime();
+    errand.legMs = errand.landedMs;
+    float const left = errand.stand.getMapId() == bot->GetMapId()
+                           ? bot->GetExactDist2d(errand.stand.GetPositionX(), errand.stand.GetPositionY()) : 0.0f;
+    errand.budgetMs = LegBudgetMs(left);
+    stand = errand.stand;
+    TC_LOG_DEBUG("playerbots", "[ERRAND] %s flight landed npc=%u after %u s, %.0f yd left, budget %u s", bot->GetName().c_str(), errand.entry,
+                 GetMSTimeDiffToNow(errand.startMs) / IN_MILLISECONDS, left, errand.budgetMs / IN_MILLISECONDS);
+    return true;
+}
+
+// Picks an errand for this IDLE draw; on true `pos` is the stand point to GO_CAMP to.
+bool TryStart(PlayerbotAI* botAI, Player* bot, WorldPosition& pos)
+{
+    if (!Enabled(bot))
+        return false;
+
+    std::unordered_map<uint32, uint32> targeted;
+    std::unordered_map<uint32, uint32> npcLoad;
+    {
+        std::lock_guard<std::mutex> guard(stateLock);
+        BotState& state = states[bot->GetGUID()];
+        // #945: an errand whose GO_CAMP is still running is never replaced by a new search
+        if (state.errand.active)
+            return false;
+        if (!state.init)
+        {
+            // stagger the first errand over one cooldown so a freshly started server does not send everyone at once
+            state.init = true;
+            state.lastMs = getMSTime() - urand(0, CfgCooldownMs() / IN_MILLISECONDS) * IN_MILLISECONDS;
+        }
+        if (GetMSTimeDiffToNow(state.lastMs) < CfgCooldownMs())
+            return false;
+        if (state.hasNone && GetMSTimeDiffToNow(state.noneMs) < NONE_COOLDOWN_MS)
+            return false;
+
+        for (auto it = state.targeted.begin(); it != state.targeted.end();)
+        {
+            if (GetMSTimeDiffToNow(it->second) >= RETARGET_COOLDOWN_MS)
+                it = state.targeted.erase(it);
+            else
+                ++it;
+        }
+        targeted = state.targeted;
+        for (auto const& other : states)
+            if (other.second.errand.active)
+                ++npcLoad[other.second.errand.spawnId];
+    }
+
+    // Needs, first that holds and finds an NPC wins. Values are the bot's own (outside the lock).
+    PlayerbotAI* ai = botAI;
+    AiObjectContext* ctx = ai->GetAiObjectContext();
+    std::vector<std::pair<uint32, uint32>> plan;  // (need, wanted categories)
+    if (ctx->GetValue<bool>("should repair")->Get() && ctx->GetValue<bool>("can repair")->Get())
+        plan.emplace_back(NEED_REPAIR, CAT_REPAIR);
+    if (ctx->GetValue<bool>("should sell")->Get() && ctx->GetValue<bool>("can sell")->Get())
+        plan.emplace_back(NEED_SELL, CAT_VENDOR);
+    // profession trainers of the known professions: a need when something is learnable now, else a random-errand category
+    std::vector<uint32> profSkills = KnownProfessions(bot);
+    if (ProfessionLearnableNow(botAI, bot, profSkills))
+        plan.emplace_back(NEED_PROF, CAT_PROF);
+    if (urand(1, 100) <= CfgChance())
+    {
+        // Owner request 2026-10-28: draw ONE category by RpgTownErrandWeight*, then (near ring, far ring) search just that
+        // category; when it finds nothing the loop below falls to the next category drawn by weight. Drawn without
+        // replacement, so the plan is the whole weighted order. Stable masters only for hunters, guild banks only for
+        // guilded bots, profession trainers only when the bot knows a profession.
+        std::vector<uint32> cats = {CAT_AUCTION, CAT_PROF, CAT_BANK, CAT_MAILBOX, CAT_CLASS};
+        if (bot->GetClass() == CLASS_HUNTER)
+            cats.push_back(CAT_STABLE);
+        if (bot->GetGuildId())
+            cats.push_back(CAT_GUILDBANK);
+        if (profSkills.empty())
+            cats.erase(std::remove(cats.begin(), cats.end(), uint32(CAT_PROF)), cats.end());
+        while (!cats.empty())
+        {
+            uint32 weightSum = 0;
+            for (uint32 cat : cats)
+                weightSum += CfgCategoryWeight(cat);
+            if (!weightSum)
+                break;
+            uint32 roll = urand(1, weightSum);
+            size_t idx = 0;
+            for (; idx < cats.size(); ++idx)
+            {
+                uint32 const w = CfgCategoryWeight(cats[idx]);
+                if (roll <= w)
+                    break;
+                roll -= w;
+            }
+            if (idx >= cats.size())
+                break;
+            // Owner order 2026-10-28 (auction house, then profession trainer, bank, mailbox): a mailbox only when the
+            // draw picked it first, never as a fallback - every town has one, so falling through to it made mailboxes
+            // as common as auctioneers (42 vs 40 in 40 min at 1000 bots) although their weight is 15 against 40.
+            if (cats[idx] != CAT_MAILBOX || plan.empty() || plan.back().first != NEED_ERRAND)
+                plan.emplace_back(NEED_ERRAND, cats[idx]);
+            cats.erase(cats.begin() + idx);
+        }
+    }
+
+    // Rings: the local town first (RpgTownErrandNearRadius), widen to RpgTownErrandRadius only when nothing qualifies.
+    float const maxRadius = CfgRadius();
+    float const nearRadius = std::min(CfgNearRadius(), maxRadius);
+    Pick pick;
+    uint32 need = NEED_NONE;
+    bool farRing = false;
+    for (auto const& entry : plan)
+    {
+        if (nearRadius > 0.0f && Search(botAI, bot, entry.first, entry.second, profSkills, targeted, npcLoad, nearRadius, pick))
+        {
+            need = entry.first;
+            break;
+        }
+        // Banks stand only in capitals and a few towns, like auction houses: search them as far (v16 census: bank 11 vs mailbox
+        // 16 per hour, because a drawn bank errand mostly found none in RpgTownErrandRadius and fell through).
+        float const outerRadius = (entry.second == CAT_AUCTION || entry.second == CAT_BANK) ? std::max(maxRadius, CfgAuctionRadius()) : maxRadius;
+        if (nearRadius < outerRadius && Search(botAI, bot, entry.first, entry.second, profSkills, targeted, npcLoad, outerRadius, pick))
+        {
+            need = entry.first;
+            farRing = true;
+            break;
+        }
+    }
+
+    std::lock_guard<std::mutex> guard(stateLock);
+    BotState& state = states[bot->GetGUID()];
+    if (need == NEED_NONE)
+    {
+        if (!plan.empty())
+        {
+            state.hasNone = true;
+            state.noneMs = getMSTime();
+            TC_LOG_DEBUG("playerbots", "[ERRAND] %s give-up: no matching NPC (needs %u, map %u zone %u)",
+                         bot->GetName().c_str(), uint32(plan.size()), bot->GetMapId(), bot->GetZoneId());
+        }
+        return false;
+    }
+
+    state.hasNone = false;
+    state.lastMs = getMSTime();
+    state.targeted[pick.spawn->spawnId] = state.lastMs;
+    Errand& errand = state.errand;
+    errand = Errand();
+    errand.active = true;
+    errand.need = need;
+    errand.cat = pick.cat;
+    errand.entry = pick.spawn->entry;
+    errand.spawnId = pick.spawn->spawnId;
+    errand.pos = WorldPosition(bot->GetMapId(), pick.spawn->x, pick.spawn->y, pick.spawn->z);
+    // Stand point ~STAND_DIST yd in front of the NPC along its orientation (as the TravelMgr hub entries: x + cos(o) * d),
+    // z from the spawn + 0.5, so GO_CAMP's 10 yd arrival test is met; the spawn itself when that point is in water.
+    float const sx = pick.spawn->x + std::cos(pick.spawn->o) * STAND_DIST;
+    float const sy = pick.spawn->y + std::sin(pick.spawn->o) * STAND_DIST;
+    float const sz = pick.spawn->z + 0.5f;
+    errand.stand = bot->GetMap()->IsInWater(bot->GetPhaseMask(), sx, sy, pick.spawn->z) ? errand.pos
+                                                                                          : WorldPosition(bot->GetMapId(), sx, sy, sz);
+    errand.startMs = state.lastMs;
+    errand.legMs = errand.startMs;
+    errand.budgetMs = LegBudgetMs(pick.dist);  // #1004: scaled with the distance (base 10 min + dist / 3 yd/s, cap 45 min)
+    errand.zoneId = bot->GetMap()->GetZoneId(bot->GetPhaseMask(), pick.spawn->x, pick.spawn->y, pick.spawn->z);
+    if (bot->GetZoneId() == errand.zoneId)
+        errand.zoneMs = errand.startMs;
+    PlanFlight(bot, pick, errand);
+    errand.stayMs = (need == NEED_ERRAND ? urand(CfgStayMinS(), CfgStayMaxS()) : urand(8, 15)) * IN_MILLISECONDS;
+    pos = errand.stand;
+
+    CreatureTemplate const* tmpl = pick.spawn->isGo ? nullptr : sObjectMgr->GetCreatureTemplate(errand.entry);
+    GameObjectTemplate const* goTmpl = pick.spawn->isGo ? sObjectMgr->GetGameObjectTemplate(errand.entry) : nullptr;
+    TC_LOG_DEBUG("playerbots", "[ERRAND] %s pick need=%s npc=%u (%s) cat=0x%x dist=%.0f ring=%s stay=%us travel=%s budget=%u s", bot->GetName().c_str(),
+                 NeedName(need), errand.entry, tmpl ? tmpl->Name.c_str() : goTmpl ? goTmpl->name.c_str() : "?", pick.cat, pick.dist, farRing ? "far" : "near",
+                 errand.stayMs / IN_MILLISECONDS, errand.flightPending ? "flight" : "walk", errand.budgetMs / IN_MILLISECONDS);
+    return true;
+}
+
+// GO_CAMP arrival (NewRpgAction.cpp): true and `npc` set when this camp pos was an errand and the NPC is there.
+bool OnArrive(Player* bot, ObjectGuid& npc)
+{
+    uint32 entry = 0;
+    uint32 spawnId = 0;
+    {
+        std::lock_guard<std::mutex> guard(stateLock);
+        auto itr = states.find(bot->GetGUID());
+        if (itr == states.end() || !itr->second.errand.active)
+            return false;
+        Errand& errand = itr->second.errand;
+        if (GetMSTimeDiffToNow(errand.legMs) > errand.budgetMs)
+        {
+            EndErrand(bot, errand, "timeout");
+            return false;
+        }
+        if (errand.pos.getMapId() != bot->GetMapId() || bot->GetExactDist(errand.pos) > 40.0f)
+        {
+            EndErrand(bot, errand, "unreachable", " (camp pos reached away from the npc)");
+            return false;
+        }
+        entry = errand.entry;
+        spawnId = errand.spawnId;
+    }
+
+    WorldObject* found = nullptr;
+    if (spawnId & GO_KEY_BIT)
+    {
+        // gameobject errand (mailbox): the same spawn, else any gameobject of the entry in range
+        std::list<GameObject*> gos;
+        bot->GetGameObjectListWithEntryInGrid(gos, entry, 60.0f);
+        for (GameObject* go : gos)
+        {
+            if (!go || !go->IsInWorld())
+                continue;
+            if (go->GetDBTableGUIDLow() == (spawnId & ~GO_KEY_BIT))
+            {
+                found = go;
+                break;
+            }
+            if (!found)
+                found = go;
+        }
+    }
+    else
+    {
+        for (Creature* creature : bot->FindNearestCreatures(entry, 60.0f))
+        {
+            if (!creature || !creature->IsAlive() || !creature->IsInWorld())
+                continue;
+            if (creature->GetSpawnId() == spawnId)
+            {
+                found = creature;
+                break;
+            }
+            if (!found)
+                found = creature;
+        }
+    }
+
+    std::lock_guard<std::mutex> guard(stateLock);
+    Errand& errand = states[bot->GetGUID()].errand;
+    if (!found)
+    {
+        TC_LOG_DEBUG("playerbots", "[ERRAND] %s give-up: npc/go %u not found at the camp pos (dead or despawned)",
+                     bot->GetName().c_str(), entry);
+        EndErrand(bot, errand, "unreachable", " (npc gone)");
+        return false;
+    }
+
+    errand.npc = found->GetGUID();
+    errand.arriveMs = getMSTime();
+    npc = errand.npc;
+    TC_LOG_DEBUG("playerbots", "[ERRAND] %s arrival need=%s npc=%u cat=0x%x dist=%.1f", bot->GetName().c_str(), NeedName(errand.need),
+                 entry, errand.cat, bot->GetExactDist(found));
+    return true;
+}
+
+// True while `npc` is this bot's active errand target.
+bool IsErrandNpc(Player* bot, ObjectGuid npc)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    return itr != states.end() && itr->second.errand.active && itr->second.errand.npc == npc;
+}
+
+// The errand was seeded but the bot never got to the NPC (blocked path, NPC gone): end it.
+bool Expired(Player* bot)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    auto itr = states.find(bot->GetGUID());
+    if (itr == states.end() || !itr->second.errand.active || !itr->second.errand.arriveMs)
+        return false;
+    Errand& errand = itr->second.errand;
+    if (!errand.reachedMs && GetMSTimeDiffToNow(errand.arriveMs) > REACH_TIMEOUT_MS)
+    {
+        TC_LOG_DEBUG("playerbots", "[ERRAND] %s give-up: could not reach npc %u within %u s", bot->GetName().c_str(), errand.entry,
+                     REACH_TIMEOUT_MS / IN_MILLISECONDS);
+        EndErrand(bot, errand, "timeout", " (reach)");
+        return true;
+    }
+    return false;
+}
+
+// Interaction distance reached: remember it; returns the need so the caller knows which work to do.
+uint32 MarkReached(Player* bot)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    Errand& errand = states[bot->GetGUID()].errand;
+    errand.reachedMs = getMSTime();
+    return errand.need;
+}
+
+uint32 StayMs(Player* bot)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    return states[bot->GetGUID()].errand.stayMs;
+}
+
+uint32 CurrentCat(Player* bot)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    return states[bot->GetGUID()].errand.cat;
+}
+
+void Finish(Player* bot)
+{
+    std::lock_guard<std::mutex> guard(stateLock);
+    Errand& errand = states[bot->GetGUID()].errand;
+    TC_LOG_DEBUG("playerbots", "[ERRAND] %s done need=%s npc=%u stayed %u s", bot->GetName().c_str(), NeedName(errand.need),
+                 errand.entry, (errand.reachedMs ? GetMSTimeDiffToNow(errand.reachedMs) : 0) / IN_MILLISECONDS);
+    errand.active = false;
+}
+}  // namespace TownErrand
+// ============================== end #945 (town errands) ==============================
+
 bool NewRpgBaseAction::RandomChangeStatus(std::vector<NewRpgStatus> candidateStatus)
 {
     // Mirrors AC NewRpgBaseAction::RandomChangeStatus: pick from the candidate
@@ -1731,6 +3002,31 @@ bool NewRpgBaseAction::RandomChangeStatus(std::vector<NewRpgStatus> candidateSta
     // #872 (#843 extension): a new draw ends any quest hub trip the previous one started.
     if (sPlayerbotAIConfig->rpgQuestHubSearchEnable)
         QuestHubSearch::ClearTrip(bot);
+
+    // #945 (BEYOND AC): a new draw ends any town errand the previous one started; then a bot with a need (repair, sell,
+    // profession rank) or, by chance, a random errand goes to a matching NPC with the GO_CAMP travel. The GO_CAMP arrival
+    // (NewRpgAction.cpp) seeds WANDER_NPC with that NPC. Only at the IDLE draw (GO_CAMP is a candidate there).
+    TownErrand::Clear(bot);
+    if (std::find(candidateStatus.begin(), candidateStatus.end(), RPG_GO_CAMP) != candidateStatus.end() &&
+        !BotScenario::IsStatusLocked(bot))
+    {
+        WorldPosition errandPos;
+        if (TownErrand::TryStart(botAI, bot, errandPos))
+        {
+            uint32 flightFm = 0;
+            WorldPosition flightFmPos;
+            std::vector<uint32> flightPath;
+            if (TownErrand::TakeFlight(bot, flightFm, flightFmPos, flightPath))  // #1004: far pick, fly first
+            {
+                botAI->GetRpgInfo().ChangeToTravelFlight(flightFm, flightFmPos, std::move(flightPath));
+                return true;
+            }
+            botAI->GetRpgInfo().ChangeToGoCamp(errandPos);
+            BotScenario::LogTarget(bot, "camp", nullptr, errandPos.GetPositionX(), errandPos.GetPositionY(),
+                                   errandPos.GetPositionZ());
+            return true;
+        }
+    }
 
     std::vector<NewRpgStatus> availableStatus;
     uint32 probSum = 0;

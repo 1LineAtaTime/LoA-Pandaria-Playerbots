@@ -275,6 +275,23 @@ CastShootAction::CastShootAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "s
     }
 }
 
+// #930 (MoP-only; AC GenericSpellActions.cpp:431-437 decides the same through CheckCast): patch 5.0.4 removed the ranged
+// slot, so wands sit in the main hand (Player::FindEquipSlot INVTYPE_RANGEDRIGHT) and the ranged-slot lookup above never
+// finds one. Shoot (5019) needs a wand there; without one the action is impossible up front. Priests, mages and warlocks
+// without a wand otherwise ran a full CheckCast for it (EQUIPPED_ITEM_CLASS) on every tick nothing else could run.
+bool CastShootAction::isPossible()
+{
+    if (spell == "shoot")
+    {
+        Item* const weapon = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+        ItemTemplate const* proto = weapon ? weapon->GetTemplate() : nullptr;
+        if (!proto || proto->Class != ITEM_CLASS_WEAPON || proto->SubClass != ITEM_SUBCLASS_WEAPON_WAND)
+            return false;
+    }
+
+    return CastSpellAction::isPossible();
+}
+
 NextAction** CastSpellAction::getPrerequisites()
 {
     return nullptr;

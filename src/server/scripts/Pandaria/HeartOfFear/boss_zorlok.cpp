@@ -1678,23 +1678,6 @@ class spell_sonic_ring : public SpellScriptLoader
     public:
         spell_sonic_ring() : SpellScriptLoader("spell_sonic_ring") { }
 
-        class spell_sonic_ring_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_sonic_ring_AuraScript);
-
-            void ApplyAura(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (Unit* caster = GetCaster())
-                    caster->AddAura(SPELL_SONIC_RING_AURA, caster);
-            }
-
-            void Register() override
-            {
-                OnEffectApply += AuraEffectApplyFn(spell_sonic_ring_AuraScript::ApplyAura, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-                OnEffectApply += AuraEffectApplyFn(spell_sonic_ring_AuraScript::ApplyAura, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
         class spell_sonic_ring_SpellScript : public SpellScript
         {
             PrepareSpellScript(spell_sonic_ring_SpellScript);
@@ -1711,11 +1694,6 @@ class spell_sonic_ring : public SpellScriptLoader
                 OnHit += SpellHitFn(spell_sonic_ring_SpellScript::Effect);
             }
         };
-
-        AuraScript* GetAuraScript() const override
-        {
-            return new spell_sonic_ring_AuraScript();
-        }
 
         SpellScript* GetSpellScript() const override
         {

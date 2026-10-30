@@ -43,7 +43,8 @@ MapManager::MapManager()
     : _freeInstanceIds(std::make_unique<InstanceIds>()), _nextInstanceId(0)
 {
     i_gridCleanUpDelay = sWorld->getIntConfig(CONFIG_INTERVAL_GRIDCLEAN);
-    i_timer.SetInterval(sWorld->getIntConfig(CONFIG_INTERVAL_MAPUPDATE));
+    i_timer[3].SetInterval(sWorld->getIntConfig(CONFIG_INTERVAL_MAPUPDATE));
+    mapUpdateStep = 0;
 }
 
 MapManager::~MapManager() { }
@@ -382,9 +383,19 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
 
 void MapManager::Update(uint32 diff)
 {
-    i_timer.Update(diff);
-    if (!i_timer.Passed())
-        return;
+    // #935 (AC MapMgr.cpp:251-305, pussywizard's split): every world tick each map updates its sessions and players
+    // (s_diff = diff); the full update (creatures, grid objects, scripts, relocations, object updates) runs for one group
+    // per tick - step 0 continents, 1 battlegrounds/arenas, 2 dungeons - with the time that group accumulated, and step 3
+    // waits for MapUpdateInterval before the next cycle. Before, every map did a full update once per interval.
+    for (uint8 i = 0; i < 4; ++i)
+        i_timer[i].Update(diff);
+
+    auto isFullStep = [this](Map const* map)
+    {
+        return (mapUpdateStep == 0 && !map->IsBattlegroundOrArena() && !map->IsDungeon()) ||
+               (mapUpdateStep == 1 && map->IsBattlegroundOrArena()) ||
+               (mapUpdateStep == 2 && map->IsDungeon());
+    };
     // Time the whole map cycle with a local timer. The previous code used the shared
     // World::m_currentTime (RecordTimeDiff(nullptr) / RecordTimeDiff("MapUpdate")), but every
     // Map::Update that exceeds the threshold resets that shared timer, so the reported
@@ -393,22 +404,34 @@ void MapManager::Update(uint32 diff)
     MapMapType::iterator iter = i_maps.begin();
     for (; iter != i_maps.end(); ++iter)
     {
+        uint32 const t_diff = (mapUpdateStep < 3 && isFullStep(iter->second)) ? uint32(i_timer[mapUpdateStep].GetCurrent()) : 0;
         if (m_updater.activated())
-            m_updater.schedule_update(*iter->second, uint32(i_timer.GetCurrent()));
+            m_updater.schedule_update(*iter->second, t_diff, diff);
         else
-            iter->second->Update(uint32(i_timer.GetCurrent()));
+            iter->second->Update(t_diff, diff);
     }
     if (m_updater.activated())
         m_updater.wait();
 
-    for (iter = i_maps.begin(); iter != i_maps.end(); ++iter)
-        iter->second->DelayedUpdate(uint32(i_timer.GetCurrent()));
+    if (mapUpdateStep < 3)
+    {
+        for (iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+            if (isFullStep(iter->second))
+                iter->second->DelayedUpdate(uint32(i_timer[mapUpdateStep].GetCurrent()));
+
+        i_timer[mapUpdateStep].SetCurrent(0);
+        ++mapUpdateStep;
+    }
+
+    if (mapUpdateStep == 3 && i_timer[3].Passed())
+    {
+        mapUpdateStep = 0;
+        i_timer[3].SetCurrent(0);
+    }
 
     uint32 updateTime = getMSTimeDiff(updateStart, getMSTime());
     if (updateTime > sWorld->getIntConfig(CONFIG_MIN_LOG_UPDATE))
         TC_LOG_INFO("diff", "Difftime MapUpdate cycle: %u.", updateTime);
-
-    i_timer.SetCurrent(0);
 }
 
 void MapManager::DoDelayedMovesAndRemoves() { }

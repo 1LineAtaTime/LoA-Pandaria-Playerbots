@@ -210,6 +210,12 @@ bool ForcedDespawnDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
+#include "HeapProfConfig.h"
+#if LOA_HEAPPROF
+#include <atomic>
+std::atomic<int64_t> g_heapprofLiveCreatures{0}; // #924 profiling branch: live count for HeapProfiler dumps
+#endif
+
 Creature::Creature(bool isWorldObject) : Unit(isWorldObject), MapObject(),
 lootForPickPocketed(false), lootForBody(false), m_groupLootTimer(0), lootingGroupLowGUID(0),
 m_PlayerDamageReq(0), m_lootRecipient(), m_lootRecipientGroup(0), m_corpseRemoveTime(0), m_respawnTime(0),
@@ -218,6 +224,9 @@ m_defaultMovementType(IDLE_MOTION_TYPE), m_spawnId(0), m_equipmentId(0), m_origi
 m_AlreadySearchedAssistance(false), m_cannotReachTarget(false), m_cannotReachTimer(0), m_regenHealth(true), m_AI_locked(false), _isMissingSwimmingFlagOutOfCombat(false), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL),
 m_creatureInfo(nullptr), m_creatureData(nullptr), m_path_id(0), m_formation(nullptr), m_triggerJustAppeared(true), m_respawnDelayMax(0), dynamicHealthPlayersCount(0)
 {
+#if LOA_HEAPPROF
+    ++g_heapprofLiveCreatures; // #924 profiling branch
+#endif
     m_regenTimer = 0;
     m_valuesCount = UNIT_END;
 
@@ -240,6 +249,9 @@ m_creatureInfo(nullptr), m_creatureData(nullptr), m_path_id(0), m_formation(null
 
 Creature::~Creature()
 {
+#if LOA_HEAPPROF
+    --g_heapprofLiveCreatures; // #924 profiling branch
+#endif
     delete i_AI;
     i_AI = NULL;
 

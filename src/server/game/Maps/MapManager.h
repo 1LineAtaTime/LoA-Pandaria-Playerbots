@@ -73,8 +73,8 @@ class TC_GAME_API MapManager
             if (t < MIN_MAP_UPDATE_DELAY)
                 t = MIN_MAP_UPDATE_DELAY;
 
-            i_timer.SetInterval(t);
-            i_timer.Reset();
+            i_timer[3].SetInterval(t);   // #935: the step-cycle timer (AC MapMgr)
+            i_timer[3].Reset();
         }
 
         //void LoadGrid(int mapid, int instId, float x, float y, const WorldObject* obj, bool no_unload = false);
@@ -158,7 +158,10 @@ class TC_GAME_API MapManager
         mutable std::shared_mutex _mapsLock;
         uint32 i_gridCleanUpDelay;
         MapMapType i_maps;
-        IntervalTimer i_timer;
+        // #935 (AC MapMgr): [0..2] time accumulated by continents / battlegrounds+arenas / dungeons since their last full
+        // update, [3] the MapUpdateInterval between step cycles; mapUpdateStep = whose full update runs this tick (3 = none).
+        IntervalTimer i_timer[4];
+        uint8 mapUpdateStep;
 
         std::unique_ptr<InstanceIds> _freeInstanceIds;
         uint32 _nextInstanceId;

@@ -31,6 +31,12 @@
 #include "WorldSession.h"
 #include "WorldPacket.h"
 #include "Player.h"
+#include "Creature.h"
+#include "GameObject.h"
+#include "HeapProfConfig.h"
+// #924 profiling branch (defined in worldserver/HeapProfiler.cpp)
+void HeapProf_MeasureBegin();
+void HeapProf_MeasureEnd(int64_t& bytes, int64_t& count);
 #include "Vehicle.h"
 #include "SkillExtraItems.h"
 #include "SkillDiscovery.h"
@@ -593,7 +599,17 @@ void World::LoadConfigSettings(bool reload)
     if (reload)
         sMapMgr->SetGridCleanUpDelay(m_int_configs[CONFIG_INTERVAL_GRIDCLEAN]);
 
-    m_int_configs[CONFIG_INTERVAL_MAPUPDATE] = 200; // Don't mess around with mapupdate cause of the issues with the mmaps.
+    // #931 AC parity (AC WorldConfig.cpp:176, worldserver.conf.dist MapUpdateInterval = 10): this was hard-coded to 200 ms
+    // ("issues with the mmaps", from before MapUpdate.Threads > 1), so maps advanced 5 times a second and each cycle
+    // carried 200 ms of work (p99 ticks 110-150 ms at 3000 bots, up to 200 ms extra latency for real players).
+    m_int_configs[CONFIG_INTERVAL_MAPUPDATE] = sConfigMgr->GetIntDefault("MapUpdateInterval", 10);
+    if (m_int_configs[CONFIG_INTERVAL_MAPUPDATE] < MIN_MAP_UPDATE_DELAY)
+    {
+        TC_LOG_ERROR("server.loading", "MapUpdateInterval (%i) must be greater %u. Use this minimal value.", m_int_configs[CONFIG_INTERVAL_MAPUPDATE], MIN_MAP_UPDATE_DELAY);
+        m_int_configs[CONFIG_INTERVAL_MAPUPDATE] = MIN_MAP_UPDATE_DELAY;
+    }
+    if (reload)
+        sMapMgr->SetMapUpdateInterval(m_int_configs[CONFIG_INTERVAL_MAPUPDATE]);   // AC World.cpp:203
 
     m_int_configs[CONFIG_INTERVAL_CHANGEWEATHER] = sConfigMgr->GetIntDefault("ChangeWeatherInterval", 10 * MINUTE * IN_MILLISECONDS);
 
@@ -2528,6 +2544,26 @@ void World::SetInitialWorldSettings()
 	}
 
 #endif
+
+#if LOA_HEAPPROF
+    // #924 profiling branch: heap cost of one freshly constructed object (HeapProfiler.cpp counts operator new).
+    {
+        int64 b = 0, c = 0;
+        HeapProf_MeasureBegin();
+        Creature* probeCreature = new Creature();
+        HeapProf_MeasureEnd(b, c);
+        TC_LOG_INFO("server.worldserver", "[HEAPPROF] new Creature: %lld bytes in %lld allocations (sizeof Creature=%u Unit=%u WorldObject=%u)",
+            (long long)b, (long long)c, uint32(sizeof(Creature)), uint32(sizeof(Unit)), uint32(sizeof(WorldObject)));
+        delete probeCreature;
+        HeapProf_MeasureBegin();
+        GameObject* probeGo = new GameObject();
+        HeapProf_MeasureEnd(b, c);
+        TC_LOG_INFO("server.worldserver", "[HEAPPROF] new GameObject: %lld bytes in %lld allocations (sizeof GameObject=%u Player=%u)",
+            (long long)b, (long long)c, uint32(sizeof(GameObject)), uint32(sizeof(Player)));
+        delete probeGo;
+    }
+#endif
+    sSpellMgr->ShrinkSpellInfoEffects();  // #924: after every loader that edits SpellInfo effects
 
     TC_LOG_INFO("server.worldserver", "World initialized in %u minutes %u seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000));
 

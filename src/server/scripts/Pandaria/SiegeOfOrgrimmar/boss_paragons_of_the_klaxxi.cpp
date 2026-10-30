@@ -16,6 +16,7 @@
 */
 
 #include "ScriptMgr.h"
+#include "SpellMgr.h"
 #include "ScriptedCreature.h"
 #include "siege_of_orgrimmar.h"
 
@@ -4724,12 +4725,13 @@ class spell_paragon_explosive_ring_visual : public SpellScript
 
     void SelectDest(SpellDestination& dest)
     {
-        dest._position.RelocateOffset(0.0f, GetSpellInfo()->Effects[EFFECT_0].MaxRadiusEntry->RadiusMax);
+        if (SpellRadiusEntry const* radius = GetSpellInfo()->Effects[EFFECT_0].MaxRadiusEntry)
+            dest._position.RelocateOffset(0.0f, radius->RadiusMax);
     }
 
     void Register() override
     {
-        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_paragon_explosive_ring_visual::SelectDest, EFFECT_0, TARGET_DEST_CASTER);
+        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_paragon_explosive_ring_visual::SelectDest, EFFECT_0, Targets(sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].TargetA.GetTarget()));
     }
 };
 

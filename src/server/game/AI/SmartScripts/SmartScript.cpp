@@ -45,6 +45,7 @@ SmartScript::SmartScript()
     me = NULL;
     trigger = NULL;
     mEventPhase = 0;
+    mAllowPhaseReset = true;
     mPathId = 0;
     mTargetStorage = new GuidListMap();
     mTextTimer = 0;
@@ -66,7 +67,9 @@ SmartScript::~SmartScript()
 
 void SmartScript::OnReset()
 {
-    SetPhase(0);
+    // AC SmartScript.cpp:133: SMART_ACTION_SET_EVENT_FLAG_RESET 0 keeps the event phase through a reset
+    if (AllowPhaseReset())
+        SetPhase(0);
     ResetBaseObject();
     for (SmartAIEventList::iterator i = mEvents.begin(); i != mEvents.end(); ++i)
     {
@@ -750,21 +753,35 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_CALL_GROUPEVENTHAPPENS:
         {
-            if (!unit)
-                break;
-
-            if (IsPlayer(unit) && GetBaseObject())
+            // AC SmartScript.cpp:1075: credit the action's targets (a stored list, the invoker, players in range ...), their
+            // charmer/owner player, and players seated on a target vehicle. Our older code credited only the event's unit, which
+            // for a timed / out-of-combat event is the last invoker - Apprentice Mirveda (8488) credited one of her summons and
+            // the quest never got its event credit (#1001). An empty target list falls back to the unit as before.
+            ObjectList* targets = GetTargets(e, unit);
+            ObjectList fallback;
+            if ((!targets || targets->empty()) && unit)
+                fallback.push_back(unit);
+            ObjectList const& list = (targets && !targets->empty()) ? *targets : fallback;
+            for (ObjectList::const_iterator itr = list.begin(); itr != list.end(); ++itr)
             {
-                unit->ToPlayer()->GroupEventHappens(e.action.quest.quest, GetBaseObject());
-                TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_GROUPEVENTHAPPENS: Player %u, group credit for quest %u",
-                    unit->GetGUID().GetCounter(), e.action.quest.quest);
-            }
+                if (!IsUnit(*itr) || !GetBaseObject())
+                    continue;
 
-            // Special handling for vehicles
-            if (Vehicle* vehicle = unit->GetVehicleKit())
-                for (SeatMap::iterator it = vehicle->Seats.begin(); it != vehicle->Seats.end(); ++it)
-                    if (Player* player = ObjectAccessor::GetPlayer(*unit, it->second.Passenger.Guid))
-                        player->GroupEventHappens(e.action.quest.quest, GetBaseObject());
+                Unit* unitTarget = (*itr)->ToUnit();
+                if (Player* player = unitTarget->GetCharmerOrOwnerPlayerOrPlayerItself())
+                {
+                    player->GroupEventHappens(e.action.quest.quest, GetBaseObject());
+                    TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_CALL_GROUPEVENTHAPPENS: Player %u, group credit for quest %u",
+                        player->GetGUID().GetCounter(), e.action.quest.quest);
+                }
+
+                // Special handling for vehicles
+                if (Vehicle* vehicle = unitTarget->GetVehicleKit())
+                    for (SeatMap::iterator it = vehicle->Seats.begin(); it != vehicle->Seats.end(); ++it)
+                        if (Player* player = ObjectAccessor::GetPlayer(*unitTarget, it->second.Passenger.Guid))
+                            player->GroupEventHappens(e.action.quest.quest, GetBaseObject());
+            }
+            delete targets;
             break;
         }
         case SMART_ACTION_REMOVEAURASFROMSPELL:
@@ -1156,8 +1173,12 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                     z += e.target.z;
                     o += e.target.o;
                     if (Creature* summon = GetBaseObject()->SummonCreature(e.action.summonCreature.creature, x, y, z, o, (TempSummonType)e.action.summonCreature.type, Milliseconds(e.action.summonCreature.duration)))
+                    {
                         if (e.action.summonCreature.attackInvoker)
                             summon->AI()->AttackStart((*itr)->ToUnit());
+                        else if (me && e.action.summonCreature.attackScriptOwner)
+                            summon->AI()->AttackStart(me);
+                    }
                 }
 
                 delete targets;
@@ -1166,9 +1187,14 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             if (e.GetTargetType() != SMART_TARGET_POSITION)
                 break;
 
+            // AC SmartScript.cpp:1594: attackInvoker, else attackScriptOwner (action_param5)
             if (Creature* summon = GetBaseObject()->SummonCreature(e.action.summonCreature.creature, e.target.x, e.target.y, e.target.z, e.target.o, (TempSummonType)e.action.summonCreature.type, Milliseconds(e.action.summonCreature.duration)))
+            {
                 if (unit && e.action.summonCreature.attackInvoker)
                     summon->AI()->AttackStart(unit);
+                else if (me && e.action.summonCreature.attackScriptOwner)
+                    summon->AI()->AttackStart(me);
+            }
             break;
         }
         case SMART_ACTION_SUMMON_GO:
@@ -2508,6 +2534,9 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             delete targets;
             break;
         }
+        case SMART_ACTION_SET_EVENT_FLAG_RESET:
+            SetPhaseReset(e.action.active.state); // AC SmartScript.cpp:2725
+            break;
         case SMART_ACTION_SET_INGAME_PHASE_ID:
         {
             ObjectList* targets = GetTargets(e, unit);

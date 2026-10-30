@@ -39,6 +39,8 @@
 #include "TravelNode.h"
 #include "World.h"
 
+#include <atomic>
+
 #include <algorithm>
 #include <array>
 #include <cstdlib>
@@ -80,7 +82,9 @@ namespace
         {1537, ALLIANCE, {2460, 2461, 5099}},                     // Ironforge
         {1657, ALLIANCE, {4155, 4208, 4209}},                     // Darnassus
         {3557, ALLIANCE, {17773, 18350, 16710}},                  // The Exodar
-        {1637, HORDE, {3320, 3309, 3318}},                        // Orgrimmar
+        // #944 (MoP-only data): AC's Orgrimmar bankers 3320/3309/3318 are gone since the Cata rebuild (0 spawns), so no Horde
+        // bank teleport ever chose Orgrimmar. The Valley of Strength bankers (zone 1637, area 5170) take their place.
+        {1637, HORDE, {44851, 44852, 44853, 44854, 44856}},       // Orgrimmar
         {1497, HORDE, {4549, 2459, 2458, 4550}},                  // Undercity
         {1638, HORDE, {2996, 8356, 8357}},                        // Thunder Bluff
         {3487, HORDE, {17631, 17632, 17633, 16615, 16616, 16617}},// Silvermoon City
@@ -94,6 +98,14 @@ namespace
         // 19-25% on the other continents; TRAVEL_FLIGHT entries per availability check 15% vs 26-30%). The banker list
         // stays empty, so the city-banker weighting (GetCityLocations, GetCityWeight) is unchanged.
         {5840, 0, {}},                                            // Vale of Eternal Blossoms shrines (MoP)
+        // #947 (MoP-only, extends AC's Dalaran row): the shrine vaultkeepers as weighted bank cities. With
+        // EnableWeightTeleToCityBankers = 1 (conf.dist), GetCityLocations only picks a city that owns one of the level's
+        // bankers; the 5840 row above has none, so once #947 added the Stormwind/Orgrimmar bankers to 85+, every 85+ bank
+        // teleport went to Stormwind/Orgrimmar and none to a shrine (2026-10-28 log: 38 of 38). The zone ids are the
+        // vaultkeepers' (areas 6519 Summer's Rest / 6484 The Golden Lantern, whose parents are 6141 / 6553), the zone a bot
+        // standing at them reports. No flight master stands in these zones, so the capital-flight roll skips them.
+        {6141, HORDE, {63964, 63965, 63966}},                     // Shrine of Two Moons (MoP)
+        {6553, ALLIANCE, {63967, 63968, 63969, 63970, 63971, 64023, 64024}}, // Shrine of Seven Stars (MoP)
     };
 
     // AC TravelMgr.cpp:60-67.
@@ -138,6 +150,10 @@ namespace
         int silvermoonCity = sConfigMgr->GetIntDefault("AiPlayerbot.TeleToSilvermoonCityWeight", 1);
         int shattrathCity = sConfigMgr->GetIntDefault("AiPlayerbot.TeleToShattrathCityWeight", 1);
         int dalaran = sConfigMgr->GetIntDefault("AiPlayerbot.TeleToDalaranWeight", 1);
+        // #947 (MoP-only keys, same pattern): the shrines are the 85+ bank cities next to Stormwind/Orgrimmar (weight 2).
+        // AC sends every 71-80 bank teleport to Dalaran; 6 against 2 sends three of four 85+ bank teleports to the shrine.
+        int shrineOfTwoMoons = sConfigMgr->GetIntDefault("AiPlayerbot.TeleToShrineOfTwoMoonsWeight", 6);
+        int shrineOfSevenStars = sConfigMgr->GetIntDefault("AiPlayerbot.TeleToShrineOfSevenStarsWeight", 6);
     };
 
     CityBankerWeights const& CityBankerWeightConfig()
@@ -165,6 +181,8 @@ namespace
             case 3487: return cfg.silvermoonCity; // Silvermoon City
             case 3703: return cfg.shattrathCity;  // Shattrath City
             case 4395: return cfg.dalaran;        // Dalaran
+            case 6141: return cfg.shrineOfTwoMoons;   // Shrine of Two Moons (#947)
+            case 6553: return cfg.shrineOfSevenStars; // Shrine of Seven Stars (#947)
         }
 
         return 0;
@@ -376,6 +394,22 @@ void TravelMgr::Init()
                 uint32(allianceFlightMasterCache.size()), uint32(hordeFlightMasterCache.size()));
 }
 
+// #950 (MoP-only): a read-only copy of zone2LevelBracket for RandomPlayerbotMgr's login re-place, published once at
+// the end of PrepareZone2LevelBracket so TravelMgr.h does not change. Free function, declared extern at its caller.
+namespace
+{
+std::map<uint32, std::pair<uint32, uint32>> g_publishedBrackets;
+std::atomic<bool> g_bracketsPublished{false};
+}
+
+bool PlayerbotZoneLevelBracketContains(uint32 zoneId, uint32 level)
+{
+    if (!g_bracketsPublished.load(std::memory_order_acquire))
+        return false;
+    auto const itr = g_publishedBrackets.find(zoneId);
+    return itr != g_publishedBrackets.end() && level >= itr->second.first && level <= itr->second.second;
+}
+
 void TravelMgr::PrepareZone2LevelBracket()
 {
     // AC TravelMgr::PrepareZone2LevelBracket (Mgr/Travel/TravelMgr.cpp:4558-4632): the hard-coded bracket of
@@ -435,6 +469,13 @@ void TravelMgr::PrepareZone2LevelBracket()
             continue;
 
         zone2LevelBracket[zone.zone_id] = LevelBracket{zone.min_level, zone.max_level};
+    }
+
+    if (!g_bracketsPublished.load(std::memory_order_relaxed))
+    {
+        for (auto const& [zoneId, bracket] : zone2LevelBracket)
+            g_publishedBrackets[zoneId] = {bracket.low, bracket.high};
+        g_bracketsPublished.store(true, std::memory_order_release);
     }
 
     if (zone2LevelBracket.empty())
@@ -584,15 +625,19 @@ void TravelMgr::PrepareDestinationCache()
                     if (l >= 71 && l <= 80 && level != 75)
                         continue;
 
-                    // #537 (MoP-only): no banker bracket for 81-84 (Cataclysm has no level-matched capital
-                    // bankers), so GetCityLocations comes back empty and RandomTeleportForLevel falls through
-                    // to the normal level teleport, as AC does for an empty banker list.
-                    if (l >= 81 && l <= 84)
+                    // #947 (MoP-only, extends AC's bracket pattern the way Dalaran serves 71-80): Stormwind and
+                    // Orgrimmar were the Cataclysm capitals and stay the MoP auction-house/portal hubs (the shrines
+                    // have no auction house), but no bot above 60 ever banked there, so 81-90 bots were never seen
+                    // in either city. Their bankers now serve 81-84 alone (was: no bracket, #537) and 85+ next to
+                    // the vaultkeepers. GetCityLocations keeps each team in its own capital.
+                    bool const cataCapitalBanker = bLoc.entry == 2455 || bLoc.entry == 2456 || bLoc.entry == 2457 ||
+                                                   (bLoc.entry >= 44851 && bLoc.entry <= 44856);
+                    if (l >= 81 && l <= 84 && !cataCapitalBanker)
                         continue;
 
                     // #537 (MoP-only): bots 85+ go to the Pandaria vaultkeepers (all level 90: Shrine of
                     // Seven Stars / Shrine of Two Moons). GetCityLocations drops the opposite faction's shrine.
-                    if (l >= 85 && level < 85)
+                    if (l >= 85 && level < 85 && !cataCapitalBanker)
                         continue;
 
                     bankerLocsPerLevelCache[uint8(l)].push_back(bLoc);
@@ -608,9 +653,11 @@ void TravelMgr::PrepareDestinationCache()
         // (Rut'Theran). #779 (MoP-only content, extends that hand list): four Pandaria flight masters are spawned only in phase 4
         // (creature.phaseMask 4), so a phase-1 bot walks to the spawn, finds no creature and goes idle (NewRpgAction.cpp:915-924;
         // w39: 13 of 16 "no live creature" lines, 0 boardings there): 61744 Tabo the Flyer, 61745 Soaring Paw, 67785 Kromthar,
-        // 68226 Daggin Windbeard.
+        // 68226 Daggin Windbeard. #947: the same holds for three phase-4 innkeepers (creature.phaseMask 4): 69088 Keeper Jaril
+        // (Krasarang, Lion's Landing / Domination Point), 62882 Kai the Restless and 62883 Mai the Sleepy (Kun-Lai).
         if (creatureTemplate->Entry == 3838 || creatureTemplate->Entry == 29480 || creatureTemplate->Entry == 61744 ||
-            creatureTemplate->Entry == 61745 || creatureTemplate->Entry == 67785 || creatureTemplate->Entry == 68226)
+            creatureTemplate->Entry == 61745 || creatureTemplate->Entry == 67785 || creatureTemplate->Entry == 68226 ||
+            creatureTemplate->Entry == 69088 || creatureTemplate->Entry == 62882 || creatureTemplate->Entry == 62883)
             continue;
 
         // Continents only: instance flight masters/innkeepers are not travel destinations.
@@ -700,7 +747,9 @@ void TravelMgr::PrepareDestinationCache()
         // hand-listed innkeeper-less zones; an innkeeper is always a hub for its zone's bracket. A
         // spawn that is both a flight master and an innkeeper takes only the flight-master branch,
         // matching AC's if/else-if (so it is a hub only when its zone is innkeeper-less).
-        static std::set<uint32> const zonesWithoutInnkeeper = {4, 16, 28, 46, 51, 361, 490, 2817, 4197};
+        // #947 (MoP-only, extends AC's hand list): 6757 Timeless Isle (one innkeeper, so its two flight masters make it
+        // three L90 hubs instead of one) and 5146 Vashj'ir (bracket 80-82, no innkeeper on MoP, so no hub at all).
+        static std::set<uint32> const zonesWithoutInnkeeper = {4, 16, 28, 46, 51, 361, 490, 2817, 4197, 6757, 5146};
 
         // Stand in front of the NPC, facing it.
         WorldLocation loc(mapId, x + std::cos(orient) * 5.0f, y + std::sin(orient) * 5.0f, z + 0.5f,
@@ -726,10 +775,25 @@ void TravelMgr::PrepareDestinationCache()
         }
         else if (npcFlags & UNIT_NPC_FLAG_INNKEEPER)
         {
-            auto bracketItr = zone2LevelBracket.find(zoneId);
-            if (bracketItr != zone2LevelBracket.end())
+            // #947 (MoP-only, extends AC's innkeeper hubs the way MoP's Dalaran inns already are 77-80 hubs): the shrine inns
+            // are 85-90 hubs. The shrines are two-level sub-zones of the Vale (5840, bracket 90-90): an inn that resolves to
+            // area 6519 Summer's Rest got zone 6141, which has no bracket (capital row, ZoneTyp 1), so the Horde shrine had
+            // no hub at all, while the Alliance inn got the Vale's 90-only bracket (2026-10-28 log: 3 hub teleports into
+            // the Alliance shrine, 0 into the Horde one). Walk the area chain so both inns get the same bracket whichever
+            // shrine area the lookup returns: 6141 / 6554 Shrine of Two Moons, 6553 / 6142 Shrine of Seven Stars.
+            static LevelBracket const shrineInnBracket{85, 90};
+            bool shrineInn = false;
+            AreaTableEntry const* a = area;
+            for (uint32 depth = 0; a && !shrineInn && depth < 4; ++depth)
             {
-                LevelBracket const& bracket = bracketItr->second;
+                shrineInn = a->ID == 6141 || a->ID == 6554 || a->ID == 6553 || a->ID == 6142;
+                a = a->ParentAreaID ? sAreaTableStore.LookupEntry(a->ParentAreaID) : nullptr;
+            }
+
+            auto bracketItr = zone2LevelBracket.find(zoneId);
+            if (shrineInn || bracketItr != zone2LevelBracket.end())
+            {
+                LevelBracket const& bracket = shrineInn ? shrineInnBracket : bracketItr->second;
                 for (uint32 level = bracket.low; level <= bracket.high && level <= maxLevel; ++level)
                 {
                     if (forHorde)
@@ -1104,9 +1168,10 @@ std::vector<WorldLocation> TravelMgr::GetCityLocations(Player* bot)
     // #537 (MoP-only): the 85+ arm holds both faction shrines (AC's Dalaran tellers are neutral), so drop a
     // banker whose faction is hostile to the bot's team, the same hostileMask test the hub cache uses.
     uint32 const teamMask = bot->GetTeam() == HORDE ? FACTION_MASK_HORDE : FACTION_MASK_ALLIANCE;
+    // #947: from 81 the arm also holds Stormwind and Orgrimmar, so the filter starts there.
     auto usable = [&](BankerLocation const& bLoc)
     {
-        if (level < 85)
+        if (level < 81)
             return true;
         CreatureTemplate const* ct = sObjectMgr->GetCreatureTemplate(bLoc.entry);
         FactionTemplateEntry const* ft = ct ? sFactionTemplateStore.LookupEntry(ct->faction) : nullptr;

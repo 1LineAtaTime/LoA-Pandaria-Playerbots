@@ -251,6 +251,50 @@ bool MovementAction::ChaseTo(WorldObject* obj, float distance, float angle)
     return true;
 }
 
+// #968 (beyond AC; AC MovementActions.cpp:823-827 has the same gap): PathGenerator answers PATHFIND_NOPATH whenever no
+// navmesh polygon lies within 3 yd across / 50 yd up or down of the bot (core PathGenerator.cpp:160-193, 209-243: the
+// flying/swimming exception there is for creatures only). A bot on a flying mount stops there: hovering in the air or
+// set down on an unmeshed spot (soak mop1k-v4-1028: Florenia 530 (-2702.1,1778.0,49.0) on a steep slope, nearest poly
+// edge 3.9 yd away and 15 yd up; Itthul 530 (-2546.8,7434.6,1.1) in Telaar, nearest polys 108 yd below; Peradril 571
+// (4422.6,442.0,98.6), 58 yd above the floor - all three on a flying mount). "reach melee"/"reach spell" refused every
+// tick, Unit::Attack refuses a mounted player, so no combat ever started and the bots sat mounted for hours. A bot that
+// MoveTo would fly (UpdateMovementState's flight rule: flight already on, or a flight aura and a flying/absent master)
+// needs no navmesh: MoveTo sends it in a straight line (generatePath = !IsFlying(), AC :186), so the straight NOPATH
+// shortcut is handed to MoveTo instead of being refused here. External linkage: CheckMountStateAction.cpp forward-
+// declares CombatReachHasPath (no header change).
+static bool CombatReachCanFlyStraight(Player* bot)
+{
+    if (bot->GetVehicle() || bot->GetTransport())
+        return false;
+
+    if (bot->IsFlying())
+        return true;
+
+    if (!bot->HasIncreaseMountedFlightSpeedAura() && !bot->HasFlyAura())
+        return false;
+
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    Player* master = botAI ? botAI->GetMaster() : nullptr;
+    return !master || master->HasUnitMovementFlag(MOVEMENTFLAG_FLYING);
+}
+
+static bool CombatReachPathUsable(PathGenerator const& path, Player* bot)
+{
+    PathType const type = path.GetPathType();
+    if (type & (PATHFIND_NORMAL | PATHFIND_INCOMPLETE | PATHFIND_SHORTCUT))
+        return true;
+
+    // NOPATH carries BuildShortcut's two points (start, end).
+    return (type & PATHFIND_NOPATH) && path.GetPath().size() >= 2 && CombatReachCanFlyStraight(bot);
+}
+
+bool CombatReachHasPath(Player* bot, Unit* target)
+{
+    PathGenerator path(bot);
+    path.CalculatePath(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false);
+    return CombatReachPathUsable(path, bot);
+}
+
 bool MovementAction::ReachCombatTo(Unit* target, float distance)
 {
     if (!IsMovingAllowed(target))
@@ -293,9 +337,8 @@ bool MovementAction::ReachCombatTo(Unit* target, float distance)
 
     PathGenerator path(bot);
     path.CalculatePath(tx, ty, tz, false);
-    PathType type = path.GetPathType();
-    int typeOk = PATHFIND_NORMAL | PATHFIND_INCOMPLETE | PATHFIND_SHORTCUT;
-    if (!(type & typeOk))
+    // AC :823-827 accepts NORMAL | INCOMPLETE | SHORTCUT; #968 adds the flying NOPATH shortcut (see above).
+    if (!CombatReachPathUsable(path, bot))
         return false;
     float shortenTo = distance;
 

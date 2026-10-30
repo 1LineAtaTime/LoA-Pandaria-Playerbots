@@ -2545,6 +2545,9 @@ struct npc_mage_mirror_image : ScriptedAI
         Unit* owner = me->GetCharmerOrOwner();
 
         me->CombatStop(true);
+        // #996: this override skips CreatureAI::_EnterEvadeMode, so end the engagement here as GuardAI::EnterEvadeMode does;
+        // otherwise the next attack logs "EngagementStart called even though creature is already engaged".
+        EngagementOver();
         if (owner && !me->HasUnitState(UNIT_STATE_FOLLOW))
         {
             me->GetMotionMaster()->Clear(false);

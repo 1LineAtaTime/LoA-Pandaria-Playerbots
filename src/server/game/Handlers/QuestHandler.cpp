@@ -295,16 +295,15 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
             switch (object->GetTypeId())
             {
                 case TYPEID_UNIT:
-                    // the hook of the script class as well, as Player::AddQuestAndCheckCompletion does:
-                    // without it the accept scripts of the old kind (escorts, start zone events) never ran for a real player
-                    sScriptMgr->OnQuestAccept(_player, object->ToCreature(), quest);
+                    // #998: no sScriptMgr->OnQuestAccept here. Player::AddQuest above already runs the script-class hook for the
+                    // giver (Player.cpp "script managment for every quest"); the PR 15 port of upstream 50f8de47 (#474) called
+                    // it a second time, so every old-style accept script ran twice (two horses for 14293). AC calls it once.
                     object->ToCreature()->AI()->OnQuestAccept(_player, quest);
                     break;
                 case TYPEID_ITEM:
                 case TYPEID_CONTAINER:
                 {
-                    Item* item = (Item*)object;
-                    sScriptMgr->OnQuestAccept(_player, item, quest);
+                    Item* item = (Item*)object;   // its script hook already ran in Player::AddQuest (#998)
 
                     // destroy not required for quest finish quest starting item
                     bool destroyItem = true;
@@ -344,8 +343,7 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
                     }
                     break;
                 }
-                case TYPEID_GAMEOBJECT:
-                    sScriptMgr->OnQuestAccept(_player, object->ToGameObject(), quest);
+                case TYPEID_GAMEOBJECT:   // script hook: Player::AddQuest (#998)
                     object->ToGameObject()->AI()->OnQuestAccept(_player, quest);
                     break;
                 default:

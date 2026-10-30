@@ -2174,7 +2174,9 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond) const
                 return false;
             }
 
-            if (cond->ConditionValue2 > 1)
+            // QUESTSTATE falls through to here with its state mask in value2 (checked above); only the plain quest
+            // conditions have nothing in value2 (#963: 37 false "useless data" lines per boot).
+            if (cond->ConditionType != CONDITION_QUESTSTATE && cond->ConditionValue2 > 1)
                 TC_LOG_ERROR("sql.sql", "Quest condition has useless data in value2 (%u)!", cond->ConditionValue2);
             if (cond->ConditionValue3)
                 TC_LOG_ERROR("sql.sql", "Quest condition has useless data in value3 (%u)!", cond->ConditionValue3);

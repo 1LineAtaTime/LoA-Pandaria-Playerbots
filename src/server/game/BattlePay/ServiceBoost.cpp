@@ -88,7 +88,10 @@ void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
         if (session && counter <= 1)
             session->SetBoost(false);
 
-        counter--;
+        // #969: no row for this realm (login also counts realmid -1 rows) left counter at 0, and
+        // counter-- wrapped to 4294967295: an endless supply of boosts.
+        if (counter)
+            counter--;
     }
     else
     {

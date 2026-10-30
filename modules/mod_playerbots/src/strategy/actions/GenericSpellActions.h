@@ -236,6 +236,7 @@ class CastShootAction : public CastSpellAction
 public:
     CastShootAction(PlayerbotAI* botAI);
 
+    bool isPossible() override;
     ActionThreatType getThreatType() override { return ActionThreatType::None; }
 };
 

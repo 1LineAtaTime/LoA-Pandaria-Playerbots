@@ -1409,6 +1409,7 @@ public:
 
         bool _playerSeated;
         bool _aranasSaved;
+        ObjectGuid _riderToEscort;
 
         void AttackStart(Unit* /*who*/) override { }
         void JustEngagedWith(Unit* /*who*/) override { }
@@ -1423,14 +1424,12 @@ public:
         {
             if (who->GetTypeId() == TYPEID_PLAYER)
             {
-                _playerSeated = true;
-
+                // #998: the escort starts on the next UpdateAI, not here. The 14293 accept script summons this horse and
+                // seats the player in the same call, so this runs before the horse's first Creature::Update, whose
+                // JustAppeared() (npc_escortAI, fired on every creature's first update since upstream c6c7d32e) sets the
+                // escort state back to NONE: a Start() made here was lost and the horse never left its spawn.
                 if (apply)
-                {
-                    Start(false, true, who->GetGUID());
-                    me->SetSpeed(MOVE_WALK, 1.0f, true);
-                    me->SetSpeed(MOVE_RUN, 1.3f, true);
-                }
+                    _riderToEscort = who->GetGUID();
             }
             else 
             {
@@ -1550,13 +1549,30 @@ public:
 
         void UpdateAI(uint32 diff) override
         {
+            // #998: JustAppeared has run by now (Creature::Update calls it before UpdateAI on the first tick)
+            if (_riderToEscort)
+            {
+                ObjectGuid const riderGuid = _riderToEscort;
+                _riderToEscort.Clear();
+                if (Player* rider = ObjectAccessor::GetPlayer(*me, riderGuid))
+                {
+                    if (rider->GetVehicleBase() == me)
+                    {
+                        Start(false, true, riderGuid);
+                        me->SetSpeed(MOVE_WALK, 1.0f, true);
+                        me->SetSpeed(MOVE_RUN, 1.3f, true);
+                        _playerSeated = true;
+                    }
+                }
+            }
+
             npc_escortAI::UpdateAI(diff);
-            Player* player = GetPlayerForEscort();
 
             if (_playerSeated)
             {
-                player->SetClientControl(me, 0);
                 _playerSeated = false;
+                if (Player* player = GetPlayerForEscort())
+                    player->SetClientControl(me, 0);
             }
         }
     };
@@ -2587,6 +2603,10 @@ namespace GilneasLastChanceAtHumanity
         NPC_LORD_GODFREY_PILLORY        = 36330,
         NPC_KING_GENN_GREYMANE_PILLORY  = 36332,
         SPELL_CURSE_OF_THE_WORGEN       = 68630,
+        // #999: the curse's linked 68631 makes the player invisible (type 9, 100), and an invisible player only sees units that
+        // detect his invisibility (WorldObject::CanDetectInvisibilityOf; AC has the same rule). 60922 "Generic Quest
+        // Invisibility Detection 3" = detect type 9, 100. The static Genn 375757 gets it from creature_addon (SQL 2026_10_29_999).
+        SPELL_SEE_QUEST_INVIS_3         = 60922,
 
         SAY_KRENNAN_NOT_GIVING_UP       = 0,       // BT 36344
         SAY_GODFREY_PROTOCOL            = 0,       // BT 36336
@@ -2619,10 +2639,12 @@ struct npc_krennan_aranas_pillory : public ScriptedAI
 
         _playerGuid = player->GetGUID();
         me->SetReactState(REACT_PASSIVE);
+        me->AddAura(SPELL_SEE_QUEST_INVIS_3, me);   // #999: else the cursed (invisible) player cannot see him
 
         if (TempSummon* godfrey = me->SummonCreature(NPC_LORD_GODFREY_PILLORY, GodfreySpawnPos, TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, me->GetPrivateObjectOwner()))
         {
             godfrey->SetReactState(REACT_PASSIVE);
+            godfrey->AddAura(SPELL_SEE_QUEST_INVIS_3, godfrey);   // #999
             _godfreyGuid = godfrey->GetGUID();
         }
 

@@ -123,12 +123,9 @@ WayPoint* SmartAI::GetNextWayPoint()
 
 void SmartAI::StartPath(bool run/* = false*/, uint32 pathId/* = 0*/, bool repeat/* = false*/, Unit* invoker/* = nullptr*/, uint32 nodeId/* = 1*/)
 {
-    if (me->IsInCombat())// no wp movement in combat
-    {
-        TC_LOG_ERROR("misc", "SmartAI::StartPath: Creature entry %u wanted to start waypoint movement while in combat, ignoring.", me->GetEntry());
-        return;
-    }
-
+    // #1011: no in-combat refusal - AC SmartAI::StartPath (SmartAI.cpp:235) starts the path in or out of combat. The old TC
+    // guard dropped every "On Just Summoned - Start WP" of summons that aggro on spawn (Angershade/Gharsul 8488, Kalecgos
+    // 36689, Civilian Recruit 25220): they never walked their scripted path.
     if (HasEscortState(SMART_ESCORT_ESCORTING))
         StopPath();
  
@@ -610,6 +607,21 @@ void SmartAI::JustAppeared()
 
     if (me->isDead())
         return;
+
+    // #1011, AC parity (AC Creature.cpp:718 "Skip for temp summons: InitializeAI already reset them, and JustRespawned would
+    // clobber state set synchronously during SUMMON"): a summon's first appearance must not clear the escort state, phase and
+    // timers its "On Just Summoned" SAI set in the summon tick - every SAI summon that starts a path stopped at WP1 (67 entries,
+    // e.g. Civilian Recruit 25220, Kalecgos 36689). Kept here, not in Creature::Update, so CreatureAI::JustAppeared's
+    // follow-on-spawn for pets / guardians still runs; a summon's later respawns reset as before.
+    // SMART_EVENT_RESPAWN still fires on that first appearance: AC skips it for summons (its data uses On Just Summoned), but
+    // our data has 191 "On Respawn" rows on 186 summon-only entries (casts, react state, talk, paths - e.g. the Captured Riding
+    // Bat 38540 path, Gilneas 24920) that always ran here before #1011. Only the reset (escort state, phase, timers) is skipped.
+    if (!mAppearedOnce && me->IsSummon())
+    {
+        mAppearedOnce = true;
+        GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);
+        return;
+    }
 
     // A respawn: the AI object survives it, and with it the despawn state of a forced despawn of a
     // living creature - it then despawned itself again at every respawn, invisible, until a restart. Not on the first appearance:

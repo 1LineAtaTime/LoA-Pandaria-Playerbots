@@ -86,12 +86,23 @@ AiPlayerbot.Enabled = 1
 # Enable random bot system
 AiPlayerbot.RandomBotAutologin = 1
 
-# Random bot account
-# Please ensure that RandomBotAccountCount is greater than (MaxRandomBots / 10 + AddClassAccountPoolSize)
-# Kept at 200 (AC: 0 = automatic): this fork has no automatic account calculation (RandomPlayerbotFactory.cpp uses the
-# configured number as is, code default 200), so 0 would create no accounts. 200 accounts cover 500 bots
-# (500 / 10 + AddClassAccountPoolSize 50 = 100).
-AiPlayerbot.RandomBotAccountCount = 200
+# Randombot accounts
+# Set to 0 to automatically calculate needed accounts based on MaxRandomBots, EnablePeriodicOnlineOffline
+# and its ratio, and AddClassAccountPoolSize. Set manually if you want to create more accounts than needed.
+# If the manual value is less than the required, the system will override it with the required value.
+# Each account gets one character of every playable class (11, death knights and monks included).
+# Default: 0 (automatic)
+AiPlayerbot.RandomBotAccountCount = 0
+
+# Extra random bot accounts, as a percentage of MaxRandomBots (BEYOND AzerothCore; 0 = AzerothCore's sizing, off)
+# AzerothCore sizes the random bot accounts exactly: ceil(MaxRandomBots [x PeriodicOnlineOfflineRatio] / characters
+# per account), so the pool holds barely as many characters as bots. Characters that are on a login cooldown, death
+# knights when DisableDeathKnightLogin is on, or an uneven faction ratio can leave it short ("Not enough random bot
+# accounts"). With a value N the accounts (and so the characters) are sized for MaxRandomBots * (100 + N) / 100 bots.
+# Example: 1000 bots, 11 characters per account: 0 gives 91 accounts (1001 characters), 20 gives 110 (1210).
+# The number of bots that log in is still MaxRandomBots. Accounts already assigned are never taken back.
+# Default: 0
+AiPlayerbot.RandomBotAccountSlackPct = 0
 
 # Randombot count
 AiPlayerbot.MinRandomBots = 500
@@ -133,8 +144,9 @@ AiPlayerbot.MaxAddedBotsPerClass = 40
 # default: 1 (enable)
 AiPlayerbot.AddClassCommand = 1
 
-# Set the addclass command account pool size
-# Addclass command uses a subset of accounts from RandomBotAccountCount
+# Addclass accounts
+# Number of accounts reserved for the addclass command (playerbots_account_type 2), taken from the highest
+# random bot accounts. Their characters are never logged in as random bots. 0 disables them.
 AiPlayerbot.AddClassAccountPoolSize = 50
 
 # Bot group invitation permission level (0 = GM only, 1 = accept based on level, 2 = always accept)
@@ -1222,6 +1234,66 @@ AiPlayerbot.RpgQuestHubSearchEnable = 1
 #    Default: 2500 (yards, the radius AC's GoCamp uses for a level 6+ bot)
 AiPlayerbot.RpgQuestHubSearchRadius = 2500
 
+# #945 (BEYOND AC, this fork only): town errands. AC bots reach repairers, vendors, trainers, auctioneers, bankers and
+# stable masters only by chance (WANDER_NPC). With this on, at the IDLE status draw a bot that needs it walks (GoCamp
+# travel) to a matching NPC on its map within RpgTownErrandRadius yards (one of the 3 nearest, at most
+# RpgTownErrandMaxBotsPerNpc bots per NPC, hostile factions and phased / event spawns skipped) and does the work there:
+# repair (durability low, can afford), sell + buy at a vendor (bags full, something to sell), learn the next profession
+# rank at a trainer (a trainer of a profession the bot knows - primary, cooking, first aid, fishing - offers a spell it can
+# learn and afford now; checked at most once per RpgTownErrandCooldown per bot). The search is by rings: first within
+# RpgTownErrandNearRadius (the local town), only if nothing qualifies there up to RpgTownErrandRadius. The bot walks to a
+# point ~4 yd in front of the NPC. Failing a need, RpgTownErrandChance percent of draws send it on a random errand to an
+# auctioneer, banker, own-class trainer, profession trainer of a known profession, stable
+# master (hunters) or guild banker (guilded bots), where it stays RpgTownErrandStayMin..Max seconds. One errand per bot
+# per RpgTownErrandCooldown seconds (the first one is staggered), 120 s before a search that found nothing is repeated,
+# the same NPC is not chosen again for 30 minutes. Not used in a deterministic (.botscenario pick=nearest) scenario.
+# Read once at first use (no .reload). 0 = exactly AC.
+#    Default: 1
+AiPlayerbot.RpgTownErrandEnable = 1
+#    Default: 400 (yards, the first search ring; capped at RpgTownErrandRadius; 0 = search the full radius at once)
+AiPlayerbot.RpgTownErrandNearRadius = 400
+#    Default: 1200 (yards, the widest ring; #945: was 2500, 27 of 44 unfinished errands timed out on 25-min trips)
+AiPlayerbot.RpgTownErrandRadius = 1200
+#    Default: 1800 (seconds between two errands of one bot)
+AiPlayerbot.RpgTownErrandCooldown = 1800
+#    Default: 10 (percent of the IDLE draws that start a random errand, once the cooldown is over)
+AiPlayerbot.RpgTownErrandChance = 10
+#    Default: 15 (seconds a random errand stays at its NPC, minimum)
+AiPlayerbot.RpgTownErrandStayMin = 15
+#    Default: 45 (seconds, maximum)
+AiPlayerbot.RpgTownErrandStayMax = 45
+#    Default: 3 (bots on an errand to one NPC at the same time)
+AiPlayerbot.RpgTownErrandMaxBotsPerNpc = 3
+# A random errand first draws ONE category by these weights (relative, 0 = never), then searches that category (near ring,
+# then far ring); when it finds none the bot falls to the next category drawn by weight. Needs (repair, sell, a learnable
+# profession rank) keep priority. Stable masters only for hunters, guild banks only for guilded bots, profession trainers
+# only for bots that know a profession. Mailboxes are gameobjects (type 19); there the bot takes its mail ("check mail").
+#    Default: 40
+AiPlayerbot.RpgTownErrandWeightAuction = 40
+#    Default: 25
+AiPlayerbot.RpgTownErrandWeightProfession = 25
+#    Default: 20
+AiPlayerbot.RpgTownErrandWeightBank = 20
+#    Default: 6 (2026-10-29: every town has a mailbox, so a mailbox draw always succeeds while a bank draw often finds no
+#    bank nearby and falls through; at 15 mailboxes outnumbered banks 21:10 per 30 min - 6 keeps the owner order
+#    auction > profession > bank > mailbox)
+AiPlayerbot.RpgTownErrandWeightMailbox = 6
+# How far (yd) a drawn auction or bank errand searches for an auctioneer / banker before falling through to the next
+# category (both stand only in capitals and a few towns; the other errands use RpgTownErrandRadius).
+AiPlayerbot.RpgTownErrandAuctionRadius = 4000
+# #1004 (BEYOND AC): far errands travel like a player. A pick farther than this (yards) first flies to the flight node
+# nearest the NPC (the bot walks to its nearest flight master, then the TRAVEL_FLIGHT taxi), then walks the rest; used only
+# when that shortens the walk to under 60%. The time allowed is no longer fixed: 10 min + distance / 3 yd/s, at most 45 min,
+# counted again from the landing. 0 = never fly (the scaled timeout stays).
+#    Default: 800
+AiPlayerbot.RpgTownErrandFlightMinDistance = 800
+#    Default: 5
+AiPlayerbot.RpgTownErrandWeightClassTrainer = 5
+#    Default: 3
+AiPlayerbot.RpgTownErrandWeightStable = 3
+#    Default: 2
+AiPlayerbot.RpgTownErrandWeightGuildBank = 2
+
 # #218 (BEYOND AC, this fork only): roaming bots take boats, zeppelins, elevators, trams and flight paths on their own,
 # over the travel-node graph (EnableTravelNodes). AC never leaves the map in NewRpg and teleports a bot that is stuck
 # for 90 s; with this on, a bot stuck for 30 s whose graph route has an elevator / tram / boat / zeppelin / flight /
@@ -1229,8 +1301,13 @@ AiPlayerbot.RpgQuestHubSearchRadius = 2500
 # on another continent. 0 = exactly AC. Read once at first use (no .reload).
 #    Default: 1
 AiPlayerbot.RoamTransports = 1
-#    Default: 10 (percent)
-AiPlayerbot.RoamTransportCampChance = 10
+#    Default: 45 (percent; #948: was 10, ~6 ship/zeppelin rides per 70 min at 3000 bots, too few to ever see one)
+AiPlayerbot.RoamTransportCampChance = 45
+# #948 (BEYOND AC, owner 2026-10-27): percent of cross-continent roam trips that take a boat or zeppelin even when a
+# portal route is shorter (portal legs get +600 s for that route search; with no ship route the portal is still used).
+# 0 = always the cheapest route. Read once at first use (no .reload).
+#    Default: 35 (percent)
+AiPlayerbot.RoamTransportShipRouteChance = 35
 
 
 ####################################################################################################
@@ -1922,6 +1999,10 @@ AiPlayerbot.TeleToThunderBluffWeight = 1
 AiPlayerbot.TeleToSilvermoonCityWeight = 1
 AiPlayerbot.TeleToShattrathCityWeight = 1
 AiPlayerbot.TeleToDalaranWeight = 1
+# MoP-only (#947): the Pandaria shrine vaultkeepers, the 85+ bank city next to Stormwind/Orgrimmar (weight 2 above).
+# AC sends every 71-80 bank teleport to Dalaran; 6 against 2 sends three of four 85+ bank teleports to the shrine.
+AiPlayerbot.TeleToShrineOfTwoMoonsWeight = 6
+AiPlayerbot.TeleToShrineOfSevenStarsWeight = 6
 
 # How far random bots are teleported after death
 AiPlayerbot.RandomBotTeleportDistance = 100
@@ -1935,6 +2016,19 @@ AiPlayerbot.RandomBotTeleLowerLevel = 1
 # This will have no effect if AiPlayerbot.EnableNewRpgStrategy is enabled
 # Default: 3 (randombot will leave if they are more than 3 levels higher)
 AiPlayerbot.RandomBotTeleHigherLevel = 3
+
+# #952 (MoP/Cata-only content, extends AC)
+# Low-level random bots of the Cata/MoP start-zone races level in their racial start zone, as players do:
+#   - Pandaren stay neutral on the Wandering Isle (map 860) below level 10 and choose a faction at level 10
+#     (quest 31450 "A New Fate"), which sends them to Orgrimmar or Stormwind. A Pandaren randomized to level 10
+#     or higher chooses at once.
+#   - Goblins below level 12 stay on map 648: Kezan for the lowest levels, then the Lost Isles.
+#   - Worgen below level 12 stay in Gilneas (map 654).
+# Their random teleports for level go to grind cells of their start map that match their level and are in their
+# quest phase there (independent of AiPlayerbot.RandomBotMaps). Past the exit level they leave like any other bot.
+# Death Knights are not affected. Other races are not affected.
+# Default: 1 (enabled), 0 = previous behaviour (Pandaren choose a faction 5 s after their first login)
+AiPlayerbot.RandomBotRacialStartZones = 1
 
 # Bots automatically teleport to another place for leveling on levelup
 # Default: 1 (enabled)

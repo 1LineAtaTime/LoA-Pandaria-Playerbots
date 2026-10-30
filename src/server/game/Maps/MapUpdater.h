@@ -36,7 +36,7 @@ class MapUpdater
 
         friend class MapUpdateRequest;
 
-        void schedule_update(Map& map, uint32 diff);
+        void schedule_update(Map& map, uint32 diff, uint32 s_diff);
 
         void wait();
 

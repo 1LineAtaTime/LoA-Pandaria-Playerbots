@@ -389,8 +389,14 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
     UpdateTimeOutTime(diff);
     std::unordered_map<uint16, OpcodeInfo> pktHandle;
     // Services timers
-    GetBoost()->Update(diff);
-    sBattlePayMgr->Update(diff);
+    // #969: only from World::UpdateSessions (world thread, once per tick). Map::Update also calls
+    // this with a MapSessionFilter from the map threads, which ran these timers twice per tick
+    // and the shop purchase steps concurrently with the world thread.
+    if (updater.ProcessUnsafe())
+    {
+        GetBoost()->Update(diff);
+        sBattlePayMgr->Update(this, diff);
+    }
 
     ///- Before we process anything:
     /// If necessary, kick the player from the character select screen
@@ -529,7 +535,6 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
         _warden->Update();
 
     ProcessQueryCallbacks();
-    sScriptMgr->OnPlayerbotUpdateSessions(GetPlayer());
 
     uint32 sessionDiff = getMSTime();
     sessionDiff = getMSTime() - sessionDiff;
@@ -550,6 +555,10 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
     //logout procedure should happen only in World::UpdateSessions() method!!!
     if (updater.ProcessUnsafe())
     {
+        // AC WorldSession.cpp:614-616: the bot session update (far-teleport acks, bot logins / logouts) only runs on the
+        // world thread. Called for every session update, a real player's bots were processed from its map thread.
+        sScriptMgr->OnPlayerbotUpdateSessions(GetPlayer());
+
         ///- If necessary, log the player out
         if (ShouldLogOut(currentTime) && !m_playerLoading)
             LogoutPlayer(true);

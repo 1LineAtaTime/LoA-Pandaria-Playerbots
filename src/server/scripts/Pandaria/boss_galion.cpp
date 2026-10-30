@@ -107,6 +107,17 @@ class boss_galion : public CreatureScript
 
             void KilledUnit(Unit* /*victim*/) override { }
 
+            // Open-world boss (map 870): BossAI::JustSummoned zones the summon in, but DoZoneInCombat works only in
+            // dungeons and logged "DoZoneInCombat call for map that isn't an instance" for every summon (#991). Do what
+            // WorldBossAI::JustSummoned does instead: the summon attacks a random target of the boss.
+            void JustSummoned(Creature* summon) override
+            {
+                summons.Summon(summon);
+                if (me->IsInCombat())
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
+                        summon->AI()->AttackStart(target);
+            }
+
             void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
             {
                 summons.DespawnAll();

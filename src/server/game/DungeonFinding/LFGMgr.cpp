@@ -261,7 +261,9 @@ void LFGMgr::LoadLFGDungeons(bool reload /* = false */)
             AreaTriggerStruct const* at = sObjectMgr->GetMapEntranceTrigger(dungeon.map);
             if (!at)
             {
-                TC_LOG_ERROR("lfg", "LFGMgr::LoadLFGDungeons: Failed to load dungeon %s (Id: %u), cant find areatrigger for map %u", dungeon.name.c_str(), dungeon.id, dungeon.map);
+                // #962: the 5.4.8 LfgDungeons.dbc keeps dead entries (Prince Sarsarun 299/310 on map 734, the unused AhnQirajTerrace map).
+                // They have no entrance and are skipped from the dungeon cache below, so this is expected, not an error.
+                TC_LOG_DEBUG("lfg", "LFGMgr::LoadLFGDungeons: Skipping dungeon %s (Id: %u), no entrance areatrigger for map %u", dungeon.name.c_str(), dungeon.id, dungeon.map);
                 continue;
             }
 
@@ -473,7 +475,9 @@ static void AnyLevelRandomPool(LFGMgr* mgr, uint32 rDungeonId, LfgDungeonSet& du
                 status = LFG_LOCKSTATUS_TOO_LOW_LEVEL;
             else if (dungeon && dungeon->maxlevel && dungeon->maxlevel < level)
                 status = LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
-            else if (dungeon && dungeon->requiredItemLevel > itemLevel && AnyLevel::IgnoreItemLevel())
+            // #1008: a playerbot has no stock item-level lock (InitializeLockedDungeons), so none is put back here either
+            else if (dungeon && dungeon->requiredItemLevel > itemLevel && AnyLevel::IgnoreItemLevel() &&
+                     !(member->GetSession() && member->GetSession()->IsBot()))
                 status = LFG_LOCKSTATUS_TOO_LOW_GEAR_SCORE;
 
             if (!status)
@@ -504,6 +508,15 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
     bool denyJoin = !player->GetSession()->HasPermission(rbac::RBAC_PERM_JOIN_DUNGEON_FINDER);
 
     float itemLevel = player->GetAverageItemLevel();
+
+    // #1008 (public #14): a playerbot session skips the per-dungeon lfg_dungeon_template.requiredItemLevel lock. AC has no
+    // such lock (its only gear lock is access_requirement.reqItemLevel, AC LFGMgr.cpp:548, which stays below for everyone);
+    // MoP adds lfg_dungeon_template.requiredItemLevel, and
+    // the bots' expansion gear cut (#878, BotFactory: a level-80 bot wears no Cataclysm item, a level-85 bot no MoP item)
+    // keeps a level-80 bot at about ilvl 190-213 while every Cataclysm entry open at level 80 (300 Random Cataclysm,
+    // 302 Throne of the Tides, 303 Blackrock Caverns) needs 226. So every level-80 random bot was REJECTED by JoinLfg
+    // for Cataclysm, and the 81-85 pool alone rarely fills a group. Real players keep the MoP lock.
+    bool const ignoreItemLevelLock = player->GetSession()->IsBot();
 
     // #702: LFG.AnyLevel (off by default, LFGAnyLevel.h) - a player of at least LFG.AnyLevel.MinLevel gets no level lock
     // (and, with LFG.AnyLevel.IgnoreItemLevel, no item-level lock) on 5-man normal/heroic dungeons; AutoBalance scales the
@@ -539,7 +552,7 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
             lockStatus = LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
         else if (dungeon->seasonal && !IsSeasonActive(dungeon->id))
             lockStatus = LFG_LOCKSTATUS_NOT_IN_SEASON;
-        else if (dungeon->requiredItemLevel > itemLevel && !(anyLevelDungeon && AnyLevel::IgnoreItemLevel()))
+        else if (dungeon->requiredItemLevel > itemLevel && !ignoreItemLevelLock && !(anyLevelDungeon && AnyLevel::IgnoreItemLevel()))
             lockStatus = LFG_LOCKSTATUS_TOO_LOW_GEAR_SCORE;
         else if (AccessRequirement const* ar = sObjectMgr->GetAccessRequirement(dungeon->map, Difficulty(dungeon->difficulty)))
         {

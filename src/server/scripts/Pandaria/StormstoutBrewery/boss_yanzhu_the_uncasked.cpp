@@ -2034,7 +2034,6 @@ class spell_wall_of_suds : public SpellScriptLoader
             {
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_wall_of_suds_SpellScript::SelectTargets, EFFECT_0, 130);
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_wall_of_suds_SpellScript::SelectTargets, EFFECT_1, 130);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_wall_of_suds_SpellScript::SelectTargets, EFFECT_2, 130);
             }
         };
 

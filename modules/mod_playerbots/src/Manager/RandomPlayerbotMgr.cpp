@@ -102,7 +102,16 @@ uint32 RandomBotReviveTime()
     static uint32 const maxTime = sConfigMgr->GetIntDefault("AiPlayerbot.MaxRandomBotReviveTime", 300);
     return urand(minTime, std::max(minTime, maxTime));
 }
+
+// #947: defined next to CAPITAL_ZONES below.
+uint32 CapitalZoneIdOf(Player* bot);
 }  // namespace
+
+// strategy/RPG/NewRpgRoamTransport.cpp (#954): a young roam trip holds off the periodic refresh teleport.
+namespace RoamTransport
+{
+bool DefersRandomTeleport(Player* bot);
+}  // namespace RoamTransport
 
 RandomPlayerbotMgr::RandomPlayerbotMgr()
     : PlayerbotHolder(),
@@ -655,6 +664,11 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
     return false;
 }
 
+namespace
+{
+bool PickDeferredPandarenFaction(Player* bot);   // #952, defined below
+}
+
 bool RandomPlayerbotMgr::ProcessBot(Player* player)
 {
     ObjectGuid bot = player->GetGUID();
@@ -670,7 +684,20 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
     if (BotScenario::WantsTrail(player))
         return false;
 
-    
+    // #953 safety net (beyond AC): a random bot in zone 0 on a continent is off the world (a far teleport left it at
+    // another map's coordinates - 61 such bots after 4 h at 1000 bots, each stranded until its next 1-5 h periodic
+    // teleport, so roaming, errands and city counts shrank over the run). Re-place it now, and drop a dead taxi path
+    // that would otherwise resume at its next login and fly nowhere.
+    if (player->IsInWorld() && player->IsAlive() && !player->IsBeingTeleported() && !player->IsInFlight() &&
+        !player->GetTransport() && player->GetZoneId() == 0 && player->GetMap() && !player->GetMap()->Instanceable())
+    {
+        TC_LOG_DEBUG("playerbots", "[ZONE0] %s level %u in zone 0 on map %u at (%.1f,%.1f,%.1f) - re-placing",
+            player->GetName().c_str(), player->GetLevel(), player->GetMapId(), player->GetPositionX(),
+            player->GetPositionY(), player->GetPositionZ());
+        player->m_taxi.ClearTaxiDestinations();
+        RandomTeleportForLevel(player);
+        return true;
+    }
 
     // if death revive
     if (player->isDead())
@@ -720,13 +747,18 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
         // instead of letting it settle there. This log line is the regression signal.
         if (IsInEnemyCapital(player))
         {
-            char const* capital = CapitalZoneName(player->GetZoneId());
+            char const* capital = CapitalZoneName(CapitalZoneIdOf(player));
             TC_LOG_DEBUG("playerbots", "[CAPITAL] %s (team %u) is inside enemy capital zone %u (%s) - relocating",
                          player->GetName().c_str(), uint32(player->GetTeam()), player->GetZoneId(),
                          capital ? capital : "?");
             RandomTeleportForLevel(player);
             return false;
         }
+
+        // #952: a neutral Pandaren that reached the Wandering Isle's exit level on the isle picks its faction now,
+        // without waiting for its next teleport for level or login.
+        if (PickDeferredPandarenFaction(player))
+            return true;
 
         // randomize
         uint32 randomize = GetEventValue(bot, "randomize");
@@ -748,6 +780,17 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
         uint32 teleport = GetEventValue(bot, "teleport");
         if (!teleport)
         {
+            // #954 (beyond AC, AC has no roam trips): a bot on a young roam trip is already travelling, and this
+            // teleport's PlayerbotAI::Reset would end the trip ("abandon status-reset": 28 in the first hour at 1000
+            // bots, 2026-10-28, most of them 30-120 s after the trip started, from the post-login refresh burst).
+            // Retry in 5 min; DefersRandomTeleport stops deferring once the trip is 30 min old.
+            if (RoamTransport::DefersRandomTeleport(player))
+            {
+                TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s refresh teleport deferred (trip under way)", player->GetName().c_str());
+                ScheduleTeleport(bot, 300);
+                return false;
+            }
+
             PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "RandomTeleportByLocations");
             TC_LOG_DEBUG("playerbots", "Bot #%u <%s>: teleport for level and refresh", bot.GetCounter(), player->GetName().c_str());
             Refresh(player);
@@ -771,6 +814,10 @@ void RandomPlayerbotMgr::TagForRandomize(Player* bot, uint32 level)
     ScheduleRandomize(guid, 0);
 }
 
+// #949 / #951: grant what the core requires before a random bot may leave or enter a gated map; defined below,
+// also called by RoamTransport's portal legs (strategy/RPG/NewRpgRoamTransport.cpp).
+void PlayerbotPrepareFarTeleport(Player* bot, uint32 destMapId);
+
 namespace
 {
 // AC PlayerbotAIConfig.cpp:194. Read here rather than added to PlayerbotAIConfig.h, which every
@@ -782,6 +829,43 @@ float ProbTeleToBankers()
     return value;
 }
 
+// #952 (MoP/Cata-only content, extends AC): AiPlayerbot.RandomBotRacialStartZones. Read in place, like ProbTeleToBankers,
+// so PlayerbotAIConfig.h does not change. 0 = the previous behaviour.
+bool RacialStartZonesEnabled()
+{
+    static bool const value = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotRacialStartZones", true);
+    return value;
+}
+
+// #952: the racial start zones on their own maps (AC has none: every AC race starts on its home continent). A random bot
+// of the race below `exitLevel` levels there, as players do, and leaves at `exitLevel`. Create positions are
+// playercreateinfo races 24 / 9 / 22. Exit levels from quest_template: 31450 "A New Fate" (the Pandaren faction choice)
+// is QuestLevel 10; the last Lost Isles quests (QuestSortID 4720) are QuestLevel 12; 26706 "Endgame", Gilneas' exit
+// quest, is MinLevel 12. Death Knights start in Acherus (609) and are not covered.
+struct RacialStartZone
+{
+    uint8 race;
+    uint32 mapId;
+    uint32 exitLevel;
+};
+
+constexpr RacialStartZone RACIAL_START_ZONES[] =
+{
+    {RACE_PANDAREN_NEUTRAL, 860, 10},   // The Wandering Isle (zone 5736)
+    {RACE_GOBLIN,           648, 12},   // Kezan (4737), then the Lost Isles (4720)
+    {RACE_WORGEN,           654, 12},   // Gilneas City (4755) and Gilneas (4714)
+};
+
+RacialStartZone const* GetRacialStartZone(Player* bot)
+{
+    if (!RacialStartZonesEnabled() || bot->GetClass() == CLASS_DEATH_KNIGHT)
+        return nullptr;
+    for (RacialStartZone const& zone : RACIAL_START_ZONES)
+        if (zone.race == bot->GetRace())
+            return &zone;
+    return nullptr;
+}
+
 // #219: AC PlayerbotAI::StarterLevelDistanceCheck(player, loc, fromStartUp = true) (Bot/PlayerbotAI.cpp:6728-6755), the
 // only form AC's RandomTeleport uses. File-static here so PlayerbotAI.h does not change. A bot above level 16 passes;
 // below, the destination must be on the race/class start map and within 500 yd (level <= 4), 2500 yd (<= 10) or
@@ -790,6 +874,13 @@ bool StarterLevelDistanceCheck(Player* player, WorldLocation const& loc)
 {
     if (player->GetLevel() > 16)
         return true;
+
+    // #952 (extends AC): AC's check assumes a race's create map is its home continent. A Cata/MoP racial start map is an
+    // island with no levelling hub, so past the island's exit level (12 for goblins / worgen) the check rejected every
+    // destination up to level 16 and the bot never left. It passes there, as above level 16.
+    if (RacialStartZone const* startZone = GetRacialStartZone(player))
+        if (player->GetLevel() >= startZone->exitLevel)
+            return true;
 
     PlayerInfo const* pInfo = sObjectMgr->GetPlayerInfo(player->GetRace(), player->GetClass());
     if (!pInfo)
@@ -807,6 +898,36 @@ bool StarterLevelDistanceCheck(Player* player, WorldLocation const& loc)
     return dis <= bound;
 }
 
+// #949 (MoP-only content; extends AC's Death Knight 50977 unlock, RandomPlayerbotFactory.cpp:175): Player::TeleportTo
+// refuses every far teleport off a starting zone below level 30 until its exit quest is done (Player.cpp:2005-2012:
+// goblin 648 / 25266, worgen 654 / 26706, pandaren 860 / 31450). A random bot teleported onto the Wandering Isle, or
+// created in Kezan or Gilneas at a random level, could then never leave: each random teleport was refused, and the
+// refusal ignored. Reward the exit quest as the harness questreward verb does, right before the teleport, since a
+// full randomize clears quests again (ResetQuests, #813).
+void UnlockStartZoneExit(Player* bot)
+{
+    uint32 questId = 0;
+    switch (bot->GetMapId())
+    {
+        case 648: questId = bot->GetRace() == RACE_GOBLIN ? 25266 : 0; break;
+        case 654: questId = bot->GetRace() == RACE_WORGEN ? 26706 : 0; break;
+        case 860: questId = (bot->GetRace() == RACE_PANDAREN_ALLIANCE || bot->GetRace() == RACE_PANDAREN_HORDE) ? 31450 : 0; break;
+        default: break;
+    }
+    if (!questId || bot->GetClass() == CLASS_DEATH_KNIGHT || bot->GetLevel() >= 30 || bot->GetQuestRewardStatus(questId))
+        return;
+
+    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+    if (!quest)
+        return;
+    if (bot->GetQuestStatus(questId) == QUEST_STATUS_NONE)
+        bot->AddQuest(quest, nullptr);
+    bot->CompleteQuest(questId);
+    bot->RewardQuest(quest, 0, bot, false);
+    TC_LOG_DEBUG("playerbots", "%s start-zone exit unlocked: quest %u rewarded on map %u (level %u)",
+        bot->GetName().c_str(), questId, bot->GetMapId(), bot->GetLevel());
+}
+
 // AC RandomPlayerbotMgr::RandomTeleport(Player*, std::vector<WorldLocation>&, bool) (Bot/RandomPlayerbotMgr.cpp:1596-1738),
 // file-static so RandomPlayerbotMgr.h does not change. Filters to randomBotMaps (drops battleground/arena maps -
 // Player::TeleportTo silently refuses those outside an active BG, see death-parity-followup.md Gap 2), drops
@@ -815,7 +936,10 @@ bool StarterLevelDistanceCheck(Player* player, WorldLocation const& loc)
 // #268 S9: `hearth` is AC's third parameter (AC Bot/RandomPlayerbotMgr.cpp:1596). It is what
 // distinguishes the banker/city roll from the grind roll - the only difference between the two
 // calls AC RandomTeleportForLevel makes - and it sets the bot's homebind to where it landed.
-bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, bool hearth = false)
+// #952: `startZone` marks the racial start-zone cells (RacialStartZoneTeleport). They are already restricted to the bot's
+// own create map and level, so AC's randomBotMaps filter and StarterLevelDistanceCheck are skipped for them: the Lost
+// Isles lie ~9600 yd from the goblin create point in Kezan, past the check's 2500 yd bound for levels 5-10.
+bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, bool hearth = false, bool startZone = false)
 {
     if (bot->IsBeingTeleported() || !bot->IsInWorld())
         return false;
@@ -834,7 +958,7 @@ bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, b
     std::vector<uint32> const& maps = sPlayerbotAIConfig->randomBotMaps;
     std::vector<WorldLocation> tlocs;
     for (WorldLocation const& loc : locs)
-        if (std::find(maps.begin(), maps.end(), loc.GetMapId()) != maps.end())
+        if (startZone || std::find(maps.begin(), maps.end(), loc.GetMapId()) != maps.end())
             tlocs.push_back(loc);
     if (tlocs.empty())
     {
@@ -866,7 +990,7 @@ bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, b
         // #219: AC :1716 `if (!botAI->StarterLevelDistanceCheck(bot, loc, true)) continue;`. It was left out while every
         // MoP random bot was level 90; with random levels (owner 2026-10-14) a level 1-16 bot reaches this from the
         // level-up teleport (AutoMaintenanceOnLevelupAction::AutoTeleportForLevel), so it is ported (file-static below).
-        if (!StarterLevelDistanceCheck(bot, loc))
+        if (!startZone && !StarterLevelDistanceCheck(bot, loc))
             continue;
 
         TC_LOG_DEBUG("playerbots", "Random teleporting bot %s (level %u) to map %u zone %u area %u %.1f,%.1f,%.1f (%u/%u locations)",
@@ -882,17 +1006,248 @@ bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, b
         botAI->Reset(true);
         bot->RemoveAurasWithInterruptFlags(
             SpellAuraInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED | AURA_INTERRUPT_FLAG_CHANGE_MAP));
-        bot->TeleportTo(loc.GetMapId(), x, y, z, 0.0f);
+        if (loc.GetMapId() != bot->GetMapId())
+            PlayerbotPrepareFarTeleport(bot, loc.GetMapId());
+        if (!bot->TeleportTo(loc.GetMapId(), x, y, z, 0.0f))
+            TC_LOG_DEBUG("playerbots", "%s random teleport to map %u refused by TeleportTo (from map %u, level %u)",
+                bot->GetName().c_str(), loc.GetMapId(), bot->GetMapId(), bot->GetLevel());
         bot->SendMovementFlagUpdate();
         return true;
     }
     return false;
 }
 
+// #228: the neutral Pandaren faction pick (moved here unchanged from OnBotLoginInternal so #952 can also call it).
+// Scheduled on Unit::m_Events, which Unit::Update() pumps every tick. Unit::AddDelayedEvent() pushes into
+// _functionsDelayed, which nothing ever updates, so the pick had never run in this tree (issue #228).
+void ScheduleNeutralPandarenFactionPick(Player* bot)
+{
+    bot->Schedule(TimeValue(std::chrono::milliseconds(5000)), [bot]()
+    {
+        static const uint32 JOIN_THE_ALLIANCE = 1;
+        static const uint32 JOIN_THE_HORDE = 0;
+
+        WorldPacket packet(CMSG_SELECT_FACTION);
+        packet << (std::rand() % 2 ? JOIN_THE_HORDE : JOIN_THE_ALLIANCE);
+
+        if (!bot->IsInWorld())
+            return;
+        // #952: a pick scheduled twice (login + a teleport for level) runs once.
+        if (bot->GetRace() != RACE_PANDAREN_NEUTRAL)
+            return;
+
+        WorldSession* session = bot->GetSession();
+        if (!session)
+            return;
+
+        // #952: as a player does, hold 31450 "A New Fate" when choosing on the Wandering Isle. The handler credits it
+        // (KilledMonsterCredit 64594, Handlers/MiscHandler.cpp:2726), and Player::TeleportTo lets a Pandaren off map 860
+        // below level 30 only with 31450 complete or rewarded (Player.cpp:2008-2011). Without it the teleport to the
+        // capital was refused and the bot stayed on the isle until a random teleport unlocked it (#949). The quest
+        // ends at Ji Firepaw 60570 / Aysa Cloudsinger 60566, where the pick lands. Same add-or-reward rule as #951.
+        if (RacialStartZonesEnabled() && bot->GetMapId() == 860 && !bot->GetQuestRewardStatus(31450) &&
+            bot->GetQuestStatus(31450) == QUEST_STATUS_NONE)
+        {
+            if (Quest const* quest = sObjectMgr->GetQuestTemplate(31450))
+            {
+                if (bot->FindQuestSlot(0) < MAX_QUEST_LOG_SIZE)
+                    bot->AddQuest(quest, nullptr);
+                else
+                    bot->RewardQuest(quest, 0, bot, false);
+            }
+        }
+
+        session->HandleSelectFactionOpcode(packet);
+
+        TC_LOG_INFO("playerbots", "%s Assigned to faction: %s (level %u)", bot->GetName().c_str(),
+                    (bot->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde"), bot->GetLevel());
+    });
+}
+
+// #952: a neutral Pandaren random bot at or past the Wandering Isle's exit level picks its faction now (the pick
+// teleports it to its capital, as for a player). Below it the pick waits, so the bot levels on the isle.
+bool PickDeferredPandarenFaction(Player* bot)
+{
+    if (bot->GetRace() != RACE_PANDAREN_NEUTRAL)
+        return false;
+    RacialStartZone const* startZone = GetRacialStartZone(bot);
+    if (!startZone || bot->GetLevel() < startZone->exitLevel)
+        return false;
+    TC_LOG_DEBUG("playerbots", "[STARTZONE] %s neutral Pandaren at level %u (exit level %u) - faction pick scheduled",
+                 bot->GetName().c_str(), bot->GetLevel(), startZone->exitLevel);
+    ScheduleNeutralPandarenFactionPick(bot);
+    return true;
+}
+
+// #952: is the bot on its racial start map below the exit level (where it should stay)?
+bool InRacialStartZoneForLevel(Player* bot)
+{
+    RacialStartZone const* startZone = GetRacialStartZone(bot);
+    return startZone && bot->GetMapId() == startZone->mapId && bot->GetLevel() < startZone->exitLevel;
+}
+
+// #952: grind cells on the racial start maps, built once on first use. The spawn filter and the 50-yd cell with at least
+// two spawns are AC's (TravelMgr::PrepareDestinationCache CREATURES arm, Travel/TravelMgr.cpp:500-540 and :793-814; AC
+// TravelMgr.cpp:4677-4829). Two additions the start zones need: the cell keeps the OR of its spawns' phaseMask and the
+// spawns' zone (creature.zoneId, read once from the world DB rather than from terrain), because these zones are phased by
+// quest and TravelMgr's cells are not; and the point is the first spawn's own position (AC snaps it to the 50-yd lattice).
+struct StartZoneCell
+{
+    WorldLocation loc;
+    uint32 zoneId;
+    uint32 level;
+    uint32 phaseMask;
+};
+
+std::vector<StartZoneCell> const& StartZoneCells()
+{
+    static std::vector<StartZoneCell> const cells = []()
+    {
+        auto onStartMap = [](uint32 mapId)
+        {
+            for (RacialStartZone const& zone : RACIAL_START_ZONES)
+                if (zone.mapId == mapId)
+                    return true;
+            return false;
+        };
+
+        std::unordered_map<uint32, uint32> spawnZone;
+        if (QueryResult zones = WorldDatabase.Query("SELECT guid, zoneId FROM creature WHERE map IN (648, 654, 860)"))
+        {
+            do
+            {
+                Field* fields = zones->Fetch();
+                spawnZone[fields[0].GetUInt32()] = fields[1].GetUInt32();
+            } while (zones->NextRow());
+        }
+
+        struct Cell
+        {
+            uint32 entry = 0;
+            uint32 count = 0;
+            uint32 zoneId = 0;
+            uint32 phaseMask = 0;
+            float x = 0.0f, y = 0.0f, z = 0.0f;
+        };
+        std::map<std::tuple<uint16, int32, int32, int32>, Cell> tempCells;
+        for (auto const& itr : sObjectMgr->GetAllCreatureData())
+        {
+            CreatureData const& data = itr.second;
+            if (!onStartMap(data.mapId))
+                continue;
+            CreatureTemplate const* ct = sObjectMgr->GetCreatureTemplate(data.id);
+            if (!ct)
+                continue;
+            if (!(ct->npcflag == 0 && ct->npcflag2 == 0 && ct->lootid != 0 && ct->maxlevel - ct->minlevel < 3 &&
+                  data.spawntimesecs < 1000 && ct->faction != 11 && ct->faction != 71 && ct->faction != 79 &&
+                  ct->faction != 85 && ct->faction != 188 && ct->faction != 1575 && (ct->unit_flags & 256) == 0 &&
+                  (ct->unit_flags & 4096) == 0 && ct->rank == 0))
+                continue;
+
+            Cell& cell = tempCells[std::make_tuple(data.mapId, int32(std::lround(data.posX / 50.0f)),
+                                                   int32(std::lround(data.posY / 50.0f)), int32(std::lround(data.posZ / 50.0f)))];
+            if (!cell.count)
+            {
+                cell.entry = data.id;
+                cell.x = data.posX;
+                cell.y = data.posY;
+                cell.z = data.posZ;
+                auto const zone = spawnZone.find(itr.first);
+                cell.zoneId = zone != spawnZone.end() ? zone->second : 0;
+            }
+            ++cell.count;
+            cell.phaseMask |= data.phaseMask;
+        }
+
+        std::vector<StartZoneCell> result;
+        for (auto const& [key, cell] : tempCells)
+        {
+            CreatureTemplate const* ct = sObjectMgr->GetCreatureTemplate(cell.entry);
+            if (cell.count < 2 || !cell.zoneId || !ct)
+                continue;
+            result.push_back(StartZoneCell{WorldLocation(std::get<0>(key), cell.x, cell.y, cell.z, 0.0f), cell.zoneId,
+                                           uint32((ct->minlevel + ct->maxlevel + 1) / 2), cell.phaseMask});
+        }
+        TC_LOG_INFO("playerbots", "[STARTZONE] %u racial start-zone grind cells (maps 648/654/860)", uint32(result.size()));
+        return result;
+    }();
+    return cells;
+}
+
+// #952: the phase mask `bot` would get in `zoneId` from phase_definitions, as PhaseMgr::Recalculate +
+// PhaseData::AddPhaseDefinition + GetPhaseMaskForSpawn compute it (Maps/PhaseMgr.cpp:86-110, :245-248, :316-330).
+// spell_area phase auras are left out (they need quest progress a fresh random bot does not have). A quest-less bot is
+// phase 1 in Kezan and on the Wandering Isle but phase 2 on the Lost Isles (definition 4720/1, "14303 not rewarded"),
+// so most Lost Isles spawns (phase 1 or 8192, ...) are invisible to it.
+uint32 StartZonePhaseMask(Player* bot, uint32 zoneId)
+{
+    uint32 mask = 0;
+    PhaseDefinitionStore const* store = sObjectMgr->GetPhaseDefinitionStore();
+    auto const itr = store->find(zoneId);
+    if (itr != store->end())
+    {
+        for (PhaseDefinition const& phase : itr->second)
+        {
+            if (ConditionContainer const* conditions = sConditionMgr->GetConditionsForPhaseDefinition(zoneId, phase.entry))
+            {
+                ConditionSourceInfo srcInfo(bot);
+                if (!sConditionMgr->IsObjectMeetToConditions(srcInfo, *conditions))
+                    continue;
+            }
+            if (phase.IsOverwritingExistingPhases())
+                mask = phase.phasemask;
+            else if (phase.IsNegatingPhasemask())
+                mask &= ~phase.phasemask;
+            else
+                mask |= phase.phasemask;
+            if (phase.IsLastDefinition())
+                break;
+        }
+    }
+    return mask ? mask : uint32(PHASEMASK_NORMAL);
+}
+
+// #952 (MoP/Cata-only content, extends AC's random teleport for level): a random bot of a racial start-zone race below
+// the exit level is teleported to a grind cell of its start map whose level matches (AC's window: cell level in
+// [level - RandomBotTeleHigherLevel, level + RandomBotTeleLowerLevel], TravelMgr.cpp:800-814) and whose spawns are in the
+// bot's phase there. Kezan serves the lowest levels and the Lost Isles the rest, by cell level. A neutral Pandaren at the
+// exit level picks its faction instead. Returns false (the caller then does what it did before) when nothing applies.
+bool RacialStartZoneTeleport(Player* bot)
+{
+    if (PickDeferredPandarenFaction(bot))
+        return true;
+    RacialStartZone const* startZone = GetRacialStartZone(bot);
+    if (!startZone || bot->GetLevel() >= startZone->exitLevel)
+        return false;
+
+    int32 const level = int32(bot->GetLevel());
+    int32 const low = level - int32(sPlayerbotAIConfig->randomBotTeleHigherLevel);
+    int32 const high = level + int32(sPlayerbotAIConfig->randomBotTeleLowerLevel);
+    std::map<uint32, uint32> phaseByZone;
+    std::vector<WorldLocation> locs;
+    for (StartZoneCell const& cell : StartZoneCells())
+    {
+        if (cell.loc.GetMapId() != startZone->mapId || int32(cell.level) < low || int32(cell.level) > high)
+            continue;
+        auto zonePhase = phaseByZone.find(cell.zoneId);
+        if (zonePhase == phaseByZone.end())
+            zonePhase = phaseByZone.emplace(cell.zoneId, StartZonePhaseMask(bot, cell.zoneId)).first;
+        if (cell.phaseMask & zonePhase->second)
+            locs.push_back(cell.loc);
+    }
+
+    TC_LOG_DEBUG("playerbots", "[STARTZONE] %s (race %u, level %u, exit level %u) - %u start-zone cells on map %u",
+                 bot->GetName().c_str(), uint32(bot->GetRace()), bot->GetLevel(), startZone->exitLevel,
+                 uint32(locs.size()), startZone->mapId);
+    return !locs.empty() && RandomTeleportToLocs(bot, locs, false, true);
+}
+
 // AC RandomPlayerbotMgr::RandomTeleportGrindForLevel (1900-1910) + TravelMgr::GetTeleportLocations (TravelMgr.cpp:4480-4488).
 void RandomTeleportGrindForLevel(Player* bot)
 {
     if (bot->InBattleground())
+        return;
+    if (RacialStartZoneTeleport(bot))   // #952
         return;
     // #268 S9: this open-copied the same branch; #268 S4 made it a real TravelMgr entry point,
     // so call it (AC TravelMgr.cpp:4480-4488 via RandomPlayerbotMgr::RandomTeleportGrindForLevel).
@@ -1202,7 +1557,7 @@ void RandomPlayerbotMgr::Refresh(Player* bot)
     if (bot->InBattleground())
         return;
 
-    TC_LOG_INFO("playerbots", "Refreshing bot #%u <%s>", bot->GetGUID().GetCounter(), bot->GetName().c_str());
+    TC_LOG_DEBUG("playerbots", "Refreshing bot #%u <%s>", bot->GetGUID().GetCounter(), bot->GetName().c_str());
     PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "Refresh");
 
     botAI->Reset();
@@ -2853,6 +3208,49 @@ void RandomPlayerbotMgr::OnPlayerLogout(Player* player)
         _players.erase(i);
 }
 
+// #950 (MoP-only; the #62 login re-place in OnBotLoginInternal has no AC counterpart): is `zoneId` inside the travel
+// system's level bracket for `level`? Reads TravelMgr's zone2LevelBracket (AC's hard-coded brackets plus the
+// playerbot_farming_zone levelling rows) through a published copy - defined in Travel/TravelMgr.cpp, so TravelMgr.h
+// does not change. No terrain lookups: resolving the zone of every grind cell loaded terrain for whole continents.
+bool PlayerbotZoneLevelBracketContains(uint32 zoneId, uint32 level);
+
+// #951 (MoP-only content): Player::Update (Player.cpp:1352-1359) sends anyone in Isle of Thunder zone 6507 who has not
+// taken "The Storm Gathers" (32680 Horde / 32681 Alliance, level 90) back to their faction shrine, the 5.2 gate. No
+// random bot ever takes it, so every portal leg and every random teleport to map 1064 bounced the bot to the shrine
+// on its first tick and the isle had no bots. Taking the quest is enough (the check is status != NONE); with a full
+// quest log it is rewarded instead.
+void PlayerbotPrepareFarTeleport(Player* bot, uint32 destMapId)
+{
+    if (destMapId != bot->GetMapId())
+        UnlockStartZoneExit(bot);
+
+    if (destMapId != 1064 || bot->GetLevel() < 90)
+        return;
+    uint32 const questId = bot->GetTeam() == HORDE ? 32680 : 32681;
+    if (bot->GetQuestStatus(32680) != QUEST_STATUS_NONE || bot->GetQuestStatus(32681) != QUEST_STATUS_NONE)
+        return;
+    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+    if (!quest)
+        return;
+    if (bot->FindQuestSlot(0) < MAX_QUEST_LOG_SIZE)
+        bot->AddQuest(quest, nullptr);
+    else
+    {
+        bot->CompleteQuest(questId);
+        bot->RewardQuest(quest, 0, bot, false);
+    }
+    TC_LOG_DEBUG("playerbots", "%s Isle of Thunder gate: quest %u status %u before teleport to map 1064",
+        bot->GetName().c_str(), questId, uint32(bot->GetQuestStatus(questId)));
+}
+
+namespace
+{
+bool IsLevelBracketZone(uint32 level, uint32 zoneId)
+{
+    return PlayerbotZoneLevelBracketContains(zoneId, level);
+}
+}   // namespace
+
 void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
 {
     auto maxAllowed = sRandomPlayerbotMgr->GetMaxAllowedBotCount();
@@ -2868,6 +3266,58 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
         // unlocked glyph slots now; both are idempotent, so an already talented bot is untouched.
         factory.InitTalentTiers();
         factory.InitGlyphs(true);
+
+        // #946 repair, same idea as #59/#734 above: until the Randomize fix, a full randomize that changed the level was
+        // saved naked, and an interrupted levelup re-gear left the bot naked until its next randomize (days). A random bot
+        // that logs in with fewer than 5 items equipped gets the full InitEquipment now: even a level-1 kit has 5, and a
+        // bot that was saved naked often picks up one looted item before it logs out again (owner 2026-10-27: Arinerio,
+        // L58, one item, was skipped by the first "nothing equipped" rule). A bot wearing 5 or more is untouched.
+        uint32 equipped = 0;
+        for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+            if (bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+                ++equipped;
+        if (equipped < 5)
+        {
+            factory.InitEquipment(false);
+            TC_LOG_INFO("playerbots", "Bot %s (level %u) logged in with %u equipped item(s) - re-geared (#946)",
+                bot->GetName().c_str(), bot->GetLevel(), equipped);
+        }
+    }
+
+    // #971: a random bot leaves a stale group at login, as AC does (AC PlayerbotMgr.cpp:485-519, PlayerbotHolder::OnBotLogin:
+    // a group without the bot's master is left with LeaveOrDisbandGroup, AC PlayerbotAI.cpp:1088-1095 -> CMSG_GROUP_DISBAND
+    // -> RemoveFromGroup(GROUP_REMOVEMETHOD_LEAVE), AC GroupHandler.cpp:504-508). Our PlayerbotHolder::OnBotLogin returns
+    // before that check when the bot has no master, which is every random bot, so all-bot LFG groups (random-bot LFG
+    // self-queue, #142) were kept across restarts and their members logged in inside the dungeon, then the login re-place
+    // refused them (RandomTeleportToLocs: grouped non-leader). The group is kept when the master is in it, or when any
+    // member is not on a random-bot account (a real player, a headless test client); that is the non-random-member rule
+    // OnBotLogin already carries (AC: KeepAltsInGroup). Battlegrounds are left alone (AC GroupHandler.cpp:497).
+    if (Group* group = bot->GetGroup())
+    {
+        PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+        Player* master = botAI ? botAI->GetMaster() : nullptr;
+        if (!master && !bot->InBattleground() && !group->isBGGroup() && !group->isBFGroup())
+        {
+            bool groupValid = false;
+            for (Group::MemberSlot const& slot : group->GetMemberSlots())
+            {
+                if (slot.guid == bot->GetGUID())
+                    continue;
+                if (!sPlayerbotAIConfig->IsInRandomAccountList(sCharacterCache->GetCharacterAccountIdByGuid(slot.guid)))
+                {
+                    groupValid = true;
+                    break;
+                }
+            }
+
+            if (!groupValid)
+            {
+                TC_LOG_DEBUG("playerbots", "[LOGIN] %s left stale %sgroup %u (%u members, no real player) on map %u",
+                             bot->GetName().c_str(), group->isLFGGroup() ? "LFG " : "", uint32(group->GetGUID().GetCounter()),
+                             uint32(group->GetMembersCount()), bot->GetMapId());
+                bot->RemoveFromGroup(GROUP_REMOVEMETHOD_LEAVE);
+            }
+        }
     }
 
     // issue #62 (quests): a bot that logs in somewhere with no level-appropriate data can never
@@ -2908,7 +3358,44 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
         // bot belongs there. A bot standing in a capital of the other faction is re-placed as well.
         bool const enemyCapital = IsInEnemyCapital(bot);
 
-        if (!known || !levelAppropriate || enemyCapital)
+        // #950 (MoP-only): a row-less zone is not "wrong". Almost every Outland/Northrend/Cata levelling zone and
+        // Dalaran/the shrines had no row, so 488 bots/hour were thrown out at login in a 1000-bot run. A bot also
+        // stays when its zone is in the travel system's level bracket for its level, or it is in a capital of its
+        // own faction. Instances, battlegrounds and arenas never qualify.
+        char const* appropriateReason = levelAppropriate ? "row" : "none";
+        if (!levelAppropriate && !enemyCapital && zoneId)
+        {
+            Map* botMap = bot->GetMap();
+            bool const continent = botMap && !botMap->IsDungeon() && !botMap->IsBattlegroundOrArena();
+            if (continent && IsLevelBracketZone(level, zoneId))
+            {
+                levelAppropriate = true;
+                appropriateReason = "bracket";
+            }
+            else if (continent && CapitalZoneName(CapitalZoneIdOf(bot)))   // #947: whole shrine, not only its inn
+            {
+                levelAppropriate = true;
+                appropriateReason = "capital";
+            }
+            // #952: a start-zone race below its exit level, on its own start map, is where it belongs.
+            else if (continent && InRacialStartZoneForLevel(bot))
+            {
+                levelAppropriate = true;
+                appropriateReason = "startzone";
+            }
+        }
+
+        // #952: a start-zone race below its exit level that logs in OFF its start map (e.g. a neutral Pandaren saved on
+        // the mainland before the deferred faction pick existed) goes to its start zone now, not at its next periodic
+        // teleport 1-5 h later (final run 2026-10-27: 3 neutral Pandaren logged in on the mainland and stayed there).
+        if (RacialStartZone const* startZone = GetRacialStartZone(bot))
+            if (level < startZone->exitLevel && bot->GetMapId() != startZone->mapId)
+            {
+                levelAppropriate = false;
+                appropriateReason = "off-startzone";
+            }
+
+        if (!levelAppropriate || enemyCapital)
         {
             TC_LOG_DEBUG("playerbots",
                          "[QUEST] %s level %u in zone %u (known=%d appropriate=%d enemyCapital=%d) - re-placing for level",
@@ -2916,33 +3403,48 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
                          enemyCapital ? 1 : 0);
             RandomTeleportForLevel(bot);
         }
+        else if (!known)
+        {
+            // Stays only because of the #950 bracket/capital test (no data row for the zone).
+            TC_LOG_DEBUG("playerbots", "[QUEST] %s level %u in zone %u stays (appropriate=%s)",
+                         bot->GetName().c_str(), level, zoneId, appropriateReason);
+        }
+    }
+
+    // #971: an ungrouped random bot must not stay on a dungeon/raid map. In AC the group leave above teleports it out of
+    // the dungeon to its entry point (AC LFGScripts.cpp:259-263, TeleportToEntryPoint); ours only does so when the LFG
+    // queue data survived the restart (LFGScripts.cpp:221-244), and the re-place above can fail or be skipped (a dungeon
+    // zone with a farm row). Entry point first, as AC, then the homebind. No taxi restore: the stored path is stale.
+    if (bot->IsInWorld() && !bot->IsBeingTeleported() && !bot->GetGroup() && bot->GetMap() && bot->GetMap()->IsDungeon())
+    {
+        PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+        if (!botAI || !botAI->GetMaster())
+        {
+            WorldLocation const& entry = bot->GetBattlegroundEntryPoint();
+            MapEntry const* entryMap = entry.GetMapId() != MAPID_INVALID ? sMapStore.LookupEntry(entry.GetMapId()) : nullptr;
+            bool const useEntry = entryMap && !entryMap->Instanceable() && MapManager::IsValidMapCoord(entry) &&
+                (entry.GetPositionX() != 0.0f || entry.GetPositionY() != 0.0f);
+            TC_LOG_DEBUG("playerbots", "[LOGIN] %s ungrouped on instance map %u at (%.1f,%.1f,%.1f) - sent to %s (map %u)",
+                         bot->GetName().c_str(), bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
+                         useEntry ? "entry point" : "homebind", useEntry ? entry.GetMapId() : bot->m_homebindMapId);
+            if (useEntry)
+                bot->TeleportTo(entry);
+            else
+                bot->TeleportTo(bot->m_homebindMapId, bot->m_homebindX, bot->m_homebindY, bot->m_homebindZ, bot->GetOrientation());
+        }
     }
 
     // If this player has been created recently and is not assign horde / alliance as pandaren
     if (bot->GetRace() == RACE_PANDAREN_NEUTRAL)
     {
-        // Allow player to get fully logged. Scheduled on Unit::m_Events, which Unit::Update() pumps every
-        // tick. Unit::AddDelayedEvent() pushes into _functionsDelayed, which nothing ever updates, so the
-        // pick has never run in this tree (issue #228).
-        bot->Schedule(TimeValue(std::chrono::milliseconds(5000)), [bot]()
-        {
-            static const uint32 JOIN_THE_ALLIANCE = 1;
-            static const uint32 JOIN_THE_HORDE = 0;
-
-            WorldPacket packet(CMSG_SELECT_FACTION);
-            packet << (std::rand() % 2 ? JOIN_THE_HORDE : JOIN_THE_ALLIANCE);
-
-            if (!bot->IsInWorld())
-                return;
-
-            WorldSession* session = bot->GetSession();
-            if (!session)
-                return;
-
-            session->HandleSelectFactionOpcode(packet);
-
-            TC_LOG_INFO("playerbots", "%s Assigned to faction: %s", bot->GetName().c_str(), (bot->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde"));
-        });        
+        // #952 (MoP-only content): below the Wandering Isle's exit level the pick waits, so the bot levels on the isle
+        // as a player does; PickDeferredPandarenFaction (ProcessBot / teleport for level) makes it at the exit level.
+        RacialStartZone const* startZone = GetRacialStartZone(bot);
+        if (startZone && bot->GetLevel() < startZone->exitLevel)
+            TC_LOG_DEBUG("playerbots", "[STARTZONE] %s neutral Pandaren level %u on map %u - faction pick deferred to level %u",
+                         bot->GetName().c_str(), bot->GetLevel(), bot->GetMapId(), startZone->exitLevel);
+        else
+            ScheduleNeutralPandarenFactionPick(bot);   // Allow player to get fully logged (#228).
     }
     if (bot->GetRace() == RACE_GOBLIN && bot->GetLevel() == 1)
     {
@@ -3943,6 +4445,11 @@ void RandomPlayerbotMgr::RandomTeleportForLevel(Player* bot)
     if (bot->InBattleground())
         return;
 
+    // #952 (MoP/Cata-only content): a start-zone race below its exit level stays on its start map; a neutral Pandaren
+    // at the exit level picks its faction. Before the banker roll, so a level 10-11 goblin is not sent to a city.
+    if (RacialStartZoneTeleport(bot))
+        return;
+
     // #268 S9: the destination half is TravelMgr's again, exactly as upstream (AC :1811 / :1818). The
     // RandomPlayerbotMgr farm/city caches that stood in for it - GetFarmZoneForPlayer and
     // GetCityForPlayer - are deleted; nothing in this file picks a destination from them any more.
@@ -3990,7 +4497,37 @@ constexpr CapitalZone CAPITAL_ZONES[] =
     {1537, ALLIANCE, "Ironforge"},
     {1657, ALLIANCE, "Darnassus"},
     {3557, ALLIANCE, "The Exodar"},
+    // #947 / #950 (MoP-only): the Pandaria faction hubs. Bots log in there after a restart, so they must count as
+    // own-faction capitals (and the rival shrine as an enemy capital).
+    {6141, HORDE,    "Shrine of Two Moons"},
+    {6553, ALLIANCE, "Shrine of Seven Stars"},
 };
+}   // namespace
+
+namespace
+{
+// #947 (MoP-only): the capital a bot stands in. The shrines are sub-zones of the Vale (AreaTable 6141 / 6554 Shrine of Two
+// Moons and 6553 / 6142 Shrine of Seven Stars, all parent 5840, all AREA_FLAG_CAPITAL), and Map::GetZoneId climbs one level
+// only, so a bot reports zone 6141 / 6553 only inside the inn/bank sub-areas (6519 Summer's Rest, 6482/6484 Summer Terrace /
+// Golden Lantern) and zone 5840 everywhere else in the shrine. Resolve those to the shrine's CAPITAL_ZONES id so the login
+// stay and the enemy-capital check see the whole shrine; every other zone is returned unchanged.
+uint32 CapitalZoneIdOf(Player* bot)
+{
+    uint32 const zoneId = bot->GetZoneId();
+    if (zoneId != 5840)
+        return zoneId;
+
+    AreaTableEntry const* area = sAreaTableStore.LookupEntry(bot->GetAreaId());
+    for (uint32 depth = 0; area && depth < 4; ++depth)
+    {
+        if (area->ID == 6141 || area->ID == 6554)
+            return 6141;
+        if (area->ID == 6553 || area->ID == 6142)
+            return 6553;
+        area = area->ParentAreaID ? sAreaTableStore.LookupEntry(area->ParentAreaID) : nullptr;
+    }
+    return zoneId;
+}
 }   // namespace
 
 char const* RandomPlayerbotMgr::CapitalZoneName(uint32 zoneId)
@@ -4020,5 +4557,5 @@ bool RandomPlayerbotMgr::IsInEnemyCapital(Player* bot)
     if (!bot || !bot->IsInWorld())
         return false;
 
-    return IsEnemyCapitalZone(bot->GetZoneId(), bot->GetTeam());
+    return IsEnemyCapitalZone(CapitalZoneIdOf(bot), bot->GetTeam());   // #947: whole shrine, not only its inn
 }

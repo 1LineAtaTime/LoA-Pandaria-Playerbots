@@ -70,7 +70,8 @@ class spell_spicy_explosion : public SpellScriptLoader
             {
                 AfterCast += SpellCastFn(spell_spicy_explosion_SpellScript::OnAfterCast);
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_spicy_explosion_SpellScript::SelectTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENTRY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_spicy_explosion_SpellScript::SelectTargets, EFFECT_3, TARGET_UNIT_SRC_AREA_ENTRY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_spicy_explosion_SpellScript::SelectTargets, EFFECT_2, TARGET_UNIT_SRC_AREA_ENTRY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_spicy_explosion_SpellScript::SelectTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 

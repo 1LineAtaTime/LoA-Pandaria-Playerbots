@@ -4593,9 +4593,12 @@ class spell_gen_water_strider_water_walking : public AuraScript
 {
     PrepareAuraScript(spell_gen_water_strider_water_walking);
 
-    bool CheckArea(Unit* target)
+    // Original DoCheckAreaTarget: the aura may only exist outside battlegrounds (GetBattlegorund() == nullptr).
+    // 143333 is a single-target WATER_WALK aura, so that area hook never ran; the same rule is enforced on apply instead.
+    void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        return target->GetBattlegorund() == nullptr;
+        if (GetTarget()->GetBattlegorund())
+            Remove();
     }
 
     void HandleProc(ProcEventInfo& eventInfo)
@@ -4606,7 +4609,7 @@ class spell_gen_water_strider_water_walking : public AuraScript
 
     void Register() override
     {
-        DoCheckAreaTarget += AuraCheckAreaTargetFn(spell_gen_water_strider_water_walking::CheckArea);
+        AfterEffectApply += AuraEffectApplyFn(spell_gen_water_strider_water_walking::HandleApply, EFFECT_0, SPELL_AURA_WATER_WALK, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
         OnProc += AuraProcFn(spell_gen_water_strider_water_walking::HandleProc);
     }
 };

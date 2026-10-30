@@ -381,11 +381,14 @@ void Unit::Update(uint32 p_time)
     _damageTrackingTimer -= p_time;
     while (_damageTrackingTimer <= 0)
     {
-        std::copy(_npcDamageTaken.begin(), _npcDamageTaken.end() - 1, _npcDamageTaken.begin() + 1);
-        std::copy(_playerDamageTaken.begin(), _playerDamageTaken.end() - 1, _playerDamageTaken.begin() + 1);
+        if (_damageTaken)
+        {
+            std::copy(_damageTaken->npc.begin(), _damageTaken->npc.end() - 1, _damageTaken->npc.begin() + 1);
+            std::copy(_damageTaken->player.begin(), _damageTaken->player.end() - 1, _damageTaken->player.begin() + 1);
 
-        _npcDamageTaken[0] = 0;
-        _playerDamageTaken[0] = 0;
+            _damageTaken->npc[0] = 0;
+            _damageTaken->player[0] = 0;
+        }
 
         _damageTrackingTimer += DAMAGE_TRACKING_UPDATE_INTERVAL;
     }
@@ -1151,10 +1154,12 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
             victim->ToCreature()->LowerPlayerDamageReq(health < damage ? health : damage);
     }
 
+    if (!victim->_damageTaken)
+        victim->_damageTaken = std::make_unique<DamageTakenHistory>();
     if (GetTypeId() != TYPEID_PLAYER)
-        victim->_npcDamageTaken[0] += damage;
+        victim->_damageTaken->npc[0] += damage;
     else
-        victim->_playerDamageTaken[0] += damage;
+        victim->_damageTaken->player[0] += damage;
 
     if (health <= damage)
     {
@@ -4263,12 +4268,14 @@ void Unit::_RemoveNoStackAurasDueToAura(Aura* aura)
     }
 }
 
+Unit::AuraEffectList const Unit::s_emptyAuraEffectList{};
+
 void Unit::_RegisterAuraEffect(AuraEffect* aurEff, bool apply)
 {
     if (apply)
-        m_modAuras [aurEff->GetAuraType()].push_back(aurEff);
-    else
-        m_modAuras [aurEff->GetAuraType()].remove(aurEff);
+        ModAurasFor(aurEff->GetAuraType()).push_back(aurEff);
+    else if (AuraEffectList* effects = FindModAuras(aurEff->GetAuraType()))
+        effects->remove(aurEff);
 }
 
 // All aura base removes should go threw this function!
@@ -4599,7 +4606,11 @@ void Unit::RemoveAurasDueToItemSpell(uint32 spellId, uint64 castItemGuid)
 
 void Unit::RemoveAurasByType(AuraType auraType, uint64 casterGUID, Aura* except, bool negative, bool positive)
 {
-    for (AuraEffectList::iterator iter = m_modAuras [auraType].begin(); iter != m_modAuras [auraType].end();)
+    AuraEffectList* effectsPtr = FindModAuras(auraType);
+    if (!effectsPtr)
+        return;
+    AuraEffectList& effects = *effectsPtr;
+    for (AuraEffectList::iterator iter = effects.begin(); iter != effects.end();)
     {
         Aura* aura = (*iter)->GetBase();
         AuraApplication * aurApp = aura->GetApplicationOfTarget(GetGUID());
@@ -4611,14 +4622,18 @@ void Unit::RemoveAurasByType(AuraType auraType, uint64 casterGUID, Aura* except,
             uint32 removedAuras = m_removedAurasCount;
             RemoveAura(aurApp);
             if (m_removedAurasCount > removedAuras + 1)
-                iter = m_modAuras [auraType].begin();
+                iter = effects.begin();
         }
     }
 }
 
 void Unit::RemoveAurasByTypeOnImmunity(AuraType auraType)
 {
-    for (auto itr = m_modAuras[auraType].begin(); itr != m_modAuras[auraType].end();)
+    AuraEffectList* effectsPtr = FindModAuras(auraType);
+    if (!effectsPtr)
+        return;
+    AuraEffectList& effects = *effectsPtr;
+    for (auto itr = effects.begin(); itr != effects.end();)
     {
         Aura* aura = (*itr)->GetBase();
         AuraApplication* aurApp = aura->GetApplicationOfTarget(GetGUID());
@@ -4634,7 +4649,7 @@ void Unit::RemoveAurasByTypeOnImmunity(AuraType auraType)
             uint32 removedAuras = m_removedAurasCount;
             RemoveAura(aurApp);
             if (m_removedAurasCount > removedAuras + 1)
-                itr = m_modAuras[auraType].begin();
+                itr = effects.begin();
         }
     }
 }
@@ -5344,7 +5359,8 @@ bool Unit::HasAura(uint32 spellId, uint64 casterGUID, uint64 itemCasterGUID, uin
 
 bool Unit::HasAuraType(AuraType auraType) const
 {
-    return (!m_modAuras [auraType].empty());
+    AuraEffectList const* effects = FindModAuras(auraType);
+    return effects && !effects->empty();
 }
 
 bool Unit::HasAuraTypeWithCaster(AuraType auratype, uint64 caster) const
@@ -5447,7 +5463,11 @@ uint32 Unit::GetDiseasesByCaster(uint64 casterGUID, bool remove)
     uint32 diseases = 0;
     for (AuraType const* itr = diseaseAuraTypes; *itr != SPELL_AURA_NONE; ++itr)
     {
-        for (AuraEffectList::iterator i = m_modAuras [*itr].begin(); i != m_modAuras [*itr].end();)
+        AuraEffectList* effectsPtr = FindModAuras(*itr);
+        if (!effectsPtr)
+            continue;
+        AuraEffectList& effects = *effectsPtr;
+        for (AuraEffectList::iterator i = effects.begin(); i != effects.end();)
         {
             // Get auras with disease dispel type by caster
             if ((*i)->GetSpellInfo()->Dispel == DISPEL_DISEASE
@@ -5458,7 +5478,7 @@ uint32 Unit::GetDiseasesByCaster(uint64 casterGUID, bool remove)
                 if (remove)
                 {
                     RemoveAura((*i)->GetId(), (*i)->GetCasterGUID());
-                    i = m_modAuras [*itr].begin();
+                    i = effects.begin();
                     continue;
                 }
             }
@@ -20421,23 +20441,29 @@ void Unit::BuildTeleportUpdateData(WorldPacket* data)
 
 uint32 Unit::GetNpcDamageTakenInPastSecs(uint32 secs) const
 {
-    auto const offset = std::min<size_t>(secs, _npcDamageTaken.size());
-    return std::accumulate(_npcDamageTaken.begin(), _npcDamageTaken.begin() + offset, 0u);
+    if (!_damageTaken)
+        return 0;
+    auto const offset = std::min<size_t>(secs, _damageTaken->npc.size());
+    return std::accumulate(_damageTaken->npc.begin(), _damageTaken->npc.begin() + offset, 0u);
 }
 
 uint32 Unit::GetPlayerDamageTakenInPastSecs(uint32 secs) const
 {
-    auto const offset = std::min<size_t>(secs, _playerDamageTaken.size());
-    return std::accumulate(_playerDamageTaken.begin(), _playerDamageTaken.begin() + offset, 0u);
+    if (!_damageTaken)
+        return 0;
+    auto const offset = std::min<size_t>(secs, _damageTaken->player.size());
+    return std::accumulate(_damageTaken->player.begin(), _damageTaken->player.begin() + offset, 0u);
 }
 
 uint32 Unit::GetDamageTakenInPastSecs(uint32 secs) const
 {
-    auto const offset = std::min<size_t>(secs, _npcDamageTaken.size());
+    if (!_damageTaken)
+        return 0;
+    auto const offset = std::min<size_t>(secs, _damageTaken->npc.size());
 
     uint32 damage = 0;
     for (size_t i = 0; i < offset; ++i)
-        damage += _npcDamageTaken[i] + _playerDamageTaken[i];
+        damage += _damageTaken->npc[i] + _damageTaken->player[i];
 
     return damage;
 }

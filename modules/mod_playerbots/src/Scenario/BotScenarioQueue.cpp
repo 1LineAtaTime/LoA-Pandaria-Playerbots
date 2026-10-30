@@ -78,6 +78,7 @@
 #include "Group.h"
 #include "GroupMgr.h"  // #895: ratedbg group
 #include "Map.h"
+#include "MotionMaster.h"  // #983: attackers (mgen)
 #include "InstanceSaveMgr.h"
 #include "InstanceScript.h"
 #include "LFGMgr.h"
@@ -96,7 +97,9 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <list>
 #include <cstdio>
 #include <sstream>
@@ -330,6 +333,223 @@ namespace
 
     // `additem <entry> [count]`: in-memory inventory add via the CanStoreNewItem + StoreNewItem pair
     // that Player::StoreNewItemInBestSlots uses, but keeping the failure reason and a partial count.
+    // #932 `nearhp [range=100]` (read-only): every creature within range of the player - the first 25 as entry / level /
+    // hp / maxhp lines, then a summary (count, min / median / max maxhp, map, instance, difficulty).
+    bool HandleNearHp(ChatHandler* handler, std::string const& name, std::istringstream& in)
+    {
+        Player* target = name.empty() ? nullptr : ObjectAccessor::FindPlayerByName(name);
+        if (!target)
+        {
+            ReplyLine(handler, "botscenario: no online player named '" + name + "'");
+            return false;
+        }
+
+        float range = 100.0f;
+        if (!(in >> range) || range <= 0.0f)
+            range = 100.0f;
+
+        std::list<Unit*> units;
+        Trinity::AnyUnitInObjectRangeCheck check(target, range, true);
+        Trinity::UnitListSearcher<Trinity::AnyUnitInObjectRangeCheck> searcher(target, units, check);
+        Cell::VisitAllObjects(target, searcher, range);
+
+        std::vector<uint64> maxHps;
+        uint32 shown = 0;
+        for (Unit* unit : units)
+        {
+            Creature* creature = unit->ToCreature();
+            if (!creature || creature->IsPet() || creature->IsTotem() || creature->IsCharmedOwnedByPlayerOrPlayer())
+                continue;
+
+            maxHps.push_back(creature->GetMaxHealth());
+            if (++shown > 25)
+                continue;
+
+            char buf[256];
+            std::snprintf(buf, sizeof(buf), "botscenario: nearhp entry=%u level=%u hp=%llu/%llu alive=%d display=%u native=%u spawnId=%u name=%s",
+                creature->GetEntry(), uint32(creature->GetLevel()), (unsigned long long)creature->GetHealth(),
+                (unsigned long long)creature->GetMaxHealth(), creature->IsAlive() ? 1 : 0, creature->GetDisplayId(),
+                creature->GetNativeDisplayId(), uint32(creature->GetSpawnId()), creature->GetName().c_str());
+            ReplyLine(handler, buf);
+        }
+
+        std::sort(maxHps.begin(), maxHps.end());
+        char buf[256];
+        std::snprintf(buf, sizeof(buf), "botscenario: nearhp summary count=%u maxhp min=%llu median=%llu max=%llu map=%u instance=%u difficulty=%u player_level=%u",
+            uint32(maxHps.size()), (unsigned long long)(maxHps.empty() ? 0 : maxHps.front()),
+            (unsigned long long)(maxHps.empty() ? 0 : maxHps[maxHps.size() / 2]), (unsigned long long)(maxHps.empty() ? 0 : maxHps.back()),
+            target->GetMapId(), target->GetInstanceId(), uint32(target->GetMap()->GetDifficulty()), uint32(target->GetLevel()));
+        ReplyLine(handler, buf);
+        return true;
+    }
+
+    // #983 `attackers [radius]` (read-only; PR 15 commit 4aaa6982 melee-spread probe). Default: every creature that has
+    // <name> as its victim or is in <name>'s attacker list (search window 60 yd for the victim test). With a radius: every
+    // hostile in-combat creature within that radius (default arg 40 only when the token is given).
+    // One line per unit, then a summary with the min / max circular angular gap between neighbours (angles are world
+    // bearings from <name> to the unit, 0-360 deg, so drivers compare samples directly).
+    bool HandleAttackers(ChatHandler* handler, std::string const& name, std::istringstream& in)
+    {
+        Player* target = name.empty() ? nullptr : ObjectAccessor::FindPlayerByName(name);
+        if (!target)
+        {
+            ReplyLine(handler, "botscenario: no online player named '" + name + "'");
+            return false;
+        }
+
+        bool radiusMode = false;
+        float radius = 40.0f;
+        if (in >> radius)
+            radiusMode = radius > 0.0f;
+        if (!radiusMode)
+            radius = 40.0f;
+
+        float const searchRange = radiusMode ? radius : 60.0f;
+        std::list<Unit*> units;
+        Trinity::AnyUnitInObjectRangeCheck check(target, searchRange, true);
+        Trinity::UnitListSearcher<Trinity::AnyUnitInObjectRangeCheck> searcher(target, units, check);
+        Cell::VisitAllObjects(target, searcher, searchRange);
+
+        std::vector<Creature*> picked;
+        auto addUnique = [&picked](Creature* c)
+        {
+            if (c && std::find(picked.begin(), picked.end(), c) == picked.end())
+                picked.push_back(c);
+        };
+
+        if (radiusMode)
+        {
+            for (Unit* unit : units)
+            {
+                Creature* c = unit->ToCreature();
+                if (c && c->IsAlive() && c->IsInCombat() && !c->IsPet() && !c->IsTotem() && target->IsHostileTo(c))
+                    addUnique(c);
+            }
+        }
+        else
+        {
+            for (Unit* unit : units)
+            {
+                Creature* c = unit->ToCreature();
+                if (c && c->IsAlive() && c->GetVictim() == target)
+                    addUnique(c);
+            }
+            for (Unit* attacker : target->getAttackers())
+                if (attacker && attacker->GetTypeId() == TYPEID_UNIT && attacker->IsAlive())
+                    addUnique(attacker->ToCreature());
+        }
+
+        struct Row { Creature* c; float dist; float angle; };
+        std::vector<Row> rows;
+        for (Creature* c : picked)
+        {
+            float const dx = c->GetPositionX() - target->GetPositionX();
+            float const dy = c->GetPositionY() - target->GetPositionY();
+            float deg = std::atan2(dy, dx) * 180.0f / 3.14159265f;
+            if (deg < 0.0f)
+                deg += 360.0f;
+            rows.push_back({ c, std::sqrt(dx * dx + dy * dy), deg });
+        }
+        std::sort(rows.begin(), rows.end(), [](Row const& a, Row const& b) { return a.angle < b.angle; });
+
+        char buf[512];
+        uint32 shown = 0;
+        for (Row const& r : rows)
+        {
+            if (++shown > 40)
+                break;
+            std::snprintf(buf, sizeof(buf),
+                "botscenario: attackers entry=%u guid=%llu name=%s x=%.1f y=%.1f z=%.1f dist=%.1f angle=%.1f incombat=%d mgen=%d",
+                uint32(r.c->GetEntry()), (unsigned long long)r.c->GetGUID().GetRawValue(), r.c->GetName().c_str(),
+                r.c->GetPositionX(), r.c->GetPositionY(), r.c->GetPositionZ(), r.dist, r.angle, r.c->IsInCombat() ? 1 : 0,
+                int(r.c->GetMotionMaster()->GetCurrentMovementGeneratorType()));
+            ReplyLine(handler, buf);
+        }
+
+        float minGap = 0.0f, maxGap = 0.0f;
+        size_t const n = rows.size();
+        if (n == 1)
+            minGap = maxGap = 360.0f;
+        else if (n > 1)
+        {
+            minGap = 360.0f;
+            for (size_t i = 0; i < n; ++i)
+            {
+                float const gap = (i + 1 < n) ? rows[i + 1].angle - rows[i].angle : rows[0].angle + 360.0f - rows[i].angle;
+                minGap = std::min(minGap, gap);
+                maxGap = std::max(maxGap, gap);
+            }
+        }
+        std::snprintf(buf, sizeof(buf), "botscenario: attackers summary player=%s mode=%s radius=%.0f count=%u min_gap=%.1f max_gap=%.1f",
+            target->GetName().c_str(), radiusMode ? "radius" : "victim", searchRange, uint32(n), minGap, maxGap);
+        ReplyLine(handler, buf);
+        return true;
+    }
+
+    // #933 `visibleitems` (read-only): per equipped slot, the item entry, the item's transmog id and visible entry, and the
+    // PLAYER_FIELD_VISIBLE_ITEMS value the other clients draw.
+    bool HandleVisibleItems(ChatHandler* handler, std::string const& name)
+    {
+        Player* target = name.empty() ? nullptr : ObjectAccessor::FindPlayerByName(name);
+        if (!target)
+        {
+            ReplyLine(handler, "botscenario: no online player named '" + name + "'");
+            return false;
+        }
+
+        for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+        {
+            Item* item = target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+            uint32 const drawn = target->GetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + slot * 2);
+            if (!item && !drawn)
+                continue;
+
+            char buf[256];
+            std::snprintf(buf, sizeof(buf), "botscenario: visibleitems slot=%u entry=%u transmog=%u visible=%u drawn=%u", uint32(slot),
+                item ? item->GetEntry() : 0u,
+                item ? item->GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, ITEM_MODIFIER_INDEX_TRANSMOGRIFICATION) : 0u,
+                item ? item->GetVisibleEntry() : 0u, drawn);
+            ReplyLine(handler, buf);
+        }
+        ReplyLine(handler, "botscenario: visibleitems done bot=" + std::string(GET_PLAYERBOT_AI(target) ? "1" : "0"));
+        return true;
+    }
+
+    // #930 `equipitem <entry>`: create the item and equip it in the slot the core picks for it (a wand goes to the main
+    // hand on MoP, the ranged slot on AC); whatever was there is replaced. Reports the slot and the equip result code.
+    bool HandleEquipItem(ChatHandler* handler, std::string const& name, std::istringstream& in)
+    {
+        Player* target = name.empty() ? nullptr : ObjectAccessor::FindPlayerByName(name);
+        uint32 entry = 0;
+        in >> entry;
+        ItemTemplate const* proto = entry ? sObjectMgr->GetItemTemplate(entry) : nullptr;
+        if (!target || !proto)
+        {
+            ReplyLine(handler, "botscenario: usage: botscenario <online player> equipitem <entry>");
+            return false;
+        }
+
+        uint8 const slot = target->FindEquipSlot(proto, NULL_SLOT, true);
+        if (slot == NULL_SLOT)
+        {
+            ReplyLine(handler, "botscenario: " + name + " equipitem entry=" + std::to_string(entry) + " result=no_slot");
+            return false;
+        }
+
+        if (target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+            target->DestroyItem(INVENTORY_SLOT_BAG_0, slot, true);
+
+        uint16 dest = 0;
+        InventoryResult const msg = target->CanEquipNewItem(slot, dest, entry, false);
+        Item* item = msg == EQUIP_ERR_OK ? target->EquipNewItem(dest, entry, true) : nullptr;
+        if (item)
+            target->AutoUnequipOffhandIfNeed();
+
+        ReplyLine(handler, "botscenario: " + name + " equipitem entry=" + std::to_string(entry) + " slot=" +
+            std::to_string(uint32(slot)) + " result=" + (item ? std::string("ok") : "err" + std::to_string(uint32(msg))));
+        return item != nullptr;
+    }
+
     bool HandleAddItem(ChatHandler* handler, std::string const& name, std::istringstream& in)
     {
         Player* target = name.empty() ? nullptr : ObjectAccessor::FindPlayerByName(name);
@@ -1835,6 +2055,14 @@ bool HandleQueueScenarioCommand(ChatHandler* handler, std::string const& name, s
         return HandleInstInfo(handler, name);
     if (scenario == "additem")
         return HandleAddItem(handler, name, in);
+    if (scenario == "equipitem")                // #930
+        return HandleEquipItem(handler, name, in);
+    if (scenario == "nearhp")                   // #932
+        return HandleNearHp(handler, name, in);
+    if (scenario == "attackers")                // #983
+        return HandleAttackers(handler, name, in);
+    if (scenario == "visibleitems")             // #933
+        return HandleVisibleItems(handler, name);
     if (scenario == "strategy")
         return HandleStrategy(handler, name, in);
     if (scenario == "imbueinfo")

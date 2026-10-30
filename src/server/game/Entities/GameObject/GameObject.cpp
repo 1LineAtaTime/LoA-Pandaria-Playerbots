@@ -41,9 +41,18 @@
 // #736 A/B: defined in Transport.cpp (the Transport.StopFrameClientEncoding mode; no header change)
 int32 TransportStopFrameClientEncoding();
 
+#include "HeapProfConfig.h"
+#if LOA_HEAPPROF
+#include <atomic>
+std::atomic<int64_t> g_heapprofLiveGameObjects{0}; // #924 profiling branch: live count for HeapProfiler dumps
+#endif
+
 GameObject::GameObject() : WorldObject(false), MapObject(),
     m_model(NULL), m_goValue(), m_AI(NULL), _animKitId(0)
 {
+#if LOA_HEAPPROF
+    ++g_heapprofLiveGameObjects; // #924 profiling branch
+#endif
     m_objectType |= TYPEMASK_GAMEOBJECT;
     m_objectTypeId = TYPEID_GAMEOBJECT;
 
@@ -77,6 +86,9 @@ GameObject::GameObject() : WorldObject(false), MapObject(),
 
 GameObject::~GameObject()
 {
+#if LOA_HEAPPROF
+    --g_heapprofLiveGameObjects; // #924 profiling branch
+#endif
     delete m_AI;
     delete m_model;
     //if (m_uint32Values)                                      // field array can be not exist if GameOBject not loaded

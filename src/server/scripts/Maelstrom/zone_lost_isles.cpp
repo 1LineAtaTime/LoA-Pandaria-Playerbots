@@ -17,6 +17,7 @@
 
 #include "ScriptPCH.h"
 #include "GameObjectAI.h"
+#include "GossipDef.h"
 #include "Item.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
@@ -25,7 +26,9 @@
 #include "SpellAuras.h"
 #include "TemporarySummon.h"
 #include "Vehicle.h"
+#include <ctime>
 #include <list>
+#include <map>
 
 // Lost Isles (map 648, zone 4720), part 1: crash landing -> naga arc (#438).
 //
@@ -163,6 +166,17 @@ private:
 // quest is offered; the reward spell 69013 removes the aura. After the turn-in he swims away.
 // MoPCore npc_Zapnozzle, timings/lines from AshamaneCore npc_zapnozzle (lost_isles.cpp:67-178), text from Wowpedia.
 // ---------------------------------------------------------------------------------------------------------------
+enum ZapnozzleIds
+{
+    QUEST_LIFE_SAVINGS                  = 14126,
+    SPELL_SEE_INVIS_NORMAL              = 76226,    // detect invisibility type 7, amount 999999, permanent
+    ZAPNOZZLE_SPAWN_RANGE               = 20,       // yd from the static spawner (the 74100 landing point is 2.7 yd away)
+    ZAPNOZZLE_LEASH_RANGE               = 60,       // the private copy leaves when its player is farther than this
+    ZAPNOZZLE_COPY_LIFETIME_MS          = 900000,   // TempSummon failsafe (15 min); the AI normally ends it earlier
+    ZAPNOZZLE_WAIT_MS                   = 600000,   // the copy waits 10 min for the accept / hand-in
+    ZAPNOZZLE_REOFFER_MS                = 30000,    // the quest window is pushed again this often while it is not done
+};
+
 struct loi_npc_zapnozzle : public ScriptedAI
 {
     enum State
@@ -174,23 +188,44 @@ struct loi_npc_zapnozzle : public ScriptedAI
         STATE_LEAVING
     };
 
-    explicit loi_npc_zapnozzle(Creature* creature) : ScriptedAI(creature), _state(STATE_IDLE), _timer(1000), _step(0) { }
+    explicit loi_npc_zapnozzle(Creature* creature) : ScriptedAI(creature), _state(STATE_IDLE), _timer(1000), _step(0), _waitLeft(0),
+        _rewardOffered(false), _init(false) { }
 
+    // #995: the static spawn (guid 371521, 5 min respawn) is only a SPAWNER: invisible, it never runs the scene itself.
+    // For every goblin on the beach who still needs 14239 it summons a PRIVATE copy (visible only to that player) that
+    // plays the scene, offers 14239, takes the hand-in and swims away. Retail does the same per player: aura 69010
+    // casts 69018 "Summon Doc Zapnozzle" and 69043 despawns him (Haven/Legion-style cores).
+    // me->IsPrivateObject() selects the private copy mode.
+    //
+    // Traps (#995 root cause, live on v17):
+    //  * 69010 is stun + MOD_INVISIBILITY type 7 (amount 100000). WorldObject::CanDetectInvisibilityOf (Object.cpp:2468) lets
+    //    an invisible seer see a unit only if that unit detects the seer's invisibility, so without a detection aura the
+    //    copy existed (cansee samephase=2) but the player never saw it (seen=0) and could not take the quest. The copy
+    //    carries 76226 (Gizmo 375711 gets it from creature_addon, sql 2026_10_29_995).
+    //  * 69010 is not saved: after a relog the player has no Near Death, so the spawner must not require the aura, only
+    //    "14126 rewarded and 14239 not rewarded".
+    //  * The stunned player cannot click Doc, so the copy pushes the quest window (details, then the reward window).
     void Reset() override
     {
-        _state = STATE_IDLE;
-        _timer = 1000;
-        _step = 0;
-        _playerGuid.Clear();
-        me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+        _init = false;
+    }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (!me->IsPrivateObject() || quest->GetQuestId() != QUEST_DONT_GO_INTO_THE_LIGHT)
+            return;
+
+        // no objectives: the accept handler already completed it; open the hand-in window right away
+        OfferReward(player);
     }
 
     void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
     {
-        if (quest->GetQuestId() != QUEST_DONT_GO_INTO_THE_LIGHT)
+        if (!me->IsPrivateObject() || quest->GetQuestId() != QUEST_DONT_GO_INTO_THE_LIGHT)
             return;
 
         _playerGuid = player->GetGUID();
+        me->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         _state = STATE_OUTRO;
         _step = 0;
         _timer = 1000;
@@ -204,6 +239,36 @@ struct loi_npc_zapnozzle : public ScriptedAI
 
     void UpdateAI(uint32 diff) override
     {
+        if (!_init)
+        {
+            _init = true;
+            _step = 0;
+            _playerGuid.Clear();
+            _copies.clear();
+            me->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+            if (me->IsPrivateObject())
+            {
+                _playerGuid = me->GetPrivateObjectOwner();
+                me->AddAura(SPELL_SEE_INVIS_NORMAL, me);
+                Player* player = ObjectAccessor::GetPlayer(*me, _playerGuid);
+                // a player who already took the quest (relog before the hand-in) gets the window again, no second revival
+                if (player && player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) != QUEST_STATUS_NONE)
+                    StartWaiting(player);
+                else
+                {
+                    _state = STATE_INTRO;
+                    _timer = 500;
+                }
+            }
+            else
+            {
+                _state = STATE_IDLE;
+                _timer = 1000;
+                me->SetVisible(false);
+            }
+            return;
+        }
+
         if (_timer > diff)
         {
             _timer -= diff;
@@ -213,30 +278,19 @@ struct loi_npc_zapnozzle : public ScriptedAI
         switch (_state)
         {
             case STATE_IDLE:
-            {
                 _timer = 1000;
-                std::list<Player*> players;
-                me->GetPlayerListInGrid(players, 20.0f);
-                for (Player* player : players)
-                {
-                    if (player->HasAura(SPELL_NEAR_DEATH) && player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) == QUEST_STATUS_NONE)
-                    {
-                        _playerGuid = player->GetGUID();
-                        _state = STATE_INTRO;
-                        _step = 0;
-                        _timer = 0;
-                        me->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
-                        break;
-                    }
-                }
+                SpawnerTick();
                 break;
-            }
             case STATE_INTRO:
+                if (!OwnerStillHere())
+                {
+                    me->DespawnOrUnsummon();
+                    return;
+                }
                 RunIntroStep();
                 break;
             case STATE_WAIT_REWARD:
-                // nobody took the quest: start over for the next player
-                Reset();
+                WaitTick();
                 break;
             case STATE_OUTRO:
                 RunOutroStep();
@@ -248,6 +302,101 @@ struct loi_npc_zapnozzle : public ScriptedAI
     }
 
 private:
+    // spawner: one private Doc per goblin within ZAPNOZZLE_SPAWN_RANGE who still needs 14239; a new one as soon as the
+    // previous copy is gone (despawned after the hand-in, timed out, or left with a logged-out player)
+    void SpawnerTick()
+    {
+        for (std::map<ObjectGuid, ObjectGuid>::iterator itr = _copies.begin(); itr != _copies.end();)
+        {
+            Creature* copy = ObjectAccessor::GetCreature(*me, itr->second);
+            if (!copy || !copy->IsAlive())
+                itr = _copies.erase(itr);
+            else
+                ++itr;
+        }
+
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, float(ZAPNOZZLE_SPAWN_RANGE));
+        for (Player* player : players)
+        {
+            if (!NeedsDoc(player) || _copies.find(player->GetGUID()) != _copies.end())
+                continue;
+
+            if (TempSummon* copy = me->SummonCreature(me->GetEntry(), me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(),
+                me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, Milliseconds(uint32(ZAPNOZZLE_COPY_LIFETIME_MS)), player->GetGUID()))
+                _copies[player->GetGUID()] = copy->GetGUID();
+        }
+    }
+
+    static bool NeedsDoc(Player* player)
+    {
+        return player->GetQuestRewardStatus(QUEST_LIFE_SAVINGS) && player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) != QUEST_STATUS_REWARDED;
+    }
+
+    Player* OwnerStillHere()
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGuid);
+        if (!player || !player->IsInWorld() || !me->IsWithinDistInMap(player, float(ZAPNOZZLE_LEASH_RANGE)))
+            return nullptr;
+        return player;
+    }
+
+    void StartWaiting(Player* player)
+    {
+        me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+        _state = STATE_WAIT_REWARD;
+        _waitLeft = ZAPNOZZLE_WAIT_MS;
+        _timer = 1000;
+        _rewardOffered = false;
+        if (player)
+            OfferWindow(player);
+    }
+
+    // the stunned player cannot click Doc: push the accept window (quest not taken) or the hand-in window (taken)
+    void OfferWindow(Player* player)
+    {
+        Quest const* quest = sObjectMgr->GetQuestTemplate(QUEST_DONT_GO_INTO_THE_LIGHT);
+        if (!quest)
+            return;
+
+        if (player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) == QUEST_STATUS_NONE)
+            player->PlayerTalkClass->SendQuestGiverQuestDetails(quest, me->GetGUID(), true);
+        else
+            OfferReward(player);
+    }
+
+    void OfferReward(Player* player)
+    {
+        if (player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) != QUEST_STATUS_COMPLETE)
+            return;
+
+        if (Quest const* quest = sObjectMgr->GetQuestTemplate(QUEST_DONT_GO_INTO_THE_LIGHT))
+        {
+            player->PlayerTalkClass->SendQuestGiverOfferReward(quest, me->GetGUID(), true);
+            _rewardOffered = true;
+        }
+    }
+
+    // private copy: stays while its player is here and the quest is not handed in, at most ZAPNOZZLE_WAIT_MS
+    void WaitTick()
+    {
+        _timer = 1000;
+        Player* player = OwnerStillHere();
+        if (!player || player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) == QUEST_STATUS_REWARDED || _waitLeft <= 1000)
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        _waitLeft -= 1000;
+        // window closed without a choice: push it again every ZAPNOZZLE_REOFFER_MS; accepted through a path that did not
+        // run OnQuestAccept (e.g. a quest share): show the hand-in at once
+        if ((ZAPNOZZLE_WAIT_MS - _waitLeft) % ZAPNOZZLE_REOFFER_MS == 0)
+            OfferWindow(player);
+        else if (!_rewardOffered && player->GetQuestStatus(QUEST_DONT_GO_INTO_THE_LIGHT) == QUEST_STATUS_COMPLETE)
+            OfferReward(player);
+    }
+
     void RunIntroStep()
     {
         Player* player = ObjectAccessor::GetPlayer(*me, _playerGuid);
@@ -286,9 +435,7 @@ private:
                 break;
             default:
                 Talk(4, player);
-                me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
-                _state = STATE_WAIT_REWARD;
-                _timer = 120000;
+                StartWaiting(player);
                 return;
         }
 
@@ -322,7 +469,11 @@ private:
     State _state;
     uint32 _timer;
     uint32 _step;
+    uint32 _waitLeft;
+    bool _rewardOffered;
+    bool _init;
     ObjectGuid _playerGuid;
+    std::map<ObjectGuid, ObjectGuid> _copies;   // spawner only: player -> his private Doc
 };
 
 // ---------------------------------------------------------------------------------------------------------------

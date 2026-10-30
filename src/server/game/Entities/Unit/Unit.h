@@ -1940,7 +1940,9 @@ public:
 
     AuraEffectList const& GetAuraEffectsByType(AuraType type) const
     {
-        return m_modAuras [type];
+        if (AuraEffectList* effects = FindModAuras(type))
+            return *effects;
+        return s_emptyAuraEffectList;
     }
 
     AuraEffect* GetAuraEffect(uint32 spellId, uint8 effIndex, uint64 casterGUID = 0) const;
@@ -2566,16 +2568,23 @@ public:
 
     float GetTotalAuraEffectValue(AuraType type) const
     {
-        auto it = m_totalAuraEffectValue.find(type);
+        auto it = std::lower_bound(m_totalAuraEffectValue.begin(), m_totalAuraEffectValue.end(), type,
+            [](std::pair<AuraType, float> const& entry, AuraType key) { return entry.first < key; });
 
-        if (it == m_totalAuraEffectValue.end())
+        if (it == m_totalAuraEffectValue.end() || it->first != type)
             return 0.0f;
         return it->second;
     }
 
     void SetTotalAuraEffectValue(AuraType type, float val)
     {
-        m_totalAuraEffectValue[type] = val;
+        auto it = std::lower_bound(m_totalAuraEffectValue.begin(), m_totalAuraEffectValue.end(), type,
+            [](std::pair<AuraType, float> const& entry, AuraType key) { return entry.first < key; });
+
+        if (it != m_totalAuraEffectValue.end() && it->first == type)
+            it->second = val;
+        else
+            m_totalAuraEffectValue.insert(it, std::make_pair(type, val));
     }
 
     bool VisualizePathfinding = false;
@@ -2645,11 +2654,38 @@ protected:
     AuraMap::iterator m_auraUpdateIterator;
     uint32 m_removedAurasCount;
 
-    AuraEffectList m_modAuras [TOTAL_AURAS];
+    // #924: one list per aura type, created on first use and kept until the unit is destroyed (so references handed out
+    // by GetAuraEffectsByType stay valid). MSVC's std::list allocates its sentinel node when constructed, so the former
+    // inline array of 438 lists cost every creature ~7 KB of object size plus 438 heap blocks, used or not. The list
+    // pointers sit in chunks of 32 that are also created on first use: 14 chunk pointers (112 bytes) per unit instead of
+    // 438 list pointers (3.5 KB); most units only ever use a few aura types.
+    static constexpr size_t MOD_AURA_CHUNK = 32;
+    static constexpr size_t MOD_AURA_CHUNKS = (TOTAL_AURAS + MOD_AURA_CHUNK - 1) / MOD_AURA_CHUNK;
+    typedef std::array<std::unique_ptr<AuraEffectList>, MOD_AURA_CHUNK> ModAuraChunk;
+    std::array<std::unique_ptr<ModAuraChunk>, MOD_AURA_CHUNKS> m_modAuras;
+    static AuraEffectList const s_emptyAuraEffectList;
+
+    AuraEffectList* FindModAuras(AuraType type) const
+    {
+        std::unique_ptr<ModAuraChunk> const& chunk = m_modAuras[type / MOD_AURA_CHUNK];
+        return chunk ? (*chunk)[type % MOD_AURA_CHUNK].get() : nullptr;
+    }
+
+    AuraEffectList& ModAurasFor(AuraType type)
+    {
+        std::unique_ptr<ModAuraChunk>& chunk = m_modAuras[type / MOD_AURA_CHUNK];
+        if (!chunk)
+            chunk = std::make_unique<ModAuraChunk>();
+        std::unique_ptr<AuraEffectList>& effects = (*chunk)[type % MOD_AURA_CHUNK];
+        if (!effects)
+            effects = std::make_unique<AuraEffectList>();
+        return *effects;
+    }
     AuraApplicationList m_interruptableAuras;             // auras which have interrupt mask applied on unit
     AuraStateAurasMap m_auraStateAuras;        // Used for improve performance of aura state checks on aura apply/remove
     std::map<uint32, AuraList> m_boundAuras;
-    std::map<AuraType, float> m_totalAuraEffectValue;
+    // #924: sorted by aura type; a std::map cost every unit 11 heap blocks for its ~10 default entries.
+    std::vector<std::pair<AuraType, float>> m_totalAuraEffectValue;
     flag64 m_interruptMask;
 
     float m_auraModifiersGroup [UNIT_MOD_END] [MODIFIER_TYPE_END];
@@ -2746,8 +2782,14 @@ private:
 
     int32 _damageTrackingTimer = 0;
 
-    std::array<uint32, DAMAGE_TRACKING_PERIOD> _playerDamageTaken;
-    std::array<uint32, DAMAGE_TRACKING_PERIOD> _npcDamageTaken;
+    // #924: allocated on the first damage taken (most units never take any); value-initialised, so the history also starts
+    // at zero (the former inline arrays were never initialised).
+    struct DamageTakenHistory
+    {
+        std::array<uint32, DAMAGE_TRACKING_PERIOD> player{};
+        std::array<uint32, DAMAGE_TRACKING_PERIOD> npc{};
+    };
+    std::unique_ptr<DamageTakenHistory> _damageTaken;
 
     // used to track total damage each player has made to the unit
     std::map<uint64, uint32> _playerTotalDamage;

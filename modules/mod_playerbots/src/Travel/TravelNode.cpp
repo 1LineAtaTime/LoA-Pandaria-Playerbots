@@ -61,6 +61,40 @@ namespace
 
         return entry->IsFriendlyTo(*other);
     }
+
+    /// #951 (beyond AC): may this bot take a portal link? AC's portal links are area triggers (object = the
+    /// AreaTrigger id, open to both teams). The #847 / #951 travel-graph rows add the faction portals as portal links
+    /// whose object is the portal gameobject entry, and nothing kept a Horde bot off the Alliance portal: the two Isle
+    /// of Thunder camps outside the Shado-Pan Garrison stand 190 yd apart, so A* would take either. The team comes from
+    /// gameobject_template_addon.faction (Stormwind portals 1732, Orgrimmar 1735 / 2201); the portals below have no
+    /// addon row in the 5.4.8 world DB (test DB 2026-10-27), so their team is written here.
+    bool PortalUsableBy(uint32 object, Player* bot)
+    {
+        if (sAreaTriggerStore.LookupEntry(object))
+            return true;
+
+        switch (object)
+        {
+            case 215457:  // Stormwind: Portal to Paw'don Village (#847 phase 2)
+            case 218463:  // Townlong Steppes, Alliance camp (Vereesa Windrunner): Portal to the Isle of Thunder
+            case 218639:  // Isle of Thunder, Violet Rise: Portal to Shado-Pan Garrison
+                return bot->GetTeamId() == TEAM_ALLIANCE;
+            case 215424:  // Orgrimmar: Portal to Honeydew Village (#847 phase 2)
+            case 215127:  // Shrine of Two Moons: Portal to Orgrimmar (#847 phase 2)
+            case 218462:  // Townlong Steppes, Horde camp (Sunreaver Magus): Portal to the Isle of Thunder
+            case 218638:  // Isle of Thunder, Dawnseeker Promontory: Portal to Shado-Pan Garrison
+                return bot->GetTeamId() == TEAM_HORDE;
+            default:
+                break;
+        }
+
+        if (GameObjectTemplateAddon const* addon = sObjectMgr->GetGameObjectTemplateAddon(object))
+            if (FactionTemplateEntry const* portalFaction = sFactionTemplateStore.LookupEntry(addon->faction))
+                if (FactionTemplateEntry const* botFaction = bot->GetFactionTemplateEntry())
+                    return !portalFaction->IsHostileTo(*botFaction);
+
+        return true;
+    }
 }
 
 // Gets the extra information needed to properly calculate the cost.
@@ -129,6 +163,35 @@ void TravelNodePath::calculateCost(bool distanceOnly)
 }
 
 // The cost to travel this path.
+// #948 (BEYOND AC, owner 2026-10-27): RoamTransport sets this around a cross-map route search for
+// AiPlayerbot.RoamTransportShipRouteChance percent of its trips. Portal legs then cost an extra 600 s, so A* takes a
+// boat/zeppelin route whenever the graph has one, even a longer one, and still falls back to the portal when it has
+// none. Thread-local: route searches run on the bots' map threads.
+namespace
+{
+thread_local bool t_preferShipRoute = false;
+}
+
+void PlayerbotSetPreferShipRoute(bool prefer) { t_preferShipRoute = prefer; }
+
+// #956 (BEYOND AC): RoamTransport sets this around its route search (BuildRoute) only; every other caller keeps AC's
+// search. Transport links whose object is in the list (the transports this bot just failed a dock wait at,
+// NewRpgRoamTransport.cpp RememberTransportFail) are no links for that search, nor are static (type-11) transports that
+// have no `gameobject` spawn on this core (AuditTransportStops below): the AC graph's Deeprun Tram links named the
+// WotLK cars 176080-176085, which this core spawns as 218203-218208, so 10 of 16 dock waits in 2 h waited for a tram
+// that never existed ("wait-why not-found transport=176085", Astias 6x). A* in getRoute skips a cost <= 0.
+namespace
+{
+thread_local std::vector<uint32> const* t_roamAvoidTransports = nullptr;
+std::unordered_set<uint32> g_unspawnedStaticTransports;  // filled once at load (AuditTransportStops), read-only after
+}
+
+void PlayerbotSetRoamAvoidTransports(std::vector<uint32> const* avoid) { t_roamAvoidTransports = avoid; }
+
+// strategy/RPG/NewRpgRoamTransport.cpp (#948): can the bot use a flight master at this departure (faction, reputation,
+// phase)? Judged for departures on the bot's own map only.
+bool PlayerbotRoamFlightMasterUsable(Player* bot, WorldPosition const& departure);
+
 float TravelNodePath::getCost(Player* bot, uint32 cGold)
 {
     float modifier = 1.0f;  // Global modifier
@@ -137,8 +200,19 @@ float TravelNodePath::getCost(Player* bot, uint32 cGold)
     float speed = 8.0f;      // default run speed
     float swimSpeed = 4.0f;  // default swim speed.
 
+    // #956: see t_roamAvoidTransports above (roam route searches only).
+    if (t_roamAvoidTransports && getPathType() == TravelNodePathType::transport && pathObject &&
+        (g_unspawnedStaticTransports.count(pathObject) ||
+         std::find(t_roamAvoidTransports->begin(), t_roamAvoidTransports->end(), pathObject) !=
+             t_roamAvoidTransports->end()))
+        return -1;
+
     if (bot)
     {
+        // #951: the other faction's portal is no link for this bot (A* in getRoute skips a cost <= 0).
+        if (getPathType() == TravelNodePathType::portal && pathObject && !PortalUsableBy(pathObject, bot))
+            return -1;
+
         if (getPathType() == TravelNodePathType::flightPath && pathObject)
         {
             if (!bot->IsAlive())
@@ -197,6 +271,8 @@ float TravelNodePath::getCost(Player* bot, uint32 cGold)
         // and the A* in getRoute() drops every link whose cost is <= 0, so no cross-map route could
         // ever be found (issue #62). A hop must cost something; keep a small positive floor.
         timeCost = std::max(extraCost * modifier, 0.1f);
+        if (t_preferShipRoute && getPathType() == TravelNodePathType::portal)
+            timeCost += 600.0f;
     }
     else
         timeCost = (runDistance / speed + swimDistance / swimSpeed) * modifier;
@@ -1216,6 +1292,10 @@ TravelNodeRoute TravelNodeMap::getRoute(TravelNode* start, TravelNode* goal, Pla
     // map alone (links to other maps are not expanded, the hearthstone seed is skipped - the trip never accepts a
     // hearth for a same-map destination), and a link into an instance map is expanded only when the goal is there.
     bool const keepMap = roamTrip && goal->getMapId() == start->getMapId();
+    // #948: a roam trip's flight departures on the bot's map whose flight master the bot cannot use (hostile, at war,
+    // another phase) are no links (RoamTransport's ValidateRoute rejected such routes "flightmaster-unusable" after the
+    // search, 25 per hour). One test per departure node per search: a flight master node has many flight links.
+    std::unordered_map<TravelNode*, bool> flightDepartureUsable;
 
     // Basic A* algoritm
     std::unordered_map<TravelNode*, TravelNodeStub> m_stubs;
@@ -1334,6 +1414,18 @@ TravelNodeRoute TravelNodeMap::getRoute(TravelNode* start, TravelNode* goal, Pla
                     if (MapEntry const* linkMap = sMapStore.LookupEntry(linkNode->getMapId()))
                         if (linkMap->Instanceable())
                             continue;
+            }
+            if (roamTrip && bot && link.second->getPathType() == TravelNodePathType::flightPath &&
+                currentNode->dataNode->getMapId() == bot->GetMapId())
+            {
+                auto usable = flightDepartureUsable.find(currentNode->dataNode);
+                if (usable == flightDepartureUsable.end())
+                    usable = flightDepartureUsable
+                                 .emplace(currentNode->dataNode,
+                                          PlayerbotRoamFlightMasterUsable(bot, *currentNode->dataNode->getPosition()))
+                                 .first;
+                if (!usable->second)
+                    continue;
             }
             float linkCost = link.second->getCost(bot, currentNode->currentGold);
 
@@ -2413,7 +2505,20 @@ namespace
             } while (result->NextRow());
         }
 
-        uint32 stops = 0, offStop = 0, notSpawned = 0;
+        // #956: static (type-11) transports are `gameobject` spawns. A continent stop whose static transport has no spawn
+        // is logged and its links are skipped by roam route searches (g_unspawnedStaticTransports, getCost above).
+        std::unordered_set<uint32> staticSpawned;
+        if (QueryResult result = WorldDatabase.Query(
+                "SELECT DISTINCT g.id FROM gameobject g JOIN gameobject_template t ON t.entry = g.id WHERE t.type = 11"))
+        {
+            do
+            {
+                Field* fields = result->Fetch();
+                staticSpawned.insert(fields[0].GetUInt32());
+            } while (result->NextRow());
+        }
+
+        uint32 stops = 0, offStop = 0, notSpawned = 0, staticStops = 0, staticNotSpawned = 0;
         for (TravelNode* node : allNodes)
         {
             uint32 entry = 0;
@@ -2429,6 +2534,21 @@ namespace
                 continue;
 
             GameObjectTemplate const* go = sObjectMgr->GetGameObjectTemplate(entry);
+            if (go && go->type == GAMEOBJECT_TYPE_TRANSPORT)
+            {
+                MapEntry const* staticMap = sMapStore.LookupEntry(node->getMapId());
+                if (!staticMap || staticMap->Instanceable())
+                    continue;
+                ++staticStops;
+                if (!staticSpawned.count(entry))
+                {
+                    ++staticNotSpawned;
+                    g_unspawnedStaticTransports.insert(entry);
+                    TC_LOG_INFO("playerbots", "[TRAVELNODE] stop '%s' map %u (%.1f,%.1f,%.1f): static transport %u is not spawned on this core (no `gameobject` row), roam routes skip it",
+                                node->getName().c_str(), node->getMapId(), node->getX(), node->getY(), node->getZ(), entry);
+                }
+                continue;
+            }
             if (!go || go->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
                 continue;
             MapEntry const* mapEntry = sMapStore.LookupEntry(node->getMapId());
@@ -2474,6 +2594,8 @@ namespace
         }
         TC_LOG_INFO("playerbots", ">> Travel node transport stops: %u boat/zeppelin stops, %u off a 5.4.8 stop, %u of transports not spawned",
                     stops, offStop, notSpawned);
+        TC_LOG_INFO("playerbots", ">> Travel node static transport stops: %u elevator/tram stops, %u of transports not spawned (%u entries skipped by roam routes)",
+                    staticStops, staticNotSpawned, uint32(g_unspawnedStaticTransports.size()));
     }
 }  // namespace
 

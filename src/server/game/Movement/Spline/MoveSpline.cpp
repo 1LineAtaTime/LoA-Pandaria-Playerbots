@@ -143,9 +143,11 @@ void MoveSpline::init_spline(const MoveSplineInitArgs& args)
     }
 
     /// @todo what to do in such cases? problem is in input data (all points are at same coords)
+    // #959 (AC parity, AC MoveSpline.cpp:151-154): a fall whose end is at or above its start (MotionMaster::MoveFall finds
+    // the ground from 1.5 yd above the unit; Launch moves the first point to the real position) is clamped to 1 ms here,
+    // as on AC, which logs nothing for it; this line was ~200/h at 1000 bots (dismount falls, flying creature deaths).
     if (spline.length() < minimal_duration)
     {
-        TC_LOG_ERROR("misc", "MoveSpline::init_spline: zero length spline, wrong input data?");
         spline.set_length(spline.last(), spline.isCyclic() ? 1000 : 1);
     }
     point_Idx = spline.first();
@@ -201,9 +203,9 @@ bool MoveSplineInitArgs::Validate(Unit* unit) const
     if (!(exp))\
     {\
         if (unit)\
-            TC_LOG_ERROR("MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUID().GetCounter() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
+            TC_LOG_ERROR("misc", "MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUID().GetCounter() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
         else\
-            TC_LOG_ERROR("MoveSplineInitArgs::Validate: expression '%s' failed for cyclic spline continuation", #exp);\
+            TC_LOG_ERROR("misc", "MoveSplineInitArgs::Validate: expression '%s' failed for cyclic spline continuation", #exp);\
         return false;\
     }
     CHECK(path.size() > 1);

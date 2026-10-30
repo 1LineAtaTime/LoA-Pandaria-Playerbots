@@ -34,6 +34,65 @@
 #include "WorldSession.h"
 #include "NewRpgRoamTransport.h"  // #890 (beyond AC)
 
+// #945 (BEYOND AC): town errands are indexed and picked in NewRpgBaseAction.cpp (namespace TownErrand); this file only
+// seeds WANDER_NPC on the GO_CAMP arrival and does the work at the NPC.
+namespace TownErrand
+{
+bool Enabled(Player* bot);
+bool OnArrive(Player* bot, ObjectGuid& npc);
+bool IsErrandNpc(Player* bot, ObjectGuid npc);
+bool Expired(Player* bot);
+uint32 MarkReached(Player* bot);
+uint32 StayMs(Player* bot);
+uint32 CurrentCat(Player* bot);
+void Finish(Player* bot);
+void Watch(Player* bot, NewRpgStatus status);
+bool OnFlightLanded(Player* bot, WorldPosition& stand);  // #1004
+}  // namespace TownErrand
+
+// Arrival work at a vendor / repairer / profession trainer. Sell, buy and repair follow AC test-staging PR #2949
+// (merged 2026-10-23, NewRpgWanderNpcAction::Execute): sell then buy when the NPC is a vendor and the bot has something
+// to sell, repair at an armorer. The profession trainer teaches through the existing "trainer" action (TrainerAction).
+// Runs for an errand target and for any WANDER_NPC target while RpgTownErrandEnable is on (0 = exactly AC).
+static void TownErrandArrivalWork(PlayerbotAI* botAI, Player* bot, Creature* creature, bool errand)
+{
+    AiObjectContext* context = botAI->GetAiObjectContext();
+    constexpr uint32 MIN_VENDOR_BALANCE = 1000;  // 10 silver (PR #2949)
+    int64 const moneyBefore = bot->GetMoney();
+    bool sold = false;
+    bool repaired = false;
+    bool trained = false;
+
+    if (creature->HasNpcFlag(UNIT_NPC_FLAG_VENDOR) && context->GetValue<bool>("can sell")->Get())
+    {
+        sold = botAI->DoSpecificAction("sell", Event("sell", "vendor"), true);
+
+        // Buying sorts the vendor list through the weight calculator; skip it for bots without money for cheap
+        // consumables (PR #2949).
+        if (bot->GetMoney() >= MIN_VENDOR_BALANCE)
+            botAI->DoSpecificAction("buy", Event("buy", "vendor"), true);
+    }
+
+    if (creature->HasNpcFlag(UNIT_NPC_FLAG_REPAIR) && context->GetValue<bool>("can repair")->Get())
+        repaired = botAI->DoSpecificAction("repair", Event("repair"), true);
+
+    // Profession trainer: select it (TrainerAction::GetTarget reads the selection) and learn what the bot can afford.
+    if (errand && (TownErrand::CurrentCat(bot) & 0x04) /* CAT_PROF */)
+    {
+        bot->SetSelection(creature->GetGUID());
+        trained = botAI->DoSpecificAction("trainer", Event("trainer", "learn"), true);
+    }
+
+    bot->SetFacingToObject(creature);
+    if (errand && urand(1, 100) <= 30)
+        bot->HandleEmoteCommand(urand(0, 1) ? EMOTE_ONESHOT_TALK : EMOTE_ONESHOT_POINT);
+
+    if (errand || sold || repaired)
+        TC_LOG_DEBUG("playerbots", "[ERRAND] %s work at npc %u: sold=%d repaired=%d trainer=%d money %+lld c", bot->GetName().c_str(),
+                     creature->GetEntry(), sold ? 1 : 0, repaired ? 1 : 0, trained ? 1 : 0,
+                     (long long)(int64(bot->GetMoney()) - moneyBefore));
+}
+
 // #134 (flying bots): grind cells keep their z rounded to 50 yd (TravelMgr grind cells). A flying bot flies
 // straight to that z and can end up under the terrain, where every later path fails and it freezes. So a
 // flyer aims at the ground below the cell once it is within path range, and its arrival is measured in 2D.
@@ -290,6 +349,8 @@ bool NewRpgStatusUpdateAction::Execute(Event /*event*/)
     if (BotScenario::IsStatusLocked(bot))
         return false;
     NewRpgStatus status = info.GetStatus();
+    // #945: an errand whose status left GO_CAMP / WANDER_NPC ends here, with its reason logged.
+    TownErrand::Watch(bot, status);
     switch (status)
     {
         case RPG_IDLE:
@@ -318,6 +379,16 @@ bool NewRpgStatusUpdateAction::Execute(Event /*event*/)
             if (bot->GetExactDist(data->pos) < 10.0f)
             {
                 info.ChangeToWanderNpc();
+                // #945 (BEYOND AC): a town errand walked here; make its NPC the WANDER_NPC target so the bot interacts.
+                ObjectGuid errandNpc;
+                if (TownErrand::Enabled(bot) && TownErrand::OnArrive(bot, errandNpc))
+                {
+                    if (auto* wander = std::get_if<NewRpgInfo::WanderNpc>(&info.data))
+                    {
+                        wander->npcOrGo = errandNpc;
+                        wander->lastReach = 0;
+                    }
+                }
                 return true;
             }
             break;
@@ -360,6 +431,13 @@ bool NewRpgStatusUpdateAction::Execute(Event /*event*/)
             if (data->inFlight && !bot->IsInFlight())
             {
                 // flight arrival
+                // #1004 (BEYOND AC): a town errand's flight continues as the GO_CAMP walk to its NPC
+                WorldPosition errandStand;
+                if (TownErrand::Enabled(bot) && TownErrand::OnFlightLanded(bot, errandStand))
+                {
+                    info.ChangeToGoCamp(errandStand);
+                    return true;
+                }
                 info.ChangeToIdle();
                 return true;
             }
@@ -761,6 +839,16 @@ bool NewRpgWanderNpcAction::Execute(Event /*event*/)
 
     WorldObject* object = ObjectAccessor::GetWorldObject(*bot, data.npcOrGo);
     bool const within = object && IsWithinInteractionDist(object);
+
+    // #945: the bot never reached its errand NPC (blocked path, NPC gone): drop the errand and go idle. Tested only while
+    // the NPC is out of reach - 2026-10-28: Alaindo and Nethol arrived 4.0 yd from their NPC, slept >180 s of throttled
+    // ticks and the first tick after gave up "timeout (reach)" standing at it, because this ran before the reach test.
+    if (!within && TownErrand::Expired(bot))
+    {
+        info.ChangeToIdle();
+        return true;
+    }
+
     if (debugBot)
         TC_LOG_DEBUG("playerbots", "[RPGNPC] %s npc=%s object=%d withinDist=%d waitingMove=%d dist=%.1f",
                      bot->GetName().c_str(), data.npcOrGo.ToString().c_str(), object ? 1 : 0, within ? 1 : 0,
@@ -774,6 +862,43 @@ bool NewRpgWanderNpcAction::Execute(Event /*event*/)
             data.lastReach = getMSTime();
             if (bot->CanInteractWithQuestGiver(object))
                 InteractWithNpcOrGameObjectForQuest(data.npcOrGo);
+
+            // #945 (BEYOND AC) + AC test-staging PR #2949: sell / buy / repair at a vendor or repairer, profession
+            // trainer learn on an errand. Off (exactly AC) when RpgTownErrandEnable = 0 or in a deterministic scenario.
+            if (TownErrand::Enabled(bot))
+            {
+                if (Creature* creature = object->ToCreature())
+                {
+                    bool const errandNpc = TownErrand::IsErrandNpc(bot, data.npcOrGo);
+                    if (errandNpc)
+                        TownErrand::MarkReached(bot);
+                    TownErrandArrivalWork(botAI, bot, creature, errandNpc);
+                }
+                else if (object->GetTypeId() == TYPEID_GAMEOBJECT && TownErrand::IsErrandNpc(bot, data.npcOrGo))
+                {
+                    // mailbox errand (CAT_MAILBOX 0x100): a pure visit, stay StayMin..Max. AC's "check mail" action is not
+                    // called: AC never schedules it (its trigger is commented out), and it bounces real players' mails to
+                    // the bot (returns the items, deletes the mail) - a visible behaviour AC does not have.
+                    TownErrand::MarkReached(bot);
+                    bot->SetFacingToObject(object);
+                    TC_LOG_DEBUG("playerbots", "[ERRAND] %s work at mailbox %u: mails=%u", bot->GetName().c_str(),
+                                 object->GetEntry(), uint32(bot->GetMailSize()));
+                }
+            }
+            return true;
+        }
+
+        // #945: an errand stays at its NPC for its own time (RpgTownErrandStayMin..Max for the pure visits), then the bot
+        // goes on with AC's own WANDER_NPC rotation in that town (next NPC below) until the status's AC timer
+        // (statusWanderNpcDuration, started at the GO_CAMP arrival) ends it. #947 (2026-10-28): going IDLE here cut AC's
+        // town window short once errands finished in 1-2 min (capital bots 100 -> 68 in 1.5 h at 1000 bots).
+        if (TownErrand::IsErrandNpc(bot, data.npcOrGo))
+        {
+            if (GetMSTimeDiffToNow(data.lastReach) < TownErrand::StayMs(bot))
+                return false;
+            TownErrand::Finish(bot);
+            data.npcOrGo = ObjectGuid::Empty;
+            data.lastReach = 0;
             return true;
         }
 

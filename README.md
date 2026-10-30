@@ -22,12 +22,26 @@ authors and contributors.
 + Class rotations for every class and specialisation of MoP, including the Monk, with PvE and
   PvP priorities, interrupts, defensives and pet control.
 + Bot chat: greetings, reactions, battleground and group chatter, and duels around the cities.
++ Town errands: bots visit vendors, repairers, trainers, the auction house, banks, mailboxes
+  and stable masters, and fly to a far town when the errand needs it.
++ Optional, off by default: bots that follow their master across maps
+  (`AiPlayerbot.FollowTeleport`) and bots that respect crowd control set by others
+  (`AiPlayerbot.RespectCrowdControl`).
+
+**World content**
++ The Forsaken questline (Tirisfal Glades, Silverpine Forest, Hillsbrad Foothills), Wandering
+  Isle fixes and start-zone training dummies.
++ Creature abilities for thousands of open-world and dungeon creatures, Deadmines, Wailing
+  Caverns and Ragefire Chasm encounter data, and gathering-node placement fixes.
 
 **Performance**
-+ Reworked bot tick scheduling and per-bot update delays: with about 1000 bots online the world
-  update averages a few milliseconds (median 2 ms in our 1000-bot runs), at no extra CPU cost.
++ Reworked bot tick scheduling and per-bot update delays: the world keeps a steady update rate
+  with about 1000 bots online, without extra CPU cost.
 + `.server info` prints the update-time statistics of the last 500 world updates (mean, median,
   95th and 99th percentile, max), so the cost of a bot population can be measured directly.
++ Map updates: `MapUpdateInterval` is read from the config (default 10 ms); sessions and players
+  update every world tick, and the full map update runs per map group.
++ Lower memory per creature, per spell and per bot, so large bot populations fit in less RAM.
 
 **Testing and diagnostics**
 + A headless client (`contrib/headless-client/`): a scriptable, graphics-free 5.4.8 client that
@@ -99,16 +113,15 @@ Copy the `.conf.dist` files next to the binaries and drop the `.dist` suffix:
 + `authserver.conf`: `LoginDatabaseInfo`.
 + `worldserver.conf`: `LoginDatabaseInfo`, `WorldDatabaseInfo`, `CharacterDatabaseInfo`,
   `PlayerbotsDatabaseInfo`, `DataDir`, `LogsDir`.
-+ `playerbots.conf` (placed next to `worldserver.conf`): the same `PlayerbotsDatabaseInfo`, and
-  the bot population, e.g. `AiPlayerbot.MinRandomBots`, `AiPlayerbot.MaxRandomBots` and
-  `AiPlayerbot.RandomBotAccountCount`. `AiPlayerbot.Enabled = 0` turns the module off.
++ `playerbots.conf` (placed next to `worldserver.conf`): the bot population, e.g. `AiPlayerbot.MinRandomBots`, `AiPlayerbot.MaxRandomBots` and
+  `AiPlayerbot.RandomBotAccountCount` (0 = sized automatically). `AiPlayerbot.Enabled = 0` turns the
+  module off. The playerbots database connection is set only in `worldserver.conf`.
 
 Database updates: the release dumps are complete, so `Updates.EnableDatabases = 0` (the shipped
 default) is fine. To apply SQL updates from a newer checkout of this repository, set
-`Updates.EnableDatabases = 7` (1 auth + 2 characters + 4 world) and point `SourceDirectory` at
+`Updates.EnableDatabases = 15` (1 auth + 2 characters + 4 world + 8 playerbots) and point `SourceDirectory` at
 the checkout and `MySQLExecutable` at `mysql.exe`. The world dump already records every update
-it contains, so nothing is applied twice. The playerbots database (mask 8) is not handled by the
-updater yet; import its SQL by hand.
+it contains, so nothing is applied twice.
 
 To drive the server from scripts (the headless client's GM verbs use it), enable SOAP in
 `worldserver.conf` (`SOAP.Enabled`, `SOAP.IP`, `SOAP.Port`).
@@ -127,3 +140,7 @@ Read file [COPYING](COPYING.md)
 
 ## Authors &amp; Contributors
 Read file [THANKS](THANKS.md)
+
+Contributed work is published commit by commit with its original authors. The status of
+each commit of pull request #15 (included, changed, partial, had, rejected) is listed in
+[PR 15 port status](doc/PR15-port-status.md).

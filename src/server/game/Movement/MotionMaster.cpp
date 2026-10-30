@@ -771,6 +771,12 @@ void MotionMaster::MoveKnockbackFrom(float srcX, float srcY, float speedXY, floa
     if (_owner->GetTypeId() == TYPEID_PLAYER)
         return;
 
+    // #972 AC parity (MotionMaster.cpp:626, as MoveKnockbackFromForPlayer below): a knock-up with no horizontal
+    // speed (SPELL_EFFECT_KNOCK_BACK with MiscValue 0, e.g. Torn Earth 55715 on the Iron Sentinel 29984) has no
+    // spline to launch - distance 0 at velocity 0 fails MoveSplineInitArgs::Validate.
+    if (speedXY <= 0.1f)
+        return;
+
     float x, y, z;
     float moveTimeHalf = speedZ / Movement::gravity;
     float dist = 2 * moveTimeHalf * speedXY;
@@ -804,6 +810,12 @@ void MotionMaster::MoveJumpTo(float angle, float speedXY, float speedZ)
 void MotionMaster::MoveJump(float x, float y, float z, float speedXY, float speedZ, uint32 id)
 {
     TC_LOG_DEBUG("misc", "Unit (GUID: %u) jump to point (X: %f Y: %f Z: %f)", _owner->GetGUID().GetCounter(), x, y, z);
+
+    // #1014 AC parity (MotionMaster.cpp:679-680): a jump with no horizontal speed (SPELL_EFFECT_PULL_TOWARDS with
+    // MiscValue < 10 on a player, a zero JumpTo speed) has no spline to launch - velocity 0 fails
+    // MoveSplineInitArgs::Validate.
+    if (speedXY <= 0.1f)
+        return;
 
     float moveTimeHalf = speedZ / Movement::gravity;
     float max_height = -Movement::computeFallElevation(moveTimeHalf, false, -speedZ);

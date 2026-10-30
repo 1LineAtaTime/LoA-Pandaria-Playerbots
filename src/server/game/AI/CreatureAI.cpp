@@ -366,7 +366,7 @@ void CreatureAI::EngagementStart(Unit* who)
 {
     if (IsEngaged())
     {
-        TC_LOG_ERROR("scripts.ai", "CreatureAI::EngagementStart called even though creature is already engaged.");
+        TC_LOG_ERROR("scripts.ai", "CreatureAI::EngagementStart called even though creature is already engaged. Creature entry %u guid %u map %u", me->GetEntry(), me->GetDBTableGUIDLow(), me->GetMapId()); // AC logs GetDebugInfo() here (AC CreatureAI.cpp:290)
         return;
     }
 
@@ -506,6 +506,13 @@ bool CreatureAI::UpdateVictimWithGaze()
     if (!me->IsInCombat() && !CombatDroppedWithoutEvade(me, IsEngaged()))
         return false;
 
+    // #1001: AC CreatureAI.cpp:351 returns while !IsEngaged(): a creature in combat only through a combat reference (another
+    // creature attacked it, it has threatened nobody) waits for its attacker instead of evading through SelectVictim with an
+    // empty threat list - Apprentice Mirveda 15402 evaded in the tick her summons attacked her. Narrowed to an empty threat list
+    // (see #904 above: _isEngaged can stay set after a fight here); JustEnteredCombat clears a stale engagement on a new fight.
+    if (!IsEngaged() && me->CanHaveThreatList() && me->GetThreatManager().IsThreatListEmpty(true))
+        return false;
+
     if (me->HasReactState(REACT_PASSIVE))
     {
         if (me->GetVictim())
@@ -557,6 +564,13 @@ bool CreatureAI::UpdateVictim()
         EnterEvadeMode(EVADE_REASON_NO_HOSTILES);
         return false;
     }
+
+    // #1001: AC CreatureAI.cpp:351 returns while !IsEngaged(): a creature in combat only through a combat reference (another
+    // creature attacked it, it has threatened nobody) waits for its attacker instead of evading through SelectVictim with an
+    // empty threat list - Apprentice Mirveda 15402 evaded in the tick her summons attacked her. Narrowed to an empty threat list
+    // (see #904 above: _isEngaged can stay set after a fight here); JustEnteredCombat clears a stale engagement on a new fight.
+    if (!IsEngaged() && me->CanHaveThreatList() && me->GetThreatManager().IsThreatListEmpty(true))
+        return false;
 
     if (InstanceScript* instance = me->GetInstanceScript())
     {
