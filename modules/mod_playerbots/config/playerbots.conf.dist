@@ -656,8 +656,9 @@ AiPlayerbot.EnableRotation = 0
 # Bots pool size for rotation (should be less than RandomBotAccountCount * 10)
 AiPlayerbot.RotationPoolSize = 500
 
+# MoP: 90 (the AC value is 80)
 AiPlayerbot.RandomBotMinLevel = 1
-AiPlayerbot.RandomBotMaxLevel = 80
+AiPlayerbot.RandomBotMaxLevel = 90
 
 # Sync max random bot level with max level of online players
 # Default: 0 (disabled)
@@ -1390,7 +1391,8 @@ AiPlayerbot.DuelSpotSeedEnable = 1
 AiPlayerbot.DuelSpotSeedInterval = 5000
 AiPlayerbot.DuelSpotSeedPerTick = 2
 AiPlayerbot.DuelSpotSeedMaxShare = 25
-AiPlayerbot.DuelSpotSeedRelevel = 1
+# SeedRelevel: 0 = only bots already in the spot's level band are seeded (no level changes).
+AiPlayerbot.DuelSpotSeedRelevel = 0
 AiPlayerbot.DuelSpotSeedRegear = 1
 AiPlayerbot.DuelSpotActiveDistance = 1500
 
@@ -1989,7 +1991,9 @@ AiPlayerbot.RestrictedHealerDPSMaps = "33,34,36,43,47,48,70,90,109,129,209,229,2
 #
 
 # Maps where bots can be teleported to
-AiPlayerbot.RandomBotMaps = 0,1,530,571
+# MoP: the AC maps (0, 1, 530, 571) plus Gilneas (654), Kezan (648), the Lost Isles (646), the Wandering Isle (860),
+# Pandaria (870) and the Isle of Thunder (1064)
+AiPlayerbot.RandomBotMaps = 0,1,530,571,646,648,654,860,870,1064
 
 # Probabilty bots teleport to banker (city)
 # default: 0.25

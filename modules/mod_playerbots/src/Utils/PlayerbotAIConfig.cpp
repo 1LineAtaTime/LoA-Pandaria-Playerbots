@@ -255,7 +255,7 @@ bool PlayerbotAIConfig::Initialize()
     duelSpotSeedInterval = std::max<uint32>(100, sConfigMgr->GetIntDefault("AiPlayerbot.DuelSpotSeedInterval", 5000));
     duelSpotSeedPerTick = sConfigMgr->GetIntDefault("AiPlayerbot.DuelSpotSeedPerTick", 2);
     duelSpotSeedMaxShare = sConfigMgr->GetIntDefault("AiPlayerbot.DuelSpotSeedMaxShare", 25);
-    duelSpotSeedRelevel = sConfigMgr->GetBoolDefault("AiPlayerbot.DuelSpotSeedRelevel", true);
+    duelSpotSeedRelevel = sConfigMgr->GetBoolDefault("AiPlayerbot.DuelSpotSeedRelevel", false);
     duelSpotSeedRegear = sConfigMgr->GetBoolDefault("AiPlayerbot.DuelSpotSeedRegear", true);
     duelSpotActiveDistance = sConfigMgr->GetIntDefault("AiPlayerbot.DuelSpotActiveDistance", 1500);
 
