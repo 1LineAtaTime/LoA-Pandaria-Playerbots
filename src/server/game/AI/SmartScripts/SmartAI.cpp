@@ -613,13 +613,14 @@ void SmartAI::JustAppeared()
     // timers its "On Just Summoned" SAI set in the summon tick - every SAI summon that starts a path stopped at WP1 (67 entries,
     // e.g. Civilian Recruit 25220, Kalecgos 36689). Kept here, not in Creature::Update, so CreatureAI::JustAppeared's
     // follow-on-spawn for pets / guardians still runs; a summon's later respawns reset as before.
-    // SMART_EVENT_RESPAWN still fires on that first appearance: AC skips it for summons (its data uses On Just Summoned), but
-    // our data has 191 "On Respawn" rows on 186 summon-only entries (casts, react state, talk, paths - e.g. the Captured Riding
-    // Bat 38540 path, Gilneas 24920) that always ran here before #1011. Only the reset (escort state, phase, timers) is skipped.
+    // #1020: SMART_EVENT_RESPAWN does not fire here either. InitializeAI already fired it (AC fires it there only, AC
+    // SmartAI.cpp:1080, and never in JustRespawned for a summon), so a second firing doubled every repeatable "On Respawn"
+    // talk, cast, summon and quest credit of a summon (e.g. the Verog 3395 yell reached the client twice). Rows that must run
+    // after a synchronous vehicle boarding use "On Passenger Boarded", as AC data does (Captured Riding Bat 38540, Eagle
+    // Spirit 36790: sql 2026_10_30_1020).
     if (!mAppearedOnce && me->IsSummon())
     {
         mAppearedOnce = true;
-        GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);
         return;
     }
 
