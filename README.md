@@ -66,11 +66,20 @@ authors and contributors.
 
 ## Latest builds (CI)
 Untested development builds of this branch are published at most once a day, when it has
-new commits: Windows (x64), Linux (x64) and macOS (arm64) binaries plus a database zip with
-every SQL update up to that commit applied (no extracted map data):
+new commits: Windows (x64), Linux (x64) and macOS (arm64) binaries, a database zip with
+every SQL update up to that commit applied, and the SQL sources (no extracted map data):
 **[latest playerbot-beta build](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/ci-playerbot-beta)**.
 For a tested package, use the
 [releases](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases).
+
+A fresh install takes:
+
++ the extractors from the latest full [release](../../releases), to build `dbc`, `maps`,
+  `vmaps` and `mmaps` once from your client;
++ the binaries, the database zip and the SQL sources from the latest playerbot-beta build
+  (or all of them from a release, for a tested package).
+
+Each package is complete on its own: never unpack one over another.
 
 ## Getting started
 
@@ -125,11 +134,9 @@ Copy the `.conf.dist` files next to the binaries and drop the `.dist` suffix:
   `AiPlayerbot.RandomBotAccountCount` (0 = sized automatically). `AiPlayerbot.Enabled = 0` turns the
   module off. The playerbots database connection is set only in `worldserver.conf`.
 
-Database updates: the release dumps are complete, so `Updates.EnableDatabases = 0` (the shipped
-default) is fine. To apply SQL updates from a newer checkout of this repository, set
-`Updates.EnableDatabases = 15` (1 auth + 2 characters + 4 world + 8 playerbots) and point `SourceDirectory` at
-the checkout and `MySQLExecutable` at `mysql.exe`. The world dump already records every update
-it contains, so nothing is applied twice.
+Database updates: the dumps are complete, so `Updates.EnableDatabases = 0` (the shipped
+default) is fine for a new install. To upgrade an existing install, see
+[6. Upgrading an existing install](#6-upgrading-an-existing-install-keeps-characters-accounts-and-bot-data).
 
 To drive the server from scripts (the headless client's GM verbs use it), enable SOAP in
 `worldserver.conf` (`SOAP.Enabled`, `SOAP.IP`, `SOAP.Port`).
@@ -140,6 +147,22 @@ accounts and characters and takes a while; let it finish. Create your own accoun
 worldserver console (`account create <name> <password>`, then `account set gmlevel <name> 3 -1`
 for a GM). The realm address is `127.0.0.1`; change it in the `realmlist` table of the auth
 database if clients connect from other machines.
+
+### 6. Upgrading an existing install (keeps characters, accounts and bot data)
+1. Back up all four databases (`mysqldump`).
+2. Replace the binaries. Keep your `.conf` files and copy any new keys from the new
+   `.conf.dist` files.
+3. Extract the SQL sources (`playerbot-beta-ci-sql.zip`, or the `Source code` zip of a
+   release) and set, in `worldserver.conf`: `Updates.EnableDatabases = 15`
+   (1 auth + 2 characters + 4 world + 8 playerbots), `SourceDirectory` = the extracted folder
+   (`sql-sources`), `MySQLExecutable` = your `mysql` client (`mysql.exe` on Windows).
+4. Start the worldserver once: the updater applies only the missing updates, in order, and
+   records them.
+5. Never import `characters.sql`, `auth.sql` or `playerbots.sql` from a database zip over an
+   existing install: they replace your saves. Replacing `world.sql` alone is safe for player
+   progress but drops your own world edits.
+
+Read the release notes too: some releases list extra upgrade steps (e.g. from v1.0.x).
 
 ## Copyright
 License: GPL 2.0
