@@ -1139,6 +1139,20 @@ namespace
         return false;
     }
 
+    // Does a boat / zeppelin rider stand on the deck: a model surface within 0.6 yd of its feet with room to stand on
+    // it? PlayerbotAI's ambient check (AC parity) attaches a bot wherever the arriving hull passes under it within its
+    // 4 yd deck ray. Bots waiting on the Booty Bay and Ratchet piers were attached by the Maiden's Fancy (20808) sliding
+    // in alongside, at offsets inside the bow and the forecastle (2-3 yd under the deck there). They rode inside the ship,
+    // and at the other dock no standing spot could be reached from their feet (step-off fail=deck-snap / no-join).
+    bool OnDeckStand(Transport* t, Player* bot)
+    {
+        if (!t || !t->m_model)
+            return true;
+        float fz = 0.0f;
+        return ModelFloor(t, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 0.6f, 1.2f, fz) &&
+               Standable(t, bot->GetPositionX(), bot->GetPositionY(), fz);
+    }
+
     struct DeckRouteInfo
     {
         bool found = false;
@@ -1542,6 +1556,22 @@ namespace
     {
         bot->ClearUnitState(UNIT_STATE_MOVING);
         if (!bot->IsInWorld() || !bot->GetTransport())
+            return;
+        Movement::MoveSplineInit init(bot);
+        init.MoveTo(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), false, true);
+        init.SetFacing(bot->GetOrientation());
+        init.Launch();
+    }
+
+    // Take a bot the ambient check attached back off (HullSwimmer / OnDeckStand refusals). That attach told the clients
+    // around it the bot is aboard (a transport-frame spline); a zero-length spline in the world frame tells them it is
+    // not, or they would carry it off with the ship.
+    void DetachAshore(Transport* t, Player* bot)
+    {
+        StopHere(bot);
+        t->RemovePassenger(bot, true);
+        bot->ClearUnitState(UNIT_STATE_IGNORE_PATHFINDING);
+        if (!bot->IsInWorld())
             return;
         Movement::MoveSplineInit init(bot);
         init.MoveTo(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), false, true);
@@ -2957,7 +2987,11 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
             // the bot is taken off again and goes on with its dock wait (the pier walk below, or the one already found).
             // The ambient check may attach it again a second later while it is still under the hull; each refusal
             // re-issues the pier walk, so it gets out from under the ship. PlayerbotAI's own #879 gate is not changed.
-            char const* const swimmer = legTransport ? HullSwimmer(on, bot) : nullptr;
+            // ...and one the arriving hull picked up off the deck (OnDeckStand) is taken off the same way; it boards
+            // the docked ship with the board step instead.
+            char const* swimmer = legTransport ? HullSwimmer(on, bot) : nullptr;
+            if (!swimmer && legTransport && on->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT && !OnDeckStand(on, bot))
+                swimmer = "off-deck";
             if (swimmer)
             {
                 ++trip.ambientRefused;
@@ -2966,9 +3000,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                                  bot->GetName().c_str(), swimmer, on->GetEntry(), uint32(on->GetGoType()), bot->GetMapId(),
                                  bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), trip.ambientRefused,
                                  trip.pierFound ? "yes" : "no");
-                StopHere(bot);
-                on->RemovePassenger(bot, true);
-                bot->ClearUnitState(UNIT_STATE_IGNORE_PATHFINDING);
+                DetachAshore(on, bot);
                 if (trip.pierFound)
                 {
                     pierWalk();
@@ -3417,6 +3449,17 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                 {
                     trip.phase = TripPhase::DockWait;
                     return 1;
+                }
+                // Attached by the ambient check off the deck surface (the hull passing under the pier spot) before the board
+                // walk could start: taken off again, and the board walk below takes it onto the deck.
+                if (bot->GetTransport() == t && t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT && !trip.deckWalked &&
+                    !OnDeckStand(t, bot) && AtStop(t, from.point))
+                {
+                    TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s board-refused off-deck transport=%u map=%u (%.1f,%.1f,%.1f)",
+                                 bot->GetName().c_str(), t->GetEntry(), bot->GetMapId(), bot->GetPositionX(),
+                                 bot->GetPositionY(), bot->GetPositionZ());
+                    DetachAshore(t, bot);
+                    trip.boardMoveIssued = false;
                 }
                 if (bot->GetTransport() == t)
                 {
