@@ -17,6 +17,11 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "ObjectAccessor.h"
+#include "Player.h"
+#include "TemporarySummon.h"
+#include "Transport.h"
+#include <vector>
 
 // http://www.wowhead.com/quest=25281/pay-it-forward http://www.wowhead.com/quest=25936/pay-it-forward
 enum QuestPayItForward
@@ -82,7 +87,158 @@ private:
     int32 move_timer;
 };
 
+// Call of Duty (14482 Alliance, 25924 Horde): the mercenary Ship to Vashj'ir (197195 / 203466) reaches its sea stop over
+// Seafarer's Tomb, the crew sights a wreck, a kraken attacks and throws the riders overboard, Erunak Stonespeaker saves
+// them and they wake beside him in the Briny Cutter / Immortal Coil, which completes the quest (Warcraft Wiki "Call of
+// Duty (Alliance)" / "Call of Duty (Horde)", the scene before 7.0.3; the texts are the scene's broadcast texts). Kept to
+// what this core has: the crew lines, the throw into the water with the drowned screen effect, the rescue Erunak (the
+// creatures of the 74701 / 76127 summon spells, as a private summon) and the wake-up beside the quest ender. The
+// tentacle vehicle rides of the retail scene are left out. Only riders with the quest in progress take part; the ship
+// then sails on as before.
+enum CallOfDutyShip
+{
+    GO_SHIP_TO_VASHJIR_ALLIANCE     = 197195,
+    GO_SHIP_TO_VASHJIR_HORDE        = 203466,
+    SHIP_SEA_STOP_NODE_ALLIANCE     = 11,       // TaxiPathNode path 1368 node 11 (-4632.9, 3863.7), 45 s
+    SHIP_SEA_STOP_NODE_HORDE        = 4,        // TaxiPathNode path 2204 node 4, the same point, 45 s
+
+    QUEST_CALL_OF_DUTY_ALLIANCE     = 14482,
+    QUEST_CALL_OF_DUTY_HORDE        = 25924,
+    NPC_SUBMERGE_BUNNY              = 36901,    // the objective of 25924 (kill credit)
+
+    NPC_ADARRAH                     = 43051,
+    NPC_MACK_FEARSEN                = 43022,
+    NPC_ERUNAK_ALLIANCE             = 36915,    // quest ender in the Briny Cutter
+    NPC_ERUNAK_HORDE                = 41618,    // quest ender in the Immortal Coil
+    NPC_ERUNAK_RESCUE_ALLIANCE      = 40053,    // Summon Erunak Rescue (74701)
+    NPC_ERUNAK_RESCUE_HORDE         = 40801,    // Summon Erunak Rescue 02 (76127)
+
+    SPELL_DROWNED_SCREEN_EFFECT     = 73734,
+
+    TEXT_ADARRAH_SHIPWRECK          = 39672,    // "Captain! Shipwreck off the starboard bow! There appear to be survivors!"
+    TEXT_MACK_WHAT_THE              = 39687,    // "What the... ?"
+    TEXT_ERUNAK_TO_THE_DEPTHS       = 40551,    // "To the depths with you, beast!"
+    TEXT_ERUNAK_HOLD_ON             = 40556,    // "Hold on, $r!"
+    TEXT_ERUNAK_RELAX               = 39348,    // "Relax, friend. You have not passed away... yet. ..."
+};
+
+class transport_ship_to_vashjir : public TransportScript
+{
+public:
+    transport_ship_to_vashjir() : TransportScript("transport_ship_to_vashjir") { }
+
+    void OnRelocate(Transport* transport, uint32 waypointId, uint32 /*mapId*/, float /*x*/, float /*y*/, float /*z*/) override
+    {
+        bool const alliance = transport->GetEntry() == GO_SHIP_TO_VASHJIR_ALLIANCE;
+        if (!alliance && transport->GetEntry() != GO_SHIP_TO_VASHJIR_HORDE)
+            return;
+        if (waypointId != uint32(alliance ? SHIP_SEA_STOP_NODE_ALLIANCE : SHIP_SEA_STOP_NODE_HORDE))
+            return;
+
+        uint32 const questId = alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE;
+        std::vector<Player*> riders;
+        for (WorldObject* passenger : transport->GetPassengers())
+            if (Player* player = passenger->ToPlayer())
+                if (player->IsAlive() && player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
+                    riders.push_back(player);
+        if (riders.empty())
+            return;
+
+        // the crew sights the wreck (passengers of the phased ship: only its phase sees and hears them)
+        for (WorldObject* crew : transport->GetStaticPassengers())
+            if (Creature* creature = crew->ToCreature())
+            {
+                if (creature->GetEntry() == NPC_ADARRAH)
+                    creature->Yell(TEXT_ADARRAH_SHIPWRECK);
+                else if (creature->GetEntry() == NPC_MACK_FEARSEN)
+                    creature->m_Events.Schedule(3000, [creature]() { creature->Say(TEXT_MACK_WHAT_THE); });
+            }
+
+        ObjectGuid const shipGuid = transport->GetGUID();
+        for (Player* player : riders)
+            StartScene(player, shipGuid, alliance);
+    }
+
+private:
+    // each step runs in the rider's own update and stops (dropping the screen effect) when the rider left, died or no
+    // longer has the quest running
+    static bool StillInScene(Player* player, bool alliance)
+    {
+        if (player->IsInWorld() && player->IsAlive() &&
+            player->GetQuestStatus(alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE) == QUEST_STATUS_INCOMPLETE)
+            return true;
+
+        player->RemoveAurasDueToSpell(SPELL_DROWNED_SCREEN_EFFECT);
+        return false;
+    }
+
+    static void StartScene(Player* player, ObjectGuid shipGuid, bool alliance)
+    {
+        // the kraken throws the rider overboard, into the water beside the hull, where it starts to drown
+        player->m_Events.Schedule(6000, [player, shipGuid, alliance]()
+        {
+            if (!StillInScene(player, alliance) || !player->GetTransport() || player->GetTransport()->GetGUID() != shipGuid)
+                return;
+
+            player->TeleportTo(player->GetMapId(), -4620.0f, 3850.0f, -15.0f, 5.95f);   // leaves the ship
+            player->CastSpell(player, SPELL_DROWNED_SCREEN_EFFECT, true);
+
+            // Erunak comes to the rescue (a private summon: seen by this rider only)
+            player->m_Events.Schedule(3000, [player, alliance]()
+            {
+                if (!StillInScene(player, alliance))
+                    return;
+
+                Position const pos = player->GetNearPosition(4.0f, 0.0f);
+                if (TempSummon* erunak = player->SummonCreature(alliance ? NPC_ERUNAK_RESCUE_ALLIANCE : NPC_ERUNAK_RESCUE_HORDE, pos,
+                    TEMPSUMMON_TIMED_DESPAWN, Milliseconds(9000), 0, player->GetGUID()))
+                {
+                    erunak->SetFacingToObject(player);
+                    erunak->Yell(TEXT_ERUNAK_TO_THE_DEPTHS);
+                    ObjectGuid const playerGuid = player->GetGUID();
+                    erunak->m_Events.Schedule(2500, [erunak, playerGuid]()
+                    {
+                        if (Player* target = ObjectAccessor::GetPlayer(*erunak, playerGuid))
+                            erunak->Say(TEXT_ERUNAK_HOLD_ON, target);
+                    });
+                }
+
+                // the rider wakes beside Erunak in the Briny Cutter / the Immortal Coil
+                player->m_Events.Schedule(5000, [player, alliance]()
+                {
+                    if (!StillInScene(player, alliance))
+                        return;
+
+                    player->RemoveAurasDueToSpell(SPELL_DROWNED_SCREEN_EFFECT);
+                    if (alliance)   // the Vashj'ir Rescue Bunny's spot, beside Erunak (36915)
+                        player->TeleportTo(player->GetMapId(), -4458.93f, 3801.23f, -81.92f, 1.0f);
+                    else            // beside Erunak (41618)
+                        player->TeleportTo(player->GetMapId(), -4609.82f, 3981.23f, -70.54f, 2.0f);
+
+                    player->m_Events.Schedule(1500, [player, alliance]()
+                    {
+                        if (!StillInScene(player, alliance))
+                            return;
+
+                        // the quest objective: the event (14482) / the Submerge Bunny credit (25924), then the event
+                        if (!alliance)
+                            player->KilledMonsterCredit(NPC_SUBMERGE_BUNNY);
+                        player->AreaExploredOrEventHappens(alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE);
+
+                        if (Creature* erunak = player->FindNearestCreature(alliance ? NPC_ERUNAK_ALLIANCE : NPC_ERUNAK_HORDE, 30.0f))
+                        {
+                            erunak->SetFacingToObject(player);
+                            erunak->Say(TEXT_ERUNAK_RELAX, player);
+                        }
+                    });
+                });
+            });
+        });
+    }
+};
+
 void AddSC_vashjir()
 {
     new creature_script<npc_drowning_soldier_and_warrior>("npc_drowning_soldier_and_warrior");
+    new transport_ship_to_vashjir();
 }
