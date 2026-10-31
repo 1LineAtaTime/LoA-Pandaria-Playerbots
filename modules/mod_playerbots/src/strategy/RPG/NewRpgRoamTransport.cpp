@@ -357,10 +357,19 @@ namespace
     // The live transport GO of this entry on the bot's map closest to (x,y,z). Static (elevator/tram) transports are
     // never in a grid and MO transports are map-wide, so walk the map's object store - BotScenario.cpp's
     // StaticTransportFinder idiom, widened to both transport GO types.
+    // A phased boat / zeppelin (the transports phase columns) this bot is not in the phase of: it does not exist for the
+    // bot (its client is never sent the ship), so the bot neither waits for it nor routes over it. The ship it is riding
+    // always counts.
+    bool PhasedOutFor(Transport* t, Player* bot)
+    {
+        return t && t->HasPhaseRule() && t != bot->GetTransport() && !t->CanBeSeenByPhase(bot);
+    }
+
     struct TransportByEntryFinder
     {
         uint32 entry;
         float x, y, z;
+        Player* viewer = nullptr;
         Transport* best = nullptr;
         float bestD = 0.0f;
         template <class T> void Visit(std::unordered_map<ObjectGuid, T*>&) { }
@@ -374,6 +383,8 @@ namespace
                 if (go->GetGoType() != GAMEOBJECT_TYPE_TRANSPORT && go->GetGoType() != GAMEOBJECT_TYPE_MO_TRANSPORT)
                     continue;
                 if (!go->GetGUID().IsMOTransport())  // #141 F3: only a real Transport object
+                    continue;
+                if (viewer && PhasedOutFor(go->ToTransport(), viewer))
                     continue;
                 float const d = go->GetExactDist(x, y, z);
                 if (!best || d < bestD)
@@ -389,10 +400,40 @@ namespace
     {
         if (!entry || !bot->GetMap())
             return nullptr;
-        TransportByEntryFinder finder{entry, nearPos.GetPositionX(), nearPos.GetPositionY(), nearPos.GetPositionZ()};
+        TransportByEntryFinder finder{entry, nearPos.GetPositionX(), nearPos.GetPositionY(), nearPos.GetPositionZ(), bot};
         TypeContainerVisitor<TransportByEntryFinder, MapStoredObjectTypesContainer> visitor(finder);
         visitor.Visit(bot->GetMap()->GetObjectsStore());
         return finder.best;
+    }
+
+    // The boat / zeppelin entries on the bot's map that are phased out for it (PhasedOutFor): no links for its route
+    // search, e.g. Stormwind's Pride (190536) for an Alliance bot in the Call of Duty phase at Stormwind.
+    struct PhasedOutTransportFinder
+    {
+        Player* viewer;
+        std::vector<uint32>* out;
+        template <class T> void Visit(std::unordered_map<ObjectGuid, T*>&) { }
+        void Visit(std::unordered_map<ObjectGuid, GameObject*>& m)
+        {
+            for (auto const& p : m)
+            {
+                GameObject* go = p.second;
+                if (!go || !go->IsInWorld() || go->GetGoType() != GAMEOBJECT_TYPE_MO_TRANSPORT || !go->GetGUID().IsMOTransport())
+                    continue;
+                if (PhasedOutFor(go->ToTransport(), viewer) &&
+                    std::find(out->begin(), out->end(), go->GetEntry()) == out->end())
+                    out->push_back(go->GetEntry());
+            }
+        }
+    };
+
+    void AddPhasedOutTransports(Player* bot, std::vector<uint32>& out)
+    {
+        if (!bot->GetMap())
+            return;
+        PhasedOutTransportFinder finder{bot, &out};
+        TypeContainerVisitor<PhasedOutTransportFinder, MapStoredObjectTypesContainer> visitor(finder);
+        visitor.Visit(bot->GetMap()->GetObjectsStore());
     }
 
     // Same keyframe test as FollowActions.cpp IsDockedNow / PlayerbotAI.cpp IsMoTransportDockedNow (#587: only an MO
@@ -2591,6 +2632,7 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
         // not spawned here are no links for this search (TravelNode.cpp getCost).
         std::vector<uint32> avoid;
         AvoidedTransports(trip, now, avoid);
+        AddPhasedOutTransports(bot, avoid);
         if (!avoid.empty())
         {
             std::string list;
