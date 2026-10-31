@@ -4923,6 +4923,8 @@ def run_steps(w, args_cli, steps):
 #   OUT_OF_RANGE  the mover left this client's view (SMSG_UPDATE_OBJECT out-of-range block: range, stealth, phase)
 #   VISIBLE       first=1: the mover is the first create block of an SMSG_UPDATE_OBJECT without an out-of-range block
 #   CREATE        (#126) every create block of a wanted unit: spline=0|1 pos= [dest= passed= dur= npts= sid= sflags= type=] self=
+#   TRANSPORT_CREATE / TRANSPORT_OUT  every create / out-of-range block of a moving transport (boat, zeppelin), whatever
+#                 the wanted filter: guid= is its `transports`.guid. Shows which transports this client is sent (phases).
 # MOVEPKT-SUMMARY at exit: packet counts and anomaly counts per bot.
 # ---------------------------------------------------------------------------
 MV_SMSG_MONSTER_MOVE = 0x1A07
@@ -4940,6 +4942,7 @@ MV_SMSG_MOVE_UPDATE_TELEPORT = 0x15A9
 MV_CMSG_NAME_QUERY = 0x0328
 MV_SMSG_NAME_QUERY_RESPONSE = 0x169B
 MV_HIGH_PLAYER = 0x070
+MV_HIGH_MO_TRANSPORT = 0x1FC             # ObjectGuid HighGuid::Mo_Transport; the counter is the `transports` guid
 MV_SWIM_SPEED_BASE = 4.722222
 MV_TRACK_S = 0.5           # TRACK line cadence (s): the client's drawn position of every mover
 
@@ -5780,6 +5783,15 @@ class MoveLog:
                 pass
         return self.names.get(guid, "?")
 
+    def emit_transport(self, t, op, guid):
+        """TRANSPORT_CREATE / TRANSPORT_OUT for a moving transport (not subject to the wanted filter)."""
+        line = "MOVEPKT t=%d wall=%.3f op=%s guid=%d hi=motransport map=%s" % (
+            int((t - self.w.login_time) * 1000), t, op, guid & 0xFFFFFFFF, self.w.map_id)
+        if self.fh:
+            self.fh.write(line + "\n")
+        else:
+            print(line, flush=True)
+
     def emit(self, t, op, guid, fields):
         name = self._name(guid)
         if not self.wanted(guid):
@@ -5888,6 +5900,8 @@ class MoveLog:
             if typ == 3:
                 for _ in range(r.u32()):
                     guid = mv_read_packed_guid(r)
+                    if ((guid >> 52) & 0xFFF) == MV_HIGH_MO_TRANSPORT:
+                        self.emit_transport(t, "TRANSPORT_OUT", guid)
                     if self.wanted(guid) and (guid in self.spl or guid in self.stat):
                         self.emit(t, "OUT_OF_RANGE", guid, [])
                     self.spl.pop(guid, None)
@@ -5897,6 +5911,8 @@ class MoveLog:
             elif typ in (1, 2):
                 guid = mv_read_packed_guid(r)
                 r.u8()                                   # object type id
+                if ((guid >> 52) & 0xFFF) == MV_HIGH_MO_TRANSPORT:
+                    self.emit_transport(t, "TRANSPORT_CREATE", guid)
                 if first and self._is_player(guid) and self.wanted(guid):
                     self.emit(t, "VISIBLE", guid, [("first", 1)])
                 first = False
