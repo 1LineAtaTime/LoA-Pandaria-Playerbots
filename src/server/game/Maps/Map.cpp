@@ -752,6 +752,14 @@ bool Map::AddToMap(Transport* obj)
         {
             if (itr->GetSource()->GetTransport() != obj && itr->GetSource()->IsInWorld())
             {
+                // a transport with a phase rule only to the players of its phase
+                if (obj->HasPhaseRule())
+                {
+                    if (!obj->CanBeSeenByPhase(itr->GetSource()))
+                        continue;
+                    obj->SetPhaseSeenBy(itr->GetSource(), true);
+                }
+
                 UpdateData data(GetId());
                 obj->BuildCreateUpdateBlockForPlayer(&data, itr->GetSource());
                 WorldPacket packet;
@@ -1178,6 +1186,8 @@ void Map::RemoveFromMap(Transport* obj, bool remove)
             if (itr->GetSource()->GetTransport() != obj && itr->GetSource()->IsInWorld())
                 itr->GetSource()->SendDirectMessage(&packet);
     }
+
+    obj->ClearPhaseSeen();
 
     if (_transportsUpdateIter != _transports.end())
     {
@@ -2857,6 +2867,10 @@ Transport* Map::GetTransportForPos(uint32 phase, float x, float y, float z, Worl
     for (TransportsContainer::const_iterator itr = _transports.begin(); itr != _transports.end(); ++itr)
         if ((*itr)->IsInWorld() && (*itr)->GetExactDist(x, y, z) < 75.0f && (*itr)->m_model)
         {
+            // not a transport of another phase (the object asking cannot see it), unless it already rides it
+            if (worldobject && (*itr)->HasPhaseRule() && worldobject->GetTransport() != *itr && !(*itr)->CanBeSeenByPhase(worldobject))
+                continue;
+
             float dist = 30.0f;
             bool hit = (*itr)->m_model->intersectRay(r, dist, false, phase, VMAP::ModelIgnoreFlags::Nothing);
             if (hit)
@@ -3430,8 +3444,19 @@ void Map::SendInitTransports(Player* player)
     // Hack to send out transports
     UpdateData transData(player->GetMapId());
     for (TransportsContainer::const_iterator i = _transports.begin(); i != _transports.end(); ++i)
+    {
+        // a transport with a phase rule only when the player is in its phase (its riders get it from SendInitSelf)
+        if ((*i)->HasPhaseRule())
+        {
+            bool const seen = *i == player->GetTransport() || (*i)->CanBeSeenByPhase(player);
+            (*i)->SetPhaseSeenBy(player, seen);
+            if (!seen)
+                continue;
+        }
+
         if (*i != player->GetTransport())
             (*i)->BuildCreateUpdateBlockForPlayer(&transData, player);
+    }
 
     WorldPacket packet;
     transData.BuildPacket(&packet);
@@ -3443,8 +3468,13 @@ void Map::SendRemoveTransports(Player* player)
     // Hack to send out transports
     UpdateData transData(player->GetMapId());
     for (TransportsContainer::const_iterator i = _transports.begin(); i != _transports.end(); ++i)
+    {
+        if ((*i)->HasPhaseRule())
+            (*i)->SetPhaseSeenBy(player, false);
+
         if (*i != player->GetTransport())
             (*i)->BuildOutOfRangeUpdateBlock(&transData);
+    }
 
     WorldPacket packet;
     transData.BuildPacket(&packet);

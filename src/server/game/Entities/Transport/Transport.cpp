@@ -22,6 +22,7 @@
 #include "Path.h"
 #include "ScriptMgr.h"
 #include "WorldPacket.h"
+#include "UpdateData.h"
 #include "DBCStores.h"
 #include "World.h"
 #include "Config.h"
@@ -1215,10 +1216,83 @@ void Transport::BuildUpdate(UpdateDataMapType& data_map)
     if (players.isEmpty())
         return;
 
+    bool const phased = HasPhaseRule();
     for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+    {
+        // a phased transport only updates the clients it was created at (TrinityCore master: InSamePhase)
+        if (phased && itr->GetSource()->GetTransport() != this && !IsPhaseSeenBy(itr->GetSource()))
+            continue;
+
         BuildFieldsUpdate(itr->GetSource(), data_map);
+    }
 
     ClearUpdateMask(false);
+}
+
+bool Transport::CanBeSeenByPhase(WorldObject const* viewer) const
+{
+    if (!HasPhaseRule())
+        return true;
+
+    if (Player const* player = viewer->ToPlayer())
+        if (player->IsGameMaster())
+            return true;
+
+    bool holdsPhase = false;
+    for (uint32 phaseId : _transportInfo->phases)
+    {
+        if (viewer->IsPhased(phaseId))
+        {
+            holdsPhase = true;
+            break;
+        }
+    }
+
+    return _transportInfo->phaseInverse ? !holdsPhase : holdsPhase;
+}
+
+bool Transport::IsPhaseSeenBy(Player const* player) const
+{
+    return _phaseSeenBy.find(player->GetGUID()) != _phaseSeenBy.end();
+}
+
+void Transport::SetPhaseSeenBy(Player const* player, bool seen)
+{
+    if (seen)
+        _phaseSeenBy.insert(player->GetGUID());
+    else
+        _phaseSeenBy.erase(player->GetGUID());
+}
+
+// TrinityCore master Map::SendUpdateTransportVisibility for one transport: create it at the client when the player
+// entered its phase, destroy it when the player left it. Its own riders keep it (they were sent it with themselves).
+void Transport::UpdatePhaseVisibilityFor(Player* player)
+{
+    if (!HasPhaseRule() || !IsInWorld() || !player->IsInWorld() || player->GetMap() != GetMap())
+        return;
+
+    bool const seen = IsPhaseSeenBy(player);
+    if (player->GetTransport() == this)
+    {
+        if (!seen)
+            SetPhaseSeenBy(player, true);
+        return;
+    }
+
+    bool const visible = CanBeSeenByPhase(player);
+    if (visible == seen)
+        return;
+
+    UpdateData data(GetMapId());
+    if (visible)
+        BuildCreateUpdateBlockForPlayer(&data, player);
+    else
+        BuildOutOfRangeUpdateBlock(&data);
+    SetPhaseSeenBy(player, visible);
+
+    WorldPacket packet;
+    data.BuildPacket(&packet);
+    player->SendDirectMessage(&packet);
 }
 
 // #736 - stop-frame mode for a local (type 11) transport with a pause time. The 5.4.8 create block carries the

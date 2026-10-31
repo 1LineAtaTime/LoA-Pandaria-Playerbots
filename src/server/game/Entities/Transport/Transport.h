@@ -108,6 +108,16 @@ class Transport : public GameObject, public TransportBase
 
         TransportTemplate const* GetTransportTemplate() const { return _transportInfo; }
 
+        // Phase rule of the `transports` row (TransportTemplate::phases). A moving transport is sent to its whole map
+        // outside the grid visibility, so the map asks these when it sends, and the player's visibility update calls
+        // UpdatePhaseVisibilityFor to create or destroy the transport at the client when the player's phases change.
+        bool HasPhaseRule() const { return _transportInfo && !_transportInfo->phases.empty(); }
+        bool CanBeSeenByPhase(WorldObject const* viewer) const;
+        void UpdatePhaseVisibilityFor(Player* player);
+        void SetPhaseSeenBy(Player const* player, bool seen);
+        bool IsPhaseSeenBy(Player const* player) const;
+        void ClearPhaseSeen() { _phaseSeenBy.clear(); }
+
         // #736: stop-frame mode for a local (type 11) transport with a pause time - the Strand of the Ancients boats.
         // The 5.4.8 client only stops such a transport when the create block lists its stop frames; without them it
         // loops the whole TransportAnimation path (ocean -> dock -> jump back), which is what the boats did.
@@ -165,6 +175,8 @@ class Transport : public GameObject, public TransportBase
         uint32 _stopFrameTargetProgress;
         uint8 _stopFrameMode;                           // #851: 1 = #736 encoding, 2 = elevator encoding
         uint32 _stopFrameLogAt;                         // #851: getMSTime() of the last "[851] boat-pos" line
+
+        GuidUnorderedSet _phaseSeenBy;                  // players the phased transport was sent to (create block)
 };
 
 #endif

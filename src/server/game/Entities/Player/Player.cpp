@@ -25195,6 +25195,13 @@ void Player::UpdateVisibilityForPlayer()
         notifier.VisitSet(m_seer->GetMap()->GetCustomVisibilityObjects(m_seer == this ? m_zoneUpdateId : m_seer->GetZoneId()));
     }
     notifier.SendToSelf();   // send gathered data
+
+    // Moving transports are sent map-wide, outside the grids. Those with a phase rule are created or destroyed at
+    // the client here when the player's phases changed (TrinityCore master Map::SendUpdateTransportVisibility).
+    if (IsInWorld())
+        for (ObjectGuid const& guid : sTransportMgr->GetPhasedTransports())
+            if (Transport* transport = GetMap()->GetTransport(guid))
+                transport->UpdatePhaseVisibilityFor(this);
 }
 
 void Player::InitPrimaryProfessions()

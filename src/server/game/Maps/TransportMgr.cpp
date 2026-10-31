@@ -49,6 +49,7 @@ TransportMgr* TransportMgr::instance()
 void TransportMgr::Unload()
 {
     _transportTemplates.clear();
+    _phasedTransports.clear();
 }
 
 void TransportMgr::LoadTransportTemplates()
@@ -570,7 +571,7 @@ void TransportMgr::SpawnContinentTransports()
 
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT guid, entry FROM transports");
+    QueryResult result = WorldDatabase.Query("SELECT guid, entry, phaseUseFlags, phaseid, phasegroup FROM transports");
 
     uint32 count = 0;
     if (result)
@@ -580,16 +581,63 @@ void TransportMgr::SpawnContinentTransports()
             Field* fields = result->Fetch();
             uint32 guid = fields[0].GetUInt32();
             uint32 entry = fields[1].GetUInt32();
+            uint8 phaseUseFlags = fields[2].GetUInt8();
+            uint32 phaseId = fields[3].GetUInt32();
+            uint32 phaseGroup = fields[4].GetUInt32();
 
-            if (TransportTemplate const* tInfo = GetTransportTemplate(entry))
-                if (!tInfo->inInstance)
-                    if (CreateTransport(entry, guid))
-                        ++count;
+            auto itr = _transportTemplates.find(entry);
+            if (itr == _transportTemplates.end() || itr->second.inInstance)
+                continue;
+
+            // Phase rule of this spawn, checked as TrinityCore master does for the same columns (TransportMgr.cpp
+            // SpawnContinentTransports, PhasingHandler::InitDbPhaseShift).
+            TransportTemplate& tInfo = itr->second;
+            tInfo.phases.clear();
+            tInfo.phaseInverse = false;
+            if (phaseUseFlags & ~TRANSPORT_PHASE_USE_FLAGS_ALL)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `transports` has transport (GUID: %u Entry: %u) with unknown `phaseUseFlags` set, removed unknown value.", guid, entry);
+                phaseUseFlags &= TRANSPORT_PHASE_USE_FLAGS_ALL;
+            }
+
+            if (phaseId && phaseGroup)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `transports` has transport (GUID: %u Entry: %u) with both `phaseid` and `phasegroup` set, `phasegroup` set to 0", guid, entry);
+                phaseGroup = 0;
+            }
+
+            if (phaseId && !sPhaseStore.LookupEntry(phaseId))
+            {
+                TC_LOG_ERROR("sql.sql", "Table `transports` has transport (GUID: %u Entry: %u) with `phaseid` %u that does not exist, set to 0", guid, entry, phaseId);
+                phaseId = 0;
+            }
+
+            if (phaseId)
+                tInfo.phases.push_back(phaseId);
+            else if (phaseGroup)
+            {
+                if (std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(phaseGroup))
+                    tInfo.phases = *phasesInGroup;
+                else
+                    TC_LOG_ERROR("sql.sql", "Table `transports` has transport (GUID: %u Entry: %u) with `phasegroup` %u that does not exist, set to 0", guid, entry, phaseGroup);
+            }
+
+            // always visible = no rule (a moving transport without a phase is already sent to the whole map)
+            if (phaseUseFlags & TRANSPORT_PHASE_USE_FLAGS_ALWAYS_VISIBLE)
+                tInfo.phases.clear();
+            tInfo.phaseInverse = !tInfo.phases.empty() && (phaseUseFlags & TRANSPORT_PHASE_USE_FLAGS_INVERSE);
+
+            if (Transport* trans = CreateTransport(entry, guid))
+            {
+                ++count;
+                if (!tInfo.phases.empty())
+                    _phasedTransports.push_back(trans->GetGUID());
+            }
 
         } while (result->NextRow());
     }
 
-    TC_LOG_INFO("server.loading", ">> Spawned %u continent transports in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Spawned %u continent transports (%u with a phase rule) in %u ms", count, uint32(_phasedTransports.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void TransportMgr::SpawnLocalTransports(Map* map)
