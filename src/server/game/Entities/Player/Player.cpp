@@ -17778,6 +17778,20 @@ void Player::AreaExploredOrEventHappens(uint32 questId)
 
                 SendQuestComplete(questId);
             }
+
+            // An event objective (type AREATRIGGER, ObjectID -1: "the event happened") is what this call reports, so it is
+            // counted here. HandleAreaTriggerOpcode counts it for quests completed by entering an areatrigger; a quest
+            // completed by a scripted event (SmartAI CALL_AREAEXPLOREDOREVENTHAPPENS, quest scripts) was never counted
+            // and could not complete.
+            if (q_status.Status == QUEST_STATUS_INCOMPLETE)
+                if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
+                    for (QuestObjective const& objective : quest->Objectives)
+                        if (objective.Type == QUEST_OBJECTIVE_AREATRIGGER && int32(objective.ObjectID) == -1 && !GetQuestObjectiveCounter(objective.ID))
+                        {
+                            m_questObjectiveStatus[objective.ID] = 1;
+                            MarkQuestObjectiveToSave(questId, objective.ID);
+                            SendQuestUpdateAddCreditSimple(quest, &objective);
+                        }
         }
         if (CanCompleteQuest(questId))
             CompleteQuest(questId);
