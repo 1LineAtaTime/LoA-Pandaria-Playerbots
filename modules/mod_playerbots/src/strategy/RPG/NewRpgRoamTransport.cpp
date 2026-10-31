@@ -533,11 +533,11 @@ namespace
 
     // A deck point a bot standing at the dock can walk onto: march from the bot toward the transport origin until the
     // model is under the march point no more than 2.5 yd above / 8 yd below the bot's feet, then go 3 yd further in
-    // (a boat / zeppelin: further, while the deck stays level, see kMoBoardDepth).
+    // (a boat / zeppelin: FindMoDeckPointFrom, on the open deck).
     // #848: (ex, ey) is where the deck starts on that line (the march point it was first found under), the spot where
     // Board attaches a bot walking onto a static platform.
     // #948: the march starts from any point (bx, by, bz) - the bot's feet, or a pier candidate (FindPierPoint).
-    bool Standable(Transport* t, float x, float y, float z);  // below (deck routes)
+    bool FindMoDeckPointFrom(Transport* t, float bx, float by, float bz, float& ox, float& oy, float& oz, float& ex, float& ey);
     constexpr float kMoBoardDepth = 10.0f;  // a boat / zeppelin deck point: at most this far in from the deck edge
     constexpr float kMoBoardLevel = 1.5f;   // ... on deck no more than this above / below the edge
     constexpr uint32 kMoBoardGap = 3;       // ... stepping over at most this many non-level 1 yd samples in a row
@@ -548,10 +548,12 @@ namespace
         // under a zeppelin that was still settling ("board ... (1872.7,-4425.8,129.1)" from the 135.6 dock, stored local
         // z -27.78 where riders stand at -17.8): the rider hung under the hull and the ambient check dropped it at
         // Grom'gol. For an MO transport only a deck from 4 yd above to 4 yd below the feet counts; a higher one is
-        // found on a later tick once the ship has settled. Static platforms keep their window.
-        bool const mo = t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT;
-        float const rayFrom = bz + (mo ? 4.0f : 2.5f);
-        float const rayDown = mo ? 8.0f : 10.5f;
+        // found on a later tick once the ship has settled. Static platforms keep their window; a boat / zeppelin now
+        // takes its deck point on the open deck (FindMoDeckPointFrom: 2 yd below to 6 yd above the feet).
+        if (t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
+            return FindMoDeckPointFrom(t, bx, by, bz, ox, oy, oz, ex, ey);
+        float const rayFrom = bz + 2.5f;
+        float const rayDown = 10.5f;
         float const cx = t->GetPositionX(), cy = t->GetPositionY();
         float const len = std::sqrt((cx - bx) * (cx - bx) + (cy - by) * (cy - by));
         if (len < 0.5f)
@@ -572,34 +574,9 @@ namespace
                 continue;
             float const inner = std::min(s + 3.0f, len);
             float iz = z;
-            float ix = bx + ux * inner, iy = by + uy * inner;
+            float const ix = bx + ux * inner, iy = by + uy * inner;
             if (!DeckZAt(t, ix, iy, rayFrom, rayDown, iz))
                 iz = z;
-            // A boat / zeppelin deck is boarded well inside its edge: 3 yd in left zeppelin riders 12-14 yd from the
-            // transport origin, on the rim of the deck. Keep marching toward the origin (never past it) while the deck
-            // stays on the edge's level, up to kMoBoardDepth from the edge. A rail, crate or hatch under up to kMoBoardGap
-            // samples in a row is stepped over (the deck point is the farthest level sample); a longer run of them - a
-            // cabin, mast or stairs - ends the march. Breaking at the first such sample left some approach lines to the
-            // Borean and Grom'gol zeppelins 12-15 yd from the origin while a line half a yard beside them went 6 yd in.
-            if (mo)
-            {
-                float const deepest = std::min(s + kMoBoardDepth, len);
-                uint32 misses = 0;
-                for (float d = std::floor(inner) + 1.0f; d <= deepest; d += 1.0f)
-                {
-                    float const qx = bx + ux * d, qy = by + uy * d;
-                    float qz = 0.0f;
-                    if (!DeckZAt(t, qx, qy, rayFrom, rayDown, qz) || std::fabs(qz - z) > kMoBoardLevel ||
-                        !Standable(t, qx, qy, qz))
-                    {
-                        if (++misses > kMoBoardGap)
-                            break;
-                        continue;
-                    }
-                    misses = 0;
-                    ix = qx; iy = qy; iz = qz;
-                }
-            }
             ox = ix; oy = iy; oz = iz;
             ex = px; ey = py;
             return true;
@@ -607,9 +584,33 @@ namespace
         return false;
     }
 
+    // DockWait asks every tick while the transport is docked. The boat / zeppelin search reads several surfaces per
+    // column, so its answer is kept per bot (per map thread) while neither the transport nor the bot has moved.
     bool FindDeckPoint(Transport* t, Player* bot, float& ox, float& oy, float& oz, float& ex, float& ey)
     {
-        return FindDeckPointFrom(t, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), ox, oy, oz, ex, ey);
+        if (t->GetGoType() != GAMEOBJECT_TYPE_MO_TRANSPORT)
+            return FindDeckPointFrom(t, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), ox, oy, oz, ex, ey);
+        struct Cached
+        {
+            ObjectGuid transport;
+            float tx, ty, tz, bx, by, bz;
+            bool found;
+            float ox, oy, oz, ex, ey;
+        };
+        static thread_local std::unordered_map<ObjectGuid, Cached> cache;
+        Cached& c = cache[bot->GetGUID()];
+        if (c.transport == t->GetGUID() && std::fabs(c.tx - t->GetPositionX()) < 0.05f && std::fabs(c.ty - t->GetPositionY()) < 0.05f &&
+            std::fabs(c.tz - t->GetPositionZ()) < 0.05f && bot->GetExactDist(c.bx, c.by, c.bz) < 0.5f)
+        {
+            ox = c.ox; oy = c.oy; oz = c.oz; ex = c.ex; ey = c.ey;
+            return c.found;
+        }
+        c.transport = t->GetGUID();
+        c.tx = t->GetPositionX(); c.ty = t->GetPositionY(); c.tz = t->GetPositionZ();
+        c.bx = bot->GetPositionX(); c.by = bot->GetPositionY(); c.bz = bot->GetPositionZ();
+        c.found = FindDeckPointFrom(t, c.bx, c.by, c.bz, c.ox, c.oy, c.oz, c.ex, c.ey);
+        ox = c.ox; oy = c.oy; oz = c.oz; ex = c.ex; ey = c.ey;
+        return c.found;
     }
 
     // #948 (owner session 2026-10-26/27, 3000 bots: Lentha x2 and Gronlor waited for Stormwind's Pride 190536 at
@@ -945,7 +946,7 @@ namespace
     constexpr float kRouteHeadroom = 1.8f;
     constexpr float kRouteRidge = 0.6f;
     constexpr float kRouteLinkMax = 30.0f;
-    constexpr uint32 kRouteMaxNodes = 1000;
+    constexpr uint32 kRouteMaxNodes = 2000;  // v35: p95 4 ms, max 11 ms at the old 1000-cell cap
 
     // The nearest model surface under (x, y) between fromZ and fromZ - maxDown (nearest hit, not the first found).
     bool ModelFloor(Transport* t, float x, float y, float fromZ, float maxDown, float& outZ)
@@ -1022,8 +1023,14 @@ namespace
     // can stand between two surfaces; the route starts and ends on a real standing spot instead. fromHere: p is where
     // the bot stands, so the spot must also be reached from p without crossing the model (a bot on a mast collar is
     // not walked down through it).
-    bool SnapStand(Transport* t, G3D::Vector3 const& p, float radius, G3D::Vector3& out, bool fromHere)
+    bool SnapStand(Transport* t, G3D::Vector3 const& pIn, float radius, G3D::Vector3& out, bool fromHere)
     {
+        // A bot whose feet are up to 1.25 yd under the deck surface (attached from the pier beside the deck lip) is
+        // tested from that surface: every leg from its sunk feet crossed the deck.
+        G3D::Vector3 p = pIn;
+        float lift = 0.0f;
+        if (fromHere && ModelFloor(t, p.x, p.y, p.z + 1.25f, 1.75f, lift) && lift > p.z)
+            p.z = lift;
         bool found = false;
         float bestD = 0.0f;
         for (float r = 0.0f; r <= radius + 0.01f && !found; r += 1.0f)
@@ -1056,6 +1063,82 @@ namespace
         return found;
     }
 
+    // The open-deck surface in the column (x, y) between lo and hi nearest to `prefer`: standable, with kRouteOpen of
+    // clear air above it - the deck itself, not a hold, the space under the main deck or a cabin under the quarterdeck.
+    constexpr float kRouteOpen = 4.0f;
+    bool OpenDeckZ(Transport* t, float x, float y, float lo, float hi, float prefer, float& out)
+    {
+        bool found = false;
+        float from = hi;
+        for (uint32 s = 0; s < 6 && from > lo; ++s)
+        {
+            float z = 0.0f;
+            if (!ModelFloor(t, x, y, from, from - lo, z))
+                break;
+            if (Standable(t, x, y, z) && !ModelSegmentHit(t, G3D::Vector3(x, y, z + 0.1f), G3D::Vector3(x, y, z + kRouteOpen)) &&
+                (!found || std::fabs(z - prefer) < std::fabs(out - prefer)))
+            {
+                found = true;
+                out = z;
+            }
+            from = z - 0.05f;
+        }
+        return found;
+    }
+
+    // The boat / zeppelin deck point (FindDeckPointFrom for an MO transport): march from (bx, by) toward the transport
+    // origin until a column has an open-deck surface from 2 yd below to 6 yd above the feet (the one nearest the feet);
+    // that is where the deck starts (ex, ey). The deck point is the farthest open-deck sample on the edge's level
+    // (kMoBoardLevel) up to kMoBoardDepth further in, stepping over up to kMoBoardGap samples in a row without one.
+    // The first-hit deck ray this replaces took the hull's outside under a Theramore pier (a "deck" at z 2.7, the
+    // bot boarded into the hold), the hull interior under the Stormwind icebreaker's main deck (z 6.7 below a 9.4
+    // deck: no walk reaches it), a bulkhead seam and a mast collar; and its 4 yd upper bound never saw the
+    // icebreaker's main deck 4.4 yd above the Stormwind pier.
+    bool FindMoDeckPointFrom(Transport* t, float bx, float by, float bz, float& ox, float& oy, float& oz, float& ex, float& ey)
+    {
+        if (!t->m_model)
+            return false;
+        float const lo = bz - 2.0f, hi = bz + 6.0f;
+        float const cx = t->GetPositionX(), cy = t->GetPositionY();
+        float const len = std::sqrt((cx - bx) * (cx - bx) + (cy - by) * (cy - by));
+        if (len < 0.5f)
+        {
+            float z = 0.0f;
+            if (!OpenDeckZ(t, bx, by, lo, hi, bz, z))
+                return false;
+            ox = ex = bx; oy = ey = by; oz = z;
+            return true;
+        }
+        float const ux = (cx - bx) / len, uy = (cy - by) / len;
+        for (float s = 0.0f; s <= std::min(len, 45.0f); s += 1.0f)
+        {
+            float const px = bx + ux * s, py = by + uy * s;
+            float z = 0.0f;
+            if (!OpenDeckZ(t, px, py, lo, hi, bz, z))
+                continue;
+            float ix = px, iy = py, iz = z, prev = z;
+            float const deepest = std::min(s + kMoBoardDepth, len);
+            uint32 misses = 0;
+            for (float d = s + 1.0f; d <= deepest; d += 1.0f)
+            {
+                float const qx = bx + ux * d, qy = by + uy * d;
+                float qz = 0.0f;
+                if (!OpenDeckZ(t, qx, qy, z - kMoBoardLevel, z + kMoBoardLevel + 0.05f, prev, qz))
+                {
+                    if (++misses > kMoBoardGap)
+                        break;
+                    continue;
+                }
+                misses = 0;
+                ix = qx; iy = qy; iz = qz; prev = qz;
+            }
+            ox = ix; oy = iy; oz = iz;
+            ex = px; ey = py;
+            return true;
+        }
+        return false;
+    }
+
     struct DeckRouteInfo
     {
         bool found = false;
@@ -1084,7 +1167,7 @@ namespace
         uint32 const startMs = getMSTime();
         // The search starts at the deck end, on the standable surface nearest to it.
         G3D::Vector3 deck;
-        if (!SnapStand(t, deckIn, 4.0f, deck, !fromDock))
+        if (!SnapStand(t, deckIn, fromDock ? 4.0f : 6.0f, deck, !fromDock))
         {
             info.fail = "deck-snap";
             return false;
@@ -1305,8 +1388,16 @@ namespace
             {
                 if (k == 0 && (route[0] - from).length() <= 0.5f)
                     continue;
-                if (k == 0 && !LegClear(t, from, route[0]))
-                    ++info.cross;
+                if (k == 0)
+                {
+                    // checked from the deck surface when the feet are a little under it (SnapStand's lift)
+                    G3D::Vector3 check = from;
+                    float lift = 0.0f;
+                    if (ModelFloor(t, from.x, from.y, from.z + 1.25f, 1.75f, lift) && lift > from.z)
+                        check.z = lift;
+                    if (!LegClear(t, check, route[0]))
+                        ++info.cross;
+                }
                 pts.emplace_back(route[k].x, route[k].y, route[k].z);
             }
             bot->GetMotionMaster()->Clear();
@@ -1463,6 +1554,16 @@ namespace
     void AttachAboard(Transport* t, Player* bot)
     {
         StopHere(bot);
+        // A boat / zeppelin rider is attached standing on the deck: feet up to 1.25 yd under the deck surface (still on
+        // the pier beside the deck lip) are put on it first. Attached 1 yd under the Ratchet ship's deck, two riders rode
+        // inside it and had no standing spot to step off from at Booty Bay.
+        if (t->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT && t->m_model)
+        {
+            float fz = 0.0f;
+            if (ModelFloor(t, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 1.25f, 1.75f, fz) &&
+                fz > bot->GetPositionZ() + 0.1f)
+                bot->Relocate(bot->GetPositionX(), bot->GetPositionY(), fz, bot->GetOrientation());
+        }
         t->AddPassenger(bot, true);
         AnnounceAboard(bot);
     }
@@ -3395,7 +3496,10 @@ int32 NewRpgBaseAction::RoamTransportMove(WorldPosition const& dest, bool maySta
                     return backToDock();  // it is leaving and we are still on the dock: stay off, wait for the next one
                 float const toDeck = bot->GetExactDist2d(trip.boardX, trip.boardY);
                 // #848: on a static platform the attach happens as soon as the deck is under the bot (at its edge).
-                if (toDeck < 1.5f || (staticDeck && DeckUnder(t, bot)) ||
+                // A boat / zeppelin deck point is reached in 3D: 1.5 yd away in 2D on the pier under the deck lip is not
+                // on the deck yet (the route walk goes on up to it).
+                bool const atDeckPoint = toDeck < 1.5f && (staticDeck || std::fabs(bot->GetPositionZ() - trip.boardZ) <= 1.0f);
+                if (atDeckPoint || (staticDeck && DeckUnder(t, bot)) ||
                     (trip.boardMoveIssued && !bot->isMoving() && DeckUnder(t, bot) &&
                      (staticDeck || trip.boardWalks >= kBoardWalks)))
                 {
