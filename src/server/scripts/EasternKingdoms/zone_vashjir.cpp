@@ -24,6 +24,9 @@
 #include "WorldSession.h"
 #include "TemporarySummon.h"
 #include "Transport.h"
+#include "ChatTextBuilder.h"
+#include "WorldPacket.h"
+#include <cmath>
 #include <vector>
 
 // http://www.wowhead.com/quest=25281/pay-it-forward http://www.wowhead.com/quest=25936/pay-it-forward
@@ -176,6 +179,51 @@ private:
         return false;
     }
 
+    // Erunak's lines are part of the rider's own scene, so they go to the rider directly (a monster say, $r filled in
+    // with the rider's race; the client leaves $r as it is). Broadcast as a say they reached the rider only while the
+    // rider was registered in a grid cell within say range of Erunak, and both lines follow a near teleport, which
+    // moves the rider to its new cell only when the client's teleport ack is handled; the rescue Erunak also stood on
+    // the sea floor, far below the rider (GetNearPosition). Many rides lost them; the 300 yd yells always arrived.
+    static void SayToRider(Creature* speaker, uint32 textId, Player* rider)
+    {
+        BroadcastText const* bct = sObjectMgr->GetBroadcastText(textId);
+        if (!bct || !rider->GetSession())
+            return;
+
+        LocaleConstant const locale = rider->GetSession()->GetSessionDbLocaleIndex();
+        std::string text = bct->GetText(locale, speaker->GetGender());
+        if (ChrRacesEntry const* race = sChrRacesStore.LookupEntry(rider->GetRace()))
+            if (race->name && *race->name)
+            {
+                std::string const raceName = race->name;
+                for (std::string::size_type at = text.find("$r"); at != std::string::npos; at = text.find("$r", at + raceName.size()))
+                    text.replace(at, 2, raceName);
+            }
+
+        WorldPacket data;
+        Trinity::CustomChatTextBuilder(speaker, CHAT_MSG_MONSTER_SAY, text, Language(bct->LanguageID), rider)(data, locale);
+        rider->SendDirectMessage(&data);
+    }
+
+    // "Relax, friend...": once the wake-up teleport has landed (the rider is beside Erunak), at most 3 s later
+    static void WakeLine(Player* player, bool alliance, uint8 tries)
+    {
+        if (!player->IsInWorld())
+            return;
+
+        if (player->IsBeingTeleported() && tries)
+        {
+            player->m_Events.Schedule(500, [player, alliance, tries]() { WakeLine(player, alliance, tries - 1); });
+            return;
+        }
+
+        if (Creature* erunak = player->FindNearestCreature(alliance ? NPC_ERUNAK_ALLIANCE : NPC_ERUNAK_HORDE, 30.0f))
+        {
+            erunak->SetFacingToObject(player);
+            SayToRider(erunak, TEXT_ERUNAK_RELAX, player);
+        }
+    }
+
     static void StartScene(Player* player, ObjectGuid shipGuid, bool alliance)
     {
         // the kraken throws the rider overboard, into the water beside the hull, where it starts to drown
@@ -195,31 +243,22 @@ private:
                 if (!StillInScene(player, alliance))
                     return;
 
-                Position const pos = player->GetNearPosition(4.0f, 0.0f);
+                // 4 yd in front of the rider at the rider's depth (GetNearPosition would put him on the sea floor), and
+                // passive: he is there to save the rider, not to chase the naga
+                float const o = player->GetOrientation();
+                Position const pos(player->GetPositionX() + 4.0f * std::cos(o), player->GetPositionY() + 4.0f * std::sin(o),
+                    player->GetPositionZ(), o + float(M_PI));   // the ctor normalizes the facing
                 if (TempSummon* erunak = player->SummonCreature(alliance ? NPC_ERUNAK_RESCUE_ALLIANCE : NPC_ERUNAK_RESCUE_HORDE, pos,
                     TEMPSUMMON_TIMED_DESPAWN, Milliseconds(9000), 0, player->GetGUID()))
                 {
+                    erunak->SetReactState(REACT_PASSIVE);
                     erunak->SetFacingToObject(player);
                     erunak->Yell(TEXT_ERUNAK_TO_THE_DEPTHS);
                     ObjectGuid const playerGuid = player->GetGUID();
                     erunak->m_Events.Schedule(2500, [erunak, playerGuid]()
                     {
                         if (Player* target = ObjectAccessor::GetPlayer(*erunak, playerGuid))
-                        {
-                            // "Hold on, $r!": the client does not fill in $r for this line, so name the rider's race here
-                            BroadcastText const* bct = sObjectMgr->GetBroadcastText(TEXT_ERUNAK_HOLD_ON);
-                            ChrRacesEntry const* race = sChrRacesStore.LookupEntry(target->GetRace());
-                            if (bct && race && race->name)
-                            {
-                                std::string text = bct->GetText(target->GetSession()->GetSessionDbLocaleIndex(), target->GetGender());
-                                std::string::size_type const at = text.find("$r");
-                                if (at != std::string::npos)
-                                    text.replace(at, 2, race->name);
-                                erunak->Say(text, LANG_UNIVERSAL, target);
-                            }
-                            else
-                                erunak->Say(TEXT_ERUNAK_HOLD_ON, target);
-                        }
+                            SayToRider(erunak, TEXT_ERUNAK_HOLD_ON, target);   // "Hold on, <race>!"
                     });
                 }
 
@@ -245,11 +284,7 @@ private:
                             player->KilledMonsterCredit(NPC_SUBMERGE_BUNNY);
                         player->AreaExploredOrEventHappens(alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE);
 
-                        if (Creature* erunak = player->FindNearestCreature(alliance ? NPC_ERUNAK_ALLIANCE : NPC_ERUNAK_HORDE, 30.0f))
-                        {
-                            erunak->SetFacingToObject(player);
-                            erunak->Say(TEXT_ERUNAK_RELAX, player);
-                        }
+                        WakeLine(player, alliance, 6);
                     });
                 });
             });
