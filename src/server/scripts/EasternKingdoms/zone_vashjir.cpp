@@ -205,23 +205,28 @@ private:
         rider->SendDirectMessage(&data);
     }
 
-    // "Relax, friend...": once the wake-up teleport has landed (the rider is beside Erunak), at most 3 s later
-    static void WakeLine(Player* player, bool alliance, uint8 tries)
+    // "Relax, friend...": once the wake-up teleport has landed (the rider is beside Erunak), at most 3 s later. The line
+    // goes to the rider directly, so the speaker's position does not matter: Erunak beside the rider when the grid search
+    // finds him, otherwise the rescue Erunak (the same character; the search missed him in most v40 rides right after
+    // the teleport and the quest credit), so the line is never dropped.
+    static void WakeLine(Player* player, bool alliance, ObjectGuid rescueGuid, uint8 tries)
     {
         if (!player->IsInWorld())
             return;
 
         if (player->IsBeingTeleported() && tries)
         {
-            player->m_Events.Schedule(500, [player, alliance, tries]() { WakeLine(player, alliance, tries - 1); });
+            player->m_Events.Schedule(500, [player, alliance, rescueGuid, tries]() { WakeLine(player, alliance, rescueGuid, tries - 1); });
             return;
         }
 
-        if (Creature* erunak = player->FindNearestCreature(alliance ? NPC_ERUNAK_ALLIANCE : NPC_ERUNAK_HORDE, 30.0f))
-        {
+        Creature* erunak = player->FindNearestCreature(alliance ? NPC_ERUNAK_ALLIANCE : NPC_ERUNAK_HORDE, 30.0f);
+        if (erunak)
             erunak->SetFacingToObject(player);
+        else if (!rescueGuid.IsEmpty())
+            erunak = ObjectAccessor::GetCreature(*player, rescueGuid);
+        if (erunak)
             SayToRider(erunak, TEXT_ERUNAK_RELAX, player);
-        }
     }
 
     static void StartScene(Player* player, ObjectGuid shipGuid, bool alliance)
@@ -248,9 +253,12 @@ private:
                 float const o = player->GetOrientation();
                 Position const pos(player->GetPositionX() + 4.0f * std::cos(o), player->GetPositionY() + 4.0f * std::sin(o),
                     player->GetPositionZ(), o + float(M_PI));   // the ctor normalizes the facing
+                ObjectGuid rescueGuid;
+                // he stays until after "Relax, friend..." (at most +18.5 s), which he speaks if Erunak is not found
                 if (TempSummon* erunak = player->SummonCreature(alliance ? NPC_ERUNAK_RESCUE_ALLIANCE : NPC_ERUNAK_RESCUE_HORDE, pos,
-                    TEMPSUMMON_TIMED_DESPAWN, Milliseconds(9000), 0, player->GetGUID()))
+                    TEMPSUMMON_TIMED_DESPAWN, Milliseconds(12000), 0, player->GetGUID()))
                 {
+                    rescueGuid = erunak->GetGUID();
                     erunak->SetReactState(REACT_PASSIVE);
                     erunak->SetFacingToObject(player);
                     erunak->Yell(TEXT_ERUNAK_TO_THE_DEPTHS);
@@ -263,7 +271,7 @@ private:
                 }
 
                 // the rider wakes beside Erunak in the Briny Cutter / the Immortal Coil
-                player->m_Events.Schedule(5000, [player, alliance]()
+                player->m_Events.Schedule(5000, [player, alliance, rescueGuid]()
                 {
                     if (!StillInScene(player, alliance))
                         return;
@@ -274,7 +282,7 @@ private:
                     else            // beside Erunak (41618)
                         player->TeleportTo(MAP_VASHJIR, -4609.82f, 3981.23f, -70.54f, 2.0f);
 
-                    player->m_Events.Schedule(1500, [player, alliance]()
+                    player->m_Events.Schedule(1500, [player, alliance, rescueGuid]()
                     {
                         if (!StillInScene(player, alliance))
                             return;
@@ -284,7 +292,7 @@ private:
                             player->KilledMonsterCredit(NPC_SUBMERGE_BUNNY);
                         player->AreaExploredOrEventHappens(alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE);
 
-                        WakeLine(player, alliance, 6);
+                        WakeLine(player, alliance, rescueGuid, 6);
                     });
                 });
             });
