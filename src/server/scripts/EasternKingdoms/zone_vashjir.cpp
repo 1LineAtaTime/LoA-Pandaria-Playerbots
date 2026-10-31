@@ -18,7 +18,10 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "DBCStores.h"
 #include "Player.h"
+#include "WorldSession.h"
 #include "TemporarySummon.h"
 #include "Transport.h"
 #include <vector>
@@ -97,6 +100,7 @@ private:
 // then sails on as before.
 enum CallOfDutyShip
 {
+    MAP_VASHJIR                     = 0,        // Vashj'ir (Kelp'thar Forest) is on the Eastern Kingdoms map
     GO_SHIP_TO_VASHJIR_ALLIANCE     = 197195,
     GO_SHIP_TO_VASHJIR_HORDE        = 203466,
     SHIP_SEA_STOP_NODE_ALLIANCE     = 11,       // TaxiPathNode path 1368 node 11 (-4632.9, 3863.7), 45 s
@@ -180,7 +184,9 @@ private:
             if (!StillInScene(player, alliance) || !player->GetTransport() || player->GetTransport()->GetGUID() != shipGuid)
                 return;
 
-            player->TeleportTo(player->GetMapId(), -4620.0f, 3850.0f, -15.0f, 5.95f);   // leaves the ship
+            // Vashj'ir is on Eastern Kingdoms: the Horde ship's sea stop is a teleport frame, so it has already moved on to
+            // Kalimdor when this runs and the rider's current map is the wrong one
+            player->TeleportTo(MAP_VASHJIR, -4620.0f, 3850.0f, -15.0f, 5.95f);   // leaves the ship
             player->CastSpell(player, SPELL_DROWNED_SCREEN_EFFECT, true);
 
             // Erunak comes to the rescue (a private summon: seen by this rider only)
@@ -199,7 +205,21 @@ private:
                     erunak->m_Events.Schedule(2500, [erunak, playerGuid]()
                     {
                         if (Player* target = ObjectAccessor::GetPlayer(*erunak, playerGuid))
-                            erunak->Say(TEXT_ERUNAK_HOLD_ON, target);
+                        {
+                            // "Hold on, $r!": the client does not fill in $r for this line, so name the rider's race here
+                            BroadcastText const* bct = sObjectMgr->GetBroadcastText(TEXT_ERUNAK_HOLD_ON);
+                            ChrRacesEntry const* race = sChrRacesStore.LookupEntry(target->GetRace());
+                            if (bct && race && race->name)
+                            {
+                                std::string text = bct->GetText(target->GetSession()->GetSessionDbLocaleIndex(), target->GetGender());
+                                std::string::size_type const at = text.find("$r");
+                                if (at != std::string::npos)
+                                    text.replace(at, 2, race->name);
+                                erunak->Say(text, LANG_UNIVERSAL, target);
+                            }
+                            else
+                                erunak->Say(TEXT_ERUNAK_HOLD_ON, target);
+                        }
                     });
                 }
 
@@ -211,9 +231,9 @@ private:
 
                     player->RemoveAurasDueToSpell(SPELL_DROWNED_SCREEN_EFFECT);
                     if (alliance)   // the Vashj'ir Rescue Bunny's spot, beside Erunak (36915)
-                        player->TeleportTo(player->GetMapId(), -4458.93f, 3801.23f, -81.92f, 1.0f);
+                        player->TeleportTo(MAP_VASHJIR, -4458.93f, 3801.23f, -81.92f, 1.0f);
                     else            // beside Erunak (41618)
-                        player->TeleportTo(player->GetMapId(), -4609.82f, 3981.23f, -70.54f, 2.0f);
+                        player->TeleportTo(MAP_VASHJIR, -4609.82f, 3981.23f, -70.54f, 2.0f);
 
                     player->m_Events.Schedule(1500, [player, alliance]()
                     {
