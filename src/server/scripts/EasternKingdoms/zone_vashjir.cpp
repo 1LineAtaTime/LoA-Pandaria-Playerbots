@@ -297,13 +297,20 @@ private:
 
                     player->m_Events.Schedule(1500, [player, alliance, rescueGuid]()
                     {
-                        if (!StillInScene(player, alliance))
+                        // Erunak's own line-of-sight event can complete the quest first once the rider lands beside him;
+                        // the wake-up line still belongs to the scene then, only the credit is skipped
+                        uint32 const questId = alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE;
+                        QuestStatus const status = player->GetQuestStatus(questId);
+                        if (!player->IsInWorld() || !player->IsAlive() || (status != QUEST_STATUS_INCOMPLETE && status != QUEST_STATUS_COMPLETE))
                             return;
 
-                        // the quest objective: the event (14482) / the Submerge Bunny credit (25924), then the event
-                        if (!alliance)
-                            player->KilledMonsterCredit(NPC_SUBMERGE_BUNNY);
-                        player->AreaExploredOrEventHappens(alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE);
+                        if (status == QUEST_STATUS_INCOMPLETE)
+                        {
+                            // the quest objective: the event (14482) / the Submerge Bunny credit (25924), then the event
+                            if (!alliance)
+                                player->KilledMonsterCredit(NPC_SUBMERGE_BUNNY);
+                            player->AreaExploredOrEventHappens(questId);
+                        }
 
                         WakeLine(player, alliance, rescueGuid, 10);
                     });
