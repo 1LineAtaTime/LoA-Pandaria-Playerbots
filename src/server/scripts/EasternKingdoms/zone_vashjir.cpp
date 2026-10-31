@@ -205,7 +205,7 @@ private:
         rider->SendDirectMessage(&data);
     }
 
-    // "Relax, friend...": once the wake-up teleport has landed (the rider is beside Erunak), at most 3 s later. The line
+    // "Relax, friend...": once the wake-up teleport has landed (the rider is beside Erunak), at most 5 s later. The line
     // goes to the rider directly, so the speaker's position does not matter: Erunak beside the rider when the grid search
     // finds him, otherwise the rescue Erunak (the same character; the search missed him in most v40 rides right after
     // the teleport and the quest credit), so the line is never dropped.
@@ -221,12 +221,25 @@ private:
         }
 
         Creature* erunak = player->FindNearestCreature(alliance ? NPC_ERUNAK_ALLIANCE : NPC_ERUNAK_HORDE, 30.0f);
-        if (erunak)
+        // the client drops a monster say from a unit it has not been sent yet: right after the wake-up teleport Erunak's
+        // create block may still be on its way, so wait until the rider's client has him (at most 5 s in all)
+        if ((!erunak || !player->HaveAtClient(erunak)) && tries)
+        {
+            player->m_Events.Schedule(500, [player, alliance, rescueGuid, tries]() { WakeLine(player, alliance, rescueGuid, tries - 1); });
+            return;
+        }
+
+        Creature* speaker = erunak;
+        if (!speaker && !rescueGuid.IsEmpty())
+            speaker = ObjectAccessor::GetCreature(*player, rescueGuid);
+        TC_LOG_INFO("scripts", "Call of Duty: %s wake-up line from %s (%s at client), tries left %u",
+            player->GetName().c_str(), speaker ? speaker->GetName().c_str() : "nobody",
+            speaker && player->HaveAtClient(speaker) ? "known" : "not known", uint32(tries));
+        if (!speaker)
+            return;
+        if (speaker == erunak)
             erunak->SetFacingToObject(player);
-        else if (!rescueGuid.IsEmpty())
-            erunak = ObjectAccessor::GetCreature(*player, rescueGuid);
-        if (erunak)
-            SayToRider(erunak, TEXT_ERUNAK_RELAX, player);
+        SayToRider(speaker, TEXT_ERUNAK_RELAX, player);
     }
 
     static void StartScene(Player* player, ObjectGuid shipGuid, bool alliance)
@@ -292,7 +305,7 @@ private:
                             player->KilledMonsterCredit(NPC_SUBMERGE_BUNNY);
                         player->AreaExploredOrEventHappens(alliance ? QUEST_CALL_OF_DUTY_ALLIANCE : QUEST_CALL_OF_DUTY_HORDE);
 
-                        WakeLine(player, alliance, rescueGuid, 6);
+                        WakeLine(player, alliance, rescueGuid, 10);
                     });
                 });
             });
