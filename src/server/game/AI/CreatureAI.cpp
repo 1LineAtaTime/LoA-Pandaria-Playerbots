@@ -597,7 +597,11 @@ bool CreatureAI::UpdateVictim()
             AttackStart(victim);
         return me->GetVictim();
     }
-    else if (me->GetThreatManager().IsThreatListEmpty())
+    // A passive creature only evades once nobody is fighting it any more (AC/TC CreatureAI::UpdateVictim: passive and out of
+    // combat -> EVADE_REASON_NO_HOSTILES). Offline threat references still count: a scripted surrender that turns the creature
+    // passive and immune to players (Hogger 448 at 1 hp) puts its attackers offline, and counting only online references
+    // made it evade, heal to full and restart the fight instead of finishing its script.
+    else if (me->GetThreatManager().IsThreatListEmpty(true))
     {
         EnterEvadeMode();
         return false;
