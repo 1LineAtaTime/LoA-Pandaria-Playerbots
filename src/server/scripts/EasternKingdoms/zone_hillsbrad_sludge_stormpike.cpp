@@ -40,6 +40,7 @@
 #include "TemporarySummon.h"
 #include "SpellScript.h"
 #include "DBCStores.h"
+#include "SpellMgr.h"
 
 namespace
 {
@@ -203,6 +204,75 @@ protected:
         me->GetMotionMaster()->MoveSmoothPath(pointId, path.data(), path.size(), false, true);
     }
 
+    // Flies the camera from where it is along one curve that rounds off the corners of the given points (a clamped uniform cubic
+    // B-spline: it starts here, ends on the last point and passes inside the others), sent as points `step` yards apart. The
+    // client runs a smooth spline at an even pace per segment and turns the camera along it, so a spline through a few far-apart,
+    // unevenly spaced points speeds up and slows down at every point where the spacing changes and swings round each corner;
+    // evenly spaced points on a curve without corners fly at one speed and turn steadily.
+    void FlyCurve(uint32 pointId, std::initializer_list<Position> corners, float step)
+    {
+        Position const here = me->GetPosition();
+        std::vector<Position> controls(3, here);
+        controls.insert(controls.end(), corners.begin(), corners.end());
+        Position const last = controls.back();
+        controls.push_back(last);
+        controls.push_back(last);
+
+        uint32 const subSteps = 16;
+        std::vector<Position> dense;
+        dense.push_back(here);
+        for (size_t i = 0; i + 3 < controls.size(); ++i)
+        {
+            Position const& c0 = controls[i];
+            Position const& c1 = controls[i + 1];
+            Position const& c2 = controls[i + 2];
+            Position const& c3 = controls[i + 3];
+            for (uint32 k = 1; k <= subSteps; ++k)
+            {
+                float t = float(k) / subSteps;
+                float b0 = (1.0f - t) * (1.0f - t) * (1.0f - t) / 6.0f;
+                float b1 = (3.0f * t * t * t - 6.0f * t * t + 4.0f) / 6.0f;
+                float b2 = (-3.0f * t * t * t + 3.0f * t * t + 3.0f * t + 1.0f) / 6.0f;
+                float b3 = t * t * t / 6.0f;
+                dense.emplace_back(
+                    b0 * c0.GetPositionX() + b1 * c1.GetPositionX() + b2 * c2.GetPositionX() + b3 * c3.GetPositionX(),
+                    b0 * c0.GetPositionY() + b1 * c1.GetPositionY() + b2 * c2.GetPositionY() + b3 * c3.GetPositionY(),
+                    b0 * c0.GetPositionZ() + b1 * c1.GetPositionZ() + b2 * c2.GetPositionZ() + b3 * c3.GetPositionZ());
+            }
+        }
+
+        float length = 0.0f;
+        for (size_t i = 0; i + 1 < dense.size(); ++i)
+            length += dense[i].GetExactDist(dense[i + 1]);
+
+        size_t const count = std::max<size_t>(1, size_t(std::lround(length / step)));
+        float const spacing = length / count;
+
+        std::vector<Position> path;
+        path.push_back(here);
+        float walked = 0.0f;
+        float next = spacing;
+        for (size_t i = 0; i + 1 < dense.size(); ++i)
+        {
+            Position const& a = dense[i];
+            Position const& b = dense[i + 1];
+            float segment = a.GetExactDist(b);
+            while (segment > 0.0f && walked + segment >= next && path.size() < count)
+            {
+                float f = (next - walked) / segment;
+                path.emplace_back(a.GetPositionX() + (b.GetPositionX() - a.GetPositionX()) * f,
+                    a.GetPositionY() + (b.GetPositionY() - a.GetPositionY()) * f,
+                    a.GetPositionZ() + (b.GetPositionZ() - a.GetPositionZ()) * f);
+                next += spacing;
+            }
+            walked += segment;
+        }
+        path.push_back(last);
+
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(pointId, path.data(), path.size(), false, true);
+    }
+
     void FaceTo(float x, float y)
     {
         me->SetFacingTo(me->GetAngle(x, y));
@@ -236,8 +306,14 @@ protected:
         _actorGUIDs.clear();
     }
 
-    // Lets the player out and casts the end spell once getting off is over: from PassengerBoarded the teleport would run
-    // before the exit's jump, which would carry the player back to the camera (as in What Tomorrow Brings).
+    // Lets the player out, then casts the end spell (a teleport and the quest credit) once getting off is over. The client only
+    // gives the player back their own view once it has played the exit's jump: a teleport sent in the same tick (the end spell
+    // cast on the player still in the seat: Player::TeleportTo exits the vehicle and teleports at once) cut the jump off and
+    // left the view stuck at the camera's last spot. From PassengerBoarded the teleport would run before the jump, which would
+    // carry the player back to the camera (as in What Tomorrow Brings). Until the teleport the player hovers where the camera
+    // let go (gravity off; getting off gives gravity back, and the player fell until the teleport came). Not rooted: rooting
+    // stops the exit's jump with a stop spline in the same tick, just like the teleport. If the end spell fails, the player is
+    // sent to its spot directly rather than dropped. A player who got out early is not held.
     void Finish()
     {
         if (_done)
@@ -249,13 +325,17 @@ protected:
 
         if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
         {
-            if (player->GetVehicleBase() == me)
+            bool const hover = player->GetVehicleBase() == me;
+            if (hover)
+            {
                 player->ExitVehicle();
+                player->SetDisableGravity(true);
+            }
 
             uint32 questId = _questId;
             uint32 endSpellId = _endSpellId;
             ReturnHook hook = _returnHook;
-            player->m_Events.AddLambdaEventAtOffset([player, questId, endSpellId, hook]()
+            player->m_Events.AddLambdaEventAtOffset([player, questId, endSpellId, hook, hover]()
             {
                 if (!player->IsInWorld())
                     return;
@@ -263,12 +343,27 @@ protected:
                 if (!player->GetVehicle())
                     player->CastSpell(player, endSpellId, true);
 
+                if (hover && !player->GetVehicle() && !player->IsBeingTeleported())
+                    if (SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(endSpellId, EFFECT_0))
+                        if (dest->target_mapId == player->GetMapId())
+                            player->NearTeleportTo(dest->target_X, dest->target_Y, dest->target_Z, dest->target_Orientation);
+
                 // The end spell's QUEST_COMPLETE, done directly if the spell could not hit (still on a vehicle, spell failed)
                 if (player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
                     player->AreaExploredOrEventHappens(questId);
 
                 if (hook)
                     hook(player);
+
+                // Once set down: a teleport cast in the player's own update only goes out at the end of it
+                if (hover)
+                    player->m_Events.AddLambdaEventAtOffset([player]()
+                    {
+                        if (!player->IsInWorld())
+                            return;
+
+                        player->SetDisableGravity(false);
+                    }, 100);
             }, 300);
         }
 
@@ -318,11 +413,10 @@ enum NoOneHereGetsOutAlive
 
     TALK_SLUDGE_CAMERA_TROUBLE                  = 0,
 
-    POINT_SLUDGE_TOUR                           = 1,
-    POINT_SLUDGE_BACK                           = 2,
+    POINT_SLUDGE_RISE                           = 1,
+    POINT_SLUDGE_TOUR                           = 2,
 
     EVENT_SLUDGE_TOUR                           = EVENT_SCENE_FIRST,
-    EVENT_SLUDGE_BACK,
     EVENT_SLUDGE_END
 };
 
@@ -348,10 +442,20 @@ struct npc_hillsbrad_warden_stillwater_sludge : public ScriptedAI
 // Summoned in front of Stillwater (spell_target_position of 89144) with the player in it and phase 326 "The Sludge Fields"
 // (Sludge Field Camera). "There's trouble at the Sludge Fields...", then the camera flies once around the fields, over the
 // infected laborers and the guards' barricades, and comes back to Stillwater; Teleport to Sludge Fields Lab sets the player
-// down in front of him and completes the quest. The path is ours: each leg keeps 9 yd or more above the ground and the silos.
+// down in front of him and completes the quest. The path is ours: the camera lifts off at once (the summon spot is on the
+// ground, a little below the ground around it, so the view started under it), then flies one curve round the fields and back,
+// 9 yd or more above the ground and the silos (checked against the extracted maps and vmaps), arriving facing Stillwater.
 struct npc_hillsbrad_sludge_fields_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_sludge_fields_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_NO_ONE_HERE_GETS_OUT_ALIVE, SPELL_TELEPORT_TO_SLUDGE_FIELDS_LAB, 1.5f) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        npc_hillsbrad_scene_camera::IsSummonedBy(summoner);
+
+        // 7 yd up, leaning towards the fields, as the player is seated
+        FlyPath(POINT_SLUDGE_RISE, { { -500.35f, 82.8f, 63.0f } });
+    }
 
     void Start(Player* player) override
     {
@@ -364,23 +468,20 @@ struct npc_hillsbrad_sludge_fields_camera : public npc_hillsbrad_scene_camera
         switch (eventId)
         {
             case EVENT_SLUDGE_TOUR:
-                FlyPath(POINT_SLUDGE_TOUR,
+                // Corners the curve rounds off; it ends on Stillwater's spot
+                FlyCurve(POINT_SLUDGE_TOUR,
                 {
-                    { -495.0f,   60.0f, 72.0f },
-                    { -475.0f,   10.0f, 88.0f },
-                    { -465.0f,  -50.0f, 85.0f },
-                    { -450.0f, -100.0f, 96.0f },
-                    { -500.0f, -140.0f, 90.0f },
-                    { -560.0f,  -80.0f, 85.0f },
-                    { -560.0f,   20.0f, 80.0f }
-                });
-                break;
-            case EVENT_SLUDGE_BACK:
-                FlyPath(POINT_SLUDGE_BACK,
-                {
-                    { -520.0f, 60.0f, 72.0f },
-                    { -503.0f, 68.0f, 64.0f }
-                });
+                    { -495.0f,   60.0f,  72.0f },
+                    { -475.0f,   10.0f,  89.0f },
+                    { -462.0f,  -50.0f,  94.0f },
+                    { -444.0f, -112.0f, 101.0f },
+                    { -503.0f, -152.0f,  97.0f },
+                    { -568.0f,  -84.0f,  93.0f },
+                    { -564.0f,   22.0f,  82.0f },
+                    { -530.0f,   30.0f,  76.0f },
+                    { -508.0f,   45.0f,  69.0f },
+                    { -503.0f,   68.0f,  64.0f }
+                }, 6.0f);
                 break;
             case EVENT_SLUDGE_END:
                 Finish();
@@ -392,19 +493,12 @@ struct npc_hillsbrad_sludge_fields_camera : public npc_hillsbrad_scene_camera
 
     void Arrived(uint32 pointId, Player* /*player*/) override
     {
-        switch (pointId)
-        {
-            case POINT_SLUDGE_TOUR:
-                _events.ScheduleEvent(EVENT_SLUDGE_BACK, 500ms);
-                break;
-            case POINT_SLUDGE_BACK:
-                // Stillwater's spot
-                FaceTo(-500.719f, 90.8021f);
-                _events.ScheduleEvent(EVENT_SLUDGE_END, 3s);
-                break;
-            default:
-                break;
-        }
+        if (pointId != POINT_SLUDGE_TOUR)
+            return;
+
+        // Stillwater's spot: the curve arrives within a few degrees of facing him
+        FaceTo(-500.719f, 90.8021f);
+        _events.ScheduleEvent(EVENT_SLUDGE_END, 3s);
     }
 };
 
