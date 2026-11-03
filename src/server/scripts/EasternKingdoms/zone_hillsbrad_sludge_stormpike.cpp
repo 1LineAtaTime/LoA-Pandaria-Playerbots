@@ -87,10 +87,11 @@ bool ReplayScene(Player* player, uint32 questId, uint32 cameraEntry, uint32 summ
     return true;
 }
 
-// The cameras of the five scenes. Summoned on the player by the scene's summon spell, whose ride aura seats the player (hidden,
-// with the scene's phase). The camera waits for its rider, plays the scene, then lets the player out and casts the end spell
-// on the player: it puts the player back at the quest giver and completes the quest. Getting out early ends the scene the same
-// way (the end spells are named Cancel Cinematic), so the quest is never left open by a scene that went wrong.
+// The cameras of the five scenes. Summoned on the player by the scene's summon spell, whose ride aura seats the player (hidden:
+// spell_hillsbrad_scene_camera_ride; with the scene's phase). The camera waits for its rider, plays the scene, then lets the
+// player out and casts the end spell on the player: it puts the player back at the quest giver and completes the quest. Getting
+// out early ends the scene the same way (the end spells are named Cancel Cinematic), so the quest is never left open by a scene
+// that went wrong.
 class npc_hillsbrad_scene_camera : public VehicleAI
 {
 public:
@@ -171,9 +172,11 @@ public:
                     _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
                 else
                 {
-                    // The player never got in: complete the quest anyway (ours), the chain must not stop here
+                    // The player never got in: complete the quest anyway (ours), the chain must not stop here. The ride
+                    // aura's hiding and phase may still be on the player without the seat: take them off
                     _done = true;
                     DespawnActors();
+                    RemoveRideAura(player);
                     if (player->GetQuestStatus(_questId) == QUEST_STATUS_INCOMPLETE)
                         player->AreaExploredOrEventHappens(_questId);
                     me->DespawnOrUnsummon();
@@ -296,6 +299,14 @@ protected:
     Creature* GetActor(ObjectGuid const& guid) const
     {
         return ObjectAccessor::GetCreature(*me, guid);
+    }
+
+    // The ride aura the summon spell seats the player with (its effect value), on the player
+    void RemoveRideAura(Player* player)
+    {
+        if (SpellInfo const* summon = sSpellMgr->GetSpellInfo(me->GetUInt32Value(UNIT_FIELD_CREATED_BY_SPELL)))
+            if (uint32 ride = uint32(summon->Effects[EFFECT_0].CalcValue()))
+                player->RemoveAurasDueToSpell(ride);
     }
 
     void DespawnActors()
@@ -1937,11 +1948,64 @@ class spell_hillsbrad_machine_quest_giver : public AuraScript
     }
 };
 
+// 89149 - Sludge Field Camera, 91354 - Aid of the Frostwolf Camera, 90714 - Tarren Mill Camera, 91609 - Stormpike Apocalypse Camera
+// The ride auras of the four cameras also make the rider invisible (quest invisibility 4). In this core an invisible unit only
+// sees the units that detect its invisibility (WorldObject::CanDetectInvisibilityOf), and nothing in the world detects type 4, so
+// the rider saw no creature at all during the tour, the scene's own actors included (the scene phase has nothing to do with
+// it: unphased spawns stay in sight with phase 169). The invisibility is not applied; the rider is hidden from everyone else
+// the server-side way instead (as a GM is), which leaves the rider's own sight alone. Ours: as with the invisibility, other
+// players and creatures do not see the rider; unlike it, group members do not either.
+class spell_hillsbrad_scene_camera_ride : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_scene_camera_ride);
+
+    void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsVisible())
+            return;
+
+        _hidden = true;
+        player->SetVisible(false);
+    }
+
+    // The phase comes after the hiding, and a phase change only refreshes what a visible player sees: without this the scene
+    // phase's own spawns only showed up once the camera had moved on
+    void AfterApplyPhase(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (_hidden)
+            GetTarget()->UpdateObjectVisibility();
+    }
+
+    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        PreventDefaultAction();
+
+        if (!_hidden)
+            return;
+
+        _hidden = false;
+        GetTarget()->SetVisible(true);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_scene_camera_ride::HandleApply, EFFECT_1, SPELL_AURA_MOD_INVISIBILITY, AURA_EFFECT_HANDLE_CHANGE_AMOUNT_SEND_FOR_CLIENT_MASK);
+        AfterEffectApply += AuraEffectApplyFn(spell_hillsbrad_scene_camera_ride::AfterApplyPhase, EFFECT_2, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_scene_camera_ride::HandleRemove, EFFECT_1, SPELL_AURA_MOD_INVISIBILITY, AURA_EFFECT_HANDLE_CHANGE_AMOUNT_SEND_FOR_CLIENT_MASK);
+    }
+
+    bool _hidden = false;
+};
+
 void AddSC_hillsbrad_sludge_stormpike()
 {
     new creature_script<npc_hillsbrad_machine_skeletal_steed>("npc_hillsbrad_machine_skeletal_steed");
     new creature_script<npc_hillsbrad_machine_visitor>("npc_hillsbrad_machine_visitor");
     new aura_script<spell_hillsbrad_machine_quest_giver>("spell_hillsbrad_machine_quest_giver");
+    new aura_script<spell_hillsbrad_scene_camera_ride>("spell_hillsbrad_scene_camera_ride");
     new spell_script<spell_hillsbrad_machine_summon_skeletal_steed>("spell_hillsbrad_machine_summon_skeletal_steed");
     new creature_script<npc_hillsbrad_scene_actor>("npc_hillsbrad_scene_actor");
     new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
