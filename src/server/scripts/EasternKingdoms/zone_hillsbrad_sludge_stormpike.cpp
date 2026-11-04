@@ -18,7 +18,7 @@
 /* Hillsbrad Foothills: the Sludge Fields and the Stormpike scenes
  *
  * No One Here Gets Out Alive (28192)   the camera tour of the Sludge Fields
- * Freedom for Lydon (28209)            Lydon and Johnny Awesome go with the player, up to A Blight Upon the Land
+ * Freedom for Lydon (28209)            Lydon and Johnny Awesome go with the player, up to Stillwater's head
  * Welcome to the Machine (28096)       the quest giver on the Skeletal Steed and his three visitors
  * A Blight Upon the Land (28237)       Lydon's sentence and Warden Stillwater's new form
  * Matters of Loyalty (28600)           Drek'Thar refuses to aid the Forsaken
@@ -577,14 +577,20 @@ Creature* GetSludgeFieldsCompanion(Player* player, uint32 entry)
     return nullptr;
 }
 
-// Both go with the player from Freedom for Lydon until A Blight Upon the Land is turned in. Do it for Twinkles runs beside
-// that chain and only Johnny ends it (both TDBs, Wowhead), and the farm's Johnny 47869 still offers it after A Blight Upon
-// the Land: Johnny also stays while it is in the log, whichever order the two are done in (ours).
+// Both go with the player from Freedom for Lydon until A Blight Upon the Land is turned in. Lydon leaves once Stillwater's
+// head is taken (the quest complete): then the static Lydon 47900 waits by Stillwater's spot to take it (phase 333; Wowhead
+// comment on 47900: "The other follows you around and does the fighting. Then this one reappears again after Stillwater is
+// killed"). Do it for Twinkles runs beside that chain and only Johnny ends it (both TDBs, Wowhead), and the farm's Johnny
+// 47869 still offers it after A Blight Upon the Land: Johnny also stays while it is in the log, whichever order the two are
+// done in (ours).
 bool WantsSludgeFieldsCompanion(Player* player, uint32 entry)
 {
-    if (player->GetQuestStatus(QUEST_FREEDOM_FOR_LYDON) == QUEST_STATUS_REWARDED
-        && player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_REWARDED)
-        return true;
+    if (player->GetQuestStatus(QUEST_FREEDOM_FOR_LYDON) == QUEST_STATUS_REWARDED)
+    {
+        QuestStatus blight = player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND);
+        if (blight != QUEST_STATUS_REWARDED && (entry != NPC_MASTER_APOTHECARY_LYDON || blight != QUEST_STATUS_COMPLETE))
+            return true;
+    }
 
     if (entry != NPC_JOHNNY_AWESOME)
         return false;
@@ -652,8 +658,8 @@ void RemoveSludgeFieldsCompanions(Unit* owner)
 } // namespace
 
 // 89292 - Sludge Field Summon Controller
-// Lydon and Johnny Awesome go with the player from Freedom for Lydon until A Blight Upon the Land is turned in
-// (warcraft.wiki.gg, Freedom for Lydon: "Upon completion, Lydon and Johnny accompany the player"; Wowhead comments on
+// Lydon and Johnny Awesome go with the player from Freedom for Lydon until A Blight Upon the Land is turned in, Lydon only
+// until Stillwater's head is taken (warcraft.wiki.gg, Freedom for Lydon: "Upon completion, Lydon and Johnny accompany the player"; Wowhead comments on
 // Protocol and A Blight Upon the Land), Johnny also while Do it for Twinkles is in the log (WantsSludgeFieldsCompanion).
 // The controller is the player's aura in the Sludge Fields (its casting requirements: area group 2831 = area 286; the
 // quest bounds are spell_area's). Summon Lydon and Summon Johnny (89295, 89296) make them the player's guardians
@@ -845,7 +851,8 @@ private:
     bool _held;
 };
 
-// 47900 - Master Apothecary Lydon (in his cage)
+// 47900 - Master Apothecary Lydon (in his cage until Protocol is taken, phase 196; by Stillwater's spot once his head is
+// taken, phase 333)
 // Turning in Freedom for Lydon gives the player the Sludge Field Summon Controller (spell_area, re-checked as the quest is
 // rewarded), and Johnny begs to be taken along (warcraft.wiki.gg, Freedom for Lydon: "You're not leaving me to rot in this
 // place! Take me with you!"; said by the companion, as the farm's Johnny 47869 stays where he is). He also ends A Blight Upon
@@ -993,7 +1000,7 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
     void JustDied(Unit* /*killer*/) override
     {
         // He respawns friendly, for the next player's intro (Respawn keeps the faction). The companions stay with the player
-        // until A Blight Upon the Land is turned in (Sludge Field Summon Controller).
+        // until his head is taken; then Lydon leaves for the static Lydon 47900 here (Sludge Field Summon Controller).
         _introStarted = false;
         _events.Reset();
         me->SetFaction(me->GetCreatureTemplate()->faction);
