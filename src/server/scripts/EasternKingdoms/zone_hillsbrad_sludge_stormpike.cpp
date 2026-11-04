@@ -18,6 +18,7 @@
 /* Hillsbrad Foothills: the Sludge Fields and the Stormpike scenes
  *
  * No One Here Gets Out Alive (28192)   the camera tour of the Sludge Fields
+ * Freedom for Lydon (28209)            Lydon and Johnny Awesome go with the player, up to A Blight Upon the Land
  * Welcome to the Machine (28096)       the quest giver on the Skeletal Steed and his three visitors
  * A Blight Upon the Land (28237)       Lydon's sentence and Warden Stillwater's new form
  * Matters of Loyalty (28600)           Drek'Thar refuses to aid the Forsaken
@@ -514,15 +515,376 @@ struct npc_hillsbrad_sludge_fields_camera : public npc_hillsbrad_scene_camera
 };
 
 /*######
+## Lydon and Johnny Awesome go with the player (Freedom for Lydon to A Blight Upon the Land)
+######*/
+
+enum SludgeFieldsCompanions
+{
+    QUEST_FREEDOM_FOR_LYDON                     = 28209,
+    QUEST_DO_IT_FOR_TWINKLES                    = 28231,
+    QUEST_A_BLIGHT_UPON_THE_LAND                = 28237,
+
+    NPC_MASTER_APOTHECARY_LYDON                 = 48020,
+    NPC_JOHNNY_AWESOME                          = 48021,
+    NPC_TWINKLES                                = 47870,
+
+    SPELL_SLUDGE_FIELD_SUMMON_CONTROLLER        = 89292,
+    SPELL_SUMMON_LYDON                          = 89295,
+    SPELL_SUMMON_JOHNNY                         = 89296,
+
+    // Johnny Awesome 48021
+    TALK_JOHNNY_TAKE_ME_WITH_YOU                = 0,  // 48285
+    TALK_JOHNNY_TWINKLES                        = 1,  // 48283
+    TALK_JOHNNY_THEY_WILL_PAY                   = 2,  // 48284
+
+    // Warden Stillwater's intro (A Blight Upon the Land) holds the companions beside the player and lets them go again
+    ACTION_COMPANION_HOLD                       = 1,
+    ACTION_COMPANION_RELEASE                    = 2,
+
+    EVENT_COMPANION_CHECK                       = 1,
+    EVENT_COMPANION_THEY_WILL_PAY               = 2,
+
+    SLUDGE_FIELDS_COMPANION_COUNT               = 2
+};
+
+uint32 const SludgeFieldsCompanionEntries[SLUDGE_FIELDS_COMPANION_COUNT] = { NPC_MASTER_APOTHECARY_LYDON, NPC_JOHNNY_AWESOME };
+uint32 const SludgeFieldsCompanionSummonSpells[SLUDGE_FIELDS_COMPANION_COUNT] = { SPELL_SUMMON_LYDON, SPELL_SUMMON_JOHNNY };
+
+// Lydon on the player's left, Johnny on the right (ours): the two summon spells share one destination, so both would otherwise
+// take the same follow angle and stand inside each other with overlapping quest clicks (as the Battlefront trio in Silverpine)
+float const SludgeFieldsCompanionFollowAngles[SLUDGE_FIELDS_COMPANION_COUNT] = { float(M_PI / 2), float(M_PI * 3 / 2) };
+
+// How close Johnny has to come to Twinkles' grave to see her (ours)
+float const TwinklesSightRange = 12.0f;
+
+namespace
+{
+
+// An unsummoned companion stays in the owner's list until the map removes it (TempSummon::UnSummon only queues it)
+bool IsLiveSludgeFieldsCompanion(Creature* companion, Player* player)
+{
+    return companion->IsInWorld() && !companion->IsDestroyedObject() && companion->IsAlive() && companion->IsInMap(player);
+}
+
+// The player's own living companion of an entry (Lydon and Johnny are the player's guardians, not personal summons)
+Creature* GetSludgeFieldsCompanion(Player* player, uint32 entry)
+{
+    std::list<Creature*> companions;
+    player->GetAllMinionsByEntry(companions, entry);
+    for (Creature* companion : companions)
+        if (IsLiveSludgeFieldsCompanion(companion, player))
+            return companion;
+    return nullptr;
+}
+
+// Both go with the player from Freedom for Lydon until A Blight Upon the Land is turned in. Do it for Twinkles runs beside
+// that chain and only Johnny ends it (both TDBs, Wowhead), and the farm's Johnny 47869 still offers it after A Blight Upon
+// the Land: Johnny also stays while it is in the log, whichever order the two are done in (ours).
+bool WantsSludgeFieldsCompanion(Player* player, uint32 entry)
+{
+    if (player->GetQuestStatus(QUEST_FREEDOM_FOR_LYDON) == QUEST_STATUS_REWARDED
+        && player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_REWARDED)
+        return true;
+
+    if (entry != NPC_JOHNNY_AWESOME)
+        return false;
+
+    QuestStatus twinkles = player->GetQuestStatus(QUEST_DO_IT_FOR_TWINKLES);
+    return twinkles == QUEST_STATUS_INCOMPLETE || twinkles == QUEST_STATUS_COMPLETE;
+}
+
+// One of each that the player's quests call for: a companion that is dead or was left far behind is replaced (after a login,
+// a death, a flight or a teleport the player has none), one that is no longer called for leaves
+void SummonSludgeFieldsCompanions(Player* player)
+{
+    if (!player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->GetVehicle())
+        return;
+
+    for (uint8 i = 0; i < SLUDGE_FIELDS_COMPANION_COUNT; ++i)
+    {
+        bool const wanted = WantsSludgeFieldsCompanion(player, SludgeFieldsCompanionEntries[i]);
+
+        std::list<Creature*> companions;
+        player->GetAllMinionsByEntry(companions, SludgeFieldsCompanionEntries[i]);
+
+        bool found = false;
+        for (Creature* companion : companions)
+        {
+            if (companion->IsDestroyedObject())
+                continue;
+            if (wanted && !found && IsLiveSludgeFieldsCompanion(companion, player) && companion->IsWithinDist(player, 100.0f))
+                found = true;
+            else
+                companion->ToTempSummon()->UnSummon();
+        }
+
+        if (!wanted)
+            player->RemoveAurasDueToSpell(SludgeFieldsCompanionSummonSpells[i]);
+
+        if (found || !wanted)
+            continue;
+
+        player->CastSpell(player, SludgeFieldsCompanionSummonSpells[i], true);
+
+        if (Creature* companion = GetSludgeFieldsCompanion(player, SludgeFieldsCompanionEntries[i]))
+        {
+            if (companion->HasUnitTypeMask(UNIT_MASK_MINION))
+                static_cast<Minion*>(companion)->SetFollowAngle(SludgeFieldsCompanionFollowAngles[i]);
+
+            float x, y, z;
+            player->GetClosePoint(x, y, z, companion->GetObjectSize(), PET_FOLLOW_DIST, SludgeFieldsCompanionFollowAngles[i]);
+            companion->NearTeleportTo(x, y, z, player->GetOrientation());
+            companion->GetMotionMaster()->Clear();
+            companion->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, SludgeFieldsCompanionFollowAngles[i]);
+        }
+    }
+}
+
+void RemoveSludgeFieldsCompanions(Unit* owner)
+{
+    for (uint8 i = 0; i < SLUDGE_FIELDS_COMPANION_COUNT; ++i)
+    {
+        owner->RemoveAllMinionsByEntry(SludgeFieldsCompanionEntries[i]);
+        owner->RemoveAurasDueToSpell(SludgeFieldsCompanionSummonSpells[i]);
+    }
+}
+
+} // namespace
+
+// 89292 - Sludge Field Summon Controller
+// Lydon and Johnny Awesome go with the player from Freedom for Lydon until A Blight Upon the Land is turned in
+// (warcraft.wiki.gg, Freedom for Lydon: "Upon completion, Lydon and Johnny accompany the player"; Wowhead comments on
+// Protocol and A Blight Upon the Land), Johnny also while Do it for Twinkles is in the log (WantsSludgeFieldsCompanion).
+// The controller is the player's aura in the Sludge Fields (its casting requirements: area group 2831 = area 286; the
+// quest bounds are spell_area's). Summon Lydon and Summon Johnny (89295, 89296) make them the player's guardians
+// (SummonProperties 3045: ally, without the personal-spawn flag, so other players see them too) and they follow and fight
+// beside the player. Its periodic trigger, Lydon/Johnny Broadcast (89293, every 60 s), has no known effect; instead the
+// aura checks every 5 s for a missing companion (ours, as Battlefront Summon Master Aura in Silverpine). They leave with
+// the aura. Its first effect's amount records that Johnny has mourned Twinkles, so he does it once per aura, not per summon.
+class spell_hillsbrad_sludge_field_summon_controller : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_sludge_field_summon_controller);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_LYDON, SPELL_SUMMON_JOHNNY });
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        // At login the aura comes back before the player is in the world: the first periodic tick summons them then
+        if (Player* player = GetTarget()->ToPlayer())
+            SummonSludgeFieldsCompanions(player);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        RemoveSludgeFieldsCompanions(GetTarget());
+    }
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        // spell_area takes the aura away when the quests change too; this is the fallback
+        if (!WantsSludgeFieldsCompanion(player, NPC_MASTER_APOTHECARY_LYDON)
+            && !WantsSludgeFieldsCompanion(player, NPC_JOHNNY_AWESOME))
+        {
+            Remove();
+            return;
+        }
+
+        SummonSludgeFieldsCompanions(player);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_sludge_field_summon_controller::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_sludge_field_summon_controller::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_hillsbrad_sludge_field_summon_controller::CalcPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_hillsbrad_sludge_field_summon_controller::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+};
+
+// 48020 - Master Apothecary Lydon, 48021 - Johnny Awesome (the player's companions)
+// They follow the player, help in every fight the player is in, and start and end their quests (Protocol, Burnside Must Fall, A
+// Blight Upon the Land; Do it for Twinkles). Johnny brought to Twinkles' grave: "TWINKLES! TWINKLES! NOOOOO!!" (with his scream,
+// its sound), then "I won't let them get away with this, Twinkles. They will pay! They will all pay!" (Wowhead comments on Do it
+// for Twinkles; the spells Johnny & Twinkles 89364/89365 send him the trigger on retail, the range is ours). No combat spells
+// are known for either.
+struct npc_hillsbrad_sludge_fields_companion : public ScriptedAI
+{
+    npc_hillsbrad_sludge_fields_companion(Creature* creature) : ScriptedAI(creature), _held(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _ownerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_DEFENSIVE);
+        me->GetMotionMaster()->MoveFollow(summoner, PET_FOLLOW_DIST, me->GetFollowAngle());
+        _events.ScheduleEvent(EVENT_COMPANION_CHECK, 1s);
+    }
+
+    void Reset() override
+    {
+        me->SetReactState(_held ? REACT_PASSIVE : REACT_DEFENSIVE);
+    }
+
+    void DoAction(int32 action) override
+    {
+        switch (action)
+        {
+            case ACTION_COMPANION_HOLD:
+                _held = true;
+                me->CombatStop(true);
+                me->SetReactState(REACT_PASSIVE);
+                me->GetMotionMaster()->Clear();
+                break;
+            case ACTION_COMPANION_RELEASE:
+                if (!_held)
+                    break;
+                _held = false;
+                me->SetReactState(REACT_DEFENSIVE);
+                if (Player* owner = GetOwner())
+                {
+                    me->GetMotionMaster()->Clear();
+                    me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void OwnerAttackedBy(Unit* attacker) override
+    {
+        HelpOwner(attacker);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_COMPANION_CHECK:
+                    CheckTwinkles();
+                    _events.ScheduleEvent(EVENT_COMPANION_CHECK, 1s);
+                    break;
+                case EVENT_COMPANION_THEY_WILL_PAY:
+                    Talk(TALK_JOHNNY_THEY_WILL_PAY, GetOwner());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (_held)
+            return;
+
+        // Guardians hear OwnerAttackedBy but not OwnerAttacked (only the pet does): join the player's own attacks from here
+        if (!me->GetVictim())
+            if (Player* owner = GetOwner())
+            {
+                if (Unit* target = owner->GetVictim())
+                    HelpOwner(target);
+                else if (!owner->getAttackers().empty())
+                    HelpOwner(*owner->getAttackers().begin());
+            }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    Player* GetOwner() const
+    {
+        return ObjectAccessor::GetPlayer(*me, _ownerGUID);
+    }
+
+    void HelpOwner(Unit* target)
+    {
+        if (!_held && target && !me->GetVictim() && me->IsValidAttackTarget(target))
+            AttackStart(target);
+    }
+
+    void CheckTwinkles()
+    {
+        if (me->GetEntry() != NPC_JOHNNY_AWESOME || _held || me->IsInCombat())
+            return;
+
+        Player* owner = GetOwner();
+        if (!owner || owner->GetQuestStatus(QUEST_DO_IT_FOR_TWINKLES) == QUEST_STATUS_REWARDED)
+            return;
+
+        // Once per controller aura (its amount), not once per summon: a re-summoned Johnny does not mourn her again
+        AuraEffect* controller = owner->GetAuraEffect(SPELL_SLUDGE_FIELD_SUMMON_CONTROLLER, EFFECT_0);
+        if (!controller || controller->GetAmount() || !me->FindNearestCreature(NPC_TWINKLES, TwinklesSightRange))
+            return;
+
+        controller->SetAmount(1);
+        Talk(TALK_JOHNNY_TWINKLES, owner);
+        _events.ScheduleEvent(EVENT_COMPANION_THEY_WILL_PAY, 4s);
+    }
+
+    EventMap _events;
+    ObjectGuid _ownerGUID;
+    bool _held;
+};
+
+// 47900 - Master Apothecary Lydon (in his cage)
+// Turning in Freedom for Lydon gives the player the Sludge Field Summon Controller (spell_area, re-checked as the quest is
+// rewarded), and Johnny begs to be taken along (warcraft.wiki.gg, Freedom for Lydon: "You're not leaving me to rot in this
+// place! Take me with you!"; said by the companion, as the farm's Johnny 47869 stays where he is). He also ends A Blight Upon
+// the Land, after which only a Johnny still owed Do it for Twinkles stays.
+struct npc_hillsbrad_caged_lydon : public ScriptedAI
+{
+    npc_hillsbrad_caged_lydon(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
+    {
+        if (!player->HasAura(SPELL_SLUDGE_FIELD_SUMMON_CONTROLLER))
+            return;
+
+        // A Blight Upon the Land turned in with Do it for Twinkles still in the log: Lydon leaves now, Johnny stays
+        if (quest->GetQuestId() == QUEST_A_BLIGHT_UPON_THE_LAND)
+        {
+            SummonSludgeFieldsCompanions(player);
+            return;
+        }
+
+        if (quest->GetQuestId() != QUEST_FREEDOM_FOR_LYDON)
+            return;
+
+        SummonSludgeFieldsCompanions(player);
+        if (Creature* johnny = GetSludgeFieldsCompanion(player, NPC_JOHNNY_AWESOME))
+            johnny->AI()->Talk(TALK_JOHNNY_TAKE_ME_WITH_YOU, player);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
+/*######
 ## A Blight Upon the Land (28237)
 ######*/
 
 enum ABlightUponTheLand
 {
-    QUEST_A_BLIGHT_UPON_THE_LAND                = 28237,
-
-    NPC_MASTER_APOTHECARY_LYDON                 = 48020,
-    NPC_JOHNNY_AWESOME                          = 48021,
     NPC_FLESH_SHAPER_ARNAULD                    = 48081,
     NPC_SLUDGE_GUARD                            = 48083,
 
@@ -560,15 +922,16 @@ float const StillwaterIntroLeaveRange = 60.0f;
 
 // 48080 - Warden Stillwater
 // Phase 332 shows him with Flesh-Shaper Arnauld and his Sludge Guards to players on A Blight Upon the Land. When one comes
-// near, Lydon and Johnny Awesome (whom Stillwater calls Jenny) stand beside the player, Lydon passes the sentence and
-// Stillwater's people attack (the dialogue in the order of the wiki's notes; Lydon and Johnny are temporary copies here, as mop
-// keeps the freed Lydon as a static quest giver instead of the player's follower). The blow that would kill Stillwater makes
+// near, the player's companions Lydon and Johnny Awesome (whom Stillwater calls Jenny) step up beside the player, Lydon passes
+// the sentence and Stillwater's people attack, and the companions fight with the player (the dialogue in the order of the
+// wiki's notes; where they stand is ours). The blow that would kill Stillwater makes
 // him yell "Stand before my new form and tremble!" and take his new form (48103's model, and its health: HealthModifier 10
 // against his 3 in the Cataclysm Classic TDB); SMASH! then throws the players back and kills his followers (its instakill
 // effect, given the followers by conditions). He drops his head as before (his own loot).
 struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
 {
-    npc_hillsbrad_warden_stillwater_blight(Creature* creature) : ScriptedAI(creature), _introStarted(false), _newForm(false), _baseMaxHealth(0) { }
+    npc_hillsbrad_warden_stillwater_blight(Creature* creature) : ScriptedAI(creature), _introStarted(false), _newForm(false),
+        _baseMaxHealth(0), _introCheckTimer(1000) { }
 
     void Reset() override
     {
@@ -589,22 +952,15 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
     {
         ScriptedAI::MoveInLineOfSight(who);
 
-        if (_introStarted || me->IsInCombat() || !me->IsAlive())
-            return;
-
-        Player* player = who->ToPlayer();
-        if (!player || !player->IsAlive() || player->IsGameMaster() || !me->IsWithinDistInMap(player, StillwaterIntroRange)
-            || player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_INCOMPLETE || !me->IsWithinLOSInMap(player))
-            return;
-
-        StartIntro(player);
+        if (Player* player = who->ToPlayer())
+            TryStartIntro(player);
     }
 
     void EnterEvadeMode(EvadeReason why) override
     {
         _introStarted = false;
         me->SetFaction(me->GetCreatureTemplate()->faction);
-        DespawnWitnesses();
+        ReleaseWitnesses();
         ScriptedAI::EnterEvadeMode(why);
     }
 
@@ -636,17 +992,12 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
 
     void JustDied(Unit* /*killer*/) override
     {
-        // The AI does not update once he is dead: the witnesses go by themselves. He respawns friendly, for the next player's
-        // intro (Respawn keeps the faction).
+        // He respawns friendly, for the next player's intro (Respawn keeps the faction). The companions stay with the player
+        // until A Blight Upon the Land is turned in (Sludge Field Summon Controller).
         _introStarted = false;
         _events.Reset();
         me->SetFaction(me->GetCreatureTemplate()->faction);
-        if (Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID))
-            lydon->DespawnOrUnsummon(10000);
-        if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
-            johnny->DespawnOrUnsummon(10000);
-        _lydonGUID.Clear();
-        _johnnyGUID.Clear();
+        ReleaseWitnesses();
     }
 
     void UpdateAI(uint32 diff) override
@@ -655,6 +1006,22 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
 
         if (!me->IsInCombat())
         {
+            // A player standing still is not seen again: look for one here as well (e.g. once the controller brought Lydon back)
+            if (!_introStarted && me->IsAlive())
+            {
+                if (_introCheckTimer <= diff)
+                {
+                    _introCheckTimer = 1000;
+                    std::list<Player*> players;
+                    me->GetPlayerListInGrid(players, StillwaterIntroRange);
+                    for (Player* player : players)
+                        if (TryStartIntro(player))
+                            break;
+                }
+                else
+                    _introCheckTimer -= diff;
+            }
+
             while (uint32 eventId = _events.ExecuteEvent())
             {
                 if (eventId >= EVENT_BLIGHT_INTRO && eventId <= EVENT_BLIGHT_INTRO_LAST)
@@ -702,42 +1069,68 @@ struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
     }
 
 private:
+    bool TryStartIntro(Player* player)
+    {
+        if (_introStarted || me->IsInCombat() || !me->IsAlive())
+            return false;
+
+        if (!player->IsAlive() || player->IsGameMaster() || !me->IsWithinDistInMap(player, StillwaterIntroRange)
+            || player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_INCOMPLETE || !me->IsWithinLOSInMap(player))
+            return false;
+
+        StartIntro(player);
+        return _introStarted;
+    }
+
     void StartIntro(Player* player)
     {
+        // The player's own Lydon and Johnny (Sludge Field Summon Controller). Without Lydon there is no sentence: the intro waits
+        // until the controller has brought him back (every 5 s; UpdateAI looks for the player again every second). Not summoned
+        // from here: this can run inside a visibility update of the grid.
+        Creature* lydon = GetSludgeFieldsCompanion(player, NPC_MASTER_APOTHECARY_LYDON);
+        if (!lydon)
+            return;
+
         _introStarted = true;
         _playerGUID = player->GetGUID();
         me->GetMotionMaster()->Clear();
         me->StopMoving();
         me->SetFacingToObject(player);
 
-        // Lydon and Johnny stand to either side behind the player, facing Stillwater (ours)
+        // Lydon and Johnny step up to either side behind the player (ours)
         float angle = player->GetAngle(me);
-        float x, y, z;
-        player->GetNearPoint(player, x, y, z, 2.5f, angle + float(M_PI) * 0.7f);
-        if (Creature* lydon = me->SummonCreature(NPC_MASTER_APOTHECARY_LYDON, x, y, z, angle, TEMPSUMMON_MANUAL_DESPAWN))
-            SetUpWitness(lydon, _lydonGUID);
-        player->GetNearPoint(player, x, y, z, 2.5f, angle - float(M_PI) * 0.7f);
-        if (Creature* johnny = me->SummonCreature(NPC_JOHNNY_AWESOME, x, y, z, angle, TEMPSUMMON_MANUAL_DESPAWN))
-            SetUpWitness(johnny, _johnnyGUID);
+        HoldWitness(player, lydon, angle + float(M_PI) * 0.7f, _lydonGUID);
+        HoldWitness(player, GetSludgeFieldsCompanion(player, NPC_JOHNNY_AWESOME), angle - float(M_PI) * 0.7f, _johnnyGUID);
 
         _events.ScheduleEvent(EVENT_BLIGHT_INTRO, 1s);
     }
 
-    void SetUpWitness(Creature* witness, ObjectGuid& guid)
+    void HoldWitness(Player* player, Creature* witness, float angle, ObjectGuid& guid)
     {
-        witness->SetReactState(REACT_PASSIVE);
-        witness->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
-        witness->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
-        witness->SetFacingToObject(me);
+        if (!witness)
+            return;
+
+        witness->AI()->DoAction(ACTION_COMPANION_HOLD);
+        float x, y, z;
+        player->GetNearPoint(player, x, y, z, 2.5f, angle);
+        witness->GetMotionMaster()->MovePoint(0, x, y, z);
         guid = witness->GetGUID();
     }
 
-    void DespawnWitnesses()
+    void FaceWitnessesToMe()
     {
-        if (Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID))
-            lydon->DespawnOrUnsummon();
-        if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
-            johnny->DespawnOrUnsummon();
+        for (ObjectGuid const& guid : { _lydonGUID, _johnnyGUID })
+            if (Creature* witness = ObjectAccessor::GetCreature(*me, guid))
+                witness->SetFacingToObject(me);
+    }
+
+    // Back to following the player (and to the player's fight, if there is one)
+    void ReleaseWitnesses()
+    {
+        for (ObjectGuid const& guid : { _lydonGUID, _johnnyGUID })
+            if (Creature* witness = ObjectAccessor::GetCreature(*me, guid))
+                if (witness->IsAIEnabled)
+                    witness->AI()->DoAction(ACTION_COMPANION_RELEASE);
         _lydonGUID.Clear();
         _johnnyGUID.Clear();
     }
@@ -746,7 +1139,7 @@ private:
     {
         _events.Reset();
         _introStarted = false;
-        DespawnWitnesses();
+        ReleaseWitnesses();
         me->GetMotionMaster()->MoveTargetedHome();
     }
 
@@ -770,6 +1163,7 @@ private:
                 break;
             case 2:
                 me->SetFacingToObject(player);
+                FaceWitnessesToMe();
                 Talk(TALK_STILLWATER_ALLEGIANCES, player);
                 next = 4s;
                 break;
@@ -804,6 +1198,7 @@ private:
             {
                 Talk(TALK_STILLWATER_KILL_THEM_ALL);
                 me->SetFaction(14);
+                ReleaseWitnesses();
 
                 std::list<Creature*> followers;
                 me->GetCreatureListWithEntryInGrid(followers, NPC_SLUDGE_GUARD, 40.0f);
@@ -830,6 +1225,7 @@ private:
     bool _introStarted;
     bool _newForm;
     uint32 _baseMaxHealth;
+    uint32 _introCheckTimer;
 };
 
 /*######
@@ -2010,6 +2406,9 @@ void AddSC_hillsbrad_sludge_stormpike()
     new creature_script<npc_hillsbrad_scene_actor>("npc_hillsbrad_scene_actor");
     new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
     new creature_script<npc_hillsbrad_sludge_fields_camera>("npc_hillsbrad_sludge_fields_camera");
+    new aura_script<spell_hillsbrad_sludge_field_summon_controller>("spell_hillsbrad_sludge_field_summon_controller");
+    new creature_script<npc_hillsbrad_sludge_fields_companion>("npc_hillsbrad_sludge_fields_companion");
+    new creature_script<npc_hillsbrad_caged_lydon>("npc_hillsbrad_caged_lydon");
     new creature_script<npc_hillsbrad_warden_stillwater_blight>("npc_hillsbrad_warden_stillwater_blight");
     new creature_script<npc_hillsbrad_voggah_deathgrip>("npc_hillsbrad_voggah_deathgrip");
     new creature_script<npc_hillsbrad_aid_of_the_frostwolf_camera>("npc_hillsbrad_aid_of_the_frostwolf_camera");
