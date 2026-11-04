@@ -21,6 +21,9 @@
 //    while the player takes the Alliance Battle Plans; Kasha carries the player and the dying Orkus to Tarren Mill.
 // Sourced: the spells and their summon properties and vehicle seats (5.4.8 DBC), every line (broadcast_text), the course of
 // the events (warcraft.wiki.gg). Ours: the flight paths, heights, speeds, the actors' spots and the timings; nothing was sniffed.
+//
+// Hillsbrad Foothills: the Ruins of Southshore.
+//  - Studies in Lethality (28324): the Blight Slimes' anger meter (its sources are with its scripts below).
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
@@ -1184,6 +1187,167 @@ private:
     bool _arrived;
 };
 
+// Studies in Lethality (28324), Ruins of Southshore: the anger meter.
+// Sourced: the bar is Lethality Analyzer 88375 (aura 346, UnitPowerBar 24 "Blight Sample": 0 to 250, starts at 0, no regeneration
+// or decay) and fills by one per sample through Specimen Collected 88769 (energize alternate power +1, kill credit 48290); the
+// three anger auras Slime Anger 89783/89784/89785 (force reaction of faction 1179 "Slime", the Blight Slimes' faction, to
+// Unfriendly, Unfriendly and Hostile; 20 minutes each; "Level I. Moderately peeved", "Level II. Does not like you", "Level III.
+// KILL! KILL! KILL!") and their three warnings (broadcast_text 48491-48493). warcraft.wiki.gg: the meter comes with the quest, the
+// slimes start neutral, turn unfriendly with those warnings as the player samples them and hostile "near completion". The only
+// source for hostile at half the meter is one Wowhead comment (quest 28324, 2010-12-04): "If the "angry-meter" ... goes to half
+// full, the Blight Slimes will go hostile. The Slimes will (over time) become less hostile and finally neutral again. That is if
+// you don't let the meter become completely full". Later Wowhead comments say a logout resets the meter to 0 and calms the
+// slimes while the samples still count, and that the bar "frequently resets"; that is not reproduced: the meter is kept here.
+// The wiki's Studies in Lethality page also says the last warning offers Angry Scrubbing Bubbles (28329) and makes the Angry
+// Blight Slimes attackable; its 28329 page and the data (48319 faction 14, 28329 pushed on its death) have 28329 start from
+// killing one, which is kept.
+// Ours: no source applies any of these spells (no sniffed spell_area, SmartAI or script). The bar comes with the quest and goes at
+// its completion or abandonment; the anger level follows the meter (Level I from a fifth, Level II from two fifths, Level III
+// from half), each sample refreshes it, and when a level runs out it falls to the one below. A full meter keeping the slimes
+// hostile is not done: a full meter is the 250th sample, which completes the quest.
+// Groupmates get 88769's kill credit (RewardPlayerAndGroupAtEvent) but not its energize, so a groupmate's quest count runs ahead
+// of their own meter and anger.
+enum StudiesInLethality
+{
+    QUEST_STUDIES_IN_LETHALITY                  = 28324,
+
+    SPELL_LETHALITY_ANALYZER                    = 88375,
+    SPELL_SLIME_ANGER_LEVEL_1                   = 89783,
+    SPELL_SLIME_ANGER_LEVEL_2                   = 89784,
+    SPELL_SLIME_ANGER_LEVEL_3                   = 89785,
+
+    TEXT_SLIMES_REACT_NEGATIVELY                = 48491,    // "The Blight Slimes are beginning to react negatively towards your prodding."
+    TEXT_SLIMES_GETTING_ANGRY                   = 48492,    // "The Blight Slimes are getting ANGRY!"
+    TEXT_SLIMES_WANT_YOUR_BLOOD                 = 48493,    // "The Blight Slimes want your blood!"
+};
+
+static uint32 const SlimeAngerSpells[3] = { SPELL_SLIME_ANGER_LEVEL_1, SPELL_SLIME_ANGER_LEVEL_2, SPELL_SLIME_ANGER_LEVEL_3 };
+static uint32 const SlimeAngerTexts[3] = { TEXT_SLIMES_REACT_NEGATIVELY, TEXT_SLIMES_GETTING_ANGRY, TEXT_SLIMES_WANT_YOUR_BLOOD };
+
+// The player's anger level, 0 (none) to 3
+static uint8 GetSlimeAngerLevel(Player* player)
+{
+    for (uint8 level = 3; level > 0; --level)
+        if (player->HasAura(SlimeAngerSpells[level - 1]))
+            return level;
+    return 0;
+}
+
+static void SetSlimeAngerLevel(Player* player, uint8 level)
+{
+    for (uint8 i = 0; i < 3; ++i)
+        if (i + 1 != level)
+            player->RemoveAurasDueToSpell(SlimeAngerSpells[i]);
+
+    if (level)
+        player->CastSpell(player, SlimeAngerSpells[level - 1], true);
+}
+
+// 28324 - Studies in Lethality
+class quest_hillsbrad_studies_in_lethality : public QuestScript
+{
+public:
+    quest_hillsbrad_studies_in_lethality() : QuestScript("quest_hillsbrad_studies_in_lethality") { }
+
+    void OnQuestStatusChange(Player* player, Quest const* /*quest*/, QuestStatus /*oldStatus*/, QuestStatus newStatus) override
+    {
+        if (newStatus == QUEST_STATUS_INCOMPLETE)
+        {
+            if (!player->HasAura(SPELL_LETHALITY_ANALYZER))
+                player->CastSpell(player, SPELL_LETHALITY_ANALYZER, true);
+            return;
+        }
+
+        player->RemoveAurasDueToSpell(SPELL_LETHALITY_ANALYZER);
+        if (newStatus == QUEST_STATUS_NONE)
+            SetSlimeAngerLevel(player, 0);
+    }
+};
+
+// 88769 - Specimen Collected (cast by the Blight Slime on the player for every Depleted it takes)
+class spell_hillsbrad_specimen_collected : public SpellScript
+{
+    PrepareSpellScript(spell_hillsbrad_specimen_collected);
+
+    void GiveMeter()
+    {
+        // The meter of a player who took the quest before it had one, or whose meter lost its maximum
+        Player* player = GetHitPlayer();
+        if (!player || player->GetQuestStatus(QUEST_STUDIES_IN_LETHALITY) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        if (player->HasAura(SPELL_LETHALITY_ANALYZER))
+        {
+            if (player->GetMaxPower(POWER_ALTERNATE_POWER) > 0)
+                return;
+            player->RemoveAurasDueToSpell(SPELL_LETHALITY_ANALYZER);
+        }
+
+        player->CastSpell(player, SPELL_LETHALITY_ANALYZER, true);
+    }
+
+    void UpdateAnger()
+    {
+        Player* player = GetHitPlayer();
+        if (!player || !player->HasAura(SPELL_LETHALITY_ANALYZER))
+            return;
+
+        int32 maxPower = player->GetMaxPower(POWER_ALTERNATE_POWER);
+        if (maxPower <= 0)
+            return;
+
+        int32 power = player->GetPower(POWER_ALTERNATE_POWER);
+        uint8 level = 0;
+        if (power * 2 >= maxPower)
+            level = 3;
+        else if (power * 5 >= maxPower * 2)
+            level = 2;
+        else if (power * 5 >= maxPower)
+            level = 1;
+
+        uint8 oldLevel = GetSlimeAngerLevel(player);
+        if (level == oldLevel)
+        {
+            if (level)
+                if (Aura* aura = player->GetAura(SlimeAngerSpells[level - 1]))
+                    aura->RefreshDuration();
+            return;
+        }
+
+        // Rising comes with its warning; lower (a meter that was given again) without one
+        SetSlimeAngerLevel(player, level);
+        if (level > oldLevel)
+            if (Unit* slime = GetCaster())
+                slime->Whisper(SlimeAngerTexts[level - 1], player, true);
+    }
+
+    void Register() override
+    {
+        BeforeHit += SpellHitFn(spell_hillsbrad_specimen_collected::GiveMeter);
+        AfterHit += SpellHitFn(spell_hillsbrad_specimen_collected::UpdateAnger);
+    }
+};
+
+// 89784, 89785 - Slime Anger (Levels II and III)
+class spell_hillsbrad_slime_anger : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_slime_anger);
+
+    void CalmDown(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetTargetApplication()->GetRemoveMode() != AURA_REMOVE_BY_EXPIRE)
+            return;
+
+        if (Player* player = GetTarget()->ToPlayer())
+            player->CastSpell(player, GetId() == SPELL_SLIME_ANGER_LEVEL_3 ? SPELL_SLIME_ANGER_LEVEL_2 : SPELL_SLIME_ANGER_LEVEL_1, true);
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_slime_anger::CalmDown, EFFECT_0, SPELL_AURA_FORCE_REACTION, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 void AddSC_hillsbrad_purgation()
 {
     new spell_script<spell_hillsbrad_summon_kasha_road_to_purgation>("spell_hillsbrad_summon_kasha_road_to_purgation");
@@ -1193,4 +1357,7 @@ void AddSC_hillsbrad_purgation()
     new creature_script<npc_hillsbrad_orkus_heroes>("npc_hillsbrad_orkus_heroes");
     new creature_script<npc_hillsbrad_purgation_actor>("npc_hillsbrad_purgation_actor");
     new creature_script<npc_hillsbrad_kasha_heroes>("npc_hillsbrad_kasha_heroes");
+    new quest_hillsbrad_studies_in_lethality();
+    new spell_script<spell_hillsbrad_specimen_collected>("spell_hillsbrad_specimen_collected");
+    new aura_script<spell_hillsbrad_slime_anger>("spell_hillsbrad_slime_anger");
 }
