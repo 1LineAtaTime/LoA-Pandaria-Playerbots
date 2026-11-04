@@ -1204,7 +1204,9 @@ private:
 // Ours: no source applies any of these spells (no sniffed spell_area, SmartAI or script). The bar comes with the quest and goes at
 // its completion or abandonment; the anger level follows the meter (Level I from a fifth, Level II from two fifths, Level III
 // from half), each sample refreshes it, and when a level runs out it falls to the one below. A full meter keeping the slimes
-// hostile is not done: a full meter is the 250th sample, which completes the quest.
+// hostile is not done: a full meter is the 250th sample, which completes the quest. Sampling does not start combat (no initial
+// aggro on 89752/89756, spell_custom_attribute), so a slime only fights the player once Level III makes it hostile: then the
+// sampled slime attacks at once, the others as the player comes into their sight.
 // Groupmates get 88769's kill credit (RewardPlayerAndGroupAtEvent) but not its energize, so a groupmate's quest count runs ahead
 // of their own meter and anger.
 enum StudiesInLethality
@@ -1311,14 +1313,22 @@ class spell_hillsbrad_specimen_collected : public SpellScript
             if (level)
                 if (Aura* aura = player->GetAura(SlimeAngerSpells[level - 1]))
                     aura->RefreshDuration();
-            return;
+        }
+        else
+        {
+            // Rising comes with its warning; lower (a meter that was given again) without one
+            SetSlimeAngerLevel(player, level);
+            if (level > oldLevel)
+                if (Unit* slime = GetCaster())
+                    slime->Whisper(SlimeAngerTexts[level - 1], player, true);
         }
 
-        // Rising comes with its warning; lower (a meter that was given again) without one
-        SetSlimeAngerLevel(player, level);
-        if (level > oldLevel)
-            if (Unit* slime = GetCaster())
-                slime->Whisper(SlimeAngerTexts[level - 1], player, true);
+        // Sampling itself never starts combat (Collect Specimen and Depleted have no initial aggro), so a slime that the
+        // anger made hostile turns on the player who is sampling it ("hostile to you and attack you on sight"), who may be
+        // standing still and so never come into its sight again.
+        if (Creature* slime = GetCaster() ? GetCaster()->ToCreature() : nullptr)
+            if (slime->IsAlive() && slime->IsAIEnabled && !slime->IsInCombat() && slime->IsHostileTo(player))
+                slime->AI()->AttackStart(player);
     }
 
     void Register() override
