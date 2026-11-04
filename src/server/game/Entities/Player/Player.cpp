@@ -3304,9 +3304,10 @@ void Player::InitStatsForLevel(bool reapplyMods)
     // Init data for form but skip reapply item mods for form
     InitDataForForm(reapplyMods);
 
-    // save new stats
+    // save new stats (the alternate power maximum is owned by SPELL_AURA_ENABLE_ALT_POWER, see UpdateMaxPower)
     for (uint8 i = POWER_MANA; i < MAX_POWERS; ++i)
-        SetMaxPower(Powers(i), GetCreatePowers(Powers(i)));
+        if (i != POWER_ALTERNATE_POWER)
+            SetMaxPower(Powers(i), GetCreatePowers(Powers(i)));
 
     SetMaxHealth(basehp);                     // stamina bonus will applied later
 
