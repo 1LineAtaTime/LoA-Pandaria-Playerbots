@@ -17,7 +17,8 @@
 
 // Hillsbrad Foothills: Kasha and Kingslayer Orkus, from the Ruins of Southshore to Purgation Isle and on to Tarren Mill.
 //  - The Road to Purgation (28375): Kasha flies the player and Orkus to Purgation Isle.
-//  - Heroes of the Horde! (28400): Orkus kills the Stormpike Battle Master and holds off Vanndar, Balinda and Ivar Bloodfang
+//  - They Will Never Expect This... (28397): on the isle Orkus goes with the player as a guardian, fights beside them and chats.
+//  - Heroes of the Horde! (28400): the event Orkus comes, gives the quest, leads the player up the hill, kills the Stormpike Battle Master and holds off Vanndar, Balinda and Ivar Bloodfang
 //    while the player takes the Alliance Battle Plans; Kasha carries the player and the dying Orkus to Tarren Mill.
 // Sourced: the spells and their summon properties and vehicle seats (5.4.8 DBC), every line (broadcast_text), the course of
 // the events (warcraft.wiki.gg). Ours: the flight paths, heights, speeds, the actors' spots and the timings; nothing was sniffed.
@@ -39,6 +40,7 @@
 enum PurgationIsle
 {
     QUEST_THE_ROAD_TO_PURGATION                 = 28375,
+    QUEST_THEY_WILL_NEVER_EXPECT_THIS           = 28397,
     QUEST_HEROES_OF_THE_HORDE                   = 28400,
 
     NPC_KASHA_ROAD_TO_PURGATION                 = 48467,
@@ -53,10 +55,14 @@ enum PurgationIsle
 
     ITEM_ALLIANCE_BATTLE_PLANS                  = 64307,
 
-    SPELL_DETECT_QUEST_INVIS_ZONE_4             = 90115,    // shows the landed Kasha and Orkus on Purgation Isle (spell_area)
+    SPELL_DETECT_QUEST_INVIS_ZONE_4             = 90115,    // shows the landed Kasha on Purgation Isle (spell_area)
     SPELL_RIDE_TO_PURGATION                     = 90122,
     SPELL_SUMMON_KASHA_ROAD_TO_PURGATION        = 90123,
     SPELL_SUMMON_KASHA_HEROES                   = 90278,
+    SPELL_PURGATION_ISLE_SUMMON_CONTROLLER_I    = 90130,
+    SPELL_PURGATION_ISLE_SUMMON_CONTROLLER_II   = 90206,
+    SPELL_SUMMON_ORKUS_PURGATION_ISLE           = 90132,
+    SPELL_COMMANDING_SHOUT                      = 82061,    // +2500 health to allies in 20 yards, 2 min
 
     // Kasha 48467 (Vehicle 1329) and 48504 (Vehicle 1332): seat 0 can control the vehicle (a player there would take her
     // over and her script would stop), seat 1 is a plain passenger seat. Orkus takes seat 0, the player seat 1.
@@ -70,6 +76,10 @@ enum PurgationIsle
 
     ACTION_ORKUS_CARRIED                        = 1,
     ACTION_HEROES_ABORT                         = 2,        // Orkus 48503 / Kasha 48504: end the player's event early
+    ACTION_HEROES_DISMISS                       = 3,        // Orkus 48503: Controller II is gone (the player left the zone)
+    ACTION_HEROES_DISCARD                       = 4,        // Orkus 48503: a stale second one of the player's, left behind
+
+    AREA_PURGATION_ISLE                         = 896,
 };
 
 enum PurgationTexts
@@ -77,6 +87,8 @@ enum PurgationTexts
     // Kingslayer Orkus 48470 (riding Kasha in The Road to Purgation)
     TALK_ORKUS_TO_PURGATION_ISLE                = 0,        // 48671
     TALK_ORKUS_FLEW_OFF                         = 1,        // 48675 (boss whisper)
+    // Kingslayer Orkus 48470 (the player's companion on Purgation Isle)
+    TALK_ORKUS_CHATTER                          = 2,        // 48698, 48702, 48705, 48706, 48708 .. 48719
 
     // Kingslayer Orkus 48503 (Heroes of the Horde!)
     TALK_ORKUS_GET_DOWN                         = 0,        // 48744
@@ -95,6 +107,7 @@ enum PurgationTexts
     TALK_ORKUS_TAKE_CARE_OF_KASHA               = 13,       // 48779
     TALK_ORKUS_BEST_FRIEND                      = 14,       // 48778
     TALK_ORKUS_SOMEWHERE_SAFE                   = 15,       // 48774
+    TALK_ORKUS_TELL_ME_WHEN_READY               = 16,       // 48757
 
     // Vanndar Stormpike 48508
     TALK_VANNDAR_LAST_LOKTAR                    = 0,        // 48788
@@ -111,6 +124,9 @@ enum PurgationEvents
     EVENT_ROAD_LAND,
     EVENT_ROAD_ARRIVE,
 
+    // Orkus, the player's companion on Purgation Isle
+    EVENT_COMPANION_SHOUT                       = 5,
+
     // Orkus, Heroes of the Horde!
     EVENT_HEROES_WALK                           = 10,
     EVENT_HEROES_WALK_TIMEOUT,
@@ -120,6 +136,7 @@ enum PurgationEvents
     EVENT_HEROES_KILL_BATTLE_MASTER,
     EVENT_HEROES_CHECK_PLANS,
     EVENT_HEROES_CALL_KASHA,
+    EVENT_HEROES_FOLLOW                         = 24,
 
     // Kasha, Heroes of the Horde!
     EVENT_KASHA_APPROACH                        = 30,
@@ -189,8 +206,8 @@ Position const RoadToPurgationFlightPath[] =
     { -1234.2f,  424.3f, 12.0f }
 };
 
-// The landed Kasha 48471 (guid 312259) and Orkus 48470 (guid 3110070): the flight ends on their spots, and they take over from
-// the player's own Kasha and Orkus when the player is credited
+// The landed Kasha 48471 (guid 312259): the flight ends on her spot, and she takes over from the player's own Kasha when the
+// player is credited (and the player's companion Orkus from the one who rode with them)
 Position const RoadToPurgationLandingPos = { -1234.18f, 424.32f, 2.93f, 1.73f };
 Position const RoadToPurgationPlayerExitPos = { -1231.5f, 420.5f, 3.3f, 1.73f };
 
@@ -243,7 +260,8 @@ class spell_hillsbrad_ride_to_purgation : public AuraScript
 // 48467 - Kasha
 // Summoned beside Orkus at Southshore by Summon Kasha (90123, from his gossip option), with the player on her through its ride
 // aura (Ride to Purgation 90122, which also gives the Road to Purgation phase 348 and hides the rider). Orkus rides in front.
-// She flies them to Purgation Isle and lands where the landed Kasha stands; there the player is credited and set down.
+// She flies them to Purgation Isle and lands where the landed Kasha stands; there the player is credited and set down, and
+// the player's own Orkus (Purgation Isle Summon Controller I) takes over from the one who rode with them.
 // The credit is given directly: in 5.4.8 Kasha ends the ride with Cancel Cinematic (90128: teleport the summoner to a DB spot,
 // Despawn All Summons, QUEST_COMPLETE 28375), whose teleport has no spot here and which would not reach a player who is still
 // her passenger.
@@ -352,13 +370,13 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
                     _arrived = true;
                     if (player->GetQuestStatus(QUEST_THE_ROAD_TO_PURGATION) == QUEST_STATUS_INCOMPLETE)
                         player->AreaExploredOrEventHappens(QUEST_THE_ROAD_TO_PURGATION);
-                    // spell_area does not follow quest changes in this core: give the detection of the landed Kasha and Orkus
-                    // now, so they stand where the player's own pair leaves them
-                    player->UpdateAreaDependentAuras(player->GetAreaId());
                     if (Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID))
                         orkus->DespawnOrUnsummon();
                     if (player->GetVehicleBase() == me)
                         player->ExitVehicle();
+                    // spell_area does not follow quest changes in this core: give the detection of the landed Kasha and the
+                    // Summon Controller now. The player is off Kasha, so the controller brings the player's Orkus at once.
+                    player->UpdateAreaDependentAuras(player->GetAreaId());
                     Leave();
                     return;
                 default:
@@ -430,82 +448,146 @@ PurgationActorSpawn const HeroesActorSpawns[] =
     { NPC_PACKLEADER_IVAR_BLOODFANG,    { -1343.0f,  530.0f,  97.5f,  6.00f } }
 };
 
-// Static Kingslayer Orkus 48470 on the Purgation Isle beach (guid 3110070): ends The Road to Purgation and They Will Never
-// Expect This..., starts Heroes of the Horde!. "I'm ready, Orkus. Let's do this!" (12440) starts the event with the player's
-// own Orkus (48503; Summon Orkus 90205 in 5.4.8, from Purgation Isle Summon Controller II 90206). He takes this one's place:
-// the player loses the detection of the beach pair (Kasha flies off to wait for his call), and gets it back if the event ends
-// early. Talking to him again starts the event anew, ending what is left of an earlier one of the player's (cut short by a
-// logout, by leaving the isle or by getting off Kasha) first, so that the player can never be locked out; a player who already
-// holds the plans is picked up at once.
+// Kingslayer Orkus 48470: the player's companion on Purgation Isle, from The Road to Purgation until They Will Never Expect
+// This... is turned in (and, as a plain summon of Kasha's, the Orkus who rides her there). Purgation Isle Summon Controller I
+// (90130) brings him with Summon Orkus (90132), which makes him the player's guardian (SummonProperties 3045: ally, defensive,
+// without the personal-spawn flag, so other players see him too). He ends The Road to Purgation and starts and ends They Will
+// Never Expect This...; at that turn-in he runs off and the event Orkus 48503 takes over. Wowhead comments: "he acts like a pet
+// during this section", "Orkus gives you a buff of 2500 health" (Commanding Shout 82061, the +2500 health shout of John J.
+// Keeshan, another quest companion; when he casts it is ours: whenever the player is without it), "He hits a bit low for a
+// level 80" (he has the player's level here).
 struct npc_hillsbrad_orkus_purgation_isle : public ScriptedAI
 {
     npc_hillsbrad_orkus_purgation_isle(Creature* creature) : ScriptedAI(creature) { }
 
-    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    void IsSummonedBy(Unit* summoner) override
     {
-        if (menuId != GOSSIP_MENU_ORKUS_HEROES || gossipListId != GOSSIP_OPTION_ORKUS_READY)
-            return false;
+        // The Orkus who rides Kasha is summoned by her and does nothing of his own
+        Player* player = summoner->ToPlayer();
+        if (!player || !me->HasUnitTypeMask(UNIT_MASK_GUARDIAN))
+            return;
 
-        CloseGossipMenuFor(player);
-
-        // The Orkus who rides Kasha in The Road to Purgation is this entry too
-        if (me->IsSummon())
-            return true;
-
-        if (player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE) != QUEST_STATUS_INCOMPLETE || !player->IsAlive() || player->GetVehicle())
-            return true;
-
-        // What is left of an earlier event of the player's goes first: its Orkus with his actors, a Kasha still on her way
-        for (uint32 entry : { NPC_KASHA_HEROES, NPC_ORKUS_HEROES })
-        {
-            std::list<Creature*> creatures;
-            player->GetCreatureListWithEntryInGrid(creatures, entry, 300.0f);
-            for (Creature* creature : creatures)
-                if (creature->GetPrivateObjectOwner() == player->GetGUID() && creature->IsAIEnabled)
-                    creature->AI()->DoAction(ACTION_HEROES_ABORT);
-        }
-        player->RemoveAurasDueToSpell(SPELL_SUMMON_KASHA_HEROES);
-
-        if (me->SummonCreature(NPC_ORKUS_HEROES, me->GetPosition(), TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID()))
-            player->RemoveAurasDueToSpell(SPELL_DETECT_QUEST_INVIS_ZONE_4);
-        return true;
+        _ownerGUID = player->GetGUID();
+        me->SetReactState(REACT_DEFENSIVE);
+        me->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, me->GetFollowAngle());
+        _events.ScheduleEvent(EVENT_COMPANION_SHOUT, 2s);
     }
+
+    void Reset() override
+    {
+        if (_ownerGUID && me->GetUInt32Value(UNIT_FIELD_NPC_FLAGS))
+            me->SetReactState(REACT_DEFENSIVE);
+    }
+
+    void OwnerAttackedBy(Unit* attacker) override
+    {
+        HelpOwner(attacker);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        // Not his owner's any more once he runs off (SendPurgationIsleOrkusAway clears his quest flags)
+        if (!_ownerGUID || !me->GetUInt32Value(UNIT_FIELD_NPC_FLAGS))
+            return;
+
+        Player* owner = ObjectAccessor::GetPlayer(*me, _ownerGUID);
+        if (!owner)
+            return;
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId == EVENT_COMPANION_SHOUT)
+            {
+                if (owner->IsAlive() && !owner->HasAura(SPELL_COMMANDING_SHOUT) && me->IsWithinDist(owner, 20.0f))
+                    DoCast(me, SPELL_COMMANDING_SHOUT, true);
+                _events.ScheduleEvent(EVENT_COMPANION_SHOUT, 10s);
+            }
+        }
+
+        // Guardians hear OwnerAttackedBy but not OwnerAttacked (only the pet does): join the player's own attacks from here
+        if (!me->GetVictim())
+        {
+            if (Unit* target = owner->GetVictim())
+                HelpOwner(target);
+            else if (!owner->getAttackers().empty())
+                HelpOwner(*owner->getAttackers().begin());
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    void HelpOwner(Unit* target)
+    {
+        if (target && me->GetUInt32Value(UNIT_FIELD_NPC_FLAGS) && !me->GetVictim() && me->IsValidAttackTarget(target))
+            AttackStart(target);
+    }
+
+    EventMap _events;
+    ObjectGuid _ownerGUID;
 };
 
 // 48503 - Kingslayer Orkus
-// Leads the player up the hill, tells them his plan, kills the Stormpike Battle Master and holds the trio while the player loots
-// the Alliance Battle Plans from the body; then he calls Kasha (Summon Kasha 90278, cast by the player), again every few seconds
-// until she has the player (she gives up on a player she cannot pick up: dead, casting or out of reach). The plans' item spell
-// (Send Event 27246) has an empty event in 5.4.8: he watches for the plans instead. If the Battle Master's body is gone before
-// the player took the plans, the event ends (the player starts it again at the beach). He cannot fall in the fight; Kasha takes
-// him off the hill and he dies on the way to Tarren Mill.
+// The player's event Orkus (personal; Purgation Isle Summon Controller II): he runs to the player when They Will Never Expect
+// This... is turned in, follows them through Hillsbrad and gives Heroes of the Horde! (retail TDB 1210 has him as its only
+// starter). When the player is on the way up to the Stormpike camp with the quest, he leads them to the cover of the rock at its
+// edge, stops them ("STOP! GET DOWN, $n!"), shows them the Battle Master and tells his plan, then waits for the player's word
+// ("Tell me when you are ready and we will go!", 48757; gossip 12440 "I'm ready, Orkus. Let's do this!"). Wowhead comments on
+// 28400: "When you reach the top of the Purgation Isle, it starts", "You have to talk to Orkus again to start the event", "When
+// you get near the top you will notice that Orkus slows down starting a scripted event ... After a short while you can talk to
+// him", and of the bugged event "Orkus is following me". Where the walk starts is ours. A player who says the word on the way
+// up gets the old order: he goes up, tells the plan and attacks.
+// Then he kills the Stormpike Battle Master and holds the trio while the player loots the Alliance Battle Plans from the body,
+// and calls Kasha (Summon Kasha 90278, cast by the player), again every few seconds until she has the player (she gives up on a
+// player she cannot pick up: dead, casting or out of reach). The plans' item spell (Send Event 27246) has an empty event in
+// 5.4.8: he watches for the plans instead. A player who already holds the plans when he comes (after an interrupted event) is
+// picked up as soon as they are on Purgation Isle. If the Battle Master's body is gone before the player took the plans, or the
+// player goes too far, the event ends and he goes with his actors; the controller then brings a new Orkus, so the event can
+// always be started again. He cannot fall in the fight; Kasha takes him off the hill and he dies on the way to Tarren Mill.
 struct npc_hillsbrad_orkus_heroes : public ScriptedAI
 {
-    npc_hillsbrad_orkus_heroes(Creature* creature) : ScriptedAI(creature), _waitTries(0), _atHiding(false), _fighting(false), _carried(false),
-        _kashaCalled(false) { }
+    npc_hillsbrad_orkus_heroes(Creature* creature) : ScriptedAI(creature), _waitTries(0), _started(false), _atHiding(false),
+        _waitingForWord(false), _wordGiven(false), _fighting(false), _carried(false), _kashaCalled(false) { }
 
     void IsSummonedBy(Unit* /*summoner*/) override
     {
         _playerGUID = me->GetPrivateObjectOwner();
 
-        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
         me->SetLevel(80);
         me->SetMaxHealth(600000);
         me->SetFullHealth();
         me->SetFaction(FACTION_ORGRIMMAR);
         me->SetReactState(REACT_PASSIVE);
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
 
-        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
-        if (player && player->HasItemCount(ITEM_ALLIANCE_BATTLE_PLANS))
-            _events.ScheduleEvent(EVENT_HEROES_CALL_KASHA, 1s);
-        else
-            _events.ScheduleEvent(EVENT_HEROES_WALK, 1s);
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            me->SetWalk(false);
+            me->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, float(M_PI / 2));
+        }
+        _events.ScheduleEvent(EVENT_HEROES_FOLLOW, 1s);
     }
 
     void DoAction(int32 action) override
     {
-        if (action == ACTION_HEROES_ABORT)
+        // One left behind after a teleport while the player got a new one: he and his actors just go, without touching the
+        // player's auras (the other Orkus' event may be running)
+        if (action == ACTION_HEROES_DISCARD)
+        {
+            _events.Reset();
+            _carried = true;
+            DespawnActors(0);
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        if (action == ACTION_HEROES_ABORT || (action == ACTION_HEROES_DISMISS && !_carried))
         {
             Abort(ObjectAccessor::GetPlayer(*me, _playerGUID));
             return;
@@ -521,7 +603,44 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
         me->CombatStop(true);
         me->SetReactState(REACT_PASSIVE);
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
         DespawnActors(4000);
+    }
+
+    // However he goes (the player's logout or map change unsummons the player's summons, Unit::RemoveFromWorld), his actors go too
+    void Unsummoned() override
+    {
+        DespawnActors(0);
+    }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_ORKUS_HEROES || gossipListId != GOSSIP_OPTION_ORKUS_READY)
+            return false;
+
+        CloseGossipMenuFor(player);
+
+        if (player->GetGUID() != _playerGUID || _carried || _fighting || _wordGiven
+            || player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE) != QUEST_STATUS_INCOMPLETE || !player->IsAlive() || player->GetVehicle())
+            return true;
+
+        if (_waitingForWord)
+        {
+            _wordGiven = true;
+            _waitingForWord = false;
+            me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+            _events.ScheduleEvent(EVENT_HEROES_TALK + 6, 1s);
+        }
+        // The word on the way: only on Purgation Isle (the option's condition says the same); elsewhere he asks for it there
+        else if (!_started)
+        {
+            if (player->GetAreaId() != AREA_PURGATION_ISLE)
+                return true;
+
+            _wordGiven = true;
+            StartWalk(player);
+        }
+        return true;
     }
 
     void DamageTaken(Unit* /*attacker*/, uint32& damage) override
@@ -551,7 +670,8 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
         }
 
         QuestStatus status = player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE);
-        if ((status != QUEST_STATUS_INCOMPLETE && status != QUEST_STATUS_COMPLETE) || me->GetDistance(player) > 250.0f)
+        if (status == QUEST_STATUS_COMPLETE || status == QUEST_STATUS_REWARDED || me->GetDistance(player) > (_started ? 250.0f : 100.0f)
+            || (_started && status != QUEST_STATUS_INCOMPLETE))
         {
             Abort(player);
             return;
@@ -565,10 +685,28 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
 
             switch (eventId)
             {
-                case EVENT_HEROES_WALK:
-                    SummonActors();
-                    me->GetMotionMaster()->MovePoint(POINT_HEROES_HIDING, HeroesHidingPos);
-                    _events.ScheduleEvent(EVENT_HEROES_WALK_TIMEOUT, 60s);
+                case EVENT_HEROES_FOLLOW:
+                    if (_started)
+                        break;
+                    if (status == QUEST_STATUS_INCOMPLETE && !player->GetVehicle() && player->GetAreaId() == AREA_PURGATION_ISLE)
+                    {
+                        // Back with the plans after an interrupted event: Kasha comes for the player
+                        if (player->HasItemCount(ITEM_ALLIANCE_BATTLE_PLANS))
+                        {
+                            _started = true;
+                            me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+                            _events.ScheduleEvent(EVENT_HEROES_CALL_KASHA, 1s);
+                            break;
+                        }
+                        // On the way up to the camp (ours: within 40 yards of his cover, he no more than 60 behind)
+                        if (player->GetExactDist2d(HeroesHidingPos.GetPositionX(), HeroesHidingPos.GetPositionY()) < 40.0f
+                            && me->IsWithinDist(player, 60.0f))
+                        {
+                            StartWalk(player);
+                            break;
+                        }
+                    }
+                    _events.ScheduleEvent(EVENT_HEROES_FOLLOW, 1s);
                     break;
                 case EVENT_HEROES_WALK_TIMEOUT:
                     // No way up was found in time: he is there all the same
@@ -611,9 +749,20 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
                     break;
                 case EVENT_HEROES_TALK + 4:
                     Talk(TALK_ORKUS_GET_THE_PLANS, player);
-                    next = 8s;
+                    next = 6s;
                     break;
                 case EVENT_HEROES_TALK + 5:
+                    // The player's word, unless it was given on the way up
+                    if (_wordGiven)
+                        next = 2s;
+                    else
+                    {
+                        Talk(TALK_ORKUS_TELL_ME_WHEN_READY, player);
+                        _waitingForWord = true;
+                        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    }
+                    break;
+                case EVENT_HEROES_TALK + 6:
                     Talk(TALK_ORKUS_DO_NOT_WORRY, player);
                     _events.ScheduleEvent(EVENT_HEROES_CHARGE, 5s);
                     break;
@@ -679,9 +828,14 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
                         _events.ScheduleEvent(EVENT_HEROES_CHECK_PLANS, 1s);
                     break;
                 case EVENT_HEROES_CALL_KASHA:
-                    // The plans were lost again: back to waiting for them
+                    // The plans were lost again: back to waiting for them, or (with no Battle Master to loot) to the start
                     if (!player->HasItemCount(ITEM_ALLIANCE_BATTLE_PLANS))
                     {
+                        if (!BattleMasterBodyLeft())
+                        {
+                            Abort(player);
+                            return;
+                        }
                         _events.ScheduleEvent(EVENT_HEROES_CHECK_PLANS, 1s);
                         break;
                     }
@@ -709,6 +863,19 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
     }
 
 private:
+    // Up to his cover with the actors in place; the landed Kasha flies off to wait for his call (the player loses her detection)
+    void StartWalk(Player* player)
+    {
+        _started = true;
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+        player->RemoveAurasDueToSpell(SPELL_DETECT_QUEST_INVIS_ZONE_4);
+        SummonActors();
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MovePoint(POINT_HEROES_HIDING, HeroesHidingPos);
+        _events.CancelEvent(EVENT_HEROES_FOLLOW);
+        _events.ScheduleEvent(EVENT_HEROES_WALK_TIMEOUT, 60s);
+    }
+
     void ReachHiding()
     {
         if (_atHiding)
@@ -721,6 +888,7 @@ private:
 
     void SummonActors()
     {
+        DespawnActors(0);
         for (PurgationActorSpawn const& spawn : HeroesActorSpawns)
         {
             Position pos = spawn.Pos;
@@ -758,7 +926,8 @@ private:
         _actorGUIDs.clear();
     }
 
-    // The event ended early: the actors go, and a player still here sees the beach Orkus and Kasha again
+    // The event ended early: the actors go and so does he; a player still here sees the landed Kasha again, and the controller
+    // brings a new Orkus
     void Abort(Player* player)
     {
         _events.Reset();
@@ -778,7 +947,10 @@ private:
     ObjectGuid _battleMasterGUID;
     GuidVector _actorGUIDs;
     uint32 _waitTries;
+    bool _started;
     bool _atHiding;
+    bool _waitingForWord;
+    bool _wordGiven;
     bool _fighting;
     bool _carried;
     bool _kashaCalled;
@@ -789,7 +961,7 @@ private:
 // past them). The Battle Master falls to Orkus; the trio cannot be killed, they are the reason Orkus does not come back.
 struct npc_hillsbrad_purgation_actor : public ScriptedAI
 {
-    npc_hillsbrad_purgation_actor(Creature* creature) : ScriptedAI(creature) { }
+    npc_hillsbrad_purgation_actor(Creature* creature) : ScriptedAI(creature), _summonerCheckTimer(2000) { }
 
     void Reset() override
     {
@@ -813,12 +985,328 @@ struct npc_hillsbrad_purgation_actor : public ScriptedAI
         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
     }
 
-    void UpdateAI(uint32 /*diff*/) override
+    void UpdateAI(uint32 diff) override
     {
+        // Their Orkus is gone without despawning them (whatever the way): they go too, so they never stand doubled
+        if (_summonerCheckTimer <= diff)
+        {
+            _summonerCheckTimer = 2000;
+            TempSummon* summon = me->ToTempSummon();
+            if (!summon || !summon->GetSummoner())
+            {
+                me->DespawnOrUnsummon();
+                return;
+            }
+        }
+        else
+            _summonerCheckTimer -= diff;
+
         if (!UpdateVictim())
             return;
 
         DoMeleeAttackIfReady();
+    }
+
+private:
+    uint32 _summonerCheckTimer;
+};
+
+/*######
+## They Will Never Expect This... (28397) and Heroes of the Horde! (28400): Orkus goes with the player
+######*/
+
+// 5.4.8 has two controllers, one per Orkus. Purgation Isle Summon Controller I (90130) keeps the companion 48470 with the
+// player on Purgation Isle until They Will Never Expect This... is turned in; then he runs off, and Purgation Isle Summon
+// Controller II (90206) brings the event Orkus 48503, who runs to the player, gives Heroes of the Horde! and leads the event
+// (Wowhead comments on 48470 and 28400; retail TDB 1210 has only 48503 as the starter of 28400). Neither controller has data
+// in either TDB: the quest bounds are spell_area's and ours.
+
+namespace
+{
+
+// An unsummoned companion stays in the owner's list until the map removes it (TempSummon::UnSummon only queues it)
+bool IsLivePurgationIsleOrkus(Creature* orkus, Player* player)
+{
+    return orkus->IsInWorld() && !orkus->IsDestroyedObject() && orkus->IsAlive() && orkus->IsInMap(player);
+}
+
+// The companion: from the end of the flight (The Road to Purgation complete) until They Will Never Expect This... is turned in.
+// He ends the one and gives and ends the other.
+bool WantsPurgationIsleOrkus(Player* player)
+{
+    QuestStatus road = player->GetQuestStatus(QUEST_THE_ROAD_TO_PURGATION);
+    if (road != QUEST_STATUS_COMPLETE && road != QUEST_STATUS_REWARDED)
+        return false;
+
+    return player->GetQuestStatus(QUEST_THEY_WILL_NEVER_EXPECT_THIS) != QUEST_STATUS_REWARDED;
+}
+
+Creature* GetPurgationIsleOrkus(Player* player)
+{
+    std::list<Creature*> companions;
+    player->GetAllMinionsByEntry(companions, NPC_ORKUS_PURGATION_ISLE);
+    for (Creature* orkus : companions)
+        if (IsLivePurgationIsleOrkus(orkus, player))
+            return orkus;
+    return nullptr;
+}
+
+// One companion while the player's quests call for him: one that is dead or was left far behind is replaced (after a login, a
+// death or a teleport the player has none), one that is no longer called for leaves
+void SummonPurgationIsleOrkus(Player* player)
+{
+    if (!player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->GetVehicle())
+        return;
+
+    bool const wanted = WantsPurgationIsleOrkus(player);
+
+    std::list<Creature*> companions;
+    player->GetAllMinionsByEntry(companions, NPC_ORKUS_PURGATION_ISLE);
+
+    bool found = false;
+    for (Creature* orkus : companions)
+    {
+        if (orkus->IsDestroyedObject())
+            continue;
+        if (wanted && !found && IsLivePurgationIsleOrkus(orkus, player) && orkus->IsWithinDist(player, 100.0f))
+            found = true;
+        else
+            orkus->ToTempSummon()->UnSummon();
+    }
+
+    if (!wanted)
+        player->RemoveAurasDueToSpell(SPELL_SUMMON_ORKUS_PURGATION_ISLE);
+
+    if (found || !wanted)
+        return;
+
+    player->CastSpell(player, SPELL_SUMMON_ORKUS_PURGATION_ISLE, true);
+}
+
+// The companion's leave when his controller goes: he turns away from the player and runs off (Wowhead comment on 48470: he
+// "runs off and disappears when They Will Never Expect This... is turned in"; the distance and the time are ours)
+void SendPurgationIsleOrkusAway(Unit* owner)
+{
+    std::list<Creature*> companions;
+    owner->GetAllMinionsByEntry(companions, NPC_ORKUS_PURGATION_ISLE);
+    for (Creature* orkus : companions)
+    {
+        if (orkus->IsDestroyedObject())
+            continue;
+
+        if (!orkus->IsAlive() || !orkus->IsInWorld() || !owner->IsInWorld())
+        {
+            orkus->ToTempSummon()->UnSummon();
+            continue;
+        }
+
+        orkus->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+        orkus->CombatStop(true);
+        orkus->SetReactState(REACT_PASSIVE);
+        float x, y, z;
+        orkus->GetNearPoint(orkus, x, y, z, 25.0f, owner->GetAngle(orkus));
+        orkus->GetMotionMaster()->Clear();
+        orkus->GetMotionMaster()->MovePoint(0, x, y, z);
+        orkus->ToTempSummon()->UnSummon(4 * IN_MILLISECONDS);
+    }
+}
+
+// The event Orkus: from They Will Never Expect This... turned in until Heroes of the Horde! is done
+bool WantsHeroesOrkus(Player* player)
+{
+    if (player->GetQuestStatus(QUEST_THEY_WILL_NEVER_EXPECT_THIS) != QUEST_STATUS_REWARDED)
+        return false;
+
+    QuestStatus heroes = player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE);
+    return heroes == QUEST_STATUS_NONE || heroes == QUEST_STATUS_INCOMPLETE;
+}
+
+// The player's event Orkuses anywhere on the map (the player's own summons, Unit::m_summons), unsummoned ones left out
+void GetHeroesOrkuses(Player* player, std::list<Creature*>& orkuses)
+{
+    std::list<TempSummon*> summons;
+    player->GetSummons(summons, NPC_ORKUS_HEROES);
+    for (TempSummon* orkus : summons)
+        if (orkus->IsInWorld() && !orkus->IsDestroyedObject() && orkus->IsAlive() && orkus->IsInMap(player))
+            orkus->IsAIEnabled ? orkuses.push_back(orkus) : orkus->UnSummon();
+}
+
+// One event Orkus of the player's: he comes running from a little way off (ours). One that has gone far from the player
+// unsummons himself (npc_hillsbrad_orkus_heroes), but only while he is updated (creatures update near players only): after a
+// teleport on the same map (a hearthstone, a spirit healer) he would stay where he was and come back doubled. So only one
+// within his event range (250 yards) is kept, and every other one of the player's goes with his actors.
+void SummonHeroesOrkus(Player* player)
+{
+    if (!player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->GetVehicle() || !WantsHeroesOrkus(player))
+        return;
+
+    std::list<Creature*> orkuses;
+    GetHeroesOrkuses(player, orkuses);
+
+    bool found = false;
+    for (Creature* orkus : orkuses)
+    {
+        if (!found && orkus->IsWithinDist(player, 250.0f))
+            found = true;
+        else
+            orkus->AI()->DoAction(ACTION_HEROES_DISCARD);
+    }
+
+    if (found)
+        return;
+
+    float x, y, z;
+    player->GetNearPoint(player, x, y, z, 15.0f, player->GetOrientation() + float(M_PI));
+    player->SummonCreature(NPC_ORKUS_HEROES, { x, y, z, player->GetOrientation() }, TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID());
+}
+
+} // namespace
+
+// 90130 - Purgation Isle Summon Controller I
+// The player's aura on Purgation Isle (its casting requirements: area group 2852 = area 896) while the companion Orkus goes
+// with the player; on leaving the isle it goes and Orkus with it (Wowhead comment on 28397: "he evaporated about halfway to
+// shore, and didn't show up again till I was back on the island"). Its effect 0 is a dummy (5.4.8): here it brings Orkus
+// (Summon Orkus 90132). Its periodic trigger every 30 s, Orkus Broadcast (90129, a dummy on the creatures around), is his
+// chatter: one of the sixteen lines Wowhead quotes for 48470 outside the Heroes of the Horde! event (broadcast texts 48698 ..
+// 48719; "much more chatty than Dumass and Johnny Awesome, sometimes spamming me with paragraphs at a time"), out of combat
+// (ours). The aura also checks every 5 s for a missing Orkus (ours, as the Sludge Field Summon Controller) and says a line
+// every sixth check.
+class spell_hillsbrad_purgation_isle_summon_controller : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_purgation_isle_summon_controller);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_ORKUS_PURGATION_ISLE, SPELL_COMMANDING_SHOUT });
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        // At login the aura comes back before the player is in the world: the first periodic tick brings him then
+        if (Player* player = GetTarget()->ToPlayer())
+            SummonPurgationIsleOrkus(player);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        SendPurgationIsleOrkusAway(GetTarget());
+        GetTarget()->RemoveAurasDueToSpell(SPELL_SUMMON_ORKUS_PURGATION_ISLE);
+    }
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* aurEff)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        // spell_area takes the aura away when the area or the quests change (the quests only on the next area check here)
+        if (!WantsPurgationIsleOrkus(player))
+        {
+            Remove();
+            return;
+        }
+
+        SummonPurgationIsleOrkus(player);
+
+        // Orkus Broadcast: every 30 s (the DBC period), a line for his owner
+        if (aurEff->GetTickNumber() % 6 == 0)
+            if (Creature* orkus = GetPurgationIsleOrkus(player))
+                if (!orkus->IsInCombat() && !player->IsInCombat() && orkus->IsWithinDist(player, 30.0f) && orkus->IsAIEnabled)
+                    orkus->AI()->Talk(TALK_ORKUS_CHATTER, player);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_purgation_isle_summon_controller::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_purgation_isle_summon_controller::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_hillsbrad_purgation_isle_summon_controller::CalcPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_hillsbrad_purgation_isle_summon_controller::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+};
+
+// 90206 - Purgation Isle Summon Controller II
+// The player's aura in Hillsbrad Foothills (its casting requirements: area group 2822 = zone 267, so the event Orkus also goes
+// with Kasha to Tarren Mill) from They Will Never Expect This... turned in until Heroes of the Horde! is done. Its only effect
+// is a dummy (5.4.8): here it brings the event Orkus 48503, summoned directly rather than by Summon Orkus 90205 (SummonProperties
+// 3081: personal ally, no duration), and checks every 5 s that the player has one (ours). Leaving the zone sends him away,
+// unless Kasha already carries him.
+class spell_hillsbrad_purgation_isle_summon_controller_heroes : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_purgation_isle_summon_controller_heroes);
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+            SummonHeroesOrkus(player);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        std::list<Creature*> orkuses;
+        GetHeroesOrkuses(player, orkuses);
+        for (Creature* orkus : orkuses)
+            orkus->AI()->DoAction(ACTION_HEROES_DISMISS);
+    }
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        QuestStatus heroes = player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE);
+        if (heroes == QUEST_STATUS_COMPLETE || heroes == QUEST_STATUS_REWARDED)
+        {
+            Remove();
+            return;
+        }
+
+        SummonHeroesOrkus(player);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_purgation_isle_summon_controller_heroes::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_purgation_isle_summon_controller_heroes::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_hillsbrad_purgation_isle_summon_controller_heroes::CalcPeriodic, EFFECT_0, SPELL_AURA_DUMMY);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_hillsbrad_purgation_isle_summon_controller_heroes::OnPeriodic, EFFECT_0, SPELL_AURA_DUMMY);
+    }
+};
+
+// 28397 - They Will Never Expect This...
+// spell_area does not follow quest changes in this core: at the turn-in the controllers are checked again, so the companion runs
+// off and the event Orkus comes at once
+class quest_hillsbrad_they_will_never_expect_this : public QuestScript
+{
+public:
+    quest_hillsbrad_they_will_never_expect_this() : QuestScript("quest_hillsbrad_they_will_never_expect_this") { }
+
+    void OnQuestStatusChange(Player* player, Quest const* /*quest*/, QuestStatus /*oldStatus*/, QuestStatus newStatus) override
+    {
+        if (newStatus != QUEST_STATUS_REWARDED || !player->IsInWorld())
+            return;
+
+        // Controller II is given zone-wide, Controller I in the area
+        player->UpdateZoneDependentAuras(player->GetZoneId());
+        player->UpdateAreaDependentAuras(player->GetAreaId());
     }
 };
 
@@ -1139,8 +1627,8 @@ private:
 
     // Cut short. Before the player was on board (she could not pick them up): only she goes, and Orkus calls another Kasha.
     // Once the player had been on board (they logged out or got off on the way): the player's Orkus ends the event (his actors
-    // go, the beach Orkus and Kasha show again); the player keeps the plans and is picked up again by talking to Orkus on the
-    // Purgation Isle beach.
+    // go, the landed Kasha comes back and Controller II brings a new Orkus); the player keeps the plans, and that Orkus calls
+    // Kasha again as soon as the player is back on Purgation Isle.
     void Leave()
     {
         if (_arrived)
@@ -1364,6 +1852,9 @@ void AddSC_hillsbrad_purgation()
     new aura_script<spell_hillsbrad_ride_to_purgation>("spell_hillsbrad_ride_to_purgation");
     new creature_script<npc_hillsbrad_kasha_road_to_purgation>("npc_hillsbrad_kasha_road_to_purgation");
     new creature_script<npc_hillsbrad_orkus_purgation_isle>("npc_hillsbrad_orkus_purgation_isle");
+    new aura_script<spell_hillsbrad_purgation_isle_summon_controller>("spell_hillsbrad_purgation_isle_summon_controller");
+    new aura_script<spell_hillsbrad_purgation_isle_summon_controller_heroes>("spell_hillsbrad_purgation_isle_summon_controller_heroes");
+    new quest_hillsbrad_they_will_never_expect_this();
     new creature_script<npc_hillsbrad_orkus_heroes>("npc_hillsbrad_orkus_heroes");
     new creature_script<npc_hillsbrad_purgation_actor>("npc_hillsbrad_purgation_actor");
     new creature_script<npc_hillsbrad_kasha_heroes>("npc_hillsbrad_kasha_heroes");
