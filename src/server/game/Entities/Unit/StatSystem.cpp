@@ -483,6 +483,11 @@ void Player::UpdateMaxHealth()
 
 void Player::UpdateMaxPower(Powers power)
 {
+    // The alternate power maximum belongs to SPELL_AURA_ENABLE_ALT_POWER (UnitPowerBar) or to the script that set it; it has no
+    // stat source, so a recalculation (login, level-up) would only reset it to 0 and clamp the current value with it.
+    if (power == POWER_ALTERNATE_POWER)
+        return;
+
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
 
     float bonusPower = (power == POWER_MANA && GetCreatePowers(power) > 0) ? GetManaBonusFromIntellect() : 0;
@@ -1189,6 +1194,11 @@ void Creature::UpdateMaxHealth()
 
 void Creature::UpdateMaxPower(Powers power)
 {
+    // The alternate power maximum belongs to SPELL_AURA_ENABLE_ALT_POWER (UnitPowerBar) or to the script that set it; it has no
+    // stat source, so a recalculation (login, level-up) would only reset it to 0 and clamp the current value with it.
+    if (power == POWER_ALTERNATE_POWER)
+        return;
+
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
 
     float value  = GetTotalAuraModValue(unitMod);
@@ -1501,6 +1511,11 @@ void Guardian::UpdateMaxHealth()
 
 void Guardian::UpdateMaxPower(Powers power)
 {
+    // The alternate power maximum belongs to SPELL_AURA_ENABLE_ALT_POWER (UnitPowerBar) or to the script that set it; it has no
+    // stat source, so a recalculation (login, level-up) would only reset it to 0 and clamp the current value with it.
+    if (power == POWER_ALTERNATE_POWER)
+        return;
+
     if (GetPowerIndex(power) == MAX_POWERS)
         return;
 
