@@ -24,6 +24,7 @@
  * Matters of Loyalty (28600)           Drek'Thar refuses to aid the Forsaken
  * March of the Stormpike (28506)       the camera tour of the four fingers of Hillsbrad
  * Stormpike Apocalypse (28616)         the pocket-nukes go off
+ * Stormpike Rendezvous (28348)         Orkus overhears Vanndar and Balinda on the Southshore docks
  *
  * Sourced: the spells (5.4.8 Spell.dbc: the camera summons, their ride auras with the scene's phase, the end spells with
  * QUEST_COMPLETE), the actors (their summon spells and templates), every line (broadcast_text), the Sludge Fields camera start
@@ -42,6 +43,7 @@
 #include "SpellScript.h"
 #include "DBCStores.h"
 #include "SpellMgr.h"
+#include "SmartAI.h"
 
 namespace
 {
@@ -88,7 +90,7 @@ bool ReplayScene(Player* player, uint32 questId, uint32 cameraEntry, uint32 summ
     return true;
 }
 
-// The cameras of the five scenes. Summoned on the player by the scene's summon spell, whose ride aura seats the player (hidden:
+// The scene cameras. Summoned on the player by the scene's summon spell, whose ride aura seats the player (hidden:
 // spell_hillsbrad_scene_camera_ride; with the scene's phase). The camera waits for its rider, plays the scene, then lets the
 // player out and casts the end spell on the player: it puts the player back at the quest giver and completes the quest. Getting
 // out early ends the scene the same way (the end spells are named Cancel Cinematic), so the quest is never left open by a scene
@@ -119,8 +121,8 @@ public:
         if (apply || passenger->GetGUID() != _playerGUID)
             return;
 
-        // The player got out early
-        if (_started && !_done)
+        // The player got out early, also before the scene started: Finish sets the player down at the quest giver
+        if (!_done)
             Finish();
     }
 
@@ -174,13 +176,11 @@ public:
                 else
                 {
                     // The player never got in: complete the quest anyway (ours), the chain must not stop here. The ride
-                    // aura's hiding and phase may still be on the player without the seat: take them off
-                    _done = true;
-                    DespawnActors();
+                    // aura's hiding and phase may still be on the player without the seat: take them off. Finish casts the
+                    // end spell, which sets the player down at the quest giver (where the quest was accepted) and credits
+                    // the quest, or credits it directly
                     RemoveRideAura(player);
-                    if (player->GetQuestStatus(_questId) == QUEST_STATUS_INCOMPLETE)
-                        player->AreaExploredOrEventHappens(_questId);
-                    me->DespawnOrUnsummon();
+                    Finish();
                 }
                 return;
             }
@@ -1765,6 +1765,309 @@ private:
 };
 
 /*######
+## Stormpike Rendezvous (28348)
+######*/
+
+// Orkus tells how he ended up in the water: on the docks of the Ruins of Southshore he overheard Vanndar Stormpike and Captain
+// Balinda Stonehearth, who meet Ivar Bloodfang at Purgation Isle, fought them, called Kasha, and was thrown into the sea.
+//
+// Sourced: the spells (5.4.8 Spell.dbc: 89971 Summon Orkus Camera, whose effect value names the ride 89970 Orkus Camera with
+// phase 343 "Stormpike Rendezvous" and quest invisibility 4; the actors' summons 89983-89986, Summon Orkus/Vanndar/Kasha/Balinda;
+// 89987 Cancel Cinematic, teleport + QUEST_COMPLETE 28348), the camera's vehicle (1325, sniffed in mop's template), every line
+// (broadcast_text 48624-48647), the order of the scene (warcraft.wiki.gg; a Wowhead comment quoting the lines in order) and that it
+// is a skippable camera scene in which Kasha lands and fights (Wowhead comments, 2010). Orkus', Vanndar's and Balinda's spots and
+// Orkus' two jumps are those of LoA's old SmartAI for the scene (source unknown; they fit the docks of the extracted vmaps).
+// Ours: the camera's spot, every timing, Kasha's flight and landing spot, where Vanndar throws Orkus (into the shallows off
+// the docks), the dwarves leaving by teleport (the wiki says they teleport out; Teleport Visual Only is ours), that the actors
+// are the player's private summons summoned from here rather than by their spells, and that the fight is played with attack
+// animations: the actors never enter combat, as a creature entering combat loses its immunity to players (Unit::SetInCombatWith)
+// and the elite Stormpike then killed the player.
+// Retail's actors were real hostile mobs (a comment: skipping the scene left a hostile Balinda on the shore).
+
+enum StormpikeRendezvous
+{
+    QUEST_STORMPIKE_RENDEZVOUS                  = 28348,
+
+    NPC_ORKUS_CAMERA                            = 48395,
+    NPC_RENDEZVOUS_KASHA                        = 48396,
+    NPC_RENDEZVOUS_ORKUS                        = 48397,
+    NPC_RENDEZVOUS_VANNDAR                      = 48403,
+    NPC_RENDEZVOUS_BALINDA                      = 48407,
+
+    SPELL_SUMMON_ORKUS_CAMERA                   = 89971,
+    SPELL_CANCEL_CINEMATIC_RENDEZVOUS           = 89987,
+    SPELL_TELEPORT_VISUAL_ONLY                  = 51347,
+
+    // Orkus Camera (the narration)
+    TALK_RENDEZVOUS_FACILITIES                  = 0,    // 48624
+    TALK_RENDEZVOUS_OUTHOUSE                    = 1,    // 48626
+    // Kingslayer Orkus 48397
+    TALK_RENDEZVOUS_ORKUS_SMELL                 = 0,    // 48625
+    TALK_RENDEZVOUS_ORKUS_HELLSCREAM            = 1,    // 48627
+    TALK_RENDEZVOUS_ORKUS_YOU_FACE              = 2,    // 48643
+    TALK_RENDEZVOUS_ORKUS_KASHA                 = 3,    // 48644
+    // Vanndar Stormpike 48403
+    TALK_RENDEZVOUS_VANNDAR_WHERE               = 0,    // 48635
+    TALK_RENDEZVOUS_VANNDAR_LOOK                = 1,    // 48641
+    TALK_RENDEZVOUS_VANNDAR_ENOUGH              = 2,    // 48645
+    TALK_RENDEZVOUS_VANNDAR_LEAVE               = 3,    // 48646
+    // Captain Balinda Stonehearth 48407
+    TALK_RENDEZVOUS_BALINDA_PURGATION           = 0,    // 48639
+    TALK_RENDEZVOUS_BALINDA_SMELL               = 1,    // 48640
+    TALK_RENDEZVOUS_BALINDA_AYE                 = 2,    // 48647
+
+    POINT_RENDEZVOUS_KASHA_LANDED               = 1,
+    POINT_RENDEZVOUS_KASHA_SEA                  = 2,
+
+    EVENT_RENDEZVOUS_ORKUS_SMELL                = EVENT_SCENE_FIRST,
+    EVENT_RENDEZVOUS_OUTHOUSE,
+    EVENT_RENDEZVOUS_ORKUS_HELLSCREAM,
+    EVENT_RENDEZVOUS_VANNDAR_WHERE,
+    EVENT_RENDEZVOUS_BALINDA_PURGATION,
+    EVENT_RENDEZVOUS_BALINDA_SMELL,
+    EVENT_RENDEZVOUS_VANNDAR_LOOK,
+    EVENT_RENDEZVOUS_ORKUS_JUMP_UP,
+    EVENT_RENDEZVOUS_ORKUS_YOU_FACE,
+    EVENT_RENDEZVOUS_ORKUS_ATTACKS,
+    EVENT_RENDEZVOUS_FIGHT,
+    EVENT_RENDEZVOUS_ORKUS_KASHA,
+    EVENT_RENDEZVOUS_KASHA_LANDING,
+    EVENT_RENDEZVOUS_VANNDAR_ENOUGH,
+    EVENT_RENDEZVOUS_VANNDAR_LEAVE,
+    EVENT_RENDEZVOUS_BALINDA_AYE,
+    EVENT_RENDEZVOUS_TELEPORT_OUT,
+    EVENT_RENDEZVOUS_END
+};
+
+// LoA's old SmartAI spots: the outhouse (the end of his walk there), the top of it, and Vanndar and Balinda on the dock (vmap
+// surface 6.88). Orkus starts at the outhouse, as he has just come out of it (facing the dock: ours)
+Position const RendezvousOuthousePos        = { -890.572f, -574.041f, 7.29059f, 2.36f };
+Position const RendezvousOuthouseTopPos     = { -891.764f, -571.821f, 8.60625f };
+Position const RendezvousVanndarPos         = { -904.302f, -560.513f, 6.87974f, 2.25001f };
+Position const RendezvousBalindaPos         = { -901.909f, -557.962f, 6.87974f, 2.25001f };
+// Ours, all on the dock's surface or in the shallows off it (ground.py): Orkus lands in front of Vanndar; Kasha comes out
+// of the sky inland, out of the camera's view, and lands on the dock 3 yd from Balinda; Vanndar throws Orkus into
+// the shallows 25 yd from 312261, and Kasha flies after him. The kneeling Orkus 312261 and the collapsed Kasha 312260 stay in
+// sight in the scene (phases 187 and 200: the scene phase is added to the player's, it takes none away), so the camera stands
+// with them at its back and the throw goes away from them: they stay out of frame for the whole scene.
+Position const RendezvousOrkusFightPos      = { -902.0f, -562.6f, 6.88f };
+Position const RendezvousKashaSkyPos        = { -880.0f, -605.0f, 35.0f };
+Position const RendezvousKashaLandPos       = { -899.6f, -556.2f, 6.88f };
+Position const RendezvousOrkusSeaPos        = { -924.5f, -557.0f, -1.4f };
+Position const RendezvousKashaSeaPos        = { -927.0f, -560.0f, 4.0f };
+
+// 48218 - Kingslayer Orkus (at the Ruins of Southshore)
+// His SmartAI (the drowning Orkus, the Road to Purgation gossip) is kept. Accepting Stormpike Rendezvous starts the scene (Summon
+// Orkus Camera, cast on the player); talking to him with the quest still open plays it again.
+struct npc_hillsbrad_kingslayer_orkus_southshore : public SmartAI
+{
+    npc_hillsbrad_kingslayer_orkus_southshore(Creature* creature) : SmartAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        SmartAI::OnQuestAccept(player, quest);
+
+        if (quest->GetQuestId() == QUEST_STORMPIKE_RENDEZVOUS)
+            StartScene(player, QUEST_STORMPIKE_RENDEZVOUS, NPC_ORKUS_CAMERA, SPELL_SUMMON_ORKUS_CAMERA);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        if (ReplayScene(player, QUEST_STORMPIKE_RENDEZVOUS, NPC_ORKUS_CAMERA, SPELL_SUMMON_ORKUS_CAMERA))
+            return true;
+
+        return SmartAI::OnGossipHello(player);
+    }
+};
+
+// 48395 - Orkus Camera
+// Summoned on the player with phase 343 (Stormpike Rendezvous), 10 yd above the shore between Orkus and the docks, looking at
+// the docks with Orkus and Kasha at its back. Cancel Cinematic puts the player back in front of Orkus and completes the quest.
+struct npc_hillsbrad_orkus_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_orkus_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_RENDEZVOUS, SPELL_CANCEL_CINEMATIC_RENDEZVOUS, 1.0f), _kashaLanded(false) { }
+
+    void Start(Player* player) override
+    {
+        FaceTo(-897.0f, -566.0f);
+
+        if (Creature* orkus = SummonActor(NPC_RENDEZVOUS_ORKUS, RendezvousOuthousePos))
+            _orkusGUID = orkus->GetGUID();
+        if (Creature* vanndar = SummonActor(NPC_RENDEZVOUS_VANNDAR, RendezvousVanndarPos))
+            _vanndarGUID = vanndar->GetGUID();
+        if (Creature* balinda = SummonActor(NPC_RENDEZVOUS_BALINDA, RendezvousBalindaPos))
+            _balindaGUID = balinda->GetGUID();
+
+        // "I had just finished making use of the facilities on the docks when..."
+        Talk(TALK_RENDEZVOUS_FACILITIES, player);
+        _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_SMELL, 6s);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        Creature* orkus = GetActor(_orkusGUID);
+        Creature* vanndar = GetActor(_vanndarGUID);
+        Creature* balinda = GetActor(_balindaGUID);
+        if (!orkus || !vanndar || !balinda)
+        {
+            Finish();
+            return;
+        }
+
+        switch (eventId)
+        {
+            case EVENT_RENDEZVOUS_ORKUS_SMELL:
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_SMELL, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_OUTHOUSE, 6s);
+                break;
+            case EVENT_RENDEZVOUS_OUTHOUSE:
+                // "As I emerged from the outhouse, I saw them!"
+                Talk(TALK_RENDEZVOUS_OUTHOUSE, player);
+                orkus->SetFacingToObject(vanndar);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_HELLSCREAM, 6s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_HELLSCREAM:
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_HELLSCREAM, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_WHERE, 3s);
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_WHERE:
+                vanndar->SetFacingToObject(balinda);
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_WHERE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_BALINDA_PURGATION, 7s);
+                break;
+            case EVENT_RENDEZVOUS_BALINDA_PURGATION:
+                balinda->SetFacingToObject(vanndar);
+                balinda->AI()->Talk(TALK_RENDEZVOUS_BALINDA_PURGATION, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_BALINDA_SMELL, 6s);
+                break;
+            case EVENT_RENDEZVOUS_BALINDA_SMELL:
+                balinda->SetFacingToObject(orkus);
+                balinda->AI()->Talk(TALK_RENDEZVOUS_BALINDA_SMELL, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_LOOK, 6s);
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_LOOK:
+                vanndar->SetFacingToObject(orkus);
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_LOOK, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_JUMP_UP, 3s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_JUMP_UP:
+                orkus->GetMotionMaster()->MoveJump(RendezvousOuthouseTopPos, 10.0f, 10.0f);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_YOU_FACE, 2s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_YOU_FACE:
+                orkus->SetFacingToObject(vanndar);
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_YOU_FACE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_ATTACKS, 3s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_ATTACKS:
+                orkus->GetMotionMaster()->MoveJump(RendezvousOrkusFightPos, 15.0f, 15.0f);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_FIGHT, 1500ms);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_KASHA, 6s);
+                break;
+            case EVENT_RENDEZVOUS_FIGHT:
+            {
+                // The fight, played with attack animations only (see above)
+                orkus->SetFacingToObject(vanndar);
+                vanndar->SetFacingToObject(orkus);
+                orkus->HandleEmoteCommand(urand(0, 1) ? EMOTE_ONESHOT_ATTACK1H : EMOTE_ONESHOT_ATTACK2HTIGHT);
+                vanndar->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                Creature* kasha = _kashaLanded ? GetActor(_kashaGUID) : nullptr;
+                if (kasha)
+                {
+                    kasha->SetFacingToObject(balinda);
+                    balinda->SetFacingToObject(kasha);
+                    kasha->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                    balinda->HandleEmoteCommand(EMOTE_ONESHOT_SPELL_CAST_OMNI);
+                }
+                else
+                {
+                    balinda->SetFacingToObject(orkus);
+                    balinda->HandleEmoteCommand(EMOTE_ONESHOT_SPELL_CAST_OMNI);
+                }
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_FIGHT, Milliseconds(urand(1200, 1700)));
+                break;
+            }
+            case EVENT_RENDEZVOUS_ORKUS_KASHA:
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_KASHA, player);
+                // Summoned in mid-air: her create packet goes out from AddToMap before gravity is turned off here, but neither
+                // the server nor the client drops a creature that has no falling flag, and she appears out of the camera's view
+                if (Creature* kasha = SummonActor(NPC_RENDEZVOUS_KASHA, RendezvousKashaSkyPos))
+                {
+                    _kashaGUID = kasha->GetGUID();
+                    kasha->SetCanFly(true);
+                    kasha->SetDisableGravity(true);
+                    kasha->GetMotionMaster()->MovePoint(POINT_RENDEZVOUS_KASHA_LANDED, RendezvousKashaLandPos, false);
+                    _events.ScheduleEvent(EVENT_RENDEZVOUS_KASHA_LANDING, 500ms);
+                }
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_ENOUGH, 16s);
+                break;
+            case EVENT_RENDEZVOUS_KASHA_LANDING:
+                // Kasha lands on the dock and joins the fight
+                if (Creature* kasha = GetActor(_kashaGUID))
+                {
+                    if (kasha->GetExactDist(&RendezvousKashaLandPos) > 1.0f)
+                    {
+                        _events.ScheduleEvent(EVENT_RENDEZVOUS_KASHA_LANDING, 500ms);
+                        break;
+                    }
+
+                    kasha->SetDisableGravity(false);
+                    kasha->SetCanFly(false);
+                    _kashaLanded = true;
+                }
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_ENOUGH:
+                _events.CancelEvent(EVENT_RENDEZVOUS_FIGHT);
+                _events.CancelEvent(EVENT_RENDEZVOUS_KASHA_LANDING);
+                _kashaLanded = false;
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_ENOUGH, player);
+                vanndar->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK2HTIGHT);
+                orkus->GetMotionMaster()->MoveJump(RendezvousOrkusSeaPos, 20.0f, 12.0f);
+                if (Creature* kasha = GetActor(_kashaGUID))
+                {
+                    kasha->SetCanFly(true);
+                    kasha->SetDisableGravity(true);
+                    kasha->GetMotionMaster()->MovePoint(POINT_RENDEZVOUS_KASHA_SEA, RendezvousKashaSeaPos, false);
+                }
+                // Between the dock and the spot in the sea: both stay in view, 312261 and 312260 stay behind the camera
+                FaceTo(-913.25f, -559.8f);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_LEAVE, 5s);
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_LEAVE:
+                FaceTo(-899.0f, -562.0f);
+                vanndar->SetFacingToObject(balinda);
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_LEAVE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_BALINDA_AYE, 5s);
+                break;
+            case EVENT_RENDEZVOUS_BALINDA_AYE:
+                balinda->SetFacingToObject(vanndar);
+                balinda->AI()->Talk(TALK_RENDEZVOUS_BALINDA_AYE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_TELEPORT_OUT, 2s);
+                break;
+            case EVENT_RENDEZVOUS_TELEPORT_OUT:
+                vanndar->CastSpell(vanndar, SPELL_TELEPORT_VISUAL_ONLY, true);
+                balinda->CastSpell(balinda, SPELL_TELEPORT_VISUAL_ONLY, true);
+                vanndar->DespawnOrUnsummon(1000);
+                balinda->DespawnOrUnsummon(1000);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_END, 4s);
+                break;
+            case EVENT_RENDEZVOUS_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+private:
+    ObjectGuid _orkusGUID;
+    ObjectGuid _vanndarGUID;
+    ObjectGuid _balindaGUID;
+    ObjectGuid _kashaGUID;
+    bool _kashaLanded;
+};
+
+/*######
 ## Welcome to the Machine (28096)
 ######*/
 
@@ -2352,8 +2655,9 @@ class spell_hillsbrad_machine_quest_giver : public AuraScript
 };
 
 // 89149 - Sludge Field Camera, 91354 - Aid of the Frostwolf Camera, 90714 - Tarren Mill Camera, 91609 - Stormpike Apocalypse Camera
-// The ride auras of the four cameras also make the rider invisible (quest invisibility 4). In this core an invisible unit only
-// sees the units that detect its invisibility (WorldObject::CanDetectInvisibilityOf), and nothing in the world detects type 4, so
+// The ride auras of the five cameras (89149, 89970 Orkus Camera, 90714, 91354, 91609) also make the rider invisible (quest
+// invisibility 4). In this core an invisible unit only sees the units that detect its invisibility
+// (WorldObject::CanDetectInvisibilityOf), and nothing in the world detects type 4, so
 // the rider saw no creature at all during the tour, the scene's own actors included (the scene phase has nothing to do with
 // it: unphased spawns stay in sight with phase 169). The invisibility is not applied; the rider is hidden from everyone else
 // the server-side way instead (as a GM is), which leaves the rider's own sight alone. Ours: as with the invisibility, other
@@ -2423,4 +2727,6 @@ void AddSC_hillsbrad_sludge_stormpike()
     new creature_script<npc_hillsbrad_high_warlord_cromush>("npc_hillsbrad_high_warlord_cromush");
     new creature_script<npc_hillsbrad_tarren_mill_camera>("npc_hillsbrad_tarren_mill_camera");
     new creature_script<npc_hillsbrad_stormpike_apocalypse_camera>("npc_hillsbrad_stormpike_apocalypse_camera");
+    new creature_script<npc_hillsbrad_kingslayer_orkus_southshore>("npc_hillsbrad_kingslayer_orkus_southshore");
+    new creature_script<npc_hillsbrad_orkus_camera>("npc_hillsbrad_orkus_camera");
 }
