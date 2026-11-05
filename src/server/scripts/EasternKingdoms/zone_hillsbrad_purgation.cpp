@@ -36,6 +36,7 @@
 #include "CombatAI.h"
 #include "TemporarySummon.h"
 #include "ObjectAccessor.h"
+#include "MoveSpline.h"
 
 enum PurgationIsle
 {
@@ -78,6 +79,7 @@ enum PurgationIsle
     ACTION_HEROES_ABORT                         = 2,        // Orkus 48503 / Kasha 48504: end the player's event early
     ACTION_HEROES_DISMISS                       = 3,        // Orkus 48503: Controller II is gone (the player left the zone)
     ACTION_HEROES_DISCARD                       = 4,        // Orkus 48503: a stale second one of the player's, left behind
+    ACTION_KASHA_STAND_DOWN                     = 5,        // Kasha 48467 / 48504: the player's watchdog sets the player down
 
     AREA_PURGATION_ISLE                         = 896,
 };
@@ -126,6 +128,9 @@ enum PurgationEvents
 
     // Orkus, the player's companion on Purgation Isle
     EVENT_COMPANION_SHOUT                       = 5,
+
+    // Kasha, The Road to Purgation: the flight did not end in time
+    EVENT_ROAD_OVERDUE                          = 6,
 
     // Orkus, Heroes of the Horde!
     EVENT_HEROES_WALK                           = 10,
@@ -188,6 +193,92 @@ static float GroundZ(WorldObject* object, float x, float y, float z)
     return ground > INVALID_HEIGHT ? ground : z;
 }
 
+// What a Kasha whose flight did not end was doing: whether her AI still runs (Creature::Update runs it only when enabled and
+// not evading), her motion and her spline
+static void LogKashaOverdue(char const* script, Creature* kasha, Player* player)
+{
+    TC_LOG_ERROR("scripts", "%s: the flight of %s did not land, setting them down (motion %u, spline finalized %u, evading %u, AI enabled %u)",
+        script, player->GetName().c_str(), uint32(kasha->GetMotionMaster()->GetCurrentMovementGeneratorType()),
+        uint32(kasha->movespline->Finalized()), uint32(kasha->IsInEvadeMode()), uint32(kasha->IsAIEnabled));
+}
+
+// Sets a player down at the end of a Kasha flight, in the scene cameras' order (npc_hillsbrad_scene_camera::Finish). A player
+// still seated gets off and is then held in the air (gravity off, no root: a root, like a teleport in the same tick, stops the
+// exit's jump with a stop spline and leaves the client in the seat's view). A player who already got off (from the vehicle's
+// PassengerBoarded, which runs inside Vehicle::RemovePassenger, before _ExitVehicle sends the unroot and the exit's jump) is
+// held from their next update. 300 ms later the player is teleported to `dest` and credited, unless they died or were
+// teleported away meanwhile (Player::TeleportTo gets them off before it marks the teleport, so only the place they are in by
+// then tells), and the area auras are checked again (spell_area does not follow quest changes in this core); gravity comes
+// back 100 ms after the teleport, which a teleport cast in the player's own update only sends at the end of it.
+static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, uint32 questId)
+{
+    if (kasha && player->GetVehicleBase() == kasha)
+    {
+        player->ExitVehicle();
+        player->SetDisableGravity(true);
+    }
+    else
+        player->m_Events.AddLambdaEventAtOffset([player]()
+        {
+            if (player->IsInWorld() && !player->GetVehicle())
+                player->SetDisableGravity(true);
+        }, 1);
+
+    WorldLocation const heldAt = player->GetWorldLocation();
+    player->m_Events.AddLambdaEventAtOffset([player, heldAt, dest, questId]()
+    {
+        if (!player->IsInWorld())
+            return;
+
+        if (!player->GetVehicle() && !player->IsBeingTeleported() && player->IsAlive() && player->GetMapId() == heldAt.GetMapId()
+            && player->GetExactDist(&heldAt) < 30.0f)
+        {
+            if (player->GetExactDist(&dest) > 2.0f)
+                player->NearTeleportTo(dest.GetPositionX(), dest.GetPositionY(), dest.GetPositionZ(), dest.GetOrientation());
+
+            if (player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
+                player->AreaExploredOrEventHappens(questId);
+            player->UpdateAreaDependentAuras(player->GetAreaId());
+        }
+
+        player->m_Events.AddLambdaEventAtOffset([player]()
+        {
+            if (player->IsInWorld())
+                player->SetDisableGravity(false);
+        }, 100);
+    }, 300);
+}
+
+// The player's own check that a Kasha flight ended, in case Kasha's AI no longer runs (then neither her landing nor her own
+// overdue timer would): if the player still sits on that Kasha well after the flight's duration, Kasha is told to stand down
+// (or sent away, without an AI) and the player is set down at `dest` and credited. `extraAura` is an aura of the flight to take
+// off with it.
+static void WatchKashaFlight(Player* player, Creature* kasha, Milliseconds after, Position const& dest, uint32 questId, uint32 extraAura,
+    char const* script, int32 standDownAction)
+{
+    ObjectGuid const kashaGUID = kasha->GetGUID();
+    player->m_Events.AddLambdaEventAtOffset([player, kashaGUID, dest, questId, extraAura, script, standDownAction]()
+    {
+        if (!player->IsInWorld())
+            return;
+
+        Unit* base = player->GetVehicleBase();
+        if (!base || base->GetGUID() != kashaGUID || !base->ToCreature())
+            return;
+
+        Creature* kasha = base->ToCreature();
+        LogKashaOverdue(script, kasha, player);
+        if (kasha->IsAIEnabled)
+            kasha->AI()->DoAction(standDownAction);
+        else
+            kasha->DespawnOrUnsummon(500);
+
+        if (extraAura)
+            player->RemoveAurasDueToSpell(extraAura);
+        SetDownFromKasha(player, kasha, dest, questId);
+    }, uint32(after.count()));
+}
+
 /*######
 ## The Road to Purgation (28375)
 ######*/
@@ -212,6 +303,9 @@ Position const RoadToPurgationLandingPos = { -1234.18f, 424.32f, 2.93f, 1.73f };
 Position const RoadToPurgationPlayerExitPos = { -1231.5f, 420.5f, 3.3f, 1.73f };
 
 float const RoadToPurgationFlightSpeedRate = 2.5f;
+
+// How long past the flight's own duration Kasha waits for her landing before she sets the player down anyway
+Milliseconds const RoadToPurgationOverdue = 10s;
 
 // 90123 - Summon Kasha
 // One Kasha per player, and only for a player who can ride
@@ -264,10 +358,15 @@ class spell_hillsbrad_ride_to_purgation : public AuraScript
 // the player's own Orkus (Purgation Isle Summon Controller I) takes over from the one who rode with them.
 // The credit is given directly: in 5.4.8 Kasha ends the ride with Cancel Cinematic (90128: teleport the summoner to a DB spot,
 // Despawn All Summons, QUEST_COMPLETE 28375), whose teleport has no spot here and which would not reach a player who is still
-// her passenger.
+// her passenger. Once she has taken off, the ride ends the same way however it ends: on the landing, when the player gets off
+// on the way (the seat lets them) and when the landing does not come (Finish, SetDownFromKasha). Crediting a player who got
+// off on the way is ours, after Cancel Cinematic's QUEST_COMPLETE. The landing is watched twice: by her own overdue event, and
+// by the player (WatchKashaFlight), since anything that stops her AI (Creature::Update runs it only when enabled and not
+// evading) stops her events with it. She is an active object for the flight, so that she never reaches a grid that is not
+// loaded: a creature that cannot enter one is removed (Map::MoveAllCreaturesInMoveList), which would drop the player.
 struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
 {
-    npc_hillsbrad_kasha_road_to_purgation(Creature* creature) : VehicleAI(creature), _boardTries(0), _started(false), _arrived(false) { }
+    npc_hillsbrad_kasha_road_to_purgation(Creature* creature) : VehicleAI(creature), _boardTries(0), _started(false), _done(false) { }
 
     void IsSummonedBy(Unit* summoner) override
     {
@@ -278,6 +377,7 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
         me->SetCanFly(true);
         me->SetDisableGravity(true);
+        me->setActive(true, ActiveFlags::Script);
 
         // Orkus rides in front, in the seat that steers. He leaves with her; the timed despawn is for a Kasha that goes with
         // her owner's logout.
@@ -298,20 +398,36 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
         if (apply || passenger->GetGUID() != _playerGUID)
             return;
 
-        // The player is off: Kasha leaves (getting off also dismisses her, as a vehicle minion)
-        if (!_arrived)
-            Leave();
+        // The player is off (getting off also dismisses her, as a vehicle minion). Before the take-off nothing happened yet;
+        // after it the player got off on the way and is set down on Purgation Isle.
+        if (_flying)
+            Finish();
+        else
+            Despawn();
     }
 
     void GetPassengerExitPosition(Unit* passenger, int8 /*seatId*/, Position& pos) override
     {
-        if (_arrived && passenger->GetGUID() == _playerGUID)
+        if (_landed && passenger->GetGUID() == _playerGUID)
             pos.Relocate(RoadToPurgationPlayerExitPos);
+    }
+
+    // The player's watchdog takes over: she only goes
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_KASHA_STAND_DOWN || _done)
+            return;
+
+        _done = true;
+        _events.Reset();
+        if (Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID))
+            orkus->DespawnOrUnsummon();
+        me->DespawnOrUnsummon(500);
     }
 
     void MovementInform(uint32 type, uint32 pointId) override
     {
-        if (type != EFFECT_MOTION_TYPE)
+        if (type != EFFECT_MOTION_TYPE || _done)
             return;
 
         if (pointId == POINT_ROAD_FLIGHT)
@@ -324,10 +440,23 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
     {
         VehicleAI::UpdateAI(diff);
 
+        if (_done)
+            return;
+
+        // Logged out: the ride aura is not saved, and the player asks Orkus at Southshore again
         Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
-        if (!player || !player->IsInWorld() || (_started && !_arrived && player->GetVehicleBase() != me))
+        if (!player || !player->IsInWorld())
         {
-            Leave();
+            Despawn();
+            return;
+        }
+
+        if (_started && player->GetVehicleBase() != me)
+        {
+            if (_flying)
+                Finish();
+            else
+                Despawn();
             return;
         }
 
@@ -352,13 +481,22 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
                         _events.ScheduleEvent(EVENT_ROAD_WAIT_FOR_RIDER, 500ms);
                     else
                     {
-                        Leave();
+                        // Never seated: the ride aura's hiding and phase may still be on the player
+                        player->RemoveAurasDueToSpell(SPELL_RIDE_TO_PURGATION);
+                        Despawn();
                         return;
                     }
                     break;
                 case EVENT_ROAD_TAKE_OFF:
+                {
                     TakeOff();
+                    _flying = true;
+                    Milliseconds const flight = Milliseconds(me->movespline->Duration());
+                    _events.ScheduleEvent(EVENT_ROAD_OVERDUE, flight + RoadToPurgationOverdue);
+                    WatchKashaFlight(player, me, flight + RoadToPurgationOverdue + 5s, RoadToPurgationPlayerExitPos, QUEST_THE_ROAD_TO_PURGATION,
+                        0, "npc_hillsbrad_kasha_road_to_purgation (player watchdog)", ACTION_KASHA_STAND_DOWN);
                     break;
+                }
                 case EVENT_ROAD_LAND:
                 {
                     Position landing = RoadToPurgationLandingPos;
@@ -367,17 +505,13 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
                     break;
                 }
                 case EVENT_ROAD_ARRIVE:
-                    _arrived = true;
-                    if (player->GetQuestStatus(QUEST_THE_ROAD_TO_PURGATION) == QUEST_STATUS_INCOMPLETE)
-                        player->AreaExploredOrEventHappens(QUEST_THE_ROAD_TO_PURGATION);
-                    if (Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID))
-                        orkus->DespawnOrUnsummon();
-                    if (player->GetVehicleBase() == me)
-                        player->ExitVehicle();
-                    // spell_area does not follow quest changes in this core: give the detection of the landed Kasha and the
-                    // Summon Controller now. The player is off Kasha, so the controller brings the player's Orkus at once.
-                    player->UpdateAreaDependentAuras(player->GetAreaId());
-                    Leave();
+                    _landed = true;
+                    Finish();
+                    return;
+                case EVENT_ROAD_OVERDUE:
+                    // The landing did not come (the end of the flight was lost): set the player down on the isle all the same
+                    LogKashaOverdue("npc_hillsbrad_kasha_road_to_purgation", me, player);
+                    Finish();
                     return;
                 default:
                     break;
@@ -400,12 +534,46 @@ private:
         me->GetMotionMaster()->MoveSmoothPath(POINT_ROAD_FLIGHT, path.data(), path.size(), false, true);
     }
 
-    // A player still on board is set down first; Orkus leaves with her
-    void Leave()
+    // The end of the ride (Cancel Cinematic): the player gets off, is credited and stands on the Purgation Isle beach
+    // (SetDownFromKasha). On the landing the player is already on that spot: the credit and the area auras (the detection of
+    // the landed Kasha and Purgation Isle Summon Controller I, whose Orkus comes as the player stands on the beach) come at once,
+    // so that the landed Kasha shows as this one goes. On the way, or when the landing never came, the teleport is what brings
+    // the player there (and puts the client back in step if it saw the flight end elsewhere), and the credit and the auras come
+    // with it. A player who logs out, dies or is teleported away meanwhile is left alone.
+    void Finish()
     {
+        if (_done)
+            return;
+
+        _done = true;
         _events.Reset();
-        _started = false;
-        _arrived = true;
+
+        if (Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID))
+            orkus->DespawnOrUnsummon();
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (player && player->IsInWorld() && !player->GetSession()->PlayerLogout() && player->IsAlive())
+        {
+            SetDownFromKasha(player, me, RoadToPurgationPlayerExitPos, QUEST_THE_ROAD_TO_PURGATION);
+            if (_landed)
+            {
+                if (player->GetQuestStatus(QUEST_THE_ROAD_TO_PURGATION) == QUEST_STATUS_INCOMPLETE)
+                    player->AreaExploredOrEventHappens(QUEST_THE_ROAD_TO_PURGATION);
+                player->UpdateAreaDependentAuras(player->GetAreaId());
+            }
+        }
+
+        me->DespawnOrUnsummon(500);
+    }
+
+    // Cut short before the take-off or by the player's logout: nothing to set down, the player asks Orkus again
+    void Despawn()
+    {
+        if (_done)
+            return;
+
+        _done = true;
+        _events.Reset();
 
         if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
             if (player->GetVehicleBase() == me)
@@ -420,8 +588,10 @@ private:
     ObjectGuid _playerGUID;
     ObjectGuid _orkusGUID;
     uint32 _boardTries;
-    bool _started;
-    bool _arrived;
+    bool _started;                              // the player is seated
+    bool _flying = false;                       // she has taken off
+    bool _landed = false;
+    bool _done;
 };
 
 /*######
