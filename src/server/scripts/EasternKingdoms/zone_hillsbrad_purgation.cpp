@@ -159,6 +159,8 @@ enum PurgationEvents
     EVENT_KASHA_ORKUS_DIES                      = 48,
     EVENT_KASHA_CROMUSH_TALK                    = 50,       // .. + 6
     EVENT_KASHA_FINISH                          = 60,
+    EVENT_KASHA_OVERDUE                         = 61,       // the flight to Tarren Mill did not end in time
+    EVENT_KASHA_GOT_OFF                         = 62,       // the player got off on the way: set down, or gone elsewhere
 };
 
 enum PurgationPoints
@@ -210,8 +212,9 @@ static void LogKashaOverdue(char const* script, Creature* kasha, Player* player)
 // held from their next update. 300 ms later the player is teleported to `dest` and credited, unless they died or were
 // teleported away meanwhile (Player::TeleportTo gets them off before it marks the teleport, so only the place they are in by
 // then tells), and the area auras are checked again (spell_area does not follow quest changes in this core); gravity comes
-// back 100 ms after the teleport, which a teleport cast in the player's own update only sends at the end of it.
-static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, uint32 questId)
+// back 100 ms after the teleport, which a teleport cast in the player's own update only sends at the end of it. Without
+// `areaAuras` the caller checks them itself, later.
+static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, uint32 questId, bool areaAuras = true)
 {
     if (kasha && player->GetVehicleBase() == kasha)
     {
@@ -226,7 +229,7 @@ static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, 
         }, 1);
 
     WorldLocation const heldAt = player->GetWorldLocation();
-    player->m_Events.AddLambdaEventAtOffset([player, heldAt, dest, questId]()
+    player->m_Events.AddLambdaEventAtOffset([player, heldAt, dest, questId, areaAuras]()
     {
         if (!player->IsInWorld())
             return;
@@ -239,7 +242,8 @@ static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, 
 
             if (player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
                 player->AreaExploredOrEventHappens(questId);
-            player->UpdateAreaDependentAuras(player->GetAreaId());
+            if (areaAuras)
+                player->UpdateAreaDependentAuras(player->GetAreaId());
         }
 
         player->m_Events.AddLambdaEventAtOffset([player]()
@@ -272,7 +276,14 @@ static void WatchKashaFlight(Player* player, Creature* kasha, Milliseconds after
         if (kasha->IsAIEnabled)
             kasha->AI()->DoAction(standDownAction);
         else
+        {
+            // Without her AI nobody else sends away her other riders (Orkus, a manual-despawn summon in Heroes of the Horde!)
+            if (Vehicle* vehicle = kasha->GetVehicleKit())
+                for (auto const& seat : vehicle->Seats)
+                    if (Creature* rider = ObjectAccessor::GetCreature(*kasha, seat.second.Passenger.Guid))
+                        rider->DespawnOrUnsummon();
             kasha->DespawnOrUnsummon(500);
+        }
 
         if (extraAura)
             player->RemoveAurasDueToSpell(extraAura);
@@ -1514,12 +1525,21 @@ Position const HeroesKashaPerchPos = { -21.1076f, -933.026f, 71.5233f, 0.380397f
 
 float const HeroesFlightSpeedRate = 3.0f;
 
+// How long past the flight's own duration Kasha waits for her landing at Tarren Mill before she sets the player down anyway
+Milliseconds const HeroesFlightOverdue = 10s;
+
 // 48504 - Kasha
 // Called by Orkus once the player holds the plans (Summon Kasha 90278, personal). She comes down beside the player and takes
 // them up (seat 1), snatches Orkus out of the fight (seat 0) and flies to Tarren Mill while he dies; there she sets the player
 // and his body down before Cromush, and the player is credited. The credit is given directly: Quest Complete 28400 (90379)
 // is aimed at her master, which a summon with no owner does not have here. Cromush's lines follow; she settles on the roof
 // where the perched Kasha takes over when the player is given its detection.
+// As on the Road to Purgation, she is an active object (a creature that cannot enter an unloaded grid is removed, which would
+// drop the player), and once she has taken off the player always arrives at Tarren Mill: on her landing; when the player
+// gets off on the way (seat 9115 has CAN_ENTER_OR_EXIT), which would otherwise drop them from up to 130 yd; and when the
+// landing does not come in time (SetDownAtTarrenMill), watched by her own overdue event and by the player (WatchKashaFlight,
+// for an AI that no longer runs). Before the take-off, getting off ends the event as before (the player keeps the plans and
+// Kasha is called again on the isle), and so does a player who got off by being teleported elsewhere.
 struct npc_hillsbrad_kasha_heroes : public VehicleAI
 {
     npc_hillsbrad_kasha_heroes(Creature* creature) : VehicleAI(creature), _boardTries(0), _started(false), _arrived(false) { }
@@ -1533,6 +1553,7 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
         me->SetCanFly(true);
         me->SetDisableGravity(true);
+        me->setActive(true, ActiveFlags::Script);
         me->SetSpeed(MOVE_RUN, HeroesFlightSpeedRate);
         me->SetSpeed(MOVE_FLIGHT, HeroesFlightSpeedRate);
 
@@ -1543,6 +1564,15 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
     {
         if (action == ACTION_HEROES_ABORT)
             Leave();
+        else if (action == ACTION_KASHA_STAND_DOWN && !_arrived)
+        {
+            // The player's watchdog sets the player down and credits them: she and the dying Orkus only go
+            _arrived = true;
+            _events.Reset();
+            if (Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID))
+                orkus->DespawnOrUnsummon();
+            me->DespawnOrUnsummon(500);
+        }
     }
 
     void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
@@ -1551,12 +1581,12 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
             return;
 
         if (_started && !_arrived)
-            Leave();
+            GotOff(passenger->ToPlayer());
     }
 
     void GetPassengerExitPosition(Unit* passenger, int8 /*seatId*/, Position& pos) override
     {
-        if (!_arrived)
+        if (!_landed)
             return;
 
         if (passenger->GetGUID() == _playerGUID)
@@ -1603,9 +1633,16 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
         VehicleAI::UpdateAI(diff);
 
         Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
-        if (!player || !player->IsInWorld() || (_started && !_arrived && player->GetVehicleBase() != me))
+        if (!player || !player->IsInWorld())
         {
             Leave();
+            return;
+        }
+
+        // Once the player got off on the way, EVENT_KASHA_GOT_OFF decides: the events must go on running
+        if (_started && !_arrived && !_gotOff && player->GetVehicleBase() != me)
+        {
+            GotOff(player);
             return;
         }
 
@@ -1667,9 +1704,35 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
                     _events.ScheduleEvent(EVENT_KASHA_TAKE_OFF, 3s);
                     break;
                 case EVENT_KASHA_TAKE_OFF:
+                {
                     TakeOff();
+                    _flying = true;
+                    Milliseconds const flight = Milliseconds(me->movespline->Duration());
+                    _events.ScheduleEvent(EVENT_KASHA_OVERDUE, flight + HeroesFlightOverdue);
+                    WatchKashaFlight(player, me, flight + HeroesFlightOverdue + 5s, HeroesPlayerExitPos, QUEST_HEROES_OF_THE_HORDE,
+                        SPELL_SUMMON_KASHA_HEROES, "npc_hillsbrad_kasha_heroes (player watchdog)", ACTION_KASHA_STAND_DOWN);
                     if (ObjectAccessor::GetCreature(*me, _orkusGUID))
                         _events.ScheduleEvent(EVENT_KASHA_ORKUS_TALK, 6s);
+                    break;
+                }
+                case EVENT_KASHA_OVERDUE:
+                    // The landing did not come (the end of the flight was lost): the player arrives at Tarren Mill all the same
+                    LogKashaOverdue("npc_hillsbrad_kasha_heroes", me, player);
+                    SetDownAtTarrenMill(player);
+                    break;
+                case EVENT_KASHA_GOT_OFF:
+                    // Still where they got off: set down at Tarren Mill. Gone elsewhere (Player::TeleportTo gets them off before it
+                    // marks the teleport, so only where they are by now tells): the event ends early.
+                    if (player->IsAlive() && !player->GetVehicle() && !player->IsBeingTeleported() && player->GetMapId() == _gotOffAt.GetMapId()
+                        && player->GetExactDist(&_gotOffAt) < 30.0f)
+                        SetDownAtTarrenMill(player);
+                    else
+                    {
+                        if (!player->GetVehicle())
+                            player->SetDisableGravity(false);
+                        Leave();
+                        return;
+                    }
                     break;
                 case EVENT_KASHA_ORKUS_TALK:
                     OrkusTalk(player, TALK_ORKUS_CAME_BACK);
@@ -1704,7 +1767,9 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
                 }
                 case EVENT_KASHA_ARRIVE:
                     _arrived = true;
+                    _landed = true;
                     _events.CancelEvent(EVENT_KASHA_ORKUS_DIES);
+                    _events.CancelEvent(EVENT_KASHA_OVERDUE);
                     if (player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE) == QUEST_STATUS_INCOMPLETE)
                         player->AreaExploredOrEventHappens(QUEST_HEROES_OF_THE_HORDE);
                     if (Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID))
@@ -1784,6 +1849,70 @@ private:
             orkus->AI()->Talk(textId, player);
     }
 
+    // The player is off before the landing. On the hill, dead or logging out: the event ends early (Leave). In the air, the
+    // player is held where they got off (from their next update: PassengerBoarded runs inside Vehicle::RemovePassenger, before
+    // the exit's jump is sent) and 300 ms later either set down at Tarren Mill or, if they were teleported away, the event ends.
+    void GotOff(Player* player)
+    {
+        if (_gotOff)
+            return;
+
+        if (!_flying || !player || !player->IsInWorld() || player->GetSession()->PlayerLogout() || !player->IsAlive())
+        {
+            Leave();
+            return;
+        }
+
+        _gotOff = true;
+        _gotOffAt = player->GetWorldLocation();
+        player->m_Events.AddLambdaEventAtOffset([player]()
+        {
+            if (player->IsInWorld() && !player->GetVehicle())
+                player->SetDisableGravity(true);
+        }, 1);
+        // Never left floating, whatever becomes of her
+        player->m_Events.AddLambdaEventAtOffset([player]()
+        {
+            if (player->IsInWorld() && !player->GetVehicle())
+                player->SetDisableGravity(false);
+        }, 3000);
+        _events.Reset();
+        _events.ScheduleEvent(EVENT_KASHA_GOT_OFF, 300ms);
+    }
+
+    // The landing without the flight: Kasha goes to her spot in front of Cromush first (the grid there loaded for her and for
+    // Orkus, who is made active too: a creature moved into an unloaded grid is removed), then Orkus' body, and the player is
+    // set down there and credited (SetDownFromKasha: off where Kasha was, held, teleported 300 ms later). The scene goes on as
+    // after a landing (Cromush's lines, Kasha on the roof, the area auras checked again at the end).
+    void SetDownAtTarrenMill(Player* player)
+    {
+        _arrived = true;
+        _events.Reset();
+
+        Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID);
+        if (orkus && orkus->GetVehicleBase() == me)
+            orkus->ExitVehicle();
+
+        SetDownFromKasha(player, me, HeroesPlayerExitPos, QUEST_HEROES_OF_THE_HORDE, false);
+
+        me->GetMap()->LoadGrid(HeroesTarrenMillLandingPos.GetPositionX(), HeroesTarrenMillLandingPos.GetPositionY());
+        Position landing = HeroesTarrenMillLandingPos;
+        landing.m_positionZ = GroundZ(me, landing.GetPositionX(), landing.GetPositionY(), landing.GetPositionZ());
+        me->GetMotionMaster()->Clear();
+        me->NearTeleportTo(landing.GetPositionX(), landing.GetPositionY(), landing.GetPositionZ(), landing.GetOrientation());
+
+        if (orkus)
+        {
+            orkus->setActive(true, ActiveFlags::Script);
+            orkus->NearTeleportTo(HeroesOrkusBodyPos.GetPositionX(), HeroesOrkusBodyPos.GetPositionY(), HeroesOrkusBodyPos.GetPositionZ(),
+                HeroesOrkusBodyPos.GetOrientation());
+            SetLifeless(orkus);
+        }
+
+        _events.ScheduleEvent(EVENT_KASHA_CROMUSH_TALK, 2s);
+        _events.ScheduleEvent(EVENT_KASHA_PERCH, 5s);
+    }
+
     // Orkus is dead: lying still, as Cromush finds him
     static void SetLifeless(Creature* orkus)
     {
@@ -1857,6 +1986,10 @@ private:
     uint32 _boardTries;
     bool _started;
     bool _arrived;
+    bool _flying = false;                       // taken off for Tarren Mill
+    bool _landed = false;                       // landed there: the passengers get off on their spots
+    bool _gotOff = false;                       // the player got off on the way (EVENT_KASHA_GOT_OFF decides)
+    WorldLocation _gotOffAt;
 };
 
 // Studies in Lethality (28324), Ruins of Southshore: the anger meter.
