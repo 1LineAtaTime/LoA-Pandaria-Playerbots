@@ -367,15 +367,26 @@ protected:
                 if (hook)
                     hook(player);
 
-                // Once set down: a teleport cast in the player's own update only goes out at the end of it
+                // Once set down: a teleport cast in the player's own update only goes out at the end of it. The enable is always
+                // sent, and once more a little later: the player's own movement packets replace the server's flags
+                // (WorldSession::HandleMovementOpcode), so one sent before the client took the hold clears the server's
+                // MOVEMENTFLAG_DISABLE_GRAVITY, Unit::SetDisableGravity(false) then sends nothing and the client keeps the hold
+                // (no jumping, walking down a slope keeps the height).
                 if (hover)
-                    player->m_Events.AddLambdaEventAtOffset([player]()
-                    {
-                        if (!player->IsInWorld())
-                            return;
+                    for (uint32 delay : { 100, 1500 })
+                        player->m_Events.AddLambdaEventAtOffset([player]()
+                        {
+                            if (!player->IsInWorld() || player->GetVehicle() || player->IsInFlight() || player->HasAuraType(SPELL_AURA_FLY)
+                                || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+                                return;
 
-                        player->SetDisableGravity(false);
-                    }, 100);
+                            if (!player->SetDisableGravity(false))
+                            {
+                                TC_LOG_DEBUG("scripts", "npc_hillsbrad_scene_camera: %s had no MOVEMENTFLAG_DISABLE_GRAVITY left on the server, sending the gravity enable anyway",
+                                    player->GetName().c_str());
+                                player->SetDisableGravity(false, true);
+                            }
+                        }, delay);
             }, 300);
         }
 

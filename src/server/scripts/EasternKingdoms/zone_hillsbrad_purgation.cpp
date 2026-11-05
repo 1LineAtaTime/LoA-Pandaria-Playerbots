@@ -205,6 +205,35 @@ static void LogKashaOverdue(char const* script, Creature* kasha, Player* player)
         uint32(kasha->movespline->Finalized()), uint32(kasha->IsInEvadeMode()), uint32(kasha->IsAIEnabled));
 }
 
+// Gives a player held in the air at the end of a Kasha flight their gravity back, and lifts the Road to Purgation rider's hiding
+// if it is still on. Unit::SetDisableGravity(false) sends the change only while the server still has MOVEMENTFLAG_DISABLE_GRAVITY,
+// but the player's own movement packets replace the server's flags (WorldSession::HandleMovementOpcode copies them over
+// m_movementInfo, and the gravity acks are ignored): one the client sent before it took the hold, received after it, clears the
+// flag, the restore then sends nothing and the client keeps the hold for good (walking down a slope keeps the height, no
+// jumping; while airborne it can also keep creatures more than 3 yd below at a steep angle from aggroing, through
+// Creature::CanStartAttack's height check). So the enable is always sent. Ride to Purgation 90122 hides its rider server-side (spell_hillsbrad_scene_camera_ride) until the aura goes, which
+// getting off does; it is taken off here again, and a hiding left without it is lifted (not a GM's own invisibility). Called
+// more than once; never for a player who has since boarded a vehicle, taken a flight path or flies.
+static void RestoreAfterKashaFlight(Player* player)
+{
+    if (!player->IsInWorld() || player->GetVehicle() || player->IsInFlight())
+        return;
+
+    player->RemoveAurasDueToSpell(SPELL_RIDE_TO_PURGATION);
+    if (!player->IsVisible() && player->isGMVisible())
+        player->SetVisible(true);
+
+    if (player->HasAuraType(SPELL_AURA_FLY) || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+        return;
+
+    if (!player->SetDisableGravity(false))
+    {
+        TC_LOG_DEBUG("scripts", "RestoreAfterKashaFlight: %s had no MOVEMENTFLAG_DISABLE_GRAVITY left on the server, sending the gravity enable anyway",
+            player->GetName().c_str());
+        player->SetDisableGravity(false, true);
+    }
+}
+
 // Sets a player down at the end of a Kasha flight, in the scene cameras' order (npc_hillsbrad_scene_camera::Finish). A player
 // still seated gets off and is then held in the air (gravity off, no root: a root, like a teleport in the same tick, stops the
 // exit's jump with a stop spline and leaves the client in the seat's view). A player who already got off (from the vehicle's
@@ -212,8 +241,9 @@ static void LogKashaOverdue(char const* script, Creature* kasha, Player* player)
 // held from their next update. 300 ms later the player is teleported to `dest` and credited, unless they died or were
 // teleported away meanwhile (Player::TeleportTo gets them off before it marks the teleport, so only the place they are in by
 // then tells), and the area auras are checked again (spell_area does not follow quest changes in this core); gravity comes
-// back 100 ms after the teleport, which a teleport cast in the player's own update only sends at the end of it. Without
-// `areaAuras` the caller checks them itself, later.
+// back 100 ms after the teleport, which a teleport cast in the player's own update only sends at the end of it, and once more
+// 1.5 s later (RestoreAfterKashaFlight), on every path: also when the player died, left or was teleported away meanwhile.
+// Without `areaAuras` the caller checks them itself, later.
 static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, uint32 questId, bool areaAuras = true)
 {
     if (kasha && player->GetVehicleBase() == kasha)
@@ -224,13 +254,17 @@ static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, 
     else
         player->m_Events.AddLambdaEventAtOffset([player]()
         {
-            if (player->IsInWorld() && !player->GetVehicle())
+            if (player->IsInWorld() && player->IsAlive() && !player->GetVehicle())
                 player->SetDisableGravity(true);
         }, 1);
 
     WorldLocation const heldAt = player->GetWorldLocation();
     player->m_Events.AddLambdaEventAtOffset([player, heldAt, dest, questId, areaAuras]()
     {
+        // Whatever comes of the set-down, the hold always ends
+        player->m_Events.AddLambdaEventAtOffset([player]() { RestoreAfterKashaFlight(player); }, 100);
+        player->m_Events.AddLambdaEventAtOffset([player]() { RestoreAfterKashaFlight(player); }, 1500);
+
         if (!player->IsInWorld())
             return;
 
@@ -245,12 +279,6 @@ static void SetDownFromKasha(Player* player, Unit* kasha, Position const& dest, 
             if (areaAuras)
                 player->UpdateAreaDependentAuras(player->GetAreaId());
         }
-
-        player->m_Events.AddLambdaEventAtOffset([player]()
-        {
-            if (player->IsInWorld())
-                player->SetDisableGravity(false);
-        }, 100);
     }, 300);
 }
 
@@ -1728,8 +1756,7 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
                         SetDownAtTarrenMill(player);
                     else
                     {
-                        if (!player->GetVehicle())
-                            player->SetDisableGravity(false);
+                        RestoreAfterKashaFlight(player);
                         Leave();
                         return;
                     }
@@ -1867,15 +1894,11 @@ private:
         _gotOffAt = player->GetWorldLocation();
         player->m_Events.AddLambdaEventAtOffset([player]()
         {
-            if (player->IsInWorld() && !player->GetVehicle())
+            if (player->IsInWorld() && player->IsAlive() && !player->GetVehicle())
                 player->SetDisableGravity(true);
         }, 1);
         // Never left floating, whatever becomes of her
-        player->m_Events.AddLambdaEventAtOffset([player]()
-        {
-            if (player->IsInWorld() && !player->GetVehicle())
-                player->SetDisableGravity(false);
-        }, 3000);
+        player->m_Events.AddLambdaEventAtOffset([player]() { RestoreAfterKashaFlight(player); }, 3000);
         _events.Reset();
         _events.ScheduleEvent(EVENT_KASHA_GOT_OFF, 300ms);
     }
