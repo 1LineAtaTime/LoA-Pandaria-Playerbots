@@ -892,9 +892,11 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
             return;
         }
 
+        // The player died once the event had started: it ends (the actors go, Controller II brings a new Orkus once the player
+        // is alive again; with the plans kept, he calls Kasha on the isle)
         QuestStatus status = player->GetQuestStatus(QUEST_HEROES_OF_THE_HORDE);
         if (status == QUEST_STATUS_COMPLETE || status == QUEST_STATUS_REWARDED || me->GetDistance(player) > (_started ? 250.0f : 100.0f)
-            || (_started && status != QUEST_STATUS_INCOMPLETE))
+            || (_started && status != QUEST_STATUS_INCOMPLETE) || (_started && !player->IsAlive()))
         {
             Abort(player);
             return;
@@ -995,7 +997,8 @@ struct npc_hillsbrad_orkus_heroes : public ScriptedAI
                     Creature* master = GetActor(NPC_STORMPIKE_BATTLE_MASTER);
                     if (!master)
                     {
-                        // The Battle Master is gone (killed by the player): straight on to holding the trio
+                        // The Battle Master is gone (the actors are immune to players, so not by the player's hand): straight on to
+                        // holding the trio
                         _events.ScheduleEvent(EVENT_HEROES_KILL_BATTLE_MASTER, 1s);
                         break;
                     }
@@ -1182,9 +1185,22 @@ private:
 // 48515 - Stormpike Battle Master, 48508 - Vanndar Stormpike, 48507 - Captain Balinda Stonehearth, 48485 - Packleader Ivar
 // Bloodfang: Orkus' event actors on the hilltop. They wait until Orkus strikes and fight only him (the player is sneaking
 // past them). The Battle Master falls to Orkus; the trio cannot be killed, they are the reason Orkus does not come back.
+// Only Orkus: entering combat takes UNIT_FLAG_IMMUNE_TO_PC off a creature (Unit::SetInCombatWith), and the trio (level 85, set
+// aggressive once the Battle Master falls, EVENT_HEROES_KILL_BATTLE_MASTER) then took the player or their pet as the next
+// victim, from sight or from the threat list once Kasha had snatched Orkus away (Vanndar killed a player being picked up). They
+// never aggro by sight and attack only Orkus (CanAIAttack, which Creature::CanCreatureAttack asks, keeps the player and pets
+// from becoming their victim; ThreatReference::FlagsAllowFighting likewise keeps a target they may not fight offline on their
+// threat list), and they get the immunity back at once, so the player and pets cannot hit them.
 struct npc_hillsbrad_purgation_actor : public ScriptedAI
 {
     npc_hillsbrad_purgation_actor(Creature* creature) : ScriptedAI(creature), _summonerCheckTimer(2000) { }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    bool CanAIAttack(Unit const* who) const override
+    {
+        return who->GetEntry() == NPC_ORKUS_HEROES;
+    }
 
     void Reset() override
     {
@@ -1224,8 +1240,17 @@ struct npc_hillsbrad_purgation_actor : public ScriptedAI
         else
             _summonerCheckTimer -= diff;
 
+        if (me->IsAlive() && !me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC))
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+
         if (!UpdateVictim())
             return;
+
+        if (!CanAIAttack(me->GetVictim()))
+        {
+            me->AttackStop();
+            return;
+        }
 
         DoMeleeAttackIfReady();
     }
@@ -1667,6 +1692,14 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
             return;
         }
 
+        // The player died before the landing (by now off her: Unit::setDeathState gets a dying passenger off): the event ends,
+        // nobody is carried or teleported. Before the take-off too: she does not wait by the body for the next 30 s.
+        if (!_arrived && !player->IsAlive())
+        {
+            Leave();
+            return;
+        }
+
         // Once the player got off on the way, EVENT_KASHA_GOT_OFF decides: the events must go on running
         if (_started && !_arrived && !_gotOff && player->GetVehicleBase() != me)
         {
@@ -1702,7 +1735,10 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
                 case EVENT_KASHA_WAIT_FOR_RIDER:
                     if (player->GetVehicleBase() == me)
                     {
+                        // Seated: whatever still fights the player on the hilltop is left behind (ours)
                         _started = true;
+                        player->CombatStop(true);
+                        player->GetThreatManager().RemoveMeFromThreatLists();
                         _events.ScheduleEvent(EVENT_KASHA_FETCH_ORKUS, 1s);
                     }
                     else if (++_boardTries < 30)
@@ -1746,6 +1782,11 @@ struct npc_hillsbrad_kasha_heroes : public VehicleAI
                 case EVENT_KASHA_OVERDUE:
                     // The landing did not come (the end of the flight was lost): the player arrives at Tarren Mill all the same
                     LogKashaOverdue("npc_hillsbrad_kasha_heroes", me, player);
+                    if (!player->IsAlive())
+                    {
+                        Leave();
+                        return;
+                    }
                     SetDownAtTarrenMill(player);
                     break;
                 case EVENT_KASHA_GOT_OFF:
@@ -1982,7 +2023,8 @@ private:
         if (player && player->GetVehicleBase() == me)
             player->ExitVehicle();
 
-        if (wasStarted)
+        // A player who died before getting on: the whole event ends too (Orkus' actors go)
+        if (wasStarted || (player && player->IsInWorld() && !player->IsAlive()))
         {
             Creature* orkus = ObjectAccessor::GetCreature(*me, _orkusGUID);
             if (!orkus && player && player->IsInWorld())
