@@ -173,6 +173,7 @@ enum PurgationPoints
     POINT_KASHA_TARREN_MILL,
     POINT_KASHA_PERCH_APPROACH,
     POINT_KASHA_PERCH,
+    POINT_ROAD_RISE,
 };
 
 // A creature of the player's own event: a private object of theirs, alive and in reach. Lookups from the player's side find
@@ -389,6 +390,19 @@ struct npc_hillsbrad_kasha_road_to_purgation : public VehicleAI
             orkus->EnterVehicle(me, SEAT_ORKUS);
             _orkusGUID = orkus->GetGUID();
         }
+
+        // Up and out over the water at once, as the player is seated: she is summoned on the beach (Summon Kasha's spot, 0.25 yd
+        // over the ground), which rises behind her (6 yd higher 10 yd back, a tree 8-10 yd back), and the view behind her seat
+        // started below the ground. 8 yd towards the first point of the flight, over the shallows, and 10 yd up.
+        float const angle = me->GetAngle(RoadToPurgationFlightPath[0].GetPositionX(), RoadToPurgationFlightPath[0].GetPositionY());
+        Position const rise[] =
+        {
+            me->GetPosition(),
+            { me->GetPositionX() + 8.0f * std::cos(angle), me->GetPositionY() + 8.0f * std::sin(angle), me->GetPositionZ() + 10.0f }
+        };
+        me->SetSpeed(MOVE_RUN, 1.0f);
+        me->SetSpeed(MOVE_FLIGHT, 1.0f);
+        me->GetMotionMaster()->MoveSmoothPath(POINT_ROAD_RISE, rise, 2, false, true);
 
         _events.ScheduleEvent(EVENT_ROAD_WAIT_FOR_RIDER, 1s);
     }
