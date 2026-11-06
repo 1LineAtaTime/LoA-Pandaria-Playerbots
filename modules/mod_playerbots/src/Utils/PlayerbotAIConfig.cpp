@@ -351,7 +351,7 @@ bool PlayerbotAIConfig::Initialize()
         }
     }
     ValidateDuelSpotMaps();
-    TC_LOG_INFO("playerbots", "[DUELSPOT] config: enable=%u spots=%u", uint32(duelSpotEnable), uint32(duelSpots.size()));
+    TC_LOG_DEBUG("playerbots", "[DUELSPOT] config: enable=%u spots=%u", uint32(duelSpotEnable), uint32(duelSpots.size()));
 
     // AiPlayerbot.DebugBotNames = "Arkond,Tariney" - comma-separated watch list for the
     // periodic [RPGSTAT] roaming/AI state dump (issue #61).

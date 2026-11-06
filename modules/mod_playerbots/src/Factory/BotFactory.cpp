@@ -777,7 +777,7 @@ void BotFactory::Prepare()
  
 void BotFactory::Randomize(bool incremental)
 {
-    TC_LOG_INFO("playerbots", "%s randomizing %s (level %u class = %s)...", (incremental ? "Incremental" : "Full"),
+    TC_LOG_DEBUG("playerbots", "%s randomizing %s (level %u class = %s)...", (incremental ? "Incremental" : "Full"),
             bot->GetName().c_str(), level, ClassToString((Classes)bot->GetClass()).c_str());
 
     uint32 const oldLevel = bot->GetLevel();

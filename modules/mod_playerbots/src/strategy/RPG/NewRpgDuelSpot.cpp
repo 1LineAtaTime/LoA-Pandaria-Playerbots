@@ -891,7 +891,7 @@ void DuelSpotMgr::Update(uint32 /*diff*/)
                     pickAI->Reset(true);
                 TeleportToSpot(pick, spot);
                 SetPending(pick->GetGUID(), idx, teamId);
-                TC_LOG_INFO("playerbots", "[DUELSPOT] seed %s -> %s lvl %u", pick->GetName().c_str(), spot.name.c_str(),
+                TC_LOG_DEBUG("playerbots", "[DUELSPOT] seed %s -> %s lvl %u", pick->GetName().c_str(), spot.name.c_str(),
                             pick->GetLevel());
 
                 --budget;
