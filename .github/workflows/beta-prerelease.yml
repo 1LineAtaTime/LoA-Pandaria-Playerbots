@@ -1,8 +1,7 @@
 name: playerbot-beta pre-release
 
 # Daily rolling pre-release "ci-playerbot-beta": an untested development build of the
-# playerbot-beta branch, with Windows, Linux and macOS binaries and a database zip (macOS
-# only when a hosted macOS runner was available: it never holds the pre-release back).
+# playerbot-beta branch, with Windows, Linux and macOS binaries and a database zip.
 #
 # Scheduled workflows only run from the default branch, so this file lives on the
 # default branch and builds the playerbot-beta branch.
@@ -12,6 +11,12 @@ name: playerbot-beta pre-release
 # run with "force"): the three builds and the database run on that commit, then the
 # pre-release assets and notes are replaced and the tag is moved last, so a failed run is
 # retried the next day. The release stays a pre-release and never becomes "Latest".
+#
+# macOS never holds the pre-release back. When the macOS build fails or gets no hosted
+# runner, the release keeps the prior build's macOS zip and its notes say so. The
+# notes' "ci-macos-sha" marker names the commit that zip was built from, and while it
+# differs from the tag, each daily run builds macOS alone and swaps the zip and its
+# notes line once it compiles.
 #
 # The database zip starts from the database of the newest versioned release in the
 # branch history that has one, and applies every SQL update that release does not have
@@ -32,6 +37,10 @@ on:
         description: "Release tag whose database zip is the starting point (empty: newest release in the branch history with one)"
         type: string
         default: ''
+      skip_macos:
+        description: "Leave the macOS build out, as when no macOS runner is available (the next daily run retries it)"
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -43,6 +52,8 @@ concurrency:
 env:
   BRANCH: playerbot-beta
   TAG: ci-playerbot-beta
+  # The release notes' macOS line when the attached macOS zip matches the published commit
+  MACOS_NOTE: "macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
 
 jobs:
   check:
@@ -52,6 +63,7 @@ jobs:
     outputs:
       build: ${{ steps.check.outputs.build }}
       sha: ${{ steps.check.outputs.sha }}
+      macos_retry: ${{ steps.check.outputs.macos_retry }}
     steps:
     - name: Compare playerbot-beta with the ci-playerbot-beta tag
       id: check
@@ -76,8 +88,20 @@ jobs:
           echo "Forced run: building $SHA." | tee -a "$GITHUB_STEP_SUMMARY"
           echo "build=true" >> "$GITHUB_OUTPUT"
         elif [ "$SHA" = "$TAG_SHA" ]; then
-          echo "No new commits on $BRANCH since the last pre-release ($SHA): nothing to build." | tee -a "$GITHUB_STEP_SUMMARY"
           echo "build=false" >> "$GITHUB_OUTPUT"
+          # The notes' ci-macos-sha marker names the commit the attached macOS zip was built
+          # from. When the published build went out without its own macOS build, only macOS is
+          # built again (job macos-retry). Releases without the marker are left alone.
+          BODY=$(gh release view "$TAG" -R "$REPO" --json body --jq .body 2>/dev/null || true)
+          if grep -q '<!-- ci-macos-sha:' <<< "$BODY"; then
+            MAC_SHA=$(sed -n 's/.*<!-- ci-macos-sha: *\([0-9a-f]*\) *-->.*/\1/p' <<< "$BODY" | head -n 1)
+            if [ "$MAC_SHA" != "$SHA" ]; then
+              echo "No new commits on $BRANCH, but the published build ($SHA) has no macOS build of its own (attached: ${MAC_SHA:-none}): building macOS only." | tee -a "$GITHUB_STEP_SUMMARY"
+              echo "macos_retry=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "No new commits on $BRANCH since the last pre-release ($SHA): nothing to build." | tee -a "$GITHUB_STEP_SUMMARY"
         else
           echo "$BRANCH has new commits: building $SHA." | tee -a "$GITHUB_STEP_SUMMARY"
           echo "build=true" >> "$GITHUB_OUTPUT"
@@ -105,7 +129,9 @@ jobs:
 
   macos:
     needs: check
-    if: needs.check.outputs.build == 'true'
+    if: >-
+      ${{ (needs.check.outputs.build == 'true' || needs.check.outputs.macos_retry == 'true')
+      && !inputs.skip_macos }}
     permissions:
       contents: read
     uses: ./.github/workflows/macos-arm-build.yml
@@ -442,8 +468,9 @@ jobs:
 
   # macOS never holds the pre-release back: hosted macOS arm64 runners are sometimes not
   # available at all ("The job was not acquired by Runner of type hosted"), so a failed or
-  # cancelled macOS build only leaves its package out of this build. Windows, Linux and the
-  # database must succeed. !cancelled() keeps a run cancelled by hand from publishing.
+  # cancelled macOS build keeps the prior build's macOS zip attached, and the next daily run
+  # builds macOS again. Windows, Linux and the database must succeed. !cancelled() keeps a
+  # run cancelled by hand from publishing.
   publish:
     needs: [check, windows, linux, macos, database]
     if: >-
@@ -476,16 +503,31 @@ jobs:
           if [ -z "$zip" ]; then echo "::error::No ci-$os.zip in the build artifacts"; exit 1; fi
           mv "$zip" "out/$BRANCH-ci-$os.zip"
         done
-        # The macOS package is optional (see the publish job). Without it the previous build's
-        # macOS zip is removed from the release too, so every asset matches this commit.
-        MACOS=false
+        # The macOS package is optional (see the publish job). Without it the release keeps the
+        # prior build's macOS zip, and the ci-macos-sha marker keeps naming the commit it was
+        # built from, so the next daily run builds macOS again (job macos-retry).
+        MAC_SHA=""
         zip=$(find dl -name "ci-macos-arm64.zip" | head -n 1)
         if [ -n "$zip" ]; then
           mv "$zip" "out/$BRANCH-ci-macos-arm64.zip"
-          MACOS=true
+          MAC_SHA=$SHA
+          MACOS_LINE="- \`$BRANCH-ci-macos-arm64.zip\`: $MACOS_NOTE"
         else
-          echo "::warning::No macOS package (macOS build: $MACOS_RESULT); publishing without it."
-          echo "macOS build: $MACOS_RESULT. Published without the macOS package." >> "$GITHUB_STEP_SUMMARY"
+          if gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name' 2>/dev/null | grep -qx "$BRANCH-ci-macos-arm64.zip"; then
+            BODY=$(gh release view "$TAG" -R "$REPO" --json body --jq .body)
+            if grep -q '<!-- ci-macos-sha:' <<< "$BODY"; then
+              MAC_SHA=$(sed -n 's/.*<!-- ci-macos-sha: *\([0-9a-f]*\) *-->.*/\1/p' <<< "$BODY" | head -n 1)
+            else
+              MAC_SHA=$(gh api "repos/$REPO/commits/$TAG" --jq .sha)
+            fi
+          fi
+          if [ -n "$MAC_SHA" ]; then
+            MACOS_LINE="- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64: did not compile on this build. Attached file is from prior build [\`${MAC_SHA:0:8}\`](https://github.com/$REPO/commit/$MAC_SHA)."
+          else
+            MACOS_LINE="- macOS arm64: did not compile on this build, and there is no prior macOS build to attach."
+          fi
+          echo "::warning::No macOS package (macOS build: $MACOS_RESULT); publishing with the prior macOS zip (${MAC_SHA:-none})."
+          echo "macOS build: $MACOS_RESULT. Published with the prior macOS zip (${MAC_SHA:-none}); the next daily run builds macOS again." >> "$GITHUB_STEP_SUMMARY"
         fi
         for kind in database sql; do
           zip=$(find dl -name "$BRANCH-ci-$kind.zip" | head -n 1)
@@ -496,17 +538,13 @@ jobs:
         DATE=$(gh api "repos/$REPO/commits/$SHA" --jq .commit.committer.date)
         {
           echo "Automated build of the \`$BRANCH\` branch at commit [\`${SHA:0:8}\`](https://github.com/$REPO/commit/$SHA) ($DATE)."
-          echo "Rebuilt at most once a day, and only when the branch has new commits."
+          echo "Rebuilt at most once a day, and only when the branch has new commits. A macOS build that did not compile is retried by the next daily run."
           echo
           echo "**Untested development build.** For a tested package, use a versioned [release](https://github.com/$REPO/releases)."
           echo
           echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
           echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
-          if [ "$MACOS" = "true" ]; then
-            echo "- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
-          else
-            echo "- macOS arm64: not in this build (the macOS build did not finish: $MACOS_RESULT). The next build with new commits tries again."
-          fi
+          echo "$MACOS_LINE"
           echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\` for a **new install**: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes."
           echo "- \`$BRANCH-ci-sql.zip\`: the SQL update files up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install."
           echo
@@ -518,6 +556,8 @@ jobs:
           echo "3. Extract \`$BRANCH-ci-sql.zip\` and set, in \`worldserver.conf\`: \`Updates.EnableDatabases = 15\`, \`SourceDirectory\` = the extracted \`sql-sources\` folder, \`MySQLExecutable\` = your \`mysql\` client (\`mysql.exe\` on Windows)."
           echo "4. Start the worldserver once: it applies only the missing updates and keeps your accounts and characters."
           echo "5. Never import \`auth.sql\`, \`characters.sql\` or \`playerbots.sql\` from the database zip over an existing install: they replace your saves. The database zip is for new installs."
+          echo
+          echo "<!-- ci-macos-sha: $MAC_SHA -->"
         } > notes.md
         cat notes.md
 
@@ -541,7 +581,8 @@ jobs:
         }
         if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
           gh release upload "$TAG" -R "$REPO" --clobber out/*.zip
-          keep=" $(cd out && echo *.zip) "
+          # The macOS zip always stays: it is either this build's or the prior build's
+          keep=" $(cd out && echo *.zip) $BRANCH-ci-macos-arm64.zip "
           for name in $(gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name'); do
             case "$keep" in *" $name "*) ;; *) gh release delete-asset "$TAG" "$name" -R "$REPO" --yes ;; esac
           done
@@ -562,3 +603,53 @@ jobs:
         echo "Tag $TAG -> $TAG_SHA; latest release: $LATEST" | tee -a "$GITHUB_STEP_SUMMARY"
         [ "$TAG_SHA" = "$SHA" ] || { echo "::error::The tag did not move to $SHA"; exit 1; }
         case "$LATEST" in ci-*) echo "::error::$LATEST became the latest release"; exit 1 ;; esac
+
+  # No new commits, but the published build went out with the prior build's macOS zip:
+  # only macOS was built again. Its zip and the notes' macOS line replace the prior ones;
+  # the other assets and the tag stay as they are. A failed retry changes nothing and the
+  # next daily run tries again.
+  macos-retry:
+    needs: [check, macos]
+    if: ${{ !cancelled() && needs.check.outputs.macos_retry == 'true' && needs.macos.result == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ needs.check.outputs.sha }}
+    steps:
+    - name: Download the macOS package
+      uses: actions/download-artifact@v4
+      with:
+        name: ci-package-macos-arm64
+        path: dl
+
+    - name: Replace the macOS zip and its line in the release notes
+      run: |
+        set -euo pipefail
+        zip=$(find dl -name "ci-macos-arm64.zip" | head -n 1)
+        if [ -z "$zip" ]; then echo "::error::No ci-macos-arm64.zip in the build artifacts"; exit 1; fi
+        mkdir -p out
+        mv "$zip" "out/$BRANCH-ci-macos-arm64.zip"
+        # A full build that moved the tag meanwhile has its own macOS zip: leave it alone
+        TAG_SHA=$(gh api "repos/$REPO/commits/$TAG" --jq .sha)
+        if [ "$TAG_SHA" != "$SHA" ]; then
+          echo "::warning::$TAG moved to $TAG_SHA meanwhile; this macOS build of $SHA is not attached."
+          exit 0
+        fi
+        gh release view "$TAG" -R "$REPO" --json body --jq .body > old.md
+        awk -v line="- \`$BRANCH-ci-macos-arm64.zip\`: $MACOS_NOTE" \
+            -v marker="<!-- ci-macos-sha: $SHA -->" \
+            -v zipline="- \`$BRANCH-ci-macos-arm64.zip\`:" '
+          { sub(/\r$/, "") }
+          index($0, zipline) == 1 || index($0, "- macOS arm64:") == 1 { print line; found = 1; next }
+          index($0, "<!-- ci-macos-sha:") == 1 { next }
+          { print }
+          END { print marker; if (!found) exit 3 }' old.md > notes.md || { echo "::error::No macOS line in the release notes"; exit 1; }
+        diff old.md notes.md || true
+        gh release upload "$TAG" -R "$REPO" --clobber "out/$BRANCH-ci-macos-arm64.zip"
+        gh release edit "$TAG" -R "$REPO" --notes-file notes.md --prerelease --latest=false
+        gh release view "$TAG" -R "$REPO" --json tagName,isPrerelease,assets \
+          --jq '{tagName, isPrerelease, assets: [.assets[] | "\(.name) \(.size) \(.updatedAt)"]}'
+        echo "macOS build of $SHA attached to $TAG; notes updated." | tee -a "$GITHUB_STEP_SUMMARY"
