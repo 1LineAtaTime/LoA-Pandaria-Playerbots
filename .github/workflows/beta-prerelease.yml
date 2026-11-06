@@ -1,7 +1,8 @@
 name: playerbot-beta pre-release
 
 # Daily rolling pre-release "ci-playerbot-beta": an untested development build of the
-# playerbot-beta branch, with Windows, Linux and macOS binaries and a database zip.
+# playerbot-beta branch, with Windows, Linux and macOS binaries and a database zip (macOS
+# only when a hosted macOS runner was available: it never holds the pre-release back).
 #
 # Scheduled workflows only run from the default branch, so this file lives on the
 # default branch and builds the playerbot-beta branch.
@@ -439,9 +440,16 @@ jobs:
         compression-level: 0
         if-no-files-found: error
 
+  # macOS never holds the pre-release back: hosted macOS arm64 runners are sometimes not
+  # available at all ("The job was not acquired by Runner of type hosted"), so a failed or
+  # cancelled macOS build only leaves its package out of this build. Windows, Linux and the
+  # database must succeed. !cancelled() keeps a run cancelled by hand from publishing.
   publish:
     needs: [check, windows, linux, macos, database]
-    if: needs.check.outputs.build == 'true'
+    if: >-
+      ${{ !cancelled() && needs.check.outputs.build == 'true'
+      && needs.windows.result == 'success' && needs.linux.result == 'success'
+      && needs.database.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -451,6 +459,7 @@ jobs:
       SHA: ${{ needs.check.outputs.sha }}
       BASELINE: ${{ needs.database.outputs.baseline }}
       APPLIED: ${{ needs.database.outputs.applied }}
+      MACOS_RESULT: ${{ needs.macos.result }}
     steps:
     - name: Download the packages
       uses: actions/download-artifact@v4
@@ -462,11 +471,22 @@ jobs:
       run: |
         set -euo pipefail
         mkdir -p out
-        for os in win64 linux-x64 macos-arm64; do
+        for os in win64 linux-x64; do
           zip=$(find dl -name "ci-$os.zip" | head -n 1)
           if [ -z "$zip" ]; then echo "::error::No ci-$os.zip in the build artifacts"; exit 1; fi
           mv "$zip" "out/$BRANCH-ci-$os.zip"
         done
+        # The macOS package is optional (see the publish job). Without it the previous build's
+        # macOS zip is removed from the release too, so every asset matches this commit.
+        MACOS=false
+        zip=$(find dl -name "ci-macos-arm64.zip" | head -n 1)
+        if [ -n "$zip" ]; then
+          mv "$zip" "out/$BRANCH-ci-macos-arm64.zip"
+          MACOS=true
+        else
+          echo "::warning::No macOS package (macOS build: $MACOS_RESULT); publishing without it."
+          echo "macOS build: $MACOS_RESULT. Published without the macOS package." >> "$GITHUB_STEP_SUMMARY"
+        fi
         for kind in database sql; do
           zip=$(find dl -name "$BRANCH-ci-$kind.zip" | head -n 1)
           if [ -z "$zip" ]; then echo "::error::No $BRANCH-ci-$kind.zip in the artifacts"; exit 1; fi
@@ -482,7 +502,11 @@ jobs:
           echo
           echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
           echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
-          echo "- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
+          if [ "$MACOS" = "true" ]; then
+            echo "- \`$BRANCH-ci-macos-arm64.zip\`: macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
+          else
+            echo "- macOS arm64: not in this build (the macOS build did not finish: $MACOS_RESULT). The next build with new commits tries again."
+          fi
           echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\` for a **new install**: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes."
           echo "- \`$BRANCH-ci-sql.zip\`: the SQL update files up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install."
           echo
