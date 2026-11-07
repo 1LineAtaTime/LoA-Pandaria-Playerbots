@@ -28,8 +28,10 @@ namespace HillsbradDurnholde
 enum Durnholde
 {
     NPC_ZEPHYRUS        = 49263,
+    NPC_TERACULA        = 49265,
 
     SPELL_TORNADO_AURA  = 80065, // periodic trigger of 80064 every 500 ms; Wowhead lists it as Tornado 42895's ability
+    SPELL_RUPTURE_SPIKE = 89933, // trigger missile with a fixed 2 s delay (SpellMisc speed 2, SPECIAL_DELAY_CALCULATION) of 89936
 };
 
 // Tornado 42895, summoned for 5 s under Zephyrus's target by 80066.
@@ -49,10 +51,49 @@ struct npc_durnholde_tornado : public NullCreatureAI
         me->CastSpell(me, SPELL_TORNADO_AURA, true);
     }
 };
+
+// Rupture Line 89932: "Breaks up the ground in front of the caster, causing it to erupt in a spike of earth after 2 sec."
+// The DBC has dummies only. As in boss_grilek.cpp (Gri'lek's 96619 has value 45 and his script draws a 45 yard line), the dummy's value
+// is taken as the line's length, here 15 yards, towards the target. The 2 s in the tooltip and the comments is the missile's delay.
+// Ours: straight line and spacing. 89936 has a 2 yard radius (EffectRadiusMaxIndex 7) and a player's 1.5 yard size adds to it, so a spike reaches 3.5 yards.
+// All spikes land on the same tick, and each does about 360 at level 25, so they stand 7.5 yards apart and can never hit a player twice:
+// the first at 3.5 yards, the second at 11, together covering 14.5 of the 15 yards but for a half yard gap.
+class spell_durnholde_rupture_line : public SpellScript
+{
+    PrepareSpellScript(spell_durnholde_rupture_line);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!target || caster->GetEntry() != NPC_TERACULA)
+            return;
+
+        float const relativeAngle = caster->GetRelativeAngle(target);
+        float const angle = caster->GetOrientation() + relativeAngle;
+        Position const end = caster->GetFirstCollisionPosition(float(GetEffectValue()), relativeAngle);
+        float const length = caster->GetExactDist2d(end.GetPositionX(), end.GetPositionY());
+
+        for (float distance = std::min(3.5f, length); distance <= length; distance += 7.5f)
+        {
+            float const x = caster->GetPositionX() + distance * std::cos(angle);
+            float const y = caster->GetPositionY() + distance * std::sin(angle);
+            float z = caster->GetPositionZ();
+            caster->UpdateGroundPositionZ(x, y, z);
+            caster->CastSpell(x, y, z, SPELL_RUPTURE_SPIKE, true);
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_durnholde_rupture_line::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
 }
 
 void AddSC_hillsbrad_durnholde()
 {
     using namespace HillsbradDurnholde;
     new creature_script<npc_durnholde_tornado>("npc_durnholde_tornado");
+    new spell_script<spell_durnholde_rupture_line>("spell_durnholde_rupture_line");
 }
