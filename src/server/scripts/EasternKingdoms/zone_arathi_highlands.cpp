@@ -30,6 +30,7 @@ EndContentData */
 #include "ScriptedCreature.h"
 #include "ScriptedEscortAI.h"
 #include "Player.h"
+#include "Group.h"
 
 /*######
 ## npc_professor_phizzlethorpe
@@ -72,7 +73,17 @@ class npc_professor_phizzlethorpe : public CreatureScript
 
         struct npc_professor_phizzlethorpeAI : public npc_escortAI
         {
-            npc_professor_phizzlethorpeAI(Creature* creature) : npc_escortAI(creature) { }
+            npc_professor_phizzlethorpeAI(Creature* creature) : npc_escortAI(creature), _playerCheckTimer(1000)
+            {
+                // The base despawns him silently when the players are gone; UpdateAI does it here and fails the quest
+                SetDespawnAtFar(false);
+            }
+
+            // Runs at a respawn. An evade during the escort doesn't come here, so the escort's lines survive a fight.
+            void Reset() override
+            {
+                events.Reset();
+            }
 
             void WaypointReached(uint32 waypointId) override
             {
@@ -112,36 +123,120 @@ class npc_professor_phizzlethorpe : public CreatureScript
                 Talk(SAY_AGGRO);
             }
 
-            void UpdateAI(uint32 diff) override
+            // npc_escortAI::JustDied only fails the quest of a jumping escort
+            void JustDied(Unit* /*killer*/) override
             {
-                Player* player = GetPlayerForEscort();
-                if (!player)
+                if (!HasEscortState(STATE_ESCORT_ESCORTING))
                     return;
 
-                events.Update(diff);
+                FailEscortQuest();
+                events.Reset();
+            }
 
-                while (uint32 event = events.ExecuteEvent())
+            void UpdateAI(uint32 diff) override
+            {
+                if (HasEscortState(STATE_ESCORT_ESCORTING) && !HasEscortState(STATE_ESCORT_RETURNING) && !me->GetVictim())
                 {
-                    switch (event)
+                    if (_playerCheckTimer <= diff)
                     {
-                        case EVENT_SAY_3:
-                            Talk(SAY_PROGRESS_3, player);
-                            break;
-                        case EVENT_SAY_6:
-                            Talk(SAY_PROGRESS_6, player);
-                            SetRun();
-                            break;
-                        case EVENT_SAY_8:
-                            Talk(EMOTE_PROGRESS_8);
-                            Talk(SAY_PROGRESS_9, player);
-                            player->GroupEventHappens(QUEST_GOGGLE_BOGGLE, me);
-                            break;
+                        _playerCheckTimer = 1000;
+
+                        if (!IsEscortPlayerOrGroupNear())
+                        {
+                            FailEscortQuest();
+                            events.Reset();
+                            me->DespawnOrUnsummon();
+                            return;
+                        }
+                    }
+                    else
+                        _playerCheckTimer -= diff;
+                }
+
+                // The escort AI below has to run without the player too: it fights.
+                Player* player = HasEscortState(STATE_ESCORT_ESCORTING) ? GetPlayerForEscort() : nullptr;
+                if (player)
+                {
+                    events.Update(diff);
+
+                    while (uint32 event = events.ExecuteEvent())
+                    {
+                        switch (event)
+                        {
+                            case EVENT_SAY_3:
+                                Talk(SAY_PROGRESS_3, player);
+                                break;
+                            case EVENT_SAY_6:
+                                Talk(SAY_PROGRESS_6, player);
+                                SetRun();
+                                break;
+                            case EVENT_SAY_8:
+                                Talk(EMOTE_PROGRESS_8);
+                                Talk(SAY_PROGRESS_9, player);
+                                player->GroupEventHappens(QUEST_GOGGLE_BOGGLE, me);
+                                break;
+                        }
                     }
                 }
+                else
+                    events.Reset();
+
                 npc_escortAI::UpdateAI(diff);
             }
 
             EventMap events;
+
+        private:
+            // As npc_escortAI::IsPlayerOrGroupInRange, which is private
+            bool IsEscortPlayerOrGroupNear()
+            {
+                Player* player = GetPlayerForEscort();
+                if (!player)
+                    return false;
+
+                if (Group* group = player->GetGroup())
+                {
+                    for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+                        if (Player* member = itr->GetSource())
+                            if (me->IsWithinDistInMap(member, GetMaxPlayerDistance()))
+                                return true;
+
+                    return false;
+                }
+
+                return me->IsWithinDistInMap(player, GetMaxPlayerDistance());
+            }
+
+            // The starter and their group, and whoever holds the quest nearby: the group of a starter who logged out can't be found any more.
+            // A logged out starter can't be sent a fail: their quest stays incomplete, to abandon and retake.
+            void FailEscortQuest()
+            {
+                if (Player* player = GetPlayerForEscort())
+                {
+                    if (Group* group = player->GetGroup())
+                    {
+                        for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+                            if (Player* member = itr->GetSource())
+                                if (member->IsInMap(me))
+                                    FailIfOnQuest(member);
+                    }
+                    else
+                        FailIfOnQuest(player);
+                }
+
+                std::list<Player*> nearby;
+                me->GetPlayerListInGrid(nearby, GetMaxPlayerDistance());
+                for (Player* player : nearby)
+                    FailIfOnQuest(player);
+            }
+
+            static void FailIfOnQuest(Player* player)
+            {
+                if (player->GetQuestStatus(QUEST_GOGGLE_BOGGLE) == QUEST_STATUS_INCOMPLETE)
+                    player->FailQuest(QUEST_GOGGLE_BOGGLE);
+            }
+
+            uint32 _playerCheckTimer;
         };
 
         CreatureAI* GetAI(Creature* creature) const override
