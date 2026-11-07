@@ -365,7 +365,7 @@ protected:
                     player->AreaExploredOrEventHappens(questId);
 
                 if (hook)
-                    hook(player);
+                    RunReturnHook(player, hook, endSpellId, 20);
 
                 // Once set down: a teleport cast in the player's own update only goes out at the end of it. The enable is always
                 // sent, and once more a little later: the player's own movement packets replace the server's flags
@@ -394,6 +394,24 @@ protected:
     }
 
     typedef void (*ReturnHook)(Player*);
+
+    // Runs the hook once the end spell's teleport is over and the player is at its spot. The teleport cast in Finish's lambda is
+    // only stored at that point (Player::TeleportTo in Unit::Update), and the player arrives when the client acknowledges it, so
+    // the check repeats every 250 ms, `tries` times at most. A player who never arrives misses the hook.
+    static void RunReturnHook(Player* player, ReturnHook hook, uint32 endSpellId, uint32 tries)
+    {
+        player->m_Events.AddLambdaEventAtOffset([player, hook, endSpellId, tries]()
+        {
+            if (!player->IsInWorld())
+                return;
+
+            SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(endSpellId, EFFECT_0);
+            if (!player->IsBeingTeleported() && (!dest || player->GetExactDist2d(dest->target_X, dest->target_Y) < 10.0f))
+                hook(player);
+            else if (tries > 1)
+                RunReturnHook(player, hook, endSpellId, tries - 1);
+        }, 250);
+    }
 
     EventMap _events;
     ObjectGuid _playerGUID;
@@ -1615,7 +1633,7 @@ private:
     uint8 _stop;
 };
 
-// Cromush's yell once the player is back in Tarren Mill (Cancel Cinematic has put the player in front of him)
+// Cromush's yell once the player is back in Tarren Mill and in front of him (RunReturnHook waits for the teleport)
 static void CromushHillsbradIsOurs(Player* player)
 {
     if (Creature* cromush = player->FindNearestCreature(NPC_HIGH_WARLORD_CROMUSH, 30.0f))
