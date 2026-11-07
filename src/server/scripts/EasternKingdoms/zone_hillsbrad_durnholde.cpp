@@ -29,9 +29,11 @@ enum Durnholde
 {
     NPC_ZEPHYRUS        = 49263,
     NPC_TERACULA        = 49265,
+    NPC_INFERNUS        = 49266,
 
     SPELL_TORNADO_AURA  = 80065, // periodic trigger of 80064 every 500 ms; Wowhead lists it as Tornado 42895's ability
     SPELL_RUPTURE_SPIKE = 89933, // trigger missile with a fixed 2 s delay (SpellMisc speed 2, SPECIAL_DELAY_CALCULATION) of 89936
+    SPELL_FLAME_PATCH   = 75024, // persistent fire area, radius 3, 8 s
 };
 
 // Tornado 42895, summoned for 5 s under Zephyrus's target by 80066.
@@ -89,6 +91,39 @@ class spell_durnholde_rupture_line : public SpellScript
         OnEffectHitTarget += SpellEffectFn(spell_durnholde_rupture_line::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
+
+// Rush of Flame 75025: "The fire elemental rushes forward, leaving a blazing train behind."
+// Effect 0 charges 20 yards ahead on its own. Effect 1 is a script effect naming 75024 with misc 5, which nothing handled.
+// Ours: reading that as 5 patches, laid evenly along the charge. They stand 4 yards apart and a patch reaches 4.89 (3 yard radius, its own 0.388 size and the player's
+// size); dynamic object auras stack, so a player on the line can stand in up to 3, at about 14 damage a second each at level 25.
+class spell_durnholde_rush_of_flame : public SpellScript
+{
+    PrepareSpellScript(spell_durnholde_rush_of_flame);
+
+    void HandleScript(SpellEffIndex effIndex)
+    {
+        Unit* caster = GetCaster();
+        WorldLocation const* dest = GetExplTargetDest();
+        if (caster->GetEntry() != NPC_INFERNUS || !dest)
+            return;
+
+        int32 const patches = GetSpellInfo()->Effects[effIndex].MiscValue;
+        for (int32 i = 1; i <= patches; ++i)
+        {
+            float const fraction = float(i) / float(patches);
+            float const x = caster->GetPositionX() + (dest->GetPositionX() - caster->GetPositionX()) * fraction;
+            float const y = caster->GetPositionY() + (dest->GetPositionY() - caster->GetPositionY()) * fraction;
+            float z = caster->GetPositionZ();
+            caster->UpdateGroundPositionZ(x, y, z);
+            caster->CastSpell(x, y, z, SPELL_FLAME_PATCH, true);
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_durnholde_rush_of_flame::HandleScript, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
 }
 
 void AddSC_hillsbrad_durnholde()
@@ -96,4 +131,5 @@ void AddSC_hillsbrad_durnholde()
     using namespace HillsbradDurnholde;
     new creature_script<npc_durnholde_tornado>("npc_durnholde_tornado");
     new spell_script<spell_durnholde_rupture_line>("spell_durnholde_rupture_line");
+    new spell_script<spell_durnholde_rush_of_flame>("spell_durnholde_rush_of_flame");
 }
