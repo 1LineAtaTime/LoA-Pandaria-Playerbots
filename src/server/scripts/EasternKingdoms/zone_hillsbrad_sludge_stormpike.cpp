@@ -1532,6 +1532,11 @@ enum StormpikeScenes
     SEAT_MARCH_THE_HEADLAND                     = 2,
     SEAT_MARCH_GAVINS_NAZE                      = 3,
 
+    // Seats of Vehicle 1379 (Stormpike Apocalypse Camera); the first, Gavin's Naze, is where the ride aura puts the rider
+    SEAT_APOCALYPSE_THE_HEADLAND                = 1,
+    SEAT_APOCALYPSE_CORRAHNS_DAGGER             = 2,
+    SEAT_APOCALYPSE_SOFERAS_NAZE                = 3,
+
     POINT_APOCALYPSE_GAVINS_NAZE                = 1,
     POINT_APOCALYPSE_THE_HEADLAND               = 2,
     POINT_APOCALYPSE_CORRAHNS_DAGGER            = 3,
@@ -1695,8 +1700,11 @@ static void CromushHillsbradIsOurs(Player* player)
 // Magruder to defuse the nuke and Magruder runs; the nuke goes off (Global Thermonuclear War), and the camera pulls back over
 // the Headland, Corrahn's Dagger and Sofera's Naze, stopping at each to watch its nuke go off. Cancel Cinematic puts the player back in
 // front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!". The path is ours: each leg is one
-// curve (FlyCurve), 19 yd or more above the ground and the vmaps once off the first rise, arriving headed for the nuke and at
-// most 73 yd from it (checked against the extracted maps and vmaps).
+// curve (FlyCurve), 19 yd or more above the ground and the vmaps once off the first rise, arriving at most 73 yd from the nuke
+// (checked against the extracted maps and vmaps). Where the camera looks is not the vehicle's facing: Vehicle 1379 has four seats,
+// one per finger, and each seat's CameraMode (133, 136, 137, 138, "Stormpike Apocalypse Camera 01-04") holds the view on a fixed
+// point in the world, within a few yards of that finger's nuke. The rider changes seat as each leg starts, and at each stop the
+// nuke is at most 7 degrees from the view's centre.
 struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_stormpike_apocalypse_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_APOCALYPSE, SPELL_CANCEL_CINEMATIC_APOCALYPSE, 5.0f)
@@ -1788,12 +1796,15 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
                     _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
                 break;
             case EVENT_APOCALYPSE_TO_THE_HEADLAND:
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_THE_HEADLAND);
                 FlyCurve(POINT_APOCALYPSE_THE_HEADLAND, { { -65.0f, -100.0f, 175.0f }, { -62.0f, -170.0f, 205.0f }, { -78.0f, -190.0f, 205.0f }, { -92.0f, -235.0f, 190.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER:
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_CORRAHNS_DAGGER);
                 FlyCurve(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -100.0f, -300.0f, 205.0f }, { -70.0f, -400.0f, 215.0f }, { -50.0f, -440.0f, 205.0f }, { -38.0f, -490.0f, 190.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_TO_SOFERAS_NAZE:
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_SOFERAS_NAZE);
                 FlyCurve(POINT_APOCALYPSE_SOFERAS_NAZE, { { -5.0f, -560.0f, 215.0f }, { 50.0f, -680.0f, 235.0f }, { 95.0f, -800.0f, 235.0f }, { 125.0f, -880.0f, 205.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_END:
