@@ -216,6 +216,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/zone_silverpine_forest.cpp
   EasternKingdoms/zone_hillsbrad_azurelode.cpp
   EasternKingdoms/zone_hillsbrad_brazie.cpp
+  EasternKingdoms/zone_hillsbrad_durnholde.cpp
   EasternKingdoms/zone_hillsbrad_purgation.cpp
   EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp
   EasternKingdoms/Karazhan/instance_karazhan.cpp
