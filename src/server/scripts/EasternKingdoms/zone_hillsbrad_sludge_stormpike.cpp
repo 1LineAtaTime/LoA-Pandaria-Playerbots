@@ -1517,6 +1517,7 @@ enum StormpikeScenes
     EVENT_APOCALYPSE_MAGRUDER_WIRES,
     EVENT_APOCALYPSE_MAGRUDER_RUN,
     EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS,
+    EVENT_APOCALYPSE_NEXT_NUKE_BLOWS,
     EVENT_APOCALYPSE_TO_THE_HEADLAND,
     EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER,
     EVENT_APOCALYPSE_TO_SOFERAS_NAZE,
@@ -1661,7 +1662,7 @@ static void CromushHillsbradIsOurs(Player* player)
 // directly: Magruder (Summon Magruder) and Lieutenant Jan Lagrave (Summon Pixin) at the pocket-nuke on Gavin's Naze (Summon
 // Goblin Pocket Nuke), and one pocket-nuke on each of the other fingers. The camera flies to Gavin's Naze, where Lagrave asks
 // Magruder to defuse the nuke and Magruder runs; the nuke goes off (Global Thermonuclear War), and the camera pulls back over
-// the Headland, Corrahn's Dagger and Sofera's Naze as their nukes go off in turn. Cancel Cinematic puts the player back in
+// the Headland, Corrahn's Dagger and Sofera's Naze, stopping at each to watch its nuke go off. Cancel Cinematic puts the player back in
 // front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!". The path is ours: each leg is one
 // curve (FlyCurve), 19 yd or more above the ground and the vmaps once off the first rise, arriving headed for the nuke and at
 // most 73 yd from it (checked against the extracted maps and vmaps).
@@ -1745,6 +1746,16 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
                 Detonate(0);
                 _events.ScheduleEvent(EVENT_APOCALYPSE_TO_THE_HEADLAND, 3s);
                 break;
+            case EVENT_APOCALYPSE_NEXT_NUKE_BLOWS:
+                // Arrived a moment ago, looking at it: it goes off, and the camera stays to watch
+                Detonate(_nextNuke);
+                if (_nextNuke == 1)
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER, 2500ms);
+                else if (_nextNuke == 2)
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_TO_SOFERAS_NAZE, 2500ms);
+                else
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
+                break;
             case EVENT_APOCALYPSE_TO_THE_HEADLAND:
                 FlyCurve(POINT_APOCALYPSE_THE_HEADLAND, { { -65.0f, -100.0f, 175.0f }, { -62.0f, -170.0f, 205.0f }, { -78.0f, -190.0f, 205.0f }, { -92.0f, -235.0f, 190.0f } }, 6.0f);
                 break;
@@ -1772,19 +1783,18 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
                 break;
             case POINT_APOCALYPSE_THE_HEADLAND:
                 FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
-                Detonate(1);
-                // The next leg starts from UpdateAI, not from inside the movement generator that just finished
-                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER, 100ms);
+                _nextNuke = 1;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
                 break;
             case POINT_APOCALYPSE_CORRAHNS_DAGGER:
                 FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
-                Detonate(2);
-                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_SOFERAS_NAZE, 100ms);
+                _nextNuke = 2;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
                 break;
             case POINT_APOCALYPSE_SOFERAS_NAZE:
                 FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
-                Detonate(3);
-                _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
+                _nextNuke = 3;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
                 break;
             default:
                 break;
@@ -1794,9 +1804,13 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
 private:
     ObjectGuid SummonNuke(uint32 entry, Position const& pos)
     {
-        if (Creature* nuke = SummonActor(entry, pos))
-            return nuke->GetGUID();
-        return ObjectGuid::Empty;
+        Creature* nuke = SummonActor(entry, pos);
+        if (!nuke)
+            return ObjectGuid::Empty;
+
+        // Past the map's visibility range (Visibility.Distance.Continents), the nuke and its spell would never reach the client
+        nuke->SetCustomVisibilityDistance(VISIBILITY_DISTANCE_GIGANTIC, false);
+        return nuke->GetGUID();
     }
 
     // Global Thermonuclear War: its conditions keep it on the nukes and the two engineers
@@ -1807,6 +1821,7 @@ private:
     }
 
     ObjectGuid _nukeGUIDs[4];
+    uint8 _nextNuke = 0;
     ObjectGuid _magruderGUID;
     ObjectGuid _lagraveGUID;
 };
