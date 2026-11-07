@@ -103,7 +103,7 @@ class npc_hillsbrad_scene_camera : public VehicleAI
 {
 public:
     npc_hillsbrad_scene_camera(Creature* creature, uint32 questId, uint32 endSpellId, float speedRate) : VehicleAI(creature),
-        _questId(questId), _endSpellId(endSpellId), _speedRate(speedRate), _boardTries(0), _started(false), _done(false) { }
+        _questId(questId), _endSpellId(endSpellId), _speedRate(speedRate), _boardTries(0), _started(false), _done(false), _changingSeat(false) { }
 
     void IsSummonedBy(Unit* summoner) override
     {
@@ -126,7 +126,7 @@ public:
 
     void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
     {
-        if (apply || passenger->GetGUID() != _playerGUID)
+        if (apply || _changingSeat || passenger->GetGUID() != _playerGUID)
             return;
 
         // The player got out early, also before the scene started: Finish sets the player down at the quest giver
@@ -290,6 +290,18 @@ protected:
         me->SetFacingTo(me->GetAngle(x, y));
     }
 
+    // Moves the rider to another seat of the camera, whose CameraMode the client then uses. Unit::ChangeSeat takes the passenger
+    // off (PassengerBoarded with apply false) and seats them again within the call: that is no early exit.
+    void ChangeRiderSeat(Player* player, int8 seatId)
+    {
+        _changingSeat = true;
+        player->ChangeSeat(seatId);
+        _changingSeat = false;
+
+        // RemovePassenger's Parachute for a rider with MOVEMENTFLAG_FLYING (flight form: boarding only drops mounts); nobody got out
+        player->RemoveAurasDueToSpell(VEHICLE_SPELL_PARACHUTE);
+    }
+
     // An actor of the scene: the player's private summon, passive and out of reach
     Creature* SummonActor(uint32 entry, Position const& pos)
     {
@@ -434,6 +446,7 @@ private:
     uint32 _boardTries;
     bool _started;
     bool _done;
+    bool _changingSeat;
 };
 
 // A passive actor of a scene: the camera moves and speaks for it
@@ -1512,6 +1525,11 @@ enum StormpikeScenes
     POINT_MARCH_GAVINS_NAZE                     = 4,
     POINT_MARCH_GRASP                           = 5,
 
+    // Seats of Vehicle 1343 (Tarren Mill Camera); the first, Sofera's Naze, is where the ride aura puts the rider
+    SEAT_MARCH_CORRAHNS_DAGGER                  = 1,
+    SEAT_MARCH_THE_HEADLAND                     = 2,
+    SEAT_MARCH_GAVINS_NAZE                      = 3,
+
     POINT_APOCALYPSE_GAVINS_NAZE                = 1,
     POINT_APOCALYPSE_THE_HEADLAND               = 2,
     POINT_APOCALYPSE_CORRAHNS_DAGGER            = 3,
@@ -1566,8 +1584,12 @@ Position const GavinsNazeNukePos        = { -104.993f, -69.8663f, 147.112f };
 // Summoned on the player with phase 355 (Tarren Mill Camera). It flies from Tarren Mill over the four fingers of Hillsbrad in
 // the order of the narration, stopping at each while the two lines on it show, rises over Gavin's Naze for the last line, and
 // Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: each leg is one curve
-// (FlyCurve), 21 yd or more above the ground and the vmaps once the camera is off the first rise, and each stop is about 60 yd
-// (2D) from its finger's pocket-nuke spot (checked against the extracted maps and vmaps).
+// (FlyCurve), 17 yd or more above the ground and the vmaps once the camera is off the first rise (checked against the extracted
+// maps and vmaps). Where the camera looks is not the vehicle's facing: Vehicle 1343 has four seats, one per finger, and each
+// seat's CameraMode (124, 126, 127, 128, "March of the Stormpike 01-04") holds the view on a fixed point in the world, at its
+// finger (lockedTargetOffsetBase 2, CCameraModeLocked::CalcTargetCameraShot). The rider changes seat as each leg starts. Each stop
+// frames that point and the Stormpike camp round it, which the lines describe: the Headland, Corrahn's Dagger and Gavin's Naze stops
+// are within Visibility.Distance.Continents (90 yd) of most of their camp. Sofera's Naze is left where it was.
 struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0)
@@ -1575,9 +1597,9 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
         _liftHeight = 7.0f;
     }
 
-    void Start(Player* /*player*/) override
+    void Start(Player* player) override
     {
-        FlyOn();
+        FlyOn(player);
     }
 
     void SceneEvent(uint32 eventId, Player* player) override
@@ -1589,7 +1611,7 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
                 _events.ScheduleEvent(EVENT_MARCH_FLY_ON, 5s);
                 break;
             case EVENT_MARCH_FLY_ON:
-                FlyOn();
+                FlyOn(player);
                 break;
             case EVENT_MARCH_END:
                 Finish();
@@ -1604,16 +1626,9 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
         switch (pointId)
         {
             case POINT_MARCH_SOFERAS_NAZE:
-                FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
-                break;
             case POINT_MARCH_CORRAHNS_DAGGER:
-                FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
-                break;
             case POINT_MARCH_THE_HEADLAND:
-                FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
-                break;
             case POINT_MARCH_GAVINS_NAZE:
-                FaceTo(GavinsNazeNukePos.GetPositionX(), GavinsNazeNukePos.GetPositionY());
                 break;
             case POINT_MARCH_GRASP:
                 // "Together the fingers represent the grasp of Stormpike closing upon us."
@@ -1630,7 +1645,7 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
     }
 
 private:
-    void FlyOn()
+    void FlyOn(Player* player)
     {
         switch (++_stop)
         {
@@ -1638,15 +1653,19 @@ private:
                 FlyCurve(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
                 break;
             case POINT_MARCH_CORRAHNS_DAGGER:
-                FlyCurve(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -10.0f, -610.0f, 195.0f } }, 6.0f);
+                ChangeRiderSeat(player, SEAT_MARCH_CORRAHNS_DAGGER);
+                FlyCurve(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -5.0f, -570.0f, 178.0f } }, 6.0f);
                 break;
             case POINT_MARCH_THE_HEADLAND:
-                FlyCurve(POINT_MARCH_THE_HEADLAND, { { -100.0f, -420.0f, 200.0f }, { -120.0f, -345.0f, 190.0f } }, 6.0f);
+                ChangeRiderSeat(player, SEAT_MARCH_THE_HEADLAND);
+                FlyCurve(POINT_MARCH_THE_HEADLAND, { { -40.0f, -470.0f, 205.0f }, { -60.0f, -370.0f, 195.0f }, { -100.0f, -300.0f, 180.0f } }, 6.0f);
                 break;
             case POINT_MARCH_GAVINS_NAZE:
-                FlyCurve(POINT_MARCH_GAVINS_NAZE, { { -90.0f, -230.0f, 190.0f }, { -85.0f, -125.0f, 175.0f } }, 6.0f);
+                ChangeRiderSeat(player, SEAT_MARCH_GAVINS_NAZE);
+                FlyCurve(POINT_MARCH_GAVINS_NAZE, { { -70.0f, -215.0f, 195.0f }, { -58.0f, -135.0f, 172.0f } }, 6.0f);
                 break;
             case POINT_MARCH_GRASP:
+                // Stays in Gavin's Naze's seat: backs off and rises, still looking at the finger
                 FlyCurve(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } }, 6.0f);
                 break;
             default:
