@@ -21,13 +21,17 @@
 // Sourced: the spells, their summon properties and area group (5.4.8 DBC); that she comes as 28603 is accepted, that the disguise holds through
 // the zone and that its vendors, Rufus and Magnus can be talked to (Wowhead comments on 28603 and 28604). Ours: the states that keep her
 // (WantsLilith), the leash and the timings; nothing was sniffed.
+//  - Cry of the Banshee (28538): the Banshee called by the Banshee Mirror lifts the agent and flies off with it. See npc_hillsbrad_banshee.
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "SmartAI.h"
 #include "Player.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
 #include "TemporarySummon.h"
+#include "ModelIgnoreFlags.h"
+#include "Vehicle.h"
 
 enum HeadlandLilith
 {
@@ -236,9 +240,496 @@ public:
     }
 };
 
+/*######
+## Cry of the Banshee (28538): the Banshee carries the agent off
+######*/
+
+enum BansheeCarry
+{
+    NPC_BANSHEE                         = 48752,
+
+    SPELL_BANSHEE_MIRROR                = 90976,    // Call of the Banshee, the item's spell; it triggers 90871, which summons her
+    SPELL_CARRIED_BY_BANSHEE            = 90874,    // area script (10 yd): the agent casts the ride, 90873, on her
+
+    DATA_CARRIED_AGENT                  = 1,
+
+    TALK_BANSHEE_CARRY                  = 0,
+
+    POINT_BANSHEE_APPROACH              = 1,
+    POINT_BANSHEE_AWAY                  = 2,
+
+    EVENT_BANSHEE_NO_AGENT              = 1,
+    EVENT_BANSHEE_GRAB                  = 2,
+    EVENT_BANSHEE_NOT_SEATED            = 3,
+    EVENT_BANSHEE_LIFT                  = 4,
+    EVENT_BANSHEE_END                   = 5
+};
+
+namespace
+{
+    // The wiki's caption has her "taking an SI:7 Operative back to Tarren Mill": she heads there. All the rest of the path is ours.
+    Position const BansheeTarrenMillPos = { -30.0f, -900.0f, 57.0f };
+
+    float const BansheeApproachSpeed    = 10.0f;    // yd/s: she was summoned 10 yd behind the agent
+    float const BansheeFlightSpeed      = 5.0f;     // yd/s: time for a ranged player to finish the agent off
+    float const BansheeFlightDistance   = 35.0f;
+    float const BansheeRises[]          = { 16.0f, 10.0f, 6.0f };
+
+    uint32 const AgentNeverSeatedDelay  = 8 * IN_MILLISECONDS;
+    uint32 const AgentDroppedDelay      = 4 * IN_MILLISECONDS;
+
+    Position BansheeCurvePoint(Position const& a, Position const& c, Position const& b, float t)
+    {
+        float const u = 1.0f - t;
+        return { u * u * a.GetPositionX() + 2.0f * u * t * c.GetPositionX() + t * t * b.GetPositionX(),
+                 u * u * a.GetPositionY() + 2.0f * u * t * c.GetPositionY() + t * t * b.GetPositionY(),
+                 u * u * a.GetPositionZ() + 2.0f * u * t * c.GetPositionZ() + t * t * b.GetPositionZ() };
+    }
+}
+
+// 48741 - SI:7 Operative, 48742 - SI:7 Assassin
+// Their SmartAI as before (the mirror's credit and Gaze of the Banshee 90903, stun + pacify; fighting), plus what being carried needs. From the mirror's hit until it goes the agent
+// neither fights nor evades: an evade would run a passenger home, and clear the gaze that makes the mirror's credit once-only. Respawning resets it
+// all (Creature::Respawn: react state, AI Reset; the corpse's removal takes the auras).
+struct npc_hillsbrad_si7_agent : public SmartAI
+{
+    npc_hillsbrad_si7_agent(Creature* creature) : SmartAI(creature), _state(CARRY_NONE), _despawnTimer(0) { }
+
+    void Reset() override
+    {
+        _state = CARRY_NONE;
+        _despawnTimer = 0;
+        _casterGUID.Clear();
+        SmartAI::Reset();
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spell) override
+    {
+        SmartAI::SpellHit(caster, spell);
+
+        if (spell->Id != SPELL_BANSHEE_MIRROR || _state != CARRY_NONE)
+            return;
+
+        _state = CARRY_HELD;
+        _casterGUID = caster->GetGUID();
+        _despawnTimer = AgentNeverSeatedDelay;
+
+        me->AttackStop();
+        me->SetReactState(REACT_PASSIVE);
+        me->GetMotionMaster()->Clear(false);
+        me->GetMotionMaster()->MoveIdle();
+    }
+
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
+    {
+        if (_state == CARRY_NONE)
+            SmartAI::EnterEvadeMode(why);
+    }
+
+    void AttackStart(Unit* who) override
+    {
+        if (_state == CARRY_NONE)
+            SmartAI::AttackStart(who);
+    }
+
+    // Vehicle calls this only for leaving. Dying and despawning count as dead by now (Unit::setDeathState sets the state first), so this is
+    // a living agent let go of: she was unsummoned (her owner logged out or left the map) or killed. _ExitVehicle has it falling.
+    // It stays held and goes soon after it lands; meanwhile it can be killed.
+    void BoardedVehicle(Vehicle* /*vehicle*/, int8 /*seatId*/, bool apply) override
+    {
+        if (apply || !me->IsAlive())
+            return;
+
+        _state = CARRY_DROPPED;
+        _despawnTimer = AgentDroppedDelay;
+    }
+
+    void JustDied(Unit* killer) override
+    {
+        SmartAI::JustDied(killer);
+
+        // Unit::setDeathState stopped the exit's fall, and only makes creatures that can fly fall again (Creature::setDeathState).
+        // A plain fall, with no TransportExit: the exit's packet already took it off her, as any SMSG_MONSTER_MOVE without a transport does
+        // (client CGUnit_C::OnMonsterMove, ForceSetTransport), and the client's CMovement_C::OnSpline does not play a spline with that flag.
+        if (_state != CARRY_NONE)  // MoveFall does nothing on the ground
+            me->GetMotionMaster()->MoveFall();
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        SmartAI::UpdateAI(diff);
+
+        if (_state == CARRY_HELD)
+        {
+            if (me->GetVehicle())
+            {
+                _state = CARRY_SEATED;
+                _despawnTimer = 0;
+                return;
+            }
+
+            GiveToBanshee();
+        }
+
+        if (!_despawnTimer)
+            return;
+
+        // At once and in plain sight: SMART_ACTION_FORCE_DESPAWN would hide a living creature and keep it, killable, for 5 s more
+        if (_despawnTimer <= diff)
+            me->DespawnOrUnsummon();
+        else
+            _despawnTimer -= diff;
+    }
+
+private:
+    enum CarryState
+    {
+        CARRY_NONE,
+        CARRY_HELD,
+        CARRY_SEATED,
+        CARRY_DROPPED
+    };
+
+    // Tells the Banshee this mirror called which agent she came for. The mirror has a 5 s cooldown, so its caster has one Banshee waiting for an agent;
+    // an earlier one may still be in the air, having left alone
+    void GiveToBanshee()
+    {
+        if (_casterGUID.IsEmpty())
+            return;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _casterGUID);
+        if (!player)
+        {
+            _casterGUID.Clear();
+            return;
+        }
+
+        std::list<TempSummon*> banshees;
+        player->GetSummons(banshees, NPC_BANSHEE);
+        for (TempSummon* banshee : banshees)
+        {
+            if (banshee->IsDestroyedObject() || !banshee->IsInWorld() || !banshee->IsAIEnabled || !banshee->AI()->GetData(DATA_CARRIED_AGENT))
+                continue;
+
+            banshee->AI()->SetGUID(me->GetGUID(), DATA_CARRIED_AGENT);
+            _casterGUID.Clear();
+            return;
+        }
+    }
+
+    CarryState _state;
+    uint32 _despawnTimer;
+    ObjectGuid _casterGUID;
+};
+
+// 48752 - Banshee
+// Sourced: the spells (90871 summons her behind the agent, for 30 s; 90874 and 90873 Carried by Banshee, 5.4.8 DBC), her lines (broadcast 48962-48965)
+// and the event: comments on 28538 and 48752 have the agent carried off while she speaks, killable and lootable by ranged players on the way,
+// and the wiki has her taking it to Tarren Mill. Ours: Vehicle 1348 (no source gives her a vehicle, see the SQL), the approach, when she speaks, the
+// flight and that both then vanish. She flies a curve up and towards Tarren Mill, out of melee reach within a few seconds; she leaves the same
+// way if the agent is dead or lost. The agent's death mid-flight drops it (npc_hillsbrad_si7_agent) and she flies on. Never in combat.
+struct npc_hillsbrad_banshee : public ScriptedAI
+{
+    npc_hillsbrad_banshee(Creature* creature) : ScriptedAI(creature), _flying(false) { }
+
+    void IsSummonedBy(Unit* /*summoner*/) override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+        me->SetWalk(false);
+        me->setActive(true, ActiveFlags::Script);   // the flight goes on if the player runs off
+
+        _events.ScheduleEvent(EVENT_BANSHEE_NO_AGENT, 2s);
+    }
+
+    // Not the follow-on-spawn of CreatureAI::JustAppeared, nor a return to an owner
+    void JustAppeared() override { }
+    void EnterEvadeMode(EvadeReason /*why*/ = EVADE_REASON_OTHER) override { }
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    ObjectGuid GetGUID(int32 id = 0) const override
+    {
+        return id == DATA_CARRIED_AGENT ? _agentGUID : ObjectGuid::Empty;
+    }
+
+    // Still waiting to be told her agent
+    uint32 GetData(uint32 id = 0) const override
+    {
+        return id == DATA_CARRIED_AGENT && !_flying && _agentGUID.IsEmpty() ? 1 : 0;
+    }
+
+    void SetGUID(ObjectGuid guid, int32 id = 0) override
+    {
+        if (id != DATA_CARRIED_AGENT || _flying)
+            return;
+
+        _agentGUID = guid;
+        _events.CancelEvent(EVENT_BANSHEE_NO_AGENT);
+
+        Creature* agent = ObjectAccessor::GetCreature(*me, _agentGUID);
+        if (!agent || !agent->IsAlive())
+        {
+            FlyOff();
+            return;
+        }
+
+        // Up to the agent's shoulder, from where she is
+        float const angle = agent->GetAngle(me);
+        Position const path[2] =
+        {
+            me->GetPosition(),
+            { agent->GetPositionX() + 2.0f * std::cos(angle), agent->GetPositionY() + 2.0f * std::sin(angle), agent->GetPositionZ() + 1.0f }
+        };
+        SetFlightSpeed(BansheeApproachSpeed);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(POINT_BANSHEE_APPROACH, path, 2, false, true);
+
+        _events.ScheduleEvent(EVENT_BANSHEE_GRAB, 3s);  // should the spline not report
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != EFFECT_MOTION_TYPE)
+            return;
+
+        if (pointId == POINT_BANSHEE_APPROACH && !_flying)
+        {
+            _events.CancelEvent(EVENT_BANSHEE_GRAB);
+            _events.ScheduleEvent(EVENT_BANSHEE_GRAB, 0ms);
+        }
+        else if (pointId == POINT_BANSHEE_AWAY)
+        {
+            _events.CancelEvent(EVENT_BANSHEE_END);
+            _events.ScheduleEvent(EVENT_BANSHEE_END, 0ms);
+        }
+    }
+
+    void PassengerBoarded(Unit* /*who*/, int8 /*seatId*/, bool apply) override
+    {
+        if (apply)
+        {
+            _events.CancelEvent(EVENT_BANSHEE_NOT_SEATED);
+            Talk(TALK_BANSHEE_CARRY);
+            _events.ScheduleEvent(EVENT_BANSHEE_LIFT, 800ms);
+        }
+        else if (!_flying)  // Dead or despawned before she took off (in the air the flight just goes on)
+        {
+            _events.CancelEvent(EVENT_BANSHEE_LIFT);
+            _events.ScheduleEvent(EVENT_BANSHEE_LIFT, 0ms);
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_BANSHEE_NO_AGENT:
+                case EVENT_BANSHEE_NOT_SEATED:
+                case EVENT_BANSHEE_LIFT:
+                    FlyOff();
+                    break;
+                case EVENT_BANSHEE_GRAB:
+                {
+                    Creature* agent = ObjectAccessor::GetCreature(*me, _agentGUID);
+                    if (!agent || !agent->IsAlive())
+                    {
+                        FlyOff();
+                        break;
+                    }
+
+                    me->CastSpell(me, SPELL_CARRIED_BY_BANSHEE, true);
+                    if (!agent->GetVehicle())   // The ride is instant: seated by now if it worked
+                        _events.ScheduleEvent(EVENT_BANSHEE_NOT_SEATED, 500ms);
+                    break;
+                }
+                case EVENT_BANSHEE_END:
+                    if (Creature* agent = ObjectAccessor::GetCreature(*me, _agentGUID))
+                        if (agent->GetVehicleBase() == me)
+                            agent->DespawnOrUnsummon();
+                    me->DespawnOrUnsummon();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void SetFlightSpeed(float speed)
+    {
+        me->SetSpeed(MOVE_RUN, speed / baseMoveSpeed[MOVE_RUN]);
+        me->SetSpeed(MOVE_FLIGHT, speed / baseMoveSpeed[MOVE_FLIGHT]);
+    }
+
+    bool LineIsClear(Position const& from, Position const& to) const
+    {
+        return me->GetMap()->isInLineOfSight(from.GetPositionX(), from.GetPositionY(), from.GetPositionZ(),
+            to.GetPositionX(), to.GetPositionY(), to.GetPositionZ(), me->GetPhaseMask(), VMAP::ModelIgnoreFlags::Nothing);
+    }
+
+    // The curve from here over the control point to the end clears the terrain, the buildings and the trees (they are in the vmaps)
+    bool CurveIsClear(Position const& here, Position const& control, Position const& end) const
+    {
+        Position from = here;
+        for (uint32 i = 1; i <= 8; ++i)
+        {
+            float const t = float(i) / 8.0f;
+            Position const to = BansheeCurvePoint(here, control, end, t);
+            if (!LineIsClear(from, to))
+                return false;
+
+            // Near the start she may still be low over the ground she took the agent from
+            float const ground = me->GetMap()->GetHeight(me->GetPhaseMask(), to.GetPositionX(), to.GetPositionY(), to.GetPositionZ() + 40.0f, true, 120.0f);
+            if (ground > INVALID_HEIGHT && to.GetPositionZ() < ground + (t < 0.5f ? 2.0f : 6.0f))
+                return false;
+
+            from = to;
+        }
+        return true;
+    }
+
+    // Spawns are spread over the Headland, so the path is relative and checked here: towards Tarren Mill if that is clear, else the nearest clear
+    // heading, higher if that helps; else straight up.
+    void FlyOff()
+    {
+        if (_flying)
+            return;
+
+        _flying = true;
+        _events.CancelEvent(EVENT_BANSHEE_NO_AGENT);
+        _events.CancelEvent(EVENT_BANSHEE_GRAB);
+        _events.CancelEvent(EVENT_BANSHEE_NOT_SEATED);
+        _events.CancelEvent(EVENT_BANSHEE_LIFT);
+
+        Position const here = me->GetPosition();
+
+        float rise = 0.0f;
+        for (float candidate : BansheeRises)
+        {
+            if (LineIsClear(here, { here.GetPositionX(), here.GetPositionY(), here.GetPositionZ() + candidate }))
+            {
+                rise = candidate;
+                break;
+            }
+        }
+
+        Position const control = { here.GetPositionX(), here.GetPositionY(), here.GetPositionZ() + rise };
+        Position end = { here.GetPositionX(), here.GetPositionY(), here.GetPositionZ() + rise };
+        bool found = false;
+
+        float const heading = me->GetAngle(BansheeTarrenMillPos.GetPositionX(), BansheeTarrenMillPos.GetPositionY());
+        float const offsets[] = { 0.0f, 0.79f, -0.79f, 1.57f, -1.57f, 2.36f, -2.36f, 3.14f };
+        for (float offset : offsets)
+        {
+            float const x = here.GetPositionX() + BansheeFlightDistance * std::cos(heading + offset);
+            float const y = here.GetPositionY() + BansheeFlightDistance * std::sin(heading + offset);
+            for (float extra : { 6.0f, 12.0f, 18.0f, 24.0f })
+            {
+                Position const candidate = { x, y, control.GetPositionZ() + extra };
+                if (CurveIsClear(here, control, candidate))
+                {
+                    end = candidate;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+                break;
+        }
+
+        // Evenly spaced points: a smooth spline's speed jumps at uneven ones
+        Position last = here;
+        float length = 0.0f;
+        std::vector<Position> dense;
+        dense.push_back(here);
+        for (uint32 i = 1; i <= 64; ++i)
+        {
+            dense.push_back(BansheeCurvePoint(here, control, end, float(i) / 64.0f));
+            length += last.GetExactDist(dense.back());
+            last = dense.back();
+        }
+
+        if (length < 1.0f)  // Under a roof with nowhere to go
+        {
+            _events.ScheduleEvent(EVENT_BANSHEE_END, 2s);
+            return;
+        }
+
+        size_t const count = std::max<size_t>(2, size_t(std::lround(length / 3.0f)));
+        float const spacing = length / count;
+        std::vector<Position> path;
+        path.push_back(here);
+        float walked = 0.0f;
+        float next = spacing;
+        for (size_t i = 0; i + 1 < dense.size(); ++i)
+        {
+            float const segment = dense[i].GetExactDist(dense[i + 1]);
+            while (segment > 0.0f && walked + segment >= next && path.size() < count)
+            {
+                float const f = (next - walked) / segment;
+                path.emplace_back(dense[i].GetPositionX() + (dense[i + 1].GetPositionX() - dense[i].GetPositionX()) * f,
+                    dense[i].GetPositionY() + (dense[i + 1].GetPositionY() - dense[i].GetPositionY()) * f,
+                    dense[i].GetPositionZ() + (dense[i + 1].GetPositionZ() - dense[i].GetPositionZ()) * f);
+                next += spacing;
+            }
+            walked += segment;
+        }
+        path.push_back(end);
+
+        SetFlightSpeed(BansheeFlightSpeed);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(POINT_BANSHEE_AWAY, path.data(), path.size(), false, true);
+
+        // Should the spline not report; well inside her 30 s
+        _events.ScheduleEvent(EVENT_BANSHEE_END, Milliseconds(uint32(length / BansheeFlightSpeed * IN_MILLISECONDS) + 2 * IN_MILLISECONDS));
+    }
+
+    EventMap _events;
+    ObjectGuid _agentGUID;
+    bool _flying;
+};
+
+// 90874 - Carried by Banshee
+// Its area would take any unit in 10 yd (the DBC's aura state is not even checked for a vehicle as caster, SpellInfo::CheckTarget): she takes
+// the agent she came for, and two Banshees side by side don't swap. The script effect's value is the ride, which the agent casts on her.
+class spell_hillsbrad_carried_by_banshee : public SpellScript
+{
+    PrepareSpellScript(spell_hillsbrad_carried_by_banshee);
+
+    void FilterTargets(std::list<WorldObject*>& targets)
+    {
+        Creature* caster = GetCaster()->ToCreature();
+        ObjectGuid const agent = caster && caster->IsAIEnabled ? caster->AI()->GetGUID(DATA_CARRIED_AGENT) : ObjectGuid::Empty;
+        targets.remove_if([agent](WorldObject* target) { return target->GetGUID() != agent; });
+    }
+
+    void HandleScript(SpellEffIndex /*effIndex*/)
+    {
+        if (Unit* agent = GetHitUnit())
+            agent->CastSpell(GetCaster(), uint32(GetEffectValue()), true);
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hillsbrad_carried_by_banshee::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_hillsbrad_carried_by_banshee::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
 void AddSC_hillsbrad_headland()
 {
     new creature_script<npc_hillsbrad_lilith>("npc_hillsbrad_lilith");
     new aura_script<spell_hillsbrad_lilith_summon_controller>("spell_hillsbrad_lilith_summon_controller");
     new quest_hillsbrad_lilith_disguise();
+    new creature_script<npc_hillsbrad_si7_agent>("npc_hillsbrad_si7_agent");
+    new creature_script<npc_hillsbrad_banshee>("npc_hillsbrad_banshee");
+    new spell_script<spell_hillsbrad_carried_by_banshee>("spell_hillsbrad_carried_by_banshee");
 }
