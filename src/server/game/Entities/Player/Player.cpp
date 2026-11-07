@@ -2648,8 +2648,12 @@ Creature* Player::GetNPCIfCanInteractWith(ObjectGuid guid, uint32 npcflagmask)
     if (FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(creature->GetFaction()))
         if (factionTemplate->faction)
             if (FactionEntry const* faction = sFactionStore.LookupEntry(factionTemplate->faction))
-                if (faction->reputationListID >= 0 && GetReputationMgr().GetRank(faction) <= REP_UNFRIENDLY)
+            {
+                // A forced reaction (SPELL_AURA_FORCE_REACTION, a disguise) overrules the standing, as it does in IsHostileTo and on the client
+                ReputationRank const* forcedRank = GetReputationMgr().GetForcedRankIfAny(factionTemplate);
+                if (faction->reputationListID >= 0 && (forcedRank ? *forcedRank : GetReputationMgr().GetRank(faction)) <= REP_UNFRIENDLY)
                     return nullptr;
+            }
 
     // not too far
     if (!creature->IsWithinDistInMap(this, npcflagmask & UNIT_NPC_FLAG_WILDPET_CAPTURABLE ? PETBATTLE_INTERACTION_DIST : (creature->GetEntry() == 60166 || creature->GetEntry() == 60167) ? 9.6f : INTERACTION_DISTANCE))
@@ -2699,8 +2703,12 @@ Creature* Player::GetNPCIfCanInteractWithFlag2(ObjectGuid guid, uint32 npcflagma
     if (FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(creature->GetFaction()))
     if (factionTemplate->faction)
     if (FactionEntry const* faction = sFactionStore.LookupEntry(factionTemplate->faction))
-    if (faction->reputationListID >= 0 && GetReputationMgr().GetRank(faction) <= REP_UNFRIENDLY)
-        return nullptr;
+    {
+        // A forced reaction (SPELL_AURA_FORCE_REACTION, a disguise) overrules the standing, as it does in IsHostileTo and on the client
+        ReputationRank const* forcedRank = GetReputationMgr().GetForcedRankIfAny(factionTemplate);
+        if (faction->reputationListID >= 0 && (forcedRank ? *forcedRank : GetReputationMgr().GetRank(faction)) <= REP_UNFRIENDLY)
+            return nullptr;
+    }
 
     // not too far
     if (!creature->IsWithinDistInMap(this, INTERACTION_DISTANCE))
