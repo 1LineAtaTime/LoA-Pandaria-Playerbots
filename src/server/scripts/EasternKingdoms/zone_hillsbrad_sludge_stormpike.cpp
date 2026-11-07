@@ -218,9 +218,11 @@ protected:
 
     // Flies the camera from where it is along one curve that rounds off the corners of the given points (a clamped uniform cubic
     // B-spline: it starts here, ends on the last point and passes inside the others), sent as points `step` yards apart. The
-    // client runs a smooth spline at an even pace per segment and turns the camera along it, so a spline through a few far-apart,
+    // client runs a smooth spline at an even pace per segment and turns the vehicle along it, so a spline through a few far-apart,
     // unevenly spaced points speeds up and slows down at every point where the spacing changes and swings round each corner;
-    // evenly spaced points on a curve without corners fly at one speed and turn steadily.
+    // evenly spaced points on a curve without corners fly at one speed and turn steadily. Where the view looks is up to the seat's
+    // CameraMode: a mode locked on a world point (lockedTargetOffsetBase 2: March of the Stormpike, Stormpike Apocalypse) stays on
+    // that point whichever way the vehicle turns.
     void FlyCurve(uint32 pointId, std::initializer_list<Position> corners, float step)
     {
         Position const here = me->GetPosition();
