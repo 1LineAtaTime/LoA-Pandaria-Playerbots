@@ -1285,6 +1285,7 @@ enum MattersOfLoyalty
     NPC_DREKTHAR                                = 48969,
     NPC_DREKTHARS_WHEELCHAIR                    = 48971,
     NPC_CAPTAIN_GALVANGAR                       = 48980,
+    NPC_DREKTHARS_WHEELCHAIR_WHEEL              = 48970,
 
     SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA    = 91356,
     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY   = 91358,
@@ -1337,7 +1338,8 @@ struct npc_hillsbrad_voggah_deathgrip : public ScriptedAI
 // Summoned on the player with phase 357 (Aid of the Frostwolf Camera); the same spell leaves a Cloned Image of the player in
 // front of Voggah. Summon Drek'thar/Crew, done directly: Captain Galvangar pushes Drek'Thar in his wheelchair out of the
 // Alterac Valley tunnel (Galvangar carries the wheelchair, which carries Drek'Thar: vehicles 1367 and 1363), Drek'Thar refuses
-// the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest.
+// the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest. The wheelchair
+// is a plain chair model (WORGEN_CHAIR_01); its two other seats, 0.55 yd to each side, carry Drek'thar's Wheelchair Wheels.
 struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0)
@@ -1353,6 +1355,9 @@ struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_ca
             _wheelchairGUID = wheelchair->GetGUID();
         if (Creature* drekthar = SummonActor(NPC_DREKTHAR, GalvangarTunnelPos))
             _drektharGUID = drekthar->GetGUID();
+        for (ObjectGuid& wheelGUID : _wheelGUIDs)
+            if (Creature* wheel = SummonActor(NPC_DREKTHARS_WHEELCHAIR_WHEEL, GalvangarTunnelPos))
+                wheelGUID = wheel->GetGUID();
 
         me->GetMotionMaster()->MovePoint(POINT_FROSTWOLF_VANTAGE, FrostwolfVantagePos, false);
         _events.ScheduleEvent(EVENT_FROSTWOLF_ACTORS_BOARD, 500ms);
@@ -1375,6 +1380,9 @@ struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_ca
                 {
                     wheelchair->EnterVehicle(galvangar, 0);
                     drekthar->EnterVehicle(wheelchair, 0);
+                    for (uint8 i = 0; i < 2; ++i)
+                        if (Creature* wheel = GetActor(_wheelGUIDs[i]))
+                            wheel->EnterVehicle(wheelchair, i + 1);
                 }
                 _events.ScheduleEvent(EVENT_FROSTWOLF_GALVANGAR_WALK, 2s);
                 break;
@@ -1416,6 +1424,7 @@ private:
     ObjectGuid _galvangarGUID;
     ObjectGuid _wheelchairGUID;
     ObjectGuid _drektharGUID;
+    ObjectGuid _wheelGUIDs[2];
     uint8 _line;
 };
 
