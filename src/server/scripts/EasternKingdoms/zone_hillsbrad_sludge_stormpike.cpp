@@ -52,7 +52,10 @@ enum HillsbradScenes
 {
     // The camera's own steps; the scenes number theirs from EVENT_SCENE_FIRST on
     EVENT_CAMERA_WAIT_FOR_RIDER                 = 1,
-    EVENT_SCENE_FIRST                           = 10
+    EVENT_SCENE_FIRST                           = 10,
+
+    // The camera's lift off the ground; the scenes number their own points from 1
+    POINT_CAMERA_LIFT                           = 100
 };
 
 // The player's own summon of an entry near the player (personal summons are private: closest-creature searches skip them)
@@ -114,6 +117,10 @@ public:
         me->SetSpeed(MOVE_FLIGHT, _speedRate);
 
         _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
+
+        // The summon spot is on the ground: the view would start under it where the ground rises
+        if (_liftHeight > 0.0f)
+            FlyPath(POINT_CAMERA_LIFT, { { me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + _liftHeight } });
     }
 
     void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
@@ -416,6 +423,7 @@ protected:
     EventMap _events;
     ObjectGuid _playerGUID;
     ReturnHook _returnHook = nullptr;
+    float _liftHeight = 0.0f;
 
 private:
     std::vector<ObjectGuid> _actorGUIDs;
@@ -1331,7 +1339,10 @@ struct npc_hillsbrad_voggah_deathgrip : public ScriptedAI
 // the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest.
 struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_camera
 {
-    npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0) { }
+    npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0)
+    {
+        _liftHeight = 3.0f;
+    }
 
     void Start(Player* /*player*/) override
     {
@@ -1543,11 +1554,15 @@ Position const GavinsNazeNukePos        = { -104.993f, -69.8663f, 147.112f };
 // 48696 - Tarren Mill Camera
 // Summoned on the player with phase 355 (Tarren Mill Camera). It flies from Tarren Mill over the four fingers of Hillsbrad in
 // the order of the narration, stopping at each while the two lines on it show, rises over Gavin's Naze for the last line, and
-// Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: 17 yd or more above the
-// ground on every leg.
+// Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: each leg is one curve
+// (FlyCurve), 21 yd or more above the ground and the vmaps once the camera is off the first rise, and each stop is about 60 yd
+// (2D) from its finger's pocket-nuke spot (checked against the extracted maps and vmaps).
 struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
 {
-    npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0) { }
+    npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0)
+    {
+        _liftHeight = 7.0f;
+    }
 
     void Start(Player* /*player*/) override
     {
@@ -1609,19 +1624,19 @@ private:
         switch (++_stop)
         {
             case POINT_MARCH_SOFERAS_NAZE:
-                FlyPath(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } });
+                FlyCurve(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
                 break;
             case POINT_MARCH_CORRAHNS_DAGGER:
-                FlyPath(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -10.0f, -610.0f, 195.0f } });
+                FlyCurve(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -10.0f, -610.0f, 195.0f } }, 6.0f);
                 break;
             case POINT_MARCH_THE_HEADLAND:
-                FlyPath(POINT_MARCH_THE_HEADLAND, { { -100.0f, -420.0f, 200.0f }, { -120.0f, -345.0f, 190.0f } });
+                FlyCurve(POINT_MARCH_THE_HEADLAND, { { -100.0f, -420.0f, 200.0f }, { -120.0f, -345.0f, 190.0f } }, 6.0f);
                 break;
             case POINT_MARCH_GAVINS_NAZE:
-                FlyPath(POINT_MARCH_GAVINS_NAZE, { { -90.0f, -230.0f, 190.0f }, { -65.0f, -155.0f, 175.0f } });
+                FlyCurve(POINT_MARCH_GAVINS_NAZE, { { -90.0f, -230.0f, 190.0f }, { -85.0f, -125.0f, 175.0f } }, 6.0f);
                 break;
             case POINT_MARCH_GRASP:
-                FlyPath(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } });
+                FlyCurve(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } }, 6.0f);
                 break;
             default:
                 Finish();
@@ -1647,11 +1662,14 @@ static void CromushHillsbradIsOurs(Player* player)
 // Goblin Pocket Nuke), and one pocket-nuke on each of the other fingers. The camera flies to Gavin's Naze, where Lagrave asks
 // Magruder to defuse the nuke and Magruder runs; the nuke goes off (Global Thermonuclear War), and the camera pulls back over
 // the Headland, Corrahn's Dagger and Sofera's Naze as their nukes go off in turn. Cancel Cinematic puts the player back in
-// front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!".
+// front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!". The path is ours: each leg is one
+// curve (FlyCurve), 19 yd or more above the ground and the vmaps once off the first rise, arriving headed for the nuke and at
+// most 73 yd from it (checked against the extracted maps and vmaps).
 struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_stormpike_apocalypse_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_APOCALYPSE, SPELL_CANCEL_CINEMATIC_APOCALYPSE, 5.0f)
     {
+        _liftHeight = 7.0f;
         _returnHook = &CromushHillsbradIsOurs;
     }
 
@@ -1685,14 +1703,14 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
         switch (eventId)
         {
             case EVENT_APOCALYPSE_FLY:
-                FlyPath(POINT_APOCALYPSE_GAVINS_NAZE,
+                FlyCurve(POINT_APOCALYPSE_GAVINS_NAZE,
                 {
                     { -5.0f, -890.0f, 100.0f },
                     { -60.0f, -600.0f, 200.0f },
                     { -100.0f, -330.0f, 195.0f },
                     { -95.0f, -140.0f, 175.0f },
                     { -93.0f, -92.0f, 158.0f }
-                });
+                }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_LAGRAVE_DEFUSE:
                 if (lagrave)
@@ -1728,13 +1746,13 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
                 _events.ScheduleEvent(EVENT_APOCALYPSE_TO_THE_HEADLAND, 3s);
                 break;
             case EVENT_APOCALYPSE_TO_THE_HEADLAND:
-                FlyPath(POINT_APOCALYPSE_THE_HEADLAND, { { -85.0f, -170.0f, 215.0f }, { -75.0f, -245.0f, 225.0f } });
+                FlyCurve(POINT_APOCALYPSE_THE_HEADLAND, { { -65.0f, -100.0f, 175.0f }, { -62.0f, -170.0f, 205.0f }, { -78.0f, -190.0f, 205.0f }, { -92.0f, -235.0f, 190.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER:
-                FlyPath(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -40.0f, -480.0f, 230.0f } });
+                FlyCurve(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -100.0f, -300.0f, 205.0f }, { -70.0f, -400.0f, 215.0f }, { -50.0f, -440.0f, 205.0f }, { -38.0f, -490.0f, 190.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_TO_SOFERAS_NAZE:
-                FlyPath(POINT_APOCALYPSE_SOFERAS_NAZE, { { 60.0f, -700.0f, 235.0f }, { 150.0f, -790.0f, 225.0f } });
+                FlyCurve(POINT_APOCALYPSE_SOFERAS_NAZE, { { -5.0f, -560.0f, 215.0f }, { 50.0f, -680.0f, 235.0f }, { 95.0f, -800.0f, 235.0f }, { 125.0f, -880.0f, 205.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_END:
                 Finish();
