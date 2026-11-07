@@ -30,7 +30,8 @@
  * QUEST_COMPLETE), the actors (their summon spells and templates), every line (broadcast_text), the Sludge Fields camera start
  * (spell_target_position of 89144 in the Cataclysm Classic TDB), Stillwater's combat spells (its SmartAI in the same TDB) and
  * the order of the scenes (warcraft.wiki.gg). Ours: the camera paths, every timing, where the actors stand, the vehicle of the
- * three Stormpike cameras (no source has it) and the replay when a scene was interrupted. None of this was sniffed.
+ * three Stormpike cameras (no source has it), the replay when a scene was interrupted and setting a player down who logged out
+ * in one of them. None of this was sniffed.
  */
 
 #include "ScriptMgr.h"
@@ -2769,8 +2770,79 @@ class spell_hillsbrad_scene_camera_ride : public AuraScript
     bool _hidden = false;
 };
 
+// A player who logs out (or crashes) in a scene camera is saved at the camera's position (Player::SaveToDB runs before the vehicle
+// exit), up to 125 yd above a hostile camp, and would fall to their death on logging in. Ours, as retail's scenes could not be
+// left. Those whose scene quest is still open and who are in the air over the scene are set down at its end spot, in front of
+// the quest giver who plays it again (ReplayScene). The position is corrected before the player enters the map, so the client
+// is told the right place from the start: a near teleport at login would depend on the client answering it from the loading
+// screen, and the player's movement is ignored until it does. The checks keep this to such a player: the quest is also open for
+// a party member who confirmed it, and one of those may be anywhere, flying, swimming or walking on water. A saved position
+// can't tell a camera from a jump: someone in the same state who logged out mid-jump over a drop is set down at the giver too.
+class player_hillsbrad_scene_logout : public PlayerScript
+{
+public:
+    player_hillsbrad_scene_logout() : PlayerScript("player_hillsbrad_scene_logout") { }
+
+    void OnLoadFromDB(Player* player) override
+    {
+        struct AerialScene
+        {
+            uint32 QuestId;
+            uint32 EndSpellId;
+            float Radius; // how far from the end spot the camera flies
+        };
+
+        static AerialScene const scenes[] =
+        {
+            { QUEST_MATTERS_OF_LOYALTY,     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY,  60.0f },
+            { QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH,               1000.0f },
+            { QUEST_STORMPIKE_APOCALYPSE,   SPELL_CANCEL_CINEMATIC_APOCALYPSE,          1000.0f }
+        };
+
+        if (!player->IsAlive() || !player->m_taxi.empty() || player->GetTransport() || player->HasAuraType(SPELL_AURA_FLY)
+            || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+            return;
+
+        for (AerialScene const& scene : scenes)
+        {
+            if (player->GetQuestStatus(scene.QuestId) != QUEST_STATUS_INCOMPLETE)
+                continue;
+
+            SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(scene.EndSpellId, EFFECT_0);
+            if (!dest || dest->target_mapId != player->GetMapId() || player->GetExactDist2d(dest->target_X, dest->target_Y) > scene.Radius)
+                continue;
+
+            // The Matters of Loyalty camera only hovers 7 yd up, so the margin is small. A player standing on anything has less.
+            float const x = player->GetPositionX();
+            float const y = player->GetPositionY();
+            float const z = player->GetPositionZ();
+            Map* map = player->GetMap();
+
+            // The player's grid may not exist yet: a terrain lookup only loads the terrain tile, so without the grid's vmap and
+            // gameobjects a player in a cave or on a roof would read as in the air. AddPlayerToMap loads this grid next anyway,
+            // on this same thread; a player moved away just leaves it loaded until it expires.
+            map->LoadGrid(x, y);
+
+            float surface = map->GetHeight(player->GetPhaseMask(), x, y, z, true, MAX_FALL_DISTANCE);
+            LiquidData liquid;
+            liquid.level = INVALID_HEIGHT;
+            if (map->GetLiquidStatus(player->GetPhaseMask(), x, y, z, MAP_ALL_LIQUIDS, &liquid) != LIQUID_MAP_NO_WATER)
+                surface = std::max(surface, liquid.level);
+            if (z - surface <= 5.0f)
+                continue;
+
+            TC_LOG_DEBUG("scripts", "player_hillsbrad_scene_logout: %s logged in %.1f %.1f %.1f in the air with quest %u open, setting them down",
+                player->GetName().c_str(), x, y, z, scene.QuestId);
+            player->Relocate(dest->target_X, dest->target_Y, dest->target_Z, dest->target_Orientation);
+            player->SetFallInformation(0, dest->target_Z);
+            return;
+        }
+    }
+};
+
 void AddSC_hillsbrad_sludge_stormpike()
 {
+    new player_hillsbrad_scene_logout();
     new creature_script<npc_hillsbrad_machine_skeletal_steed>("npc_hillsbrad_machine_skeletal_steed");
     new creature_script<npc_hillsbrad_machine_visitor>("npc_hillsbrad_machine_visitor");
     new aura_script<spell_hillsbrad_machine_quest_giver>("spell_hillsbrad_machine_quest_giver");

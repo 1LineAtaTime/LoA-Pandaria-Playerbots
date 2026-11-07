@@ -1563,6 +1563,11 @@ void ScriptMgr::OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck)
     FOREACH_SCRIPT(PlayerScript)->OnSpellCast(player, spell, skipCheck);
 }
 
+void ScriptMgr::OnPlayerLoadFromDB(Player* player)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnLoadFromDB(player);
+}
+
 void ScriptMgr::OnPlayerLogin(Player* player)
 {
 #ifdef ELUNA

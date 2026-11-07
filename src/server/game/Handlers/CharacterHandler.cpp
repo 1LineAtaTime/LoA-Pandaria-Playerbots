@@ -927,6 +927,8 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
         return;
     }
 
+    sScriptMgr->OnPlayerLoadFromDB(pCurrChar);
+
     pCurrChar->GetMotionMaster()->Initialize();
 
     WorldPacket data(SMSG_LOGIN_VERIFY_WORLD, 4 + 4 + 4 + 4 + 4);
