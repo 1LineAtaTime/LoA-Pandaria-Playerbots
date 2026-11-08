@@ -459,6 +459,16 @@ struct npc_hillsbrad_scene_actor : public ScriptedAI
     void AttackStart(Unit* /*who*/) override { }
     void MoveInLineOfSight(Unit* /*who*/) override { }
     void UpdateAI(uint32 /*diff*/) override { }
+
+    // Drek'thar's Wheelchair 48971 (Matters of Loyalty): its wheel seats 1 and 2 (VehicleSeat 9200/9226) pitch the passenger
+    // 90 degrees, which stands Drek'thar's Wheelchair Wheel up facing the way the chair faces. The client turns a seated
+    // passenger by its own transport-relative facing after the seat's pitch (CVehiclePassenger_C::ComputeModelTransform), so a
+    // quarter turn to the outside lays each wheel along the chair's side.
+    void GetPassengerEnterPosition(Unit* /*passenger*/, int8 seatId, Position& pos) override
+    {
+        if (me->GetEntry() == 48971 && (seatId == 1 || seatId == 2))
+            pos.SetOrientation(seatId == 1 ? float(M_PI) / 2.0f : float(M_PI) * 1.5f);
+    }
 };
 
 } // namespace
@@ -1354,7 +1364,8 @@ struct npc_hillsbrad_voggah_deathgrip : public ScriptedAI
 // front of Voggah. Summon Drek'thar/Crew, done directly: Captain Galvangar pushes Drek'Thar in his wheelchair out of the
 // Alterac Valley tunnel (Galvangar carries the wheelchair, which carries Drek'Thar: vehicles 1367 and 1363), Drek'Thar refuses
 // the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest. The wheelchair
-// is a plain chair model (WORGEN_CHAIR_01); its two other seats, 0.55 yd to each side, carry Drek'thar's Wheelchair Wheels.
+// is a plain chair model (WORGEN_CHAIR_01); its two other seats, 0.55 yd to each side, carry Drek'thar's Wheelchair Wheels,
+// turned a quarter outwards by npc_hillsbrad_scene_actor::GetPassengerEnterPosition.
 struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0)

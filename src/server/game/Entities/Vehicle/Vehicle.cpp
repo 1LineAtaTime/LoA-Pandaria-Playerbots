@@ -226,7 +226,7 @@ void Vehicle::AnnouncePassengers()
         Movement::MoveSplineInit init(passenger);
         init.DisableTransportPathTransformations();
         init.MoveTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), false, true);
-        init.SetFacing(0.0f);
+        init.SetFacing(pos.GetOrientation());
         init.SetTransportEnter();
         init.Launch();
     }
@@ -721,7 +721,7 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
     Movement::MoveSplineInit init(unit);
     init.DisableTransportPathTransformations();
     init.MoveTo(attachmentPos.GetPositionX(), attachmentPos.GetPositionY(), attachmentPos.GetPositionZ(), false, true);
-    init.SetFacing(0.0f);
+    init.SetFacing(attachmentPos.GetOrientation());   // the passenger's facing relative to the seat (0 unless the vehicle's AI sets it)
     init.SetTransportEnter();
     init.Launch();
 
