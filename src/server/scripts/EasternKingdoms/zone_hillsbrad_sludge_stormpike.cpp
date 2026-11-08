@@ -30,7 +30,8 @@
  * QUEST_COMPLETE), the actors (their summon spells and templates), every line (broadcast_text), the Sludge Fields camera start
  * (spell_target_position of 89144 in the Cataclysm Classic TDB), Stillwater's combat spells (its SmartAI in the same TDB) and
  * the order of the scenes (warcraft.wiki.gg). Ours: the camera paths, every timing, where the actors stand, the vehicle of the
- * three Stormpike cameras (no source has it) and the replay when a scene was interrupted. None of this was sniffed.
+ * three Stormpike cameras (no source has it), the replay when a scene was interrupted and setting a player down who logged out
+ * in one of them. None of this was sniffed.
  */
 
 #include "ScriptMgr.h"
@@ -52,7 +53,10 @@ enum HillsbradScenes
 {
     // The camera's own steps; the scenes number theirs from EVENT_SCENE_FIRST on
     EVENT_CAMERA_WAIT_FOR_RIDER                 = 1,
-    EVENT_SCENE_FIRST                           = 10
+    EVENT_SCENE_FIRST                           = 10,
+
+    // The camera's lift off the ground; the scenes number their own points from 1
+    POINT_CAMERA_LIFT                           = 100
 };
 
 // The player's own summon of an entry near the player (personal summons are private: closest-creature searches skip them)
@@ -99,7 +103,7 @@ class npc_hillsbrad_scene_camera : public VehicleAI
 {
 public:
     npc_hillsbrad_scene_camera(Creature* creature, uint32 questId, uint32 endSpellId, float speedRate) : VehicleAI(creature),
-        _questId(questId), _endSpellId(endSpellId), _speedRate(speedRate), _boardTries(0), _started(false), _done(false) { }
+        _questId(questId), _endSpellId(endSpellId), _speedRate(speedRate), _boardTries(0), _started(false), _done(false), _changingSeat(false) { }
 
     void IsSummonedBy(Unit* summoner) override
     {
@@ -114,11 +118,15 @@ public:
         me->SetSpeed(MOVE_FLIGHT, _speedRate);
 
         _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
+
+        // The summon spot is on the ground: the view would start under it where the ground rises
+        if (_liftHeight > 0.0f)
+            FlyPath(POINT_CAMERA_LIFT, { { me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + _liftHeight } });
     }
 
     void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
     {
-        if (apply || passenger->GetGUID() != _playerGUID)
+        if (apply || _changingSeat || passenger->GetGUID() != _playerGUID)
             return;
 
         // The player got out early, also before the scene started: Finish sets the player down at the quest giver
@@ -210,9 +218,11 @@ protected:
 
     // Flies the camera from where it is along one curve that rounds off the corners of the given points (a clamped uniform cubic
     // B-spline: it starts here, ends on the last point and passes inside the others), sent as points `step` yards apart. The
-    // client runs a smooth spline at an even pace per segment and turns the camera along it, so a spline through a few far-apart,
+    // client runs a smooth spline at an even pace per segment and turns the vehicle along it, so a spline through a few far-apart,
     // unevenly spaced points speeds up and slows down at every point where the spacing changes and swings round each corner;
-    // evenly spaced points on a curve without corners fly at one speed and turn steadily.
+    // evenly spaced points on a curve without corners fly at one speed and turn steadily. Where the view looks is up to the seat's
+    // CameraMode: a mode locked on a world point (lockedTargetOffsetBase 2: March of the Stormpike, Stormpike Apocalypse) stays on
+    // that point whichever way the vehicle turns.
     void FlyCurve(uint32 pointId, std::initializer_list<Position> corners, float step)
     {
         Position const here = me->GetPosition();
@@ -280,6 +290,18 @@ protected:
     void FaceTo(float x, float y)
     {
         me->SetFacingTo(me->GetAngle(x, y));
+    }
+
+    // Moves the rider to another seat of the camera, whose CameraMode the client then uses. Unit::ChangeSeat takes the passenger
+    // off (PassengerBoarded with apply false) and seats them again within the call: that is no early exit.
+    void ChangeRiderSeat(Player* player, int8 seatId)
+    {
+        _changingSeat = true;
+        player->ChangeSeat(seatId);
+        _changingSeat = false;
+
+        // RemovePassenger's Parachute for a rider with MOVEMENTFLAG_FLYING (flight form: boarding only drops mounts); nobody got out
+        player->RemoveAurasDueToSpell(VEHICLE_SPELL_PARACHUTE);
     }
 
     // An actor of the scene: the player's private summon, passive and out of reach
@@ -365,7 +387,7 @@ protected:
                     player->AreaExploredOrEventHappens(questId);
 
                 if (hook)
-                    hook(player);
+                    RunReturnHook(player, hook, endSpellId, 20);
 
                 // Once set down: a teleport cast in the player's own update only goes out at the end of it. The enable is always
                 // sent, and once more a little later: the player's own movement packets replace the server's flags
@@ -395,9 +417,28 @@ protected:
 
     typedef void (*ReturnHook)(Player*);
 
+    // Runs the hook once the end spell's teleport is over and the player is at its spot. The teleport cast in Finish's lambda is
+    // only stored at that point (Player::TeleportTo in Unit::Update), and the player arrives when the client acknowledges it, so
+    // the check repeats every 250 ms, `tries` times at most. A player who never arrives misses the hook.
+    static void RunReturnHook(Player* player, ReturnHook hook, uint32 endSpellId, uint32 tries)
+    {
+        player->m_Events.AddLambdaEventAtOffset([player, hook, endSpellId, tries]()
+        {
+            if (!player->IsInWorld())
+                return;
+
+            SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(endSpellId, EFFECT_0);
+            if (!player->IsBeingTeleported() && (!dest || player->GetExactDist2d(dest->target_X, dest->target_Y) < 10.0f))
+                hook(player);
+            else if (tries > 1)
+                RunReturnHook(player, hook, endSpellId, tries - 1);
+        }, 250);
+    }
+
     EventMap _events;
     ObjectGuid _playerGUID;
     ReturnHook _returnHook = nullptr;
+    float _liftHeight = 0.0f;
 
 private:
     std::vector<ObjectGuid> _actorGUIDs;
@@ -407,6 +448,7 @@ private:
     uint32 _boardTries;
     bool _started;
     bool _done;
+    bool _changingSeat;
 };
 
 // A passive actor of a scene: the camera moves and speaks for it
@@ -417,6 +459,16 @@ struct npc_hillsbrad_scene_actor : public ScriptedAI
     void AttackStart(Unit* /*who*/) override { }
     void MoveInLineOfSight(Unit* /*who*/) override { }
     void UpdateAI(uint32 /*diff*/) override { }
+
+    // Drek'thar's Wheelchair 48971 (Matters of Loyalty): its wheel seats 1 and 2 (VehicleSeat 9200/9226) pitch the passenger
+    // 90 degrees, which stands Drek'thar's Wheelchair Wheel up facing the way the chair faces. The client turns a seated
+    // passenger by its own transport-relative facing after the seat's pitch (CVehiclePassenger_C::ComputeModelTransform), so a
+    // quarter turn to the outside lays each wheel along the chair's side.
+    void GetPassengerEnterPosition(Unit* /*passenger*/, int8 seatId, Position& pos) override
+    {
+        if (me->GetEntry() == 48971 && (seatId == 1 || seatId == 2))
+            pos.SetOrientation(seatId == 1 ? float(M_PI) / 2.0f : float(M_PI) * 1.5f);
+    }
 };
 
 } // namespace
@@ -1258,6 +1310,7 @@ enum MattersOfLoyalty
     NPC_DREKTHAR                                = 48969,
     NPC_DREKTHARS_WHEELCHAIR                    = 48971,
     NPC_CAPTAIN_GALVANGAR                       = 48980,
+    NPC_DREKTHARS_WHEELCHAIR_WHEEL              = 48970,
 
     SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA    = 91356,
     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY   = 91358,
@@ -1310,10 +1363,15 @@ struct npc_hillsbrad_voggah_deathgrip : public ScriptedAI
 // Summoned on the player with phase 357 (Aid of the Frostwolf Camera); the same spell leaves a Cloned Image of the player in
 // front of Voggah. Summon Drek'thar/Crew, done directly: Captain Galvangar pushes Drek'Thar in his wheelchair out of the
 // Alterac Valley tunnel (Galvangar carries the wheelchair, which carries Drek'Thar: vehicles 1367 and 1363), Drek'Thar refuses
-// the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest.
+// the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest. The wheelchair
+// is a plain chair model (WORGEN_CHAIR_01); its two other seats, 0.55 yd to each side, carry Drek'thar's Wheelchair Wheels,
+// turned a quarter outwards by npc_hillsbrad_scene_actor::GetPassengerEnterPosition.
 struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_camera
 {
-    npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0) { }
+    npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0)
+    {
+        _liftHeight = 3.0f;
+    }
 
     void Start(Player* /*player*/) override
     {
@@ -1323,6 +1381,9 @@ struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_ca
             _wheelchairGUID = wheelchair->GetGUID();
         if (Creature* drekthar = SummonActor(NPC_DREKTHAR, GalvangarTunnelPos))
             _drektharGUID = drekthar->GetGUID();
+        for (ObjectGuid& wheelGUID : _wheelGUIDs)
+            if (Creature* wheel = SummonActor(NPC_DREKTHARS_WHEELCHAIR_WHEEL, GalvangarTunnelPos))
+                wheelGUID = wheel->GetGUID();
 
         me->GetMotionMaster()->MovePoint(POINT_FROSTWOLF_VANTAGE, FrostwolfVantagePos, false);
         _events.ScheduleEvent(EVENT_FROSTWOLF_ACTORS_BOARD, 500ms);
@@ -1345,6 +1406,9 @@ struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_ca
                 {
                     wheelchair->EnterVehicle(galvangar, 0);
                     drekthar->EnterVehicle(wheelchair, 0);
+                    for (uint8 i = 0; i < 2; ++i)
+                        if (Creature* wheel = GetActor(_wheelGUIDs[i]))
+                            wheel->EnterVehicle(wheelchair, i + 1);
                 }
                 _events.ScheduleEvent(EVENT_FROSTWOLF_GALVANGAR_WALK, 2s);
                 break;
@@ -1386,6 +1450,7 @@ private:
     ObjectGuid _galvangarGUID;
     ObjectGuid _wheelchairGUID;
     ObjectGuid _drektharGUID;
+    ObjectGuid _wheelGUIDs[2];
     uint8 _line;
 };
 
@@ -1473,6 +1538,16 @@ enum StormpikeScenes
     POINT_MARCH_GAVINS_NAZE                     = 4,
     POINT_MARCH_GRASP                           = 5,
 
+    // Seats of Vehicle 1343 (Tarren Mill Camera); the first, Sofera's Naze, is where the ride aura puts the rider
+    SEAT_MARCH_CORRAHNS_DAGGER                  = 1,
+    SEAT_MARCH_THE_HEADLAND                     = 2,
+    SEAT_MARCH_GAVINS_NAZE                      = 3,
+
+    // Seats of Vehicle 1379 (Stormpike Apocalypse Camera); the first, Gavin's Naze, is where the ride aura puts the rider
+    SEAT_APOCALYPSE_THE_HEADLAND                = 1,
+    SEAT_APOCALYPSE_CORRAHNS_DAGGER             = 2,
+    SEAT_APOCALYPSE_SOFERAS_NAZE                = 3,
+
     POINT_APOCALYPSE_GAVINS_NAZE                = 1,
     POINT_APOCALYPSE_THE_HEADLAND               = 2,
     POINT_APOCALYPSE_CORRAHNS_DAGGER            = 3,
@@ -1488,6 +1563,7 @@ enum StormpikeScenes
     EVENT_APOCALYPSE_MAGRUDER_WIRES,
     EVENT_APOCALYPSE_MAGRUDER_RUN,
     EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS,
+    EVENT_APOCALYPSE_NEXT_NUKE_BLOWS,
     EVENT_APOCALYPSE_TO_THE_HEADLAND,
     EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER,
     EVENT_APOCALYPSE_TO_SOFERAS_NAZE,
@@ -1525,15 +1601,23 @@ Position const GavinsNazeNukePos        = { -104.993f, -69.8663f, 147.112f };
 // 48696 - Tarren Mill Camera
 // Summoned on the player with phase 355 (Tarren Mill Camera). It flies from Tarren Mill over the four fingers of Hillsbrad in
 // the order of the narration, stopping at each while the two lines on it show, rises over Gavin's Naze for the last line, and
-// Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: 17 yd or more above the
-// ground on every leg.
+// Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: each leg is one curve
+// (FlyCurve), 17 yd or more above the ground and the vmaps once the camera is off the first rise (checked against the extracted
+// maps and vmaps). Where the camera looks is not the vehicle's facing: Vehicle 1343 has four seats, one per finger, and each
+// seat's CameraMode (124, 126, 127, 128, "March of the Stormpike 01-04") holds the view on a fixed point in the world, at its
+// finger (lockedTargetOffsetBase 2, CCameraModeLocked::CalcTargetCameraShot). The rider changes seat as each leg starts. Each stop
+// frames that point and the Stormpike camp round it, which the lines describe: the Headland, Corrahn's Dagger and Gavin's Naze stops
+// are within Visibility.Distance.Continents (90 yd) of most of their camp. Sofera's Naze is left where it was.
 struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
 {
-    npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0) { }
-
-    void Start(Player* /*player*/) override
+    npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0)
     {
-        FlyOn();
+        _liftHeight = 7.0f;
+    }
+
+    void Start(Player* player) override
+    {
+        FlyOn(player);
     }
 
     void SceneEvent(uint32 eventId, Player* player) override
@@ -1545,7 +1629,7 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
                 _events.ScheduleEvent(EVENT_MARCH_FLY_ON, 5s);
                 break;
             case EVENT_MARCH_FLY_ON:
-                FlyOn();
+                FlyOn(player);
                 break;
             case EVENT_MARCH_END:
                 Finish();
@@ -1560,16 +1644,9 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
         switch (pointId)
         {
             case POINT_MARCH_SOFERAS_NAZE:
-                FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
-                break;
             case POINT_MARCH_CORRAHNS_DAGGER:
-                FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
-                break;
             case POINT_MARCH_THE_HEADLAND:
-                FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
-                break;
             case POINT_MARCH_GAVINS_NAZE:
-                FaceTo(GavinsNazeNukePos.GetPositionX(), GavinsNazeNukePos.GetPositionY());
                 break;
             case POINT_MARCH_GRASP:
                 // "Together the fingers represent the grasp of Stormpike closing upon us."
@@ -1586,24 +1663,28 @@ struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
     }
 
 private:
-    void FlyOn()
+    void FlyOn(Player* player)
     {
         switch (++_stop)
         {
             case POINT_MARCH_SOFERAS_NAZE:
-                FlyPath(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } });
+                FlyCurve(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
                 break;
             case POINT_MARCH_CORRAHNS_DAGGER:
-                FlyPath(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -10.0f, -610.0f, 195.0f } });
+                ChangeRiderSeat(player, SEAT_MARCH_CORRAHNS_DAGGER);
+                FlyCurve(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -5.0f, -570.0f, 178.0f } }, 6.0f);
                 break;
             case POINT_MARCH_THE_HEADLAND:
-                FlyPath(POINT_MARCH_THE_HEADLAND, { { -100.0f, -420.0f, 200.0f }, { -120.0f, -345.0f, 190.0f } });
+                ChangeRiderSeat(player, SEAT_MARCH_THE_HEADLAND);
+                FlyCurve(POINT_MARCH_THE_HEADLAND, { { -40.0f, -470.0f, 205.0f }, { -60.0f, -370.0f, 195.0f }, { -100.0f, -300.0f, 180.0f } }, 6.0f);
                 break;
             case POINT_MARCH_GAVINS_NAZE:
-                FlyPath(POINT_MARCH_GAVINS_NAZE, { { -90.0f, -230.0f, 190.0f }, { -65.0f, -155.0f, 175.0f } });
+                ChangeRiderSeat(player, SEAT_MARCH_GAVINS_NAZE);
+                FlyCurve(POINT_MARCH_GAVINS_NAZE, { { -70.0f, -215.0f, 195.0f }, { -58.0f, -135.0f, 172.0f } }, 6.0f);
                 break;
             case POINT_MARCH_GRASP:
-                FlyPath(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } });
+                // Stays in Gavin's Naze's seat: backs off and rises, still looking at the finger
+                FlyCurve(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } }, 6.0f);
                 break;
             default:
                 Finish();
@@ -1615,7 +1696,7 @@ private:
     uint8 _stop;
 };
 
-// Cromush's yell once the player is back in Tarren Mill (Cancel Cinematic has put the player in front of him)
+// Cromush's yell once the player is back in Tarren Mill and in front of him (RunReturnHook waits for the teleport)
 static void CromushHillsbradIsOurs(Player* player)
 {
     if (Creature* cromush = player->FindNearestCreature(NPC_HIGH_WARLORD_CROMUSH, 30.0f))
@@ -1628,12 +1709,18 @@ static void CromushHillsbradIsOurs(Player* player)
 // directly: Magruder (Summon Magruder) and Lieutenant Jan Lagrave (Summon Pixin) at the pocket-nuke on Gavin's Naze (Summon
 // Goblin Pocket Nuke), and one pocket-nuke on each of the other fingers. The camera flies to Gavin's Naze, where Lagrave asks
 // Magruder to defuse the nuke and Magruder runs; the nuke goes off (Global Thermonuclear War), and the camera pulls back over
-// the Headland, Corrahn's Dagger and Sofera's Naze as their nukes go off in turn. Cancel Cinematic puts the player back in
-// front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!".
+// the Headland, Corrahn's Dagger and Sofera's Naze, stopping at each to watch its nuke go off. Cancel Cinematic puts the player back in
+// front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!". The path is ours: each leg is one
+// curve (FlyCurve), 19 yd or more above the ground and the vmaps once off the first rise, arriving at most 73 yd from the nuke
+// (checked against the extracted maps and vmaps). Where the camera looks is not the vehicle's facing: Vehicle 1379 has four seats,
+// one per finger, and each seat's CameraMode (133, 136, 137, 138, "Stormpike Apocalypse Camera 01-04") holds the view on a fixed
+// point in the world, within a few yards of that finger's nuke. The rider changes seat as each leg starts, and at each stop the
+// nuke is at most 7 degrees from the view's centre.
 struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_camera
 {
     npc_hillsbrad_stormpike_apocalypse_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_APOCALYPSE, SPELL_CANCEL_CINEMATIC_APOCALYPSE, 5.0f)
     {
+        _liftHeight = 7.0f;
         _returnHook = &CromushHillsbradIsOurs;
     }
 
@@ -1667,14 +1754,14 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
         switch (eventId)
         {
             case EVENT_APOCALYPSE_FLY:
-                FlyPath(POINT_APOCALYPSE_GAVINS_NAZE,
+                FlyCurve(POINT_APOCALYPSE_GAVINS_NAZE,
                 {
                     { -5.0f, -890.0f, 100.0f },
                     { -60.0f, -600.0f, 200.0f },
                     { -100.0f, -330.0f, 195.0f },
                     { -95.0f, -140.0f, 175.0f },
                     { -93.0f, -92.0f, 158.0f }
-                });
+                }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_LAGRAVE_DEFUSE:
                 if (lagrave)
@@ -1709,14 +1796,27 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
                 Detonate(0);
                 _events.ScheduleEvent(EVENT_APOCALYPSE_TO_THE_HEADLAND, 3s);
                 break;
+            case EVENT_APOCALYPSE_NEXT_NUKE_BLOWS:
+                // Arrived a moment ago, looking at it: it goes off, and the camera stays to watch
+                Detonate(_nextNuke);
+                if (_nextNuke == 1)
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER, 2500ms);
+                else if (_nextNuke == 2)
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_TO_SOFERAS_NAZE, 2500ms);
+                else
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
+                break;
             case EVENT_APOCALYPSE_TO_THE_HEADLAND:
-                FlyPath(POINT_APOCALYPSE_THE_HEADLAND, { { -85.0f, -170.0f, 215.0f }, { -75.0f, -245.0f, 225.0f } });
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_THE_HEADLAND);
+                FlyCurve(POINT_APOCALYPSE_THE_HEADLAND, { { -65.0f, -100.0f, 175.0f }, { -62.0f, -170.0f, 205.0f }, { -78.0f, -190.0f, 205.0f }, { -92.0f, -235.0f, 190.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER:
-                FlyPath(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -40.0f, -480.0f, 230.0f } });
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_CORRAHNS_DAGGER);
+                FlyCurve(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -100.0f, -300.0f, 205.0f }, { -70.0f, -400.0f, 215.0f }, { -50.0f, -440.0f, 205.0f }, { -38.0f, -490.0f, 190.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_TO_SOFERAS_NAZE:
-                FlyPath(POINT_APOCALYPSE_SOFERAS_NAZE, { { 60.0f, -700.0f, 235.0f }, { 150.0f, -790.0f, 225.0f } });
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_SOFERAS_NAZE);
+                FlyCurve(POINT_APOCALYPSE_SOFERAS_NAZE, { { -5.0f, -560.0f, 215.0f }, { 50.0f, -680.0f, 235.0f }, { 95.0f, -800.0f, 235.0f }, { 125.0f, -880.0f, 205.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
                 break;
             case EVENT_APOCALYPSE_END:
                 Finish();
@@ -1736,19 +1836,18 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
                 break;
             case POINT_APOCALYPSE_THE_HEADLAND:
                 FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
-                Detonate(1);
-                // The next leg starts from UpdateAI, not from inside the movement generator that just finished
-                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER, 100ms);
+                _nextNuke = 1;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
                 break;
             case POINT_APOCALYPSE_CORRAHNS_DAGGER:
                 FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
-                Detonate(2);
-                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_SOFERAS_NAZE, 100ms);
+                _nextNuke = 2;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
                 break;
             case POINT_APOCALYPSE_SOFERAS_NAZE:
                 FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
-                Detonate(3);
-                _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
+                _nextNuke = 3;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
                 break;
             default:
                 break;
@@ -1758,9 +1857,13 @@ struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_ca
 private:
     ObjectGuid SummonNuke(uint32 entry, Position const& pos)
     {
-        if (Creature* nuke = SummonActor(entry, pos))
-            return nuke->GetGUID();
-        return ObjectGuid::Empty;
+        Creature* nuke = SummonActor(entry, pos);
+        if (!nuke)
+            return ObjectGuid::Empty;
+
+        // Past the map's visibility range (Visibility.Distance.Continents), the nuke and its spell would never reach the client
+        nuke->SetCustomVisibilityDistance(VISIBILITY_DISTANCE_GIGANTIC, false);
+        return nuke->GetGUID();
     }
 
     // Global Thermonuclear War: its conditions keep it on the nukes and the two engineers
@@ -1771,6 +1874,7 @@ private:
     }
 
     ObjectGuid _nukeGUIDs[4];
+    uint8 _nextNuke = 0;
     ObjectGuid _magruderGUID;
     ObjectGuid _lagraveGUID;
 };
@@ -2718,8 +2822,83 @@ class spell_hillsbrad_scene_camera_ride : public AuraScript
     bool _hidden = false;
 };
 
+// A player who logs out (or crashes) in a scene camera is saved at the camera's position (Player::SaveToDB runs before the vehicle
+// exit), up to 125 yd above a hostile camp, and would fall to their death on logging in. Ours, as retail's scenes could not be
+// left. Those whose scene quest is still open and who are in the air over the scene are set down at its end spot, in front of
+// the quest giver who plays it again (ReplayScene). The position is corrected before the player enters the map, so the client
+// is told the right place from the start: a near teleport at login would depend on the client answering it from the loading
+// screen, and the player's movement is ignored until it does. The checks keep this to such a player: the quest is also open for
+// a party member who confirmed it, and one of those may be anywhere, flying, swimming or walking on water. A saved position
+// can't tell a camera from a jump: someone in the same state who logged out mid-jump over a drop is set down at the giver too.
+class player_hillsbrad_scene_logout : public PlayerScript
+{
+public:
+    player_hillsbrad_scene_logout() : PlayerScript("player_hillsbrad_scene_logout") { }
+
+    void OnLoadFromDB(Player* player) override
+    {
+        struct AerialScene
+        {
+            uint32 QuestId;
+            uint32 EndSpellId;
+            float Radius; // how far from the end spot the camera flies
+            float Margin; // how high above the surface counts as in the camera
+        };
+
+        static AerialScene const scenes[] =
+        {
+            { QUEST_MATTERS_OF_LOYALTY,     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY,  60.0f,   5.0f },
+            { QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH,               1000.0f, 12.0f },
+            { QUEST_STORMPIKE_APOCALYPSE,   SPELL_CANCEL_CINEMATIC_APOCALYPSE,          1000.0f, 12.0f }
+        };
+
+        if (!player->IsAlive() || !player->m_taxi.empty() || player->GetTransport() || player->HasAuraType(SPELL_AURA_FLY)
+            || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+            return;
+
+        for (AerialScene const& scene : scenes)
+        {
+            if (player->GetQuestStatus(scene.QuestId) != QUEST_STATUS_INCOMPLETE)
+                continue;
+
+            SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(scene.EndSpellId, EFFECT_0);
+            if (!dest || dest->target_mapId != player->GetMapId() || player->GetExactDist2d(dest->target_X, dest->target_Y) > scene.Radius)
+                continue;
+
+            // The margin is set per scene, below the lowest the camera flies once it has risen: the Matters of Loyalty camera hovers
+            // 7 yd up, the Stormpike cameras stay 17 yd or more above the ground and the vmaps after their 7 yd lift at Cromush. A
+            // player standing on anything, or in the air from a jump, has less. No surface found below (under the world) still sets
+            // the player down.
+            float const x = player->GetPositionX();
+            float const y = player->GetPositionY();
+            float const z = player->GetPositionZ();
+            Map* map = player->GetMap();
+
+            // The player's grid may not exist yet: a terrain lookup only loads the terrain tile, so without the grid's vmap and
+            // gameobjects a player in a cave or on a roof would read as in the air. AddPlayerToMap loads this grid next anyway,
+            // on this same thread; a player moved away just leaves it loaded until it expires.
+            map->LoadGrid(x, y);
+
+            float surface = map->GetHeight(player->GetPhaseMask(), x, y, z, true, MAX_FALL_DISTANCE);
+            LiquidData liquid;
+            liquid.level = INVALID_HEIGHT;
+            if (map->GetLiquidStatus(player->GetPhaseMask(), x, y, z, MAP_ALL_LIQUIDS, &liquid) != LIQUID_MAP_NO_WATER)
+                surface = std::max(surface, liquid.level);
+            if (z - surface <= scene.Margin)
+                continue;
+
+            TC_LOG_DEBUG("scripts", "player_hillsbrad_scene_logout: %s logged in %.1f %.1f %.1f in the air with quest %u open, setting them down",
+                player->GetName().c_str(), x, y, z, scene.QuestId);
+            player->Relocate(dest->target_X, dest->target_Y, dest->target_Z, dest->target_Orientation);
+            player->SetFallInformation(0, dest->target_Z);
+            return;
+        }
+    }
+};
+
 void AddSC_hillsbrad_sludge_stormpike()
 {
+    new player_hillsbrad_scene_logout();
     new creature_script<npc_hillsbrad_machine_skeletal_steed>("npc_hillsbrad_machine_skeletal_steed");
     new creature_script<npc_hillsbrad_machine_visitor>("npc_hillsbrad_machine_visitor");
     new aura_script<spell_hillsbrad_machine_quest_giver>("spell_hillsbrad_machine_quest_giver");

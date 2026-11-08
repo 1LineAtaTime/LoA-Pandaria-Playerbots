@@ -346,6 +346,8 @@ void AddSC_hillsbrad_purgation();
 void AddSC_hillsbrad_sludge_stormpike();
 void AddSC_hillsbrad_brazie();
 void AddSC_hillsbrad_azurelode();
+void AddSC_hillsbrad_durnholde();
+void AddSC_hillsbrad_headland();
 void AddSC_stormwind_city();
 void AddSC_tol_barad();
 void AddSC_stranglethorn_vale();
@@ -1387,6 +1389,8 @@ void AddEasternKingdomsScripts()
     AddSC_hillsbrad_sludge_stormpike();
     AddSC_hillsbrad_brazie();
     AddSC_hillsbrad_azurelode();
+    AddSC_hillsbrad_durnholde();
+    AddSC_hillsbrad_headland();
     AddSC_stormwind_city();
     AddSC_tol_barad();
     AddSC_stranglethorn_vale();

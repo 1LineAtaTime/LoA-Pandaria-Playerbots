@@ -658,8 +658,10 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
             int32 level = int32(caster->GetLevel());
             if (level > int32(_spellInfo->MaxLevel) && _spellInfo->MaxLevel > 0)
                 level = int32(_spellInfo->MaxLevel);
-            if (level >= int32(_spellInfo->BaseLevel))
-                level -= int32(_spellInfo->BaseLevel);
+            // a caster below the spell's base level gets no per-level bonus
+            level -= int32(_spellInfo->BaseLevel);
+            if (level < 0)
+                level = 0;
             basePoints += int32(level * basePointsPerLevel);
         }
 
