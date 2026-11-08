@@ -2831,13 +2831,14 @@ public:
             uint32 QuestId;
             uint32 EndSpellId;
             float Radius; // how far from the end spot the camera flies
+            float Margin; // how high above the surface counts as in the camera
         };
 
         static AerialScene const scenes[] =
         {
-            { QUEST_MATTERS_OF_LOYALTY,     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY,  60.0f },
-            { QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH,               1000.0f },
-            { QUEST_STORMPIKE_APOCALYPSE,   SPELL_CANCEL_CINEMATIC_APOCALYPSE,          1000.0f }
+            { QUEST_MATTERS_OF_LOYALTY,     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY,  60.0f,   5.0f },
+            { QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH,               1000.0f, 12.0f },
+            { QUEST_STORMPIKE_APOCALYPSE,   SPELL_CANCEL_CINEMATIC_APOCALYPSE,          1000.0f, 12.0f }
         };
 
         if (!player->IsAlive() || !player->m_taxi.empty() || player->GetTransport() || player->HasAuraType(SPELL_AURA_FLY)
@@ -2853,7 +2854,10 @@ public:
             if (!dest || dest->target_mapId != player->GetMapId() || player->GetExactDist2d(dest->target_X, dest->target_Y) > scene.Radius)
                 continue;
 
-            // The Matters of Loyalty camera only hovers 7 yd up, so the margin is small. A player standing on anything has less.
+            // The margin is set per scene, below the lowest the camera flies once it has risen: the Matters of Loyalty camera hovers
+            // 7 yd up, the Stormpike cameras stay 17 yd or more above the ground and the vmaps after their 7 yd lift at Cromush. A
+            // player standing on anything, or in the air from a jump, has less. No surface found below (under the world) still sets
+            // the player down.
             float const x = player->GetPositionX();
             float const y = player->GetPositionY();
             float const z = player->GetPositionZ();
@@ -2869,7 +2873,7 @@ public:
             liquid.level = INVALID_HEIGHT;
             if (map->GetLiquidStatus(player->GetPhaseMask(), x, y, z, MAP_ALL_LIQUIDS, &liquid) != LIQUID_MAP_NO_WATER)
                 surface = std::max(surface, liquid.level);
-            if (z - surface <= 5.0f)
+            if (z - surface <= scene.Margin)
                 continue;
 
             TC_LOG_DEBUG("scripts", "player_hillsbrad_scene_logout: %s logged in %.1f %.1f %.1f in the air with quest %u open, setting them down",
