@@ -8979,6 +8979,10 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
 
         ToCreature()->SendAIReaction(AI_REACTION_HOSTILE);
         ToCreature()->CallAssistance();
+
+        // Remove emote state - will be restored on creature reset (LoadCreaturesAddon on evade and respawn), as TrinityCore
+        if (!IsControlledByPlayer())
+            SetEmoteState(EMOTE_ONESHOT_NONE);
     }
 
     // delay offhand weapon attack to next attack time
@@ -12726,6 +12730,9 @@ void Unit::setDeathState(DeathState s)
         SetHealth(0);
         if (GetPowerType() != POWER_MANA)
             SetPower(GetPowerType(), 0);
+        // a corpse doesn't keep working or sitting (TrinityCore, TCPP and AzerothCore clear it on death too); not for players
+        if (GetTypeId() == TYPEID_UNIT)
+            SetEmoteState(EMOTE_ONESHOT_NONE);
 
         // players in instance don't have ZoneScript, but they have InstanceScript
         if (ZoneScript* zoneScript = GetZoneScript() ? GetZoneScript() : GetInstanceScript())
