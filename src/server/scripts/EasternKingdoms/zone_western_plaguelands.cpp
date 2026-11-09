@@ -33,7 +33,8 @@ EndContentData */
 
 enum eQuests
 {
-    QUEST_SCHOLOMANCER = 27162,
+    QUEST_SCHOLOMANCER_HORDE    = 26924,
+    QUEST_SCHOLOMANCER          = 27162,
 };
 
 enum eCreatures
@@ -149,7 +150,12 @@ struct npc_dark_master_gandling_quest : public ScriptedAI
         {
             std::list<Player*> pList;
             GetPlayerListInGrid(pList, me, 100.0f);
-            pList.remove_if([=](Player* target) { return target && target->GetQuestStatus(QUEST_SCHOLOMANCER) != QUEST_STATUS_INCOMPLETE; });
+            // The Horde (26924, from Koltira) and the Alliance (27162, from Thassarian) Scholomancer share the objective 44323
+            pList.remove_if([=](Player* target)
+            {
+                return target && target->GetQuestStatus(QUEST_SCHOLOMANCER) != QUEST_STATUS_INCOMPLETE
+                    && target->GetQuestStatus(QUEST_SCHOLOMANCER_HORDE) != QUEST_STATUS_INCOMPLETE;
+            });
 
             for (auto&& itr : pList)
                 itr->KilledMonsterCredit(me->GetEntry());
@@ -181,6 +187,20 @@ class npc_thassarian_quest : public CreatureScript
         {
             return new npc_thassarian_questAI(creature);
         }
+};
+
+// Koltira Deathweaver 44452 (the Forsaken camp in Andorhal)
+// Gives the Horde Scholomancer with the same promise as Thassarian's: "Gandling is strong, but do not worry. I will join you shortly
+// after you begin to fight him."
+struct npc_koltira_deathweaver_andorhal : public ScriptedAI
+{
+    npc_koltira_deathweaver_andorhal(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* /*player*/, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_SCHOLOMANCER_HORDE)
+            Talk(SAY_INTRO);
+    }
 };
 
 // Shadow Prison 86780
@@ -336,6 +356,7 @@ void AddSC_western_plaguelands()
 {
     new creature_script<npc_dark_master_gandling_quest>("npc_dark_master_gandling_quest");
     new npc_thassarian_quest();
+    new creature_script<npc_koltira_deathweaver_andorhal>("npc_koltira_deathweaver_andorhal");
     new aura_script<spell_shadow_prison_gandling>("spell_shadow_prison_gandling");
     new npc_anchorite_truuen();
 }
