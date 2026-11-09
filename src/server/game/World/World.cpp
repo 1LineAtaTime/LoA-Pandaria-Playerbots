@@ -1404,11 +1404,15 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_LFG_SOLO]                     = sConfigMgr->GetBoolDefault("LFGSolo.Enabled", false);
     m_bool_configs[CONFIG_LFG_CASTDESERTER]             = sConfigMgr->GetBoolDefault("DungeonFinder.CastDeserter", false);
     m_bool_configs[CONFIG_LFG_OVERRIDE_ROLES_REQUIRED]  = sConfigMgr->GetBoolDefault("DungeonFinder.OverrideRolesRequired", false);
+    m_bool_configs[CONFIG_LFG_DUNGEON_OVERRIDE_ROLES_REQUIRED] = sConfigMgr->GetBoolDefault("DungeonFinder.DungeonOverrideRolesRequired", false);
     m_bool_configs[CONFIG_LFG_MULTIQUEUE_ENABLED]       = sConfigMgr->GetBoolDefault("DungeonFinder.MultiqueueEnabled", false);
     m_bool_configs[CONFIG_LFG_KEEP_QUEUES_IN_DUNGEON]   = sConfigMgr->GetBoolDefault("DungeonFinder.KeepQueuesInDungeon", false);
     m_int_configs[CONFIG_LFG_TANKS_NEEDED]              = sConfigMgr->GetIntDefault("DungeonFinder.TanksNeeded", 1);
     m_int_configs[CONFIG_LFG_HEALERS_NEEDED]            = sConfigMgr->GetIntDefault("DungeonFinder.HealersNeeded", 1);
     m_int_configs[CONFIG_LFG_DPS_NEEDED]                = sConfigMgr->GetIntDefault("DungeonFinder.DPSNeeded", 3);
+    m_int_configs[CONFIG_LFG_DUNGEON_TANKS_NEEDED]      = sConfigMgr->GetIntDefault("DungeonFinder.DungeonTanksNeeded", 1);
+    m_int_configs[CONFIG_LFG_DUNGEON_HEALERS_NEEDED]    = sConfigMgr->GetIntDefault("DungeonFinder.DungeonHealersNeeded", 1);
+    m_int_configs[CONFIG_LFG_DUNGEON_DPS_NEEDED]        = sConfigMgr->GetIntDefault("DungeonFinder.DungeonDPSNeeded", 3);
     m_int_configs[CONFIG_LFG_SHORTAGE_CHECK_INTERVAL]   = sConfigMgr->GetIntDefault("DungeonFinder.ShortageCheckInterval", 5);
     m_int_configs[CONFIG_LFG_SHORTAGE_PERCENT]          = sConfigMgr->GetIntDefault("DungeonFinder.ShortagePercent", 50);
     m_int_configs[CONFIG_LFG_MAX_LFR_QUEUES]            = sConfigMgr->GetIntDefault("DungeonFinder.MaxLfrQueues", 3);
