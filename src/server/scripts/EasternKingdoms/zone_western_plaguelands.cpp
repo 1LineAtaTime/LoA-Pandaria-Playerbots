@@ -681,6 +681,23 @@ private:
     ObjectGuid _ownerGUID;
 };
 
+// 6235 - by Lurid's body, at the Alliance camp in western Andorhal (unused areatrigger, radius 25, around Lurid 45129, the ender)
+// Ace in the Hole: "Then take a group of them into Alliance-held western Andorhal and hunt down this death knight, Thassarian."
+// The hunt ends at Lurid's body (Wowhead comments: "Once you get to the end you will see the mob on the ground dead"); Thassarian
+// is gone, so reaching the body gives the "Hunt Thassarian" credit (44453).
+class at_wpl_lurids_body : public AreaTriggerScript
+{
+public:
+    at_wpl_lurids_body() : AreaTriggerScript("at_wpl_lurids_body") { }
+
+    bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/) override
+    {
+        if (player->IsAlive() && player->GetQuestStatus(QUEST_ACE_IN_THE_HOLE) == QUEST_STATUS_INCOMPLETE)
+            player->KilledMonsterCredit(NPC_THASSARIAN);
+        return true;
+    }
+};
+
 /*######
 ## npc_anchorite_truuen
 ######*/
@@ -811,4 +828,5 @@ void AddSC_western_plaguelands()
     new spell_script<spell_wpl_notify_valkyr>("spell_wpl_notify_valkyr");
     new spell_script<spell_wpl_call_to_arms>("spell_wpl_call_to_arms");
     new creature_script<npc_wpl_forsaken_trooper>("npc_wpl_forsaken_trooper");
+    new at_wpl_lurids_body();
 }
