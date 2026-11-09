@@ -1246,6 +1246,612 @@ public:
 };
 
 /*######
+## The Reckoning (27144)
+######*/
+
+enum TheReckoning
+{
+    QUEST_THE_RECKONING                         = 27144,
+
+    NPC_RECKONING_SYLVANAS                      = 45111,
+    NPC_RECKONING_KOLTIRA                       = 45112,
+    NPC_RECKONING_PORTAL                        = 45114,
+    NPC_RECKONING_CAMERA                        = 45113,
+    NPC_RECKONING_DOPPELGANGER                  = 45127,
+
+    SPELL_RECKONING_FORCE_PHASE                 = 84252,
+    SPELL_RECKONING_SUMMON_SYLVANAS             = 84208,
+    SPELL_RECKONING_SUMMON_KOLTIRA              = 84209,
+    SPELL_RECKONING_SUMMON_PORTAL               = 84218,
+    SPELL_RECKONING_CANCEL_PHASE_AND_TELEPORT   = 84257,
+    SPELL_RECKONING_SUMMON_CAMERA               = 84211,
+    SPELL_RECKONING_SUMMON_DOPPELGANGER         = 84258,
+    SPELL_RECKONING_MIRROR_IMAGE                = 84259,
+    SPELL_RECKONING_CHAIN                       = 84239,
+    SPELL_RECKONING_CHANNEL_SYLVANAS            = 84214,
+    SPELL_RECKONING_CHANNEL_KOLTIRA             = 84219,
+    SPELL_RECKONING_CHANNEL_PORTAL              = 84221,
+
+    // Reckoning Event Camera 45113 (Vehicle 1079). The seats' CameraModes 42/43 (flags 0x144) take the passenger, the player, as
+    // the first camera target and the player's channel object as the second (base 1; flag 0x40, and no 0x20 hop to the vehicle).
+    // The player aims the view with The Reckoning: Channel Target Sylvanas/Koltira/Portal (infinite dummy channels, castable while
+    // on a vehicle). Without a channel both offsets are taken from the player, and the view tilts up into the hall's ceiling:
+    // 63 degrees for mode 42, 45 for mode 43. The camera keeps its sniffed facing (84211's spell_target_position, east).
+    // Seat 0 (VehicleSeat 8465, attachment 13 + (8.5, 1, 1.2), mode 42, FOV 140): 1.9 yd behind Sylvanas and 1.6 yd up; the eye
+    // 1 yd further back from the channel target, looking 2 yd above it. Seats 1 and 2 (8466/8467, attachments 14/15 + (-1, 2, 3)
+    // and (0, 4, 4), mode 43, FOV 70): 5-6 yd above the floor north of the camera, looking 3 yd beyond the target and 3 yd up.
+    // The client divides a CameraMode's FOV by sqrt(aspect^2 + 1) for the vertical one: at 16:9 mode 42 shows about +-34 degrees
+    // vertically and +-51 horizontally, mode 43 only +-17 and +-29, so seats 1 and 2 only frame targets 8 yd or more away
+    RECKONING_SEAT_WIDE                         = 0,
+    RECKONING_SEAT_CLOSE                        = 1,
+    RECKONING_SEAT_HIGH                         = 2,
+
+    // Lady Sylvanas Windrunner 45111
+    TALK_RECKONING_SUMMONS                      = 0,    // Koltira!  Your queen summons you!
+    TALK_RECKONING_INSOLENCE                    = 1,    // Enough of this insolence...
+    TALK_RECKONING_NO_THANKS                    = 2,    // No thanks to you...
+    TALK_RECKONING_SECRET                       = 3,    // I know your secret, Koltira...
+    TALK_RECKONING_WEAK                         = 4,    // Arthas clearly failed...
+    TALK_RECKONING_BENEATH                      = 5,    // Fortunately, I have agents... Beneath the Undercity you go.
+    TALK_RECKONING_QUIET                        = 6,    // Shh... quiet, death knight...
+    TALK_RECKONING_THANK_ME                     = 7,    // You can thank me later.
+
+    // Koltira Deathweaver 45112
+    TALK_RECKONING_DELIVER                      = 0,    // Your highness.  I deliver to you... Andorhal.
+    TALK_RECKONING_VICTORIOUS                   = 1,    // I... your majesty, we were victorious!
+    TALK_RECKONING_STAMMER                      = 2,    // Y... your majesty...
+    TALK_RECKONING_NO                           = 3,    // No!
+
+    EVENT_RECKONING_START                       = 1,    // 1-14: the scene, in order
+    EVENT_RECKONING_CHECK_PLAYER                = 20,
+
+    POINT_RECKONING_BEFORE_QUEEN                = 1,
+    POINT_RECKONING_INTO_PORTAL                 = 2
+};
+
+// Where Koltira kneels before his queen. Ours: 1.6 yd north-west of the doppelganger (84258) and 5 yd from Sylvanas (84208), inside
+// the ring of seasonal candles around the double (1.55 yd from the nearest). From seat 0 aimed at him his head is on the axis, with
+// Sylvanas and the double 10 degrees to the side; from seat 0 aimed at Sylvanas it is 13 degrees right and 8 down.
+Position const ReckoningKoltiraStop = { 1541.50f, -1687.30f, 57.42f };
+
+// The scene's actors are the player's personal summons (SummonProperties 492), so they are found from the player's side
+static Creature* FindReckoningActorOf(Player* player, uint32 entry, float range = 100.0f)
+{
+    std::list<Creature*> creatures;
+    player->GetCreatureListWithEntryInGrid(creatures, entry, range);
+    for (Creature* creature : creatures)
+        if (creature->IsAlive() && creature->IsSummon() && creature->ToTempSummon()->GetSummonerGUID() == player->GetGUID())
+            return creature;
+    return nullptr;
+}
+
+static uint32 ReckoningChannelSpellFor(uint32 targetEntry)
+{
+    switch (targetEntry)
+    {
+        case NPC_RECKONING_KOLTIRA:
+            return SPELL_RECKONING_CHANNEL_KOLTIRA;
+        case NPC_RECKONING_PORTAL:
+            return SPELL_RECKONING_CHANNEL_PORTAL;
+        default:
+            return SPELL_RECKONING_CHANNEL_SYLVANAS;
+    }
+}
+
+// Aims the seated player's view at one of the player's actors: the player channels on it (see the seat comment above). Only
+// after boarding, since entering a vehicle interrupts the passenger's spells. Kept if the player already channels on that actor.
+static void AimReckoningCamera(Player* player, uint32 targetEntry)
+{
+    Creature* target = FindReckoningActorOf(player, targetEntry);
+    if (!target || !player->GetVehicle())
+        return;
+
+    uint32 const spellId = ReckoningChannelSpellFor(targetEntry);
+    if (Spell const* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+        if (channel->GetSpellInfo()->Id == spellId && player->GetGuidValue(UNIT_FIELD_CHANNEL_OBJECT) == target->GetGUID())
+            return;
+
+    player->InterruptSpell(CURRENT_CHANNELED_SPELL);
+    player->CastSpell(player, spellId, true);
+}
+
+// Stops the aiming channel, on every way out of the scene
+static void StopReckoningAim(Player* player)
+{
+    if (Spell const* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+    {
+        uint32 const id = channel->GetSpellInfo()->Id;
+        if (id == SPELL_RECKONING_CHANNEL_SYLVANAS || id == SPELL_RECKONING_CHANNEL_KOLTIRA || id == SPELL_RECKONING_CHANNEL_PORTAL)
+            player->InterruptSpell(CURRENT_CHANNELED_SPELL);
+    }
+}
+
+// 44451 - Lady Sylvanas Windrunner (the Forsaken camp in Andorhal)
+// Starts The Reckoning on accepting it, and again from her menu if the scene was cut short (logout, death, leaving)
+struct npc_wpl_sylvanas_andorhal : public ScriptedAI
+{
+    npc_wpl_sylvanas_andorhal(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_THE_RECKONING)
+            StartReckoning(player);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        if (player->GetQuestStatus(QUEST_THE_RECKONING) == QUEST_STATUS_INCOMPLETE)
+            StartReckoning(player);
+        return false;
+    }
+
+    // The Reckoning: Force Phase puts the player into phase 269 "Andorhal 05 - Andorhal Event", where the scene's Sylvanas and Koltira
+    // are summoned at their spell_target_position spots; Sylvanas runs the scene. The player watches it through the Reckoning Event
+    // Camera, and a doppelganger with the player's looks stands before Sylvanas in the player's place (Mirror Image Aura: display
+    // and weapons, its target set by a condition)
+    static void StartReckoning(Player* player)
+    {
+        if (player->HasAura(SPELL_RECKONING_FORCE_PHASE) || FindReckoningActorOf(player, NPC_RECKONING_SYLVANAS)
+            || FindReckoningActorOf(player, NPC_RECKONING_CAMERA))
+            return;
+
+        player->CastSpell(player, SPELL_RECKONING_FORCE_PHASE, true);
+        player->CastSpell(player, SPELL_RECKONING_SUMMON_SYLVANAS, true);
+        player->CastSpell(player, SPELL_RECKONING_SUMMON_KOLTIRA, true);
+        player->CastSpell(player, SPELL_RECKONING_SUMMON_DOPPELGANGER, true);
+        player->CastSpell(player, SPELL_RECKONING_MIRROR_IMAGE, true);
+
+        // The camera's summon (SummonProperties 161, a vehicle) seats its summoner with Ride Vehicle 46598, in seat 0: the first seat
+        // that can be entered. A player already on a vehicle watches in person, as before.
+        if (!player->GetVehicle())
+        {
+            player->CastSpell(player, SPELL_RECKONING_SUMMON_CAMERA, true);
+            // First shot, once seated: Sylvanas from seat 0
+            if (Creature* camera = FindReckoningActorOf(player, NPC_RECKONING_CAMERA))
+                if (player->GetVehicleBase() == camera)
+                    AimReckoningCamera(player, NPC_RECKONING_SYLVANAS);
+        }
+    }
+};
+
+// 45111 - Lady Sylvanas Windrunner (The Reckoning)
+// Calls Koltira down, condemns him, sends him through a portal to the Undercity, credits the player and ends the phase. Every way
+// out (the player logs out, dies, walks away, gets out of the camera or abandons the quest) ends the scene once; only the full scene
+// credits. She also moves the player between the camera's seats.
+struct npc_wpl_reckoning_sylvanas : public ScriptedAI
+{
+    npc_wpl_reckoning_sylvanas(Creature* creature) : ScriptedAI(creature), _finished(false), _seated(false), _boardTries(0),
+        _shotSeat(RECKONING_SEAT_WIDE), _shotEntry(NPC_RECKONING_SYLVANAS) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _playerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        _events.ScheduleEvent(EVENT_RECKONING_START, 2s);
+        _events.ScheduleEvent(EVENT_RECKONING_CHECK_PLAYER, 1s);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+            if (eventId == EVENT_RECKONING_CHECK_PLAYER)
+            {
+                if (!player || !player->IsAlive() || !player->IsWithinDistInMap(me, 60.0f) || !player->HasAura(SPELL_RECKONING_FORCE_PHASE)
+                    || player->GetQuestStatus(QUEST_THE_RECKONING) != QUEST_STATUS_INCOMPLETE)
+                {
+                    End(player, false);
+                    return;
+                }
+
+                // Getting out of the camera ends the scene like walking away. Not seated after a second (Ride Vehicle failed): seat
+                // 0 is named once; without a camera the player watches in person.
+                Creature* camera = FindReckoningActorOf(player, NPC_RECKONING_CAMERA);
+                if (camera && player->GetVehicleBase() == camera)
+                {
+                    _seated = true;
+                    if (player->GetTransSeat() != _shotSeat)
+                        SetCameraSeat(player, _shotSeat);
+                    // The channel that aims the view is gone or never took (seated by the retry below): aim again
+                    AimReckoningCamera(player, _shotEntry);
+                }
+                else if (_seated)
+                {
+                    End(player, false);
+                    return;
+                }
+                else if (camera && !player->GetVehicle() && ++_boardTries == 1)
+                    player->EnterVehicle(camera, RECKONING_SEAT_WIDE);
+
+                _events.ScheduleEvent(EVENT_RECKONING_CHECK_PLAYER, 1s);
+                continue;
+            }
+
+            if (!player)
+                continue;
+
+            Creature* koltira = FindReckoningActorOf(player, NPC_RECKONING_KOLTIRA);
+            switch (eventId)
+            {
+                case EVENT_RECKONING_START:
+                    Talk(TALK_RECKONING_SUMMONS, player);
+                    if (koltira)
+                    {
+                        koltira->SetWalk(true);
+                        koltira->GetMotionMaster()->MovePoint(POINT_RECKONING_BEFORE_QUEEN, ReckoningKoltiraStop);
+                    }
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 1, 9s);
+                    break;
+                case EVENT_RECKONING_START + 1:
+                    SetShot(player, RECKONING_SEAT_WIDE, NPC_RECKONING_KOLTIRA);
+                    if (koltira)
+                    {
+                        koltira->SetFacingToObject(me);
+                        koltira->HandleEmoteCommand(EMOTE_ONESHOT_KNEEL);
+                        koltira->AI()->Talk(TALK_RECKONING_DELIVER, player);
+                    }
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 2, 5s);
+                    break;
+                case EVENT_RECKONING_START + 2:
+                    Talk(TALK_RECKONING_INSOLENCE, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 3, 7s);
+                    break;
+                case EVENT_RECKONING_START + 3:
+                    if (koltira)
+                        koltira->AI()->Talk(TALK_RECKONING_VICTORIOUS, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 4, 5s);
+                    break;
+                case EVENT_RECKONING_START + 4:
+                    Talk(TALK_RECKONING_NO_THANKS, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 5, 7s);
+                    break;
+                case EVENT_RECKONING_START + 5:
+                    SetShot(player, RECKONING_SEAT_HIGH, NPC_RECKONING_SYLVANAS);
+                    Talk(TALK_RECKONING_SECRET, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 6, 7s);
+                    break;
+                case EVENT_RECKONING_START + 6:
+                    if (koltira)
+                        koltira->AI()->Talk(TALK_RECKONING_STAMMER, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 7, 4s);
+                    break;
+                case EVENT_RECKONING_START + 7:
+                    Talk(TALK_RECKONING_WEAK, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 8, 6s);
+                    break;
+                case EVENT_RECKONING_START + 8:
+                    Talk(TALK_RECKONING_BENEATH, player);
+                    player->CastSpell(player, SPELL_RECKONING_SUMMON_PORTAL, true);
+                    SetShot(player, RECKONING_SEAT_CLOSE, NPC_RECKONING_PORTAL);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 9, 6s);
+                    break;
+                case EVENT_RECKONING_START + 9:
+                    if (koltira)
+                        koltira->AI()->Talk(TALK_RECKONING_NO, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 10, 3s);
+                    break;
+                case EVENT_RECKONING_START + 10:
+                    Talk(TALK_RECKONING_QUIET, player);
+                    if (koltira)
+                        if (Creature* portal = FindReckoningActorOf(player, NPC_RECKONING_PORTAL))
+                        {
+                            // The Reckoning: Chain 01 (channelled, 15 s; its target, Koltira, set by a condition) drags him in
+                            portal->CastSpell(koltira, SPELL_RECKONING_CHAIN, true);
+                            koltira->SetWalk(true);
+                            koltira->GetMotionMaster()->MovePoint(POINT_RECKONING_INTO_PORTAL, portal->GetPosition());
+                        }
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 11, 5s);
+                    break;
+                case EVENT_RECKONING_START + 11:
+                    // Back behind Sylvanas before Koltira and the portal go, so the channel never loses its target
+                    SetShot(player, RECKONING_SEAT_WIDE, NPC_RECKONING_SYLVANAS);
+                    if (koltira)
+                        koltira->DespawnOrUnsummon();
+                    if (Creature* portal = FindReckoningActorOf(player, NPC_RECKONING_PORTAL))
+                        portal->DespawnOrUnsummon(2 * IN_MILLISECONDS);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 12, 2s);
+                    break;
+                case EVENT_RECKONING_START + 12:
+                    me->SetFacingToObject(player);
+                    Talk(TALK_RECKONING_THANK_ME, player);
+                    _events.ScheduleEvent(EVENT_RECKONING_START + 13, 4s);
+                    break;
+                case EVENT_RECKONING_START + 13:
+                    End(player, true);
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // One shot of the scene (ours: which seat shows which actor when). Seat 0 on Sylvanas while Koltira comes down, on him from his
+    // kneel through their exchange, on her again at the end; seat 2 on Sylvanas (8 yd) for the accusation; seat 1 on the portal
+    // (11 yd) while he is dragged in. Seats 1 and 2 never aim at Koltira: he stands too close to them for their narrow view.
+    void SetShot(Player* player, int8 seatId, uint32 targetEntry)
+    {
+        _shotSeat = seatId;
+        _shotEntry = targetEntry;
+        SetCameraSeat(player, seatId);
+        AimReckoningCamera(player, targetEntry);
+    }
+
+    // Moves the player to another seat of the camera, whose CameraMode the client then uses. Unit::ChangeSeat takes the passenger off
+    // and seats them again within the call (Unit::SetVehicle stays set), so the check above never sees an empty seat.
+    static void SetCameraSeat(Player* player, int8 seatId)
+    {
+        Creature* camera = FindReckoningActorOf(player, NPC_RECKONING_CAMERA);
+        if (!camera || player->GetVehicleBase() != camera || player->GetTransSeat() == seatId)
+            return;
+
+        player->ChangeSeat(seatId);
+        // Vehicle::RemovePassenger's Parachute for a rider in flight form; nobody got out
+        player->RemoveAurasDueToSpell(VEHICLE_SPELL_PARACHUTE);
+    }
+
+    // Out of the camera, then Cancel Phase and Teleport once getting off is over, as npc_hillsbrad_scene_camera::Finish: a teleport
+    // sent in the same tick as the exit leaves the client's view stuck in the camera. Until then the player hovers (gravity off, no
+    // root: a root's stop spline replaces the exit's). Gravity comes back after the teleport, and once more a little later because
+    // the client's own movement packets overwrite the server's flags. A player who left the camera with its Leave Vehicle button is
+    // not held (hover false) but still gets the delay: the check that notices it can run in the same tick as the exit packet.
+    static void SetDownFromCamera(Player* player, bool hover)
+    {
+        player->m_Events.AddLambdaEventAtOffset([player, hover]()
+        {
+            if (!player->IsInWorld())
+                return;
+
+            if (player->IsAlive() && !player->GetVehicle())
+            {
+                player->CastSpell(player, SPELL_RECKONING_CANCEL_PHASE_AND_TELEPORT, true);
+                if (!player->IsBeingTeleported())
+                    if (SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(SPELL_RECKONING_CANCEL_PHASE_AND_TELEPORT, EFFECT_1))
+                        if (dest->target_mapId == player->GetMapId())
+                            player->NearTeleportTo(dest->target_X, dest->target_Y, dest->target_Z, dest->target_Orientation);
+            }
+            player->RemoveAurasDueToSpell(SPELL_RECKONING_FORCE_PHASE);
+
+            if (!hover)
+                return;
+
+            for (uint32 delay : { 100, 1500 })
+                player->m_Events.AddLambdaEventAtOffset([player]()
+                {
+                    if (!player->IsInWorld() || player->GetVehicle() || player->IsInFlight() || player->HasAuraType(SPELL_AURA_FLY)
+                        || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+                        return;
+
+                    if (!player->SetDisableGravity(false))
+                    {
+                        TC_LOG_DEBUG("scripts", "npc_wpl_reckoning_sylvanas: %s had no MOVEMENTFLAG_DISABLE_GRAVITY left on the server, sending the gravity enable anyway",
+                            player->GetName().c_str());
+                        player->SetDisableGravity(false, true);
+                    }
+                }, delay);
+        }, 300);
+    }
+
+    void End(Player* player, bool credit)
+    {
+        if (_finished)
+            return;
+        _finished = true;
+        _events.Reset();
+
+        if (player)
+        {
+            StopReckoningAim(player);
+            if (credit && player->GetQuestStatus(QUEST_THE_RECKONING) == QUEST_STATUS_INCOMPLETE)
+                player->KilledMonsterCredit(NPC_RECKONING_SYLVANAS);
+
+            for (uint32 entry : { NPC_RECKONING_KOLTIRA, NPC_RECKONING_PORTAL, NPC_RECKONING_DOPPELGANGER })
+                if (Creature* actor = FindReckoningActorOf(player, entry))
+                    actor->DespawnOrUnsummon();
+
+            // The camera is the player's minion: getting out also unsummons it (Unit::_ExitVehicle)
+            Creature* camera = FindReckoningActorOf(player, NPC_RECKONING_CAMERA);
+            bool const seated = camera && player->GetVehicleBase() == camera;
+            if (seated)
+            {
+                player->ExitVehicle();
+                player->SetDisableGravity(true);
+            }
+            if (camera)
+                camera->DespawnOrUnsummon(500);
+
+            // Seated now, or got out by themselves (the camera already gone with the exit)
+            if (seated || _seated)
+                SetDownFromCamera(player, seated);
+            // Cancel Phase and Teleport: removes the Force Phase and sets the player down by the camp (spell_target_position)
+            else if (player->HasAura(SPELL_RECKONING_FORCE_PHASE))
+            {
+                if (player->IsAlive() && player->IsInWorld())
+                    player->CastSpell(player, SPELL_RECKONING_CANCEL_PHASE_AND_TELEPORT, true);
+                player->RemoveAurasDueToSpell(SPELL_RECKONING_FORCE_PHASE);
+            }
+        }
+
+        me->DespawnOrUnsummon(credit ? 1 * IN_MILLISECONDS : 0);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    bool _finished;
+    bool _seated;
+    uint8 _boardTries;
+    int8 _shotSeat;
+    uint32 _shotEntry;
+};
+
+// 45112 - Koltira Deathweaver, 45114 - Portal to Undercity, 45127 - Your Doppelganger, 45113 - Reckoning Event Camera (The Reckoning)
+// Actors only: they never fight; Sylvanas moves and voices Koltira and moves the player between the camera's seats
+struct npc_wpl_reckoning_actor : public ScriptedAI
+{
+    npc_wpl_reckoning_actor(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _playerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        if (me->GetEntry() == NPC_RECKONING_CAMERA)
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+
+    // Nobody to play to: the player is gone or the scene ended without despawning this actor
+    void UpdateAI(uint32 diff) override
+    {
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 2 * IN_MILLISECONDS;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->HasAura(SPELL_RECKONING_FORCE_PHASE) || !FindReckoningActorOf(player, NPC_RECKONING_SYLVANAS))
+            me->DespawnOrUnsummon();
+    }
+
+private:
+    ObjectGuid _playerGUID;
+    uint32 _checkTimer = 2 * IN_MILLISECONDS;
+};
+
+// 84259 - Mirror Image Aura (The Reckoning)
+// The player's own doppelganger takes the player's looks (effect 0, CLONE_CASTER) and weapons: effects 1 and 2 are script effects
+// whose values are Copy Weapon 41055 and Copy Off-hand Weapon 45206, which the player casts on the double (spell_gen_clone_weapon
+// then puts the copy auras on it). The condition only names the entry; group members see each other's doppelgangers (both stand on
+// 84258's spot), so the target is the caster's own.
+class spell_wpl_reckoning_mirror_image : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_reckoning_mirror_image);
+
+    void SelectOwnDouble(WorldObject*& target)
+    {
+        if (Player* player = GetCaster()->ToPlayer())
+            if (Creature* own = FindReckoningActorOf(player, NPC_RECKONING_DOPPELGANGER, 40.0f))
+                target = own;
+    }
+
+    void HandleCopyWeapon(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+        if (Unit* target = GetHitUnit())
+            GetCaster()->CastSpell(target, uint32(GetEffectValue()), true);
+    }
+
+    void Register() override
+    {
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_reckoning_mirror_image::SelectOwnDouble, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_reckoning_mirror_image::SelectOwnDouble, EFFECT_1, TARGET_UNIT_NEARBY_ENTRY);
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_reckoning_mirror_image::SelectOwnDouble, EFFECT_2, TARGET_UNIT_NEARBY_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_reckoning_mirror_image::HandleCopyWeapon, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_reckoning_mirror_image::HandleCopyWeapon, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
+// 84239 - The Reckoning: Chain 01
+// Cast by the scene's portal: the Koltira of the same player's scene, not a group member's standing on the same spot
+class spell_wpl_reckoning_chain : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_reckoning_chain);
+
+    void SelectOwnKoltira(WorldObject*& target)
+    {
+        TempSummon* portal = GetCaster()->ToTempSummon();
+        Player* player = portal ? ObjectAccessor::GetPlayer(*portal, portal->GetSummonerGUID()) : nullptr;
+        if (Creature* own = player ? FindReckoningActorOf(player, NPC_RECKONING_KOLTIRA) : nullptr)
+            target = own;
+    }
+
+    void Register() override
+    {
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_reckoning_chain::SelectOwnKoltira, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+    }
+};
+
+// 84214 - The Reckoning: Channel Target Sylvanas, 84219 - Channel Target Koltira, 84221 - Channel Target Portal
+// The seated player's channel that aims the camera view. The conditions only name the entry; group members see each other's
+// personal actors, which stand on the same spots, so the target is the caster's own.
+class spell_wpl_reckoning_channel_target : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_reckoning_channel_target);
+
+    void SelectOwnActor(WorldObject*& target)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player)
+            return;
+
+        uint32 entry = NPC_RECKONING_SYLVANAS;
+        if (GetSpellInfo()->Id == SPELL_RECKONING_CHANNEL_KOLTIRA)
+            entry = NPC_RECKONING_KOLTIRA;
+        else if (GetSpellInfo()->Id == SPELL_RECKONING_CHANNEL_PORTAL)
+            entry = NPC_RECKONING_PORTAL;
+
+        if (Creature* own = FindReckoningActorOf(player, entry))
+            target = own;
+    }
+
+    void Register() override
+    {
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_reckoning_channel_target::SelectOwnActor, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+    }
+};
+
+// 84252 - The Reckoning: Force Phase
+// Kept only while the scene's Sylvanas is there: after a logout or a crash the player is not left alone in phase 269 (the aura is
+// saved), and taking her menu starts the scene again
+class spell_wpl_reckoning_force_phase : public AuraScript
+{
+    PrepareAuraScript(spell_wpl_reckoning_force_phase);
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 3 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+        Player* player = GetTarget()->ToPlayer();
+        if (player && player->IsInWorld() && !FindReckoningActorOf(player, NPC_RECKONING_SYLVANAS))
+            Remove();
+    }
+
+    // The phase aura's own removal does not re-run phase_area, whose Sylvanas (181) and Koltira (171) rows need this aura gone; only
+    // Cancel Phase and Teleport does, and a death or a relog ends the scene without it
+    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (player && player->IsInWorld() && !player->GetSession()->PlayerLogout())
+            player->UpdateAreaAndZonePhase();
+    }
+
+    void Register() override
+    {
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_wpl_reckoning_force_phase::CalcPeriodic, EFFECT_0, SPELL_AURA_PHASE);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_wpl_reckoning_force_phase::OnPeriodic, EFFECT_0, SPELL_AURA_PHASE);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_reckoning_force_phase::AfterRemove, EFFECT_0, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+/*######
 ## Northridge Lumber Camp: Learning the Ropes (27000), This Means WAR (Wild Arachnid Roundup) (27001)
 ######*/
 
@@ -2994,6 +3600,13 @@ void AddSC_western_plaguelands()
     new spell_script<spell_wpl_call_to_arms>("spell_wpl_call_to_arms");
     new creature_script<npc_wpl_forsaken_trooper>("npc_wpl_forsaken_trooper");
     new at_wpl_lurids_body();
+    new creature_script<npc_wpl_sylvanas_andorhal>("npc_wpl_sylvanas_andorhal");
+    new creature_script<npc_wpl_reckoning_sylvanas>("npc_wpl_reckoning_sylvanas");
+    new creature_script<npc_wpl_reckoning_actor>("npc_wpl_reckoning_actor");
+    new spell_script<spell_wpl_reckoning_mirror_image>("spell_wpl_reckoning_mirror_image");
+    new spell_script<spell_wpl_reckoning_chain>("spell_wpl_reckoning_chain");
+    new spell_script<spell_wpl_reckoning_channel_target>("spell_wpl_reckoning_channel_target");
+    new aura_script<spell_wpl_reckoning_force_phase>("spell_wpl_reckoning_force_phase");
     new spell_script<spell_wpl_whinny>("spell_wpl_whinny");
     new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
     new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
