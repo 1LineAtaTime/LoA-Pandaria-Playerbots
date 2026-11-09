@@ -30,6 +30,7 @@ EndContentData */
 #include "ScriptedEscortAI.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
+#include "ScriptedGossip.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
 #include "TemporarySummon.h"
@@ -899,6 +900,285 @@ private:
 };
 
 /*######
+## The Writhing Haunt: Combat Training (27174)
+######*/
+
+enum CombatTrainingAlliance
+{
+    QUEST_COMBAT_TRAINING_ALLIANCE              = 27174,
+
+    NPC_GORY                                    = 45212,
+    NPC_PROVINCIAL_MINUTEMAN_1                  = 45231,
+    NPC_PROVINCIAL_MINUTEMAN_2                  = 45232,
+    NPC_PROVINCIAL_MINUTEMAN_3                  = 45233,
+    NPC_PROVINCIAL_MINUTEMAN_4                  = 45234,
+
+    SPELL_SUMMON_PROVINCIAL_MINUTEMAN_1_PET     = 84452,
+    SPELL_SUMMON_PROVINCIAL_MINUTEMAN_2         = 84456,
+    SPELL_SUMMON_PROVINCIAL_MINUTEMAN_3         = 84457,
+    SPELL_SUMMON_PROVINCIAL_MINUTEMAN_4         = 84458,
+    SPELL_GORY_CLEAVE                           = 40504,
+    SPELL_GORY_SCOURGE_HOOK                     = 50335,
+
+    GOSSIP_MENU_GORY                            = 11953,
+    GOSSIP_OPTION_GORY_CHALLENGE                = 0,
+
+    TALK_GORY_CHALLENGED                        = 0,    // You want to fight?  Alright, Gory fight.
+    TALK_GORY_GIVES_UP                          = 1,    // Gory give up!  You farmers fight more good!
+
+    FACTION_GORY_FIGHTING                       = 974,
+
+    EVENT_GORY_CLEAVE                           = 1,
+    EVENT_GORY_SCOURGE_HOOK                     = 2,
+    EVENT_MINUTEMAN_ASSIST                      = 1
+};
+
+static uint32 const ProvincialMinutemen[4][2] =
+{
+    { NPC_PROVINCIAL_MINUTEMAN_1, SPELL_SUMMON_PROVINCIAL_MINUTEMAN_1_PET },
+    { NPC_PROVINCIAL_MINUTEMAN_2, SPELL_SUMMON_PROVINCIAL_MINUTEMAN_2 },
+    { NPC_PROVINCIAL_MINUTEMAN_3, SPELL_SUMMON_PROVINCIAL_MINUTEMAN_3 },
+    { NPC_PROVINCIAL_MINUTEMAN_4, SPELL_SUMMON_PROVINCIAL_MINUTEMAN_4 }
+};
+
+// 84460 - Combat Training
+// Given by spell_area at the Writhing Haunt while Combat Training is in the log: keeps Thurman's four settlers with the player (the
+// first one as a pet, with a pet bar, as warcraft.wiki.gg describes: "You control them with a basic pet interface"). As with the
+// val'kyr, the pet gives way to a hunter's or warlock's own pet once the player has called it back.
+class spell_wpl_combat_training_minutemen : public AuraScript
+{
+    PrepareAuraScript(spell_wpl_combat_training_minutemen);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_PROVINCIAL_MINUTEMAN_1_PET, SPELL_SUMMON_PROVINCIAL_MINUTEMAN_2,
+            SPELL_SUMMON_PROVINCIAL_MINUTEMAN_3, SPELL_SUMMON_PROVINCIAL_MINUTEMAN_4 });
+    }
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+            if (player->IsInWorld())
+                Check(player, true);
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+        if (Player* player = GetTarget()->ToPlayer())
+            Check(player, false);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        for (auto const& minuteman : ProvincialMinutemen)
+        {
+            GetTarget()->RemoveAllMinionsByEntry(minuteman[0]);
+            GetTarget()->RemoveAurasDueToSpell(minuteman[1]);
+        }
+    }
+
+    static void Check(Player* player, bool force)
+    {
+        if (!player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->GetVehicle())
+            return;
+
+        for (auto const& minuteman : ProvincialMinutemen)
+        {
+            Creature* found = nullptr;
+            std::list<Creature*> minions;
+            player->GetAllMinionsByEntry(minions, minuteman[0]);
+            for (Creature* minion : minions)
+                if (minion->IsAlive() && !minion->IsDestroyedObject())
+                    found = minion;
+
+            if (found && found->IsWithinDistInMap(player, 60.0f))
+                continue;
+
+            if (minuteman[0] == NPC_PROVINCIAL_MINUTEMAN_1 && !found && !force && player->GetPetGUID())
+                continue;
+
+            if (found)
+                found->DespawnOrUnsummon();
+
+            player->CastSpell(player, minuteman[1], true);
+        }
+    }
+
+    void Register() override
+    {
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_wpl_combat_training_minutemen::CalcPeriodic, EFFECT_0, SPELL_AURA_DUMMY);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_wpl_combat_training_minutemen::OnPeriodic, EFFECT_0, SPELL_AURA_DUMMY);
+        OnEffectApply += AuraEffectApplyFn(spell_wpl_combat_training_minutemen::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_wpl_combat_training_minutemen::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 45231-45234 - Provincial Minuteman (Combat Training)
+// Follows the player and joins whatever he fights, unless set to passive from the pet bar
+struct npc_wpl_provincial_minuteman : public ScriptedAI
+{
+    npc_wpl_provincial_minuteman(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _events.ScheduleEvent(EVENT_MINUTEMAN_ASSIST, 1s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        if (_events.ExecuteEvent() == EVENT_MINUTEMAN_ASSIST)
+        {
+            if (!me->GetVictim() && !me->HasReactState(REACT_PASSIVE))
+                if (Unit* owner = me->GetCharmerOrOwner())
+                    if (owner->IsInCombat())
+                        if (Unit* victim = owner->GetVictim())
+                            if (me->IsValidAttackTarget(victim))
+                                AttackStart(victim);
+            _events.ScheduleEvent(EVENT_MINUTEMAN_ASSIST, 1s);
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+};
+
+// 45212 - Gory
+// A friendly abomination who wants to be a farmer. A player on Combat Training can challenge him from his menu; he fights that
+// player and the settlers, and near the end gives up instead of dying, which completes the quest for the players fighting him.
+// He is friendly again after every fight and respawn (Hillsbrad lesson: Respawn keeps a faction set by a script).
+struct npc_wpl_gory : public ScriptedAI
+{
+    npc_wpl_gory(Creature* creature) : ScriptedAI(creature), _fighting(false), _givingUp(false) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _fighting = false;
+        _givingUp = false;
+        me->RestoreFaction();
+        me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+    }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != GOSSIP_MENU_GORY || gossipListId != GOSSIP_OPTION_GORY_CHALLENGE)
+            return false;
+
+        CloseGossipMenuFor(player);
+        if (_fighting || me->IsInCombat() || player->GetQuestStatus(QUEST_COMBAT_TRAINING_ALLIANCE) != QUEST_STATUS_INCOMPLETE)
+            return true;
+
+        _fighting = true;
+        Talk(TALK_GORY_CHALLENGED, player);
+        me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        me->SetFaction(FACTION_GORY_FIGHTING);
+        me->SetReactState(REACT_AGGRESSIVE);
+        AttackStart(player);
+        return true;
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_GORY_CLEAVE, 5s, 8s);
+        _events.ScheduleEvent(EVENT_GORY_SCOURGE_HOOK, 3s);
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    {
+        if (!_fighting || _givingUp)
+        {
+            damage = 0;
+            return;
+        }
+
+        if (me->GetHealth() <= damage || me->GetHealthPct() - float(damage) * 100.0f / float(me->GetMaxHealth()) < 10.0f)
+        {
+            if (me->GetHealth() <= damage)
+                damage = me->GetHealth() - 1;
+            _givingUp = true;
+            me->m_Events.Schedule(1, [this]() { GiveUp(); });
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        _events.Update(diff);
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_GORY_CLEAVE:
+                    DoCastVictim(SPELL_GORY_CLEAVE);
+                    _events.ScheduleEvent(EVENT_GORY_CLEAVE, 12s, 15s);
+                    break;
+                case EVENT_GORY_SCOURGE_HOOK:
+                    if (Unit* victim = me->GetVictim())
+                        if (me->GetDistance(victim) > 8.0f && me->GetDistance(victim) < 40.0f)
+                        {
+                            DoCast(victim, SPELL_GORY_SCOURGE_HOOK);
+                            _events.ScheduleEvent(EVENT_GORY_SCOURGE_HOOK, 10s, 12s);
+                            break;
+                        }
+                    _events.ScheduleEvent(EVENT_GORY_SCOURGE_HOOK, 1s);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    // "When defeated, he gives up and tells the farmers they fight well" (warcraft.wiki.gg); Wowhead: "I got him on 1 health and he
+    // gave up". Every player fighting him with the quest in progress gets the credit.
+    void GiveUp()
+    {
+        if (!_fighting)
+            return;
+        _fighting = false;
+
+        Talk(TALK_GORY_GIVES_UP);
+
+        std::list<Player*> players;
+        GetPlayerListInGrid(players, me, 40.0f);
+        for (Player* player : players)
+            if (player->IsInCombatWith(me) && player->GetQuestStatus(QUEST_COMBAT_TRAINING_ALLIANCE) == QUEST_STATUS_INCOMPLETE)
+                player->KilledMonsterCredit(NPC_GORY);
+
+        me->RestoreFaction();
+        me->CombatStop(true);
+        EnterEvadeMode();
+    }
+
+    EventMap _events;
+    bool _fighting;
+    bool _givingUp;
+};
+
+/*######
 ## npc_anchorite_truuen
 ######*/
 
@@ -1031,4 +1311,7 @@ void AddSC_western_plaguelands()
     new at_wpl_lurids_body();
     new spell_script<spell_wpl_whinny>("spell_wpl_whinny");
     new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
+    new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
+    new creature_script<npc_wpl_provincial_minuteman>("npc_wpl_provincial_minuteman");
+    new creature_script<npc_wpl_gory>("npc_wpl_gory");
 }
