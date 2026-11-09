@@ -39,9 +39,8 @@ enum eOOX
 {
     SAY_OOX_START           = 0,
     SAY_OOX_AGGRO           = 1,
-    SAY_OOX_AMBUSH          = 3,
-    SAY_OOX_AMBUSH_REPLY    = 4,
-    SAY_OOX_END             = 5,
+    SAY_OOX_AMBUSH          = 2,
+    SAY_OOX_END             = 3,
 
     QUEST_RESQUE_OOX_09     = 836,
 
