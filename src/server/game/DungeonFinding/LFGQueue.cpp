@@ -548,13 +548,27 @@ QueueManager::QueueManager()
         uint32 dps  = dungeon->dpsNeeded;
 
         bool raid = map && map->IsRaid();
+        bool isScenario = map && map->IsScenario();
+        bool isDungeon = map && !raid && !isScenario;
         if (raid && sWorld->getBoolConfig(CONFIG_LFG_OVERRIDE_ROLES_REQUIRED))
         {
             tank = sWorld->getIntConfig(CONFIG_LFG_TANKS_NEEDED);
             heal = sWorld->getIntConfig(CONFIG_LFG_HEALERS_NEEDED);
             dps  = sWorld->getIntConfig(CONFIG_LFG_DPS_NEEDED);
         }
-        if (map && map->IsScenario() && scenarioDebug)
+        if (isDungeon && sWorld->getBoolConfig(CONFIG_LFG_DUNGEON_OVERRIDE_ROLES_REQUIRED))
+        {
+            tank = sWorld->getIntConfig(CONFIG_LFG_DUNGEON_TANKS_NEEDED);
+            heal = sWorld->getIntConfig(CONFIG_LFG_DUNGEON_HEALERS_NEEDED);
+            dps  = sWorld->getIntConfig(CONFIG_LFG_DUNGEON_DPS_NEEDED);
+            if (tank + heal + dps == 0 || tank + heal + dps > 5)
+            {
+                tank = dungeon->tankNeeded;
+                heal = dungeon->healerNeeded;
+                dps = dungeon->dpsNeeded;
+            }
+        }
+        if (isScenario && scenarioDebug)
             dps = 1;
 
         if (sWorld->getBoolConfig(CONFIG_LFG_SOLO))
