@@ -699,6 +699,206 @@ public:
 };
 
 /*######
+## Northridge Lumber Camp: Learning the Ropes (27000), This Means WAR (Wild Arachnid Roundup) (27001)
+######*/
+
+enum NorthridgeSpiders
+{
+    QUEST_LEARNING_THE_ROPES                    = 27000,
+    QUEST_THIS_MEANS_WAR                        = 27001,
+
+    NPC_NORTHRIDGE_SPIDER                       = 44284,
+    NPC_HEARTHGLEN_RECRUIT                      = 44437,
+    NPC_NORTHRIDGE_SPIDER_SCARE_CREDIT          = 44850,
+    NPC_NORTHRIDGE_SPIDER_SCARE_KILL_CREDIT     = 44838,
+
+    SPELL_DEADLY_POISON                         = 3583,
+    SPELL_SPIDER_SLAY                           = 83621,
+    SPELL_WHINNY_FEAR                           = 81442, // Fear: 4 s MOD_FEAR, the usual NPC fear visual
+
+    DATA_SPIDER_WHINNY                          = 1,
+
+    EVENT_SPIDER_DEADLY_POISON                  = 1,
+    EVENT_SPIDER_CHECK_RECRUITS                 = 2,
+    EVENT_SPIDER_FEAR_OVER                      = 3,
+
+    POINT_SPIDER_FRIGHTENED                     = 1
+};
+
+// 83605 - Whinny
+// The Hearthglen Mustang's only ability (its rider's first button): spiders in front of the horse run away from it. On Learning the
+// Ropes each spider frightened counts; on This Means WAR the rider pushes them on to the Hearthglen Recruits at the lumber mill
+class spell_wpl_whinny : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_whinny);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Creature* spider = GetHitCreature();
+        Player* player = GetCaster()->GetCharmerOrOwnerPlayerOrPlayerItself();
+        if (spider && player && spider->IsAlive() && spider->GetEntry() == NPC_NORTHRIDGE_SPIDER && spider->IsAIEnabled)
+            spider->AI()->SetGUID(player->GetGUID(), DATA_SPIDER_WHINNY);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_whinny::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 44284 - Northridge Spider
+// A Whinny frightens it (fear aura, 4 s): it runs 18 yd away from the horse and stays about where it stopped. A spider that comes
+// onto a Hearthglen Recruit, frightened there or chasing a player, is slain by Spider Slay; that counts for This Means WAR for
+// every player on it within 40 yd of the spider (Wowhead comments: "you need to be about within 40 yards from the mill when the
+// spiders are killed to receive credit, even if you were the one to lure them there"; "you don't need to be partied with other
+// players"; "lure the spiders right on top of the NPCs").
+struct npc_wpl_northridge_spider : public ScriptedAI
+{
+    npc_wpl_northridge_spider(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _events.ScheduleEvent(EVENT_SPIDER_CHECK_RECRUITS, 1s);
+        me->SetReactState(REACT_AGGRESSIVE);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_SPIDER_DEADLY_POISON, 5s, 8s);
+    }
+
+    void SetGUID(ObjectGuid guid, int32 id) override
+    {
+        if (id != DATA_SPIDER_WHINNY)
+            return;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, guid);
+        if (!player)
+            return;
+
+        // Each rider can count this spider once every 10 seconds
+        if (player->GetQuestStatus(QUEST_LEARNING_THE_ROPES) == QUEST_STATUS_INCOMPLETE)
+        {
+            uint32 now = getMSTime();
+            auto itr = _lastScare.find(guid);
+            if (itr == _lastScare.end() || getMSTimeDiff(itr->second, now) >= 10 * IN_MILLISECONDS)
+            {
+                player->KilledMonsterCredit(NPC_NORTHRIDGE_SPIDER_SCARE_CREDIT);
+                _lastScare[guid] = now;
+            }
+        }
+
+        Unit* horse = player->GetVehicleBase();
+        Frighten(horse ? horse : player);
+    }
+
+    void JustDied(Unit* killer) override
+    {
+        if (!killer || killer->GetEntry() != NPC_HEARTHGLEN_RECRUIT)
+            return;
+
+        std::list<Player*> players;
+        GetPlayerListInGrid(players, me, 40.0f);
+        for (Player* player : players)
+            if (player->GetQuestStatus(QUEST_THIS_MEANS_WAR) == QUEST_STATUS_INCOMPLETE)
+                player->KilledMonsterCredit(NPC_NORTHRIDGE_SPIDER_SCARE_KILL_CREDIT);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SPIDER_CHECK_RECRUITS:
+                    if (Creature* recruit = me->FindNearestCreature(NPC_HEARTHGLEN_RECRUIT, 5.0f))
+                    {
+                        recruit->SetFacingToObject(me);
+                        recruit->CastSpell(me, SPELL_SPIDER_SLAY, true);
+                    }
+                    if (me->IsAlive())
+                        _events.ScheduleEvent(EVENT_SPIDER_CHECK_RECRUITS, 1s);
+                    break;
+                case EVENT_SPIDER_DEADLY_POISON:
+                    if (me->GetVictim())
+                    {
+                        DoCastVictim(SPELL_DEADLY_POISON);
+                        _events.ScheduleEvent(EVENT_SPIDER_DEADLY_POISON, 15s, 18s);
+                    }
+                    else if (me->IsInCombat()) // frightened when it came up: try again once it fights
+                        _events.ScheduleEvent(EVENT_SPIDER_DEADLY_POISON, 2s);
+                    break;
+                case EVENT_SPIDER_FEAR_OVER:
+                    if (me->HasAuraType(SPELL_AURA_MOD_FEAR))
+                        _events.ScheduleEvent(EVENT_SPIDER_FEAR_OVER, 500ms);
+                    else
+                        EndFright();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    // A real fear aura from the horse (the spider shows it and is flagged fleeing), with a scripted run straight away from the
+    // horse instead of the aura's own fleeing movement: that one runs only to 28 yd from the caster, so a spider hit from 20 yd
+    // barely moved and riders couldn't herd them to the recruits for This Means WAR ("Use the whinny when behind the spiders").
+    // The aura is added, not cast, and Whinny itself no longer starts combat (spell_custom_attribute), so the spider stays out of
+    // combat: in combat with nobody to fight, it would evade, lose the fear and run home.
+    void Frighten(Unit* horse)
+    {
+        me->CombatStop(true);
+        if (IsEngaged())
+            EngagementOver();
+        me->SetReactState(REACT_PASSIVE);
+        _events.CancelEvent(EVENT_SPIDER_DEADLY_POISON);
+
+        // Idle underneath, so the end of the fear doesn't resume the random or waypoint movement towards the old spot
+        me->GetMotionMaster()->Clear(false);
+        me->GetMotionMaster()->MoveIdle();
+
+        // A new aura brings the fleeing movement (Unit::SetFeared); a second Whinny only refreshes the aura
+        horse->AddAura(SPELL_WHINNY_FEAR, me);
+
+        // MovePositionToFirstCollision adds the spider's own facing to the angle
+        Position pos = me->GetPosition();
+        me->MovePositionToFirstCollision(pos, 18.0f, horse->GetAngle(me) - me->GetOrientation());
+        me->SetWalk(false);
+        // Same priority as the fleeing movement, so it replaces it; the fear aura and its fleeing flag stay
+        me->GetMotionMaster()->MovePoint(POINT_SPIDER_FRIGHTENED, pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), true,
+            MOTION_SLOT_CONTROLLED);
+        _events.RescheduleEvent(EVENT_SPIDER_FEAR_OVER, 500ms);
+    }
+
+    // The spider wanders around where it stopped (3 yd), so the next Whinny moves it on from there.
+    // If someone attacked it meanwhile, it fights back instead (UpdateVictim picks the target).
+    void EndFright()
+    {
+        _events.CancelEvent(EVENT_SPIDER_FEAR_OVER);
+        me->SetReactState(REACT_AGGRESSIVE);
+
+        if (me->IsInCombat())
+            return;
+
+        me->SetHomePosition(me->GetPosition());
+        me->GetMotionMaster()->Clear(false);
+        me->GetMotionMaster()->MoveRandom(3.0f);
+    }
+
+    EventMap _events;
+    std::unordered_map<ObjectGuid, uint32> _lastScare;
+};
+
+/*######
 ## npc_anchorite_truuen
 ######*/
 
@@ -829,4 +1029,6 @@ void AddSC_western_plaguelands()
     new spell_script<spell_wpl_call_to_arms>("spell_wpl_call_to_arms");
     new creature_script<npc_wpl_forsaken_trooper>("npc_wpl_forsaken_trooper");
     new at_wpl_lurids_body();
+    new spell_script<spell_wpl_whinny>("spell_wpl_whinny");
+    new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
 }
