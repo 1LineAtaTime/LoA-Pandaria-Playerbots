@@ -18,7 +18,7 @@
 /* ScriptData
 SDName: Hinterlands
 SD%Complete: 100
-SDComment: Quest support: 836, 26419, 26532
+SDComment: Quest support: 836, 26419, 26532. Sharpbeak taxi
 SDCategory: The Hinterlands
 EndScriptData */
 
@@ -26,6 +26,7 @@ EndScriptData */
 npc_00x09hl
 npc_hinterlands_shadra
 npc_hinterlands_shadra_lookout
+npc_sharpbeak
 EndContentData */
 
 #include "ScriptMgr.h"
@@ -37,6 +38,7 @@ EndContentData */
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "TemporarySummon.h"
+#include "Vehicle.h"
 
 /*######
 ## npc_00x09hl
@@ -762,6 +764,190 @@ public:
     }
 };
 
+/*######
+## Sharpbeak (43161, 51125): Doran Steelwing's gryphon between the Steelwing camp and the top of Jintha'Alor
+######*/
+
+// Sourced: the spells (83486 force-casts 80657 Sharpbeak Taxi - Camp to Jintha'Alor, 94120 Sharpbeak Taxi - Jintha'Alor to Camp; both
+// summon a vehicle with SummonProperties 161, 5.4.8 DBC), Vehicle 1434 (one seat, no exit at will), Doran's gossip option and SmartAI,
+// Sharpbeak 44776's spellclick and the vehicles' data (TDB 442 and 1210), and the two flight paths (TCPP npc_sharpbeak, 4.3.4 sniff).
+// The spline replaces each path's first point with Sharpbeak's own position (TCPP's first points are those placeholders). He flies
+// at his run speed, the TDBs' rate 3.23.
+// Ours: setting the rider down on the ground at the end (TCPP ejects with 50630, which this core does not handle), and the despawns.
+enum Sharpbeak
+{
+    NPC_SHARPBEAK_CAMP                  = 43161,
+    NPC_SHARPBEAK_JINTHAALOR            = 51125,
+
+    POINT_SHARPBEAK_END                 = 1
+};
+
+namespace
+{
+    Position const SharpbeakCampPath[] =
+    {
+        { -75.40077f, -4037.111f, 114.6418f },
+        { -68.80193f, -4034.235f, 123.6844f },
+        { -62.2031f,  -4031.36f,  132.727f  },
+        { -48.5851f,  -4008.04f,  156.977f  },
+        { -26.2691f,  -3987.88f,  176.755f  },
+        { 11.5087f,   -3960.86f,  203.561f  },
+        { 45.0087f,   -3922.58f,  236.672f  },
+        { 75.4427f,   -3856.91f,  255.672f  },
+        { 74.8351f,   -3768.84f,  279.839f  },
+        { -53.0104f,  -3582.62f,  287.755f  },
+        { -169.123f,  -3582.08f,  282.866f  },
+        { -241.8403f, -3625.01f,  247.4203f }
+    };
+
+    Position const SharpbeakJinthaalorPath[] =
+    {
+        { -249.4681f, -3632.487f, 232.6947f },
+        { -241.606f,  -3627.713f, 236.6187f },
+        { -235.6163f, -3624.076f, 239.6081f },
+        { -226.8698f, -3623.929f, 244.8882f },
+        { -193.6406f, -3618.776f, 244.8882f },
+        { -149.7292f, -3613.349f, 244.8882f },
+        { -103.8976f, -3623.828f, 238.0368f },
+        { -41.33681f, -3710.568f, 232.4109f },
+        { 6.201389f,  -3739.243f, 214.2869f },
+        { 37.44097f,  -3773.431f, 189.4650f },
+        { 44.21875f,  -3884.991f, 177.7446f },
+        { 39.81424f,  -3934.679f, 168.1627f },
+        { 32.17535f,  -3983.781f, 166.1228f },
+        { 21.34896f,  -4005.293f, 162.9598f },
+        { -5.734375f, -4028.695f, 149.0161f },
+        { -23.23611f, -4040.689f, 140.1189f },
+        { -35.45139f, -4047.543f, 133.2071f },
+        { -59.21181f, -4051.257f, 128.0297f },
+        { -76.90625f, -4040.207f, 126.0433f },
+        { -77.51563f, -4022.026f, 123.2135f }
+    };
+
+    uint32 const SharpbeakTakeOffDelay      = 500;                      // not inside the boarding call
+    uint32 const SharpbeakNoRiderDespawn    = 5 * IN_MILLISECONDS;
+}
+
+struct npc_sharpbeak : public ScriptedAI
+{
+    npc_sharpbeak(Creature* creature) : ScriptedAI(creature), _state(STATE_WAITING), _timer(SharpbeakNoRiderDespawn) { }
+
+    void IsSummonedBy(Unit* /*summoner*/) override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+        me->setActive(true, ActiveFlags::Script);
+    }
+
+    // Not the follow-on-spawn of CreatureAI::JustAppeared
+    void JustAppeared() override { }
+    void EnterEvadeMode(EvadeReason /*why*/ = EVADE_REASON_OTHER) override { }
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    void PassengerBoarded(Unit* /*passenger*/, int8 /*seatId*/, bool apply) override
+    {
+        if (apply)
+        {
+            if (_state == STATE_WAITING)
+            {
+                _state = STATE_TAKE_OFF;
+                _timer = SharpbeakTakeOffDelay;
+            }
+            return;
+        }
+
+        // The rider is off (logged out, died): Sharpbeak goes. A rider set down at the end is handled there.
+        if (_state == STATE_DONE)
+            return;
+
+        _state = STATE_DONE;
+        me->DespawnOrUnsummon(1000);
+    }
+
+    void MovementInform(uint32 type, uint32 id) override
+    {
+        if (type == EFFECT_MOTION_TYPE && id == POINT_SHARPBEAK_END && _state == STATE_FLYING)
+        {
+            _state = STATE_LANDED;
+            _timer = 0;
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        switch (_state)
+        {
+            case STATE_WAITING:
+                // Never boarded
+                if (_timer <= diff)
+                {
+                    _state = STATE_DONE;
+                    me->DespawnOrUnsummon();
+                }
+                else
+                    _timer -= diff;
+                break;
+            case STATE_TAKE_OFF:
+                if (_timer > diff)
+                {
+                    _timer -= diff;
+                    break;
+                }
+                _state = STATE_FLYING;
+                if (me->GetEntry() == NPC_SHARPBEAK_CAMP)
+                    me->GetMotionMaster()->MoveSmoothPath(POINT_SHARPBEAK_END, SharpbeakCampPath, std::extent<decltype(SharpbeakCampPath)>::value, false, true);
+                else
+                    me->GetMotionMaster()->MoveSmoothPath(POINT_SHARPBEAK_END, SharpbeakJinthaalorPath, std::extent<decltype(SharpbeakJinthaalorPath)>::value, false, true);
+                break;
+            case STATE_LANDED:
+                _state = STATE_DONE;
+                SetRiderDown();
+                me->DespawnOrUnsummon(1000);
+                break;
+            default:
+                break;
+        }
+    }
+
+private:
+    enum SharpbeakState
+    {
+        STATE_WAITING,
+        STATE_TAKE_OFF,
+        STATE_FLYING,
+        STATE_LANDED,
+        STATE_DONE
+    };
+
+    // The summit end hangs 10 yd over the terrace: the rider gets down to the ground under Sharpbeak
+    void SetRiderDown()
+    {
+        Vehicle* vehicle = me->GetVehicleKit();
+        if (!vehicle)
+            return;
+
+        Unit* rider = vehicle->GetPassenger(0);
+        if (!rider)
+        {
+            vehicle->RemoveAllPassengers();
+            return;
+        }
+
+        // Unit::ExitVehicle ignores the position (the control aura's removal exits at the vehicle's): exit to the ground first; the
+        // aura's removal then finds the rider out of the vehicle
+        Position ground = me->GetPosition();
+        me->UpdateGroundPositionZ(ground.GetPositionX(), ground.GetPositionY(), ground.m_positionZ);
+        ObjectGuid const riderGUID = rider->GetGUID();
+        rider->_ExitVehicle(&ground);
+        me->RemoveAurasByType(SPELL_AURA_CONTROL_VEHICLE, riderGUID);
+    }
+
+    SharpbeakState _state;
+    uint32 _timer;
+};
+
 void AddSC_hinterlands()
 {
     new npc_00x09hl();
@@ -769,4 +955,5 @@ void AddSC_hinterlands()
     new creature_script<npc_hinterlands_shadra>("npc_hinterlands_shadra");
     new creature_script<npc_hinterlands_shadra_lookout>("npc_hinterlands_shadra_lookout");
     new quest_hinterlands_shadra_the_venom_queen();
+    new creature_script<npc_sharpbeak>("npc_sharpbeak");
 }
