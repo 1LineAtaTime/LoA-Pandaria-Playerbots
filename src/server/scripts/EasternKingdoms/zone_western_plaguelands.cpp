@@ -1179,6 +1179,162 @@ private:
 };
 
 /*######
+## Andorhal: The Endless Flow (26922 Horde, 27161 Alliance)
+######*/
+
+enum EndlessFlow
+{
+    NPC_STICKBONE_BERSERKER                     = 44329,
+
+    SPELL_HAND_GRENADE                          = 83108,    // Lang's Hand Grenades 60849 / the Horde's grenade 60678
+    SPELL_SUMMON_STICKBONE_BERSERKER_MISSILE    = 82875,    // random spot within 10 yd, triggers 82861 (summon 44329, 40 s)
+    SPELL_ENDLESS_FLOW_KILL_CREDIT              = 83109,    // credit 44360 to players within 30 yd, kills berserkers within 35 yd
+
+    EVENT_ANIMUS_RAISE                          = 1
+};
+
+// The pile is on the tower's ground floor, so only players this close make it raise berserkers. Every static berserker the
+// sniff caught at the two towers stood within this range of its pile.
+static float const AnimusPlayerRange            = 40.0f;
+// "the bones spew them at a rate of about 1 every second until there are 15 or 20 there" (Wowhead, The Endless Flow 27161)
+static size_t const AnimusMaxBerserkers         = 15;
+static uint32 const AnimusMissileFlightMs       = 4 * IN_MILLISECONDS; // 82875 flies at 5 yd/s over at most 10 yd
+
+// 44360 - Scourge Bone Animus Bunny
+// The burning bone pile on the ground floor of each Andorhal tower. While a player is near, it raises a Stickbone Berserker
+// about every second (82875 -> 82861) until 15 of its own stand; a killed one is replaced at once ("they respawn immediately
+// after you kill them"). A Hand Grenade on the pile destroys it: 83109 gives the credit to the players around and kills the
+// berserkers near it ("Any skellies hitting you when you do that die with it"), the thrower gets the credit even from outside
+// 83109's 30 yd, and the pile comes back after its respawn time.
+struct npc_wpl_scourge_bone_animus : public ScriptedAI
+{
+    npc_wpl_scourge_bone_animus(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _events.ScheduleEvent(EVENT_ANIMUS_RAISE, 1s);
+    }
+
+    void JustSummoned(Creature* summon) override
+    {
+        if (summon->GetEntry() != NPC_STICKBONE_BERSERKER)
+            return;
+
+        _berserkers.insert(summon->GetGUID());
+        if (!_missiles.empty())
+            _missiles.erase(_missiles.begin());
+    }
+
+    void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) override
+    {
+        _berserkers.erase(summon->GetGUID());
+    }
+
+    void SummonedCreatureDespawn(Creature* summon) override
+    {
+        _berserkers.erase(summon->GetGUID());
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spell) override
+    {
+        if (!caster || spell->Id != SPELL_HAND_GRENADE || !me->IsAlive())
+            return;
+
+        DoCast(me, SPELL_ENDLESS_FLOW_KILL_CREDIT, true);
+        if (Player* player = caster->GetCharmerOrOwnerPlayerOrPlayerItself())
+            player->KilledMonsterCredit(me->GetEntry());
+
+        // Berserkers out of the blast that aren't fighting go with their pile; those in a fight stay until killed or until
+        // their 40 s run out after the fight. Swapped out first: each unsummon calls SummonedCreatureDespawn, which edits the set
+        GuidSet berserkers;
+        berserkers.swap(_berserkers);
+        _missiles.clear();
+
+        // The fighters stay counted: the pile comes back as the same creature, and it must not raise 15 more beside them
+        uint32 despawned = 0;
+        GuidSet fighting;
+        for (ObjectGuid const& guid : berserkers)
+            if (Creature* berserker = ObjectAccessor::GetCreature(*me, guid))
+                if (berserker->IsAlive())
+                {
+                    if (berserker->IsInCombat())
+                        fighting.insert(guid);
+                    else
+                    {
+                        berserker->DespawnOrUnsummon();
+                        ++despawned;
+                    }
+                }
+        _berserkers.insert(fighting.begin(), fighting.end());
+
+        TC_LOG_DEBUG("scripts", "npc_wpl_scourge_bone_animus: animus %u destroyed by %s, %u of its %u living berserkers despawned",
+            me->GetDBTableGUIDLow(), caster->GetName().c_str(), despawned, uint32(berserkers.size()));
+
+        _events.Reset();
+        me->DespawnOrUnsummon();
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId != EVENT_ANIMUS_RAISE)
+                continue;
+
+            Prune();
+            if (_berserkers.size() + _missiles.size() < AnimusMaxBerserkers && PlayerNearby())
+            {
+                DoCast(me, SPELL_SUMMON_STICKBONE_BERSERKER_MISSILE, true);
+                _missiles.push_back(getMSTime());
+            }
+            _events.ScheduleEvent(EVENT_ANIMUS_RAISE, 1s);
+        }
+    }
+
+private:
+    // Drops berserkers that are gone or dead and missiles that never summoned. 82861 gives its summons a 40 s timer that also
+    // runs in a fight (TEMPSUMMON_TIMED_DESPAWN, set after JustSummoned); TEMPSUMMON_TIMED_OR_DEAD_DESPAWN restarts it while
+    // they fight, so a berserker only goes 40 s after its last fight
+    void Prune()
+    {
+        for (auto itr = _berserkers.begin(); itr != _berserkers.end();)
+        {
+            Creature* berserker = ObjectAccessor::GetCreature(*me, *itr);
+            if (!berserker || !berserker->IsInWorld() || !berserker->IsAlive())
+            {
+                itr = _berserkers.erase(itr);
+                continue;
+            }
+
+            if (TempSummon* summon = berserker->ToTempSummon())
+                summon->SetTempSummonType(TEMPSUMMON_TIMED_OR_DEAD_DESPAWN);
+            ++itr;
+        }
+
+        uint32 now = getMSTime();
+        while (!_missiles.empty() && getMSTimeDiff(_missiles.front(), now) > AnimusMissileFlightMs)
+            _missiles.erase(_missiles.begin());
+    }
+
+    bool PlayerNearby() const
+    {
+        std::list<Player*> players;
+        GetPlayerListInGrid(players, me, AnimusPlayerRange);
+        for (Player* player : players)
+            if (player->IsAlive() && !player->IsGameMaster() && player->InSamePhase(me))
+                return true;
+        return false;
+    }
+
+    EventMap _events;
+    GuidSet _berserkers;
+    std::vector<uint32> _missiles;
+};
+
+/*######
 ## npc_anchorite_truuen
 ######*/
 
@@ -1314,4 +1470,5 @@ void AddSC_western_plaguelands()
     new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
     new creature_script<npc_wpl_provincial_minuteman>("npc_wpl_provincial_minuteman");
     new creature_script<npc_wpl_gory>("npc_wpl_gory");
+    new creature_script<npc_wpl_scourge_bone_animus>("npc_wpl_scourge_bone_animus");
 }
