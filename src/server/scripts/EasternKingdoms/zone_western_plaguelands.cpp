@@ -1020,6 +1020,33 @@ class spell_wpl_combat_training_minutemen : public AuraScript
     }
 };
 
+enum ZenKiki
+{
+    NPC_ZENKIKI_ESCORT                          = 44904
+};
+
+// 83819 - Escorting Zen'Kiki
+// Given by spell_area while Zen'Kiki, the Druid 26953 or Zen'Kiki and the Cultists 26955 is in the log. Its effect 0 summons
+// Zen'Kiki 44904 as the player's guardian, but the summon isn't bound to the aura (effect 2, a dummy), so he stayed with the
+// player after the quest was abandoned or handed in. He now goes when the aura does; death is left to the guardian's own rules.
+class spell_wpl_escorting_zenkiki : public AuraScript
+{
+    PrepareAuraScript(spell_wpl_escorting_zenkiki);
+
+    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEATH)
+            return;
+
+        GetTarget()->RemoveAllMinionsByEntry(NPC_ZENKIKI_ESCORT);
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_escorting_zenkiki::AfterRemove, EFFECT_2, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 // 45231-45234 - Provincial Minuteman (Combat Training)
 // Follows the player and joins whatever he fights, unless set to passive from the pet bar
 struct npc_wpl_provincial_minuteman : public ScriptedAI
@@ -1691,6 +1718,7 @@ void AddSC_western_plaguelands()
     new spell_script<spell_wpl_whinny>("spell_wpl_whinny");
     new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
     new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
+    new aura_script<spell_wpl_escorting_zenkiki>("spell_wpl_escorting_zenkiki");
     new creature_script<npc_wpl_provincial_minuteman>("npc_wpl_provincial_minuteman");
     new creature_script<npc_wpl_gory>("npc_wpl_gory");
     new creature_script<npc_wpl_scourge_bone_animus>("npc_wpl_scourge_bone_animus");
