@@ -183,7 +183,8 @@ static bool FlyLegTarget(Player* bot, WorldPosition const& dest, float legDis, f
 // GetQuestPOIPosAndObjectiveIdx uses: creature/GO objectives are slots 0-3 and item objectives are
 // QUEST_OBJECTIVES_COUNT (4) + item slot. StorageIndex counts within each type (a kill and an item objective can
 // both be 0), so item objectives map to 4 + StorageIndex. Without this no item-objective POI ever matched and bots
-// dropped every collect-item quest right after accepting it.
+// dropped every collect-item quest right after accepting it. Areas that carry a QuestObjectiveId use the newer
+// layout (ObjectiveIndex = the objective's own index); GetQuestPOIPosAndObjectiveIdx matches those by the id instead.
 static int32 LegacyPoiIndex(QuestObjective const& objective)
 {
     return objective.Type == QUEST_OBJECTIVE_ITEM ? 4 + int32(objective.StorageIndex) : int32(objective.StorageIndex);
@@ -1288,30 +1289,38 @@ bool NewRpgBaseAction::GetQuestPOIPosAndObjectiveIdx(uint32 questId, std::vector
 
     // MoP tracks progress per QuestObjective rather than through the 3.3.5 RequiredNpcOrGo /
     // RequiredItem arrays; the POI blobs key off the objective's StorageIndex.
-    std::vector<int32> incompleteObjectiveIdx;
+    std::vector<QuestObjective const*> incompleteObjectives;
     for (QuestObjective const& objective : quest->GetObjectives())
     {
         if (objective.StorageIndex < 0)
             continue;
 
         if (!bot->IsQuestObjectiveComplete(quest, objective))
-            incompleteObjectiveIdx.push_back(LegacyPoiIndex(objective));
+            incompleteObjectives.push_back(&objective);
     }
 
-    if (incompleteObjectiveIdx.empty())
+    if (incompleteObjectives.empty())
         return false;
 
     for (QuestPOIBlobData const& blob : poiData->Blobs)
     {
-        if (std::find(incompleteObjectiveIdx.begin(), incompleteObjectiveIdx.end(), blob.ObjectiveIndex) ==
-            incompleteObjectiveIdx.end())
+        // An area that names its objective (QuestObjectiveId) is matched by that id, its ObjectiveIndex is the
+        // objective's own index then. An area without one keeps the legacy 3.3.5 index layout.
+        auto matched = std::find_if(incompleteObjectives.begin(), incompleteObjectives.end(),
+            [&blob](QuestObjective const* objective)
+            {
+                return blob.QuestObjectiveId ? objective->ID == blob.QuestObjectiveId
+                                             : LegacyPoiIndex(*objective) == blob.ObjectiveIndex;
+            });
+        if (matched == incompleteObjectives.end())
             continue;
 
         float dx = 0.f, dy = 0.f;
         if (!blobPosition(blob, dx, dy))
             continue;
 
-        poiInfo.push_back({{dx, dy}, blob.ObjectiveIndex});
+        // Callers decode objectiveIdx through LegacyPoiIndex, so hand back the legacy index whatever the format.
+        poiInfo.push_back({{dx, dy}, LegacyPoiIndex(**matched)});
     }
 
     return !poiInfo.empty();
