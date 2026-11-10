@@ -1487,13 +1487,23 @@ class spell_wpl_combat_training_minutemen : public AuraScript
 
 enum ZenKiki
 {
-    NPC_ZENKIKI_ESCORT                          = 44904
+    NPC_ZENKIKI_ESCORT                          = 44904,
+    NPC_ZENKIKI_HAWKS                           = 44269,
+    NPC_DISEASED_HAWK                           = 44481,
+
+    SPELL_ESCORTING_ZENKIKI_HAWKS               = 83456,
+    SPELL_DISEASED_SPIT                         = 81236,
+
+    EVENT_DISEASED_SPIT                         = 1,
+
+    SAY_ZENKIKI_POKED                           = 0
 };
 
-// 83819 - Escorting Zen'Kiki
-// Given by spell_area while Zen'Kiki, the Druid 26953 or Zen'Kiki and the Cultists 26955 is in the log. Its effect 0 summons
-// Zen'Kiki 44904 as the player's guardian, but the summon isn't bound to the aura (effect 2, a dummy), so he stayed with the
-// player after the quest was abandoned or handed in. He now goes when the aura does; death is left to the guardian's own rules.
+// 83819, 83456 - Escorting Zen'Kiki
+// Given by spell_area while Zen'Kiki, the Druid 26953 or Zen'Kiki and the Cultists 26955 (83819, Zen'Kiki 44904) or A Different
+// Approach 26954 (83456, Zen'Kiki 44269) is in the log. Its effect 0 summons Zen'Kiki as the player's guardian, but the summon isn't
+// bound to the aura (effect 2, a dummy), so he stayed with the player after the quest was abandoned or handed in. He now goes when
+// the aura does; death is left to the guardian's own rules. Both summons use quest slot 6, so a new one replaces the other.
 class spell_wpl_escorting_zenkiki : public AuraScript
 {
     PrepareAuraScript(spell_wpl_escorting_zenkiki);
@@ -1503,12 +1513,156 @@ class spell_wpl_escorting_zenkiki : public AuraScript
         if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEATH)
             return;
 
-        GetTarget()->RemoveAllMinionsByEntry(NPC_ZENKIKI_ESCORT);
+        GetTarget()->RemoveAllMinionsByEntry(GetId() == SPELL_ESCORTING_ZENKIKI_HAWKS ? NPC_ZENKIKI_HAWKS : NPC_ZENKIKI_ESCORT);
     }
 
     void Register() override
     {
         AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_escorting_zenkiki::AfterRemove, EFFECT_2, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 44269 - Zen'Kiki (A Different Approach, summoned by Escorting Zen'Kiki 83456)
+// He carries the spellclick flag for his Wrath pull, so without a script the core gave him NullCreatureAI, which never runs the
+// follow-the-owner step of a summon: he stayed where he was summoned. He follows the player to the hill and takes no part in
+// fights himself, so a hawk only comes down when the player clicks him.
+struct npc_wpl_zenkiki_hawk_helper : public ScriptedAI
+{
+    npc_wpl_zenkiki_hawk_helper(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        if (summoner->GetTypeId() == TYPEID_PLAYER)
+        {
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveFollow(summoner, PET_FOLLOW_DIST, me->GetFollowAngle());
+        }
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void AttackStart(Unit* /*who*/) override { }
+
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
+// 44481 - Diseased Hawk (A Different Approach 26954)
+// The hawks circle the hill immune to players and only fight one when Zen'Kiki's Wrath pulls them down. This core lets an
+// immune-to-PC creature start a fight anyway (the check in Unit::IsValidAttackTarget is commented out) and drops the flag once it
+// engages, and SmartAI::MoveInLineOfSight attacks on sight in any react state but passive, so with SmartAI the hawks dived on
+// everyone reaching the hilltop. While the hawk carries the flag it now ignores players by sight, by assistance and by any other
+// AttackStart; spell_wpl_zenkiki_wrath clears the flag before it sends the hawk at the clicker, and the core puts the flag back
+// when the hawk leaves combat. A hawk is also defensive and calls no help: the core's assistance (AssistDelayEvent) starts
+// combat before AttackStart, which drops the flag, and only aggressive creatures answer it. Diseased Spit 4-9 s into the
+// fight and then every 35-40 s, as the SmartAI row did.
+struct npc_wpl_diseased_hawk : public ScriptedAI
+{
+    npc_wpl_diseased_hawk(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        me->SetReactState(REACT_DEFENSIVE);
+        if (!me->IsInCombat())
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+    }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        if (me->IsImmuneToPC())
+            return;
+
+        ScriptedAI::MoveInLineOfSight(who);
+    }
+
+    void AttackStart(Unit* who) override
+    {
+        if (!who || (me->IsImmuneToPC() && who->GetCharmerOrOwnerPlayerOrPlayerItself()))
+            return;
+
+        ScriptedAI::AttackStart(who);
+    }
+
+    void JustEngagedWith(Unit* who) override
+    {
+        ScriptedAI::JustEngagedWith(who);
+        me->SetNoCallAssistance(true);
+        _events.ScheduleEvent(EVENT_DISEASED_SPIT, urand(4 * IN_MILLISECONDS, 9 * IN_MILLISECONDS));
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        // AttackStop clears it (Feign Death, Vanish), and the next Attack would call the other hawks
+        me->SetNoCallAssistance(true);
+
+        _events.Update(diff);
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        if (_events.ExecuteEvent() == EVENT_DISEASED_SPIT)
+        {
+            DoCastVictim(SPELL_DISEASED_SPIT);
+            _events.ScheduleEvent(EVENT_DISEASED_SPIT, urand(35 * IN_MILLISECONDS, 40 * IN_MILLISECONDS));
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+};
+
+// 83541 - Wrath (Zen'Kiki 44269's spellclick on A Different Approach 26954)
+// The Diseased Hawks circle the hill immune to players (sniffed unit_flags 0x100) and only come down when Zen'Kiki's Wrath hits one
+// (Wowhead: "you can't tame or attack them unless he pulls them down"). The hit hawk turns on the player who clicked him; one that
+// is already fighting keeps its fight. Zen'Kiki answers each poke with one of his lines.
+class spell_wpl_zenkiki_wrath : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_zenkiki_wrath);
+
+    Player* GetClicker()
+    {
+        if (Unit* original = GetOriginalCaster())
+            if (Player* player = original->ToPlayer())
+                return player;
+        return GetCaster()->GetCharmerOrOwnerPlayerOrPlayerItself();
+    }
+
+    void HandleCast()
+    {
+        if (Creature* zenkiki = GetCaster()->ToCreature())
+            if (zenkiki->IsAIEnabled)
+                zenkiki->AI()->Talk(SAY_ZENKIKI_POKED, GetClicker());
+    }
+
+    void HandleHit(SpellEffIndex /*effIndex*/)
+    {
+        Creature* hawk = GetHitCreature();
+        Player* player = GetClicker();
+        // An evading hawk is out of combat but refuses to attack: it would keep the flag off for good
+        if (!hawk || !player || !player->IsAlive() || hawk->GetEntry() != NPC_DISEASED_HAWK || !hawk->IsAlive() || hawk->IsInCombat()
+            || hawk->IsInEvadeMode() || !hawk->IsAIEnabled)
+            return;
+
+        // One hawk per pull, tapped by the player who clicked Zen'Kiki
+        hawk->RemoveUnitFlag(UNIT_FLAG_IMMUNE_TO_PC);
+        hawk->SetNoCallAssistance(true);
+        hawk->SetNoSearchAssistance(true);
+        hawk->SetLootRecipient(player);
+        hawk->AI()->AttackStart(player);
+
+        if (!hawk->IsInCombat())
+            hawk->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+    }
+
+    void Register() override
+    {
+        OnCast += SpellCastFn(spell_wpl_zenkiki_wrath::HandleCast);
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_zenkiki_wrath::HandleHit, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
     }
 };
 
@@ -2315,6 +2469,9 @@ void AddSC_western_plaguelands()
     new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
     new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
     new aura_script<spell_wpl_escorting_zenkiki>("spell_wpl_escorting_zenkiki");
+    new spell_script<spell_wpl_zenkiki_wrath>("spell_wpl_zenkiki_wrath");
+    new creature_script<npc_wpl_zenkiki_hawk_helper>("npc_wpl_zenkiki_hawk_helper");
+    new creature_script<npc_wpl_diseased_hawk>("npc_wpl_diseased_hawk");
     new creature_script<npc_wpl_provincial_minuteman>("npc_wpl_provincial_minuteman");
     new creature_script<npc_wpl_gory>("npc_wpl_gory");
     new creature_script<npc_wpl_scourge_bone_animus>("npc_wpl_scourge_bone_animus");
