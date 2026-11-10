@@ -33,6 +33,8 @@ EndContentData */
 #include "ScriptedGossip.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
+#include "SmartAI.h"
+#include "DBCStores.h"
 #include "TemporarySummon.h"
 
 enum eQuests
@@ -1585,6 +1587,135 @@ private:
 };
 
 /*######
+## Andorhal: Opengut Behemoth (first battle, phase 259)
+######*/
+
+enum OpengutBehemoth
+{
+    SPELL_OPENGUT_CLEAVE                        = 83136,    // physical damage + knockback, no source casts it
+    FACTION_SCOURGE_PLAYERS_ONLY                = 974       // the sniffed faction: hostile only to players
+};
+
+static uint32 const OpengutCleaveFirstMin       = 3000;
+static uint32 const OpengutCleaveFirstMax       = 5000;
+static uint32 const OpengutCleaveRepeatMin      = 6000;
+static uint32 const OpengutCleaveRepeatMax      = 9000;
+
+// Only NPCs nobody plays: soldiers, never players, their pets, guardians, companions or vehicles
+static bool IsOpengutCleaveNpcTarget(Unit const* target)
+{
+    return target && target->GetTypeId() == TYPEID_UNIT && !target->IsControlledByPlayer() && !target->IsCharmedOwnedByPlayerOrPlayer();
+}
+
+// 44562 - Opengut Behemoth; Cleave 40504, Scourge Hook 50335 and the attacks on the soldiers stay in its SmartAI
+// Retail (a video the user found; Wowhead, The Battle for Andorhal 27159: "the abominations will, after a few seconds, use a
+// one-shot ability on horde/alliance NPCs - but never on players"; War Machines 26923: "throwing my deathguards around like
+// ragdolls"): a Behemoth fighting a soldier one-shots it. The spell is our inference: Opengut Cleave 83136 ("Inflicts physical
+// damage, knocking the target back"), next to Summon Andorhal Deathguard/Defender 83121/83135 in the DBC. The template uses
+// faction 1988 so it can fight the soldiers; it still starts a fight on sight only with what faction 974 is hostile to (players
+// and their units), so it never wanders into quest NPCs or other Alliance and Horde NPCs. Fights with soldiers come from its
+// SmartAI (the nearest within 5 yd, out of combat) or from soldiers that attack it.
+struct npc_wpl_opengut_behemoth : public SmartAI
+{
+    npc_wpl_opengut_behemoth(Creature* creature) : SmartAI(creature), _cleaveTimer(0) { }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        if (!who)
+            return;
+
+        if (!who->IsControlledByPlayer())
+        {
+            FactionTemplateEntry const* sniffed = sFactionTemplateStore.LookupEntry(FACTION_SCOURGE_PLAYERS_ONLY);
+            FactionTemplateEntry const* theirs = who->GetFactionTemplateEntry();
+            if (!sniffed || !theirs || !sniffed->IsHostileTo(*theirs))
+                return;
+        }
+
+        SmartAI::MoveInLineOfSight(who);
+    }
+
+    void Reset() override
+    {
+        SmartAI::Reset();
+        _cleaveVictim.Clear();
+        _cleaveTimer = 0;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        SmartAI::UpdateAI(diff);
+
+        if (!me->IsAlive() || !me->IsInCombat())
+            return;
+
+        Unit* victim = me->GetVictim();
+        if (!IsOpengutCleaveNpcTarget(victim))
+        {
+            _cleaveVictim.Clear();
+            return;
+        }
+
+        // "after a few seconds" of fighting each new soldier
+        if (victim->GetGUID() != _cleaveVictim)
+        {
+            _cleaveVictim = victim->GetGUID();
+            _cleaveTimer = urand(OpengutCleaveFirstMin, OpengutCleaveFirstMax);
+            return;
+        }
+
+        if (_cleaveTimer > diff)
+        {
+            _cleaveTimer -= diff;
+            return;
+        }
+
+        if (me->HasUnitState(UNIT_STATE_CASTING) || !me->IsWithinMeleeRange(victim))
+            return;
+
+        DoCastVictim(SPELL_OPENGUT_CLEAVE);
+        _cleaveTimer = urand(OpengutCleaveRepeatMin, OpengutCleaveRepeatMax);
+    }
+
+private:
+    ObjectGuid _cleaveVictim;
+    uint32 _cleaveTimer;
+};
+
+// 83136 - Opengut Cleave
+// The one-shot: an NPC target dies on the hit, whatever its health and its 85% sparring limit (which caps every NPC's damage).
+// Any other target (none: the Behemoth casts it only on NPCs) takes the spell's normal damage and knockback.
+class spell_wpl_opengut_cleave : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_opengut_cleave);
+
+    void HandleDamage(SpellEffIndex effIndex)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!caster || !target || !target->IsAlive() || !IsOpengutCleaveNpcTarget(target))
+            return;
+
+        PreventHitDefaultEffect(effIndex);
+        caster->Kill(target, false, GetSpellInfo());
+    }
+
+    // No knockback for a corpse
+    void HandleKnockBack(SpellEffIndex effIndex)
+    {
+        if (Unit* target = GetHitUnit())
+            if (!target->IsAlive())
+                PreventHitDefaultEffect(effIndex);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_opengut_cleave::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_opengut_cleave::HandleKnockBack, EFFECT_1, SPELL_EFFECT_KNOCK_BACK);
+    }
+};
+
+/*######
 ## npc_anchorite_truuen
 ######*/
 
@@ -1723,4 +1854,6 @@ void AddSC_western_plaguelands()
     new creature_script<npc_wpl_gory>("npc_wpl_gory");
     new creature_script<npc_wpl_scourge_bone_animus>("npc_wpl_scourge_bone_animus");
     new creature_script<npc_wpl_araj_the_summoner>("npc_wpl_araj_the_summoner");
+    new creature_script<npc_wpl_opengut_behemoth>("npc_wpl_opengut_behemoth");
+    new spell_script<spell_wpl_opengut_cleave>("spell_wpl_opengut_cleave");
 }
