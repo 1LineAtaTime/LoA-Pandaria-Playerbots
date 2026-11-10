@@ -1000,10 +1000,11 @@ struct npc_wpl_forsaken_trooper : public ScriptedAI
         return id == DATA_TROOPER_OWNER ? _ownerGUID : ObjectGuid::Empty;
     }
 
-    // A static Felstone trooper keeps its AI through the respawn: it comes back unclaimed
+    // A static Felstone trooper keeps its AI and its flags through the respawn: it comes back unclaimed
     void JustDied(Unit* /*killer*/) override
     {
-        _ownerGUID.Clear();
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
+        DropOwner();
         _raiserGUID.Clear();
         _events.Reset();
     }
@@ -1017,7 +1018,9 @@ struct npc_wpl_forsaken_trooper : public ScriptedAI
             return;
         }
 
+        // _EnterEvadeMode reloads the creature addon, which puts the Felstone trooper's 82343 back on (creature_template_addon)
         _EnterEvadeMode(why);
+        KeepVisible();
         me->GetMotionMaster()->MoveFollow(owner, 2.0f + frand(0.0f, 2.0f), frand(float(M_PI) * 0.5f, float(M_PI) * 1.5f));
     }
 
@@ -1066,10 +1069,15 @@ struct npc_wpl_forsaken_trooper : public ScriptedAI
                         return;
                     }
 
+                    // The leash is measured from home: keep it at the master, or a trooper mobilized far from the fight
+                    // gives up the chase (Creature::CanCreatureAttack)
+                    me->SetHomePosition(owner->GetPosition());
+                    KeepVisible();
+                    CopyOwnerPvPFlags(owner);
+
                     if (!me->GetVictim() && owner->IsInCombat())
-                        if (Unit* victim = owner->GetVictim())
-                            if (me->IsValidAttackTarget(victim))
-                                AttackStart(victim);
+                        if (Unit* victim = SelectOwnerTarget(owner))
+                            AttackStart(victim);
 
                     _events.ScheduleEvent(EVENT_TROOPER_CHECK_OWNER, 2s);
                     break;
@@ -1103,6 +1111,46 @@ private:
 
     Player* GetOwner() const { return _ownerGUID ? ObjectAccessor::GetPlayer(*me, _ownerGUID) : nullptr; }
 
+    // A unit with an invisibility only sees and attacks units that detect it (WorldObject::CanDetectInvisibilityOf checks both
+    // ways), and nothing on the farm detects 82343 (type 12) but the questing player: a Felstone trooper that keeps it can
+    // neither attack nor be attacked. Mobilize takes it off; every evade puts it back (CreatureAI::_EnterEvadeMode ->
+    // Creature::LoadCreaturesAddon), so a trooper that fought a laborer on the way never hit the Behemoth.
+    void KeepVisible()
+    {
+        if (IsFelstone() && me->HasAura(SPELL_GENERIC_QUEST_INVISIBILITY_4))
+            me->RemoveAurasDueToSpell(SPELL_GENERIC_QUEST_INVISIBILITY_4);
+    }
+
+    // Every candidate is one of the master's fights, so units immune to NPCs count too: the mounted Force-Commanders 44450 (Ashes
+    // to Ashes 27086) carry IMMUNE_TO_NPC so that the battle's Deathguards leave them alone ("They do not fight"), and Wowhead
+    // has the troopers fighting them ("After the Force-Commander mobs ... heal or bandage your troops", 27089, 2010-12-01). The
+    // flag does not stop the trooper: a mobilized trooper is PVP_ATTACKABLE, so Unit::IsValidAttackTarget skips the target's
+    // IMMUNE_TO_NPC, and it is player-controlled, so ThreatReference::FlagsAllowFighting and the commander's own
+    // Creature::CanStartAttack treat it like a pet. The trooper is defensive and never picks a fight on its own.
+    bool CanFight(Unit* target) const
+    {
+        return target && target->IsAlive() && me->IsWithinDistInMap(target, 50.0f) && me->IsValidAttackTarget(target);
+    }
+
+    // What the master fights: his melee target, else his selected target if he is fighting it (a caster's spells set no melee
+    // victim), else whatever attacks him (as npc_wpl_provincial_minuteman)
+    Unit* SelectOwnerTarget(Player* owner) const
+    {
+        Unit* victim = owner->GetVictim();
+        if (CanFight(victim))
+            return victim;
+
+        Unit* selected = owner->GetSelectedUnit();
+        if (selected && owner->IsInCombatWith(selected) && CanFight(selected))
+            return selected;
+
+        for (Unit* attacker : owner->getAttackers())
+            if (CanFight(attacker))
+                return attacker;
+
+        return nullptr;
+    }
+
     void Mobilize(Player* player)
     {
         if (_ownerGUID || IsFelstoneRisen() || me->IsInCombat())
@@ -1118,13 +1166,23 @@ private:
             return;
 
         _ownerGUID = player->GetGUID();
+        // It fights for its master like his pet: owned by him, so the 85% sparring limit of the battle's soldiers (Unit::DealDamage)
+        // does not stop it, and controlled by a player, so its damage counts towards the half of a target's health that players
+        // must deal for the kill credit (Unit::DealDamage -> Creature::LowerPlayerDamageReq). It is not added to his controlled
+        // units (no Minion), so nothing of the player's pet handling touches it.
+        me->SetOwnerGUID(_ownerGUID);
+        me->m_ControlledByPlayer = true;
+        _unownedPvPFlags = me->GetByteValue(UNIT_FIELD_BYTES_2, 1);
+        CopyOwnerPvPFlags(player);
         player->KilledMonsterCredit(IsFelstone() ? NPC_FELSTONE_CHARM_CREDIT : NPC_ANDORHAL_CHARM_CREDIT);
 
-        // An invisible unit sees only those that detect its invisibility, so a Felstone trooper could attack nothing while it kept
-        // 82343; its respawn gives it back
-        if (IsFelstone())
-            me->RemoveAurasDueToSpell(SPELL_GENERIC_QUEST_INVISIBILITY_4);
+        // Its respawn gives 82343 back
+        KeepVisible();
         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        // Two NPCs fight only when one is hostile to the other (Unit::IsValidAttackTarget), and the Opengut Behemoth in Felstone's
+        // barn (45098, faction 974) is hostile only to players: neither it nor the Undercity troopers (68) would ever attack. Like
+        // the player's own units, a mobilized trooper is PvP-attackable, so it can attack whatever its master fights.
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
         me->SetReactState(REACT_DEFENSIVE);
         me->SetHomePosition(me->GetPosition());
         me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
@@ -1139,14 +1197,35 @@ private:
     // A static Felstone trooper goes away and comes back at its spawn after its respawn time, as one that was never called
     void Release()
     {
-        _ownerGUID.Clear();
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
+        DropOwner();
         _events.Reset();
         me->DespawnOrUnsummon();
+    }
+
+    // A static Felstone trooper respawns as the same creature, so it must come back unowned
+    void DropOwner()
+    {
+        if (_ownerGUID)
+            me->SetByteValue(UNIT_FIELD_BYTES_2, 1, _unownedPvPFlags);
+        _ownerGUID.Clear();
+        me->SetOwnerGUID(ObjectGuid::Empty);
+        me->m_ControlledByPlayer = false;
+    }
+
+    // With a player owner, Unit::IsValidAttackTarget treats the trooper as that player's unit and reads the PvP flags from the
+    // trooper itself. A Minion gets its owner's in Unit::SetMinion and Player::UpdatePvPState keeps them in step; the trooper is
+    // no Minion, so it takes them here and on every owner check: attackable by Alliance players exactly when its master is.
+    void CopyOwnerPvPFlags(Player* owner)
+    {
+        if (me->GetByteValue(UNIT_FIELD_BYTES_2, 1) != owner->GetByteValue(UNIT_FIELD_BYTES_2, 1))
+            me->SetByteValue(UNIT_FIELD_BYTES_2, 1, owner->GetByteValue(UNIT_FIELD_BYTES_2, 1));
     }
 
     EventMap _events;
     ObjectGuid _raiserGUID;
     ObjectGuid _ownerGUID;
+    uint8 _unownedPvPFlags = 0;
 };
 
 // 6235 - by Lurid's body, at the Alliance camp in western Andorhal (unused areatrigger, radius 25, around Lurid 45129, the ender)
@@ -2254,10 +2333,15 @@ static uint32 const OpengutCleaveFirstMax       = 5000;
 static uint32 const OpengutCleaveRepeatMin      = 6000;
 static uint32 const OpengutCleaveRepeatMax      = 9000;
 
-// Only NPCs nobody plays: soldiers, never players, their pets, guardians, companions or vehicles
+// Only NPCs nobody plays: soldiers, never players, their pets, guardians, companions or vehicles, nor the Forsaken Troopers a
+// player mobilized with his val'kyr (they fight for him like his pets)
 static bool IsOpengutCleaveNpcTarget(Unit const* target)
 {
-    return target && target->GetTypeId() == TYPEID_UNIT && !target->IsControlledByPlayer() && !target->IsCharmedOwnedByPlayerOrPlayer();
+    if (!target || target->GetTypeId() != TYPEID_UNIT || target->IsControlledByPlayer() || target->IsCharmedOwnedByPlayerOrPlayer())
+        return false;
+
+    CreatureAI const* ai = target->ToCreature()->AI();
+    return !ai || !ai->GetGUID(DATA_TROOPER_OWNER);
 }
 
 // 44562 - Opengut Behemoth; Cleave 40504, Scourge Hook 50335 and the attacks on the soldiers stay in its SmartAI
