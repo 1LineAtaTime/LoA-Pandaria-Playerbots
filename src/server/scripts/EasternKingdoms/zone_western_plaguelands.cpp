@@ -1335,6 +1335,229 @@ private:
 };
 
 /*######
+## Andorhal: Araj the Summoner (26925 Horde, 27164 Alliance)
+######*/
+
+enum ArajTheSummoner
+{
+    SPELL_ARAJ_FROSTBOLT                        = 9672,
+    SPELL_ARAJ_FROST_NOVA                       = 75062,
+    SPELL_ARAJ_SUMMON_BERSERKERS                = 83701,    // dummy on himself, "server-side script" (Wowhead)
+    SPELL_ARAJ_PHYLACTERY                       = 18661,    // summons Araj's Phylactery 177241 (shard 17114)
+
+    EVENT_ARAJ_FROSTBOLT                        = 1,
+    EVENT_ARAJ_SUMMON_BERSERKERS                = 2
+};
+
+// Ours: neither the DBC nor any source gives the size of a batch. Comments speak of a "batch" of skeletons that one grenade
+// kills, and a retail video shows a small group, so three per cast. A batch lives 40 s and the next comes 50-65 s later, so the
+// cap of six is only a safety net: it is never reached in a normal fight
+static uint32 const ArajBerserkersPerCast       = 3;
+static size_t const ArajMaxBerserkers           = 6;
+static float const ArajFrostNovaRange           = 8.0f;
+
+// 1852 - Araj the Summoner
+// The TDB (4.4.2 and 12.1.0) SmartAI, ported as is: Frostbolt every 3.4-4.7 s standing still while the target is in range
+// (SMARTCAST_COMBAT_MOVE), Frost Nova within 8 yd every 15-25 s, Summon Berserkers 83701 after 18-23 s and then every 50-65 s,
+// Araj's Phylactery on death. 83701 is a bare dummy, so here it fires Summon Stickbone Berserker: Missile 82875 (random spot
+// within 10 yd, triggers 82861: 44329 for 40 s), the zone's only spell that summons a berserker. "When you fight Araj he/she
+// will summon skeletons periodically", "when his first batch of Berserkers were summoned, I tossed a grenade, killing them
+// all" (Wowhead, Araj the Summoner 27164). The berserkers join his fight and outlive him ("it's looting before he respawns,
+// with all those skeletons beating on you", 26925); they go with him only when he evades. Only his own summons reach this
+// JustSummoned (82861's summoner is whoever cast 82875), so the bone piles' berserkers are never counted or despawned here.
+struct npc_wpl_araj_the_summoner : public ScriptedAI
+{
+    npc_wpl_araj_the_summoner(Creature* creature) : ScriptedAI(creature), _combatMove(true), _frostNovaTimer(0) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _missiles.clear();
+        _frostNovaTimer = 0;
+        _combatMove = true;
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_ARAJ_FROSTBOLT, 0ms);
+        _events.ScheduleEvent(EVENT_ARAJ_SUMMON_BERSERKERS, 18s, 23s);
+    }
+
+    // A new target while he stands keeps him standing until the next Frostbolt checks the range again, as in SmartAI
+    void AttackStart(Unit* who) override
+    {
+        if (_combatMove)
+            ScriptedAI::AttackStart(who);
+        else
+            AttackStartNoMove(who);
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spell) override
+    {
+        if (caster != me || spell->Id != SPELL_ARAJ_SUMMON_BERSERKERS)
+            return;
+
+        Prune();
+        if (_berserkers.size() + _missiles.size() >= ArajMaxBerserkers)
+            return;
+
+        uint32 count = std::min<uint32>(ArajBerserkersPerCast, uint32(ArajMaxBerserkers - _berserkers.size() - _missiles.size()));
+        for (uint32 i = 0; i < count; ++i)
+        {
+            DoCast(me, SPELL_SUMMON_STICKBONE_BERSERKER_MISSILE, true);
+            _missiles.push_back(getMSTime());
+        }
+    }
+
+    void JustSummoned(Creature* summon) override
+    {
+        if (summon->GetEntry() != NPC_STICKBONE_BERSERKER)
+            return;
+
+        if (!_missiles.empty())
+            _missiles.erase(_missiles.begin());
+
+        // A missile still flying when he evaded lands after it: that berserker would only stand idle
+        if (me->IsInEvadeMode())
+        {
+            summon->DespawnOrUnsummon();
+            return;
+        }
+
+        _berserkers.insert(summon->GetGUID());
+
+        if (Unit* victim = me->GetVictim())
+            if (summon->IsAIEnabled)
+                summon->AI()->AttackStart(victim);
+    }
+
+    void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) override
+    {
+        _berserkers.erase(summon->GetGUID());
+    }
+
+    void SummonedCreatureDespawn(Creature* summon) override
+    {
+        _berserkers.erase(summon->GetGUID());
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        // Swapped out first: each unsummon calls SummonedCreatureDespawn, which edits the set
+        GuidSet berserkers;
+        berserkers.swap(_berserkers);
+        for (ObjectGuid const& guid : berserkers)
+            if (Creature* berserker = ObjectAccessor::GetCreature(*me, guid))
+                if (berserker->IsAlive())
+                    berserker->DespawnOrUnsummon();
+        _missiles.clear();
+
+        ScriptedAI::EnterEvadeMode(why);
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        _events.Reset();
+        me->InterruptNonMeleeSpells(false);
+        DoCast(me, SPELL_ARAJ_PHYLACTERY, true);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        _events.Update(diff);
+
+        if (_frostNovaTimer > diff)
+            _frostNovaTimer -= diff;
+        else
+            _frostNovaTimer = 0;
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        if (!_frostNovaTimer && me->IsWithinDistInMap(me->GetVictim(), ArajFrostNovaRange))
+        {
+            DoCast(me, SPELL_ARAJ_FROST_NOVA);
+            _frostNovaTimer = urand(15000, 25000);
+            return;
+        }
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_ARAJ_FROSTBOLT:
+                    UpdateCombatMove(me->GetVictim());
+                    DoCastVictim(SPELL_ARAJ_FROSTBOLT);
+                    _events.ScheduleEvent(EVENT_ARAJ_FROSTBOLT, 3400ms, 4700ms);
+                    break;
+                case EVENT_ARAJ_SUMMON_BERSERKERS:
+                    DoCast(me, SPELL_ARAJ_SUMMON_BERSERKERS);
+                    _events.ScheduleEvent(EVENT_ARAJ_SUMMON_BERSERKERS, 50s, 65s);
+                    break;
+                default:
+                    break;
+            }
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    // SMARTCAST_COMBAT_MOVE as SmartAI does it: stand while the target is in Frostbolt range and sight and the mana lasts,
+    // otherwise chase it
+    void UpdateCombatMove(Unit* victim)
+    {
+        SpellInfo const* frostbolt = sSpellMgr->GetSpellInfo(SPELL_ARAJ_FROSTBOLT);
+        if (!victim || !frostbolt)
+            return;
+
+        bool move = me->GetDistance(victim) > frostbolt->GetMaxRange(false) || !me->IsWithinLOSInMap(victim)
+            || me->GetPower(POWER_MANA) < frostbolt->CalcPowerCost(me, frostbolt->GetSchoolMask());
+        if (move == _combatMove)
+            return;
+
+        _combatMove = move;
+        if (move)
+            me->GetMotionMaster()->MoveChase(victim);
+        else
+        {
+            me->StopMoving();
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveIdle();
+        }
+    }
+
+    // Drops berserkers that are gone or dead and missiles that never summoned
+    void Prune()
+    {
+        for (auto itr = _berserkers.begin(); itr != _berserkers.end();)
+        {
+            Creature* berserker = ObjectAccessor::GetCreature(*me, *itr);
+            if (!berserker || !berserker->IsInWorld() || !berserker->IsAlive())
+                itr = _berserkers.erase(itr);
+            else
+                ++itr;
+        }
+
+        uint32 now = getMSTime();
+        while (!_missiles.empty() && getMSTimeDiff(_missiles.front(), now) > AnimusMissileFlightMs)
+            _missiles.erase(_missiles.begin());
+    }
+
+    EventMap _events;
+    GuidSet _berserkers;
+    std::vector<uint32> _missiles;
+    bool _combatMove;
+    uint32 _frostNovaTimer;
+};
+
+/*######
 ## npc_anchorite_truuen
 ######*/
 
@@ -1471,4 +1694,5 @@ void AddSC_western_plaguelands()
     new creature_script<npc_wpl_provincial_minuteman>("npc_wpl_provincial_minuteman");
     new creature_script<npc_wpl_gory>("npc_wpl_gory");
     new creature_script<npc_wpl_scourge_bone_animus>("npc_wpl_scourge_bone_animus");
+    new creature_script<npc_wpl_araj_the_summoner>("npc_wpl_araj_the_summoner");
 }
