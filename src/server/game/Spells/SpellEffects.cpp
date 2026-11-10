@@ -1104,12 +1104,21 @@ void Spell::EffectTriggerRitualOfSummoning(SpellEffIndex effIndex)
     m_caster->CastSpell((Unit*)NULL, spellInfo, false);
 }
 
+// A creature rooted by creature_template_movement / creature_movement_override is not pulled or jumped by spell
+// effects, as knockback skips a rooted target: MotionMaster::Update does not update the jump generator under root, so it
+// would stay on top for the whole fight.
+static bool IsRootedByMovementTemplate(Unit const* unit)
+{
+    Creature const* creature = unit->ToCreature();
+    return creature && creature->IsRootedByMovementTemplate();
+}
+
 void Spell::EffectJump(SpellEffIndex effIndex)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_LAUNCH_TARGET)
         return;
 
-    if (m_caster->IsInFlight())
+    if (m_caster->IsInFlight() || IsRootedByMovementTemplate(m_caster))
         return;
 
     if (!unitTarget)
@@ -1128,7 +1137,7 @@ void Spell::EffectJumpDest(SpellEffIndex effIndex)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_LAUNCH)
         return;
 
-    if (m_caster->IsInFlight())
+    if (m_caster->IsInFlight() || IsRootedByMovementTemplate(m_caster))
         return;
 
     if (!m_targets.HasDst())
@@ -5709,7 +5718,7 @@ void Spell::EffectPullTowards(SpellEffIndex effIndex)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
         return;
 
-    if (!unitTarget)
+    if (!unitTarget || IsRootedByMovementTemplate(unitTarget))
         return;
 
     float speedZ = (float)(m_spellInfo->Effects[effIndex].CalcValue() / 10);
