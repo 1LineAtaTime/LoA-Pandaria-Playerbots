@@ -36,92 +36,212 @@ EndContentData */
 #include "SmartAI.h"
 #include "DBCStores.h"
 #include "TemporarySummon.h"
+#include "Group.h"
 
-enum eQuests
-{
-    QUEST_SCHOLOMANCER_HORDE    = 26924,
-    QUEST_SCHOLOMANCER          = 27162,
-};
+/*######
+## Scholomancer (26924 Horde, 27162 Alliance): Darkmaster Gandling, Koltira and Thassarian
+######*/
 
-enum eCreatures
+// Sourced: the Shadow Prison spells and NPC from the 5.4.8 DBCs and both TDBs: 86797 summons the Shadow Prison 46558 (an invisible
+// vehicle, Vehicle 1204, one seat, no exit; 15 s), 86826 is its Ride Vehicle, 86780 "Imprisons the target. Surrounded by a shadowy
+// prison." (stun, 15 s). The lines from broadcast_text 45042-45056 (in that order), Gandling's three groups from creature_text, and the
+// spots where Koltira and Thassarian end up from the sniffs (TDB 442/1210 guids 328338/328339, also TCPP). Wowhead comments (27162):
+// "When you get Gandling to about 50% hp, he will lift you in the air, and Koltira and Thassarian will come and finish him off, after
+// he teleports away, Koltira and Thassarian will have the following conversation: ..." (the whole conversation, Koltira whispering
+// the agreement to a Horde player); "After Gandling disappears, Thassarian whispered me to not tell anyone of their 'secret
+// agreement'" (Alliance).
+// Ours: the scene runs on Gandling (shared, so every player near him sees it); the timings, the heights, where the death knights come
+// from, the laughs given to Koltira, credit at the moment of the prison, the teleport visuals, and Gandling hidden (not despawned)
+// until the death knights leave, so the scene keeps its director.
+enum Scholomancer
 {
-    NPC_THASSARIAN           = 44453,
-    NPC_KOLTIRA_DEATHVIEWER  = 44452,
-    NPC_DARK_MASTER_GANDLING = 44323,
-};
+    QUEST_SCHOLOMANCER_HORDE        = 26924,
+    QUEST_SCHOLOMANCER              = 27162,
 
-enum eSpells
-{
-    SPELL_SHADOWBOLT      = 79932,
-    SPELL_SHADOW_ERUPTION = 79932,
-    SPELL_SHADOW_PRISON   = 86780,
-};
+    NPC_THASSARIAN                  = 44453,
+    NPC_KOLTIRA_DEATHVIEWER         = 44452,
+    NPC_DARK_MASTER_GANDLING        = 44323,
+    NPC_GANDLING_SHADOW_PRISON      = 46558,
 
-enum eEvents
-{
-    EVENT_SHADOW_BOLT = 1,
+    SPELL_SHADOWBOLT                = 79932,
+    SPELL_SHADOW_ERUPTION           = 79932,
+    SPELL_SHADOW_PRISON             = 86780,
+    SPELL_TELEPORT_VISUAL_EVIL      = 52233,
+    SPELL_DK_TELEPORT_VISUAL        = 51347,
+
+    // Darkmaster Gandling 44323
+    SAY_GANDLING_AGGRO              = 0,    // Prepare to die, $r!
+    SAY_GANDLING_FORFEIT            = 1,    // Your life is forfeit.
+    SAY_GANDLING_ENOUGH             = 2,    // Enough of this.  The Cult of the Damned doesn't need Andorhal...
+
+    // Koltira Deathweaver 44452 and Thassarian 44453
+    SAY_DK_QUEST_ACCEPT             = 0,    // Gandling is strong, but do not worry...
+    SAY_DK_BATTLE_CRY               = 1,    // For the Horde! / For the Alliance!
+
+    SAY_KOLTIRA_HEARD_CORRECTLY     = 2,
+    EMOTE_KOLTIRA_LAUGH             = 3,
+    SAY_KOLTIRA_NOT_TODAY           = 4,
+    SAY_KOLTIRA_GO_EASY             = 5,
+    EMOTE_KOLTIRA_LAUGH_2           = 6,
+    WHISPER_KOLTIRA_AGREEMENT       = 7,
+
+    SAY_THASSARIAN_RUMORS           = 2,
+    SAY_THASSARIAN_COME_TO_THAT     = 3,
+    SAY_THASSARIAN_SAME             = 4,
+    SAY_THASSARIAN_BROTHERS         = 5,
+    SAY_THASSARIAN_EVENTUALLY       = 6,
+    SAY_THASSARIAN_LOOK_FORWARD     = 7,
+    WHISPER_THASSARIAN_AGREEMENT    = 8,
+
+    EVENT_SHADOW_BOLT               = 1,
     EVENT_SHADOW_ERUPTION,
+
+    // The scene, in order
+    SCENE_PRISON                    = 1,
+    SCENE_STRIKE,
+    SCENE_ENOUGH,
+    SCENE_TELEPORT,
+    SCENE_VANISH,
+    SCENE_RUMORS,
+    SCENE_HEARD_CORRECTLY,
+    SCENE_LAUGH,
+    SCENE_COME_TO_THAT,
+    SCENE_NOT_TODAY,
+    SCENE_SAME,
+    SCENE_BROTHERS,
+    SCENE_EVENTUALLY,
+    SCENE_GO_EASY,
+    SCENE_LAUGH_2,
+    SCENE_LOOK_FORWARD,
+    SCENE_WHISPER,
+    SCENE_DK_TELEPORT,
+    SCENE_END,
+
+    POINT_DK_STRIKE                 = 1,
+    POINT_DK_TALK                   = 2,
 };
 
-enum eTalks
+// Where the death knights stand to talk (sniffed: TDB 442/1210 guids 328338 and 328339, facing each other)
+Position const KoltiraTalkSpot     = { 1288.65f, -1536.47f, 58.7686f, 1.18098f };
+Position const ThassarianTalkSpot  = { 1291.0f,  -1530.75f, 58.7618f, 4.32258f };
+
+uint8 const GandlingPrisonPct = 50;         // Wowhead comment: "about 50% hp"
+
+static bool IsShadowPrisonPassenger(Unit const* unit)
 {
-    SAY_INTRO,
-    SAY_SPECIAL_1,
-    SAY_SPECIAL_2,
-    SAY_SPECIAL_3,
-    SAY_SPECIAL_4,
-};
+    Unit const* base = unit ? unit->GetVehicleBase() : nullptr;
+    return base && base->GetEntry() == NPC_GANDLING_SHADOW_PRISON;
+}
 
 // Dark Master Gandling 44323
+// Can't be killed: at half health he imprisons everyone fighting him (credit for them and their group), Koltira and Thassarian come to
+// finish him, he leaves, they talk and leave, and only then does he despawn (respawn from his spawntimesecs) for the next player.
 struct npc_dark_master_gandling_quest : public ScriptedAI
 {
-    npc_dark_master_gandling_quest(Creature* creature) : ScriptedAI(creature) { }
-
-    EventMap events;
-    bool eventDone;
+    npc_dark_master_gandling_quest(Creature* creature) : ScriptedAI(creature), _summons(creature) { }
 
     void Reset() override
     {
         SetCombatMovement(false);
         events.Reset();
-        eventDone = false;
-        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED);
+        _scene.Reset();
+        _sceneStarted = false;
+        _witnesses.clear();
+        _prisoners.clear();
+        _summons.DespawnAll();
+        _koltiraGUID.Clear();
+        _thassarianGUID.Clear();
+        _strikes = 0;
+        me->SetVisible(true);
+        me->SetReactState(REACT_AGGRESSIVE);
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED | UNIT_FLAG_NOT_SELECTABLE);
     }
 
-    void JustEngagedWith(Unit* who) override
+    void JustEngagedWith(Unit* /*who*/) override
     {
-        Talk(SAY_INTRO);
+        Talk(SAY_GANDLING_AGGRO);
         events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(1.5 * IN_MILLISECONDS, 3 * IN_MILLISECONDS));
         events.ScheduleEvent(EVENT_SHADOW_ERUPTION, 12 * IN_MILLISECONDS);
     }
 
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        if (_sceneStarted)
+            return;
+        ScriptedAI::EnterEvadeMode(why);
+    }
+
+    void AttackStart(Unit* who) override
+    {
+        if (_sceneStarted)
+            return;
+        ScriptedAI::AttackStart(who);
+    }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        if (_sceneStarted)
+            return;
+
+        // Back after his respawn, he leaves alone the players who already have their credit and are still standing there
+        if (Player* player = who->ToPlayer())
+            for (uint32 questId : { uint32(QUEST_SCHOLOMANCER_HORDE), uint32(QUEST_SCHOLOMANCER) })
+            {
+                QuestStatus status = player->GetQuestStatus(questId);
+                if (status == QUEST_STATUS_COMPLETE || status == QUEST_STATUS_REWARDED)
+                    return;
+            }
+
+        ScriptedAI::MoveInLineOfSight(who);
+    }
+
+    void JustSummoned(Creature* summon) override
+    {
+        _summons.Summon(summon);
+    }
+
+    void SummonedCreatureDespawn(Creature* summon) override
+    {
+        _summons.Despawn(summon);
+    }
+
+    // Only players take him to the prison; the soldiers fighting around him can't (they would start the scene for nobody)
     void DamageTaken(Unit* attacker, uint32& damage) override
     {
-        if (eventDone)
-            damage = 0;
-
-        if (me->GetHealth() <= damage && !eventDone)
+        if (_sceneStarted)
         {
             damage = 0;
-            eventDone = true;
-            Talk(SAY_SPECIAL_1);
-            me->InterruptNonMeleeSpells(true);
-            events.Reset();
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED);
-            DoCast(attacker, SPELL_SHADOW_PRISON);
+            return;
+        }
 
-            me->m_Events.Schedule(16000, [this]()
-            {
-                Talk(SAY_SPECIAL_2);
-                HandleCompleteQuest();
-                me->CombatStop();
-                me->DespawnOrUnsummon(5 * IN_MILLISECONDS);
-            });
+        if (!attacker || !attacker->GetCharmerOrOwnerPlayerOrPlayerItself())
+        {
+            if (me->HealthBelowPctDamaged(GandlingPrisonPct + 1, damage))
+                damage = 0;
+            return;
+        }
+
+        if (me->HealthBelowPctDamaged(GandlingPrisonPct, damage))
+        {
+            if (damage >= me->GetHealth())
+                damage = me->GetHealth() - 1;
+
+            // Not from inside the damage code: the prison stops combat and seats players
+            _sceneStarted = true;
+            _scene.ScheduleEvent(SCENE_PRISON, 0);
         }
     }
 
     void UpdateAI(uint32 diff) override
     {
+        if (_sceneStarted)
+        {
+            _scene.Update(diff);
+            while (uint32 eventId = _scene.ExecuteEvent())
+                RunScene(eventId);
+            return;
+        }
+
         if (!UpdateVictim())
             return;
 
@@ -150,93 +270,436 @@ struct npc_dark_master_gandling_quest : public ScriptedAI
         }
     }
 
-    private:
-        // Spell not found
-        void HandleCompleteQuest()
+private:
+    void RunScene(uint32 eventId)
+    {
+        Creature* koltira = ObjectAccessor::GetCreature(*me, _koltiraGUID);
+        Creature* thassarian = ObjectAccessor::GetCreature(*me, _thassarianGUID);
+
+        switch (eventId)
         {
-            std::list<Player*> pList;
-            GetPlayerListInGrid(pList, me, 100.0f);
-            // The Horde (26924, from Koltira) and the Alliance (27162, from Thassarian) Scholomancer share the objective 44323
-            pList.remove_if([=](Player* target)
+            case SCENE_PRISON:
+                Imprison();
+                _scene.ScheduleEvent(SCENE_STRIKE, 5s);
+                break;
+            case SCENE_STRIKE:
+                for (Creature* dk : { koltira, thassarian })
+                {
+                    if (!dk)
+                        continue;
+                    dk->SetFacingToObject(me);
+                    dk->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                }
+                if (++_strikes < 4)
+                    _scene.ScheduleEvent(SCENE_STRIKE, 2s);
+                else
+                    _scene.ScheduleEvent(SCENE_ENOUGH, 1s);
+                break;
+            case SCENE_ENOUGH:
+                Talk(SAY_GANDLING_ENOUGH);
+                _scene.ScheduleEvent(SCENE_TELEPORT, 3s);
+                break;
+            case SCENE_TELEPORT:
+                me->CastSpell(me, SPELL_TELEPORT_VISUAL_EVIL, true);
+                ReleasePrisoners();
+                _scene.ScheduleEvent(SCENE_VANISH, 1s);
+                break;
+            case SCENE_VANISH:
+                me->SetVisible(false);
+                if (koltira)
+                {
+                    koltira->SetWalk(true);
+                    koltira->GetMotionMaster()->MovePoint(POINT_DK_TALK, KoltiraTalkSpot);
+                }
+                if (thassarian)
+                {
+                    thassarian->SetWalk(true);
+                    thassarian->GetMotionMaster()->MovePoint(POINT_DK_TALK, ThassarianTalkSpot);
+                }
+                _scene.ScheduleEvent(SCENE_RUMORS, 6s);
+                break;
+            case SCENE_RUMORS:
+                FaceEachOther(koltira, thassarian);
+                Say(thassarian, SAY_THASSARIAN_RUMORS);
+                _scene.ScheduleEvent(SCENE_HEARD_CORRECTLY, 5s);
+                break;
+            case SCENE_HEARD_CORRECTLY:
+                Say(koltira, SAY_KOLTIRA_HEARD_CORRECTLY);
+                _scene.ScheduleEvent(SCENE_LAUGH, 5s);
+                break;
+            case SCENE_LAUGH:
+                Say(koltira, EMOTE_KOLTIRA_LAUGH);
+                if (koltira)
+                    koltira->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                _scene.ScheduleEvent(SCENE_COME_TO_THAT, 3s);
+                break;
+            case SCENE_COME_TO_THAT:
+                Say(thassarian, SAY_THASSARIAN_COME_TO_THAT);
+                _scene.ScheduleEvent(SCENE_NOT_TODAY, 4s);
+                break;
+            case SCENE_NOT_TODAY:
+                Say(koltira, SAY_KOLTIRA_NOT_TODAY);
+                _scene.ScheduleEvent(SCENE_SAME, 7s);
+                break;
+            case SCENE_SAME:
+                Say(thassarian, SAY_THASSARIAN_SAME);
+                _scene.ScheduleEvent(SCENE_BROTHERS, 4s);
+                break;
+            case SCENE_BROTHERS:
+                Say(thassarian, SAY_THASSARIAN_BROTHERS);
+                _scene.ScheduleEvent(SCENE_EVENTUALLY, 7s);
+                break;
+            case SCENE_EVENTUALLY:
+                Say(thassarian, SAY_THASSARIAN_EVENTUALLY);
+                _scene.ScheduleEvent(SCENE_GO_EASY, 7s);
+                break;
+            case SCENE_GO_EASY:
+                Say(koltira, SAY_KOLTIRA_GO_EASY);
+                _scene.ScheduleEvent(SCENE_LAUGH_2, 4s);
+                break;
+            case SCENE_LAUGH_2:
+                Say(koltira, EMOTE_KOLTIRA_LAUGH_2);
+                if (koltira)
+                    koltira->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                _scene.ScheduleEvent(SCENE_LOOK_FORWARD, 3s);
+                break;
+            case SCENE_LOOK_FORWARD:
+                Say(thassarian, SAY_THASSARIAN_LOOK_FORWARD);
+                _scene.ScheduleEvent(SCENE_WHISPER, 4s);
+                break;
+            case SCENE_WHISPER:
+                // Each side's commander swears his own players to silence
+                for (ObjectGuid const& guid : _witnesses)
+                {
+                    Player* player = ObjectAccessor::GetPlayer(*me, guid);
+                    if (!player || !player->IsWithinDistInMap(me, 100.0f))
+                        continue;
+                    if (player->GetTeam() == HORDE)
+                    {
+                        if (koltira)
+                            koltira->AI()->Talk(WHISPER_KOLTIRA_AGREEMENT, player);
+                    }
+                    else if (thassarian)
+                        thassarian->AI()->Talk(WHISPER_THASSARIAN_AGREEMENT, player);
+                }
+                _scene.ScheduleEvent(SCENE_DK_TELEPORT, 4s);
+                break;
+            case SCENE_DK_TELEPORT:
+                for (Creature* dk : { koltira, thassarian })
+                {
+                    if (!dk)
+                        continue;
+                    dk->CastSpell(dk, SPELL_DK_TELEPORT_VISUAL, true);
+                    dk->DespawnOrUnsummon(1 * IN_MILLISECONDS);
+                }
+                _scene.ScheduleEvent(SCENE_END, 2s);
+                break;
+            case SCENE_END:
+                _summons.DespawnAll();
+                me->DespawnOrUnsummon();    // back after spawntimesecs; Reset() on respawn makes him whole and visible again
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Everyone fighting him (pets count for their owner) goes into a Shadow Prison; they and their group get the credit
+    void Imprison()
+    {
+        me->InterruptNonMeleeSpells(true);
+        events.Reset();
+
+        std::set<ObjectGuid> fighters;
+        for (ThreatReference const* ref : me->GetThreatManager().GetUnsortedThreatList())
+            if (Unit* victim = ref->GetVictim())
+                if (Player* player = victim->GetCharmerOrOwnerPlayerOrPlayerItself())
+                    if (player->IsAlive() && player->IsInWorld() && player->IsWithinDistInMap(me, 60.0f))
+                        fighters.insert(player->GetGUID());
+
+        // Leave the fight before the flags: combat would drop IMMUNE_TO_PC again
+        me->CombatStop(true);
+        me->GetThreatManager().ClearAllThreat();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_PACIFIED | UNIT_FLAG_NOT_SELECTABLE);
+
+        Talk(SAY_GANDLING_FORFEIT);
+
+        for (ObjectGuid const& guid : fighters)
+        {
+            Player* player = ObjectAccessor::GetPlayer(*me, guid);
+            if (!player)
+                continue;
+
+            // Witnesses: whoever this kill credits (the fighter and the group members in reward range) with either quest open
+            if (Group* group = player->GetGroup())
             {
-                return target && target->GetQuestStatus(QUEST_SCHOLOMANCER) != QUEST_STATUS_INCOMPLETE
-                    && target->GetQuestStatus(QUEST_SCHOLOMANCER_HORDE) != QUEST_STATUS_INCOMPLETE;
-            });
+                for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+                    if (Player* member = itr->GetSource())
+                        if (member->IsAtGroupRewardDistance(me) && HasScholomancer(member))
+                            _witnesses.insert(member->GetGUID());
+            }
+            else if (HasScholomancer(player))
+                _witnesses.insert(player->GetGUID());
 
-            for (auto&& itr : pList)
-                itr->KilledMonsterCredit(me->GetEntry());
+            player->RewardPlayerAndGroupAtEvent(NPC_DARK_MASTER_GANDLING, me);
+
+            if (player->IsOnVehicle() || player->IsInFlight())
+                continue;
+
+            player->RemoveAurasByType(SPELL_AURA_MOUNTED);
+            Position pos = player->GetPosition();
+            pos.m_positionZ += 6.0f;                // the sniffed prison hung 7 yd over the square
+            if (TempSummon* prison = me->SummonCreature(NPC_GANDLING_SHADOW_PRISON, pos, TEMPSUMMON_TIMED_DESPAWN, 25s))
+            {
+                player->EnterVehicle(prison, 0, true);     // the prison puts its Shadow Prison aura on the player once seated
+                _prisoners.insert(player->GetGUID());
+            }
         }
+
+        _koltiraGUID = SummonDeathKnight(NPC_KOLTIRA_DEATHVIEWER, KoltiraTalkSpot);
+        _thassarianGUID = SummonDeathKnight(NPC_THASSARIAN, ThassarianTalkSpot);
+    }
+
+    // They come running from beyond their talking spots, shout, and close in on him
+    ObjectGuid SummonDeathKnight(uint32 entry, Position const& talkSpot)
+    {
+        float angle = me->GetAngle(&talkSpot);
+        float x = talkSpot.GetPositionX() + 15.0f * std::cos(angle);
+        float y = talkSpot.GetPositionY() + 15.0f * std::sin(angle);
+        float z = talkSpot.GetPositionZ();
+        me->UpdateGroundPositionZ(x, y, z);
+
+        TempSummon* dk = me->SummonCreature(entry, x, y, z, angle + float(M_PI), TEMPSUMMON_TIMED_DESPAWN, 150s);
+        if (!dk)
+            return ObjectGuid::Empty;
+
+        dk->AI()->Talk(SAY_DK_BATTLE_CRY);
+        dk->SetWalk(false);
+        Position strike;
+        me->GetNearPoint2D(nullptr, strike.m_positionX, strike.m_positionY, 2.5f, angle);
+        strike.m_positionZ = me->GetPositionZ();
+        dk->GetMotionMaster()->MovePoint(POINT_DK_STRIKE, strike);
+        return dk->GetGUID();
+    }
+
+    // Let them out while the prisons are still in the world (set down under them), then remove what is left
+    void ReleasePrisoners()
+    {
+        for (ObjectGuid const& guid : _prisoners)
+            if (Player* player = ObjectAccessor::GetPlayer(*me, guid))
+            {
+                player->RemoveAurasDueToSpell(SPELL_SHADOW_PRISON);
+                if (IsShadowPrisonPassenger(player))
+                    player->ExitVehicle();
+            }
+        _prisoners.clear();
+
+        std::list<ObjectGuid> prisons(_summons.begin(), _summons.end());
+        for (ObjectGuid const& guid : prisons)
+            if (Creature* prison = ObjectAccessor::GetCreature(*me, guid))
+                if (prison->GetEntry() == NPC_GANDLING_SHADOW_PRISON)
+                    prison->DespawnOrUnsummon();
+    }
+
+    static bool HasScholomancer(Player const* player)
+    {
+        return player->GetQuestStatus(QUEST_SCHOLOMANCER) == QUEST_STATUS_INCOMPLETE
+            || player->GetQuestStatus(QUEST_SCHOLOMANCER_HORDE) == QUEST_STATUS_INCOMPLETE;
+    }
+
+    static void Say(Creature* speaker, uint8 group)
+    {
+        if (speaker)
+            speaker->AI()->Talk(group);
+    }
+
+    static void FaceEachOther(Creature* a, Creature* b)
+    {
+        if (!a || !b)
+            return;
+        a->SetFacingToObject(b);
+        b->SetFacingToObject(a);
+    }
+
+    EventMap events;
+    EventMap _scene;
+    SummonList _summons;
+    std::set<ObjectGuid> _witnesses;
+    std::set<ObjectGuid> _prisoners;
+    ObjectGuid _koltiraGUID;
+    ObjectGuid _thassarianGUID;
+    uint8 _strikes = 0;
+    bool _sceneStarted = false;
 };
 
-// Thassarian 44453
-class npc_thassarian_quest : public CreatureScript
+// Koltira Deathweaver 44452 (the Forsaken camp in Andorhal) and Thassarian 44453 (the Alliance camps)
+// Both give Scholomancer with the same promise: "Gandling is strong, but do not worry. I will join you shortly after you begin to fight
+// him." Gandling summons copies of both for his scene: those are actors only (no quests, no gossip, never in combat; the camp copies
+// are the quest givers), voiced by Gandling's script, and gone with him.
+struct npc_wpl_andorhal_death_knight : public ScriptedAI
 {
-    public:
-        npc_thassarian_quest() : CreatureScript("npc_thassarian_quest") { }
+    npc_wpl_andorhal_death_knight(Creature* creature) : ScriptedAI(creature) { }
 
-        bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
-        {
-            if (quest->GetQuestId() == QUEST_SCHOLOMANCER)
-                creature->AI()->Talk(SAY_INTRO);
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _actor = true;
+        _directorGUID = summoner->GetGUID();
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, 0);
+        me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, 0);
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+    }
 
-            return true;
-        }
-
-        struct npc_thassarian_questAI : public ScriptedAI
-        {
-            npc_thassarian_questAI(Creature* creature) : ScriptedAI(creature) { }
-
-            void UpdateAI(uint32 /*diff*/) override { }
-        };
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return new npc_thassarian_questAI(creature);
-        }
-};
-
-// Koltira Deathweaver 44452 (the Forsaken camp in Andorhal)
-// Gives the Horde Scholomancer with the same promise as Thassarian's: "Gandling is strong, but do not worry. I will join you shortly
-// after you begin to fight him."
-struct npc_koltira_deathweaver_andorhal : public ScriptedAI
-{
-    npc_koltira_deathweaver_andorhal(Creature* creature) : ScriptedAI(creature) { }
+    // A scene copy is visible to clients before IsSummonedBy clears its npcflags: it never offers a quest
+    Optional<QuestGiverStatus> GetDialogStatus(Player* /*player*/) override
+    {
+        if (_actor || me->IsSummon())
+            return QuestGiverStatus::None;
+        return {};
+    }
 
     void OnQuestAccept(Player* /*player*/, Quest const* quest) override
     {
-        if (quest->GetQuestId() == QUEST_SCHOLOMANCER_HORDE)
-            Talk(SAY_INTRO);
+        if (!_actor &&(quest->GetQuestId() == QUEST_SCHOLOMANCER_HORDE || quest->GetQuestId() == QUEST_SCHOLOMANCER))
+            Talk(SAY_DK_QUEST_ACCEPT);
     }
+
+    void AttackStart(Unit* who) override
+    {
+        if (_actor || me->GetEntry() == NPC_THASSARIAN)
+            return;
+        ScriptedAI::AttackStart(who);
+    }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        if (_actor || me->GetEntry() == NPC_THASSARIAN)
+            return;
+        ScriptedAI::MoveInLineOfSight(who);
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        if (_actor)
+            return;
+        ScriptedAI::EnterEvadeMode(why);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!_actor)
+        {
+            // The camp Thassarian never fought (immune to everyone); the camp Koltira does
+            if (me->GetEntry() != NPC_THASSARIAN)
+                ScriptedAI::UpdateAI(diff);
+            return;
+        }
+
+        // An actor without its scene (Gandling gone or reset) leaves
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 2 * IN_MILLISECONDS;
+
+        Creature* director = ObjectAccessor::GetCreature(*me, _directorGUID);
+        if (!director || !director->IsAlive() || !director->IsInWorld())
+            me->DespawnOrUnsummon();
+    }
+
+private:
+    ObjectGuid _directorGUID;
+    uint32 _checkTimer = 2 * IN_MILLISECONDS;
+    bool _actor = false;
 };
 
-// Shadow Prison 86780
+// 46558 - Shadow Prison (Gandling's): holds one player in the air until Gandling lets go
+struct npc_wpl_gandling_shadow_prison : public ScriptedAI
+{
+    npc_wpl_gandling_shadow_prison(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* /*summoner*/) override
+    {
+        me->SetReactState(REACT_PASSIVE);
+        me->SetDisableGravity(true);
+        me->SetCanFly(true);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (apply)
+        {
+            _boarded = true;
+            passenger->AddAura(SPELL_SHADOW_PRISON, passenger);
+            return;
+        }
+
+        // Released, dead, logged out or teleported: the prison goes (delayed: not from inside the vehicle code)
+        passenger->RemoveAurasDueToSpell(SPELL_SHADOW_PRISON);
+        me->DespawnOrUnsummon(100);
+    }
+
+    // Set the player down on the ground under the prison
+    void GetPassengerExitPosition(Unit* /*passenger*/, int8 /*seatId*/, Position& pos) override
+    {
+        float x = me->GetPositionX(), y = me->GetPositionY(), z = me->GetPositionZ();
+        me->UpdateGroundPositionZ(x, y, z);
+        pos.Relocate(x, y, z, me->GetOrientation());
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_boarded)
+            return;
+
+        // Nobody got in
+        if (_emptyTimer > diff)
+        {
+            _emptyTimer -= diff;
+            return;
+        }
+        _boarded = true;
+        me->DespawnOrUnsummon();
+    }
+
+private:
+    uint32 _emptyTimer = 3 * IN_MILLISECONDS;
+    bool _boarded = false;
+};
+
+// 86780 - Shadow Prison (Gandling's): only while held in a Shadow Prison 46558 (the aura is saved on logout; the prison is not)
 class spell_shadow_prison_gandling : public AuraScript
 {
     PrepareAuraScript(spell_shadow_prison_gandling);
 
-    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    void AfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        if (Unit* owner = GetOwner()->ToUnit())
-            owner->SetCanFly(false);
+        if (Unit* owner = GetUnitOwner())
+            if (owner->GetTypeId() == TYPEID_PLAYER && !IsShadowPrisonPassenger(owner))
+                Remove();
     }
-
-    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        if (Unit* owner = GetOwner()->ToUnit())
-        {
-            owner->SetCanFly(true);
-            GetPositionWithDistInOrientation(owner, 4.5f, Position::NormalizeOrientation(owner->GetOrientation() - M_PI), x, y);
-            owner->GetMotionMaster()->MoveJump({ x, y, owner->GetPositionZ() + 3.0f, owner->GetOrientation() }, 20.0f, 20.0f);
-        }
-    }
-
-    private:
-        float x, y;
 
     void Register() override
     {
-        OnEffectRemove += AuraEffectRemoveFn(spell_shadow_prison_gandling::OnRemove, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
-        OnEffectApply += AuraEffectApplyFn(spell_shadow_prison_gandling::OnApply, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectApply += AuraEffectApplyFn(spell_shadow_prison_gandling::AfterApply, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// Players held in Gandling's Shadow Prison take no damage (the Scourge around the square keeps fighting)
+class unit_wpl_gandling_shadow_prison : public UnitScript
+{
+public:
+    unit_wpl_gandling_shadow_prison() : UnitScript("unit_wpl_gandling_shadow_prison") { }
+
+    void OnDamage(Unit* /*attacker*/, Unit* victim, uint32& damage) override
+    {
+        if (damage && victim && victim->GetTypeId() == TYPEID_PLAYER && IsShadowPrisonPassenger(victim))
+            damage = 0;
     }
 };
 
@@ -1836,8 +2299,10 @@ public:
 void AddSC_western_plaguelands()
 {
     new creature_script<npc_dark_master_gandling_quest>("npc_dark_master_gandling_quest");
-    new npc_thassarian_quest();
-    new creature_script<npc_koltira_deathweaver_andorhal>("npc_koltira_deathweaver_andorhal");
+    new creature_script<npc_wpl_andorhal_death_knight>("npc_thassarian_quest");
+    new creature_script<npc_wpl_andorhal_death_knight>("npc_koltira_deathweaver_andorhal");
+    new creature_script<npc_wpl_gandling_shadow_prison>("npc_wpl_gandling_shadow_prison");
+    new unit_wpl_gandling_shadow_prison();
     new aura_script<spell_shadow_prison_gandling>("spell_shadow_prison_gandling");
     new npc_anchorite_truuen();
     new aura_script<spell_wpl_bond_of_the_valkyr>("spell_wpl_bond_of_the_valkyr");
