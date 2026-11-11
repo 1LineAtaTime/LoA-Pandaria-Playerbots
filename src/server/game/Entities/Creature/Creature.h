@@ -282,6 +282,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         bool IsGuard() const { return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_GUARD; }
         
         CreatureMovementData const& GetMovementTemplate() const;
+        // rooted by creature_template_movement / creature_movement_override; pets never are (Pet::Create skips UpdateEntry)
+        bool IsRootedByMovementTemplate() const { return !IsPet() && GetMovementTemplate().IsRooted(); }
         bool CanWalk() const { return GetMovementTemplate().IsGroundAllowed(); }
         bool CanSwim() const override;
         bool CanEnterWater() const override;

@@ -16497,6 +16497,11 @@ void Unit::SetControlled(bool apply, UnitState state)
                 SetStunned(false);
                 break;
             case UNIT_STATE_ROOT:
+                // a creature rooted by creature_template_movement / creature_movement_override stays rooted when a root aura
+                // ends, it leaves a vehicle or a script unroots it (AC Unit.cpp:14006, TCPP's sessile guard)
+                if (GetTypeId() == TYPEID_UNIT && ToCreature()->IsRootedByMovementTemplate())
+                    return;
+
                 if (HasAuraType(SPELL_AURA_MOD_ROOT) || GetVehicle())
                     return;
 
