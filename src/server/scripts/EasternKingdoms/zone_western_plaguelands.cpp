@@ -37,6 +37,8 @@ EndContentData */
 #include "DBCStores.h"
 #include "TemporarySummon.h"
 #include "Group.h"
+#include "MoveSpline.h"
+#include "Vehicle.h"
 
 /*######
 ## Scholomancer (26924 Horde, 27162 Alliance): Darkmaster Gandling, Koltira and Thassarian
@@ -2333,6 +2335,415 @@ class spell_wpl_opengut_cleave : public SpellScript
 };
 
 /*######
+## The Farmers' Militia (27084): Ebon Gargoyles
+######*/
+
+enum EbonGargoyle
+{
+    NPC_EBON_GARGOYLE_PROVINCIAL_MINUTEMAN      = 44944,
+    NPC_EBON_GARGOYLE                           = 44955,
+
+    SPELL_FORCECAST_RIDE_GARGOYLE               = 84007, // FORCE_CAST Ride Gargoyle 84006 on the summoner
+
+    EVENT_GARGOYLE_PICK_UP                      = 1,
+    EVENT_GARGOYLE_BOARD_FALLBACK               = 2,
+    EVENT_GARGOYLE_TAKE_OFF                     = 3,
+    EVENT_GARGOYLE_DROP                         = 4,
+    EVENT_GARGOYLE_CHECK_LANDED                 = 5,
+    EVENT_GARGOYLE_DROP_CORPSE                  = 6,
+    EVENT_GARGOYLE_DESPAWN                      = 7,
+    EVENT_GARGOYLE_HARD_DESPAWN                 = 8,
+
+    POINT_GARGOYLE_LIFT                         = 1,
+    POINT_GARGOYLE_AWAY                         = 2
+};
+
+// The gargoyle's single seat (Vehicle 1068, VehicleSeat 8436) has neither CAN_ENTER_OR_EXIT nor a usable-by-override flag, so a ride
+// that names no seat (Ride Gargoyle's base points are 0) finds no free seat in Vehicle::AddPassenger: it has to name seat 0.
+static constexpr int8 EBON_GARGOYLE_SEAT = 0;
+
+// The free Ebon Gargoyle that this minuteman summoned, if any
+static Creature* FindOwnEbonGargoyle(Unit* minuteman)
+{
+    std::list<Creature*> gargoyles;
+    minuteman->GetCreatureListWithEntryInGrid(gargoyles, NPC_EBON_GARGOYLE, 50.0f);
+
+    Creature* found = nullptr;
+    for (Creature* gargoyle : gargoyles)
+    {
+        if (!gargoyle->IsAlive() || !gargoyle->IsSummon() || gargoyle->ToTempSummon()->GetSummonerGUID() != minuteman->GetGUID())
+            continue;
+
+        Vehicle* kit = gargoyle->GetVehicleKit();
+        if (!kit || !kit->HasEmptySeat(EBON_GARGOYLE_SEAT))
+            continue;
+
+        if (!found || minuteman->GetExactDist2dSq(gargoyle) < minuteman->GetExactDist2dSq(found))
+            found = gargoyle;
+    }
+    return found;
+}
+
+// 44955 - Ebon Gargoyle
+// The collar (Release Ebon Gargoyle 84009) makes every Provincial Minuteman near the clicked point summon a gargoyle in front of
+// himself (Summon Ebon Gargoyle 83994; the quest credit is the collar's own second effect, 84289 on the player). The gargoyle
+// makes its minuteman board (Forcecast Ride Gargoyle 84007 -> Ride Gargoyle 84006), climbs, lets go and flies off: "the sight of
+// their fellow men falling from the skies" (reward text). Creatures take no fall damage, so the gargoyle kills the minuteman once
+// he has landed; a creature killed in the air stays hanging there (Unit::setDeathState stops its fall spline). The flight, the
+// drop and the kill are ours; the spells are 5.4.8's. The summon's duration is -1 (a uint32 timer of about 49 days), so the
+// gargoyle despawns itself on every path, with a hard cap.
+struct npc_wpl_ebon_gargoyle : public ScriptedAI
+{
+    npc_wpl_ebon_gargoyle(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _summonerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        // It keeps its template faction 68 (the summon has no SummonProperties in Spell::EffectSummonType's default branch), hostile
+        // to the Alliance soldiers around it and to Alliance players: nobody may fight it. Its boarding spells are positive, so
+        // they start no combat with the minuteman (Spell::DoSpellHitOnUnit).
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+
+        _events.ScheduleEvent(EVENT_GARGOYLE_PICK_UP, 500ms);
+        _events.ScheduleEvent(EVENT_GARGOYLE_HARD_DESPAWN, 25s);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (apply)
+        {
+            if (_passengerGUID || _flyingAway)
+                return;
+
+            _passengerGUID = passenger->GetGUID();
+            // He may have been neutralized by another gargoyle (two collar hits in quick succession); this one restores him then.
+            if (passenger->GetTypeId() == TYPEID_UNIT)
+                _neutralizedGUID = passenger->GetGUID();
+            _events.CancelEvent(EVENT_GARGOYLE_BOARD_FALLBACK);
+            _events.ScheduleEvent(EVENT_GARGOYLE_TAKE_OFF, 1s);
+            return;
+        }
+
+        if (passenger->GetGUID() != _passengerGUID || _dropping)
+            return;
+
+        // Killed aboard (by a player or a soldier), or taken off by something else. Unit::setDeathState stops the fall spline that
+        // the exit gave the body, so let it fall once the death code is done; then leave.
+        if (!passenger->IsAlive() && passenger->GetTypeId() == TYPEID_UNIT)
+        {
+            _corpseGUID = passenger->GetGUID();
+            _events.ScheduleEvent(EVENT_GARGOYLE_DROP_CORPSE, 300ms);
+        }
+        _passengerGUID.Clear();
+        FlyAway();
+    }
+
+    void MovementInform(uint32 type, uint32 id) override
+    {
+        if (type != POINT_MOTION_TYPE)
+            return;
+
+        switch (id)
+        {
+            case POINT_GARGOYLE_LIFT:
+                _events.RescheduleEvent(EVENT_GARGOYLE_DROP, 300ms);
+                break;
+            case POINT_GARGOYLE_AWAY:
+                _awayReached = true;
+                TryDespawn();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_GARGOYLE_PICK_UP:
+                {
+                    // Already aboard (another gargoyle's forcecast can seat him here when the collar hit him twice at once)
+                    if (_passengerGUID)
+                        break;
+                    Creature* minuteman = GetFreeSummoner();
+                    if (!minuteman)
+                    {
+                        FlyAway();
+                        break;
+                    }
+                    // The collar's area effect is negative, so it put him in combat with the player (Spell::DoSpellHitOnUnit) and
+                    // he is chasing: while seated, the chase stops the seat spline every update, and after the drop it replaces
+                    // his fall. Take him out of the fight; he is killed on landing, and Creature::Respawn restores react state
+                    // and movement.
+                    minuteman->CombatStop(true);
+                    minuteman->SetReactState(REACT_PASSIVE);
+                    minuteman->GetMotionMaster()->Clear();
+                    minuteman->GetMotionMaster()->MoveIdle();
+                    _neutralizedGUID = minuteman->GetGUID();
+                    DoCast(minuteman, SPELL_FORCECAST_RIDE_GARGOYLE, true);
+                    _events.ScheduleEvent(EVENT_GARGOYLE_BOARD_FALLBACK, 1500ms);
+                    break;
+                }
+                case EVENT_GARGOYLE_BOARD_FALLBACK:
+                {
+                    // The ride spell did not seat him: seat him directly, once; still nobody aboard a second later, leave empty
+                    if (_passengerGUID)
+                        break;
+                    Creature* minuteman = GetFreeSummoner();
+                    if (_fallbackTried || !minuteman || !me->IsWithinDistInMap(minuteman, 30.0f))
+                    {
+                        FlyAway();
+                        break;
+                    }
+                    _fallbackTried = true;
+                    minuteman->EnterVehicle(me, EBON_GARGOYLE_SEAT);
+                    if (!_passengerGUID)
+                        _events.ScheduleEvent(EVENT_GARGOYLE_BOARD_FALLBACK, 1s);
+                    break;
+                }
+                case EVENT_GARGOYLE_TAKE_OFF:
+                {
+                    EnableFlight();
+                    float o = me->GetOrientation();
+                    float x = me->GetPositionX() + 12.0f * std::cos(o);
+                    float y = me->GetPositionY() + 12.0f * std::sin(o);
+                    float z = me->GetPositionZ() + 5.0f;
+                    me->UpdateGroundPositionZ(x, y, z);
+                    me->GetMotionMaster()->MovePoint(POINT_GARGOYLE_LIFT, x, y, z + 22.0f, false);
+                    // In case the point is never reached
+                    _events.ScheduleEvent(EVENT_GARGOYLE_DROP, 8s);
+                    break;
+                }
+                case EVENT_GARGOYLE_DROP:
+                    DropPassenger();
+                    FlyAway();
+                    break;
+                case EVENT_GARGOYLE_CHECK_LANDED:
+                {
+                    Creature* minuteman = ObjectAccessor::GetCreature(*me, _passengerGUID);
+                    if (!minuteman || !minuteman->IsAlive() || minuteman->GetVehicle())
+                    {
+                        _passengerGUID.Clear();
+                        TryDespawn();
+                        break;
+                    }
+
+                    float ground = minuteman->GetMapHeight(minuteman->GetPositionX(), minuteman->GetPositionY(), minuteman->GetPositionZ());
+                    bool landed = minuteman->movespline->Finalized() || (ground > INVALID_HEIGHT && minuteman->GetPositionZ() - ground < 1.0f);
+                    // About 1.5 s of fall from the drop height; kill him after 4 s whatever the spline says
+                    if (landed || ++_landingChecks >= 16)
+                    {
+                        me->Kill(minuteman, false);
+                        _passengerGUID.Clear();
+                        // Killed before he was down (the cap): the death code stopped his fall, so let the body down
+                        if (!landed)
+                        {
+                            _corpseGUID = minuteman->GetGUID();
+                            _events.ScheduleEvent(EVENT_GARGOYLE_DROP_CORPSE, 300ms);
+                        }
+                        TryDespawn();
+                        break;
+                    }
+                    _events.ScheduleEvent(EVENT_GARGOYLE_CHECK_LANDED, 250ms);
+                    break;
+                }
+                case EVENT_GARGOYLE_DROP_CORPSE:
+                    if (Creature* corpse = ObjectAccessor::GetCreature(*me, _corpseGUID))
+                        if (!corpse->IsAlive() && !corpse->GetVehicle())
+                            corpse->GetMotionMaster()->MoveFall();
+                    _corpseGUID.Clear();
+                    TryDespawn();
+                    break;
+                case EVENT_GARGOYLE_DESPAWN:
+                    // The away point was not reached in time
+                    _awayReached = true;
+                    TryDespawn();
+                    break;
+                case EVENT_GARGOYLE_HARD_DESPAWN:
+                    // Whatever happened. A minuteman still aboard or still falling is left alive and given his own behaviour back
+                    // (a passenger is set down by the vehicle's uninstall; let him fall first so nothing replaces the fall).
+                    if (Creature* minuteman = ObjectAccessor::GetCreature(*me, _neutralizedGUID))
+                    {
+                        if (minuteman->IsAlive())
+                        {
+                            if (minuteman->GetVehicleBase() == me)
+                                minuteman->ExitVehicle();
+                            if (!minuteman->GetVehicle())
+                            {
+                                minuteman->InitializeReactState();
+                                minuteman->GetMotionMaster()->InitDefault();
+                                minuteman->GetMotionMaster()->MoveFall();
+                            }
+                        }
+                    }
+                    me->DespawnOrUnsummon();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // The minuteman who summoned this gargoyle, if he can still be picked up
+    Creature* GetFreeSummoner() const
+    {
+        Creature* minuteman = ObjectAccessor::GetCreature(*me, _summonerGUID);
+        if (!minuteman || !minuteman->IsAlive() || !minuteman->IsInWorld() || minuteman->GetEntry() != NPC_EBON_GARGOYLE_PROVINCIAL_MINUTEMAN)
+            return nullptr;
+        // Already carried off by another gargoyle (two collar uses on him at once)
+        if (minuteman->GetVehicle())
+            return nullptr;
+        return minuteman;
+    }
+
+    void EnableFlight()
+    {
+        me->SetCanFly(true);
+        me->SetFlying(true); // DisableGravity and the flying animation tier
+    }
+
+    // Let the passenger go and watch for his landing
+    void DropPassenger()
+    {
+        Unit* passenger = ObjectAccessor::GetUnit(*me, _passengerGUID);
+        if (!passenger || passenger->GetVehicleBase() != me)
+        {
+            _passengerGUID.Clear();
+            return;
+        }
+
+        _dropping = true;
+        passenger->ExitVehicle();
+        // Unit::_ExitVehicle launches a fall but leaves the movement generators alone; the fall in the controlled slot keeps
+        // anything else from replacing it until he is down
+        passenger->GetMotionMaster()->MoveFall();
+        _landingChecks = 0;
+        _events.ScheduleEvent(EVENT_GARGOYLE_CHECK_LANDED, 500ms);
+    }
+
+    // Climb away; despawn once there and once a dropped minuteman has been dealt with
+    void FlyAway()
+    {
+        _events.CancelEvent(EVENT_GARGOYLE_PICK_UP);
+        _events.CancelEvent(EVENT_GARGOYLE_BOARD_FALLBACK);
+        _events.CancelEvent(EVENT_GARGOYLE_TAKE_OFF);
+        _events.CancelEvent(EVENT_GARGOYLE_DROP);
+
+        // Never leave with someone aboard
+        if (_passengerGUID && !_dropping)
+            DropPassenger();
+
+        // Taken out of the fight but never carried: give him his own behaviour back
+        if (!_passengerGUID)
+        {
+            if (Creature* minuteman = ObjectAccessor::GetCreature(*me, _neutralizedGUID))
+                if (minuteman->IsAlive() && !minuteman->GetVehicle())
+                {
+                    minuteman->InitializeReactState();
+                    minuteman->GetMotionMaster()->InitDefault();
+                    minuteman->GetMotionMaster()->MoveFall(); // in case he was taken off in the air; nothing if he stands
+                }
+            _neutralizedGUID.Clear();
+        }
+
+        if (_flyingAway)
+            return;
+        _flyingAway = true;
+
+        EnableFlight();
+        float o = me->GetOrientation();
+        float x = me->GetPositionX() + 30.0f * std::cos(o);
+        float y = me->GetPositionY() + 30.0f * std::sin(o);
+        float z = me->GetPositionZ() + 30.0f;
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MovePoint(POINT_GARGOYLE_AWAY, x, y, z, false);
+        _events.RescheduleEvent(EVENT_GARGOYLE_DESPAWN, 8s);
+    }
+
+    void TryDespawn()
+    {
+        if (!_awayReached || _passengerGUID || _corpseGUID)
+            return;
+        me->DespawnOrUnsummon(100);
+    }
+
+    EventMap _events;
+    ObjectGuid _summonerGUID;
+    ObjectGuid _passengerGUID;  // aboard, or dropped and not yet landed
+    ObjectGuid _corpseGUID;     // killed aboard, to be let down
+    ObjectGuid _neutralizedGUID; // the minuteman taken out of his fight for the pick-up
+    uint32 _landingChecks = 0;
+    bool _fallbackTried = false;
+    bool _dropping = false;
+    bool _flyingAway = false;
+    bool _awayReached = false;
+};
+
+// 84006 - Ride Gargoyle (aura 236 on TARGET_UNIT_NEARBY_ENTRY, cast by a minuteman through Forcecast Ride Gargoyle 84007)
+// The nearest Ebon Gargoyle (conditions) may be another minuteman's when several are summoned at once: take the caster's own.
+// Without a free one of his own the ride is dropped: boarding seat 0 of another gargoyle would push its minuteman off, and a ride
+// aura left on a gargoyle he never boarded would take him off his own one when it is removed (HandleAuraControlVehicle).
+class spell_wpl_ride_gargoyle : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_ride_gargoyle);
+
+    void SelectGargoyle(WorldObject*& target)
+    {
+        if (Unit* caster = GetCaster())
+            if (Creature* gargoyle = FindOwnEbonGargoyle(caster))
+                target = gargoyle;
+    }
+
+    void CheckGargoyle(SpellEffIndex effIndex)
+    {
+        Unit* caster = GetCaster();
+        Unit* gargoyle = GetHitUnit();
+        if (caster && gargoyle && gargoyle->GetEntry() == NPC_EBON_GARGOYLE && gargoyle->IsSummon()
+            && gargoyle->ToTempSummon()->GetSummonerGUID() == caster->GetGUID() && !caster->GetVehicle()
+            && gargoyle->GetVehicleKit() && gargoyle->GetVehicleKit()->HasEmptySeat(EBON_GARGOYLE_SEAT))
+            return;
+
+        PreventHitDefaultEffect(effIndex);
+        PreventHitAura();
+    }
+
+    void Register() override
+    {
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_ride_gargoyle::SelectGargoyle, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_ride_gargoyle::CheckGargoyle, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
+    }
+};
+
+// 84006 - Ride Gargoyle: name seat 0 (see EBON_GARGOYLE_SEAT); spell_wpl_ride_gargoyle lets the ride reach only a free seat
+class spell_wpl_ride_gargoyle_seat : public AuraScript
+{
+    PrepareAuraScript(spell_wpl_ride_gargoyle_seat);
+
+    void CalcSeat(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
+    {
+        if (Unit* gargoyle = GetUnitOwner())
+            if (gargoyle->GetEntry() == NPC_EBON_GARGOYLE)
+                amount = float(EBON_GARGOYLE_SEAT + 1);
+    }
+
+    void Register() override
+    {
+        DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_wpl_ride_gargoyle_seat::CalcSeat, EFFECT_0, SPELL_AURA_CONTROL_VEHICLE);
+    }
+};
+
+/*######
 ## npc_anchorite_truuen
 ######*/
 
@@ -2478,4 +2889,7 @@ void AddSC_western_plaguelands()
     new creature_script<npc_wpl_araj_the_summoner>("npc_wpl_araj_the_summoner");
     new creature_script<npc_wpl_opengut_behemoth>("npc_wpl_opengut_behemoth");
     new spell_script<spell_wpl_opengut_cleave>("spell_wpl_opengut_cleave");
+    new creature_script<npc_wpl_ebon_gargoyle>("npc_wpl_ebon_gargoyle");
+    new spell_script<spell_wpl_ride_gargoyle>("spell_wpl_ride_gargoyle");
+    new aura_script<spell_wpl_ride_gargoyle_seat>("spell_wpl_ride_gargoyle_seat");
 }
