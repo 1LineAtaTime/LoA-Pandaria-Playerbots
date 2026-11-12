@@ -775,6 +775,8 @@ enum EnthralledValkyr
     SPELL_NOTIFY_VALKYR_ANDORHAL                = 84195,
     SPELL_GENERIC_QUEST_INVISIBILITY_4          = 82343,
 
+    PHASE_ANDORHAL_HORDE_VS_ALLIANCE            = 261,
+
     DATA_TROOPER_RAISER                         = 1,
     DATA_TROOPER_MOBILIZE                       = 2,
     DATA_TROOPER_OWNER                          = 3,
@@ -1214,6 +1216,12 @@ private:
 
         // Its respawn gives 82343 back
         KeepVisible();
+        // A risen Andorhal trooper has its body's phase only, 268 "Andorhal 04H" (WorldObject::SummonCreature copies the summoner's
+        // phases), and the battle's Defenders stand in 261: creatures in no common phase can neither see nor attack each other
+        // (WorldObject::CanNeverSee). Its master is in 261 while Ace in the Hole is in the log, so it joins him there; and every
+        // player who sees the Defender it fights (all of 261) then sees the trooper too. It is a summon and never respawns.
+        if (!IsFelstone())
+            me->SetPhased(PHASE_ANDORHAL_HORDE_VS_ALLIANCE, true, true);
         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
         // Two NPCs fight only when one is hostile to the other (Unit::IsValidAttackTarget), and the Opengut Behemoth in Felstone's
         // barn (45098, faction 974) is hostile only to players: neither it nor the Undercity troopers (68) would ever attack. Like
