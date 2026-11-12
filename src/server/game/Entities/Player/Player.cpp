@@ -15991,6 +15991,24 @@ void Player::PrepareQuestMenu(ObjectGuid guid)
     }
 }
 
+// True when every objective of the quest is one the turn-in page checks itself (items, currency, money), or it has none.
+static bool IsPlainTurnIn(Quest const* quest)
+{
+    for (QuestObjective const& objective : quest->Objectives)
+    {
+        switch (objective.Type)
+        {
+            case QUEST_OBJECTIVE_ITEM:
+            case QUEST_OBJECTIVE_CURRENCY:
+            case QUEST_OBJECTIVE_MONEY:
+                break;
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+
 void Player::SendPreparedQuest(WorldObject* source)
 {
     QuestMenu& questMenu = PlayerTalkClass->GetQuestMenu();
@@ -16019,6 +16037,13 @@ void Player::SendPreparedQuest(WorldObject* source)
 
                 if (quest->IsTurnIn() && quest->IsRepeatable() && !quest->IsDailyOrWeekly())
                     PlayerTalkClass->SendQuestGiverRequestItems(quest, source->GetGUID(), CanCompleteRepeatableQuest(quest), true);
+                // A turn-in quest (QuestType 0) has nothing to accept: the giver that also ends it hands it in on the first talk,
+                // as when it is picked from his quest list (HandleQuestgiverQueryQuestOpcode). The details page it got here had no
+                // text and an Accept button (Lower the Boom 26936). Only for turn-ins whose requirements the turn-in page itself
+                // checks (items, currency, money): a few QuestType 0 quests carry kill or reputation objectives, which nothing
+                // on that path would check.
+                else if (quest->IsTurnIn() && source->hasInvolvedQuest(questId) && IsPlainTurnIn(quest))
+                    PlayerTalkClass->SendQuestGiverRequestItems(quest, source->GetGUID(), CanRewardQuest(quest, false), true);
                 else
                     PlayerTalkClass->SendQuestGiverQuestDetails(quest, source->GetGUID(), true);
             }
