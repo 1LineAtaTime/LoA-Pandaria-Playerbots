@@ -8,8 +8,10 @@ playerbot-beta without a human, and applies those on a candidate branch. Everyth
   apply  same, then apply the leading run of "auto" commits onto the current branch of --work
 
 Verdicts:
-  already  the commit is in playerbot-beta already (ancestor, or a "(cherry picked from commit <sha>)" trailer)
-  auto     safe to pull: only SQL updates and/or scripts, small, touches no rows or files this fork changed
+  already  the commit is in playerbot-beta already (ancestor, a "(cherry picked from commit <sha>)" trailer, or a
+           hand port: its patch reverses cleanly and its new SQL updates are present)
+  auto     safe to pull: only SQL updates and/or source under src/ (core and scripts), small, writes no row this fork's
+           SQL writes, and every changed source region is clear of this fork's own edits to that file
   review   needs a human (the reasons are listed); this and every later commit are left out of the run
 
 The window: --since <sha> (the upstream commit the previous run ended on). When it is empty or not an ancestor of the
@@ -23,10 +25,10 @@ import re
 import subprocess
 import sys
 
-AUTO_PATHS = re.compile(r"^(sql/updates/(world|characters|auth)/[^/]+\.sql|src/server/scripts/.+)$")
+AUTO_PATHS = re.compile(r"^(sql/updates/(world|characters|auth)/[^/]+\.sql|src/.+)$")
 MAX_FILES = 15
 MAX_LINES = 600
-OVERLAP_DAYS = 90
+MARGIN = 5  # an upstream hunk this close (in lines) to a region this fork changed counts as overlapping (git uses 3 lines of context)
 SQL_NAME = re.compile(r"^(\d{4}_\d{2}_\d{2})_(\d+)(.*\.sql)$")
 TRAILER = re.compile(r"\(cherry picked from commit ([0-9a-f]{40})\)")
 PR_SUFFIX = re.compile(r"\s*\(#\d+\)\s*$")
@@ -183,13 +185,59 @@ def our_sql_targets(work, branch, upstream):
     return targets
 
 
-def recently_ours(work, branch, path):
-    """True when a commit of this fork (not an upstream pick) changed path in the last OVERLAP_DAYS days."""
-    log = git("log", "--no-merges", "--since=%d.days" % OVERLAP_DAYS, "--format=%H%x00%B%x01", branch, "--", path, cwd=work)
-    for entry in log.split("\x01"):
-        if entry.strip() and not TRAILER.search(entry):
-            return True
-    return False
+HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+\d+(?:,\d+)? @@", re.M)
+
+
+LOG_LINE = re.compile(r"^\s*(TC_LOG_\w+\s*\(|\"|[\w.]+\s*[,)])")
+
+
+def old_ranges(diff_text, skip_log_only=False):
+    """Line ranges, in the OLD file's numbering, that a -U0 diff changes.
+
+    skip_log_only: leave out hunks whose removed and added lines are all TC_LOG_* calls (or their continuation lines).
+    This fork rewrote the core's log calls from fmt to printf format strings; such a hunk changes no behaviour, so an
+    upstream change next to it is not a clash."""
+    out = []
+    matches = list(HUNK.finditer(diff_text))
+    for i, m in enumerate(matches):
+        start, count = int(m.group(1)), int(m.group(2) if m.group(2) is not None else 1)
+        if skip_log_only:
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(diff_text)
+            body = [l[1:] for l in diff_text[m.end():end].splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+            if body and all("TC_LOG_" in l or LOG_LINE.match(l) for l in body) and any("TC_LOG_" in l for l in body):
+                continue
+        out.append((start, start + max(count, 1) - 1))  # a pure insertion (count 0) sits after line start
+    return out
+
+
+def blob(work, rev, path):
+    r = subprocess.run(["git", "rev-parse", "-q", "--verify", "%s:%s" % (rev, path)], cwd=work, capture_output=True)
+    return r.stdout.decode().strip() if r.returncode == 0 else None
+
+
+def code_overlap(work, branch, sha, status, path):
+    """Why a source change could clash with this fork's own edits, or None when it cannot.
+
+    Our file identical to upstream's version before the commit: the change applies exactly. Otherwise the regions this
+    fork changed (upstream's parent -> ours) are compared with the regions the commit changes; closer than MARGIN lines
+    counts as an overlap (e.g. the same function)."""
+    parent = blob(work, sha + "^", path) if status != "A" else None
+    ours = blob(work, branch, path)
+    if status == "A":
+        return "%s is new upstream but this fork already has a file there" % path if ours else None
+    if ours is None:
+        return "%s does not exist in this fork" % path
+    if ours == parent:
+        return None
+    if status == "D":
+        return "%s is deleted upstream but this fork changed it" % path
+    mine = old_ranges(git("diff", "-U0", parent, ours, cwd=work), skip_log_only=True)
+    theirs = old_ranges(git("diff", "-U0", parent, blob(work, sha, path), cwd=work))
+    for a, b in theirs:
+        for c, d in mine:
+            if a - MARGIN <= d and c - MARGIN <= b:
+                return "%s: upstream lines %d-%d are within %d lines of this fork's change at %d-%d" % (path, a, b, MARGIN, c, d)
+    return None
 
 
 def classify(work, branch, upstream, sha, our_rows):
@@ -201,7 +249,7 @@ def classify(work, branch, upstream, sha, our_rows):
     paths = [f[-1] for f in files]
     bad = [p for p in paths if not AUTO_PATHS.match(p)]
     if bad:
-        reasons.append("touches paths outside SQL updates/scripts: %s" % ", ".join(bad[:6]))
+        reasons.append("touches paths outside SQL updates and src/: %s" % ", ".join(bad[:6]))
     lines = 0
     for l in git("diff-tree", "--no-commit-id", "-r", "--numstat", sha, cwd=work).splitlines():
         a, d, _ = l.split("\t", 2)
@@ -217,9 +265,29 @@ def classify(work, branch, upstream, sha, our_rows):
                 reasons.append("%s writes rows this fork also changes: %s" % (path, ", ".join("%s %s" % h for h in hit[:8])))
             if unknown:
                 reasons.append("%s has statements whose rows cannot be read: %s" % (path, "; ".join(unknown[:3])))
-        elif path.startswith("src/") and recently_ours(work, branch, path):
-            reasons.append("%s was changed by this fork in the last %d days" % (path, OVERLAP_DAYS))
+        elif path.startswith("src/"):
+            why = code_overlap(work, branch, sha, status[0], path)
+            if why:
+                reasons.append(why)
     return reasons
+
+
+def already_equivalent(work, sha):
+    """True when the commit's change is already in the work tree under another sha (a hand port): its source/SQL edits
+    reverse cleanly, and every SQL update it adds is already in the tree with the same content (under any name). A
+    commit made only of added SQL updates is never treated as equivalent (the overlap rules handle it)."""
+    files = [l.split("\t") for l in git("diff-tree", "--no-commit-id", "-r", "--name-status", sha, cwd=work).splitlines() if l]
+    added_sql = [f[-1] for f in files if f[0] == "A" and f[-1].startswith("sql/updates/")]
+    paths = [f[-1] for f in files if f[-1] not in added_sql]
+    if not paths:
+        return False
+    if added_sql:
+        # every added update file must already be here with the same content (under any name)
+        ours = {l.split()[2] for l in git("ls-tree", "-r", "HEAD", "--", "sql/updates", cwd=work).splitlines() if l}
+        if any(blob(work, sha, p) not in ours for p in added_sql):
+            return False
+    patch = git("diff", "--binary", "%s^" % sha, sha, "--", *paths, cwd=work, binary=True)
+    return subprocess.run(["git", "apply", "--check", "-R"], cwd=work, input=patch, capture_output=True).returncode == 0
 
 
 def window(work, upstream, since, hours):
@@ -309,6 +377,8 @@ def main():
         entry = {"sha": sha, "subject": subject}
         if sha in pulled or subprocess.run(["git", "merge-base", "--is-ancestor", sha, a.branch], cwd=work).returncode == 0:
             entry["verdict"] = "already"
+        elif already_equivalent(work, sha):
+            entry.update(verdict="already", reasons=["the same change is already in this fork (ported by hand)"])
         elif blocked:
             entry.update(verdict="review", reasons=["held: comes after a commit that needs review"])
         else:

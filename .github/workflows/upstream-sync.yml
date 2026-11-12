@@ -4,11 +4,13 @@ name: Upstream sync
 #
 # 1. select   - the upstream commits that arrived since the last check (the upstream-sync-last tag; with no tag, the last
 #               6 hours). .github/upstream-sync/upstream_sync.py marks each one:
-#                 already - in playerbot-beta already (ancestor, or a "(cherry picked from commit <sha>)" trailer)
-#                 auto    - only SQL updates and/or scripts, at most 15 files / 600 lines, writes no row this fork's own
-#                           SQL updates write, touches no source file this fork changed in the last 90 days
-#                 review  - anything else (core code, modules, CI, large, overlapping, does not apply): it and every
-#                           later commit are left out
+#                 already - in playerbot-beta already (ancestor, a "(cherry picked from commit <sha>)" trailer, or a
+#                           hand port: the patch reverses cleanly and its new SQL updates are present)
+#                 auto    - only SQL updates and/or source under src/ (core and scripts), at most 15 files / 600 lines,
+#                           writes no row this fork's own SQL updates write, and every changed source region is more
+#                           than 5 lines from this fork's own edits to that file (log-format-only edits do not count)
+#                 review  - anything else (modules, CI, cmake, dep, schema changes, large, overlapping, does not apply):
+#                           it and every later commit are left out
 #               The leading run of "auto" commits is applied (author and date kept, " (#n)" dropped from the subject,
 #               added SQL updates renamed to today's free name) and pushed to a scratch branch.
 # 2. build    - linux_gcc.yml builds the candidate.
