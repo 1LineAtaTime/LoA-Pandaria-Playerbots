@@ -2469,7 +2469,8 @@ enum ZenKiki
 // Given by spell_area while Zen'Kiki, the Druid 26953 or Zen'Kiki and the Cultists 26955 (83819, Zen'Kiki 44904) or A Different
 // Approach 26954 (83456, Zen'Kiki 44269) is in the log. Its effect 0 summons Zen'Kiki as the player's guardian, but the summon isn't
 // bound to the aura (effect 2, a dummy), so he stayed with the player after the quest was abandoned or handed in. He now goes when
-// the aura does; death is left to the guardian's own rules. Both summons use quest slot 6, so a new one replaces the other.
+// the aura does; death is left to the guardian's own rules. The summon stays out of the quest summon slot (see
+// spell_wpl_escorting_zenkiki_summon).
 class spell_wpl_escorting_zenkiki : public AuraScript
 {
     PrepareAuraScript(spell_wpl_escorting_zenkiki);
@@ -2485,6 +2486,41 @@ class spell_wpl_escorting_zenkiki : public AuraScript
     void Register() override
     {
         AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_escorting_zenkiki::AfterRemove, EFFECT_2, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 83819, 83456 - Escorting Zen'Kiki (effect 0, the summon)
+// Zen'Kiki's SummonProperties 2882 put him in the quest summon slot 6, and so do the Enthralled Val'kyr's (84016: 3030, 84149: 3032).
+// A new summon in a slot unsummons the old one (TempSummon::InitStats), and Bond of the Val'kyr 84204 brings a missing val'kyr back
+// every 5 s while When Death is Not Enough, Combat Training or Ace in the Hole is in the log: with one of those in the log as well,
+// Zen'Kiki was gone within 5 s of every summon and 26954 / 26955 could not be done. He is now summoned as before (the core's summon
+// effect, private to the player, following him) but the slot is left as it was, so neither companion evicts the other; the one
+// Zen'Kiki at a time that the slot used to ensure is kept by dismissing the player's old one first.
+// Ours: both companions together. A Wowhead comment on 26953 (2011-05-04) says retail kept only one ("I thought cool I'll get two
+// people with me..nope"), without saying which one; the endless swap here was worse than either.
+class spell_wpl_escorting_zenkiki_summon : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_escorting_zenkiki_summon);
+
+    void HandleSummon(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        caster->RemoveAllMinionsByEntry(uint32(GetSpellInfo()->Effects[effIndex].MiscValue));
+
+        ObjectGuid const kept = caster->m_SummonSlot[SUMMON_SLOT_QUEST];
+        caster->m_SummonSlot[SUMMON_SLOT_QUEST].Clear();
+        GetSpell()->EffectSummonType(effIndex);
+        caster->m_SummonSlot[SUMMON_SLOT_QUEST] = kept;
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_wpl_escorting_zenkiki_summon::HandleSummon, EFFECT_0, SPELL_EFFECT_SUMMON);
     }
 };
 
@@ -4176,6 +4212,7 @@ void AddSC_western_plaguelands()
     new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
     new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
     new aura_script<spell_wpl_escorting_zenkiki>("spell_wpl_escorting_zenkiki");
+    new spell_script<spell_wpl_escorting_zenkiki_summon>("spell_wpl_escorting_zenkiki_summon");
     new spell_script<spell_wpl_zenkiki_wrath>("spell_wpl_zenkiki_wrath");
     new creature_script<npc_wpl_zenkiki_hawk_helper>("npc_wpl_zenkiki_hawk_helper");
     new creature_script<npc_wpl_diseased_hawk>("npc_wpl_diseased_hawk");
