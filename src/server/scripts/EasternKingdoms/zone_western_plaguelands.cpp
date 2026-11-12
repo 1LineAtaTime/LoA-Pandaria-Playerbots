@@ -2632,6 +2632,289 @@ class spell_wpl_zenkiki_wrath : public SpellScript
     }
 };
 
+/*######
+## Zen'Kiki and the Cultists (26955): Zen'Kiki heals the Captive Plaguebears of the Malicia Outpost
+######*/
+
+// Sourced: the log text ("break 4 Captive Plaguebears out of their cages and allow Zen'Kiki to heal them"), the objective
+// "Captive Plaguebear freed and healed" (44902), Wowhead comments ("You click on a cage to free a Captive Plaguebear which Zen'Kiki
+// then heals. The bear transforms into a Shaggy Brown Bear and you witness the bear's coat turn from a scarred, diseased, grayish
+// hide into a nice unblemished, beautiful light brown coat... which then proceeds to revert back to the nasty-looking hide when the
+// bear despawns"; "Break the plagued bears outta the cages first with Zen'kiki in tow... he'll heal them") and Shaggy Brown Bear
+// 44903 (level 38 in TDB 4.4.2, like the captive bear).
+// Ours: the chain (cage -> bear -> its opener's Zen'Kiki -> Remove Curse -> 44903 and credit); the spell, 83816 Remove Curse (1 s
+// cast, 20 yd, a dummy on a nearby creature entry, dispel visual 186), an unused spell in the quest's id block (83813-83819) that
+// nothing ties to Zen'Kiki; the wait while the cage door stands open; the 18 yd reach; no credit without Zen'Kiki; and the bear
+// walking 15 yd out past the player, taking its plagued hide back and going about 8 s after the heal. The DBC's
+// 83813 "Captive Plaguebear Freed" (an area dummy from the bear to a creature entry) can't be used: Zen'Kiki is the player's
+// personal summon (SummonProperties 2882, flag 0x10), and SpellInfo::CheckTarget refuses a private target to any other caster, so
+// the bear finds him through his owner instead.
+enum ZenKikiCultists
+{
+    QUEST_ZENKIKI_AND_THE_CULTISTS              = 26955,
+
+    NPC_CAPTIVE_PLAGUEBEAR                      = 44902,
+    NPC_SHAGGY_BROWN_BEAR                       = 44903,
+
+    SPELL_ZENKIKI_REMOVE_CURSE                  = 83816,
+
+    DATA_CAGE_OPENED                            = 1,    // SetGUID: the player who opened the bear's cage
+    DATA_HEALED_BY                              = 2,    // SetGUID: the Zen'Kiki whose Remove Curse hit the bear
+    DATA_WAITING_FOR                            = 3,    // GetGUID: the Zen'Kiki a freed bear waits for
+
+    ACTION_CAGE_CLOSED                          = 1,
+
+    EVENT_CAPTIVE_LOOK_FOR_ZENKIKI              = 1,
+    EVENT_CAPTIVE_RECAGE                        = 2,
+    EVENT_CAPTIVE_WALK_OFF                      = 3,
+    EVENT_CAPTIVE_REVERT                        = 4,
+
+    POINT_CAPTIVE_WALK_OFF                      = 1
+};
+
+constexpr float CAPTIVE_BEAR_HEAL_RANGE = 18.0f;        // Remove Curse reaches 20 yd
+constexpr float CAPTIVE_BEAR_CAGE_RANGE = 3.0f;         // each cage stands on its bear (both TDBs and mop)
+constexpr float CAPTIVE_BEAR_WALK_OFF = 15.0f;
+
+// 44902 - Captive Plaguebear
+// CAGED (as spawned: passive, immune to players, faction 35) -> FREED when a player on the quest opens its cage: it turns to him and
+// waits while the door stands open (10 s) for his Zen'Kiki to come within 18 yd and cast Remove Curse on it -> HEALED: it becomes a
+// Shaggy Brown Bear 44903, the opener gets the credit, it walks out past him, its coat turns back to the plagued hide and it
+// despawns; its respawn (Creature::Respawn restores the spawn's entry) brings the plagued bear back. Without his Zen'Kiki it is
+// caged again when the door shuts (a cast already under way may still land, until 15 s): no credit, and the cage, which never
+// despawns (a door gets GO_FLAG_NODESPAWN in GameObject::LoadGameObjectFromDB), can be opened again at once.
+struct npc_wpl_captive_plaguebear : public ScriptedAI
+{
+    npc_wpl_captive_plaguebear(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        _player.Clear();
+        _zenkiki.Clear();
+        _healed = false;
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void AttackStart(Unit* /*who*/) override { }
+
+    void SetGUID(ObjectGuid guid, int32 id) override
+    {
+        switch (id)
+        {
+            case DATA_CAGE_OPENED:
+            {
+                if (_healed || !_player.IsEmpty() || !me->IsAlive() || me->GetEntry() != NPC_CAPTIVE_PLAGUEBEAR)
+                    return;
+
+                Player* player = ObjectAccessor::GetPlayer(*me, guid);
+                if (!player || player->GetQuestStatus(QUEST_ZENKIKI_AND_THE_CULTISTS) != QUEST_STATUS_INCOMPLETE)
+                    return;
+
+                _player = guid;
+                me->SetFacingToObject(player);
+                _events.ScheduleEvent(EVENT_CAPTIVE_LOOK_FOR_ZENKIKI, 1s);
+                _events.ScheduleEvent(EVENT_CAPTIVE_RECAGE, 15s);
+                break;
+            }
+            case DATA_HEALED_BY:
+                if (!_healed && !_zenkiki.IsEmpty() && guid == _zenkiki)
+                    Heal();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_CAGE_CLOSED || _healed || _player.IsEmpty())
+            return;
+
+        // A Remove Curse under way may still land; the 15 s timer catches it if it doesn't
+        if (Creature* zenkiki = ObjectAccessor::GetCreature(*me, _zenkiki))
+            if (zenkiki->FindCurrentSpellBySpellId(SPELL_ZENKIKI_REMOVE_CURSE))
+                return;
+
+        Recage();
+    }
+
+    ObjectGuid GetGUID(int32 id) const override
+    {
+        if (id == DATA_WAITING_FOR && !_healed)
+            return _zenkiki;
+        return ObjectGuid::Empty;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_CAPTIVE_LOOK_FOR_ZENKIKI:
+                {
+                    Player* player = ObjectAccessor::GetPlayer(*me, _player);
+                    if (!player || player->GetQuestStatus(QUEST_ZENKIKI_AND_THE_CULTISTS) != QUEST_STATUS_INCOMPLETE)
+                    {
+                        Recage();
+                        return;
+                    }
+
+                    // A cast that was interrupted or found no target is simply started again
+                    if (Creature* zenkiki = FindZenKiki(player))
+                    {
+                        if (!zenkiki->FindCurrentSpellBySpellId(SPELL_ZENKIKI_REMOVE_CURSE))
+                        {
+                            _zenkiki = zenkiki->GetGUID();
+                            zenkiki->InterruptNonMeleeSpells(false);
+                            zenkiki->SetFacingToObject(me);
+                            zenkiki->CastSpell(me, SPELL_ZENKIKI_REMOVE_CURSE, false);
+                        }
+                    }
+
+                    if (!_healed)
+                        _events.ScheduleEvent(EVENT_CAPTIVE_LOOK_FOR_ZENKIKI, 1s);
+                    break;
+                }
+                case EVENT_CAPTIVE_RECAGE:
+                    Recage();
+                    return;
+                case EVENT_CAPTIVE_WALK_OFF:
+                {
+                    // Out through the open door, past the player who freed it
+                    float angle = me->GetOrientation();
+                    if (Player* player = ObjectAccessor::GetPlayer(*me, _player))
+                        angle = me->GetAngle(player);
+                    Position pos = me->GetFirstCollisionPosition(CAPTIVE_BEAR_WALK_OFF, angle - me->GetOrientation());
+                    me->SetWalk(true);
+                    me->GetMotionMaster()->MovePoint(POINT_CAPTIVE_WALK_OFF, pos);
+                    // About when it gets there (walk speed 2.5 yd/s), wherever it is
+                    _events.ScheduleEvent(EVENT_CAPTIVE_REVERT, 6s);
+                    break;
+                }
+                case EVENT_CAPTIVE_REVERT:
+                    // "...which then proceeds to revert back to the nasty-looking hide when the bear despawns"
+                    if (_plaguedDisplay)
+                        me->SetDisplayId(_plaguedDisplay);
+                    me->DespawnOrUnsummon(1500);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    // The opener's own Zen'Kiki (his guardian, wherever it is on the map), close enough to reach the bear
+    Creature* FindZenKiki(Player* player) const
+    {
+        std::list<Creature*> minions;
+        player->GetAllMinionsByEntry(minions, NPC_ZENKIKI_ESCORT);
+        for (Creature* zenkiki : minions)
+            if (zenkiki->IsInWorld() && !zenkiki->IsDestroyedObject() && zenkiki->IsAlive()
+                && zenkiki->IsWithinDistInMap(me, CAPTIVE_BEAR_HEAL_RANGE))   // 83816 ignores line of sight (the bars)
+                return zenkiki;
+        return nullptr;
+    }
+
+    void Heal()
+    {
+        _healed = true;
+        _events.Reset();
+
+        _plaguedDisplay = me->GetDisplayId();
+        me->UpdateEntry(NPC_SHAGGY_BROWN_BEAR);
+        me->SetReactState(REACT_PASSIVE);
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _player))
+        {
+            player->KilledMonsterCredit(NPC_CAPTIVE_PLAGUEBEAR);
+            me->SetFacingToObject(player);
+        }
+
+        _events.ScheduleEvent(EVENT_CAPTIVE_WALK_OFF, 2s);
+    }
+
+    void Recage()
+    {
+        _events.Reset();
+        _player.Clear();
+        _zenkiki.Clear();
+        me->SetFacingTo(me->GetHomePosition().GetOrientation());
+    }
+
+    EventMap _events;
+    ObjectGuid _player;
+    ObjectGuid _zenkiki;
+    uint32 _plaguedDisplay = 0;
+    bool _healed = false;
+};
+
+// 205155-205160, 207427-207430 - Cultist Cage
+// Opening it frees the Captive Plaguebear inside for the player who opened it; the credit comes once his Zen'Kiki has healed the
+// bear (npc_wpl_captive_plaguebear), no longer from the cage itself. When the door shuts (10 s) an unhealed bear is caged again.
+struct go_wpl_cultist_cage : public GameObjectAI
+{
+    go_wpl_cultist_cage(GameObject* go) : GameObjectAI(go) { }
+
+    void OnStateChanged(uint32 state, Unit* unit) override
+    {
+        if (state == GO_JUST_DEACTIVATED)
+        {
+            if (Creature* bear = me->FindNearestCreature(NPC_CAPTIVE_PLAGUEBEAR, CAPTIVE_BEAR_CAGE_RANGE))
+                if (bear->IsAIEnabled)
+                    bear->AI()->DoAction(ACTION_CAGE_CLOSED);
+            return;
+        }
+
+        if (state != GO_ACTIVATED || !unit || unit->GetTypeId() != TYPEID_PLAYER)
+            return;
+
+        if (Creature* bear = me->FindNearestCreature(NPC_CAPTIVE_PLAGUEBEAR, CAPTIVE_BEAR_CAGE_RANGE))
+            if (bear->IsAIEnabled)
+                bear->AI()->SetGUID(unit->GetGUID(), DATA_CAGE_OPENED);
+    }
+};
+
+// 83816 - Remove Curse (Zen'Kiki 44904 on a freed Captive Plaguebear)
+// A bare dummy on the nearest Captive Plaguebear (TARGET_UNIT_NEARBY_ENTRY, conditions: entry 44902): take the bear that waits for
+// this Zen'Kiki even when another one stands nearer. The hit heals it (it becomes a Shaggy Brown Bear).
+class spell_wpl_zenkiki_remove_curse : public SpellScript
+{
+    PrepareSpellScript(spell_wpl_zenkiki_remove_curse);
+
+    void SelectBear(WorldObject*& target)
+    {
+        std::list<Creature*> bears;
+        GetCaster()->GetCreatureListWithEntryInGrid(bears, NPC_CAPTIVE_PLAGUEBEAR, 30.0f);
+        for (Creature* bear : bears)
+        {
+            if (bear->IsAIEnabled && bear->AI()->GetGUID(DATA_WAITING_FOR) == GetCaster()->GetGUID())
+            {
+                target = bear;
+                return;
+            }
+        }
+    }
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Creature* bear = GetHitCreature();
+        if (bear && bear->GetEntry() == NPC_CAPTIVE_PLAGUEBEAR && bear->IsAIEnabled)
+            bear->AI()->SetGUID(GetCaster()->GetGUID(), DATA_HEALED_BY);
+    }
+
+    void Register() override
+    {
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_wpl_zenkiki_remove_curse::SelectBear, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_wpl_zenkiki_remove_curse::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 // 45231-45234 - Provincial Minuteman (Combat Training 84460 at the Writhing Haunt, Farmers' Militia 84480 in Andorhal)
 // Follows the player and joins whatever he fights, unless set to passive from the pet bar: "Leave them on defensive and they'll
 // attack whatever you attack" (Wowhead, Brother Against Brother). Minutemen 2-4 are plain guardians (SummonProperties 2341), which
@@ -3896,6 +4179,9 @@ void AddSC_western_plaguelands()
     new spell_script<spell_wpl_zenkiki_wrath>("spell_wpl_zenkiki_wrath");
     new creature_script<npc_wpl_zenkiki_hawk_helper>("npc_wpl_zenkiki_hawk_helper");
     new creature_script<npc_wpl_diseased_hawk>("npc_wpl_diseased_hawk");
+    new creature_script<npc_wpl_captive_plaguebear>("npc_wpl_captive_plaguebear");
+    RegisterGameObjectAI(go_wpl_cultist_cage);
+    new spell_script<spell_wpl_zenkiki_remove_curse>("spell_wpl_zenkiki_remove_curse");
     new creature_script<npc_wpl_provincial_minuteman>("npc_wpl_provincial_minuteman");
     new creature_script<npc_wpl_gory>("npc_wpl_gory");
     new creature_script<npc_wpl_scourge_bone_animus>("npc_wpl_scourge_bone_animus");
