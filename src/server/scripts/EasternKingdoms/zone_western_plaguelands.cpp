@@ -1668,11 +1668,21 @@ class spell_wpl_zenkiki_wrath : public SpellScript
     }
 };
 
-// 45231-45234 - Provincial Minuteman (Combat Training)
-// Follows the player and joins whatever he fights, unless set to passive from the pet bar
+// 45231-45234 - Provincial Minuteman (Combat Training 84460 at the Writhing Haunt, Farmers' Militia 84480 in Andorhal)
+// Follows the player and joins whatever he fights, unless set to passive from the pet bar: "Leave them on defensive and they'll
+// attack whatever you attack" (Wowhead, Brother Against Brother). Minutemen 2-4 are plain guardians (SummonProperties 2341), which
+// Guardian::InitStats makes aggressive, so they pulled every hostile pack they walked past; they are kept defensive like the first
+// one's pet bar default. "Whatever you attack" is his melee target, else his selected target if he is fighting it (a caster's
+// spells set no melee victim), else whatever attacks him.
 struct npc_wpl_provincial_minuteman : public ScriptedAI
 {
     npc_wpl_provincial_minuteman(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* /*summoner*/) override
+    {
+        if (!me->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
+            me->SetReactState(REACT_DEFENSIVE);
+    }
 
     void Reset() override
     {
@@ -1689,9 +1699,8 @@ struct npc_wpl_provincial_minuteman : public ScriptedAI
             if (!me->GetVictim() && !me->HasReactState(REACT_PASSIVE))
                 if (Unit* owner = me->GetCharmerOrOwner())
                     if (owner->IsInCombat())
-                        if (Unit* victim = owner->GetVictim())
-                            if (me->IsValidAttackTarget(victim))
-                                AttackStart(victim);
+                        if (Unit* victim = SelectOwnerTarget(owner))
+                            AttackStart(victim);
             _events.ScheduleEvent(EVENT_MINUTEMAN_ASSIST, 1s);
         }
 
@@ -1702,6 +1711,31 @@ struct npc_wpl_provincial_minuteman : public ScriptedAI
     }
 
 private:
+    bool CanFight(Unit* target) const
+    {
+        return target && target->IsAlive() && me->IsWithinDistInMap(target, 50.0f) && me->IsValidAttackTarget(target);
+    }
+
+    Unit* SelectOwnerTarget(Unit* owner) const
+    {
+        Unit* victim = owner->GetVictim();
+        if (CanFight(victim))
+            return victim;
+
+        if (Player* player = owner->ToPlayer())
+        {
+            Unit* selected = player->GetSelectedUnit();
+            if (selected && player->IsInCombatWith(selected) && CanFight(selected))
+                return selected;
+        }
+
+        for (Unit* attacker : owner->getAttackers())
+            if (CanFight(attacker))
+                return attacker;
+
+        return nullptr;
+    }
+
     EventMap _events;
 };
 
