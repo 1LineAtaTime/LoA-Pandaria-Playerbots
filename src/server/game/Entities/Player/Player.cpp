@@ -17781,11 +17781,12 @@ void Player::AreaExploredOrEventHappens(uint32 questId)
             {
                 q_status.Explored = true;
                 m_QuestStatusSave[questId] = true;
-                SetQuestSlotState(log_slot, QUEST_STATE_COMPLETE);
-                // m_QuestStatusSave[questId] = QUEST_DEFAULT_SAVE_TYPE;
-                // Todo 
-
-                SendQuestComplete(questId);
+                // Only the explored flag is set here. The quest log's COMPLETE state and SMSG_QUEST_UPDATE_COMPLETE belong
+                // to CompleteQuest below, once every objective is done: sent here (3.3.5's "exploration succeeded"), they
+                // marked a quest with objectives still open as complete on the client (Unusual Behavior... Even For
+                // Gnolls 27152: investigated before Moldfang was killed). The client then had nothing to react to when the
+                // quest really completed, so a quest handed in from the log (QUEST_FLAGS_AUTO_COMPLETE) never offered its
+                // turn-in. An event objective shows as done through its own credit (SendQuestUpdateAddCreditSimple).
             }
 
             // An event objective (type AREATRIGGER, ObjectID -1: "the event happened") is what this call reports, so it is
