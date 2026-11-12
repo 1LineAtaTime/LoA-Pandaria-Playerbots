@@ -1761,8 +1761,7 @@ class spell_dk_soul_reaper : public AuraScript
 
     void Register() override
     {
-        // effect 1 of 114866/130735/130736 is SPELL_AURA_PERIODIC_DUMMY (226); hooking PERIODIC_DAMAGE never fired
-        OnEffectRemove += AuraEffectApplyFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectApplyFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
     }
 };
 

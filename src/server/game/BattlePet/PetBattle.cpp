@@ -520,8 +520,6 @@ void PetBattle::EndBattle(PetBattleTeam* lostTeam, bool forfeit)
                     battlePetMgr.Create(battlePet->GetSpecies(), level, battlePet->GetBreed(), battlePet->GetQuality());
                     player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CAPTURE_BATTLE_PET, battlePet->GetSpecies(), uint32(1 << battlePet->GetFamilty()), 0, player);
                     player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CAPTURE_BATTLE_PET2, 1, 0, 0, player);
-                    // "Got one!" (31550, 31551, 31555, 31570 and the other variants) count a capture as this credit
-                    player->KilledMonsterCredit(65356);
                 }
             }
 

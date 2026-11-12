@@ -8547,15 +8547,13 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
         case 65081:
         {
             // Proc only from PW:S cast
-            if (!procSpell || !(procSpell->SpellFamilyFlags [0] & 0x00000001))
+            if (!(procSpell->SpellFamilyFlags [0] & 0x00000001))
                 return false;
             break;
         }
         // Culling the Herd
         case 70893:
         {
-            if (!procSpell)
-                return false;
             // check if we're doing a critical hit
             if (!(procSpell->SpellFamilyFlags [1] & 0x10000000) && (procEx != PROC_EX_CRITICAL_HIT))
                 return false;

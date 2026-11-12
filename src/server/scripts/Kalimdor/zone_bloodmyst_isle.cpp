@@ -70,7 +70,7 @@ public:
                     break;
                 case 1:
                 case 2:
-                    spawnCreatureID = possibleSpawns[urand(0, 29)]; // 30 entries
+                    spawnCreatureID = possibleSpawns[urand(0, 30)];
                     break;
             }
 

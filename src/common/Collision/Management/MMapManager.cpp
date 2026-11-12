@@ -172,7 +172,6 @@ namespace MMAP
         if (!result)
         {
             TC_LOG_ERROR("maps", "MMAP:loadMap: Bad header or data in mmap %04u_%02i_%02i.mmtile", mapId, x, y);
-            dtFree(data);
             fclose(file);
             return false;
         }
