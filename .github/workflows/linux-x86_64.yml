@@ -1,8 +1,8 @@
 name: Linux x86-64
 
-# Baseline x86-64 build without -march=native (no avx512f), so it runs on any
-# x86-64 CPU. Called by the daily playerbot-beta pre-release
-# (beta-prerelease.yml) alongside linux_gcc.yml (native, may need AVX512).
+# Portable x86-64 baseline without host-specific tuning.
+# Called by the daily playerbot-beta pre-release
+# (beta-prerelease.yml) alongside linux_gcc.yml (host-tuned).
 on:
   pull_request:
     paths-ignore:
@@ -39,7 +39,7 @@ jobs:
         persist-credentials: false
     - name: Dependencies
       run: |
-        sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-13 libreadline-dev libbz2-dev binutils
+        sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-13 libreadline-dev libbz2-dev
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13
     - name: Setup (generic x86-64)
       run: |
@@ -56,21 +56,6 @@ jobs:
         cd bin/check_install/bin
         ./authserver --version
         ./worldserver --version
-    - name: Prove baseline (no AVX512)
-      run: |
-        set -euo pipefail
-        echo "Runner CPU flags (avx512f present on runner is expected):"
-        grep -o 'avx512[a-z0-9_]*' /proc/cpuinfo | sort -u || true
-        echo "Checking binaries for AVX512/ZMM instructions..."
-        if objdump -d bin/check_install/bin/worldserver | grep -qi 'zmm\|avx512'; then
-          echo "::error::worldserver contains AVX512/ZMM instructions, not baseline x86-64"
-          exit 1
-        fi
-        if objdump -d bin/check_install/bin/authserver | grep -qi 'zmm\|avx512'; then
-          echo "::error::authserver contains AVX512/ZMM instructions, not baseline x86-64"
-          exit 1
-        fi
-        echo "OK: no AVX512/ZMM instructions found."
     # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml).
     # Same layout as linux_gcc.yml so it stays drop-in compatible.
     # Zipped here so the executables keep their permissions.

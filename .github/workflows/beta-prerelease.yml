@@ -555,7 +555,7 @@ jobs:
           echo
           echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
           echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
-          echo "- \`$BRANCH-ci-linux-x86_64.zip\`: Linux x86-64 baseline, runs on any x86-64 CPU (no AVX512)."
+          echo "- \`$BRANCH-ci-linux-x86_64.zip\`: Linux x86-64 baseline, runs on any x86-64 CPU."
           echo "$MACOS_LINE"
           echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\` for a **new install**: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes."
           echo "- \`$BRANCH-ci-sql.zip\`: the SQL update files up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install."
