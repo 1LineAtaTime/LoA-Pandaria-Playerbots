@@ -534,10 +534,40 @@ private:
     bool _sceneStarted = false;
 };
 
+enum TheDepravityOfTheForsaken
+{
+    QUEST_THE_DEPRAVITY_OF_THE_FORSAKEN         = 27205,
+
+    NPC_DEPRAVITY_CAMERA                        = 45245,
+    NPC_DEPRAVITY_ARADNE                        = 45246,
+    NPC_DEPRAVITY_VALKYR                        = 45252,
+
+    SPELL_DEPRAVITY_SUMMON_CAMERA               = 84483,
+    SPELL_DEPRAVITY_SUMMON_ARADNE               = 84484,
+    SPELL_DEPRAVITY_SUMMON_VALKYR               = 84503,
+    SPELL_DEPRAVITY_FORCE_PHASE                 = 84525,
+    SPELL_DEPRAVITY_ARADNE_LIGHTNING            = 84532,
+
+    // Thassarian 44453
+    SAY_THASSARIAN_VALKYR                       = 9,    // Is that a.. a val'kyr?
+
+    // Depravity Event Camera 45245 (Vehicle 1092): both seats look at (1370.64, -1466.36, 120.0), the sky over the town centre;
+    // seat 0 (VehicleSeat 8486, CameraMode 51 "Depravity 1") with a field of view of 60, seat 1 (8493, CameraMode 52 "Depravity 2") 20
+    DEPRAVITY_SEAT_WIDE                         = 0,
+    DEPRAVITY_SEAT_ZOOM                         = 1,
+
+    EVENT_DEPRAVITY_WAIT_FOR_RIDER              = 1,
+    EVENT_DEPRAVITY_LIGHTNING,
+    EVENT_DEPRAVITY_ZOOM,
+    EVENT_DEPRAVITY_VALKYR_LINE,
+    EVENT_DEPRAVITY_END
+};
+
 // Koltira Deathweaver 44452 (the Forsaken camp in Andorhal) and Thassarian 44453 (the Alliance camps)
 // Both give Scholomancer with the same promise: "Gandling is strong, but do not worry. I will join you shortly after you begin to fight
 // him." Gandling summons copies of both for his scene: those are actors only (no quests, no gossip, never in combat; the camp copies
 // are the quest givers), voiced by Gandling's script, and gone with him.
+// The camp Thassarian also starts The Depravity of the Forsaken's scene on its accept (npc_wpl_depravity_camera).
 struct npc_wpl_andorhal_death_knight : public ScriptedAI
 {
     npc_wpl_andorhal_death_knight(Creature* creature) : ScriptedAI(creature) { }
@@ -560,10 +590,16 @@ struct npc_wpl_andorhal_death_knight : public ScriptedAI
         return {};
     }
 
-    void OnQuestAccept(Player* /*player*/, Quest const* quest) override
+    void OnQuestAccept(Player* player, Quest const* quest) override
     {
         if (!_actor &&(quest->GetQuestId() == QUEST_SCHOLOMANCER_HORDE || quest->GetQuestId() == QUEST_SCHOLOMANCER))
             Talk(SAY_DK_QUEST_ACCEPT);
+
+        // "Find out what Thassarian is looking at": the quest is complete on accept, the scene only shows it. Its camera's summon
+        // (SummonProperties 161, a vehicle) seats the player; a player already on a vehicle or in the scene sees nothing new.
+        if (!_actor && quest->GetQuestId() == QUEST_THE_DEPRAVITY_OF_THE_FORSAKEN && !player->GetVehicle()
+            && !player->HasAura(SPELL_DEPRAVITY_FORCE_PHASE))
+            player->CastSpell(player, SPELL_DEPRAVITY_SUMMON_CAMERA, true);
     }
 
     void AttackStart(Unit* who) override
@@ -1848,6 +1884,249 @@ class spell_wpl_reckoning_force_phase : public AuraScript
         DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_wpl_reckoning_force_phase::CalcPeriodic, EFFECT_0, SPELL_AURA_PHASE);
         OnEffectPeriodic += AuraEffectPeriodicFn(spell_wpl_reckoning_force_phase::OnPeriodic, EFFECT_0, SPELL_AURA_PHASE);
         AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_reckoning_force_phase::AfterRemove, EFFECT_0, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+/*######
+## The Depravity of the Forsaken (27205)
+######*/
+
+// 45245 - Depravity Event Camera
+// "We nearly have this battle won ... The Forsaken never stood a... What the hell is that!?" - "Find out what Thassarian is looking
+// at." The quest has no objective and is complete on accept: this scene only shows what he saw, and the quest is handed in whether it
+// played or not. The camera stands just north of Thassarian and its seats look at the sky over the town centre (CameraMode 51/52).
+// Seated, the camera gives the player the val'kyr layer of the battle (Force Phase 272, cast on its seat-0 passenger, as the 5.4.8
+// DBC has it) and the player summons Aradne and a val'kyr, personal to the player, 211 yd away beyond the locked point, 6.6 degrees
+// below its line (all three spots sniffed: TDB 4.4.2 spell_target_position); object_visibility shows the two that far. The wide
+// view, then the zoom, Thassarian's line, and the player is let out where the camera stands. Every way out (logout, death, the
+// camera gone) ends it once.
+struct npc_wpl_depravity_camera : public ScriptedAI
+{
+    npc_wpl_depravity_camera(Creature* creature) : ScriptedAI(creature), _boardTries(0), _started(false), _done(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NOT_SELECTABLE);
+        // The view starts at the camera: it stays where it was summoned, half a yard up
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+
+        _events.ScheduleEvent(EVENT_DEPRAVITY_WAIT_FOR_RIDER, 500ms);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_done)
+            return;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld())
+        {
+            // Logged out: the actors leave on their own (npc_wpl_depravity_actor), the phase aura at the next login
+            // (spell_wpl_depravity_force_phase)
+            Finish(nullptr);
+            return;
+        }
+
+        if (_started && player->GetVehicleBase() != me)
+        {
+            Finish(player);
+            return;
+        }
+
+        _events.Update(diff);
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_DEPRAVITY_WAIT_FOR_RIDER:
+                    if (player->GetVehicleBase() == me)
+                        Start(player);
+                    else if (++_boardTries < 10)
+                    {
+                        // Ride Vehicle takes the first seat that can be entered; if it did not, seat 0 is named once
+                        if (_boardTries == 2 && !player->GetVehicle())
+                            player->EnterVehicle(me, DEPRAVITY_SEAT_WIDE);
+                        _events.ScheduleEvent(EVENT_DEPRAVITY_WAIT_FOR_RIDER, 500ms);
+                    }
+                    else
+                        Finish(player);
+                    break;
+                case EVENT_DEPRAVITY_LIGHTNING:
+                    if (Creature* aradne = ObjectAccessor::GetCreature(*me, _aradneGUID))
+                        aradne->CastSpell(aradne, SPELL_DEPRAVITY_ARADNE_LIGHTNING, true);
+                    _events.ScheduleEvent(EVENT_DEPRAVITY_LIGHTNING, 3s);
+                    break;
+                case EVENT_DEPRAVITY_ZOOM:
+                    player->ChangeSeat(DEPRAVITY_SEAT_ZOOM);
+                    player->RemoveAurasDueToSpell(VEHICLE_SPELL_PARACHUTE);
+                    _events.ScheduleEvent(EVENT_DEPRAVITY_VALKYR_LINE, 1s);
+                    break;
+                case EVENT_DEPRAVITY_VALKYR_LINE:
+                {
+                    // The camp Thassarian, not a copy from Gandling's scene
+                    std::list<Creature*> thassarians;
+                    me->GetCreatureListWithEntryInGrid(thassarians, NPC_THASSARIAN, 30.0f);
+                    for (Creature* thassarian : thassarians)
+                        if (!thassarian->IsSummon() && thassarian->IsAlive() && thassarian->IsAIEnabled)
+                        {
+                            thassarian->AI()->Talk(SAY_THASSARIAN_VALKYR, player);
+                            break;
+                        }
+                    _events.ScheduleEvent(EVENT_DEPRAVITY_END, 7s);
+                    break;
+                }
+                case EVENT_DEPRAVITY_END:
+                    Finish(player);
+                    return;
+                default:
+                    break;
+            }
+
+            if (_done)
+                return;
+        }
+    }
+
+private:
+    void Start(Player* player)
+    {
+        _started = true;
+
+        // Force Phase targets the camera's seat-0 passenger
+        me->CastSpell(player, SPELL_DEPRAVITY_FORCE_PHASE, true);
+        if (!player->HasAura(SPELL_DEPRAVITY_FORCE_PHASE))
+            me->AddAura(SPELL_DEPRAVITY_FORCE_PHASE, player);
+        player->CastSpell(player, SPELL_DEPRAVITY_SUMMON_ARADNE, true);
+        player->CastSpell(player, SPELL_DEPRAVITY_SUMMON_VALKYR, true);
+        _aradneGUID = FindOwnActor(player, NPC_DEPRAVITY_ARADNE);
+        _valkyrGUID = FindOwnActor(player, NPC_DEPRAVITY_VALKYR);
+
+        _events.ScheduleEvent(EVENT_DEPRAVITY_LIGHTNING, 1s);
+        _events.ScheduleEvent(EVENT_DEPRAVITY_ZOOM, 5s);
+    }
+
+    static ObjectGuid FindOwnActor(Player* player, uint32 entry)
+    {
+        if (Creature* actor = FindReckoningActorOf(player, entry, 250.0f))
+            return actor->GetGUID();
+        return ObjectGuid::Empty;
+    }
+
+    // Lets the player out where the camera stands (half a yard up, next to Thassarian; no teleport follows, so the exit's
+    // jump is not cut off) and takes the phase off; the camera, the player's minion, goes with the exit (Unit::_ExitVehicle)
+    void Finish(Player* player)
+    {
+        if (_done)
+            return;
+        _done = true;
+        _events.Reset();
+
+        for (ObjectGuid const& guid : { _aradneGUID, _valkyrGUID })
+            if (Creature* actor = ObjectAccessor::GetCreature(*me, guid))
+                actor->DespawnOrUnsummon();
+
+        if (player)
+        {
+            if (player->GetVehicleBase() == me)
+                player->ExitVehicle();
+            // Its AfterRemove re-runs phase_area: phase 272 stays for a player who has handed the quest in meanwhile
+            player->RemoveAurasDueToSpell(SPELL_DEPRAVITY_FORCE_PHASE);
+        }
+
+        me->DespawnOrUnsummon(500);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _aradneGUID;
+    ObjectGuid _valkyrGUID;
+    uint8 _boardTries;
+    bool _started;
+    bool _done;
+};
+
+// 45246 - Aradne, 45252 - Val'kyr (The Depravity of the Forsaken)
+// Actors only, in the air: passive, never in combat, gone with the scene's camera
+struct npc_wpl_depravity_actor : public ScriptedAI
+{
+    npc_wpl_depravity_actor(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _playerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void EnterEvadeMode(EvadeReason /*why*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 2 * IN_MILLISECONDS;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->HasAura(SPELL_DEPRAVITY_FORCE_PHASE) || !FindReckoningActorOf(player, NPC_DEPRAVITY_CAMERA, 50.0f))
+            me->DespawnOrUnsummon();
+    }
+
+private:
+    ObjectGuid _playerGUID;
+    uint32 _checkTimer = 2 * IN_MILLISECONDS;
+};
+
+// 84525 - The Depravity of the Forsaken: Force Phase
+// Kept only while the player's scene camera is there: a player who logged out mid-scene gets the saved aura back at login and would
+// stay in the val'kyr layer (phase 272) before handing the quest in
+class spell_wpl_depravity_force_phase : public AuraScript
+{
+    PrepareAuraScript(spell_wpl_depravity_force_phase);
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 3 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+        Player* player = GetTarget()->ToPlayer();
+        if (player && player->IsInWorld() && !FindReckoningActorOf(player, NPC_DEPRAVITY_CAMERA, 50.0f))
+            Remove();
+    }
+
+    // Phase 272 is also phase_area's (27205 rewarded, 27201/27202/27204/27206 taken): the aura's removal takes it off, this gives it
+    // back where phase_area grants it
+    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (player && player->IsInWorld() && !player->GetSession()->PlayerLogout())
+            player->UpdateAreaAndZonePhase();
+    }
+
+    void Register() override
+    {
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_wpl_depravity_force_phase::CalcPeriodic, EFFECT_0, SPELL_AURA_PHASE);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_wpl_depravity_force_phase::OnPeriodic, EFFECT_0, SPELL_AURA_PHASE);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_depravity_force_phase::AfterRemove, EFFECT_0, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -3607,6 +3886,9 @@ void AddSC_western_plaguelands()
     new spell_script<spell_wpl_reckoning_chain>("spell_wpl_reckoning_chain");
     new spell_script<spell_wpl_reckoning_channel_target>("spell_wpl_reckoning_channel_target");
     new aura_script<spell_wpl_reckoning_force_phase>("spell_wpl_reckoning_force_phase");
+    new creature_script<npc_wpl_depravity_camera>("npc_wpl_depravity_camera");
+    new creature_script<npc_wpl_depravity_actor>("npc_wpl_depravity_actor");
+    new aura_script<spell_wpl_depravity_force_phase>("spell_wpl_depravity_force_phase");
     new spell_script<spell_wpl_whinny>("spell_wpl_whinny");
     new creature_script<npc_wpl_northridge_spider>("npc_wpl_northridge_spider");
     new aura_script<spell_wpl_combat_training_minutemen>("spell_wpl_combat_training_minutemen");
