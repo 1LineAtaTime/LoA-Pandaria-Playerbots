@@ -1,0 +1,114 @@
+name: Linux x86-64 test
+
+# Standalone baseline test: generic x86-64 without -march=native (no avx512f).
+# Does not touch the daily playerbot-beta pre-release (beta-prerelease.yml).
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit to build (empty: current ref)"
+        type: string
+        default: ''
+      publish:
+        description: "Create ci-test-* pre-release"
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'ci-test-*'
+
+permissions:
+  contents: read
+
+# Queued runs on the same ref do not overlap; manual runs never share a group.
+concurrency:
+  group: ${{ format('linux-x86-64-test-{0}', github.ref) }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref || github.sha }}
+        persist-credentials: false
+    - name: Dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-13 libreadline-dev libbz2-dev binutils
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+    - name: Setup (generic x86-64)
+      run: |
+        mkdir bin
+        cd bin
+        cmake ../ -DTOOLS=1 -DELUNA=0 -DCMAKE_INSTALL_PREFIX=check_install -DBUILD_DEPLOY=0
+        cd ..
+    - name: Build
+      run: |
+        cd bin
+        make -j $(nproc) -k && make install
+    - name: Check executables
+      run: |
+        cd bin/check_install/bin
+        ./authserver --version
+        ./worldserver --version
+    - name: Prove baseline (no AVX512)
+      run: |
+        set -euo pipefail
+        echo "Runner CPU flags (avx512f present on runner is expected):"
+        grep -o 'avx512[a-z0-9_]*' /proc/cpuinfo | sort -u || true
+        echo "Checking binaries for AVX512/ZMM instructions..."
+        if objdump -d bin/check_install/bin/worldserver | grep -qi 'zmm\|avx512'; then
+          echo "::error::worldserver contains AVX512/ZMM instructions, not baseline x86-64"
+          exit 1
+        fi
+        if objdump -d bin/check_install/bin/authserver | grep -qi 'zmm\|avx512'; then
+          echo "::error::authserver contains AVX512/ZMM instructions, not baseline x86-64"
+          exit 1
+        fi
+        echo "OK: no AVX512/ZMM instructions found."
+    # Binaries-only zip, same layout as linux_gcc.yml so it stays drop-in compatible.
+    # Zipped here so the executables keep their permissions.
+    - name: Package (CI)
+      run: |
+        mkdir -p ci-package/etc
+        cp -a bin/check_install/bin ci-package/bin
+        cp src/server/authserver/authserver.conf.dist src/server/worldserver/worldserver.conf.dist \
+          modules/mod_playerbots/config/playerbots.conf.dist ci-package/etc/
+        ls -la ci-package/bin ci-package/etc
+        (cd ci-package && zip -r -q ../ci-linux-x86_64.zip .)
+    - name: Upload CI package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-package-linux-x86_64
+        path: ci-linux-x86_64.zip
+        retention-days: 7
+        compression-level: 0
+
+  publish-test:
+    needs: build
+    if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/ci-test-') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    - name: Download the x86-64 package
+      uses: actions/download-artifact@v4
+      with:
+        name: ci-package-linux-x86_64
+        path: dl
+    - name: Create the ci-test pre-release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        if [[ "${{ github.ref }}" == refs/tags/ci-test-* ]]; then
+          TAG="${GITHUB_REF_NAME}"
+        else
+          TAG="ci-test-manual-${{ github.run_id }}"
+        fi
+        echo "Publishing $TAG"
+        ls -la dl
+        gh release create "$TAG" --prerelease --latest=false --title "$TAG x86-64 test" dl/ci-linux-x86_64.zip
+        gh release view "$TAG" --json tagName,isPrerelease,assets --jq '{tagName, isPrerelease, assets: [.assets[] | "\(.name) \(.size)"]}'
