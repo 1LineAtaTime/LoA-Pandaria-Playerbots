@@ -95,17 +95,23 @@ Each package is complete on its own: never unpack one over another.
 ## Getting started
 
 ### 1. Binaries
-Each release has Windows x64 assets:
+Each release (and each playerbot-beta build) ships:
 
-+ `server`: `worldserver.exe`, `authserver.exe`, the runtime DLLs and the `.conf.dist` files.
-+ `extractors`: `mapextractor.exe`, `vmap4extractor.exe`, `vmap4assembler.exe`,
-  `mmaps_generator.exe`.
-+ `database`: `world.sql` (complete world database) and `auth.sql`, `characters.sql`,
-  `playerbots.sql` (schemas with the static data they need; no accounts or characters).
-+ `symbols`: `.pdb` debug symbols, optional, for readable crash reports.
++ the binaries, one zip per platform (Windows x64, and in recent releases also Linux x64 and
+  macOS arm64): `worldserver`, `authserver`, the map extractors (`mapextractor`,
+  `vmap4extractor`, `vmap4assembler`, `mmaps_generator`), the runtime libraries where needed and
+  the `.conf.dist` files;
++ a `database` zip: `world.sql` (complete world database) and `auth.sql`, `characters.sql`,
+  `playerbots.sql` (schemas with the static data they need; no accounts or characters), for a
+  new install;
++ the SQL update sources for upgrading an existing install (a `sql` zip, or the release's
+  `Source code` zip).
 
-The binaries need the Microsoft Visual C++ 2015-2022 Redistributable (x64) and a 64-bit
-MySQL 8.0 server.
+Some releases also ship `.pdb` debug symbols (optional, for readable crash reports). The asset
+names and contents of each release are listed in its release notes.
+
+The Windows binaries need the Microsoft Visual C++ 2015-2022 Redistributable (x64); every
+platform needs a 64-bit MySQL 8.0 server.
 
 On other platforms (or to build yourself), build from source with CMake.
 
@@ -185,6 +191,31 @@ database if clients connect from other machines.
    progress but drops your own world edits.
 
 Read the release notes too: some releases list extra upgrade steps (e.g. from v1.0.x).
+
+## Alternative forks
+Other forks take different approaches to the core, the playerbots and the databases, and may
+have more recent updates or improvements. If you want to try other options:
+
++ [Nicalicious/LoA-Pandaria-Playerbots](https://github.com/Nicalicious/LoA-Pandaria-Playerbots/)
++ [DeltaTho/Legends-of-Azeroth-Pandaria-5.4.8](https://github.com/DeltaTho/Legends-of-Azeroth-Pandaria-5.4.8/)
++ [quietpatcher/Legends-of-Azeroth-Pandaria-5.4.8](https://github.com/quietpatcher/Legends-of-Azeroth-Pandaria-5.4.8/tree/custom),
+  branch `custom` (kept in sync with their own server).
+
+These repositories may have several branches: check which one is the most recently updated
+(the repository's *Branches* page sorts them by activity) and use that one.
+
+Neither Legends of Azeroth (the main project and its
+[Pandaria 5.4.8 repository](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8),
+including its [`playerbot` branch](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/tree/playerbot)
+that this fork was forked from) nor this repository is affiliated with these forks. I have not tested or verified
+them personally, and I have not tried pulling or merging them into a clean install of this
+repository. Their contents may have been tested on their authors' own servers, but please do
+your own due diligence.
+
+The authors of these forks, like the authors of many other projects, have been working very
+hard, out of the kindness of their hearts, to bring the whole Mists of Pandaria scene to a new
+level for everyone's benefit. Their forks are actively developed and receive new commits often.
+Appreciation is the bare minimum.
 
 ## Copyright
 License: GPL 2.0
