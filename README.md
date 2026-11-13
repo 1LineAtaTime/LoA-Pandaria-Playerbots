@@ -196,7 +196,6 @@ Read the release notes too: some releases list extra upgrade steps (e.g. from v1
 Other forks take different approaches to the core, the playerbots and the databases, and may
 have more recent updates or improvements. If you want to try other options:
 
-+ [Nicalicious/LoA-Pandaria-Playerbots](https://github.com/Nicalicious/LoA-Pandaria-Playerbots/)
 + [DeltaTho/Legends-of-Azeroth-Pandaria-5.4.8](https://github.com/DeltaTho/Legends-of-Azeroth-Pandaria-5.4.8/)
 + [quietpatcher/Legends-of-Azeroth-Pandaria-5.4.8](https://github.com/quietpatcher/Legends-of-Azeroth-Pandaria-5.4.8/tree/custom),
   branch `custom` (kept in sync with their own server).
