@@ -1,0 +1,18 @@
+{
+  "tables": {
+    "battle_pay_product": 615,
+    "battle_pay_product_items": 615,
+    "battle_pay_group": 11,
+    "battle_pay_entry": 659,
+    "locales_battle_pay_product": 2,
+    "locales_battle_pay_group": 1,
+    "locales_battle_pay_entry": 1
+  },
+  "table_count": 7,
+  "rows": 1904,
+  "accounts": false,
+  "balances": false,
+  "purchases": false,
+  "delivery_receipts": false,
+  "import_policy": "Optional static catalogue; INSERT IGNORE; inspect ID collisions in scratch first"
+}

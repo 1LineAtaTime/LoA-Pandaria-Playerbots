@@ -5,9 +5,9 @@ RealmID = 0
 # Path to sql files (sql/our)
 SqlPath = ""
 
-LoginDatabaseInfo     = "127.0.0.1;3306;user;pass;database"
-WorldDatabaseInfo     = "127.0.0.1;3306;user;pass;database"
-CharacterDatabaseInfo = "127.0.0.1;3306;user;pass;database"
+LoginDatabaseInfo     = "127.0.0.1;3306;DB_USER;CHANGE_ME;database"
+WorldDatabaseInfo     = "127.0.0.1;3306;DB_USER;CHANGE_ME;database"
+CharacterDatabaseInfo = "127.0.0.1;3306;DB_USER;CHANGE_ME;database"
 
 LogsDir = "./"
 Log.Main.File = "detail.log"

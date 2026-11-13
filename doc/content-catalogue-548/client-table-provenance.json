@@ -800,7 +800,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\CreatureDifficulty.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "CreatureDisplayInfo.dbc",
@@ -979,7 +979,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\DanceMoves.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "DeathThudLookups.dbc",
@@ -2136,7 +2136,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\ItemUpgrade.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "ItemUpgradePath.dbc",
@@ -3433,7 +3433,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellActivationOverlay_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellAuraOptions.dbc",
@@ -3450,7 +3450,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellAuraOptions_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellAuraRestrictions.dbc",
@@ -3467,7 +3467,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellAuraRestrictions_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellAuraVisibility.dbc",
@@ -3484,7 +3484,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellAuraVisibility_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellAuraVisXChrSpec.dbc",
@@ -3511,7 +3511,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellCastingRequirements_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellCastTimes.dbc",
@@ -3538,7 +3538,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellCategories_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellCategory.dbc",
@@ -3575,7 +3575,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellClassOptions_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellCooldowns.dbc",
@@ -3592,7 +3592,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellCooldowns_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellDescriptionVariables.dbc",
@@ -3639,7 +3639,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellEffect_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellEffectCameraShakes.db2",
@@ -3692,7 +3692,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellEquippedItems_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellFlyout.dbc",
@@ -3749,7 +3749,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellInterrupts_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellItemEnchantment.dbc",
@@ -3796,7 +3796,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellLearnSpell_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellLevels.dbc",
@@ -3813,7 +3813,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellLevels_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellMechanic.dbc",
@@ -3840,7 +3840,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellMisc_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellMissile.db2",
@@ -3873,7 +3873,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellMissile_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellMissileMotion.db2",
@@ -3916,7 +3916,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellPower_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellProcsPerMinute.dbc",
@@ -3989,7 +3989,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellReagents_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellRuneCost.dbc",
@@ -4006,7 +4006,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellRuneCost_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellScaling.dbc",
@@ -4023,7 +4023,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellScaling_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellShapeshift.dbc",
@@ -4040,7 +4040,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellShapeshift_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellShapeshiftForm.dbc",
@@ -4077,7 +4077,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellTargetRestrictions_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellTotems.dbc",
@@ -4094,7 +4094,7 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "status": "empty_file_review",
-    "reason": "Short table: C:\\Codex Stuff\\LoA-Pandaria-Playerbots-playerbot\\exports\\dbc\\SpellTotems_internal.dbc"
+    "reason": "<local-client-data-path>"
   },
   {
     "file": "SpellVisual.db2",

@@ -34,3 +34,8 @@ testserver/confs/*.bak-*
 
 # private local defaults for the headless client (credentials; never commit)
 headless.local.json
+
+# Public distribution: local generated configs/reports/backups are never source.
+exports/
+reports/
+*.dmp

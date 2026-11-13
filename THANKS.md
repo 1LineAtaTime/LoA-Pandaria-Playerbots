@@ -1017,3 +1017,8 @@ were extracted from old commits):
 - ZxBiohazardZx
 - Дмитрий
 - ﻿4m1g0
+
+
+## Gameplay, compatibility and QA contribution
+
+- **Nicalicious** (https://github.com/Nicalicious): integrated BattlePay/DP flows, playerbot and auction-market improvements, quest/vehicle/service repairs, MySQL/MariaDB compatibility, configuration and unattended QA/handoff work. Existing upstream and imported-source authors retain credit for their work.

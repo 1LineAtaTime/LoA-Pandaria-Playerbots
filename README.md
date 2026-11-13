@@ -1,3 +1,17 @@
+# Nicalicious gameplay and QA contribution
+
+Full LoA Playerbots source, reconciled with upstream `playerbot-beta` at
+`2f9aebde9f68f7c79fbde2e7c1f2250ed49b0ef7`. Contributed by
+[Nicalicious](https://github.com/Nicalicious), with original authorship retained.
+
+Start with [Contribution and validation](CONTRIBUTION.md), [Upgrade instructions](UPGRADE.md),
+[Features](FEATURES.md), [Changelog](changelog.md) and [SQL inventory](database/contribution-migrations.csv).
+Public configuration examples are in [config/examples](config/examples).
+This is complete source, not an overlay requiring a private repository.
+Gameplay coverage remains incomplete; known issues and test limits are documented.
+
+---
+
 ## Windows test environment
 
 Use **Start-Server.cmd** for one auth/world pair, and **Run-QA.cmd** for tests and
@@ -91,7 +105,7 @@ inside; use the release assets instead.
 
 A fresh install takes:
 
-+ the extractors from the latest full [release](../../releases), to build `dbc`, `maps`,
++ the extractors from the latest full [release](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases), to build `dbc`, `maps`,
   `vmaps` and `mmaps` once from your client;
 + the binaries, the database zip and the SQL sources from the latest playerbot-beta build
   (or all of them from a release, for a tested package).

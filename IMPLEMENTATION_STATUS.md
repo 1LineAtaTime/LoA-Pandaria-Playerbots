@@ -1,3 +1,5 @@
+> Historical implementation snapshot (October29). Current features, population settings, validation and known issues are documented in FEATURES.md, CONTRIBUTION.md and doc/public-release-validation.md.
+
 # MoP Playerbots implementation status
 
 Updated 2026-10-29. This repository targets the existing 5.4.8 client and

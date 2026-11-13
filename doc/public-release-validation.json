@@ -1,0 +1,23 @@
+{
+  "native_source_merge_commit": "9a24e3e5794422017f1662b00a1b5070b1e3cdd0",
+  "upstream_beta": "2f9aebde9f68f7c79fbde2e7c1f2250ed49b0ef7",
+  "windows_build": "Visual Studio2022 x64 RelWithDebInfo",
+  "both_daemons_built": true,
+  "ctest_passed": 24,
+  "ctest_failed": 0,
+  "python_qa_tests_passed": 37,
+  "python_diagnostic_tests_passed": 3,
+  "sql_contribution_files": 146,
+  "all_sql_inventory_files": 1287,
+  "public_identity_scan_findings": [],
+  "private_development_history_excluded": true,
+  "artifact_sha256": {
+    "worldserver.exe": "478cbce1b7dd8da1272b86f8fba6953e0b3de9ed4848b5b520499cccbb01d975",
+    "authserver.exe": "17acd356826af4b55a9efd81c1d00ed07a01b1dfc9e6a9e352a63a790300bbad"
+  },
+  "compiler_warning_codes": [
+    "C4005",
+    "C4305"
+  ],
+  "all_gameplay_validated": false
+}
