@@ -139,7 +139,7 @@ class PoolMgr
 
         std::unique_ptr<ActivePoolData> InitPoolsForMap(Map* map);
 
-        PoolTemplateData const* GetPoolTemplate(uint16 pool_id) const;
+        PoolTemplateData const* GetPoolTemplate(uint32 pool_id) const;
 
     private:
         template<typename T>

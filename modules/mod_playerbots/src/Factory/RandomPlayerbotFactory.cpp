@@ -22,6 +22,8 @@
 #include "DBCStore.h"
 #include "DatabaseEnv.h"
 #include "CharacterCache.h"
+#include "CuratedPlayerNames.h"
+#include "Config.h"
 #include "GuildMgr.h"
 #include "Playerbots.h"
 #include "PlayerbotAIConfig.h"
@@ -157,8 +159,11 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls
     // AC RandomPlayerbotFactory.cpp:95-121: names keyed by race+gender (#627)
     const auto raceAndGender = CombineRaceAndGender(race, gender);
 
+    uint32 const characterGuid = sObjectMgr->GetGenerator<HighGuid::Player>().Generate();
     std::string name;
-    if (!nameCache.empty())
+    if (CuratedPlayerNames::Enabled())
+        name = CuratedPlayerNames::Pick(characterGuid, accountId, race, cls, gender);
+    else if (!nameCache.empty())
     {
         if (nameCache[raceAndGender].empty())
         {
@@ -225,9 +230,11 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls
 
     Player* player = new Player(session);
     player->GetMotionMaster()->Initialize();
-    if (!player->Create(sObjectMgr->GetGenerator<HighGuid::Player>().Generate(), characterInfo.get()))
+    if (!player->Create(characterGuid, characterInfo.get()))
     {
+        CuratedPlayerNames::Release(name, characterGuid, accountId);
         player->CleanupsBeforeDelete();
+        session->SetPlayer(nullptr);
         delete player;
 
         TC_LOG_ERROR("playerbots", "Unable to create random bot for account %u - name: \"%s\"; race: %s; class: %s",
@@ -252,6 +259,8 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls
 // also checked against characters.name (CHAR_SEL_CHECK_NAME) before it is returned.
 std::string const RandomPlayerbotFactory::CreateRandomBotName(NameRaceAndGender raceAndGender)
 {
+    if (CuratedPlayerNames::Enabled())
+        return {}; // Curated exhaustion must never fall through to procedural names.
     std::string botName = "";
     int tries = 3;
     while (--tries)
@@ -455,6 +464,10 @@ uint32 RandomPlayerbotFactory::CalculateTotalAccountCount()
     }
 
     uint32 calculatedTotal = existingTotal + additionalAccountsNeeded;
+    uint32 const rosterTarget = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotRosterTarget", 0)));
+    uint32 const slots = GetCharsPerAccount(true);
+    if (rosterTarget && slots)
+        calculatedTotal = std::max(calculatedTotal, (rosterTarget + slots - 1) / slots);
 
     // Manually set randomBotAccountCount meets the requirements
     if (sPlayerbotAIConfig->randomBotAccountCount >= calculatedTotal)
@@ -566,7 +579,12 @@ void RandomPlayerbotFactory::CreateRandomBots()
 
         AccountOpResult res = sAccountMgr->CreateAccount(accountName, password, "");
         if (AccountOpResult::AOR_OK == res)
+        {
             TC_LOG_INFO("playerbots", "Account %s created for random bots", accountName.c_str());
+            if (CuratedPlayerNames::Enabled())
+                CharacterDatabase.DirectPExecute("INSERT IGNORE INTO playerbot_roster_accounts(account_id,username,provenance) VALUES(%u,'%s','native-provisioner')",
+                    sAccountMgr->GetId(accountName), accountName.c_str());
+        }
         else
             TC_LOG_ERROR("playerbots", "Could not create random bot account %s (error %u)", accountName.c_str(), uint32(res));
     }
@@ -588,8 +606,22 @@ void RandomPlayerbotFactory::CreateRandomBots()
     std::vector<WorldSession*> sessionBots;
     int bot_creation = 0;
     uint32 expectedChars = 0;
+    uint32 const rosterTarget = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotRosterTarget", 0)));
+    uint32 rosterCount = 0;
+    // Count the configured account set, not real players or unrelated legacy bots.
+    for (uint32 accountNumber = 0; accountNumber < totalAccountCount; ++accountNumber)
+    {
+        std::string accountName = sPlayerbotAIConfig->randomBotAccountPrefix + std::to_string(accountNumber);
+        LoginDatabase.EscapeString(accountName);
+        if (QueryResult r = LoginDatabase.PQuery("SELECT id FROM account WHERE username='%s'", accountName.c_str()))
+            rosterCount += AccountMgr::GetCharactersCount(r->Fetch()[0].GetUInt32());
+    }
+    uint32 const batchSize = uint32(std::max(1, sConfigMgr->GetIntDefault("AiPlayerbot.Provision.BatchSize", 100)));
+    uint32 const batchPause = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.Provision.BatchPauseMs", 100)));
+    uint32 const maxNew = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.Provision.MaxNewPerStartup", 0)));
     timer = getMSTime();
     bool nameCached = false;
+    bool provisioningStopped = false;
     for (uint32 accountNumber = 0; accountNumber < totalAccountCount; ++accountNumber)
     {
         std::ostringstream out;
@@ -610,6 +642,13 @@ void RandomPlayerbotFactory::CreateRandomBots()
         Field* fields = result->Fetch();
         uint32 accountId = fields[0].GetUInt32();
 
+        if (CuratedPlayerNames::Enabled() && !CharacterDatabase.PQuery(
+            "SELECT account_id FROM playerbot_roster_accounts WHERE account_id=%u", accountId))
+        {
+            TC_LOG_ERROR("playerbots", "[ROSTER] Account %u has no bot ownership provenance; not provisioning its characters", accountId);
+            continue;
+        }
+
         sPlayerbotAIConfig->randomBotAccounts.push_back(accountId);
 
         // The classes the account already has, so a top-up creates only the missing ones (the loop ran up to
@@ -624,7 +663,7 @@ void RandomPlayerbotFactory::CreateRandomBots()
         }
 
         uint32 count = AccountMgr::GetCharactersCount(accountId);
-        if (count >= charsPerAccount)
+        if (count >= charsPerAccount || (rosterTarget && rosterCount >= rosterTarget) || (maxNew && uint32(bot_creation) >= maxNew) || provisioningStopped)
         {
             expectedChars += count;
             continue;
@@ -632,7 +671,7 @@ void RandomPlayerbotFactory::CreateRandomBots()
 
         // AC RandomPlayerbotFactory.cpp:688-713 (#627): build the name cache only when an account needs
         // characters, and leave out every name already taken
-        if (!nameCached)
+        if (!nameCached && !CuratedPlayerNames::Enabled())
         {
             nameCached = true;
             TC_LOG_INFO("playerbots", "Creating cache for names per gender and race...");
@@ -665,6 +704,8 @@ void RandomPlayerbotFactory::CreateRandomBots()
         // One character for each class the account does not have yet, while it has room
         for (uint8 cls = CLASS_WARRIOR; cls < MAX_CLASSES && count < charsPerAccount; ++cls)
         {
+            if ((rosterTarget && rosterCount >= rosterTarget) || (maxNew && uint32(bot_creation) >= maxNew))
+                break;
             if (!IsPlayableClass(cls) || existingClasses.count(cls))
                 continue;
 
@@ -677,6 +718,11 @@ void RandomPlayerbotFactory::CreateRandomBots()
             if (!playerBot)
             {
                 TC_LOG_ERROR("playerbots", "Fail to create character for account %u", accountId);
+                if (CuratedPlayerNames::Enabled() && CuratedPlayerNames::Exhausted())
+                {
+                    provisioningStopped = true;
+                    break;
+                }
                 continue;
             }
 
@@ -692,7 +738,13 @@ void RandomPlayerbotFactory::CreateRandomBots()
             session->SetPlayer(nullptr);
 
             ++count;
+            ++rosterCount;
             bot_creation++;
+            if (uint32(bot_creation) % batchSize == 0)
+            {
+                TC_LOG_INFO("playerbots", "[ROSTER] Queued %u/%u bot characters; batch %u", rosterCount, rosterTarget, uint32(bot_creation) / batchSize);
+                std::this_thread::sleep_for(std::chrono::milliseconds(batchPause));
+            }
         }
 
         expectedChars += count;
@@ -737,6 +789,8 @@ void RandomPlayerbotFactory::CreateRandomBots()
         totalRandomBotChars += AccountMgr::GetCharactersCount(accountId);
 
     TC_LOG_INFO("server.loading", ">> %u random bot accounts with %u characters available", uint32(sPlayerbotAIConfig->randomBotAccounts.size()), totalRandomBotChars);
+    if (CuratedPlayerNames::Enabled())
+        TC_LOG_INFO("playerbots", "[CURATED] Preferred-bucket fallbacks: %u", CuratedPlayerNames::HintFallbacks());
 }
 
 // #611 item 4: AC Bot/Factory/RandomPlayerbotFactory.cpp:774-803 (Query("{}") -> PQuery("%u"); Get<T>() -> GetUInt32()/GetString()).

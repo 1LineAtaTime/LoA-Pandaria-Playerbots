@@ -1,0 +1,7 @@
+{
+  "pin": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "source_sha256": "48ee2d3e3f7e4600c99a62ba43cf5095c4b669eb3a853424ddb6e32ecf4db9c4",
+  "source": "src/server/scripts/Kalimdor/zone_darkshore.cpp",
+  "status": "prepared, pending compilation and matched content migration",
+  "local_before": "empty AddSC_darkshore; no local behavior replaced"
+}

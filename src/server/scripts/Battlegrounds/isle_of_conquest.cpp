@@ -17,6 +17,7 @@
 
 #include "ScriptPCH.h"
 #include "ScriptMgr.h"
+#include "CatapultLaunchPolicy.h"
 #include "ScriptedCreature.h"
 #include "PassiveAI.h"
 #include "BattlegroundIC.h"
@@ -339,14 +340,20 @@ class spell_ioc_launch : public SpellScript
 
         if (Player* player = GetHitPlayer())
         {
-            GetCaster()->CastSpell(GetCaster(), SPELL_LAUNCH_NO_FALLING_DAMAGE_AURA, true);
-
             ObjectGuid vehicleGUID = GetCaster()->GetGUID();
             SpellCastTargets targets = GetSpell()->m_targets;
+            Position const* destination = targets.GetDstPos();
+            if (!CatapultLaunchPolicy::Valid(targets.HasDst(), destination->GetPositionX(), destination->GetPositionY(),
+                    destination->GetPositionZ(), targets.GetSpeedXY(), targets.GetSpeedZ()))
+            {
+                TC_LOG_ERROR("scripts", "Catapult launch spell %u has no valid destination/trajectory; keeping passenger seated", spell->Id);
+                return;
+            }
+            GetCaster()->CastSpell(GetCaster(), SPELL_LAUNCH_NO_FALLING_DAMAGE_AURA, true);
             player->m_Events.Schedule(1500, [player, vehicleGUID, targets]()
             {
                 Unit* vehicle = ObjectAccessor::GetUnit(*player, vehicleGUID);
-                if (!vehicle || !player->IsOnVehicle(vehicle) || vehicle->GetVehicleKit()->GetPassenger(1) != player)
+                if (!vehicle || !player->IsOnVehicle(vehicle) || !vehicle->GetVehicleKit() || vehicle->GetVehicleKit()->GetPassenger(1) != player)
                     return;
 
                 player->ExitVehicle();

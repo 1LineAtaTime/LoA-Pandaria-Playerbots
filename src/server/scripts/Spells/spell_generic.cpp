@@ -4709,78 +4709,57 @@ class spell_gen_rocket_barrage : public SpellScript
     }
 };
 
+// Glyph ability grants adapted from MoP GPL source (WoWCircle5.4.7,
+// 577c19c5, spell_druid.cpp / spell_rogue.cpp). Use dependent spells so
+// glyph-granted abilities do not become permanent character spell records.
+template<uint32 GrantedSpell>
+class spell_gen_glyph_granted_ability : public AuraScript
+{
+    PrepareAuraScript(spell_gen_glyph_granted_ability);
+
+    bool Validate(SpellInfo const*) override
+    {
+        return sSpellMgr->GetSpellInfo(GrantedSpell) != nullptr;
+    }
+
+    bool Load() override { return GetUnitOwner()->ToPlayer() != nullptr; }
+
+    void HandleApply(AuraEffect const*, AuraEffectHandleModes)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player->HasSpell(GrantedSpell))
+            player->LearnSpell(GrantedSpell, true);
+    }
+
+    void HandleRemove(AuraEffect const*, AuraEffectHandleModes)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        auto const& spells = player->GetSpellMap();
+        auto itr = spells.find(GrantedSpell);
+        // Preserve an independently learned (for example administrator) spell.
+        if (itr != spells.end() && itr->second->dependent && itr->second->state != PLAYERSPELL_REMOVED)
+            player->RemoveSpell(GrantedSpell, false, false);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_gen_glyph_granted_ability::HandleApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_gen_glyph_granted_ability::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+void AddSC_skyfire27_generic();
+void AddSC_skyfire27_mastery();
+void AddSC_skyfire27_archaeology();
+
 void AddSC_generic_spell_scripts()
 {
-    new aura_script<spell_gen_absorb0_hitlimit1>("spell_gen_absorb0_hitlimit1");
-    new aura_script<spell_gen_adaptive_warding>("spell_gen_adaptive_warding");
-    new aura_script<spell_gen_alchemist_stone>("spell_gen_alchemist_stone");
-    new spell_script<spell_gen_allow_cast_from_item_only>("spell_gen_allow_cast_from_item_only");
-    new aura_script<spell_gen_animal_blood>("spell_gen_animal_blood");
+    new spell_gen_nightmare_vine();
     new spell_script<spell_spawn_blood_pool>("spell_spawn_blood_pool");
-    new aura_script<spell_gen_aura_of_anger>("spell_gen_aura_of_anger");
-    new aura_script<spell_gen_aura_service_uniform>("spell_gen_aura_service_uniform");
-    new aura_script<spell_gen_av_drekthar_presence>("spell_gen_av_drekthar_presence");
-    new spell_script<spell_gen_bandage>("spell_gen_bandage");
-    new spell_script<spell_gen_bonked>("spell_gen_bonked");
-    new spell_gen_break_shield("spell_gen_break_shield");
-    new spell_gen_break_shield("spell_gen_tournament_counterattack");
-    new aura_script<spell_gen_burn_brutallus>("spell_gen_burn_brutallus");
-    new spell_script<spell_gen_cannibalize>("spell_gen_cannibalize");
-    new spell_script<spell_gen_chaos_blast>("spell_gen_chaos_blast");
-    new spell_script<spell_gen_clone>("spell_gen_clone");
-    new spell_script<spell_gen_clone_weapon>("spell_gen_clone_weapon");
-    new spell_gen_clone_weapon_aura();
-    new spell_gen_count_pct_from_max_hp("spell_gen_default_count_pct_from_max_hp");
-    new spell_gen_count_pct_from_max_hp("spell_gen_50pct_count_pct_from_max_hp", 50);
-    new spell_gen_create_lance();
-    new spell_gen_creature_permanent_feign_death();
-    new spell_gen_dalaran_disguise("spell_gen_sunreaver_disguise");
-    new spell_gen_dalaran_disguise("spell_gen_silver_covenant_disguise");
-    new spell_gen_despawn_self();
-    new spell_gen_divine_storm_cd_reset();
-    new spell_gen_ds_flush_knockback();
-    new spell_gen_dummy_trigger();
-    new spell_gen_dungeon_credit();
-    new spell_gen_elune_candle();
-    new spell_gen_fishing();
-    new spell_gen_gadgetzan_transporter_backfire();
-    new aura_script<spell_gen_gift_of_naaru>("spell_gen_gift_of_naaru");
-    new spell_gen_gnomish_transporter();
-    new spell_gen_interrupt();
-    new spell_gen_lifebloom("spell_hexlord_lifebloom", SPELL_HEXLORD_MALACRASS_LIFEBLOOM_FINAL_HEAL);
-    new spell_gen_lifebloom("spell_tur_ragepaw_lifebloom", SPELL_TUR_RAGEPAW_LIFEBLOOM_FINAL_HEAL);
-    new spell_gen_lifebloom("spell_cenarion_scout_lifebloom", SPELL_CENARION_SCOUT_LIFEBLOOM_FINAL_HEAL);
-    new spell_gen_lifebloom("spell_twisted_visage_lifebloom", SPELL_TWISTED_VISAGE_LIFEBLOOM_FINAL_HEAL);
-    new spell_gen_lifebloom("spell_faction_champion_dru_lifebloom", SPELL_FACTION_CHAMPIONS_DRU_LIFEBLOOM_FINAL_HEAL);
-    new spell_gen_mounted_charge();
-    new spell_gen_netherbloom();
-    new spell_gen_obsidian_armor();
-    new spell_gen_on_tournament_mount();
-    new spell_gen_oracle_wolvar_reputation();
-    new spell_gen_orc_disguise();
-    new spell_gen_parachute();
-    new spell_gen_remove_flight_auras();
     new spell_gen_replenishment();
     // Running Wild
-    new spell_gen_running_wild();
-    new spell_gen_two_forms();
-    new spell_gen_darkflight();
     /*                          */
     new spell_gen_seaforium_blast();
-    new spell_gen_spectator_cheer_trigger();
-    new spell_gen_spirit_healer_res();
-    new spell_gen_summon_elemental("spell_gen_summon_fire_elemental", SPELL_SUMMON_FIRE_ELEMENTAL);
-    new spell_gen_summon_elemental("spell_gen_summon_earth_elemental", SPELL_SUMMON_EARTH_ELEMENTAL);
-    new spell_gen_summon_tournament_mount();
-    new spell_gen_tournament_duel();
-    new spell_gen_tournament_pennant();
-    new spell_script<spell_pvp_trinket_wotf_shared_cd>("spell_pvp_trinket_wotf_shared_cd");
-    new aura_script<spell_gen_turkey_marker>("spell_gen_turkey_marker");
-    new spell_script<spell_gen_upper_deck_create_foam_sword>("spell_gen_upper_deck_create_foam_sword");
-    new spell_gen_vehicle_scaling();
-    new spell_gen_vendor_bark_trigger();
-    new spell_gen_wg_water();
-    new spell_gen_whisper_gulch_yogg_saron_whisper();
     new spell_gen_survey();
     new spell_gen_searching_for_artifacts();
 
@@ -4791,7 +4770,6 @@ void AddSC_generic_spell_scripts()
     new aura_script<spell_gen_the_quick_and_the_dead>("spell_gen_the_quick_and_the_dead");
     new spell_script<spell_gen_mass_resurrection>("spell_gen_mass_resurrection");
     new spell_script<spell_gen_item_crafted_kill_credit>("spell_gen_item_crafted_kill_credit");
-    new spell_script<spell_gen_profession_research>("spell_gen_profession_research");
     new spell_script<spell_gen_jewelcrafting_research>("spell_gen_jewelcrafting_research");
     new spell_script<spell_gen_scroll_of_wisdom>("spell_gen_scroll_of_wisdom");
     new spell_script<spell_gen_banquet_of_the_x>("spell_gen_banquet_of_the_x");
@@ -4823,4 +4801,11 @@ void AddSC_generic_spell_scripts()
     new aura_script<spell_gen_surgical_alterations>("spell_gen_surgical_alterations");
     new spell_script<spell_gen_deserter>("spell_gen_deserter");
 	new spell_script<spell_gen_rocket_barrage>("spell_gen_rocket_barrage");
+    new aura_script<spell_gen_glyph_granted_ability<56814>>("spell_rog_glyph_of_detection");
+    new aura_script<spell_gen_glyph_granted_ability<127757>>("spell_druid_glyph_of_charm_woodland_creature");
+    new aura_script<spell_gen_glyph_granted_ability<132157>>("spell_pri_glyph_of_holy_nova");
+    new aura_script<spell_gen_glyph_granted_ability<125050>>("spell_hun_glyph_of_fetch");
+    AddSC_skyfire27_generic();
+    AddSC_skyfire27_mastery();
+    AddSC_skyfire27_archaeology();
 }

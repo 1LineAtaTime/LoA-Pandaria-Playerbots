@@ -1,0 +1,199 @@
+id,name,comparison,behavior
+15757,Second Wind,client_asset_present,not_evaluated
+15758,Impending Victory,client_asset_present,not_evaluated
+15759,Bladestorm,client_asset_present,not_evaluated
+15760,Shockwave,client_asset_present,not_evaluated
+15765,Mass Spell Reflection,client_asset_present,not_evaluated
+15766,Safeguard,client_asset_present,not_evaluated
+15768,Staggering Shout,client_asset_present,not_evaluated
+15769,Piercing Howl,client_asset_present,not_evaluated
+15770,Disrupting Shout,client_asset_present,not_evaluated
+15774,Warbringer,client_asset_present,not_evaluated
+15775,Juggernaut,client_asset_present,not_evaluated
+16011,Presence of Mind,client_asset_present,not_evaluated
+16012,Blazing Speed,client_asset_present,not_evaluated
+16013,Ice Floes,client_asset_present,not_evaluated
+16019,Ring of Frost,client_asset_present,not_evaluated
+16020,Ice Ward,client_asset_present,not_evaluated
+16021,Frostjaw,client_asset_present,not_evaluated
+16023,Temporal Shield,client_asset_present,not_evaluated
+16024,Flameglow,client_asset_present,not_evaluated
+16025,Ice Barrier,client_asset_present,not_evaluated
+16027,Greater Invisibility,client_asset_present,not_evaluated
+16028,Cauterize,client_asset_present,not_evaluated
+16029,Cold Snap,client_asset_present,not_evaluated
+16031,Invocation,client_asset_present,not_evaluated
+16032,Rune of Power,client_asset_present,not_evaluated
+16033,Incanter's Ward,client_asset_present,not_evaluated
+16035,Double Time,client_asset_present,not_evaluated
+16036,Enraged Regeneration,client_asset_present,not_evaluated
+16037,Dragon Roar,client_asset_present,not_evaluated
+17565,Speed of Light,client_asset_present,not_evaluated
+17567,Long Arm of the Law,client_asset_present,not_evaluated
+17569,Pursuit of Justice,client_asset_present,not_evaluated
+17573,Fist of Justice,client_asset_present,not_evaluated
+17575,Repentance,client_asset_present,not_evaluated
+17577,Evil is a Point of View,client_asset_present,not_evaluated
+17581,Selfless Healer,client_asset_present,not_evaluated
+17583,Eternal Flame,client_asset_present,not_evaluated
+17589,Hand of Purity,client_asset_present,not_evaluated
+17591,Unbreakable Spirit,client_asset_present,not_evaluated
+17593,Clemency,client_asset_present,not_evaluated
+17597,Holy Avenger,client_asset_present,not_evaluated
+17599,Sanctified Wrath,client_asset_present,not_evaluated
+17601,Divine Purpose,client_asset_present,not_evaluated
+17605,Holy Prism,client_asset_present,not_evaluated
+17607,Light's Hammer,client_asset_present,not_evaluated
+17609,Execution Sentence,client_asset_present,not_evaluated
+18569,Feline Swiftness,client_asset_present,not_evaluated
+18570,Displacer Beast,client_asset_present,not_evaluated
+18571,Wild Charge,client_asset_present,not_evaluated
+18572,Ysera's Gift,client_asset_present,not_evaluated
+18574,Cenarion Ward,client_asset_present,not_evaluated
+18575,Faerie Swarm,client_asset_present,not_evaluated
+18576,Mass Entanglement,client_asset_present,not_evaluated
+18577,Typhoon,client_asset_present,not_evaluated
+18579,Incarnation,client_asset_present,not_evaluated
+18580,Force of Nature,client_asset_present,not_evaluated
+18581,Disorienting Roar,client_asset_present,not_evaluated
+18582,Ursol's Vortex,client_asset_present,not_evaluated
+18583,Mighty Bash,client_asset_present,not_evaluated
+18584,Heart of the Wild,client_asset_present,not_evaluated
+18585,Dream of Cenarius,client_asset_present,not_evaluated
+18586,Nature's Vigil,client_asset_present,not_evaluated
+19138,Avatar,client_asset_present,not_evaluated
+19139,Bloodbath,client_asset_present,not_evaluated
+19140,Storm Bolt,client_asset_present,not_evaluated
+19165,Roiling Blood,client_asset_present,not_evaluated
+19166,Plague Leech,client_asset_present,not_evaluated
+19217,Unholy Blight,client_asset_present,not_evaluated
+19218,Lichborne,client_asset_present,not_evaluated
+19219,Anti-Magic Zone,client_asset_present,not_evaluated
+19220,Purgatory,client_asset_present,not_evaluated
+19221,Death's Advance,client_asset_present,not_evaluated
+19222,Chilblains,client_asset_present,not_evaluated
+19223,Asphyxiate,client_asset_present,not_evaluated
+19224,Death Pact,client_asset_present,not_evaluated
+19225,Death Siphon,client_asset_present,not_evaluated
+19226,Blood Tap,client_asset_present,not_evaluated
+19227,Runic Empowerment,client_asset_present,not_evaluated
+19228,Runic Corruption,client_asset_present,not_evaluated
+19229,Conversion,client_asset_present,not_evaluated
+19230,Gorefiend's Grasp,client_asset_present,not_evaluated
+19231,Remorseless Winter,client_asset_present,not_evaluated
+19232,Desecrated Ground,client_asset_present,not_evaluated
+19233,Nightstalker,client_asset_present,not_evaluated
+19234,Subterfuge,client_asset_present,not_evaluated
+19235,Shadow Focus,client_asset_present,not_evaluated
+19236,Deadly Throw,client_asset_present,not_evaluated
+19237,Nerve Strike,client_asset_present,not_evaluated
+19238,Combat Readiness,client_asset_present,not_evaluated
+19239,Cheat Death,client_asset_present,not_evaluated
+19240,Leeching Poison,client_asset_present,not_evaluated
+19241,Elusiveness,client_asset_present,not_evaluated
+19242,Cloak and Dagger,client_asset_present,not_evaluated
+19243,Shadowstep,client_asset_present,not_evaluated
+19244,Burst of Speed,client_asset_present,not_evaluated
+19245,Prey on the Weak,client_asset_present,not_evaluated
+19246,Paralytic Poison,client_asset_present,not_evaluated
+19247,Dirty Tricks,client_asset_present,not_evaluated
+19248,Shuriken Toss,client_asset_present,not_evaluated
+19249,Marked for Death,client_asset_present,not_evaluated
+19250,Anticipation,client_asset_present,not_evaluated
+19259,Frozen Power,client_asset_present,not_evaluated
+19260,Earthgrab Totem,client_asset_present,not_evaluated
+19261,Windwalk Totem,client_asset_present,not_evaluated
+19262,Nature's Guardian,client_asset_present,not_evaluated
+19263,Stone Bulwark Totem,client_asset_present,not_evaluated
+19264,Astral Shift,client_asset_present,not_evaluated
+19265,Unleashed Fury,client_asset_present,not_evaluated
+19266,Primal Elementalist,client_asset_present,not_evaluated
+19267,Elemental Blast,client_asset_present,not_evaluated
+19268,Rushing Streams,client_asset_present,not_evaluated
+19269,Ancestral Guidance,client_asset_present,not_evaluated
+19270,Conductivity,client_asset_present,not_evaluated
+19271,Elemental Mastery,client_asset_present,not_evaluated
+19272,Ancestral Swiftness,client_asset_present,not_evaluated
+19273,Echo of the Elements,client_asset_present,not_evaluated
+19274,Totemic Persistence,client_asset_present,not_evaluated
+19275,Call of the Elements,client_asset_present,not_evaluated
+19276,Totemic Projection,client_asset_present,not_evaluated
+19279,Dark Regeneration,client_asset_present,not_evaluated
+19280,Soul Leech,client_asset_present,not_evaluated
+19281,Harvest Life,client_asset_present,not_evaluated
+19283,Renewal,client_asset_present,not_evaluated
+19284,Demonic Breath,client_asset_present,not_evaluated
+19285,Mortal Coil,client_asset_present,not_evaluated
+19286,Shadowfury,client_asset_present,not_evaluated
+19287,Soul Link,client_asset_present,not_evaluated
+19288,Sacrificial Pact,client_asset_present,not_evaluated
+19289,Dark Bargain,client_asset_present,not_evaluated
+19290,Blood Horror,client_asset_present,not_evaluated
+19291,Burning Rush,client_asset_present,not_evaluated
+19292,Unbound Will,client_asset_present,not_evaluated
+19293,Grimoire of Supremacy,client_asset_present,not_evaluated
+19294,Grimoire of Service,client_asset_present,not_evaluated
+19295,Grimoire of Sacrifice,client_asset_present,not_evaluated
+19296,Archimonde's Darkness,client_asset_present,not_evaluated
+19297,Kil'jaeden's Cunning,client_asset_present,not_evaluated
+19298,Mannoroth's Fury,client_asset_present,not_evaluated
+19299,Nether Tempest,client_asset_present,not_evaluated
+19300,Living Bomb,client_asset_present,not_evaluated
+19301,Frost Bomb,client_asset_present,not_evaluated
+19302,Celerity,client_asset_present,not_evaluated
+19304,Momentum,client_asset_present,not_evaluated
+19313,Chi Torpedo,client_asset_present,not_evaluated
+19347,Binding Shot,client_asset_present,not_evaluated
+19348,Wyvern Sting,client_asset_present,not_evaluated
+19349,Barrage,client_asset_present,not_evaluated
+19350,Exhilaration,client_asset_present,not_evaluated
+19351,Spirit Bond,client_asset_present,not_evaluated
+19352,Fervor,client_asset_present,not_evaluated
+19353,Dire Beast,client_asset_present,not_evaluated
+19354,Posthaste,client_asset_present,not_evaluated
+19356,Aspect of the Iron Hawk,client_asset_present,not_evaluated
+19357,Glaive Toss,client_asset_present,not_evaluated
+19358,Powershot,client_asset_present,not_evaluated
+19359,Intimidation,client_asset_present,not_evaluated
+19360,A Murder of Crows,client_asset_present,not_evaluated
+19361,Blink Strikes,client_asset_present,not_evaluated
+19362,Lynx Rush,client_asset_present,not_evaluated
+19363,Narrow Escape,client_asset_present,not_evaluated
+19364,"Crouching Tiger, Hidden Chimera",client_asset_present,not_evaluated
+19365,Thrill of the Hunt,client_asset_present,not_evaluated
+19676,Vigilance,client_asset_present,not_evaluated
+19677,Soul of the Forest,client_asset_present,not_evaluated
+19752,Void Tendrils,client_asset_present,not_evaluated
+19753,Psyfiend,client_asset_present,not_evaluated
+19754,Dominate Mind,client_asset_present,not_evaluated
+19755,Angelic Bulwark,client_asset_present,not_evaluated
+19756,Body and Soul,client_asset_present,not_evaluated
+19757,Angelic Feather,client_asset_present,not_evaluated
+19758,Phantasm,client_asset_present,not_evaluated
+19759,"From Darkness, Comes Light",client_asset_present,not_evaluated
+19760,Divine Star,client_asset_present,not_evaluated
+19761,Solace and Insanity,client_asset_present,not_evaluated
+19762,Desperate Prayer,client_asset_present,not_evaluated
+19763,Halo,client_asset_present,not_evaluated
+19764,Twist of Fate,client_asset_present,not_evaluated
+19765,Power Infusion,client_asset_present,not_evaluated
+19766,Divine Insight,client_asset_present,not_evaluated
+19767,Cascade,client_asset_present,not_evaluated
+19768,Spectral Guise,client_asset_present,not_evaluated
+19769,Mindbender,client_asset_present,not_evaluated
+19771,Ascension,client_asset_present,not_evaluated
+19772,Chi Brew,client_asset_present,not_evaluated
+19818,Tiger's Lust,client_asset_present,not_evaluated
+19819,Rushing Jade Wind,client_asset_present,not_evaluated
+19820,Zen Sphere,client_asset_present,not_evaluated
+19823,Chi Burst,client_asset_present,not_evaluated
+19992,Power Strikes,client_asset_present,not_evaluated
+19993,Ring of Peace,client_asset_present,not_evaluated
+19994,Charging Ox Wave,client_asset_present,not_evaluated
+19995,Leg Sweep,client_asset_present,not_evaluated
+20173,Diffuse Magic,client_asset_present,not_evaluated
+20174,Healing Elixirs,client_asset_present,not_evaluated
+20175,Dampen Harm,client_asset_present,not_evaluated
+20184,"Invoke Xuen, the White Tiger",client_asset_present,not_evaluated
+20185,Chi Wave,client_asset_present,not_evaluated
+21098,Sacred Shield,client_asset_present,not_evaluated

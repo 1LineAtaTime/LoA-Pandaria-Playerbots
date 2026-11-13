@@ -1774,22 +1774,6 @@ class spell_titan_gas final : public SpellScriptLoader
     public:
         spell_titan_gas() : SpellScriptLoader("spell_titan_gas") { }
 
-        class spell_titan_gas_AuraScript final : public AuraScript
-        {
-            PrepareAuraScript(spell_titan_gas_AuraScript);
-
-            void Apply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (Unit* target = GetTarget())
-                    target->AddAura(SPELL_TITAN_GAS_AURA, target);
-            }
-
-            void Register() override final
-            {
-                OnEffectApply += AuraEffectApplyFn(spell_titan_gas_AuraScript::Apply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
         class spell_titan_gas_SpellScript final : public SpellScript
         {
             PrepareSpellScript(spell_titan_gas_SpellScript);
@@ -1805,11 +1789,6 @@ class spell_titan_gas final : public SpellScriptLoader
             }
         };
 
-        AuraScript* GetAuraScript() const override final
-        {
-            return new spell_titan_gas_AuraScript();
-        }
-
         SpellScript* GetSpellScript() const override final
         {
             return new spell_titan_gas_SpellScript();
@@ -1821,22 +1800,6 @@ class spell_titan_gas2 : public SpellScriptLoader
 {
     public:
         spell_titan_gas2() : SpellScriptLoader("spell_titan_gas2") { }
-
-        class spell_titan_gas2_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_titan_gas2_AuraScript);
-
-            void Apply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (Unit* target = GetTarget())
-                    target->AddAura(SPELL_TITAN_GAS_AURA2, target);
-            }
-
-            void Register() override
-            {
-                OnEffectApply += AuraEffectApplyFn(spell_titan_gas2_AuraScript::Apply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
 
         class spell_titan_gas2_SpellScript final : public SpellScript
         {
@@ -1852,11 +1815,6 @@ class spell_titan_gas2 : public SpellScriptLoader
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_gas2_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
-
-        AuraScript* GetAuraScript() const override final
-        {
-            return new spell_titan_gas2_AuraScript();
-        }
 
         SpellScript* GetSpellScript() const override final
         {

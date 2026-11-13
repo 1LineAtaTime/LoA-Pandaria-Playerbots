@@ -10,7 +10,12 @@
 
 # Need to pass old ${CMAKE_BINARY_DIR} as param because its different at build stage
 add_custom_target(revision.h ALL
-  COMMAND "${CMAKE_COMMAND}" -DBUILDDIR="${CMAKE_BINARY_DIR}" -P "${CMAKE_SOURCE_DIR}/cmake/genrev.cmake" "${CMAKE_BINARY_DIR}"
+  COMMAND "${CMAKE_COMMAND}"
+    "-DBUILDDIR=${CMAKE_BINARY_DIR}"
+    "-DMYSQL_EXECUTABLE=${MYSQL_EXECUTABLE}"
+    "-DCMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}"
+    "-DCMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}"
+    -P "${CMAKE_SOURCE_DIR}/cmake/genrev.cmake"
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
 

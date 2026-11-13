@@ -23,6 +23,7 @@
 #include "WorldPacket.h"
 #include "DBCEnums.h"
 #include "EnumFlag.h"
+#include "QuestDependencyPolicy.h"
 
 #include <string>
 #include <vector>
@@ -354,7 +355,7 @@ class Quest
         uint32 GetSuggestedPlayers() const { return _suggestedPlayers; }
         int64 GetLimitTime() const { return _limitTime; }
         int32  GetPrevQuestId() const { return _prevQuestID; }
-        uint32 GetNextQuestId() const { return _nextQuestID; }
+        int32 GetNextQuestId() const { return _nextQuestID; }
         int32  GetExclusiveGroup() const { return _exclusiveGroup; }
         uint32 GetNextQuestInChain() const { return _nextQuestInChain; }
         int32  GetRewArenaPoints() const {return _rewardArenaPoints; }
@@ -438,7 +439,7 @@ class Quest
         uint32 GetRewItemsCount() const { return _rewItemsCount; }
         uint32 GetRewCurrencyCount() const { return _rewCurrencyCount; }
 
-        std::vector<uint32> DependentPreviousQuests;
+        std::vector<int32> DependentPreviousQuests;
 
     private:
         uint32 _rewChoiceItemsCount;
@@ -504,7 +505,7 @@ class Quest
         uint32 _allowableClasses = 0;
         uint32 _sourceSpellID = 0;
         int32 _prevQuestID = 0;
-        uint32 _nextQuestID = 0;
+        int32 _nextQuestID = 0;
         int32 _exclusiveGroup = 0;
         uint32 _rewardMailTemplateId = 0;
         uint32 _rewardMailDelay = 0;

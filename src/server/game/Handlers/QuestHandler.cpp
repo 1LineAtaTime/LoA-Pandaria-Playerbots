@@ -490,6 +490,11 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
     if (!quest)
         return;
 
+    // Ignore duplicate acknowledgements of a nonrepeatable reward without
+    // reopening its offer dialog. Repeatable quests still use the shared gate.
+    if (_player->GetQuestRewardStatus(questId))
+        return;
+
     Object* object = _player;
     if (!quest->HasFlag(QUEST_FLAGS_AUTO_COMPLETE))
     {

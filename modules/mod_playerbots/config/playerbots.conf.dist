@@ -2912,9 +2912,11 @@ AiPlayerbot.RandomClassSpecIndex.10.3 = 3
 #
 #
 
-#    The playerbots database connection (PlayerbotsDatabaseInfo, PlayerbotsDatabase.WorkerThreads,
-#    PlayerbotsDatabase.SynchThreads) is set in worldserver.conf: the worldserver connects to its
-#    databases before this file is loaded, so settings for it here are not used.
+#    PlayerbotsDatabaseInfo and PlayerbotsDatabase thread settings belong in
+#    worldserver.conf. The core opens all database pools before this file loads.
+
+# Configure PlayerbotsDatabase.WorkerThreads, PlayerbotsDatabase.SynchThreads,
+# Updates.AutoSetup and Updates.EnableDatabases in worldserver.conf.
 
 # Command server port, 0 - disabled
 AiPlayerbot.CommandServerPort = 8888
@@ -3014,20 +3016,20 @@ AiPlayerbot.BroadcastToGuildRecruitmentGlobalChance = 30000
 #
 # individual settings
 # setting one of these to 0 will disable the particular broadcast
-AiPlayerbot.BroadcastChanceLootingItemPoor = 30
-AiPlayerbot.BroadcastChanceLootingItemNormal = 150
-AiPlayerbot.BroadcastChanceLootingItemUncommon = 10000
+AiPlayerbot.BroadcastChanceLootingItemPoor = 0
+AiPlayerbot.BroadcastChanceLootingItemNormal = 0
+AiPlayerbot.BroadcastChanceLootingItemUncommon = 500
 AiPlayerbot.BroadcastChanceLootingItemRare = 20000
 AiPlayerbot.BroadcastChanceLootingItemEpic = 30000
 AiPlayerbot.BroadcastChanceLootingItemLegendary = 30000
 AiPlayerbot.BroadcastChanceLootingItemArtifact = 30000
 #
-AiPlayerbot.BroadcastChanceQuestAccepted = 6000
-AiPlayerbot.BroadcastChanceQuestUpdateObjectiveCompleted = 300
-AiPlayerbot.BroadcastChanceQuestUpdateObjectiveProgress = 300
-AiPlayerbot.BroadcastChanceQuestUpdateFailedTimer = 300
-AiPlayerbot.BroadcastChanceQuestUpdateComplete = 1000
-AiPlayerbot.BroadcastChanceQuestTurnedIn = 10000
+AiPlayerbot.BroadcastChanceQuestAccepted = 0
+AiPlayerbot.BroadcastChanceQuestUpdateObjectiveCompleted = 0
+AiPlayerbot.BroadcastChanceQuestUpdateObjectiveProgress = 0
+AiPlayerbot.BroadcastChanceQuestUpdateFailedTimer = 0
+AiPlayerbot.BroadcastChanceQuestUpdateComplete = 0
+AiPlayerbot.BroadcastChanceQuestTurnedIn = 0
 #
 AiPlayerbot.BroadcastChanceKillNormal = 30
 AiPlayerbot.BroadcastChanceKillElite = 300
@@ -3043,7 +3045,7 @@ AiPlayerbot.BroadcastChanceLevelupTenX = 30000
 AiPlayerbot.BroadcastChanceLevelupMaxLevel = 30000
 #
 AiPlayerbot.BroadcastChanceSuggestInstance = 5000
-AiPlayerbot.BroadcastChanceSuggestQuest = 10000
+AiPlayerbot.BroadcastChanceSuggestQuest = 250
 AiPlayerbot.BroadcastChanceSuggestGrindMaterials = 5000
 AiPlayerbot.BroadcastChanceSuggestGrindReputation = 5000
 AiPlayerbot.BroadcastChanceSuggestSell = 300
@@ -3148,3 +3150,56 @@ AiPlayerbot.TargetPosRecalcDistance = 0.1
 
 # Allow bots to be summoned near innkeepers
 AiPlayerbot.SummonAtInnkeepersEnabled = 1
+
+# Player-controlled companions: server-enforced, independent of the addon.
+# Rank: 0 player, 1 moderator, 2 GM, 3 administrator. Existing command RBAC still applies.
+AiPlayerbot.Companion.MinLevel = 60
+AiPlayerbot.Companion.MinSecurity = 0
+AiPlayerbot.Companion.GMBypass = 1
+AiPlayerbot.Companion.MaxBots = 39
+# City visits use existing movement/pathfinding, with bounded pauses and retries.
+AiPlayerbot.CityLife.Enable = 1
+AiPlayerbot.CityLife.CampChance = 50
+AiPlayerbot.CityLife.PauseMinSeconds = 8
+AiPlayerbot.CityLife.PauseMaxSeconds = 25
+
+# Player-controlled bots loot coins only, pass item rolls, and never reserve round-robin items.
+AiPlayerbot.Companion.GoldOnlyLoot = 1
+
+# Suppress routine hello/goodbye messages.
+AiPlayerbot.Companion.SilentGreetings = 1
+
+# Optional imported candidate pool. Apply the character naming schema and import CSV first.
+# These defaults preserve upstream behavior; enable explicitly on a prepared realm.
+AiPlayerbot.CuratedNames.Enable = 0
+# Total stored bot roster; 0 keeps the account-based limit. Does not set online population.
+AiPlayerbot.RandomBotRosterTarget = 0
+AiPlayerbot.Provision.BatchSize = 100
+AiPlayerbot.Provision.BatchPauseMs = 100
+# Optional dynamic online ramp, capped by MaxRandomBots. 0 uses normal min/max.
+AiPlayerbot.OnlineTargetOverride = 0
+
+# Optional resumable startup budget; 0 provisions the full missing roster.
+AiPlayerbot.Provision.MaxNewPerStartup = 0
+
+# Companion communication, votes and item-loot policy.
+AiPlayerbot.Companion.RoutineMessages = 0
+AiPlayerbot.Companion.FollowLeaderVotes = 1
+AiPlayerbot.Companion.RemoveOfflineBots = 1
+AiPlayerbot.Companion.LeaderLootControl = 1
+
+# Occasional social dungeon party chat; routine companion whispers remain disabled.
+AiPlayerbot.Companion.PartyFlavor = 1
+AiPlayerbot.Companion.PartyFlavorInterval = 300
+
+AiPlayerbot.Chat.ChannelMinInterval = 30
+
+AiPlayerbot.Chat.ChannelMaxInterval = 60
+
+AiPlayerbot.Chat.PerBotInterval = 300
+
+AiPlayerbot.Chat.RepeatWindow = 1800
+
+# Bounded Dalaran surface visitors from idle, unobserved level70+ random bots.
+AiPlayerbot.CityLife.DalaranTarget = 24
+AiPlayerbot.CityLife.VisitSeconds = 1200

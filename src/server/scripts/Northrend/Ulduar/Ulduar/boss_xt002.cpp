@@ -1112,10 +1112,15 @@ class spell_xt002_heart_overload_periodic : public SpellScriptLoader
                 {
                     if (InstanceScript* instance = caster->GetInstanceScript())
                     {
+                        // The heart's periodic callback can outlive its vehicle
+                        // attachment during phase transitions or teardown.
+                        Unit* vehicle = caster->GetVehicleBase();
+                        if (!vehicle)
+                            return;
                         std::vector<Unit*> piles;
                         for (uint32 i = 0; i < 4; ++i)
                             if (Unit* toyPile = ObjectAccessor::GetUnit(*caster, instance->GetGuidData(DATA_TOY_PILE_0 + i)))
-                                if (caster->GetVehicleBase()->GetExactDist2d(toyPile) > 30.0f)
+                                if (vehicle->GetExactDist2d(toyPile) > 30.0f)
                                     piles.push_back(toyPile);
 
                         if (!piles.empty())

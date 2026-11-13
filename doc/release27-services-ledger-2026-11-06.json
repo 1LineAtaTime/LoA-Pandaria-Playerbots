@@ -1,0 +1,41 @@
+{
+  "upstream": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "sources": [
+    {
+      "file": "2026_08_26_world_01.sql",
+      "sha256": "b4c9f45c5ffb1d514d967fd4f5a53d6ba9f8f679581d545b0e61f6382c149b5f",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    },
+    {
+      "file": "2026_08_26_world_07.sql",
+      "sha256": "173000ff84dab773590d1746a2a72ebe2ee0208823d4aec9c64178d702ff808b",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    },
+    {
+      "file": "2026_09_01_world_00.sql",
+      "sha256": "ac340eb842f1b0971b9f3f637e7854c56cf2dd05dc04d314e9e282df447b3495",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    },
+    {
+      "file": "2026_09_21_world_01.sql",
+      "sha256": "4b2347ec02a446985e05f2ffac19ec0b3df8cbe4a6f2cb5f86c5e92b2b720e71",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    },
+    {
+      "file": "2026_09_21_world_02.sql",
+      "sha256": "108cabdfc724e128e6849be5e6fd2bccc2e7cddea9c27997e9d8a6b703fdcbb8",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    },
+    {
+      "file": "2026_09_21_world_06.sql",
+      "sha256": "702041c7d214850a8d5b8d1324840ae85e57301d82ea9cd303384503cf4e32a7",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    },
+    {
+      "file": "2026_09_21_world_07.sql",
+      "sha256": "62a79577b0101d0376abeb32681734fb187323d55129dad6928ca21ff5654fa0",
+      "status": "adapted data: numeric service flags/gossip gates; no new native dependency"
+    }
+  ],
+  "migration_sha256": "c7ccd60accbfb8bcd47fadb03f353522b931257972b7a2f3bc839fe692b1535c"
+}

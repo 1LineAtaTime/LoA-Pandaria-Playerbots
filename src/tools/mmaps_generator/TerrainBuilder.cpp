@@ -63,8 +63,9 @@ struct map_heightHeader
 struct map_liquidHeader
 {
     uint32 fourcc;
-    uint8 flags;
-    uint8 liquidFlags;
+    // Map format10: the extractor/server store flags as uint16, followed by
+    // either uniform liquid flags or the per-cell LiquidType/flag arrays.
+    uint16 flags;
     uint16 liquidType;
     uint8  offsetX;
     uint8  offsetY;
@@ -339,7 +340,7 @@ namespace MMAP
             else
             {
                 std::fill_n(&liquid_entry[0][0], 16 * 16, lheader.liquidType);
-                std::fill_n(&liquid_flags[0][0], 16 * 16, lheader.liquidFlags);
+                std::fill_n(&liquid_flags[0][0], 16 * 16, uint8(lheader.liquidType));
             }
 
             if (!(lheader.flags & MAP_LIQUID_NO_HEIGHT))

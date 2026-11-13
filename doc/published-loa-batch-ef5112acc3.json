@@ -1,0 +1,227 @@
+{
+  "base": "68f80984313dc15a6144d4e91c325632810a488d",
+  "tip": "ef5112acc3331f7a38bc090edae887320696cac3",
+  "affected_tables": [
+    "conditions",
+    "creature",
+    "creature_addon",
+    "creature_loot_template",
+    "creature_queststarter",
+    "creature_template",
+    "creature_template_addon",
+    "event_scripts",
+    "game_event_creature",
+    "gameobject",
+    "gossip_menu_option",
+    "npc_vendor",
+    "pool_creature",
+    "pool_gameobject",
+    "pool_pool",
+    "pool_template",
+    "quest_details",
+    "quest_offer_reward",
+    "quest_poi",
+    "quest_request_items",
+    "quest_template",
+    "quest_template_addon",
+    "smart_scripts",
+    "waypoint_data"
+  ],
+  "repeat_stable": true,
+  "status": "DEPLOYED_NATIVE_PAIR",
+  "native_source": "94dfb31e1d77b3874c3e428ebd0f76881a3ba7b7",
+  "world_exe_sha256": "9d3792712b5c025ff48e08d6f576c6a0e566fe2d318fdeffb052d772b38cdd39",
+  "upstream_commits": 45,
+  "sql_files": 41,
+  "native_ctests_passed": 24,
+  "deployment_data_checks_passed": 7,
+  "all_content_certified": false,
+  "source_files": [
+    {
+      "path": "sql/updates/world/2026_11_07_60_world.sql",
+      "git_blob": "f4181865cf308183d19625535767f6f7398e83c8"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_61_world.sql",
+      "git_blob": "5cc3950b8a2fbb850bb4c2d2ed7be1b4f05cb1c3"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_62_world.sql",
+      "git_blob": "dab3e49007bbcd601c1d4241a88d2d9c47d8a4df"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_63_world.sql",
+      "git_blob": "91ced0a66a13ae368e88f0516fc9e4c190e899d3"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_64_world.sql",
+      "git_blob": "5f8b330719d064fad8705a1a30d0a531bc1959c7"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_65_world.sql",
+      "git_blob": "8f23e2b3a834939e1c9d761f0314c3e327b21554"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_67_world.sql",
+      "git_blob": "68408ccd3365015249e47887abfce16cc4795708"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_68_world.sql",
+      "git_blob": "851d9fa5fe0c561328dc1c34cf852fcc86328423"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_69_world.sql",
+      "git_blob": "bfc641f937017daef2af97612975361d0bcbdfc6"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_70_world.sql",
+      "git_blob": "77af0594efb223150a37c4778f705208610e849e"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_71_world.sql",
+      "git_blob": "0d716b193a73731678a4a3191dd2090f29439d72"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_72_world.sql",
+      "git_blob": "583339cae0ca8bbf4b89333b713f0beac0ef57c3"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_73_world.sql",
+      "git_blob": "607de04c49180ae90ef21d1f4e312ea9567766d5"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_74_world.sql",
+      "git_blob": "3d02882c9b54e7a4c8840bb786869e561ddc0b70"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_75_world.sql",
+      "git_blob": "4cce8d6fd90a75f3a5d1877f13b539b76db98aef"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_76_world.sql",
+      "git_blob": "28eb09ea0b15e47466f90574c203b172c422c0ef"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_77_world.sql",
+      "git_blob": "93ba393516d0aecbd4889def8a5ebcf63de1eea8"
+    },
+    {
+      "path": "sql/updates/world/2026_11_07_78_world.sql",
+      "git_blob": "a2f4d5ee2b2d4f76f353c12ec489c0e0f111814c"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_10_world.sql",
+      "git_blob": "eb8d9249d920d7ea5b67fec508a54e478b29f03b"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_11_world.sql",
+      "git_blob": "f988e55a87f38a1f4ed673c3fb27526970f08f5f"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_12_world.sql",
+      "git_blob": "11cf21c58211fa7398fdea87ce60d4b26c1288be"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_20_world.sql",
+      "git_blob": "68ef1c2d07ec9b2a500b24b48b5164360acc8f09"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_21_world.sql",
+      "git_blob": "532a42aacfa23da8d2c5556772d497eabcf7b334"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_22_world.sql",
+      "git_blob": "bddab504e907a9e10f2d3e53f9882672298cf7e8"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_23_world.sql",
+      "git_blob": "9c033fd9ace0eaa5a3b1c02447598188b802da15"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_24_world.sql",
+      "git_blob": "f1d64acebd15b72223b8c43c036f8c19d6c8f335"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_25_world.sql",
+      "git_blob": "f7917a91959e0f9f2394bb9af733a51be1f2c711"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_26_world.sql",
+      "git_blob": "ace0b24f7ee427d7472cdc1a36b4e90db1365cd0"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_27_world.sql",
+      "git_blob": "865d66ed265b5b91b77102a72c8d1bea3a381fee"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_28_world.sql",
+      "git_blob": "493ff1d9aa0f6472bbc7d1833f822775fce42d55"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_29_world.sql",
+      "git_blob": "c948a67b6e909072332145f3d9448d973d81b5ca"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_30_world.sql",
+      "git_blob": "4d1065a12ca018eca44d59630fecb2e9972d7aeb"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_31_world.sql",
+      "git_blob": "6da709d7ae42edc3cdf9d9847dc55ea876e41aa0"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_32_world.sql",
+      "git_blob": "8fdcc6aacc6ba8154709f2799609f21d781f8ac8"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_33_world.sql",
+      "git_blob": "00fe283b28b32e6fa72038f50057e84040867c7f"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_34_world.sql",
+      "git_blob": "f57747c66fe49bd918c6cc240711181f23c73378"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_35_world.sql",
+      "git_blob": "b3764ade2fc657c3eb9442e9f130630466e5305d"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_36_world.sql",
+      "git_blob": "a336e5edcd76e9468faec3ef6b85dd715fd7a994"
+    },
+    {
+      "path": "sql/updates/world/2026_11_09_01_world.sql",
+      "git_blob": "f913aaacc30285e20c1553a46c6c2054b1084722"
+    },
+    {
+      "path": "sql/updates/world/2026_11_09_02_world.sql",
+      "git_blob": "f9311eb1a8e8ecdf3eecc69f933ba4f058753c9c"
+    },
+    {
+      "path": "sql/updates/world/2026_11_09_10_world.sql",
+      "git_blob": "ff3c2d1ae4d03526d28a5b656e54e0de0f3b0dae"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "worldserver.exe",
+      "bytes": 72936448,
+      "sha256": "9d3792712b5c025ff48e08d6f576c6a0e566fe2d318fdeffb052d772b38cdd39"
+    },
+    {
+      "name": "worldserver.pdb",
+      "bytes": 705449984,
+      "sha256": "fcda4a43fff2935a4f9fdbf9cc99f02b256968f352616d670626394bb360e85e"
+    },
+    {
+      "name": "authserver.exe",
+      "bytes": 3310080,
+      "sha256": "1a9e31e17c84e526e65a85c0fe341f5360a70e13d78163769229c35388ad02b2"
+    },
+    {
+      "name": "authserver.pdb",
+      "bytes": 50704384,
+      "sha256": "eba831959a6246207a27f0743e6394958a3339e20ef3939984b8ac085e6b1939"
+    }
+  ]
+}

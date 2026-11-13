@@ -1,0 +1,26 @@
+id,name,comparison,behavior
+1,Alterac Valley,client_asset_present,not_evaluated
+2,Warsong Gulch,client_asset_present,not_evaluated
+3,Arathi Basin,client_asset_present,not_evaluated
+4,Nagrand Arena,client_asset_present,not_evaluated
+5,Blade's Edge Arena,client_asset_present,not_evaluated
+6,All Arenas,client_asset_present,not_evaluated
+7,Eye of the Storm,client_asset_present,not_evaluated
+8,Ruins of Lordaeron,client_asset_present,not_evaluated
+9,Strand of the Ancients,client_asset_present,not_evaluated
+10,Dalaran Sewers,client_asset_present,not_evaluated
+11,The Ring of Valor,client_asset_present,not_evaluated
+30,Isle of Conquest,client_asset_present,not_evaluated
+32,Random Battleground,client_asset_present,not_evaluated
+100,Rated Battleground,client_asset_present,not_evaluated
+101,Rated Battleground,client_asset_present,not_evaluated
+102,Rated Battleground,client_asset_present,not_evaluated
+108,Twin Peaks,client_asset_present,not_evaluated
+120,The Battle for Gilneas,client_asset_present,not_evaluated
+656,Rated Eye of the Storm,client_asset_present,not_evaluated
+699,Temple of Kotmogu,client_asset_present,not_evaluated
+706,CTF3,client_asset_present,not_evaluated
+708,Silvershard Mines,client_asset_present,not_evaluated
+719,Tol'Viron Arena,client_asset_present,not_evaluated
+754,Deepwind Gorge,client_asset_present,not_evaluated
+757,The Tiger's Peak,client_asset_present,not_evaluated

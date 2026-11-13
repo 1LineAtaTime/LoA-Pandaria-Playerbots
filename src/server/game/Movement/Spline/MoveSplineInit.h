@@ -137,7 +137,7 @@ namespace Movement
          * Has no effect if falling mode enabled
          * velocity shouldn't be negative
          */
-        void SetVelocity(float velocity);
+        void SetVelocity(float velocity, char const* source = "unspecified_script");
 
         PointsArray& Path() { return args.path; }
 
@@ -155,7 +155,7 @@ namespace Movement
     inline void MoveSplineInit::SetSmooth() { args.flags.EnableCatmullRom(); }
     inline void MoveSplineInit::SetUncompressed() { args.flags.uncompressedPath = true; }
     inline void MoveSplineInit::SetCyclic() { args.flags.cyclic = true; }
-    inline void MoveSplineInit::SetVelocity(float vel) { args.velocity = vel; args.HasVelocity = true; }
+    inline void MoveSplineInit::SetVelocity(float vel, char const* source) { args.velocity = vel; args.HasVelocity = true; args.velocitySource = source; }
     inline void MoveSplineInit::SetOrientationInversed() { args.flags.orientationInversed = true;}
     inline void MoveSplineInit::SetTransportEnter() { args.flags.EnableTransportEnter(); }
     inline void MoveSplineInit::SetTransportExit() { args.flags.EnableTransportExit(); }

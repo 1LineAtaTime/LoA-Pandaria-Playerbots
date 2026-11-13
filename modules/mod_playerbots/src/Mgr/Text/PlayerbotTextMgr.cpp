@@ -25,6 +25,55 @@ namespace
 {
     // ai_playerbot_texts has text + text_loc1..text_loc8 = 9 locale columns (AC TOTAL_LOCALES = 9).
     uint8 const TEXT_COLUMNS = 9;
+
+    // Repair known import-time punctuation damage without re-decoding localized words.
+    std::string NormalizeChatPunctuation(std::string value)
+    {
+        static std::pair<char const*, char const*> const replacements[] = {
+            {"\xe2\x80\x99", "'"},
+            {"\xc3\x94\xc3\x87\xc3\x96", "'"},
+            {"\xc3\xa2\xe2\x82\xac\xe2\x84\xa2", "'"},
+            {"\xce\x93\xc3\x87\xc3\x96", "'"},
+            {"\xe2\x80\x98", "'"},
+            {"\xc3\x94\xc3\x87\xc3\xbf", "'"},
+            {"\xc3\xa2\xe2\x82\xac\xcb\x9c", "'"},
+            {"\xce\x93\xc3\x87\xc3\xbf", "'"},
+            {"\xe2\x80\x9c", "\""},
+            {"\xc3\x94\xc3\x87\xc2\xa3", "\""},
+            {"\xc3\xa2\xe2\x82\xac\xc5\x93", "\""},
+            {"\xce\x93\xc3\x87\xc2\xa3", "\""},
+            {"\xe2\x80\x9d", "\""},
+            {"\xc3\x94\xc3\x87\xc3\x98", "\""},
+            {"\xce\x93\xc3\x87\xc2\xa5", "\""},
+            {"\xe2\x80\x93", "-"},
+            {"\xc3\x94\xc3\x87\xc3\xb4", "-"},
+            {"\xc3\xa2\xe2\x82\xac\xe2\x80\x9c", "-"},
+            {"\xce\x93\xc3\x87\xc3\xb4", "-"},
+            {"\xe2\x80\x94", "-"},
+            {"\xc3\x94\xc3\x87\xc3\xb6", "-"},
+            {"\xc3\xa2\xe2\x82\xac\xe2\x80\x9d", "-"},
+            {"\xce\x93\xc3\x87\xc3\xb6", "-"},
+            {"\xe2\x80\xa6", "..."},
+            {"\xc3\x94\xc3\x87\xc2\xaa", "..."},
+            {"\xc3\xa2\xe2\x82\xac\xc2\xa6", "..."},
+            {"\xce\x93\xc3\x87\xc2\xaa", "..."},
+            {"\xc2\xa0", " "},
+            {"\xe2\x94\xac\xc3\xa1", " "},
+            {"\xc3\x82\xc2\xa0", " "},
+        };
+        for (auto const& replacement : replacements)
+        {
+            size_t pos = 0;
+            std::string from(replacement.first), to(replacement.second);
+            while ((pos = value.find(from, pos)) != std::string::npos)
+            {
+                value.replace(pos, from.size(), to);
+                pos += to.size();
+            }
+        }
+        return value;
+    }
+
 }
 
 // AC Mgr/Text/PlayerbotTextMgr.cpp:14-24
@@ -56,12 +105,12 @@ void PlayerbotTextMgr::LoadBotTexts()
             std::map<uint32, std::string> text;
             Field* fields = result->Fetch();
             std::string name = fields[0].GetString();
-            text[0] = fields[1].GetString();
+            text[0] = NormalizeChatPunctuation(fields[1].GetString());
             uint8 sayType = fields[2].GetUInt8();
             uint8 replyType = fields[3].GetUInt8();
             for (uint8 i = 1; i < TEXT_COLUMNS && i < TOTAL_LOCALES; ++i)
             {
-                text[i] = fields[i + 3].GetString();
+                text[i] = NormalizeChatPunctuation(fields[i + 3].GetString());
             }
 
             botTexts[name].push_back(BotTextEntry(name, text, sayType, replyType));

@@ -389,15 +389,12 @@ class spell_winter_veil_px_238_winter_wondervolt : public SpellScriptLoader
         }
 };
 
+void AddSC_skyfire27_holiday();
+
 void AddSC_holiday_spell_scripts()
 {
     // Love is in the Air
-    new spell_love_is_in_the_air_romantic_picnic();
     // Hallow's End
-    new spell_hallow_end_trick();
-    new spell_hallow_end_trick_or_treat();
-    new spell_hallow_end_tricky_treat();
     // Winter Veil
-    new spell_winter_veil_mistletoe();
-    new spell_winter_veil_px_238_winter_wondervolt();
+    AddSC_skyfire27_holiday();
 }

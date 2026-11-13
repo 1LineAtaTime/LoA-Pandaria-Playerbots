@@ -550,8 +550,36 @@ void Vehicle::InstallAccessory(uint32 entry, int8 seatId, bool minion, uint8 typ
     if (minion)
         accessory->AddUnitTypeMask(UNIT_MASK_ACCESSORY);
 
-    // #170: AC parity (AC Vehicle.cpp:335-342): an accessory that cannot board is unsummoned, not left standing.
-    if (!_me->HandleSpellClick(accessory, seatId))
+    // A template accessory is an NPC passenger, not a player clicking the
+    // vehicle. Some vehicles (Frigid Proto-Drake29460) legitimately summon a
+    // different mount on player click, so their click spell cannot seat a rider.
+    // Preserve configured ride spells/conditions when present; use the native
+    // boarding aura only for a template accessory with non-boarding click actions.
+    bool hasClickActions = false;
+    bool hasBoardingClick = false;
+    SpellClickInfoMapBounds accessoryClicks = sObjectMgr->GetSpellClickInfoMapBounds(GetCreatureEntry());
+    for (auto itr = accessoryClicks.first; itr != accessoryClicks.second; ++itr)
+        if (SpellInfo const* clickSpell = sSpellMgr->GetSpellInfo(itr->second.spellId))
+        {
+            hasClickActions = true;
+            if (clickSpell->HasAura(SPELL_AURA_CONTROL_VEHICLE))
+                hasBoardingClick = true;
+        }
+
+    bool boarded;
+    if (hasClickActions && !hasBoardingClick)
+    {
+        accessory->EnterVehicle(_me, seatId, true);
+        boarded = accessory->GetVehicle() == this;
+        if (boarded)
+            TC_LOG_INFO("entities.vehicle", "Vehicle %u seated template accessory %u in seat %d with the native boarding aura; player click actions preserved.",
+                GetCreatureEntry(), entry, int32(seatId));
+    }
+    else
+        boarded = _me->HandleSpellClick(accessory, seatId);
+
+    // An accessory that cannot board is unsummoned, not left standing.
+    if (!boarded)
     {
         TC_LOG_DEBUG("playerbots", "#170 vehicle accessory: vehicle %u (entry %u, dbguid %u) could not install accessory %u on seat %d: "
             "no usable npc_spellclick_spells row for entry %u (missing, or its requirements/conditions failed) - unsummoned",

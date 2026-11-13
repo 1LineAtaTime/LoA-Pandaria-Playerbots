@@ -175,16 +175,7 @@ class TC_GAME_API GameObject : public WorldObject, public GridObject<GameObject>
         bool LoadGameObjectFromDB(uint32 guid, Map* map, bool addToMap = true);
         void DeleteFromDB();
 
-        void SetOwnerGUID(ObjectGuid owner)
-        {
-            // Owner already found and different than expected owner - remove object from old owner
-            if (owner && GetOwnerGUID() && GetOwnerGUID() != owner)
-            {
-                ASSERT(false);
-            }
-            m_spawnedByDefault = false;                     // all object with owner is despawned after delay
-            SetGuidValue(GAMEOBJECT_FIELD_CREATED_BY, owner);
-        }
+        void SetOwnerGUID(ObjectGuid owner);
         ObjectGuid GetOwnerGUID() const { return GetGuidValue(GAMEOBJECT_FIELD_CREATED_BY); }
         Unit* GetOwner() const;
 

@@ -426,6 +426,28 @@ void WorldSession::DoLootRelease(ObjectGuid guid)
     Player  *player = GetPlayer();
     Loot    *loot;
 
+    // Release can also be requested internally when replacing a loot window or
+    // clearing a looted corpse. A previous release may already have removed it.
+    // Acknowledge that closed window without applying container/corpse teardown
+    // twice, and do not clear the looting flag of a different active window.
+    bool inLootView = false;
+    for (auto const& entry : player->GetLootView())
+        if (entry.second == guid)
+        {
+            inLootView = true;
+            break;
+        }
+    if (!inLootView)
+    {
+        if (player->GetLootGUID() == guid)
+        {
+            player->SetLootGUID(ObjectGuid::Empty);
+            player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOOTING);
+        }
+        player->SendLootRelease(guid);
+        return;
+    }
+
     if (player->GetLootGUID() == guid)
         player->SetLootGUID(ObjectGuid::Empty);
     player->SendLootRelease(guid);

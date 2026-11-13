@@ -1,0 +1,581 @@
+{
+  "name": "SF27 service flags and quest gossip gates",
+  "checks": [
+    {
+      "id": "sf27-service-0-0",
+      "query": "SELECT COUNT(*) FROM `gossip_menu_option` WHERE IFNULL(HEX(CAST(`menu_id` AS BINARY)),'NULL')='3131373738' AND IFNULL(HEX(CAST(`id` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`OptionBroadcastTextID` AS BINARY)),'NULL')='3230323235' AND IFNULL(HEX(CAST(`OptionType` AS BINARY)),'NULL')='33' AND IFNULL(HEX(CAST(`OptionNpcFlag` AS BINARY)),'NULL')='313238'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-1-1",
+      "query": "SELECT COUNT(*) FROM `gossip_menu_option` WHERE IFNULL(HEX(CAST(`menu_id` AS BINARY)),'NULL')='3132373236' AND IFNULL(HEX(CAST(`id` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`OptionBroadcastTextID` AS BINARY)),'NULL')='33333730' AND IFNULL(HEX(CAST(`OptionType` AS BINARY)),'NULL')='33' AND IFNULL(HEX(CAST(`OptionNpcFlag` AS BINARY)),'NULL')='313238'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-2",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='39383936' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934333035'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-4",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='39393831' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-5",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='39393832' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-6",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='39393839' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-7",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3130303437' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-8",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3130303537' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-9",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3130303538' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-10",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3130303633' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-11",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3131313139' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-12",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3135313331' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-13",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3137363636' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-14",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3137383936' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-15",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3138323434' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-16",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3138323530' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-17",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3138393834' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-18",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3139303138' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934333035'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-19",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3139333235' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934333035'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-20",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3231353137' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-21",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3232343639' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-22",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3233333932' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-23",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3234303637' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-24",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3234393035' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-25",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3234393734' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-26",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3238303537' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-27",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3239323530' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934333035'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-28",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3335323930' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-29",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3431393033' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-30",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3432383735' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-31",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3432393131' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-32",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433303139' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-33",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433313531' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-34",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433333739' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-35",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433343038' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-36",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433363330' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-37",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433373636' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-38",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433383737' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-39",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433393832' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-40",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433393838' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-41",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3433393934' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-42",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3434333534' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-43",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3434333738' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-44",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3434333834' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-45",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3435323937' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-46",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3435323938' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-47",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3437393334' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-48",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3438303535' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-49",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3438303935' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-50",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3438323136' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-51",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3438383837' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-52",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439333935' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-53",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439343038' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343335'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-54",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439343331' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-55",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439353933' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-56",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439363030' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-57",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439373535' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-58",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3439373637' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-2-59",
+      "query": "SELECT COUNT(*) FROM `creature_template` WHERE IFNULL(HEX(CAST(`entry` AS BINARY)),'NULL')='3533373830' AND IFNULL(HEX(CAST(`npcflag` AS BINARY)),'NULL')='34313934343333'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-8-60",
+      "query": "SELECT COUNT(*) FROM `conditions` WHERE IFNULL(HEX(CAST(`SourceTypeOrReferenceId` AS BINARY)),'NULL')='3135' AND IFNULL(HEX(CAST(`SourceGroup` AS BINARY)),'NULL')='37383638' AND IFNULL(HEX(CAST(`SourceEntry` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`SourceId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ElseGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionTypeOrReference` AS BINARY)),'NULL')='39' AND IFNULL(HEX(CAST(`ConditionTarget` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue1` AS BINARY)),'NULL')='3239363035' AND IFNULL(HEX(CAST(`ConditionValue2` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue3` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`NegativeCondition` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorType` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorTextId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ScriptName` AS BINARY)),'NULL')='' AND IFNULL(HEX(CAST(`Comment` AS BINARY)),'NULL')='NULL'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-9-61",
+      "query": "SELECT COUNT(*) FROM `conditions` WHERE IFNULL(HEX(CAST(`SourceTypeOrReferenceId` AS BINARY)),'NULL')='3139' AND IFNULL(HEX(CAST(`SourceGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`SourceEntry` AS BINARY)),'NULL')='3133343038' AND IFNULL(HEX(CAST(`SourceId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ElseGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionTypeOrReference` AS BINARY)),'NULL')='3135' AND IFNULL(HEX(CAST(`ConditionTarget` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue1` AS BINARY)),'NULL')='32303135' AND IFNULL(HEX(CAST(`ConditionValue2` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue3` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`NegativeCondition` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorType` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorTextId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ScriptName` AS BINARY)),'NULL')='' AND IFNULL(HEX(CAST(`Comment` AS BINARY)),'NULL')='48656C6C6669726520466F7274696669636174696F6E73202D20416C6C69616E6365202D416C6C20636C6173736573206F74686572207468616E20646B'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-9-62",
+      "query": "SELECT COUNT(*) FROM `conditions` WHERE IFNULL(HEX(CAST(`SourceTypeOrReferenceId` AS BINARY)),'NULL')='3139' AND IFNULL(HEX(CAST(`SourceGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`SourceEntry` AS BINARY)),'NULL')='3133343039' AND IFNULL(HEX(CAST(`SourceId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ElseGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionTypeOrReference` AS BINARY)),'NULL')='3135' AND IFNULL(HEX(CAST(`ConditionTarget` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue1` AS BINARY)),'NULL')='32303135' AND IFNULL(HEX(CAST(`ConditionValue2` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue3` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`NegativeCondition` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorType` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorTextId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ScriptName` AS BINARY)),'NULL')='' AND IFNULL(HEX(CAST(`Comment` AS BINARY)),'NULL')='48656C6C6669726520466F7274696669636174696F6E73202D20486F726465202D416C6C20636C6173736573206F74686572207468616E20646B'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-11-63",
+      "query": "SELECT COUNT(*) FROM `conditions` WHERE IFNULL(HEX(CAST(`SourceTypeOrReferenceId` AS BINARY)),'NULL')='3135' AND IFNULL(HEX(CAST(`SourceGroup` AS BINARY)),'NULL')='39313535' AND IFNULL(HEX(CAST(`SourceEntry` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`SourceId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ElseGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionTypeOrReference` AS BINARY)),'NULL')='32' AND IFNULL(HEX(CAST(`ConditionTarget` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue1` AS BINARY)),'NULL')='3334383432' AND IFNULL(HEX(CAST(`ConditionValue2` AS BINARY)),'NULL')='3130' AND IFNULL(HEX(CAST(`ConditionValue3` AS BINARY)),'NULL')='31' AND IFNULL(HEX(CAST(`NegativeCondition` AS BINARY)),'NULL')='31' AND IFNULL(HEX(CAST(`ErrorType` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorTextId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ScriptName` AS BINARY)),'NULL')='' AND IFNULL(HEX(CAST(`Comment` AS BINARY)),'NULL')='NULL'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "sf27-service-11-64",
+      "query": "SELECT COUNT(*) FROM `conditions` WHERE IFNULL(HEX(CAST(`SourceTypeOrReferenceId` AS BINARY)),'NULL')='3135' AND IFNULL(HEX(CAST(`SourceGroup` AS BINARY)),'NULL')='39313536' AND IFNULL(HEX(CAST(`SourceEntry` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`SourceId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ElseGroup` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionTypeOrReference` AS BINARY)),'NULL')='32' AND IFNULL(HEX(CAST(`ConditionTarget` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ConditionValue1` AS BINARY)),'NULL')='3334383432' AND IFNULL(HEX(CAST(`ConditionValue2` AS BINARY)),'NULL')='3130' AND IFNULL(HEX(CAST(`ConditionValue3` AS BINARY)),'NULL')='31' AND IFNULL(HEX(CAST(`NegativeCondition` AS BINARY)),'NULL')='31' AND IFNULL(HEX(CAST(`ErrorType` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ErrorTextId` AS BINARY)),'NULL')='30' AND IFNULL(HEX(CAST(`ScriptName` AS BINARY)),'NULL')='' AND IFNULL(HEX(CAST(`Comment` AS BINARY)),'NULL')='NULL'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    }
+  ]
+}

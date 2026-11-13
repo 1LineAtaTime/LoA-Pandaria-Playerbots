@@ -105,6 +105,16 @@ bool PathGenerator::CalculatePath(float x, float y, float z, float destX, float 
     // make sure navMesh works - we can run on map w/o mmap
     // check if the start and end point have a .mmtile loaded (can we pass via not loaded tile on the way?)
     Unit const* _sourceUnit = _source->ToUnit();
+    // Ground navigation polygons cannot describe an airborne creature's route.
+    // Flight capability alone is insufficient: landed flyers still need the
+    // ground mesh. Preserve explicit flight altitude only while airborne.
+    if (_source->GetTypeId() == TYPEID_UNIT && !_source->GetTransport() && _sourceUnit &&
+        (_sourceUnit->IsFlying() || _sourceUnit->m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY)))
+    {
+        BuildShortcut();
+        _type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
+        return true;
+    }
     if (!_navMesh || !_navMeshQuery || (_sourceUnit && _sourceUnit->HasUnitState(UNIT_STATE_IGNORE_PATHFINDING)) ||
         !HaveTile(start) || !HaveTile(dest) || skip)
     {
@@ -1129,6 +1139,7 @@ void PathGenerator::VisualizePath(uint32 duration)
             waypoint->SetTempSummonType(TEMPSUMMON_TIMED_DESPAWN);
             return waypoint->GetGUID();
         }
+        return ObjectGuid::Empty;
     };
     static auto const UpdateWaypoint = [](Unit const* source, ObjectGuid prevGUID, G3D::Vector3 const& pos, uint32 duration, ObjectGuid guid)
     {
@@ -1202,6 +1213,7 @@ void PathGenerator::VisualizeNavmesh(uint32 duration)
             waypoint->SetTempSummonType(TEMPSUMMON_TIMED_DESPAWN);
             return waypoint->GetGUID();
         }
+        return ObjectGuid::Empty;
     };
     static auto const UpdateWaypoint = [](Unit const* source, ObjectGuid prevGUID, G3D::Vector3 const& pos, uint32 duration, ObjectGuid guid)
     {

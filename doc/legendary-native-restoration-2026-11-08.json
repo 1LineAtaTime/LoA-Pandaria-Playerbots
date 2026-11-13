@@ -1,0 +1,240 @@
+{
+  "native_tests_passed": 22,
+  "framework_tests_passed": 13,
+  "registration": {
+    "enabled_handlers": [
+      "npc_anachronos_15192",
+      "npc_tarecgosa_52835",
+      "npc_tarecgosa_53098",
+      "npc_kalecgos_53149",
+      "npc_kalecgos_53349",
+      "npc_hallegosa",
+      "npc_kalecgos_53392",
+      "npc_tarecgosa_53396",
+      "npc_blue_dragon_53394",
+      "npc_stalker_53422",
+      "item_charging_decorder_ring",
+      "npc_mostrasz_56314",
+      "npc_wrathion_57777"
+    ],
+    "enabled_handler_missing_diagnostics": [],
+    "remaining_unregistered_names": 864,
+    "npc_52835_binding": "\tnpc_tarecgosa_52835",
+    "combat_fallbacks_retained": "53472\tSmartAI\t\n57802\tSmartAI\t"
+  },
+  "dependencies": {
+    "scope": "Declared enum dependencies only; not runtime behavior",
+    "spell_dbc_sha256": "72b5b6756843ec151d10578f90f2eff12e000e3dab616222d21ae41b1d890e9c",
+    "source_sha256": {
+      "tarecgosa_scripts.cpp": "a03f6e430e48915fbc7c066b576bd663433b167c05c062fc0a4184f0dee27386",
+      "fangs_of_father_scripts.cpp": "6af4f6e6e033a5efd0aa590903f3482157a0afa011480eda34547143c3727fea"
+    },
+    "dependencies": {
+      "SPELL": {
+        "SPELL_HALEGOSA_TRANSFORM": 98948,
+        "SPELL_HALLEGOSA_SUMMON_DISC_1": 98939,
+        "SPELL_HALLEGOSA_SUMMON_DISC_2": 99094,
+        "SPELL_PLAYER_CAST_DISC_SUMMON_1": 98944,
+        "SPELL_PLAYER_CAST_DISC_SUMMON_2": 99096,
+        "SPELL_DISC_SUMMON_AURA": 98946,
+        "SPELL_RIDE_VEHICLE": 43671,
+        "SPELL_SUMMON_TARECGOSA_DISC": 98634,
+        "SPELL_SUMMON_DRAGON_DISC_1": 98943,
+        "SPELL_SUMMON_DRAGON_DISC_2": 99098,
+        "SPELL_ESSENCE_OF_TARECGOSA": 98439,
+        "SPELL_PULSE_OF_TARECGOSA": 99025,
+        "SPELL_CHARGE_DECODER_RING": 104480,
+        "SPELL_GIVE_PLAYER_SIGNED_CIPHER": 104569,
+        "SPELL_SEE_MOSTRASZ_IN_RRAVENHOLDT_CAVE": 105968,
+        "SPELL_MOSTRASZS_VISION": 106015,
+        "SPELL_BERSERK": 110055,
+        "SPELL_BLACKHOWLS_WILL": 109664,
+        "SPELL_BLACKHOWLS_RAGE": 109706,
+        "SPELL_CONSUMING_DARKNESS": 109196,
+        "SPELL_SHADOW_BREATH": 109669,
+        "SPELL_SHADOW_BREATH_SUMMON": 109673,
+        "SPELL_DRAGON_TRANSFORMATION": 109232
+      },
+      "NPC": {
+        "NPC_HALLEGOSA_53371": 53371,
+        "NPC_HALLEGOSA_53466": 53466,
+        "NPC_KALECGOS_53392": 53392,
+        "NPC_TARECGOSA_53396": 53396,
+        "NPC_STALKER_53422": 53422,
+        "NPC_BLUE_DRAGON_53394": 53394,
+        "NPC_BLUE_DRAKE_53408": 53408,
+        "NPC_THAUMATURGE_RAFIR": 57800,
+        "NPC_HIRAM_CREEDS_SHADOW_BREATH": 58002
+      },
+      "ITEM": {
+        "ITEM_CHARGING_DECORDER_RING": 74749,
+        "ITEM_CHARGED_DECORDER_RING": 74748
+      }
+    },
+    "missing": {
+      "SPELL": {},
+      "NPC": {},
+      "ITEM": {}
+    },
+    "passed": true
+  },
+  "runs": {
+    "gossip-qa": {
+      "gameplay": {
+        "counts": {
+          "blocked": 0,
+          "failed": 0,
+          "passed": 2,
+          "untested": 0
+        },
+        "complete": true,
+        "ready": true
+      },
+      "data": {
+        "counts": {
+          "blocked": 0,
+          "failed": 3,
+          "passed": 7,
+          "untested": 0
+        },
+        "complete": true,
+        "ready": false
+      },
+      "cleanup_count": 2,
+      "cleanup_verified": true,
+      "cases": [
+        {
+          "id": "timeless-eye-once",
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "normal_gossip_response",
+            "exact_persisted_item_count",
+            "duplicate_or_no_quest_guard"
+          ],
+          "fixture": {
+            "disposable_only": true,
+            "level": 85,
+            "position": [
+              -8467.88,
+              -4243.7,
+              -208.358
+            ],
+            "seeded_incomplete_quest": 29193,
+            "setup_is_not_quest_acceptance": true
+          },
+          "matching_options": 1,
+          "item_count": 1,
+          "gossip_option_evidence": [
+            {
+              "id": 0,
+              "text": "Take the Timeless Eye.",
+              "icon": 0,
+              "coded": 0,
+              "money": 0,
+              "box": ""
+            }
+          ]
+        },
+        {
+          "id": "timeless-eye-requires-quest",
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "normal_gossip_response",
+            "exact_persisted_item_count",
+            "duplicate_or_no_quest_guard"
+          ],
+          "fixture": {
+            "disposable_only": true,
+            "level": 85,
+            "position": [
+              -8467.88,
+              -4243.7,
+              -208.358
+            ],
+            "seeded_incomplete_quest": null,
+            "setup_is_not_quest_acceptance": true
+          },
+          "matching_options": 0,
+          "item_count": 0
+        }
+      ]
+    },
+    "starter-qa": {
+      "gameplay": {
+        "counts": {
+          "blocked": 0,
+          "failed": 0,
+          "passed": 15,
+          "untested": 8
+        },
+        "complete": false,
+        "ready": false
+      },
+      "data": {
+        "counts": {
+          "blocked": 0,
+          "failed": 3,
+          "passed": 7,
+          "untested": 0
+        },
+        "complete": true,
+        "ready": false
+      },
+      "cleanup_count": 15,
+      "cleanup_verified": true
+    }
+  },
+  "regressions": {
+    "regressions": [],
+    "regression_free": true,
+    "baseline_is_retail_truth": false
+  },
+  "diagnostics": {
+    "before": 1247,
+    "after": 1233,
+    "resolved": [
+      "[sql.sql] Creature GUID Full: 0xf130b208000df412 Type: Creature Entry: 45576  Low: 914450 has wrong spell 0 defined in `auras` field.",
+      "[sql.sql] SQL(p): INSERT INTO character_aura_effect (guid, slot, effect, base_amount, amount) VALUES (179, 1, 1, 0, 0)",
+      "[sql.sql] ScriptName 'item_charging_decorder_ring' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_anachronos_15192' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_blue_dragon_53394' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_hallegosa' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_kalecgos_53149' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_kalecgos_53349' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_kalecgos_53392' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_mostrasz_56314' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_stalker_53422' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_tarecgosa_53098' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_tarecgosa_53396' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_wrathion_57777' exists in database, but no core script found!"
+    ],
+    "new": []
+  },
+  "world_backup_sha256": "0967a5aaf6aeb4a1302460eb0ee11be71eed4e9fc0bf68b618904758fc5aaf9f",
+  "sql_idempotent": true,
+  "all_content_validated": false,
+  "artifacts": [
+    {
+      "name": "worldserver.exe",
+      "sha256": "97c2c3ee6c546ed05102960d4213c2203a1fb54254d2765fed0f31daaa40439a",
+      "bytes": 72805376
+    },
+    {
+      "name": "worldserver.pdb",
+      "sha256": "1d32cfc73e7a4719f5a8db48adf062756d5c92b779baed89772293880edb6e47",
+      "bytes": 704704512
+    },
+    {
+      "name": "authserver.exe",
+      "sha256": "b3b9b291c3490231752b41725aa9c8ec11ceede9b4c1fd15eca6153925de11bf",
+      "bytes": 3310080
+    },
+    {
+      "name": "authserver.pdb",
+      "sha256": "707a331565d59c7807cc6c935aedcdd7ae35c0ec5071f0f376dcd4cb7caca95c",
+      "bytes": 50696192
+    }
+  ]
+}

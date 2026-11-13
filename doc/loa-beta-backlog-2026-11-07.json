@@ -1,0 +1,1056 @@
+{
+  "upstream_pin": "8a26cd41fece10e18335ebc078f6ff7e99412c2d",
+  "commits": [
+    {
+      "commit": "8a26cd41fece10e18335ebc078f6ff7e99412c2d",
+      "title": "AI/SmartAI: Show an auto-accepted quest when SmartAI adds it",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "7e95b33784b838a2de23d6d7d8a41ca6ae428882",
+      "title": "Playerbots: Log bot randomizing and duel spots at debug level",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1ff234cea36844d7737f60eac71436864954d211",
+      "title": "DB/Creature: Run the Angry Blight Slime's SmartAI so it starts Angry Scrubbing Bubbles",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "cb21eed7e7b03c2ead05a539a6cecb111f8e9b9a",
+      "title": "CI/GitHub: beta pre-release keeps the prior macOS zip and retries macOS daily",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "22738de3aaad5b881ec170a9e9b185609b7c2ff8",
+      "title": "CI/GitHub: beta pre-release publishes without macOS when no macOS runner is available",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "17b0a4a9b4790ed85d6634a9eadda27105782cdc",
+      "title": "Scripts/Hillsbrad: Keep the Heroes of the Horde! actors off the player and end the event when the player dies",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9ad31cde5a315ed5f93cdb1eae9d379476ebf093",
+      "title": "Scripts/Hillsbrad: Always give the player their gravity back after a Kasha flight or a scene camera",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "ff9affb5f60702d5983e9e9fb942dc59f2eb69c0",
+      "title": "DB/Creature: Let the Purgation Isle Stormpike and Bloodfang aggro players",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9a074565c82a333e3dc679fcac0d9037316d783c",
+      "title": "Scripts/Hillsbrad: Always bring the player to Tarren Mill once Kasha has taken off in Heroes of the Horde!",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "21ce4a003e46d8ec3127597e15b3a4afc994d740",
+      "title": "Scripts/Hillsbrad: Lift Kasha off the Southshore beach before the Road to Purgation starts",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "2bb9385b5c644cd4d6927370815ff7484b6c8939",
+      "title": "Scripts/Hillsbrad: Always set the player down at the end of the Road to Purgation flight",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "bfadb4bd0bb1b8884679d111b7ea14cabcae9461",
+      "title": "Scripts/Hillsbrad: Let the Road to Purgation rider see Orkus on Kasha",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "60840a86e684a8a0c01d043b3fc58b6723d4324a",
+      "title": "DB/GameObject: Spawn eight Mudsnout Blossoms for Kasha Will Fly Again",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a4e36aeba8ec0449946e9edf9b16b9036d299bb5",
+      "title": "DB/Quest: Restore Cromush's salute at the Heroes of the Horde! turn-in",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "8f2fce8e52a61f530aa5949a782f8b1ac2038b98",
+      "title": "DB/Quest: Restore They Will Never Expect This...'s progress text and Orkus' turn-in emotes",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "7436a1fed9b3f7f290eb8f20b3b1d6d35a29c502",
+      "title": "DB/Creature: Keep the Purgation Isle guards and the landed Kasha on their spots",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "ad710e942e223aa757978132bc4b3c6f372b51bd",
+      "title": "Scripts/Hillsbrad: Let both Kingslayer Orkuses go with the player on Purgation Isle",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1380009d973031150c48144ca988bb74e29f24ea",
+      "title": "Scripts/Hillsbrad: Play Stormpike Rendezvous in the Orkus Camera",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "0e479e131ae97a6395db3ba92813b96c4edf6717",
+      "title": "DB/Quest: Leave Kingslayer Orkus drowning until the player helps him ashore",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1284f7ffef0a1b6593ed6f54e87d4f52bdce9bf1",
+      "title": "Scripts/Hillsbrad: Let a hostile Blight Slime attack the player sampling it",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "3578c19fa724d44e1faee8cb2ff9df6459c5e01a",
+      "title": "DB/Spell: Keep Studies in Lethality's sampling from starting combat",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "70d46adad01dd8532171c2423a5b0cbbe2fe4890",
+      "title": "DB/GameObject: Spawn the Used Blight Canisters on their sniffed spots",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "5b6947890efef3fce3341f65dca5d11729ecf135",
+      "title": "DB/GameObject: Remove a doubled Used Blight Canister in the Ruins of Southshore",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "96b5dd4c83b29078ead909b2791e934ca3718eb8",
+      "title": "Scripts/Hillsbrad: Give Studies in Lethality its anger meter",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "e09eee4800401eb4747d07c705d1bf406c109f28",
+      "title": "Core/Unit: Keep stat updates from resetting the alternate power maximum",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9880848f6e570832b5bd3babbec50b97afb6e326",
+      "title": "Core/Auras: Keep a flat max health malus from leaving its target alive at 0 health",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "f0e43e458286d5accff99f05e2cae3e405ff75aa",
+      "title": "DB/Creature: Hide the collapsed Kasha once Kasha Will Fly Again is rewarded",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "f06d234d68aa8436de22f5e522fe6485a2be0aed",
+      "title": "DB/Quest: Offer Green Living and Helcular's quests only after Trouble at Southshore",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "aa73e2c8228b77aa46a7c7f1f86269400ae8cbb8",
+      "title": "DB/Creature: Keep the healed Kasha in the air over the Southshore shore",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "076a2f26032a40403277a62f6a4a3be2b54decc8",
+      "title": "DB/Creature: Spawn the Battle Creepers beside the Dark Rangers north of Southshore",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a2a375055b045430ce6ba15621a9bf3a84daf401",
+      "title": "DB/Quest: Start Angry Scrubbing Bubbles from the Angry Blight Slimes, not from Serge Hinott",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "b73556740b88121c561de0916950ed0b98f03f7c",
+      "title": "Scripts/Hillsbrad: Take A Blight Upon the Land's head at Stillwater's spot, not at the cage",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d4cbdac37ab98e07607596f36774cffdeb7af382",
+      "title": "DB/Creature: Aim Magistrate Burnside's Arcane Storm at its camera targets, bring him down to fight, end it at death",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "cae872a064f787d0ea8b40359b9ee4416d91655e",
+      "title": "Scripts/Hillsbrad: Make Lydon and Johnny Awesome the player's companions in the Sludge Fields",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a52e62174544f2537b60a9119a59dc1ff5986102",
+      "title": "DB/Creature: Keep Twinkles' Invisible Mount in the air",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "af6802f5f084295daad7f1529d26d1684d53fc98",
+      "title": "DB/Creature: Raise Twinkles' Invisible Mount so its legs show above the dirt",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "91a062bb1a09825ae2516724a0723d2baa01cc0d",
+      "title": "DB/Creature: Turn Johnny Awesome's dead Twinkles upside down on its Invisible Mount",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "cefa484407a11896ea1b240cb11f6f98b733af46",
+      "title": "DB/Quest: Do the Right Thing: smashing a Human Seedling gives Head Asplode",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "06be3d60c918f903ee13aa1e62d840fc6fa18ff5",
+      "title": "DB/Creature: Raise the Sludge Fields ghouls that stood under the ground",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "cb2f4f0d46ce5af0a988dff75c483b40d498f167",
+      "title": "DB/Quest: Offer For Science! after No One Here Gets Out Alive",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "b26b3eb68738b1e7407c76a7bffebf0483c9973b",
+      "title": "DB/Creature: Remove the doubled risen laborers of the Sludge Fields",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "fb15fe3aba8bba6f31ca36735b521d3d6713b177",
+      "title": "DB/Quest: Start The Battle for Hillsbrad from Clerk Whitesteed's journal only",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "65e8e19aaaefb1689670cf0b857920ea74fdf804",
+      "title": "Scripts/Hillsbrad: Let the scene cameras' riders see the world",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "f270499c7ba00ae7329128bdd1f2ea2b5c2a7ff9",
+      "title": "Scripts/Hillsbrad: Smooth the Sludge Fields camera tour and land the player without a fall",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "7359d278b5fb74bbcd5eff57b669bccac3a83174",
+      "title": "DB/Creature: Let the Sludge Guards and the risen fight in the Sludge Fields",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "8c9e7f0576499f210e2c7de4bc910688c0506ce6",
+      "title": "Scripts/Hillsbrad: Make Deep Mine Rescue escortable",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "85f2daecc93a320be0bf66a1213c655e0a0cffe1",
+      "title": "Scripts/Hillsbrad: The Hungry Mine Creeper eats its murlocs, and Infested Bears die",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "0a691795688aa4625dab91f3253728641ec6e6ff",
+      "title": "DB/Quests: spawn Brewmaster Blanche; disable the removed Apothecary Karlov chain",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "af9a33941ea5bc9cbfdd445f5a2071e82cfc1f00",
+      "title": "Core/AI: a passive creature evades only once nobody is fighting it (Hogger could not be finished)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "24bedd41d45ab4c73f7aa984eb38be1899471ec7",
+      "title": "Core/GameObject: fish no longer get away because of a low fishing skill",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "3a64ae4ff879334980a00ec8d6773a26fbe0e747",
+      "title": "AI/PetAI: a guardian summoned by a creature attacks its owners attacker",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "51c0360302d96d7532090a4829148789ebc66c2d",
+      "title": "Core/Creature: apply the anim kits of creature_addon",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "8c33095fa2021e98778debdf842b9de606c92656",
+      "title": "scripts(vashj'ir): the Call of Duty wake-up line also plays when Erunak's own event completed the quest first",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "64c9491313a6ab2dc43a9c57169e704a373d96f9",
+      "title": "scripts(vashj'ir): Erunak's 'Relax, friend...' waits until the rider's client has Erunak",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "dd163479e6be32a1893f05dc17fd21c9c2697023",
+      "title": "scripts(vashj'ir): Erunak's 'Relax, friend...' falls back to the rescue Erunak when the grid search misses him after the wake-up",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "cd892aca81b0a1c10b374645863be7f0ad69079f",
+      "title": "scripts(vashj'ir): Erunak's \"Hold on, <race>!\" and \"Relax, friend...\" reach the Call of Duty rider every time",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "48da5f719057704a4b44323f151aa7817b5a220c",
+      "title": "db(kun-lai): the freed Farmstead Slaves' lines (Farmhand Freedom) - no more 'Could not find Text' for 59577",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "03ad868e087ddafd8479da681df6e5bf7b4aaf6e",
+      "title": "scripts(vashj'ir): the Call of Duty scene teleports to Vashj'ir on Eastern Kingdoms, and Erunak names the rider's race",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "123062f8e1df2247110c6aea1d1935f029a26506",
+      "title": "playerbots(transport): roaming bots skip boats and zeppelins phased out for them",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d006271299f1177e058e1144a5fbdc5782ca2ec6",
+      "title": "scripts(vashj'ir): the Call of Duty kraken scene at the Vashj'ir stop of the mercenary ships",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "599c7ab7b91857ee62f4ed195fd62b66d2fb2323",
+      "title": "core(quest): a scripted \"event happens\" counts the quest's event objective; Call of Duty (Horde) gets its kill credit at Erunak",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "5c47b41d6a23c984a65adb55406534b5a3c0559d",
+      "title": "headless: --log-movement logs every moving transport create / out-of-range block (TRANSPORT_CREATE / TRANSPORT_OUT)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1329a2f72188114505ff7d4a3aaf1df2c06f8362",
+      "title": "db(vashj'ir): the mercenary Ships to Vashj'ir exist only in their Call of Duty phase; Stormwind's Pride is phased out of it",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "5af539901f5aabd26b9b27416b0ed32df396c58f",
+      "title": "core(transport): phased moving transports (the transports phase columns of TrinityCore master)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "ec9c6885ace5d249049e172ae538009a7e025e09",
+      "title": "playerbots(transport): refuse ambient attaches the arriving hull makes off the deck",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "b8e2682bc7e84dc5e60f752fe5a4601a18a9882a",
+      "title": "playerbots(transport): boat/zeppelin deck points on the open deck, riders on the deck surface, larger route search",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "2701ab36e49da66ac84aba7f9391e6f1aa41cbfd",
+      "title": "playerbots(transport): deck routes start and end on standing spots, step off to a landing, legs checked both ways",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d00721969ad11ede85dfefc65d15503145145d57",
+      "title": "db(lost isles): 24958 Volcanoth! - the Bootzooka's spell condition no longer requires the caster to be Volcanoth",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "283075ca78dff3677466c974d4dea5e73965ec1f",
+      "title": "headless: target verb accepts npc/go/corpse (the guid cached by the harness verbs)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "18ab569671541e11e90113071a680f0f5b76e27d",
+      "title": "db(transports): despawn the always-on Ship to Vashj'ir that overlaps Stormwind's Pride",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "48ec6b73871f09cea50d30079f53333ed057b3d5",
+      "title": "playerbots(transport): walk onto and off boats and zeppelins along the deck, not through the hull",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d04f35842e2e7ceed2197099f57d204c5adeb7e4",
+      "title": "headless: decode SMSG_ATTACKERSTATEUPDATE and log one [MELEE] line per hit (damage, absorb, resist, blocked, victim state)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "3beaa0769f9e41ee3e4de79c516783ad75dfc57a",
+      "title": "core(creature): per-creature melee damage modifier in the open world (creature_template.DamageModifier, as AC)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9d7e25036fcc8d7ccd6d0413683637fe6bf3124e",
+      "title": "core(creature): multiply creature weapon damage by the attack time, as TC/AC do",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "614e919accec50f28b297aa64e06d4a4f9c046ec",
+      "title": "playerbots(transport): finish the board walk on the deck after an early attach",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1439746a004a8bd4cc11d454fed9b6e986dec317",
+      "title": "playerbots(transport): bots that board a zeppelin from the dock wait reach the deck point",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "12d7e9dab35b52f30a4772c47c246d66449799df",
+      "title": "pet: save pet auras with AC's filter (Pet::_SaveAuras)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "6cbb375694bb20cbe6c589b71a4ec300ed53b743",
+      "title": "pet_aura / pet_aura_effect insert: ON DUPLICATE KEY UPDATE",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "4d6f274f9cd217862917deaacd175c7dece71efd",
+      "title": "bg: probe optional SotA bomb and BfG/EotS honor-trigger slots without the not-found error",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a2a330b8d912c20f5abf0db23e8321b2df75fb5a",
+      "title": "core(ai): JustEnteredCombat keeps an engagement when no fight starts (AC/TC guard)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "c02c4603e193a002362a16ccf530ec1f2332106c",
+      "title": "playerbots: shipped defaults put bots in Pandaria; duel-spot seeding never re-levels bots",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "2d96d6ba0ad23ac9e54e0c272ae3c8bc92ee6214",
+      "title": "playerbots(duel spots): duel-spot bots stay out of the natural battleground queue",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "27c036f9dc5dd7e3195505c0be796fe237d4525f",
+      "title": "playerbots(duel spots): no same-class duels at the city duel spots",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "3741838e6627f3222745ac0203340a11d637b58a",
+      "title": "playerbots(transport): bots that board a boat or zeppelin ride it in every client's view",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "828c5c218188d360e290785692b8391cf0202f23",
+      "title": "README: the two database files and the exact steps for each case",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d7c92cbbe08f6a17d049d7e634515204138d2214",
+      "title": "CI/GitHub: beta pre-release recreates the tag when moving it is refused",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "4951c7e5c78618d52cb7af41bc59c9bd9d60eceb",
+      "title": "mapextractor: no silent 0-byte DBCs, recover broken patch chains, no crash on a missing output folder (public issue #10)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a573ccbd99fd22c28cbe01015f86c3f4f226a25a",
+      "title": "README: install and upgrade instructions (keeps saves)",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "263011280ede9934d65084237d0eb2845dc38245",
+      "title": "CI/GitHub: beta pre-release ships the SQL sources for upgrades",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "c586f79ca08b85401c9fbb6fe45461d9e1d5ece6",
+      "title": "CI/GitHub: daily playerbot-beta pre-release with a database, no builds on push",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1bcd3cc065be528d5c47a6a8502ecf7cc2fe31be",
+      "title": "doc: PR 15 port status - follow-up commits after PR 15",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "8fbf8c1c7aeee5b28c59343d8aee8c52ded26ed5",
+      "title": "db(smartai): Tirisfal - Scarlet Zealot and Sri'skulk get their abilities",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "c4f27d09d080ab0c17e83fc435dbaccfbd0aa808",
+      "title": "db: Ruul the Darkener - one stationary spawn at the AzerothCore position",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "6853dbad9619d9483a064a8ba27ab2f4ec68282d",
+      "title": "db: the Health_mod fix's header states the measured range (1.6x to 23x)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "cbff32b2b60353c9a61118a39196d36480b25636",
+      "title": "db: Health_mod of 164 templates computed against the classic health column while exp > 0",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "87f6fd5f1f45655b72cd430717016518a9063d3f",
+      "title": "scripts(gilneas): 26706 Endgame - the explosives go off 45 s after the furnace beat; Korm's death only brings the escape forward",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1db8796e9ed133a73d22d3bfb2f20bac33e2698f",
+      "title": "db(lost isles): Gallywix 39582 health to the intended ~98k for 25251 Final Confrontation",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "8f88be79e098716159813524117735c3d8a97df9",
+      "title": "scripts(gilneas): 26706 Endgame - a player back at the furnace (relog, restart, reset) resumes the boarding at the furnace beat",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a899beeeeb6ea598e7a37f165d71f46a21c39c62",
+      "title": "db(lost isles): Kaja'Cola Zero-One chests (202554) in the late Lost Isles phase (16384), verified in the goblin walk",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "314d20e255876b8a1a64b37f605b0cee3bd9801a",
+      "title": "smartai: TALK skips a talker without that text group (AC SmartScript.cpp:253) - a shaman's fire elemental no longer 'speaks'",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "68a526c8e4874c6fdfc2927434a73aec9a3409f8",
+      "title": "scripts(gilneas): 26706 Endgame - Korm re-engages a returning player after an evade or a player death",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "3a018924bf64d85bff619479d69a07aa10023f80",
+      "title": "scripts(gilneas): 26706 Endgame - the gunship's top-deck ropes take the player down to the rafters",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "c4c60b5d0244d259553b2bf5f166188b8536d8ac",
+      "title": "spells+db(gilneas): 24681 Glaive Thrower - impact spells are not range-checked again, and the vehicle is hostile-capable (faction 80)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "7989eedaeb094118e0444868a860ea1655c77a01",
+      "title": "ai: summons get On Respawn once and keep an escort started before their first update (AC parity)",
+      "status": "needs_adaptation",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "2361b8136e60d6f0777df4362225ba73347ecf28",
+      "title": "db: the 8 boot DBErrors new since v1.0.4 (pool 7512 chance, SAI text-over rows 4484/30945 as AC, AIName 45405/48912, dead spell_target_position 49986/65042, Goli Krumn questgiver flag)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "3074d23fa69a99e65f6fe915b9082e3ed4f591a3",
+      "title": "playerbots(monk): Brewmaster Guard action registered as 'guard spell' - the movement 'guard' action won the name lookup and Guard 115295 was never cast",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d6cca26b28cf66620a1de23c2105ecf6592b4905",
+      "title": "core(auras): RemoveAurasByTypeOnImmunity keeps the effect pointer before advancing (Displaced Energy 142913 read the next element)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "de2908ec8710ff5746de90101be3c9f6f55c9550",
+      "title": "scripts(lost isles): 24942 - Coach Crosscheck puts the player in the Super Booster Rocket Boots on accept",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "88313276d8b5e6c86f17c2cc2f083a380868cf45",
+      "title": "db(lost isles): Oomlot Shamans (38644) spawnMask 1 - they had spawnMask 0 and never spawned (24925)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "5501949dea1ef26d6dcbf50b534f3dd7b4e73f17",
+      "title": "db(lost isles): 24925 - Oomlot Shamans (38644) in their camp's phase (12288), like 38643/38574/38575",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d4b5285966263572ebee1c589abaf7f0c73bd6f3",
+      "title": "playerbots: AiPlayerbot.RespectCrowdControl defaults to 1 (owner decision)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "91fbd7dd7ae6d54763e021c3dae5872268957dbc",
+      "title": "scripts(lost isles): 24864 Naga Hatchlings also follow on right-click (retail spellclick), within the same 10 yd",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "519ca8c1be7d0cdcb4a78137967710beb92b46df",
+      "title": "scripts(kun-lai): Scritch's aggro line is text group 0 (its only group)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9c149ab2925c27ed42cf6589c6b0679d8624c66e",
+      "title": "doc: PR 15 port status - a0f6c531 (CI macOS arm64) is included",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "f1d6988fb216bcb4a986aef800e88e9ee186f1a8",
+      "title": "README: link the latest CI build of playerbot-beta (rolling ci-playerbot-beta pre-release)",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "2d362e3354e40bab6323e965272d700bf22d24d2",
+      "title": "CI/GitHub: per-OS binary zips and a rolling \"ci-<branch>\" pre-release",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "1898d09dcc925b525f1fac78fa4912f87674df21",
+      "title": "playerbots(rpg): quest-hub navmesh reach does the dtQueryFilter flag test itself - fixes the Linux/macOS link",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "fc3f56d831bf771072462d6036b7276d9a404398",
+      "title": "CI/GitHub: fix the Windows build (find the runner's MySQL Server)",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "30562c27f74aedb09f184ebcc81372eb13e5b0dc",
+      "title": "CI/GitHub: fix the macOS arm64 build (#456)",
+      "status": "not_gameplay_patch",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9648ddfbb29c633200c02b08a9aaf4d75bf6ac58",
+      "title": "Sync with the fork's development tree: bots, world fixes, performance and memory",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d9db430ae7cb3c7764fa4a1a8f0663e15faf589c",
+      "title": "DB/SmartAI: port the PR 15 creature abilities, wave 2 (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a0436fb8f4d3f068819c31d0ef4de5c78516437a",
+      "title": "Playerbots: port the PR 15 random-bot account types, realm-first guard and DB updater base (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "828f93978deb8c12169b2ee3ef98d57eedf941f2",
+      "title": "DB: port the PR 15 gathering-node/chest ground fixes and the koKR locales (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "b294ecb44eac81e93a41b683d27beaaaae2cc408",
+      "title": "Scripts/Druid: Shooting Stars procs on the last tick of the only Moonfire / Sunfire (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "0725b1528fffb059dd66a0bf05a0ee24a9ca62f0",
+      "title": "DB: port the PR 15 level 28 XP fix and the rare Boahn (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "6d8f6c154f4c91ae18c002f3dc4f0759cd732017",
+      "title": "DB/SmartAI: port the PR 15 creature abilities, wave 1 (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "c9d7648f7dd83dc7f663ace1cdd9831bc430955e",
+      "title": "DB/Dungeons: port the PR 15 Deadmines, Wailing Caverns and Ragefire Chasm data (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "b179e298d18036b121d0121613e13207eebb1250",
+      "title": "Quests: port the PR 15 Forsaken questline, Wandering Isle fixes and start-zone dummies (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "29401445ef8c0fb2d5b3f42f9e07a1811189967f",
+      "title": "Playerbots: port the PR 15 playerbot changes (adapted), two of them as opt-in toggles",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "6a81aed290473e23182a46379ca06b65921103e7",
+      "title": "Core: port the PR 15 crash, correctness and behaviour fixes (adapted)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "57a086078bc605a76f8d39dcab81730d2e2ddb28",
+      "title": "AI/TotemAI: derive from NullCreatureAI so totems do not follow their owner on spawn (#482)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "be9c464620312ef65fc96b83085496df9d55bf99",
+      "title": "Scripts/Hallow's End: Don't set the fire training fires alight",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "40497f45624314abad6acf7c889b4127abd46acc",
+      "title": "Server/Playerbots: Drop the unused playerbots DB settings from playerbots.conf.dist",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "9758907a3adcceec72295cbf84abe063726a1064",
+      "title": "Core/Database: select the entry in WORLD_SEL_CREATURE_TEMPLATE (#481)",
+      "status": "equivalent_already_present",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "e3ce53972e7606c9865777d70ad60fc01c72afe7",
+      "title": "Scripts/Commands: pass the entry to the .list creature chat line (#480)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "0d660bd7bcec6d81f9c459a844191ffca9307b0e",
+      "title": "Core/Unit: crash in SetPhased when a controlled unit leaves the control list during the phase change (#478)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "587aaf5a2075d77f33499bc254fa8944d9212f6d",
+      "title": "Core/Player: do not use a combo target that has left the map (#471)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "4773daa8b2b389585dff4072a8361e9feb96fc2c",
+      "title": "Scripts: English gossip texts for Voljin (An Ancient Enemy) and the transmogrifier (#469)",
+      "status": "pending_review",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "24dd3ba9706805a71b5d0dd0a57862f27b171fb1",
+      "title": "Core/Movement: refresh the position data after a far teleport (#468)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "684fb56d95d48811092cda3ce1c9bf14c8598a77",
+      "title": "Core/BattlePet: keep the battle pet loadout across logins (#467)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "51fb27e10a18fb9f8b79b16d393fe9a2d671429f",
+      "title": "Core/Guilds: store guild member profession recipes as numbers (#459)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "afae92b614c4e11c776130eee4fd0a42533d6237",
+      "title": "Core/AHBot: add a posted auction to the auction house once (#465)",
+      "status": "already_applied",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a18e9382648b0dc93bd52667a74487476a156e31",
+      "title": "Scripts/Azuremyst: do not keep raw Player pointers",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "092bf3a3748ca2bd3a55ba5babee3b42420fb6d6",
+      "title": "Core/AuctionHouse: fix use-after-free of pending auctions (#453)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "d6c54460a105335fceb788d00c99bd375ba50360",
+      "title": "Scripts/Ulduar: prevent endless engage recursion in Assembly of Iron (#437)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "6ca6516e0261fe78a5a2753132103675329c8482",
+      "title": "Core/Spells: fix use-after-free in Spell::SearchChainTargets (#449)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "5df94c23665b3b64417cca3b2cdca041e91be11c",
+      "title": "Core/Groups: fix null dereference in Group::IsGuildGroup (#441)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "5d50ae9d714ef7a7a28bebebbc644d7468b4f6f7",
+      "title": "Core/Creature: neutral creatures fight back against ranged attackers (#452)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "0d68d4f5d11ffd02a8cb871470d16ced8a151ef1",
+      "title": "Chat: give ChatCommandHolder a virtual destructor (#457)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    },
+    {
+      "commit": "a944477abfcd937c1d8a3ad76f7c5def3304c0cf",
+      "title": "Fix multiple null pointer dereference issues and redundant checks (#448)",
+      "status": "deployed_2026_11_07",
+      "integration": "included_in_full_beta_merge_2026_11_08",
+      "validation": "bounded suite; per-feature gameplay not established"
+    }
+  ],
+  "full_merge_report": "loa-full-beta-integration-2026-11-08.md"
+}

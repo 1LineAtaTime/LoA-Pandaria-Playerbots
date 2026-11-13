@@ -324,7 +324,8 @@ class boss_glubtok : public CreatureScript
         }
 };
 
+void AddSC_sf27_glubtok();
 void AddSC_boss_glubtok()
 {
-    new boss_glubtok();
+    AddSC_sf27_glubtok();
 }

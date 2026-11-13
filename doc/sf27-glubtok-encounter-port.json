@@ -1,0 +1,8 @@
+{
+  "pin": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "source_sha256": "abc2eefff671cfcfcaa7b319ee544850d6a9b42afd039fb5ced3e67f9b464921",
+  "source": "src/server/scripts/EasternKingdoms/Deadmines/boss_glubtok.cpp",
+  "module": "Deadmines Glubtok",
+  "status": "prepared, not compiled or deployed",
+  "reason": "five published helper identities absent locally; pair updated boss with SQL dungeon text and firewall helpers; preserve local instance/nightmare/other boss modules"
+}

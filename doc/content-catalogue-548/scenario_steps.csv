@@ -1,0 +1,186 @@
+id,name,comparison,behavior
+24,Escort Brewmaster Bo,client_asset_present,not_evaluated
+25,Fill the Brewing Cauldron,client_asset_present,not_evaluated
+26,Defeat Captain Ook,client_asset_present,not_evaluated
+114,End the Terror,client_asset_present,not_evaluated
+115,Search the Crypt,client_asset_present,not_evaluated
+116,Rescue the Villagers,client_asset_present,not_evaluated
+117,Defeat Vengeful Hui,client_asset_present,not_evaluated
+118,Recover Burgled Barrels,client_asset_present,not_evaluated
+123,Temple of the Jade Serpent,client_asset_present,not_evaluated
+124,Stormstout Brewery,client_asset_present,not_evaluated
+125,Shado-Pan Monastery,client_asset_present,not_evaluated
+127,Gate of the Setting Sun,client_asset_present,not_evaluated
+128,Siege of Niuzao Temple,client_asset_present,not_evaluated
+129,Mogu'shan Palace,client_asset_present,not_evaluated
+130,Scholomance,client_asset_present,not_evaluated
+131,Scarlet Halls,client_asset_present,not_evaluated
+132,Rescue Greenstone Masons,client_asset_present,not_evaluated
+133,Scarlet Monastery,client_asset_present,not_evaluated
+138,Scar-Shell,client_asset_present,not_evaluated
+139,Jol'Grum,client_asset_present,not_evaluated
+140,Little Liuyang,client_asset_present,not_evaluated
+141,Chagan Firehoof,client_asset_present,not_evaluated
+142,Defeat the Final Challenger!,client_asset_present,not_evaluated
+154,The Brewmoon Festival!,client_asset_present,not_evaluated
+155,The Yaungol attack!,client_asset_present,not_evaluated
+156,Warbringer Qobi,client_asset_present,not_evaluated
+157,The Scouts Report.,client_asset_present,not_evaluated
+159,Make Boomer's Brew,client_asset_present,not_evaluated
+160,Road to Thunderpaw,client_asset_present,not_evaluated
+161,Save Thunderpaw Refuge,client_asset_present,not_evaluated
+166,Destroy the Sha,client_asset_present,not_evaluated
+167,Kill General Zhun,client_asset_present,not_evaluated
+171,Rescue the Golden Lotus,client_asset_present,not_evaluated
+172,Stop the Execution,client_asset_present,not_evaluated
+173,Capture the Artifacts,client_asset_present,not_evaluated
+174,[PH] Defeat Masters,client_asset_present,not_evaluated
+175,Into the Ruins,client_asset_present,not_evaluated
+179,To the Waterline!,client_asset_present,not_evaluated
+180,The Blastmaster,client_asset_present,not_evaluated
+181,"Gryphon, Down",client_asset_present,not_evaluated
+182,Tanks for Nothing!,client_asset_present,not_evaluated
+183,"Fly, Spy!",client_asset_present,not_evaluated
+185,Destroy the Destroyer,client_asset_present,not_evaluated
+186,The Last Stand,client_asset_present,not_evaluated
+193,Welcome to Theramore,client_asset_present,not_evaluated
+194,Rescue the Dojo,client_asset_present,not_evaluated
+210,Sweep the Harbor,client_asset_present,not_evaluated
+211,The Pool of Life,client_asset_present,not_evaluated
+217,The Lady Proudmoore,client_asset_present,not_evaluated
+224,The Lorewalker's Fate,client_asset_present,not_evaluated
+367,We Ride!,client_asset_present,not_evaluated
+368,Guards!,client_asset_present,not_evaluated
+369,The Source,client_asset_present,not_evaluated
+370,The Broodmaster,client_asset_present,not_evaluated
+371,Ambush!,client_asset_present,not_evaluated
+372,Infiltrate the Ancient Fortress,client_asset_present,not_evaluated
+373,Stealing for Profit,client_asset_present,not_evaluated
+374,Assault on Zan'vess,client_asset_present,not_evaluated
+375,Defenses of Zan'vess,client_asset_present,not_evaluated
+376,The Heart of Zan'vess,client_asset_present,not_evaluated
+377,Defeat the Admiral!,client_asset_present,not_evaluated
+378,Boarding Party!,client_asset_present,not_evaluated
+379,To Smithereens!,client_asset_present,not_evaluated
+382,The Mission...,client_asset_present,not_evaluated
+383,Into the Cave,client_asset_present,not_evaluated
+384,Investigation,client_asset_present,not_evaluated
+386,The Flight Master,client_asset_present,not_evaluated
+387,Weapons of Zan'vess,client_asset_present,not_evaluated
+398,Prepare the Defenses,client_asset_present,not_evaluated
+408,Enter the Black Temple,client_asset_present,not_evaluated
+409,Search for signs of the Council's Presence,client_asset_present,not_evaluated
+410,Follow Akama to the Shrine of Lost Souls,client_asset_present,not_evaluated
+412,Kill Commander Scargash,client_asset_present,not_evaluated
+413,Uncover the Council's Plan,client_asset_present,not_evaluated
+414,Defeat the Essence of Order,client_asset_present,not_evaluated
+415,Escape the Shrine of Lost Souls,client_asset_present,not_evaluated
+416,Plunder the Den of Mortal Delights,client_asset_present,not_evaluated
+417,Head to the Temple Summit,client_asset_present,not_evaluated
+419,Death on the Docks,client_asset_present,not_evaluated
+420,Reclaim the Court!,client_asset_present,not_evaluated
+423,Legwork,client_asset_present,not_evaluated
+424,Hold the Line!,client_asset_present,not_evaluated
+430,Assault on Zan'vess,client_asset_present,not_evaluated
+431,Defenses of Zan'vess,client_asset_present,not_evaluated
+432,The Heart of Zan'vess,client_asset_present,not_evaluated
+433,Weapons of Zan'vess,client_asset_present,not_evaluated
+434,The High Marshal,client_asset_present,not_evaluated
+435,Setting Up,client_asset_present,not_evaluated
+436,The Flight Master,client_asset_present,not_evaluated
+437,A.C.E.s High,client_asset_present,not_evaluated
+438,Reclaim the Court!,client_asset_present,not_evaluated
+439,The Warlord,client_asset_present,not_evaluated
+440,Legwork,client_asset_present,not_evaluated
+441,Setting Up,client_asset_present,not_evaluated
+442,Hold the Line!,client_asset_present,not_evaluated
+443,Blending In,client_asset_present,not_evaluated
+444,Path of Smoke,client_asset_present,not_evaluated
+445,Shadows in the Storm,client_asset_present,not_evaluated
+446,Keep Quiet,client_asset_present,not_evaluated
+447,Light Up the Night,client_asset_present,not_evaluated
+448,Rendezvous with Scout Captain Elsia,client_asset_present,not_evaluated
+449,Survive the Ambush,client_asset_present,not_evaluated
+450,Destroy the Barricades,client_asset_present,not_evaluated
+451,Kill Kresh the Ripper,client_asset_present,not_evaluated
+452,Kill Arcanital Tula'chek and his Spirit Mask,client_asset_present,not_evaluated
+453,Taking Off...,client_asset_present,not_evaluated
+454,Intercepted!,client_asset_present,not_evaluated
+455,Master the Beastmaster,client_asset_present,not_evaluated
+456,Into the Mines,client_asset_present,not_evaluated
+458,Cover Me!,client_asset_present,not_evaluated
+460,Bloodied Crossing,client_asset_present,not_evaluated
+465,The Foot of Lei Shen,client_asset_present,not_evaluated
+472,Destroy the Gatekeepers,client_asset_present,not_evaluated
+473,Find Lost Explosives,client_asset_present,not_evaluated
+474,Detonate Explosives,client_asset_present,not_evaluated
+475,Kill War-God Al'chukla,client_asset_present,not_evaluated
+476,Find Lost Explosives,client_asset_present,not_evaluated
+477,Detonate Explosives,client_asset_present,not_evaluated
+478,Kill War-God Al'chukla,client_asset_present,not_evaluated
+479,Deliver Explosives,client_asset_present,not_evaluated
+480,Deliver Explosives,client_asset_present,not_evaluated
+482,Defeat Shan Bu,client_asset_present,not_evaluated
+483,Wetwork,client_asset_present,not_evaluated
+484,Charging Up,client_asset_present,not_evaluated
+485,Corruption Detected,client_asset_present,not_evaluated
+486,Manifested Corruption,client_asset_present,not_evaluated
+487,What's Yours is Mine!,client_asset_present,not_evaluated
+490,Speak with Wrathion,client_asset_present,not_evaluated
+491,Defeat Kanrethad,client_asset_present,not_evaluated
+492,Forged from Trillium,client_asset_present,not_evaluated
+493,Rendezvous with Ranger General Vereesa Windrunner,client_asset_present,not_evaluated
+494,Survive the Ambush,client_asset_present,not_evaluated
+495,Destroy the Barricades,client_asset_present,not_evaluated
+496,Kill Anki and Beastcaller Pakutesh,client_asset_present,not_evaluated
+497,Kill Arcanital Mara'kah and his Spirit Mask,client_asset_present,not_evaluated
+498,Breaking Out,client_asset_present,not_evaluated
+508,Speak to Taoshi,client_asset_present,not_evaluated
+509,Into the Forge,client_asset_present,not_evaluated
+510,Reach the Exit,client_asset_present,not_evaluated
+511,Talk to the Boss,client_asset_present,not_evaluated
+514,Infiltration,client_asset_present,not_evaluated
+515,Reconnaissance,client_asset_present,not_evaluated
+516,The Sealed Gate,client_asset_present,not_evaluated
+533,Holdout,client_asset_present,not_evaluated
+535,Rock Grinding,client_asset_present,not_evaluated
+536,Economic Recovery,client_asset_present,not_evaluated
+537,End of the Mine,client_asset_present,not_evaluated
+538,Heartbreak,client_asset_present,not_evaluated
+539,The Mountaineers,client_asset_present,not_evaluated
+540,Save Scout Stonebeard,client_asset_present,not_evaluated
+541,Save Scout Boldbrew,client_asset_present,not_evaluated
+542,Save Scout Forgefellow,client_asset_present,not_evaluated
+543,The Cold Cave,client_asset_present,not_evaluated
+544,Victory or Death,client_asset_present,not_evaluated
+545,Explosives Acquisition,client_asset_present,not_evaluated
+550,Select a Trial,client_asset_present,not_evaluated
+551,Bonus Objective,client_asset_present,not_evaluated
+556,Boarding Party!,client_asset_present,not_evaluated
+557,Explosives Acquisition,client_asset_present,not_evaluated
+558,To Smithereens!,client_asset_present,not_evaluated
+559,Defeat the Admiral!,client_asset_present,not_evaluated
+560,Bonus Objectives,client_asset_present,not_evaluated
+561,Bonus Objectives,client_asset_present,not_evaluated
+565,Bonus Objective,client_asset_present,not_evaluated
+566,Bonus Objective,client_asset_present,not_evaluated
+567,Bonus Objectives,client_asset_present,not_evaluated
+580,Bonus Objectives,client_asset_present,not_evaluated
+587,Step 1,client_asset_present,not_evaluated
+593,Step 2,client_asset_present,not_evaluated
+594,Step 3,client_asset_present,not_evaluated
+595,Step 4,client_asset_present,not_evaluated
+596,Step 5,client_asset_present,not_evaluated
+597,Step 6,client_asset_present,not_evaluated
+598,Get Ready...,client_asset_present,not_evaluated
+599,Proving Grounds,client_asset_present,not_evaluated
+607,Test Stage 2,client_asset_present,not_evaluated
+608,Test Stage 1,client_asset_present,not_evaluated
+615,He Who Has No Life,client_asset_present,not_evaluated
+616,Test Stage 0,client_asset_present,not_evaluated
+620,Champions of Pandaria,client_asset_present,not_evaluated
+621,Celestial Combat,client_asset_present,not_evaluated
+637,Noodle Time,client_asset_present,not_evaluated
+647,Tutorial,client_asset_present,not_evaluated
+652,Noodle Time,client_asset_present,not_evaluated
+653,Bonus: Go for the Gold!,client_asset_present,not_evaluated

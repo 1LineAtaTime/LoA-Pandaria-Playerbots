@@ -49,10 +49,8 @@ bool CanRepairValue::Calculate()
 // registered in ValueContext.h before this pass; only the bodies were stubbed to false, which is
 // why no bot ever emptied its bags. "bag space" (ValueContext.h) and "item count" (ValueContext.h)
 // are both registered.
-// CAVEAT: AC's CanSellValue needs InventoryAction::Find to understand a "usage <n>" qualifier.
-// This fork's Find (InventoryAction.cpp:52-119) has no such branch - "usage 12" falls through
-// to the bare-name FindNamedItemVisitor and matches nothing - so on this fork the sum is 0 and
-// "can sell" is false until that branch is ported. Reported as a #258 gap, not worked around.
+// InventoryAction::Find supports "usage <n>" including items this character
+// cannot personally use. Such vendor goods must not disappear from this count.
 bool ShouldSellValue::Calculate()
 {
     return AI_VALUE(uint8, "bag space") > 80;

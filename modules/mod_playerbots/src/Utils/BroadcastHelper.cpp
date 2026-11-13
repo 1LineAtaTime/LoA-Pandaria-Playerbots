@@ -27,6 +27,7 @@
  */
 
 #include "BroadcastHelper.h"
+#include "PublicChatThrottle.h"
 
 #include "AiFactory.h"
 #include "Bag.h"
@@ -49,6 +50,9 @@
 
 #include <algorithm>
 #include <map>
+#include <mutex>
+#include <ctime>
+#include <cctype>
 #include <sstream>
 
 namespace
@@ -397,6 +401,25 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
     }
 
     Player* bot = ai->GetBot();
+    static PlayerbotPublicChatThrottle throttle;
+    // Strip the conversational coda from the repeat key, so different bots
+    // cannot repeat the same opener by choosing a different ending.
+    std::string phrase = message.substr(0, message.find_first_of(".!?"));
+    for (char& c : phrase)
+        if (static_cast<unsigned char>(c) < 128) c = char(std::tolower(static_cast<unsigned char>(c)));
+    phrase = std::to_string(bot->GetTeam()) + ":" + phrase;
+    uint32 minimum = uint32(std::max(5, sConfigMgr->GetIntDefault("AiPlayerbot.Chat.ChannelMinInterval", 30)));
+    uint32 maximum = uint32(std::max(int32(minimum), sConfigMgr->GetIntDefault("AiPlayerbot.Chat.ChannelMaxInterval", 60)));
+    uint32 botDelay = uint32(std::max(30, sConfigMgr->GetIntDefault("AiPlayerbot.Chat.PerBotInterval", 300)));
+    uint32 repeatDelay = uint32(std::max(60, sConfigMgr->GetIntDefault("AiPlayerbot.Chat.RepeatWindow", 1800)));
+    auto limited = [&](ToChannel channel, auto send)
+    {
+        uint32 scope = channel == TO_GUILD ? bot->GetGuildId() :
+            ((channel == TO_WORLD || channel == TO_LOOKING_FOR_GROUP) ? 0 : bot->GetZoneId());
+        std::string key = std::to_string(uint32(channel)) + ":" + std::to_string(bot->GetTeam()) + ":" + std::to_string(scope);
+        return throttle.TrySend(time(nullptr), key, bot->GetGUID().GetRawValue(), phrase,
+                                urand(minimum, maximum), botDelay, repeatDelay, send);
+    };
 
     for (auto const& pair : toChannels)
     {
@@ -410,7 +433,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toGuild)
-                    && SayToGuild(bot, message))
+                    && limited(pair.first, [&] { return SayToGuild(bot, message); }))
                 {
                     return true;
                 }
@@ -420,7 +443,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toWorld)
-                    && SayToWorld(bot, message))
+                    && limited(pair.first, [&] { return SayToWorld(bot, message); }))
                 {
                     return true;
                 }
@@ -430,7 +453,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toGeneral)
-                    && BroadcastSayToChannel(bot, message, CH_GENERAL))
+                    && limited(pair.first, [&] { return BroadcastSayToChannel(bot, message, CH_GENERAL); }))
                 {
                     return true;
                 }
@@ -440,7 +463,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toTrade)
-                    && BroadcastSayToChannel(bot, message, CH_TRADE))
+                    && limited(pair.first, [&] { return BroadcastSayToChannel(bot, message, CH_TRADE); }))
                 {
                     return true;
                 }
@@ -450,7 +473,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toLFG)
-                    && BroadcastSayToChannel(bot, message, CH_LOOKING_FOR_GROUP))
+                    && limited(pair.first, [&] { return BroadcastSayToChannel(bot, message, CH_LOOKING_FOR_GROUP); }))
                 {
                     return true;
                 }
@@ -460,7 +483,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toLocalDefense)
-                    && BroadcastSayToChannel(bot, message, CH_LOCAL_DEFENSE))
+                    && limited(pair.first, [&] { return BroadcastSayToChannel(bot, message, CH_LOCAL_DEFENSE); }))
                 {
                     return true;
                 }
@@ -470,7 +493,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toWorldDefense)
-                    && BroadcastSayToChannel(bot, message, CH_WORLD_DEFENSE))
+                    && limited(pair.first, [&] { return BroadcastSayToChannel(bot, message, CH_WORLD_DEFENSE); }))
                 {
                     return true;
                 }
@@ -480,7 +503,7 @@ bool BroadcastHelper::BroadcastToChannelWithGlobalChance(PlayerbotAI* ai, std::s
             {
                 if (roll <= chance
                     && broadcastRoll <= uint32(cfg.toGuildRecruitment)
-                    && BroadcastSayToChannel(bot, message, CH_GUILD_RECRUITMENT))
+                    && limited(pair.first, [&] { return BroadcastSayToChannel(bot, message, CH_GUILD_RECRUITMENT); }))
                 {
                     return true;
                 }
@@ -1035,6 +1058,33 @@ bool BroadcastHelper::BroadcastSuggestSomething(PlayerbotAI* ai, Player* bot)
         return false;
     if (RollChance(Cfg().suggestSomething))
     {
+        // One optional flavor line per human-led dungeon party per interval,
+        // shared across its companions. This replaces a public suggestion;
+        // it does not add a timer or turn routine quest notices back on.
+        Player* master = ai->GetMaster();
+        if (master && bot->GetGroup() && bot->GetGroup() == master->GetGroup() &&
+            (!GET_PLAYERBOT_AI(master) || GET_PLAYERBOT_AI(master)->IsRealPlayer()) &&
+            bot->GetMap()->IsDungeon() &&
+            sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.PartyFlavor", true))
+        {
+            static std::mutex flavorMutex;
+            static std::map<uint64, time_t> nextFlavor;
+            time_t now = time(nullptr);
+            uint32 interval = std::max(60, sConfigMgr->GetIntDefault("AiPlayerbot.Companion.PartyFlavorInterval", 300));
+            bool allowed = false;
+            {
+                std::lock_guard<std::mutex> lock(flavorMutex);
+                for (auto i = nextFlavor.begin(); i != nextFlavor.end(); )
+                    if (i->second <= now) i = nextFlavor.erase(i); else ++i;
+                uint64 key = master->GetGUID().GetRawValue();
+                if (nextFlavor.find(key) == nextFlavor.end())
+                {
+                    nextFlavor[key] = now + interval;
+                    allowed = true;
+                }
+            }
+            return allowed && ai->SayToParty(PlayerbotTextMgr::instance().GetBotText("party_flavor_548"));
+        }
         std::map<std::string, std::string> placeholders;
         placeholders["%my_role"] = FormatRole(bot);
 
@@ -1043,7 +1093,7 @@ bool BroadcastHelper::BroadcastSuggestSomething(PlayerbotAI* ai, Player* bot)
 
         return BroadcastToChannelWithGlobalChance(
             ai,
-            PlayerbotTextMgr::instance().GetBotText("suggest_something", placeholders),
+            PlayerbotTextMgr::instance().GetBotText("ambient_general_548", placeholders),
             { {TO_GUILD, 10}, {TO_WORLD, 70}, {TO_GENERAL, 100} }
         );
     }

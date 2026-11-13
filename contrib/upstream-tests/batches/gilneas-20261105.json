@@ -1,0 +1,85 @@
+{
+  "source_revision": "b2c6b144",
+  "adaptations": [
+    "nullable waypoint orientations",
+    "dual creature-text identity keys"
+  ],
+  "sources": [
+    {
+      "path": "sql/updates/world/2026_10_04_30_world_worgen_two_by_sea_catapult.sql",
+      "sha256_lf": "4c63747fdc3d3a4f30db45ebdae315252ab3da8fc3719c34f4185ba3bd158d31"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_31_world_worgen_duskhaven_sparring.sql",
+      "sha256_lf": "1f1833316592839aa47c085ea3f3a1eeff8154c08183f9a9532fd7c01667d687"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_32_world_worgen_sacrifices_crowley_horse.sql",
+      "sha256_lf": "8a4f58fdbf2ed5dee8218ee1b54b52b02a9f1ec3a6e654047795f996f0ad2e03"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_33_world_worgen_hunt_for_sylvanas.sql",
+      "sha256_lf": "198d91a3a78ec17e15c86b563ba5a7366a731e07df3a80038c52017e051390e5"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_34_world_worgen_koroth_banner.sql",
+      "sha256_lf": "58c5ad4d40a9973af483905324819abc64d6b6e52d32608a2d48c8b0c87f73b1"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_35_world_worgen_losing_your_tail.sql",
+      "sha256_lf": "bd05ce152a42b5eaf8e2e4fa2e7304df58b39bf93e5670588344b793a495461f"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_36_world_worgen_watchmen_survivors.sql",
+      "sha256_lf": "119ff4efe39c98f52f2e0f31253e163be0222fc1494335cb9449ab6fa60a6839"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_37_world_worgen_hewell_horse.sql",
+      "sha256_lf": "6a58af61de28ed45409a3c0ed78505fa9ae85dad6d4a817149f15fd079cefa53"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_38_world_worgen_battle_for_gilneas_city.sql",
+      "sha256_lf": "abdf0cd1eb93c0ff8dca9326cf2671ad9629ba7f440af0e9f166412724649ac2"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_39_world_worgen_endgame_hippogryph.sql",
+      "sha256_lf": "2d34c6103f0f5717899b04dc1e70d9cb1cbf1c0ca46e99e1957a187115aa0d40"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_40_world_worgen_losing_your_tail_once.sql",
+      "sha256_lf": "b0312aa81506720daa0a9ed706016fcba649162f97ababa6c60787a3f2754567"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_41_world_worgen_hunt_for_sylvanas_tobias_passive.sql",
+      "sha256_lf": "50957a424f5ed7e4f159d0d2bae4ca4b6f2c8aaf3138b416e9932e2c5362209e"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_42_world_worgen_stout_mountain_horse_ai.sql",
+      "sha256_lf": "b7d8f35f534f750334df2bcd38b90f36103b2fe6f27479403ce139692b5fae12"
+    },
+    {
+      "path": "sql/updates/world/2026_10_04_43_world_worgen_liam_phase2.sql",
+      "sha256_lf": "d522885e77f570f8c2a8a9c1d44dcd1680a23dea47d4d9f7a42d8f6745c6a673"
+    },
+    {
+      "path": "sql/updates/world/2026_10_09_10_world_gilneas_lorna_post_immune_npc.sql",
+      "sha256_lf": "bf307ebfec139ff0e38880944970c0f87ac10029703224d787293c23aec1a0d7"
+    },
+    {
+      "path": "sql/updates/world/2026_10_09_11_world_gilneas_tobias_immune_npc.sql",
+      "sha256_lf": "7b0a975a718f7e838b0fcb6f2a80a22eff13cd64da02e474c615f51a29a67a9f"
+    },
+    {
+      "path": "sql/updates/world/2026_10_09_13_world_gilneas_invasion_camera.sql",
+      "sha256_lf": "ed0aeebcf921e71496bd8f20113e8fc8e76855ffd9a21e917c69849991ffa849"
+    },
+    {
+      "path": "sql/updates/world/2026_10_09_14_world_gilneas_endgame_gunship.sql",
+      "sha256_lf": "300b6d2d87d919bd660a2bd7e2706c97c9736ae8af8c0fc8c96b5a0886e44dbf"
+    },
+    {
+      "path": "sql/updates/world/2026_10_10_00_world_gilneas_tobias_phase.sql",
+      "sha256_lf": "e48753ce95e0e62a2b55391d2ab923f05e910d5e4cc00aba6143a2a05f739c66"
+    }
+  ]
+}

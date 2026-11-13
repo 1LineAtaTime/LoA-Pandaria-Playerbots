@@ -1,0 +1,11 @@
+{
+  "prior_db_records": 1503,
+  "fresh_db_records": 1447,
+  "new_db_signatures": [],
+  "new_server_signatures": [],
+  "world_initialized": true,
+  "template_reload_logged": true,
+  "mmap_warning_count": 0,
+  "error_file_bytes": 183394,
+  "error_file_note": "Includes existing startup DB/content diagnostics, not a runtime-only error channel."
+}

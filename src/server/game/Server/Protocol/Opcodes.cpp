@@ -194,7 +194,7 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_BATTLE_PET_MODIFY_NAME, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetModifyName); // 5.4.8 18414
     DEFINE_HANDLER(CMSG_BATTLE_PET_QUERY_NAME, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetQueryName); // 5.4.8 18414
     DEFINE_HANDLER(CMSG_BATTLE_PET_REQUEST_JOURNAL, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetRequestJournal); // 5.4.8 18414
-    DEFINE_HANDLER(CMSG_BATTLE_PET_REQUEST_JOURNAL_LOCK, STATUS_UNHANDLED, PROCESS_INPLACE, &WorldSession::Handle_NULL); // 5.4.8 18414
+    DEFINE_HANDLER(CMSG_BATTLE_PET_REQUEST_JOURNAL_LOCK, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetRequestJournal); // 5.4.8 18414
     DEFINE_HANDLER(CMSG_BATTLE_PET_SET_BATTLE_SLOT, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetSetBattleSlot); // 5.4.8 18414
     DEFINE_HANDLER(CMSG_BATTLE_PET_SET_FLAGS, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetSetFlags); // 5.4.8 18414
     DEFINE_HANDLER(CMSG_BATTLE_PET_SUMMON_COMPANION, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePetSummonCompanion); // 5.4.8 18414
@@ -1294,9 +1294,11 @@ void OpcodeTable::Initialize()
 #undef DEFINE_SERVER_OPCODE_HANDLER
 
 #define DEFINE_MSG_OPCODE_HANDLER(opcode, status, processing, handler) \
-    ValidateAndSetServerOpcode(OpcodeServer(opcode), #opcode, status); \
     ValidateAndSetClientOpcode<decltype(handler), handler>(OpcodeClient(opcode), #opcode, status, processing)
 
+    // These legacy MSG names identify incoming 5.4.8 messages. Movement is
+    // broadcast as SMSG_PLAYER_MOVE, not with the incoming numeric ID. Registering
+    // both directions here collides with unrelated spell and pet server packets.
     DEFINE_MSG_OPCODE_HANDLER(MSG_MOVE_FALL_LAND, STATUS_LOGGEDIN, PROCESS_THREADSAFE, &WorldSession::HandleMovementOpcodes); // 5.4.8 18414
     DEFINE_MSG_OPCODE_HANDLER(MSG_MOVE_HEARTBEAT, STATUS_LOGGEDIN, PROCESS_THREADSAFE, &WorldSession::HandleMovementOpcodes); // 5.4.8 18414
     DEFINE_MSG_OPCODE_HANDLER(MSG_MOVE_JUMP, STATUS_LOGGEDIN, PROCESS_THREADSAFE, &WorldSession::HandleMovementOpcodes); // 5.4.8 18414

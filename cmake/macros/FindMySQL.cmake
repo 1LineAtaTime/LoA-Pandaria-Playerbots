@@ -59,11 +59,14 @@ if(UNIX)
     "preferred path to MySQL (mysql_config)"
   )
 
-  find_program(MYSQL_CONFIG mysql_config
+  find_program(MYSQL_CONFIG NAMES mysql_config mariadb_config
+    HINTS ${_MYSQL_ROOT_HINTS}
+    PATHS
     ${MYSQL_CONFIG_PREFER_PATH}
     /usr/local/mysql/bin/
     /usr/local/bin/
     /usr/bin/
+    PATH_SUFFIXES bin
   )
 
   if(MYSQL_CONFIG)
@@ -80,7 +83,7 @@ if(UNIX)
     #message("[DEBUG] MYSQL ADD_INCLUDE_PATH : ${MYSQL_ADD_INCLUDE_PATH}")
     # set LIBRARY_DIR
     execute_process(
-      COMMAND "${MYSQL_CONFIG}" --libs_r
+      COMMAND "${MYSQL_CONFIG}" --libs
       OUTPUT_VARIABLE MY_TMP
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -121,8 +124,10 @@ find_path(MYSQL_INCLUDE_DIR
     ${MYSQL_ADD_INCLUDE_PATH}
     /usr/include
     /usr/include/mysql
+    /usr/include/mariadb
     /usr/local/include
     /usr/local/include/mysql
+    /usr/local/include/mariadb
     /usr/local/mysql/include
     "${PROGRAM_FILES_64}/MySQL/MySQL Server 8.3"
     "${PROGRAM_FILES_64}/MySQL/MySQL Server 8.2"
@@ -130,6 +135,9 @@ find_path(MYSQL_INCLUDE_DIR
     "${PROGRAM_FILES_64}/MySQL/MySQL Server 8.0"
     "${PROGRAM_FILES_64}/MySQL/MySQL Server 5.7"
     "${PROGRAM_FILES_64}/MySQL"
+    "${PROGRAM_FILES_64}/MariaDB/MariaDB Connector C 64-bit"
+    "${PROGRAM_FILES_64}/MariaDB/MariaDB Connector C"
+    "${PROGRAM_FILES_64}/MariaDB Connector C 64-bit"
     "${PROGRAM_FILES_32}/MySQL/MySQL Server 8.3"
     "${PROGRAM_FILES_32}/MySQL/MySQL Server 8.2"
     "${PROGRAM_FILES_32}/MySQL/MySQL Server 8.1"
@@ -161,6 +169,7 @@ find_path(MYSQL_INCLUDE_DIR
   PATH_SUFFIXES
     include
     include/mysql
+    include/mariadb
   DOC
     "Specify the directory containing mysql.h."
 )
@@ -169,7 +178,10 @@ if(UNIX)
   foreach(LIB ${MYSQL_ADD_LIBRARIES})
     find_library(MYSQL_LIBRARY
       NAMES
-        mysql libmysql ${LIB}
+        mysqlclient mariadb mysql libmysql libmariadb ${LIB}
+      NAMES_PER_DIR
+      HINTS
+        ${_MYSQL_ROOT_HINTS}
       PATHS
         ${MYSQL_ADD_LIBRARIES_PATH}
         /usr/lib
@@ -177,6 +189,8 @@ if(UNIX)
         /usr/local/lib
         /usr/local/lib/mysql
         /usr/local/mysql/lib
+      PATH_SUFFIXES
+        lib lib64 lib/mysql lib/mariadb
       DOC "Specify the location of the mysql library here."
     )
   endforeach(LIB ${MYSQL_ADD_LIBRARY})
@@ -186,6 +200,7 @@ if(WIN32)
   find_library(MYSQL_LIBRARY
     NAMES
       libmysql libmariadb
+    NAMES_PER_DIR
     HINTS
       ${_MYSQL_ROOT_HINTS}
     PATHS
@@ -196,6 +211,9 @@ if(WIN32)
       "${PROGRAM_FILES_64}/MySQL/MySQL Server 8.0"
       "${PROGRAM_FILES_64}/MySQL/MySQL Server 5.7"
       "${PROGRAM_FILES_64}/MySQL/lib"
+      "${PROGRAM_FILES_64}/MariaDB/MariaDB Connector C 64-bit"
+      "${PROGRAM_FILES_64}/MariaDB/MariaDB Connector C"
+      "${PROGRAM_FILES_64}/MariaDB Connector C 64-bit"
       "${PROGRAM_FILES_32}/MySQL/MySQL Server 8.3"
       "${PROGRAM_FILES_32}/MySQL/MySQL Server 8.2"
       "${PROGRAM_FILES_32}/MySQL/MySQL Server 8.1"
@@ -227,6 +245,7 @@ if(WIN32)
     PATH_SUFFIXES
       lib
       lib/opt
+      lib/mariadb
     DOC "Specify the location of the mysql library here."
   )
 endif(WIN32)
@@ -249,7 +268,7 @@ else(NOT WIN32)
 endif(NOT WIN32)
 
 if(UNIX)
-    find_program(MYSQL_EXECUTABLE mysql
+    find_program(MYSQL_EXECUTABLE NAMES mysql mariadb
     PATHS
         ${MYSQL_CONFIG_PREFER_PATH}
         /usr/local/mysql/bin/
@@ -261,7 +280,7 @@ if(UNIX)
 endif(UNIX)
 
 if(WIN32)
-  find_program(MYSQL_EXECUTABLE mysql
+  find_program(MYSQL_EXECUTABLE NAMES mysql mariadb
     HINTS
       ${_MYSQL_ROOT_HINTS}
     PATHS

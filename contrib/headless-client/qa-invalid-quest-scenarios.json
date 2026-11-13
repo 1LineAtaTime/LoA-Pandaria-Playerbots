@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "loa-invalid-quest-requests-v1",
+  "expectation_source": "Missing quest IDs must be rejected before dereferencing the quest template. They must not persist or prevent logout and character re-entry.",
+  "scenarios": [
+    {"id": "invalid-accept-zero", "race": 1, "class_id": 1, "mode": "invalid_accept", "request_quest": 0},
+    {"id": "invalid-accept-unknown", "race": 5, "class_id": 4, "mode": "invalid_accept", "request_quest": 999999999},
+    {"id": "invalid-accept-max-uint32", "race": 22, "class_id": 4, "mode": "invalid_accept", "request_quest": 4294967295}
+  ]
+}

@@ -21,6 +21,7 @@
 #include "Player.h"
 #include "ServiceMgr.h"
 #include "Realm.h"
+#include "BattlePayBoostQueries.h"
 
 void LoadBoostItems()
 {
@@ -64,56 +65,19 @@ CharacterBooster::CharacterBooster(WorldSession* session) : m_session(session), 
 
 void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
 {
-    if (!accountId && !session)
+    if (!accountId && session)
+        accountId = session->GetAccountId();
+    if (!accountId)
         return;
-
-    if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION) && !boost)
-    {
-        // to be impl new here
-    }
-
-    uint32 counter = 0;
-
-    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BOOST);
-    stmt->setUInt32(0, accountId);
-    stmt->setUInt32(1, realm.Id.Realm);
-    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
-    {
-        Field* fields = result->Fetch();
-        counter = fields[0].GetUInt32();
-    }
-
-    if (!boost)
-    {
-        if (session && counter <= 1)
-            session->SetBoost(false);
-
-        // #969: no row for this realm (login also counts realmid -1 rows) left counter at 0, and
-        // counter-- wrapped to 4294967295: an endless supply of boosts.
-        if (counter)
-            counter--;
-    }
+    if (boost)
+        LoginDatabase.DirectPExecute("INSERT INTO account_boost(id,realmid,counter) VALUES(%u,%u,1) ON DUPLICATE KEY UPDATE counter=IF(counter<4294967295,counter+1,counter)", accountId, realm.Id.Realm);
     else
-    {
-        if (session)
-            session->SetBoost(boost);
-        counter++;
-    }
-
-    if (counter > 0)
-    {
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_BOOST);
-        stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realm.Id.Realm);
-        stmt->setUInt32(2, counter);
-    }
-    else
-    {
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BOOST);
-        stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realm.Id.Realm);
-    }
-    LoginDatabase.Execute(stmt);
+        LoginDatabase.DirectPExecute("UPDATE account_boost SET counter=counter-1 WHERE id=%u AND realmid=%u AND counter>0", accountId, realm.Id.Realm);
+    // Zero rows are retained so a concurrent grant/reservation cannot be lost
+    // to DELETE/REPLACE. Session flags are only a view of durable entitlements.
+    QueryResult remaining = LoginDatabase.PQuery("SELECT COUNT(*) FROM account_boost WHERE id=%u AND realmid IN (-1,%u) AND counter>0", accountId, realm.Id.Realm);
+    if (session && remaining)
+        session->SetBoost(remaining->Fetch()[0].GetUInt64() != 0);
 }
 
 void CharacterBooster::_GetCharBoostItems(PreparedItemsMap& itemsToMail, PreparedItemsMap& itemsToEquip) const
@@ -248,8 +212,9 @@ void CharacterBooster::_SendMail(CharacterDatabaseTransaction trans, PreparedIte
 
     for (auto&& itr : items)
     {
-        if (Item* item = Item::CreateItem(itr.second, 1, 0))
+        if (std::unique_ptr<Item> item{Item::CreateItem(itr.second, 1, nullptr)})
         {
+            item->SetOwnerGUID(m_charBoostInfo.charGuid);
             item->SaveToDB(trans);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL_ITEM);
@@ -259,7 +224,10 @@ void CharacterBooster::_SendMail(CharacterDatabaseTransaction trans, PreparedIte
             trans->Append(stmt);
         }
         else
+        {
+            m_buildFailed = true;
             TC_LOG_ERROR("sql.sql", "Can't create item %u for _SendMail in Boost. Skip.", itr.second);
+        }
     }
 }
 
@@ -269,15 +237,22 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
     stmt->setUInt32(0, m_charBoostInfo.charGuid.GetCounter());
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
-    if (!result)
-        return;
-
     MailTemplateEntry const* mailTemplateEntry = sMailTemplateStore.LookupEntry(MAIL_CHARRACTER_BOOST_EQUIPED_ITEMS_BODY);
-    if (!mailTemplateEntry) // should never happen
+    if (!mailTemplateEntry)
+    {
+        m_buildFailed = true;
         return;
+    }
 
+    QueryResult inventoryCount = CharacterDatabase.PQuery("SELECT COUNT(*) FROM character_inventory inv1 LEFT JOIN character_inventory inv2 ON inv1.bag=inv2.item LEFT JOIN item_instance i ON inv1.item=i.guid WHERE inv1.slot<39 AND inv1.guid=%u AND (inv2.slot<39 OR inv1.bag=0) AND i.itemEntry!=6948", m_charBoostInfo.charGuid.GetCounter());
+    if (!inventoryCount || (!result && inventoryCount->Fetch()[0].GetUInt64()))
+    {
+        m_buildFailed = true;
+        return;
+    }
+    if (result)
+    {
     uint32 mailId = _PrepareMail(trans, mailTemplateEntry->subject, mailTemplateEntry->content);
-
     uint32 itemCount = 0;
     do
     {
@@ -297,6 +272,7 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
 
         itemCount++;
     } while (result->NextRow());
+    }
 
     // unequip after sending
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_INVENTORY_BOOST);
@@ -306,10 +282,18 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
     // move or create hearthstone to first slot
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_HEARTHSTONE_BOOST);
     stmt->setUInt32(0, m_charBoostInfo.charGuid.GetCounter());
-    if (!CharacterDatabase.Query(stmt))
+    PreparedQueryResult hearthstone = CharacterDatabase.Query(stmt);
+    QueryResult hearthstoneCount = CharacterDatabase.PQuery("SELECT COUNT(*) FROM item_instance WHERE owner_guid=%u AND itemEntry=6948", m_charBoostInfo.charGuid.GetCounter());
+    if (!hearthstoneCount || (!hearthstone && hearthstoneCount->Fetch()[0].GetUInt64()))
     {
-        if (Item* item = Item::CreateItem(ITEM_HEARTHSTONE, 1, 0))
+        m_buildFailed = true;
+        return;
+    }
+    if (!hearthstone)
+    {
+        if (std::unique_ptr<Item> item{Item::CreateItem(ITEM_HEARTHSTONE, 1, nullptr)})
         {
+            item->SetOwnerGUID(m_charBoostInfo.charGuid);
             item->SaveToDB(trans);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_INVENTORY);
@@ -319,6 +303,8 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
             stmt->setUInt32(3, item->GetGUID().GetCounter());
             trans->Append(stmt);
         }
+        else
+            m_buildFailed = true;
     }
     else
     {
@@ -328,8 +314,9 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
     }
 
     // insert food to second slot
-    if (Item* item = Item::CreateItem(ITEM_LEMON_FLAVOUR_PUDING, 20, 0))
+    if (std::unique_ptr<Item> item{Item::CreateItem(ITEM_LEMON_FLAVOUR_PUDING, 20, nullptr)})
     {
+        item->SetOwnerGUID(m_charBoostInfo.charGuid);
         item->SaveToDB(trans);
 
         stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_INVENTORY);
@@ -339,13 +326,16 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
         stmt->setUInt32(3, item->GetGUID().GetCounter());
         trans->Append(stmt);
     }
+    else
+        m_buildFailed = true;
 
     // insert bag in inventory slots
     uint8 slot = INVENTORY_SLOT_BAG_START;
     for (uint8 i = 0; i < 4; i++)
     {
-        if (Item* item = Item::CreateItem(ITEM_EMBERSILK_BAG, 1, 0))
+        if (std::unique_ptr<Item> item{Item::CreateItem(ITEM_EMBERSILK_BAG, 1, nullptr)})
         {
+            item->SetOwnerGUID(m_charBoostInfo.charGuid);
             item->SaveToDB(trans);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_INVENTORY);
@@ -355,6 +345,8 @@ void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) con
             stmt->setUInt32(3, item->GetGUID().GetCounter());
             trans->Append(stmt);
         }
+        else
+            m_buildFailed = true;
         slot++;
     }
 }
@@ -363,7 +355,14 @@ std::string CharacterBooster::_SetSpecialization(CharacterDatabaseTransaction tr
 {
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_TALENT);
     stmt->setUInt32(0, m_charBoostInfo.charGuid.GetCounter());
-    if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    QueryResult talentCount = CharacterDatabase.PQuery("SELECT COUNT(*) FROM character_talent WHERE guid=%u", m_charBoostInfo.charGuid.GetCounter());
+    if (!talentCount || (!result && talentCount->Fetch()[0].GetUInt64()))
+    {
+        m_buildFailed = true;
+        return {};
+    }
+    if (result)
     {
         do
         {
@@ -443,8 +442,9 @@ std::string CharacterBooster::_EquipItems(CharacterDatabaseTransaction trans, Pr
         auto itr = itemsToEquip.find(i);
         if (itr != itemsToEquip.end())
         {
-            if (Item* item = Item::CreateItem(itr->second, 1, 0))
+            if (std::unique_ptr<Item> item{Item::CreateItem(itr->second, 1, nullptr)})
             {
+                item->SetOwnerGUID(m_charBoostInfo.charGuid);
                 item->SaveToDB(trans);
 
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_INVENTORY);
@@ -458,6 +458,7 @@ std::string CharacterBooster::_EquipItems(CharacterDatabaseTransaction trans, Pr
             }
             else
             {
+                m_buildFailed = true;
                 TC_LOG_ERROR("sql.sql", "Can't create item %u for _EquipItems in Boost. Skip.", itr->second);
 
                 items << "0 0 ";
@@ -501,7 +502,14 @@ void CharacterBooster::_LearnVeteranBonuses(CharacterDatabaseTransaction trans, 
     bool cookingBoosted = false;
     bool fishingBoosted = false;
     bool archaeologyBoosted = false;
-    if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    QueryResult skillCount = CharacterDatabase.PQuery("SELECT COUNT(*) FROM character_skills WHERE guid=%u", m_charBoostInfo.charGuid.GetCounter());
+    if (!skillCount || (!result && skillCount->Fetch()[0].GetUInt64()))
+    {
+        m_buildFailed = true;
+        return;
+    }
+    if (result)
     {
         do
         {
@@ -650,33 +658,82 @@ void CharacterBooster::_LearnVeteranBonuses(CharacterDatabaseTransaction trans, 
     }
 }
 
-void CharacterBooster::_HandleCharacterBoost() const
+bool CharacterBooster::_HandleCharacterBoost()
 {
-    if (!GetSession()->HasBoost())
-        return;
-
-    if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION))
+    if (!m_useId || GetSession()->GetPlayer() || GetSession()->PlayerLoading())
+        return false;
+    uint32 const account = GetSession()->GetAccountId();
+    uint32 const target = m_charBoostInfo.charGuid.GetCounter();
+    QueryResult use = LoginDatabase.PQuery("SELECT state FROM battlepay_boost_use WHERE id=%llu AND account_id=%u AND realm_id=%u AND character_guid=%u", m_useId, account, realm.Id.Realm, target);
+    if (!use)
+        return false;
+    if (use->Fetch()[0].GetUInt8() == 2)
     {
-        auto paid = LoginDatabase.PQuery("SELECT counter FROM account_boost WHERE id = '%d' AND realmid = '%d' AND counter > 0", GetSession()->GetAccountId(), realm.Id.Realm);
-        if (!paid)
-            return;
+        PreparedItemsMap itemsToMail, itemsToEquip;
+        _GetCharBoostItems(itemsToMail, itemsToEquip);
+        SendCharBoostPacket(itemsToEquip);
+        return true;
     }
+    if (use->Fetch()[0].GetUInt8() != 1)
+        return false;
+
+    QueryResult receipt = CharacterDatabase.PQuery("SELECT state FROM battlepay_boost_delivery WHERE use_id=%llu AND account_id=%u AND character_guid=%u", m_useId, account, target);
+    if (!receipt)
+    {
+        QueryResult owner = CharacterDatabase.PQuery("SELECT COUNT(*) FROM characters WHERE guid=%u AND account=%u AND level<90", target, account);
+        if (!owner)
+            return false;
+        if (owner->Fetch()[0].GetUInt64() != 1)
+        {
+            CharacterDatabase.DirectPExecute("INSERT IGNORE INTO battlepay_boost_delivery(use_id,account_id,character_guid,state) VALUES(%llu,%u,%u,0)", m_useId, account, target);
+            receipt = CharacterDatabase.PQuery("SELECT state FROM battlepay_boost_delivery WHERE use_id=%llu", m_useId);
+        }
+    }
+    if (receipt && receipt->Fetch()[0].GetUInt8() == 0)
+    {
+        // The durable character-side fence makes restoration safe even when a
+        // second process was trying to apply this boost concurrently.
+        LoginDatabase.DirectPExecute(BattlePayBoostQueries::Restore, m_useId, account, realm.Id.Realm);
+        QueryResult restored = LoginDatabase.PQuery("SELECT state FROM battlepay_boost_use WHERE id=%llu AND account_id=%u", m_useId, account);
+        if (restored && restored->Fetch()[0].GetUInt8() == 3)
+        {
+            m_useId = 0;
+            m_boosting = false;
+            m_charBoostInfo = CharacterBoostData();
+            QueryResult remaining = LoginDatabase.PQuery("SELECT COUNT(*) FROM account_boost WHERE id=%u AND realmid IN (-1,%u) AND counter>0", account, realm.Id.Realm);
+            if (remaining)
+                GetSession()->SetBoost(remaining->Fetch()[0].GetUInt64() != 0);
+        }
+        return false;
+    }
+
+    if (!receipt)
+    {
 
     uint8 raceId = 0, classId = 0, level = 0;
     _GetBoostedCharacterData(raceId, classId, level);
-    if (!raceId || !classId || !level)
-        return;
-
-    if (ChrSpecializationEntry const* specEntry = sChrSpecializationStore.LookupEntry(m_charBoostInfo.specialization))
-        if (classId != specEntry->classId)
-            return;
+    ChrSpecializationEntry const* specEntry = sChrSpecializationStore.LookupEntry(m_charBoostInfo.specialization);
+    if (!raceId || raceId >= MAX_RACES || !classId || !level || !specEntry || classId != specEntry->classId)
+        return false;
 
     PreparedItemsMap itemsToMail, itemsToEquip;
     _GetCharBoostItems(itemsToMail, itemsToEquip);
-    if (itemsToEquip.empty())
-        return;
+    if (itemsToEquip.empty() || !sMailTemplateStore.LookupEntry(MAIL_CHARRACTER_BOOST_EQUIPED_ITEMS_BODY))
+        return false;
+    for (auto const& item : itemsToEquip)
+        if (!sObjectMgr->GetItemTemplate(item.second))
+            return false;
+    for (auto const& item : itemsToMail)
+        if (!sObjectMgr->GetItemTemplate(item.second))
+            return false;
+    for (uint32 item : { uint32(ITEM_HEARTHSTONE), uint32(ITEM_LEMON_FLAVOUR_PUDING), uint32(ITEM_EMBERSILK_BAG) })
+        if (!sObjectMgr->GetItemTemplate(item))
+            return false;
 
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    std::string claim = Trinity::StringFormat("INSERT INTO battlepay_boost_delivery(use_id,account_id,character_guid,state) SELECT %llu,%u,guid,1 FROM characters WHERE guid=%u AND account=%u AND level<90 AND online=0", m_useId, account, target, account);
+    trans->AppendChecked(claim.c_str(), 1);
+    m_buildFailed = false;
     _PrepareInventory(trans);
     _SendMail(trans, itemsToMail);
     _LearnSpells(trans);
@@ -684,13 +741,28 @@ void CharacterBooster::_HandleCharacterBoost() const
     if (level >= 60)
         _LearnVeteranBonuses(trans, classId);
     if (raceId == RACE_GOBLIN || raceId == RACE_WORGEN || raceId == RACE_PANDAREN_ALLIANCE || raceId == RACE_PANDAREN_HORDE || classId == CLASS_DEATH_KNIGHT)
-        sServiceMgr->AddSpecificPlayerData(m_charBoostInfo.charGuid, 0, raceId, classId, nullptr, true, false);
-    CharacterDatabase.CommitTransaction(trans);
-    SetBoosting(GetSession(), GetSession()->GetAccountId(), false);
-    SendCharBoostPacket(itemsToEquip);
+        sServiceMgr->AddSpecificPlayerData(target, 0, raceId, classId, nullptr, true, false, trans);
+    if (m_buildFailed)
+        return false;
+    if (sWorld->getBoolConfig(CONFIG_EXECUTED_SERVICES_LOG))
+        trans->PAppend("INSERT INTO executed_services(type,guid,old_data,new_data,execute_date) VALUES(%u,%u,'BattlePay boost','','%s')", uint32(SERVICE_TYPE_BOOST), target, TimeToTimestampStr(time(nullptr)));
+    CharacterDatabase.AsyncCommitTransaction(trans).m_future.get();
+    receipt = CharacterDatabase.PQuery("SELECT state FROM battlepay_boost_delivery WHERE use_id=%llu AND account_id=%u AND character_guid=%u", m_useId, account, target);
+    if (!receipt || receipt->Fetch()[0].GetUInt8() != 1)
+        return false;
+    }
 
-    auto data = sWorld->GetCharacterNameData(m_charBoostInfo.charGuid);
-    sServiceMgr->ExecutedServices(m_charBoostInfo.charGuid, SERVICE_TYPE_BOOST, std::string("Boosted name: ") + (data ? data->m_name : std::string("error")), "");
+    LoginDatabase.DirectPExecute("UPDATE battlepay_boost_use SET state=2 WHERE id=%llu AND account_id=%u AND realm_id=%u AND state=1", m_useId, account, realm.Id.Realm);
+    QueryResult completed = LoginDatabase.PQuery("SELECT state FROM battlepay_boost_use WHERE id=%llu AND account_id=%u", m_useId, account);
+    if (!completed || completed->Fetch()[0].GetUInt8() != 2)
+        return false;
+    PreparedItemsMap itemsToMail, itemsToEquip;
+    _GetCharBoostItems(itemsToMail, itemsToEquip);
+    SendCharBoostPacket(itemsToEquip);
+    QueryResult remaining = LoginDatabase.PQuery("SELECT COUNT(*) FROM account_boost WHERE id=%u AND realmid IN (-1,%u) AND counter>0", account, realm.Id.Realm);
+    if (remaining)
+        GetSession()->SetBoost(remaining->Fetch()[0].GetUInt64() != 0);
+    return true;
 }
 
 void CharacterBooster::HandleCharacterBoost()
@@ -707,31 +779,117 @@ void CharacterBooster::HandleCharacterBoost()
             m_sendPacket = true;
             break;
         case CHARACTER_BOOST_APPLIED:
+            if (!m_completed)
+                break;
             sBattlePayMgr->SendBattlePayDistributionUpdate(GetSession(), BATTLE_PAY_SERVICE_BOOST, m_charBoostInfo.action);
             m_charBoostInfo = CharacterBoostData();
+            m_boosting = false;
+            m_useId = 0;
+            m_completed = false;
             break;
         default:
             break;
     }
 }
 
-void CharacterBooster::SetBoostedCharInfo(ObjectGuid guid, uint32 action, uint32 specialization, bool allianceFaction)
+bool CharacterBooster::HasRecoverySchema() const
 {
+    QueryResult auth = LoginDatabase.Query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('account_boost','battlepay_boost_use') AND ENGINE='InnoDB'");
+    QueryResult chars = CharacterDatabase.Query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('characters','character_inventory','item_instance','mail','mail_items','character_spell','character_skills','character_talent','character_queststatus','character_queststatus_rewarded','battlepay_boost_delivery') AND ENGINE='InnoDB'");
+    QueryResult boostKey = LoginDatabase.Query("SELECT COUNT(*) FROM (SELECT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='account_boost' GROUP BY INDEX_NAME,NON_UNIQUE HAVING NON_UNIQUE=0 AND GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) IN ('id,realmid','realmid,id')) AS boost_keys");
+    if (sWorld->getBoolConfig(CONFIG_EXECUTED_SERVICES_LOG))
+    {
+        QueryResult log = CharacterDatabase.Query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='executed_services' AND ENGINE='InnoDB'");
+        if (!log || log->Fetch()[0].GetUInt64() != 1)
+            return false;
+    }
+    return auth && chars && boostKey && boostKey->Fetch()[0].GetUInt64() > 0 && auth->Fetch()[0].GetUInt64() == 2 && chars->Fetch()[0].GetUInt64() == 11;
+}
+
+bool CharacterBooster::SetBoostedCharInfo(ObjectGuid guid, uint32 action, uint32 specialization, bool allianceFaction)
+{
+    // Boosts operate on offline, authenticated-account characters only. Do not
+    // accept client faction/spec fields before checking the character itself.
+    if (m_useId || m_boosting || !guid.IsPlayer() || GetSession()->GetPlayer() || GetSession()->PlayerLoading() || !HasRecoverySchema())
+        return false;
+    uint32 const account = GetSession()->GetAccountId();
+    QueryResult character = CharacterDatabase.PQuery("SELECT race,class,level,online FROM characters WHERE guid=%u AND account=%u", guid.GetCounter(), account);
+    if (!character)
+        return false;
+    Field* fields = character->Fetch();
+    uint8 race = fields[0].GetUInt8(), classId = fields[1].GetUInt8();
+    ChrSpecializationEntry const* spec = sChrSpecializationStore.LookupEntry(specialization);
+    if (!race || race >= MAX_RACES || !spec || spec->classId != classId || fields[2].GetUInt8() >= 90 || fields[3].GetUInt8())
+        return false;
+    if (race != RACE_PANDAREN_NEUTRAL && allianceFaction != (Player::TeamForRace(race) == ALLIANCE))
+        return false;
+
+    // The unique character key and atomic counter/state transition turn an
+    // interrupted application into a recoverable reservation, never a new debit.
+    LoginDatabase.DirectPExecute("INSERT IGNORE INTO battlepay_boost_use(account_id,realm_id,entitlement_realm,character_guid,specialization,alliance) SELECT id,%u,realmid,%u,%u,%u FROM account_boost WHERE id=%u AND realmid IN (-1,%u) AND counter>0 ORDER BY realmid DESC LIMIT 1", realm.Id.Realm, guid.GetCounter(), specialization, uint32(allianceFaction), account, realm.Id.Realm);
+    QueryResult use = LoginDatabase.PQuery("SELECT id,state,specialization,alliance FROM battlepay_boost_use WHERE account_id=%u AND realm_id=%u AND character_guid=%u", account, realm.Id.Realm, guid.GetCounter());
+    if (!use || use->Fetch()[1].GetUInt8() > 1 || use->Fetch()[2].GetUInt32() != specialization || bool(use->Fetch()[3].GetUInt8()) != allianceFaction)
+        return false;
+    uint64 id = use->Fetch()[0].GetUInt64();
+    LoginDatabase.DirectPExecute(BattlePayBoostQueries::Reserve, id, account, realm.Id.Realm);
+    use = LoginDatabase.PQuery("SELECT state FROM battlepay_boost_use WHERE id=%llu AND account_id=%u", id, account);
+    if (!use || use->Fetch()[0].GetUInt8() != 1)
+        return false;
+
+    m_useId = id;
+    m_completed = false;
     m_boosting = true;
     m_charBoostInfo.charGuid = guid;
     m_charBoostInfo.action = action;
     m_charBoostInfo.specialization = specialization;
     m_charBoostInfo.allianceFaction = allianceFaction;
+    return true;
+}
+
+void CharacterBooster::RecoverBoost()
+{
+    if (GetSession()->GetPlayer() || GetSession()->PlayerLoading() || !HasRecoverySchema())
+        return;
+    uint32 const account = GetSession()->GetAccountId();
+    QueryResult result = LoginDatabase.PQuery("SELECT id,character_guid,specialization,alliance FROM battlepay_boost_use WHERE account_id=%u AND realm_id=%u AND state=1 ORDER BY id LIMIT 1", account, realm.Id.Realm);
+    if (!result)
+        return;
+    m_useId = result->Fetch()[0].GetUInt64();
+    m_charBoostInfo.charGuid = ObjectGuid::Create<HighGuid::Player>(result->Fetch()[1].GetUInt32());
+    m_charBoostInfo.specialization = result->Fetch()[2].GetUInt32();
+    m_charBoostInfo.allianceFaction = result->Fetch()[3].GetUInt8() != 0;
+    m_charBoostInfo.action = CHARACTER_BOOST_APPLIED;
+    m_boosting = true;
+    m_completed = false;
+    m_timer = 500;
+    m_sendPacket = true;
 }
 
 void CharacterBooster::Update(uint32 diff)
 {
+    if (GetSession()->IsBot())
+        return;
+    if (!m_useId)
+    {
+        if (m_recoveryTimer <= diff)
+        {
+            m_recoveryTimer = 30000;
+            RecoverBoost();
+        }
+        else
+            m_recoveryTimer -= diff;
+    }
     if (m_sendPacket)
     {
         if (m_timer <= diff)
         {
             m_sendPacket = false;
-            _HandleCharacterBoost();
+            m_completed = _HandleCharacterBoost();
+            if (!m_completed && m_useId)
+            {
+                m_timer = 30000;
+                m_sendPacket = true;
+            }
         }
         else
             m_timer -= diff;

@@ -126,7 +126,7 @@ namespace MMAP
         // check if we already have this tile loaded
         uint32 packedGridPos = packTileID(x, y);
         if (mmap->loadedTileRefs.find(packedGridPos) != mmap->loadedTileRefs.end())
-            return false;
+            return true; // The requested tile is available; no second allocation is needed.
 
         // load this tile :: mmaps/MMMXXYY.mmtile
         std::string fileName = Trinity::StringFormat(TILE_FILE_NAME_FORMAT, sConfigMgr->GetStringDefault("DataDir", ".").c_str(), mapId, x, y);

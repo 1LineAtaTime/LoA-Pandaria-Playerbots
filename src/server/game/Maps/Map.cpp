@@ -33,6 +33,7 @@
 #include "MapManager.h"
 #include "MiscPackets.h"
 #include "MMapFactory.h"
+#include "NavigationGridInput.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Pet.h"
@@ -210,11 +211,23 @@ void Map::LoadMMap(int gx, int gy)
     if (!DisableMgr::IsPathfindingEnabled(GetId()))
         return;
 
+    // Visibility and taxi travel also create grids over empty space. Do not
+    // request ground navigation when the installed inputs positively contain
+    // no walkable surface. Existing/damaged meshes and all uncertain inputs
+    // still go through the loader and retain their diagnostics.
+    std::string const& data = sWorld->GetDataPath();
+    if (NavigationGridInput::EmptyGrid(
+        Trinity::StringFormat("%smaps/%04u_%02u_%02u.map", data.c_str(), GetId(), gx, gy),
+        Trinity::StringFormat("%svmaps/%04u.vmtree", data.c_str(), GetId()),
+        Trinity::StringFormat("%svmaps/%04u_%02u_%02u.vmtile", data.c_str(), GetId(), gy, gx),
+        Trinity::StringFormat("%smmaps/%04u_%02u_%02u.mmtile", data.c_str(), GetId(), gx, gy)))
+        return;
+
     bool mmapLoadResult = MMAP::MMapFactory::createOrGetMMapManager()->loadMap(GetId(), gx, gy);
 
     if (mmapLoadResult)
         TC_LOG_DEBUG("maps", "MMAP loaded name:%s, id:%d, x:%d, y:%d (mmap rep.: x:%d, y:%d)", GetMapName(), GetId(), gx, gy, gx, gy);
-    else 
+    else
         TC_LOG_WARN("maps", "Could not load MMAP name:%s, id:%d, x:%d, y:%d (mmap rep.: x:%d, y:%d)", GetMapName(), GetId(), gx, gy, gx, gy);
 }
 
@@ -1173,7 +1186,12 @@ void Map::RemoveFromMap(T *obj, bool remove)
 template<>
 void Map::RemoveFromMap(Transport* obj, bool remove)
 {
-    obj->RemoveFromWorld();
+    // Passenger cleanup needs the transport's map. Do it before ResetMap and
+    // deletion, not from its destructor after map ownership has been cleared.
+    if (remove)
+        obj->CleanupsBeforeDelete();
+    else
+        obj->RemoveFromWorld();
 
     Map::PlayerList const& players = GetPlayers();
     if (!players.isEmpty())
@@ -2015,24 +2033,8 @@ void Map::UnloadAll()
     _creaturesToMove.clear();
     _gameObjectsToMove.clear();
 
-    for (GridRefManager<NGridType>::iterator i = GridRefManager<NGridType>::begin(); i != GridRefManager<NGridType>::end();)
-    {
-        NGridType &grid(*i->GetSource());
-        ++i;
-        UnloadGrid(grid, true);       // deletes the grid and removes it from the GridRefManager
-    }
-
-    // #924: terrain tiles loaded by terrain lookups for grids that were never created (base maps own their tiles)
-    if (i_InstanceId == 0)
-        for (int gx = 0; gx < MAX_NUMBER_OF_GRIDS; ++gx)
-            for (int gy = 0; gy < MAX_NUMBER_OF_GRIDS; ++gy)
-                if (GridMaps[gx][gy])
-                {
-                    GridMaps[gx][gy]->unloadData();
-                    delete GridMaps[gx][gy];
-                    GridMaps[gx][gy] = nullptr;
-                }
-
+    // Transports may queue passenger removals and touch grids during cleanup.
+    // Drain them before the final grid sweep so those grids cannot survive it.
     for (TransportsContainer::iterator itr = _transports.begin(); itr != _transports.end();)
     {
         Transport* transport = *itr;
@@ -2040,6 +2042,13 @@ void Map::UnloadAll()
 
         RemoveFromMap<Transport>(transport, true);
     }
+    RemoveAllObjectsInRemoveList();
+
+    // Cleanup callbacks may create another grid or unlink a later grid. A saved
+    // next iterator can miss newly linked grids (or become invalid). Drain the
+    // current head instead; forced UnloadGrid deletes and unlinks that grid.
+    while (auto* gridReference = GridRefManager<NGridType>::getFirst())
+        UnloadGrid(*gridReference->GetSource(), true);
 
     // #776: corpses and bones are owned by the map, not the grids (ObjectGridUnloader skips CorpseMapType, "corpses are
     // deleted with Map"), and nothing freed them here, so every unloaded instance leaked its Corpse objects.
@@ -3094,8 +3103,32 @@ void Map::GetZoneAndAreaId(uint32 phaseMask, uint32& zoneid, uint32& areaid, flo
             zoneid = area->ParentAreaID;
 }
 
+namespace
+{
+// Gilneas flood overlays have different liquid rectangles and ground levels.
+// Reading654's dry grid below the old surface incorrectly returns NO_WATER.
+// Keep this scoped to authored legacy Gilneas phases and actual overlay tiles;
+// do not change Detour, collision meshes or liquid rules on other continents.
+Map* GilneasFloodLiquidMap(Map const* map, uint32 phaseMask)
+{
+    if (map->GetId() != 654 || phaseMask == 0xFFFFFFFFu)
+        return nullptr;
+    uint32 const lateStages = 131072u | 262144u | 524288u | 1048576u | 2097152u | 4194304u;
+    uint32 const terrainId = (phaseMask & lateStages) ? 656u : (phaseMask & 16384u) ? 655u : 0u;
+    if (!terrainId)
+        return nullptr;
+    // Created on the world thread during startup; never create maps from a map worker.
+    return sMapMgr->FindBaseMap(terrainId);
+}
+}
+
 ZLiquidStatus Map::GetLiquidStatus(uint32 phaseMask, float x, float y, float z, uint8 ReqLiquidType, LiquidData* data, float collisionHeight) const
 {
+    if (Map* terrain = GilneasFloodLiquidMap(this, phaseMask))
+        if (GridMap* flood = terrain->GetGrid(x, y))
+            if (flood->getHeight(x, y) > INVALID_HEIGHT)
+                return flood->GetLiquidStatus(x, y, z, ReqLiquidType, data, collisionHeight);
+
     ZLiquidStatus result = LIQUID_MAP_NO_WATER;
     VMAP::IVMapManager* vmgr = VMAP::VMapFactory::createOrGetVMapManager();
     float liquid_level = INVALID_HEIGHT;
@@ -3309,12 +3342,24 @@ void Map::GetFullTerrainStatusForPosition(uint32 phaseMask, float x, float y, fl
         else
             data.liquidStatus = LIQUID_MAP_ABOVE_WATER;
     }
-    // look up liquid data from grid map
-    if (gmap && useGridLiquid)
+    // A flood overlay replaces the old dry terrain's liquid, including NO_WATER
+    // cells. Old WMO floors must not hide water under the removed land surface.
+    GridMap* flood = nullptr;
+    if (Map* terrain = GilneasFloodLiquidMap(this, phaseMask))
+        if (GridMap* grid = terrain->GetGrid(x, y))
+            if (grid->getHeight(x, y) > INVALID_HEIGHT)
+                flood = grid;
+    if (flood)
+    {
+        data.liquidInfo.reset();
+        data.liquidStatus = LIQUID_MAP_NO_WATER;
+    }
+    GridMap* liquidGrid = flood ? flood : gmap;
+    if (liquidGrid && (flood || useGridLiquid))
     {
         LiquidData gridMapLiquid;
-        ZLiquidStatus gridMapStatus = gmap->GetLiquidStatus(x, y, z, reqLiquidType, &gridMapLiquid, collisionHeight);
-        if (gridMapStatus != LIQUID_MAP_NO_WATER && (!wmoData || gridMapLiquid.level > wmoData->floorZ))
+        ZLiquidStatus gridMapStatus = liquidGrid->GetLiquidStatus(x, y, z, reqLiquidType, &gridMapLiquid, collisionHeight);
+        if (gridMapStatus != LIQUID_MAP_NO_WATER && (flood || !wmoData || gridMapLiquid.level > wmoData->floorZ))
         {
             if (GetId() == 530 && gridMapLiquid.entry == 2)
                 gridMapLiquid.entry = 15;
@@ -4573,7 +4618,7 @@ void Map::LoadCorpseData()
         }
 
         Corpse* corpse = new Corpse(type);
-        if (!corpse->LoadCorpseFromDB(GenerateLowGuid<HighGuid::Corpse>(), fields))
+        if (!corpse->LoadCorpseFromDB(guid, fields))
         {
             delete corpse;
             continue;

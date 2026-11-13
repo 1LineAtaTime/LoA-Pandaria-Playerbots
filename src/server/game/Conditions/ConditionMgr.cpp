@@ -2178,7 +2178,9 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond) const
             // conditions have nothing in value2 (#963: 37 false "useless data" lines per boot).
             if (cond->ConditionType != CONDITION_QUESTSTATE && cond->ConditionValue2 > 1)
                 TC_LOG_ERROR("sql.sql", "Quest condition has useless data in value2 (%u)!", cond->ConditionValue2);
-            if (cond->ConditionValue3)
+            // Quest-reward checks use value3 to bypass the race filter above.
+            // Other quest condition types do not consume it.
+            if (cond->ConditionValue3 && cond->ConditionType != CONDITION_QUESTREWARDED)
                 TC_LOG_ERROR("sql.sql", "Quest condition has useless data in value3 (%u)!", cond->ConditionValue3);
             break;
         }
@@ -2377,8 +2379,12 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond) const
                 TC_LOG_ERROR("sql.sql", "NearCreature condition has non existing creature template entry (%u), skipped", cond->ConditionValue1);
                 return false;
             }
-            if (cond->ConditionValue3)
-                TC_LOG_ERROR("sql.sql", "NearCreature condition has useless data in value3 (%u)!", cond->ConditionValue3);
+            // Meets() uses value3 as the dead/alive selector. It is not unused.
+            if (cond->ConditionValue3 > 1)
+            {
+                TC_LOG_ERROR("sql.sql", "NearCreature condition has invalid dead/alive selector (%u), skipped", cond->ConditionValue3);
+                return false;
+            }
             break;
         }
         case CONDITION_NEAR_GAMEOBJECT:

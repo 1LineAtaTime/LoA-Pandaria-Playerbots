@@ -1,0 +1,3185 @@
+[
+  {
+    "patch": "2026_07_19_world_00.sql",
+    "sha256": "e9099beb62500c67471b9b773a42b20500eaf08c343f187b6c7da36a646ddd12",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_19_world_00.sql",
+    "source_statements": 8,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_19_world_01.sql",
+    "sha256": "f9d97060acfcf009bb46e3f3a9ec3f5bbbed88da196824c21c1629e3256f9c1e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_19_world_01.sql",
+    "source_statements": 8,
+    "selected_statements": 6,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_19_world_02.sql",
+    "sha256": "df8183116fb8a53cc8734c0760bd8d9301e0010834db6d3487a813da043778d5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_19_world_02.sql",
+    "source_statements": 3,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_19_world_03.sql",
+    "sha256": "642c752a9df090deddd36f85192e35574c8bccdf6e7907f109c88127db3db849",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_19_world_03.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_19_world_04.sql",
+    "sha256": "373082fbb64d980bddaa004fe9331fa64ffd08c82eabb3f49a771d7a39f5af46",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_19_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_20_world_00.sql",
+    "sha256": "03d313774405eedc589f83ba9b1ca652cf4df469ae18e94d55fb453e6a17ed13",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_00.sql",
+    "source_statements": 6,
+    "selected_statements": 6,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_20_world_01.sql",
+    "sha256": "bbdd59080f5305a4a7b0461d2d3631dc8fc013a2f22b86c7bc2fcdbea005c9b2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_20_world_02.sql",
+    "sha256": "e17067334b886e751d89e421deae54743719f5dbb6e614f0835e9fcc6083f637",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_02.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_20_world_03.sql",
+    "sha256": "e68a00c29e16eb009b14df4e9ca53ff32f36de7197ecf223693f4fe50e2dd04e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_03.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_20_world_04.sql",
+    "sha256": "e7de8876528182f00d33b88ffdff4f841a5fb407f8bed78afdaabe498172f247",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_04.sql",
+    "source_statements": 6,
+    "selected_statements": 4,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_20_world_05.sql",
+    "sha256": "835d53b9b65daf3c87137010d0426bd721adce08e50c6e353728d4b4ef024729",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_05.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_20_world_06.sql",
+    "sha256": "73404308b816d7134ad12c22b35f8d480f8c4556772d95e4fe789b2adbadeeb7",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_20_world_06.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_21_world_00.sql",
+    "sha256": "2a0070b8148b983539d6d9347877be65902286a75e2432d2f82834ebe9a854c9",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_21_world_00.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_21_world_01.sql",
+    "sha256": "dac39d12f7c1b2eccd2fbb7a77803c7aa20399be1cf4e11ef7a76d7935a6ee2f",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_21_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_22_world_00.sql",
+    "sha256": "223aaafda6d1118bf0d14258fa8665c8b5caab35beeb36c2cb25da61401f8e50",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_22_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_22_world_01.sql",
+    "sha256": "6e2ac3d9d86dfdcff026dec0552d98a36c587ea2282eaa979263aeada8700428",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_22_world_01.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_22_world_02.sql",
+    "sha256": "e861056bf74bfe8373a578d609b2e2c0a428480e3cf5429dbe70c6d4cadbcefb",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_22_world_02.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_22_world_03.sql",
+    "sha256": "f81dc09f02d62b68c9370c016139f8fc6eca2f8a60aa57c6fcc60222e84de35b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_22_world_03.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_07_23_world_00.sql",
+    "sha256": "ae6f62f95aa4c7b330e4937016b36bb358b9b6dd06f3a1efe4f5f89f025e91f1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_23_world_00.sql",
+    "source_statements": 8,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 8
+    }
+  },
+  {
+    "patch": "2026_07_23_world_01.sql",
+    "sha256": "5522fda877d93bea322b39a3de86796b74da0274e01375dd3fa9ecaf48dc422e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_23_world_01.sql",
+    "source_statements": 18,
+    "selected_statements": 18,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_24_world_00.sql",
+    "sha256": "9ef167b8ef90b4ae2a6dbb440372fb3a04d6efb53580b650857a70ce4bcac121",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_24_world_00.sql",
+    "source_statements": 6,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_24_world_01.sql",
+    "sha256": "7e5f5a4fefd61a90154f6b0fa4e5d9c76457640342587e841355c36c29ddda82",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_24_world_01.sql",
+    "source_statements": 4,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_24_world_02.sql",
+    "sha256": "7b12a7eaab3bb00508661536fe0a4c119680808c4096af9bb12b89dee321c76b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_24_world_02.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_24_world_03.sql",
+    "sha256": "7462649411225a126ad0011a1e4f49fa2c710af08e7e9831cecff92fcf1853a8",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_24_world_03.sql",
+    "source_statements": 8,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 8
+    }
+  },
+  {
+    "patch": "2026_07_24_world_04.sql",
+    "sha256": "0ffe61ba7600f8e2e50b5c5fd19ab00f19b138af28307b85ac92a60e62da4a06",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_24_world_04.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_25_world_00.sql",
+    "sha256": "83b1164f44552c4d7ab30c988b4e364b1002d0d44782c83afcd6e046b6243dbe",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_00.sql",
+    "source_statements": 71,
+    "selected_statements": 31,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 37,
+      "numeric/training/cleanup update retained for separate adaptation": 3
+    }
+  },
+  {
+    "patch": "2026_07_25_world_01.sql",
+    "sha256": "c22d8572e23d106fc973cf3b6747ed08db2506242685e7556bc036077c31102a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_01.sql",
+    "source_statements": 29,
+    "selected_statements": 19,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 10
+    }
+  },
+  {
+    "patch": "2026_07_25_world_02.sql",
+    "sha256": "587e98e1284d6b07e0f518eb17ecced62cbfec45d3c5393a8d7052e5b23dcc2a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_02.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_25_world_03.sql",
+    "sha256": "5629bae63d3a7e93bcc708ecd73b9aeb110476f2b6c0e8aca747a4a248281d80",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_03.sql",
+    "source_statements": 13,
+    "selected_statements": 3,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6,
+      "numeric/training/cleanup update retained for separate adaptation": 4
+    }
+  },
+  {
+    "patch": "2026_07_25_world_04.sql",
+    "sha256": "59ccdf27f531ab52f35c48b77e3567ef87ca81abc8c9f4630a61f24428adb5c6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_04.sql",
+    "source_statements": 41,
+    "selected_statements": 12,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 29
+    }
+  },
+  {
+    "patch": "2026_07_25_world_05.sql",
+    "sha256": "fea4f0642ffd7232dde271a1a993a5552f9362401f9fe8a603a797a01c58a5a2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_05.sql",
+    "source_statements": 46,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 46
+    }
+  },
+  {
+    "patch": "2026_07_25_world_06.sql",
+    "sha256": "61c881911857a239a1687b4c706379dd7537cbf406194ce9834f1c007e885cf4",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_06.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_25_world_07.sql",
+    "sha256": "7282ba561115adacd1a54e0bad3942f010898b89a38b864a43e6907fff7991c0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_25_world_07.sql",
+    "source_statements": 57,
+    "selected_statements": 18,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 39
+    }
+  },
+  {
+    "patch": "2026_07_26_world_00.sql",
+    "sha256": "318c50dde2e41b902b8f2b7dfc60a70c2f84b2e2b3130d33f3c3e6f41f6118c0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_26_world_01.sql",
+    "sha256": "876fc51379f329523b89213336820abbbffc09fa53693d1f5bf4c804e778f0e6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_01.sql",
+    "source_statements": 72,
+    "selected_statements": 21,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 45,
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_26_world_02.sql",
+    "sha256": "cb3b10c0590a922f7fbb66287e7b7698cd2b3ebb6ba0cdf133a4da02d03737dd",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_02.sql",
+    "source_statements": 88,
+    "selected_statements": 20,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4,
+      "numeric/training/cleanup update retained for separate adaptation": 64
+    }
+  },
+  {
+    "patch": "2026_07_26_world_03.sql",
+    "sha256": "6870279d4802bf570615f194aa970e600ef320e286bb6c7c29e975d18eeafb6a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_03.sql",
+    "source_statements": 91,
+    "selected_statements": 22,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 63,
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_26_world_04.sql",
+    "sha256": "dc3745649a65aad7f287860303d769ba3c296ef850aa9ab4e8515ebc77be7a6c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_04.sql",
+    "source_statements": 86,
+    "selected_statements": 20,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 54,
+      "outside reviewed quest/starter AI subset": 12
+    }
+  },
+  {
+    "patch": "2026_07_26_world_05.sql",
+    "sha256": "3b7f9b156f0146bfcfc35c44a02f63bf76877abbc9dae1c58d06b4a3832b23ed",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_05.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_26_world_06.sql",
+    "sha256": "74502b6ac3f360343b1a6584c3a8b7db8e4a383fd4e580462e80cc07ab637680",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_06.sql",
+    "source_statements": 1039,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1039
+    }
+  },
+  {
+    "patch": "2026_07_26_world_07.sql",
+    "sha256": "f87975b5b5b3def5b7a22086bcc86b0f04b8b554148e7023cd688bb2578e25e9",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_07.sql",
+    "source_statements": 18,
+    "selected_statements": 18,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_26_world_08.sql",
+    "sha256": "0c21179368f51eb4a00c965190efd1aa46248a90c2b72b3245aa2d47c6be2add",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_08.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_26_world_09.sql",
+    "sha256": "f41099838d9bac8a290670c5226d0a169d09640e85321c6a22cf6f7da14bae23",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_09.sql",
+    "source_statements": 8,
+    "selected_statements": 4,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_26_world_10.sql",
+    "sha256": "23c9a9452d1fb7afd722e9d38ede962a5a042ae50d7d65b5e6df8eec2aa0b986",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_26_world_10.sql",
+    "source_statements": 20,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 20
+    }
+  },
+  {
+    "patch": "2026_07_27_world_00.sql",
+    "sha256": "216b02b61d0d4d4b11a842991c102976e807b5da2243f2be8df48593f826df7a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_00.sql",
+    "source_statements": 12,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 12
+    }
+  },
+  {
+    "patch": "2026_07_27_world_01.sql",
+    "sha256": "275a588e1a05998763ad9c49563f0afaa9fd26b7d8f2763b7c65e412de9c5cdd",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_01.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 2,
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_02.sql",
+    "sha256": "0b10180346df74f00fa673953315679dcea60e6ed514cf998956da29b147feb1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_02.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_03.sql",
+    "sha256": "a2ca1abeddfb66b50b7900b6eb318d41963d0960f17d6ca78c76512c8a910627",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_03.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_04.sql",
+    "sha256": "b36a104cdf35af037db96efe905f6b94d5175abee44c23a22b84c0fb1a838937",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_04.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_05.sql",
+    "sha256": "abe075023e9a01e6bfcef7aacdb52a5e93ac405b4d339fa6793d1f805308ab64",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_05.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_06.sql",
+    "sha256": "716a70fa549fd61c572472fdf0462374ba7292d5ba3d3173cc903e8b23a66552",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_06.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_07.sql",
+    "sha256": "4ac078eb70da691207f71006e7a35dd1a9b052ad784da7c090e8245df6baf8a9",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_07.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_08.sql",
+    "sha256": "aa53cc0c443729e7b9e4f731c98dcb5078a4781a606940947910a6bb30f2fb04",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_08.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_09.sql",
+    "sha256": "3e756325d7b675bb026fde4d1786e03e7b2ee5b726a3eeef1422070687779a33",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_09.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_10.sql",
+    "sha256": "f09c479f979bda068074ab6faf594fd4ff48baa7ece33b68c7e98a9f8c4f765f",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_10.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 6
+    }
+  },
+  {
+    "patch": "2026_07_27_world_11.sql",
+    "sha256": "13a018d1204af9c3ec20c55554a3dcc596cd1290563fd9f5c4335e137ef16220",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_11.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_12.sql",
+    "sha256": "217dfcda24e0becba6180932fa9d46c32591e84c70a3c5780bf28863a09c123c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_12.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_13.sql",
+    "sha256": "01479ca33bb112598f4e5ba129574d3bc6d2983320ee26ca631b545c49eeedd1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_13.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_14.sql",
+    "sha256": "d77b10cc9e51348a7e3007bd38338144c4c610f45c079bdab665d209db2467e3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_14.sql",
+    "source_statements": 14,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 14
+    }
+  },
+  {
+    "patch": "2026_07_27_world_15.sql",
+    "sha256": "59d9715c4a4357fd8308db6a1c01c2d48dfe3fb018aeb359fcb20c8ac34132e5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_15.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_27_world_16.sql",
+    "sha256": "88ea47952ee6e3f5b9e7cd4b1f3dde1c7001a75577808e58fe656f0a93d5f281",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_16.sql",
+    "source_statements": 7,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_07_27_world_17.sql",
+    "sha256": "3b3c88a14b6082f5b3abaf804ba6740416a92cbf80d5fe6984371e88ed72317e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_17.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_18.sql",
+    "sha256": "4b42d18ecdfc3224b5c53eaff34e14999a028cbc0295f279079322bd1136f89c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_18.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4,
+      "conditional quest update requires separate evidence": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_19.sql",
+    "sha256": "8f09d85d15104b1fc5a3c135bb47c8766eef58b2a9c3779d0dae977fd80abf54",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_19.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_20.sql",
+    "sha256": "352126762474af17531e276b3a9f0097c4e4976196a76c7186283779d20c5a67",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_20.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_21.sql",
+    "sha256": "76441a5611b5503cdf31c56a3083050442811e478baf72b95314ef7b5296f924",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_21.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_22.sql",
+    "sha256": "7256c66fe30568f709928b0eb7ce5212eb61af4215f91850591a4842ed789906",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_22.sql",
+    "source_statements": 17,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 17
+    }
+  },
+  {
+    "patch": "2026_07_27_world_23.sql",
+    "sha256": "14db803be488e6784301c5172ae58a3cb9b4dfe3ac6aebea314669a1e6155b82",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_23.sql",
+    "source_statements": 9,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 9
+    }
+  },
+  {
+    "patch": "2026_07_27_world_24.sql",
+    "sha256": "f17a9e300dd0daea8eeaa647471e80d35f6e156a31609848361e0592d806bb11",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_24.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_25.sql",
+    "sha256": "5b7f18aec1c169d4fa2cd938a305c9171642b07778e2efac916b9bb9a7a7c839",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_25.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_07_27_world_26.sql",
+    "sha256": "2566abe755af08e4bdacaaa90c4567c8ef7c321f1c14289f767b977d13c5ec8c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_26.sql",
+    "source_statements": 37,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 37
+    }
+  },
+  {
+    "patch": "2026_07_27_world_27.sql",
+    "sha256": "9c48bed668302a8b44711d0f2749ea6f5196ace7ab60d70ce9f34b171caa0d05",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_27.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_27_world_28.sql",
+    "sha256": "7d91f2e992c18eb3539b652587023c98352cbd29853f8b097a4519758fa3603e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_28.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_29.sql",
+    "sha256": "2d419ba401a6f0c50f668219a2e23df12bfbc65ffad6389bef2c26f33339a94c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_29.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_30.sql",
+    "sha256": "c41c08b8a8d0cec84f7ea23f887d13037359832aa815d41319003a35b8dd5b55",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_30.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_07_27_world_31.sql",
+    "sha256": "b5e6f0c60453417101ddd7d2f3de8aac087dc6509d74c9f8f89ea1374a5348e8",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_31.sql",
+    "source_statements": 27,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 27
+    }
+  },
+  {
+    "patch": "2026_07_27_world_32.sql",
+    "sha256": "99b709e2ab8e578db845ffbe7bd34775ad47edbd0b6d6a2ead7292b48e02ec12",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_32.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_33.sql",
+    "sha256": "7ef7db10fe1f1a95f8cfea39903d391c68675285d75455d3c6492772b5dcd1fd",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_33.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_34.sql",
+    "sha256": "0f24a9e52ec75021dc8f175d2629048b5e81d78b6dfc98f25be88b9c73191ad3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_34.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_35.sql",
+    "sha256": "82896c786038509cef4b85c8c0fda8e6989c39ee46a728f2b6c40c71eaa4fb71",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_35.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_36.sql",
+    "sha256": "d5d1333366b780a0dd204585fb3073f8c2f88c0aecdb23eea3f5bcc772ee1990",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_36.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_37.sql",
+    "sha256": "ef9278ca53dbf48f02d635ddb647aa190ffa09437e19065fb4ba5912e5c3f41e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_37.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_27_world_38.sql",
+    "sha256": "72e15d13e5a355254968e962433d900288f9bbdb2dd94986a0b7aa3c2e0cf57a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_38.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_39.sql",
+    "sha256": "14408979a3ad1f0badf1f9bc794c3f6ab8e229bee2251c0c58e90e4835fde271",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_39.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_40.sql",
+    "sha256": "3f71e81dfc93a216d77343f633a09c200e8066c39ca6806391498ea8779872ae",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_40.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 2,
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_27_world_41.sql",
+    "sha256": "9953842e245f91d6d42d22c6ee47ed3258d55d19bc356ee50b79545b56c5c204",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_41.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 3
+    }
+  },
+  {
+    "patch": "2026_07_27_world_42.sql",
+    "sha256": "9347da7721850203d1d0834239394e37e5660093ec75a5d271bfe31c355321b6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_42.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_43.sql",
+    "sha256": "14bdfc7d9ba3860dac0c7b64849202c8741aa5a69c23ef8ecfeac5dd1d404a3a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_43.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_07_27_world_44.sql",
+    "sha256": "3ba682946c40131611ac48d275f55a3bc5c8a526025b0ea15cbc18584b88f83c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_27_world_44.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_28_world_00.sql",
+    "sha256": "be0ac0ae892c2f4c18d3e4abf955949aecedc6b707969e09ea05713953ed7499",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_28_world_01.sql",
+    "sha256": "eca9a7e8879976b6b7906e9af35f50b911c10f04099bca062b81a599982fb232",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_01.sql",
+    "source_statements": 8,
+    "selected_statements": 3,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_07_28_world_02.sql",
+    "sha256": "2d9334e84b635621c1116b047927d0ba48e12f1373080668fcd50c8f7dff7db0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_02.sql",
+    "source_statements": 5,
+    "selected_statements": 3,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_28_world_03.sql",
+    "sha256": "e37f1a857f95142de50f2c73bd6c95f8fed6091cb9ae85d3e9e6c5f9a2467a18",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_03.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_28_world_04.sql",
+    "sha256": "91c0dd5eca5af913d190217627e171a0705b1011bc14ba33ac324f539a31bccd",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_28_world_05.sql",
+    "sha256": "e54844280666437ad23d0ba89f13cfdf83b196f4dd1b0e6f1136718aaaa94e5c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_05.sql",
+    "source_statements": 7,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1,
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_28_world_06.sql",
+    "sha256": "6e84f5c5abb1db5feb6a957a268ab5a19c791dd86c7dc2acd6583fc32d210002",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_06.sql",
+    "source_statements": 34,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 34
+    }
+  },
+  {
+    "patch": "2026_07_28_world_07.sql",
+    "sha256": "c903496f3c748cc0c425653b75493f5bffef3c26fb18f223a6cd589e972b401a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_28_world_07.sql",
+    "source_statements": 5,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_29_world_00.sql",
+    "sha256": "bfb483558fb622ab6d90cd6b6b4057ed8f8a4de52b6148c3425259e19f9d5e53",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_00.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_07_29_world_01.sql",
+    "sha256": "160b1ed717321b6364f38eaf97180b9b9ba30bcb8fc81a865eb7603feae1b94e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_29_world_02.sql",
+    "sha256": "224b78cf1c3afed8bc6d36df788fdf1d67793d23d333165898deccd70d3dfe29",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_02.sql",
+    "source_statements": 7,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_07_29_world_03.sql",
+    "sha256": "f3fdccb7d8269af408d33d2e90ea7985f3b40b1efb9388a41c2321cdcf85d321",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_03.sql",
+    "source_statements": 5,
+    "selected_statements": 3,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_07_29_world_04.sql",
+    "sha256": "81c2946754a2eaf1670fa878bac9ea2bddd7797bd3bc1750123ef2cf2b91d389",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_04.sql",
+    "source_statements": 3,
+    "selected_statements": 3,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_29_world_05.sql",
+    "sha256": "fc3a9bfa72e2aee74ca2b647f324ebaabbb02839671a43ba74be91616f49d90b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_05.sql",
+    "source_statements": 13,
+    "selected_statements": 13,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_29_world_06.sql",
+    "sha256": "a87ae44cbbd490b50a34c8562f3f539acd30f2f95a14226b4bbd6703dd557973",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_06.sql",
+    "source_statements": 3,
+    "selected_statements": 3,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_29_world_07.sql",
+    "sha256": "d290c1a6e82155040f5a2c6ceb9633e935054488b453107e93a9efe20dad8e02",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_07.sql",
+    "source_statements": 6,
+    "selected_statements": 6,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_29_world_08.sql",
+    "sha256": "4064777ddb4cdc0f3f695cf6588543a638e83ba5bc82ceafa271cd68da1a0baf",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_29_world_08.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_07_30_world_00.sql",
+    "sha256": "4dd673dd63f7e9c39f46d3b1dc1652e3e7451806a539b49c6cf4e526718ceaba",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_30_world_00.sql",
+    "source_statements": 44,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 43
+    }
+  },
+  {
+    "patch": "2026_07_30_world_01.sql",
+    "sha256": "29d0ba7c9cc7a03cb7d34e6b6d1d3057390d940c36f20fb3255e82d45e9c22bc",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_30_world_01.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_07_30_world_02.sql",
+    "sha256": "3b07a55e33381514dba17d5563ddab45387fb2b2986a4322dc0eea7d7a0e3bd3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_30_world_02.sql",
+    "source_statements": 34,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 34
+    }
+  },
+  {
+    "patch": "2026_07_31_world_00.sql",
+    "sha256": "a955fa6e87e71a0153b57f24a2054794e3855c415759c2cacb042abc6bb528cd",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_31_world_00.sql",
+    "source_statements": 14,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 12
+    }
+  },
+  {
+    "patch": "2026_07_31_world_01.sql",
+    "sha256": "40f88e7a6a4ac18ee3071c1ebeff16ab3ce95c646f291f3180a53da8b03598ef",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_07_31_world_01.sql",
+    "source_statements": 10,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 9
+    }
+  },
+  {
+    "patch": "2026_08_01_world_00.sql",
+    "sha256": "11d5d5e67424db1dee8db8dc20179d0fffd94af3067416cfec9e69275cea20ee",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_01_world_00.sql",
+    "source_statements": 9,
+    "selected_statements": 9,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_01_world_01.sql",
+    "sha256": "5ca67278f0c6ef846c83b582b01b98898af171ed5ead541a4b5c1e85c8ad07ca",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_01_world_01.sql",
+    "source_statements": 9,
+    "selected_statements": 9,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_02_world_00.sql",
+    "sha256": "a8b48745c2b4577be6a3d902f44419e55203aec0f7fb97c16e820e4eaea45b98",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_00.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 1,
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_08_02_world_01.sql",
+    "sha256": "f96003bd20b9fb296e743b8a72f4dfbaa91d93c4732dd36b6bc27e4f637f69f8",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_01.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_02_world_02.sql",
+    "sha256": "1fe245fa77535db4c84cd6354fb0ccdd35074e2cc144d2f5057fc0a3914e7b0b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_02.sql",
+    "source_statements": 11,
+    "selected_statements": 3,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 8
+    }
+  },
+  {
+    "patch": "2026_08_02_world_03.sql",
+    "sha256": "79660d631063945ae64b271951ae922af7a6327cec49831297c3eddfa0bbeda9",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_03.sql",
+    "source_statements": 9,
+    "selected_statements": 4,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_02_world_04.sql",
+    "sha256": "c370e6f469228d0f4239c1883fcd8981a2ec707a16ad18ee167baeb5000e9f77",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_04.sql",
+    "source_statements": 10,
+    "selected_statements": 3,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_08_02_world_05.sql",
+    "sha256": "f1554590cf61f2a06382278b2526468be1503575a92baa8eeef5dd81b3e020d0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_05.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_02_world_06.sql",
+    "sha256": "0da480153aad5a757dfebffcb6b611acf3c155c6ca8bfbc8c9ace0f60fdca647",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_06.sql",
+    "source_statements": 3,
+    "selected_statements": 3,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_02_world_07.sql",
+    "sha256": "48a07fb1d91302376ea6d53c3dfb382fd0b1857a0b84d998d0a91d3a7fa24dd6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_07.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_02_world_08.sql",
+    "sha256": "cfad093823b5fab50495f784f28607c42408c39d9dcb0057337d1f95b4409fe3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_08.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_02_world_09.sql",
+    "sha256": "bb34560ce6e14ab11b7a3d1278a6652b1685b1be77ce1c53a177c09123edf6f6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_09.sql",
+    "source_statements": 42,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 42
+    }
+  },
+  {
+    "patch": "2026_08_02_world_10.sql",
+    "sha256": "d5c94d576000ad320dcb8752f8a4b7c8d774efd0486ea41cff13aa18a6902052",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_10.sql",
+    "source_statements": 31,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 31
+    }
+  },
+  {
+    "patch": "2026_08_02_world_11.sql",
+    "sha256": "7029fbd88caa6bce71bed9da89e19c5cc4c0615b63928c34a01565b4f3ae8186",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_11.sql",
+    "source_statements": 12,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 12
+    }
+  },
+  {
+    "patch": "2026_08_02_world_12.sql",
+    "sha256": "95880b66c7172699916c1d1b194ae4b86174a76807c58cc97d23f9afa925685e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_12.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_02_world_13.sql",
+    "sha256": "97a0c17df21951c2e97d2a4c6d1c240917e21e2fbec88c8782399fe5d9a10384",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_13.sql",
+    "source_statements": 8,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 8
+    }
+  },
+  {
+    "patch": "2026_08_02_world_14.sql",
+    "sha256": "b779e14ac1596c9206786552838be1961cb73ea326bba17e66475a5a99011577",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_14.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_02_world_15.sql",
+    "sha256": "b5304b06d887aae566689abe9db018259a98e7d31ac86f20f9344fa179e48da5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_15.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_02_world_16.sql",
+    "sha256": "a7b6f60def87033784029c3985baca79f7ad3e83ea6ec842ef9c522365f34ea7",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_16.sql",
+    "source_statements": 7,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_08_02_world_17.sql",
+    "sha256": "52143ed73691c5522a37541ac79f0a28fd1fcc68b2c411e5c48b72bbcfaf33e1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_17.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_02_world_18.sql",
+    "sha256": "67f14b4c12746f2d2bf45eeb73d7d48de4dffbfa038b01a9d69adc1b88f85571",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_18.sql",
+    "source_statements": 10,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 10
+    }
+  },
+  {
+    "patch": "2026_08_02_world_19.sql",
+    "sha256": "24d44eed7d784cf1db73a7b375df59570898c22c96afe48b0105b0e30369feba",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_19.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_02_world_20.sql",
+    "sha256": "6ad043131c7c1e94ca1e0b878c471ae753c746907573da504d2575994ba2182c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_20.sql",
+    "source_statements": 32,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 31,
+      "numeric/training/cleanup update retained for separate adaptation": 1
+    }
+  },
+  {
+    "patch": "2026_08_02_world_21.sql",
+    "sha256": "7ac694c58c73ba1f3e85e5b3baef22cac762ea4038b20e03c1a79abc36c8386b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_21.sql",
+    "source_statements": 14,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 14
+    }
+  },
+  {
+    "patch": "2026_08_02_world_22.sql",
+    "sha256": "d7e6b0c800d3d2ab1d3eb14a863eccd4d06a0b456d7b707396e923ab7387eba0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_22.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_02_world_23.sql",
+    "sha256": "bc6c5d45bd922546ff0215571f7617eddf23d0c0a776c89ab6231ba37989cd3a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_23.sql",
+    "source_statements": 9,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 9
+    }
+  },
+  {
+    "patch": "2026_08_02_world_24.sql",
+    "sha256": "8917c816c76621dbef7aedc7de54b2327269e514a09603ef64aca874ae83b5ad",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_24.sql",
+    "source_statements": 7,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_08_02_world_25.sql",
+    "sha256": "8cd085dea65bd92fb6c781a3fa33f95a246e8ce2a69a68f447b1bf4ddd2ca925",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_25.sql",
+    "source_statements": 28,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 28
+    }
+  },
+  {
+    "patch": "2026_08_02_world_26.sql",
+    "sha256": "f9aa109bed50e3746765474faf5ba126bbdb03be5388cfb0720b45881dce67b2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_26.sql",
+    "source_statements": 14,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 14
+    }
+  },
+  {
+    "patch": "2026_08_02_world_27.sql",
+    "sha256": "99cd2f67eedfe5b3601270ca3a5854b6c2ccd8f84678e0cdd362493b52a47b33",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_27.sql",
+    "source_statements": 15,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 15
+    }
+  },
+  {
+    "patch": "2026_08_02_world_28.sql",
+    "sha256": "aa7f23ab862e8ace95c07ff10f318930076f7fd78e02dee1811c08f404ccb936",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_28.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_02_world_29.sql",
+    "sha256": "0c75a360e874e8c670eed28094235b3366f1e02373c7ef31cc2d412344aedaf6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_29.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_02_world_30.sql",
+    "sha256": "e0146c49e4b462e9abe728471fa373918a15f6701bc743b20c666ed00930ef96",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_30.sql",
+    "source_statements": 10,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 10
+    }
+  },
+  {
+    "patch": "2026_08_02_world_31.sql",
+    "sha256": "d2d6932c0400426ea2149c95bbf48f9c97a40343fc0f4d48e0226c3a86938021",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_31.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_02_world_32.sql",
+    "sha256": "d253bb6fb25f590109fa696324b810c57d21b11ce1218b367e9d4e011621568d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_32.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_02_world_33.sql",
+    "sha256": "be98f5673d3b0317bbbec709dc5c430f482b20d18e864cb9e2c48acd23936b27",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_33.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_02_world_34.sql",
+    "sha256": "6c90c57c940e9b54e3e732c8cc5b1bf48048dce9c028ca65e48c1aa2f63e03ef",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_34.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_02_world_35.sql",
+    "sha256": "af9bbbf49657f861a6a125e8638a36037a6d14e0ec8ff3d82c17bd0249eb72c3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_02_world_35.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_03_world_00.sql",
+    "sha256": "d4be835df1e956eb7398bc4aac2fa94c27cf86b61eaea3580f0891ece56cb8cc",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_00.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_03_world_01.sql",
+    "sha256": "0f48a11c942486a0f3c430ad71f56f0940052ba891f734494e4e187cc4ff4456",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_03_world_02.sql",
+    "sha256": "332400c332222c4dc5d85bae48c57266486ce66dd2be4e7fe021de96b4d4f414",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_02.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_03_world_03.sql",
+    "sha256": "274b30449856d97cec1193def65fcdb354e9f66dd7e28a4679cdd7d65edb4f67",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_03.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_03_world_04.sql",
+    "sha256": "0745fa3b33d2016fa08d859487a9ea344a1f9853ef82b5176b6299ec48437ca2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_04.sql",
+    "source_statements": 28,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 28
+    }
+  },
+  {
+    "patch": "2026_08_03_world_05.sql",
+    "sha256": "1189ce01e4c9a377b838fecd0dfd1bb6c2f3c54e2f44e176dc31c1eea880d2b5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_05.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_03_world_06.sql",
+    "sha256": "5d872a49128663f0a0db202409de3681e081b15365ff22676932a8b755f97c48",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_06.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_03_world_07.sql",
+    "sha256": "459a55d6c9e75a5e276b087e0c8246bac7d750da305c73976070248b7d31746d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_07.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_03_world_08.sql",
+    "sha256": "6e816a8a5aabe3720c115c6ebdf712bc1f51510cc5f29905f572aefddeee5355",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_08.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_03_world_09.sql",
+    "sha256": "0d067097538d5c1614402f00a032cdb4b4d188880a03434cffa3897d8070bf24",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_09.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_03_world_10.sql",
+    "sha256": "4434da31c307cf9e043f2f1c9b280a4b3e3c749ebcfc1d81b5adfd7a136735d3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_10.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_03_world_11.sql",
+    "sha256": "479a477afc6437d6136ccbab8b9077d08c151262f8023a8a9cb902116295e6f2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_11.sql",
+    "source_statements": 22,
+    "selected_statements": 22,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_03_world_12.sql",
+    "sha256": "b0e440523135009e1e0a358b49633f5d3da5ee10e82fa64fd6f18e29b793a8b3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_12.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_03_world_13.sql",
+    "sha256": "14b2317f560f4c9703e030f5f30b25571af87b447aa315721fa99621a7e9806d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_13.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_03_world_14.sql",
+    "sha256": "91f10c05fe3b74a06ebe49e2e56be9421b4424189d90b8283fa2ec022781ef71",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_03_world_14.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_00.sql",
+    "sha256": "b0726467fd929c4af892e8aef58f04be11aeff0076c7a3ad3aa14e2982de36cf",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_01.sql",
+    "sha256": "f063066e714466751df8ac9c5375151af8dcefab1990677491fad2bcb0e5f22b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_02.sql",
+    "sha256": "be6ab21816c96e51f2e00441fdad73110ee3f7b99cc62d250d38893dfebd2c0e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_02.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_03.sql",
+    "sha256": "248df7fd50133e371fe21ec4adcbc67b5b495bdccc1737c9846e1e1370124054",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_03.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_04_world_04.sql",
+    "sha256": "2b3516267ba260c8eed49ed857e5b0974dca53b5a1be6858f99702475600c720",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_05.sql",
+    "sha256": "a1affe98cb7029439446d943700cbbbca9c4ab3271914de31a3ba596ac91e101",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_05.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_04_world_06.sql",
+    "sha256": "67719dd6a6f8abe17d5af9146c208ff860c11d3e9d4086d0db17a46de0aacd7b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_06.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_04_world_07.sql",
+    "sha256": "e64b580feb8eda745ee2c64bffc919ab3081fe21b7531fc31c297c7da59e03d3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_07.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_08.sql",
+    "sha256": "e8968d5a02daae0248dfad89c0fdd1ac2eb0eb500ed00463eff48a18ed19ce8e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_08.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_09.sql",
+    "sha256": "b2f87571f3b42f84ae63848e5033389ce185ea7326b3af113f077a742bf66791",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_09.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_10.sql",
+    "sha256": "8cd430ad1734449338d3449c09924e86beec1e7697b94b55f5d7970455caa21e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_10.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_11.sql",
+    "sha256": "009f027e7c6a4f0e021072bbed1e13bcca5edcab3e3413ee5c006104f094250c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_11.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_12.sql",
+    "sha256": "745b623b6ac77b9b848f6bf5a4577074079228b7f7477d06168903953dd8b7bc",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_12.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_04_world_13.sql",
+    "sha256": "2706c242ddbe6a4e9271553a73ab8cb8d8c7b33d98ffc626c27ca3ea9afb2647",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_13.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_04_world_14.sql",
+    "sha256": "8ca9445bf5aaa6aa3fbb8da949ddb7835f30023172d04b6d69329f18c38f90b3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_14.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_04_world_15.sql",
+    "sha256": "577e208018f44aba7e0530c75c9301073e4b831579d9864398e509ac14047282",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_15.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_16.sql",
+    "sha256": "8ba120b6fa8c8b25808849ff3a40633f7541243cd0d138ab281f44726f79112a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_16.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_17.sql",
+    "sha256": "68ff5db65b7494610cdc1b4604384d5d7eaba5c9864c66d6405441ed46829450",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_17.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_18.sql",
+    "sha256": "feb51877070d85595cbc7f0c0e5c5bb4004ffd1955e8c8c24f47d3ac56413668",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_18.sql",
+    "source_statements": 3,
+    "selected_statements": 3,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_04_world_19.sql",
+    "sha256": "fea62af601d595762d50851cbddf980db4e133fa838803d619075517cba21095",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_19.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_04_world_20.sql",
+    "sha256": "008a3a9fe83ae9fed4605ddcf8495006380adf8be452c69bc06540ea6225a0ee",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_20.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_04_world_21.sql",
+    "sha256": "a72c92d3d35391a6178826ee869a1cf186d0e383bcd865dcf801090b798d1aa5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_04_world_21.sql",
+    "source_statements": 43,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 43
+    }
+  },
+  {
+    "patch": "2026_08_05_world_00.sql",
+    "sha256": "c0afaa92a57e70819ed0c459e043bd477c7db2769475eb0c962c71a4ea7a479e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_00.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_05_world_01.sql",
+    "sha256": "d845d24db5e13ae0c42d2b0c742b1c13a0542bb355e751ae8e52b97324152758",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_01.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_05_world_02.sql",
+    "sha256": "816c4da61fd184486d210432070e8b407de8237a998546497269f915b1992434",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_02.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_05_world_03.sql",
+    "sha256": "fa834513ad00ec9d9e8fd40d5a83701aac4391afcbff5d0df15416e0a5e13023",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_03.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_04.sql",
+    "sha256": "578325f1005017c7fbf84993ebd2f3da14a83d9d4329c28ae3017f9971332669",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_04.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_05_world_05.sql",
+    "sha256": "7e85d3a3ab1bfe9fb75baf2ca441314d4e22eb0e35b432ef13dfba5974dff7df",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_05.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_08_05_world_06.sql",
+    "sha256": "d4e59745b601645c7bd89ac50b295befed1550a894954ebaeaf65de3a2e67a7d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_06.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_07.sql",
+    "sha256": "1e7355a79efe28944e51d777a1b33b3dc609f4b1fdac103142cdd7586b09e59e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_07.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_08_05_world_08.sql",
+    "sha256": "db455736d40a90b0a9bfe4d03f8b6204056d2cec001f5b5b06c4e74a1a567833",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_08.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_05_world_09.sql",
+    "sha256": "ff258014235405592b68f02a197a197800bfe650731606d8a30e13bcddc6986a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_09.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_05_world_10.sql",
+    "sha256": "cca4fadd9b789af4cb5e40f0b507abcd9cb56d988e13c3a13e17c6498bda9655",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_10.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_08_05_world_11.sql",
+    "sha256": "a81c0844e33b124d5a3a4dd7101d2457e1b5933f995f8308f77a2f108f45ada9",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_11.sql",
+    "source_statements": 16,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 15
+    }
+  },
+  {
+    "patch": "2026_08_05_world_12.sql",
+    "sha256": "6817a7a5e831e0b38e48634a28c90e43493c55d7ebfb2b5afa331434ccff209e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_12.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_05_world_13.sql",
+    "sha256": "8a379b404856d9390e7982ec031bbf49e0363739622c89c75f309a1c81c422d1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_13.sql",
+    "source_statements": 3,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 3
+    }
+  },
+  {
+    "patch": "2026_08_05_world_14.sql",
+    "sha256": "ce552442921fbe13aaebec6c03939b1cef67cd01d488a381fa390fd747292778",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_14.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_05_world_15.sql",
+    "sha256": "14fb30a37404bf2a3081336890b1824e089777d039bbdd21d4ceb6cf19c9bbe7",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_15.sql",
+    "source_statements": 17,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 17
+    }
+  },
+  {
+    "patch": "2026_08_05_world_16.sql",
+    "sha256": "18101af27af28e0721c8c56b9bd407541e9e2ab16256c389b9b63b2105e93e74",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_16.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_17.sql",
+    "sha256": "6e33a5758781d26e66d3a49a761d41640869653315dedc35f065a93e16536318",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_17.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_18.sql",
+    "sha256": "854dde3c09115a5187f7ce3007e685ee5b7116f051267e84f4a29146d943d15d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_18.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_19.sql",
+    "sha256": "a12b31653925c37f06bf557fe2b8e88b772957ee9524837f9629b8566ef44693",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_19.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_20.sql",
+    "sha256": "452fa2fdca9714bd7c74e82d05b089c800ebeda0e4809772857858fbfa974703",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_20.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_21.sql",
+    "sha256": "6e092754e0947573a9fa1bb6e5df1d78eadb46c37ffb2fbf5e4c69d528f1f793",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_21.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_22.sql",
+    "sha256": "df067ebd1f0d73fa989e1e1b421fb34c9de9d372aa4b566247380611bda99de0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_22.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_23.sql",
+    "sha256": "ebf37b3dbcfc3df1e236a8dda34e0607c1392839d559c68aff14f0dc3325b323",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_23.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_24.sql",
+    "sha256": "b236d417aef78eee40a3d89901f34d11ddeaf97b0a2992eff47e9c96e7548892",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_24.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_05_world_25.sql",
+    "sha256": "58f48ca680787e80cbb8d600aac73c49d8d927b45dd951982818f0215f834785",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_05_world_25.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_00.sql",
+    "sha256": "c0f591ae2d239067ddcb8c1d1e1893bbff5200c88f2f6ad9f9310eecc5b10b23",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_00.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_06_world_01.sql",
+    "sha256": "6df29e9d143e19e64fc8d4d1f3c3062c4ab2d610312ad40f43c5c024154730ca",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_02.sql",
+    "sha256": "9f63aed9c412afff52f34b79339c97ea37047895bfbc56fd76dc002ec84ad8ab",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_02.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_06_world_03.sql",
+    "sha256": "655535c8feee81653527ab0f42131d03da71357ffdb6f84a0e7637578e044088",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_03.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_06_world_04.sql",
+    "sha256": "f59fcbe0b6c4723a2bceea5641bcc04a79e90ac3a4f3bae8a7bb75ab1ad278df",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_04.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_06_world_05.sql",
+    "sha256": "0472ae1211b87e66cb5e73343b27464952344773e34ab923cf4255a79325db67",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_05.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_06.sql",
+    "sha256": "fe46eb274db98d1ff4e36517f89c7f4af93fedd225cf36b349003b6ea2ae0743",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_06.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_07.sql",
+    "sha256": "9ad08665b274a1b55a72c7a1e9b9d22f9eb05ccb0bf0edff1af8f2627a63fda5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_07.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_06_world_08.sql",
+    "sha256": "1f4678c19943dcd4067701d4ce8bb4913e431721ea117f33121f3625184181f2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_08.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_09.sql",
+    "sha256": "299c1ba580e9cb6cde75d32144bc420fe450c065eeecdba14c9ae6b592b68e48",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_09.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_10.sql",
+    "sha256": "fa9bab6d50db6de87c9582b593b1d3ccbd58e1c33ac8453da0f3cebcea81d941",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_10.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_11.sql",
+    "sha256": "2b7ff0213e6caeb26ea8ed8dd20dedd5e78f530f2aa10be0c6ea5421972f8fa2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_11.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_06_world_12.sql",
+    "sha256": "0dbf9dca861f80fd8214d7cf20dc599897f619b6b241944e23844a3cac1760a5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_12.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_06_world_13.sql",
+    "sha256": "2d705e27ac4e6551d4843ebe913f39ceec18cfecd886c12c83ea2c2a10e2b7e3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_06_world_13.sql",
+    "source_statements": 65,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 64
+    }
+  },
+  {
+    "patch": "2026_08_07_world_00.sql",
+    "sha256": "dfc088172148997878ee7d5275a116d6daa54c9d119d0b461259f936010aed5f",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_07_world_01.sql",
+    "sha256": "a194433cbb5805d728a5f7ab36d139f22c0c07862b541aebcdbe9e415cf20eab",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_01.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_07_world_02.sql",
+    "sha256": "16935f5807c361ff86c05e33e7edd193c7025eabad4a101234e0551d1ae111ab",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_02.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_07_world_03.sql",
+    "sha256": "c137cec04a851ed9d9e621a857e4895f143130598b088f68bf9772f853582299",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_03.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_07_world_04.sql",
+    "sha256": "2a6f8da214f865bcfda170322652261c507abb45ecc26a71eba6cf4d72da28c7",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_07_world_05.sql",
+    "sha256": "7ce198c04aabd17c4dbdd5ca07ed3ef44bbe1cc5cb9fd6d79ed46796eb2c5beb",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_05.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_07_world_06.sql",
+    "sha256": "015b02a207474e988c23aebb7abcbdcd280957561f7220deb2f62a781d0fbfb3",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_06.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_07_world_07.sql",
+    "sha256": "66ccedb5453b01a71fce181dd23c4848bf6209ea13effc7dce00e379d17ed194",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_07.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_07_world_08.sql",
+    "sha256": "57ac8b2bbf600bfadceaacac04e2bf795d481b91c9e3076b2083718e6b39543f",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_08.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_07_world_09.sql",
+    "sha256": "6d7b74d5f2c09707bc10a698931c41cff6708947e5a9392c0b4930c1fc3af7bf",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_09.sql",
+    "source_statements": 17,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 16
+    }
+  },
+  {
+    "patch": "2026_08_07_world_10.sql",
+    "sha256": "905a459aa03b09ca2ca6f66432f7aea5067104ceb70d7c7f39de5208c3118587",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_10.sql",
+    "source_statements": 6,
+    "selected_statements": 6,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_07_world_11.sql",
+    "sha256": "9ae7337634d1192fc6e11827ff50c05e6e97826b85538309ae55f463ba292c57",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_11.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_07_world_12.sql",
+    "sha256": "be8601f9aff98035a99498af7dd68dde8d2fec1422f711148d952cab30af5b2a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_12.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_07_world_13.sql",
+    "sha256": "90773f65651ab2015bc0477227831b64d30fca876bffcfa4f78445974d3aa9c1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_13.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_07_world_14.sql",
+    "sha256": "182691770a56d9c093e22c8e70562b992f1f908c3272e92f848a2e9e2d75fc09",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_14.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_07_world_15.sql",
+    "sha256": "df42c750a31169b2fd1fd5cfa5bf99c16d9b7c95f1ff433e03ff7179070a1ced",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_15.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_07_world_16.sql",
+    "sha256": "a60df8abd6aa04dc1501524dc015b2be2b09af4b6e872f097764bac0c0b2c8ac",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_16.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_07_world_17.sql",
+    "sha256": "44c6105ba200e476d5ecc9196f5579698a0cb6d261f35dbcc27f3ef75bdfa201",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_07_world_17.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_08_world_00.sql",
+    "sha256": "3b1b4d717bbf0f6f9254b3117aa82aaf86d81bbb585a86b9a2148b06de7d9eb2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_08_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_08_world_01.sql",
+    "sha256": "6c1df58dbcfb06ad09151dfdf8a6e973410a978a4a4ddb3500974b1cbc208de0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_08_world_01.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_08_world_02.sql",
+    "sha256": "c6c8eb41ca2f912b41ec407faa6869871643ecb159db863300a73ec8614c3f74",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_08_world_02.sql",
+    "source_statements": 9,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_08_08_world_03.sql",
+    "sha256": "0cf2a7b1e8a63d853fbd0f7910543990d0c42559cf5ff93df452a6aef97f4698",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_08_world_03.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_08_world_04.sql",
+    "sha256": "183d84db8df614dd2cc34d03fe713a6d42a105ba87470623764be850661cd540",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_08_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_09_world_00.sql",
+    "sha256": "6abcbb39fd6435335605fdfe2fdcbf99e17de83525410ed169c247820ff96cd6",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_00.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_09_world_01.sql",
+    "sha256": "83bca935138e91843b1b16b96e3778ddf4a0bc5457ce01efbf139d5cc657125e",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_01.sql",
+    "source_statements": 41,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 39
+    }
+  },
+  {
+    "patch": "2026_08_09_world_02.sql",
+    "sha256": "806612c7c7676a4bd5c1178a9d2342972b5255000eafb700d2b884a541e8a953",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_02.sql",
+    "source_statements": 10,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 10
+    }
+  },
+  {
+    "patch": "2026_08_09_world_03.sql",
+    "sha256": "f8dc13c4c24e0394260447d88074b98c13374223ec41c25e340bf5dda78cdca2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_03.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_09_world_04.sql",
+    "sha256": "cc52eedca4d6fb7a8dfcea768c786ded3246fbce85f562084339ba14c72bf4db",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_09_world_05.sql",
+    "sha256": "4a005797bcd2113eca7916e93e29c23aeb315f8559873aad0db0e28cc0bf2caf",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_05.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_09_world_06.sql",
+    "sha256": "0df1a9354aaa9ed077fc4cd83ca1dbe250ce055b776073cb93754fdd7592d48c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_09_world_06.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_10_world_00.sql",
+    "sha256": "619fa922ebca8203544d8e367497aef177fb2b07dafe8a489a550ea70fccd28c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_10_world_00.sql",
+    "source_statements": 19,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 17
+    }
+  },
+  {
+    "patch": "2026_08_10_world_01.sql",
+    "sha256": "5995b9ea1cfbbd9d63a899fd7a54174a86f40780fb2e22797e0c78476d94cdc9",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_10_world_01.sql",
+    "source_statements": 80,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 80
+    }
+  },
+  {
+    "patch": "2026_08_10_world_02.sql",
+    "sha256": "732a90d448040e2fc65518e60d1d6ab5647e32dd55889fa280739d0d75a99e44",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_10_world_02.sql",
+    "source_statements": 3,
+    "selected_statements": 3,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_10_world_03.sql",
+    "sha256": "13a207749561e80b08e33d7c367294aa9e33fb5cdd78597099eecd44de6b9776",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_10_world_03.sql",
+    "source_statements": 3,
+    "selected_statements": 3,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_10_world_04.sql",
+    "sha256": "697f67881e5ff7bb700d8d0ce9d64d9799939e8c172ba08d70ae1bcd8db4736f",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_10_world_04.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_11_world_00.sql",
+    "sha256": "3bc06d7c18354132ab8224d0f2ef20e2c42ae433374000f9f9e976bc83b8931f",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_11_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_11_world_01.sql",
+    "sha256": "7cc37f565bc2c1b2765e060c4622aa69ff145858b220808ad31983d397e58724",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_11_world_01.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_11_world_02.sql",
+    "sha256": "dc15a6405a5aaae2685a49786fcb510967a5da76c73cab1454206669372b0701",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_11_world_02.sql",
+    "source_statements": 13,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 13
+    }
+  },
+  {
+    "patch": "2026_08_11_world_03.sql",
+    "sha256": "93e5ad0ada5877afe635a84c768fb1494c64d780109e81e57fcd2fb3a5e6dcb5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_11_world_03.sql",
+    "source_statements": 14,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 14
+    }
+  },
+  {
+    "patch": "2026_08_11_world_04.sql",
+    "sha256": "00e811de784f1250d1a5f32cb352db0c587e36909018071197a2c6b11e73d19a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_11_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_12_world_00.sql",
+    "sha256": "fee63ed5b82a370f5609948f233e0777142b00c6d8f6af1dd499b310c57cffc8",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_00.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_12_world_01.sql",
+    "sha256": "9ad3fec5c20a2a2b4ec31fa707e6c5b8a160d6eaf50e6f2bd4e0f9848fd3064b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_01.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_12_world_02.sql",
+    "sha256": "31b638140e7e1353f8afeeb6a95ace0bafc7173439265e3a98fee9e78abe3132",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_02.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_12_world_03.sql",
+    "sha256": "217d7ef049fc6a4a67c7e0829d56092943875ca301af9c1ff9b550b45f8f5ae1",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_03.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_12_world_04.sql",
+    "sha256": "c29fc2e0e41e6fdec08772e0d99085eff0c6abe8dc0370fc3b2afdf63cfcdd8b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_04.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_12_world_05.sql",
+    "sha256": "78f87507c64e607040b6747a016624f4b2864921bdb3e1dedce61da24bdd7ba2",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_05.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_12_world_06.sql",
+    "sha256": "9334a40330e7675cbb1242a35e60b8f46b63264a424e066188333134ec35eb98",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_06.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_12_world_07.sql",
+    "sha256": "fed8c34677368372ee52509071f738e5d9ef323049a3aa85bc18cb015f328327",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_07.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_12_world_08.sql",
+    "sha256": "03765301833a9014c421926d74c741082519b650c84286d57fbe958102f2fd2d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_08.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_12_world_09.sql",
+    "sha256": "1266224243d49e71fc97182feb9bc6b765828fe5b64ff8c522387fa99d8994d8",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_09.sql",
+    "source_statements": 8,
+    "selected_statements": 8,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_12_world_10.sql",
+    "sha256": "abfb29c0dc027c578bac06d005927326f67d90b12aba6aa5a6d2263e19483691",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_10.sql",
+    "source_statements": 7,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_08_12_world_11.sql",
+    "sha256": "6cc9f44ec046a367c77e56e4f1202764e8d1c621dce151dbd78d14702561f457",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_12_world_11.sql",
+    "source_statements": 2,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 2
+    }
+  },
+  {
+    "patch": "2026_08_13_world_00.sql",
+    "sha256": "7592c465068415d97b0c200f9fb9d0121e6cbffdc63093531036099341f6b668",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_00.sql",
+    "source_statements": 7,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 7
+    }
+  },
+  {
+    "patch": "2026_08_13_world_01.sql",
+    "sha256": "875fcb033289acf0a1b776df3f7cd9cd1ac0786472b3511c3dc7f3be95cc8072",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_01.sql",
+    "source_statements": 5,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 5
+    }
+  },
+  {
+    "patch": "2026_08_13_world_02.sql",
+    "sha256": "eac76a51dc79e9851ca74bafdf94cb0c39aa391d69e4141b5fe75d71a75b0f6b",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_02.sql",
+    "source_statements": 13,
+    "selected_statements": 13,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_13_world_03.sql",
+    "sha256": "5ddd880bedbe087f607fdac278be8824fcbf576408fb185727370d8707376af0",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_03.sql",
+    "source_statements": 9,
+    "selected_statements": 9,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_13_world_04.sql",
+    "sha256": "59da2e33d0195f9a73388e0e8ee34bde443086f20b55c4b721d78285440d41a5",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_04.sql",
+    "source_statements": 2,
+    "selected_statements": 2,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_13_world_05.sql",
+    "sha256": "729965fb1b740ad12f1cc0a611c79d354a37b74140dbd3b54c17954e3b2fd01c",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_05.sql",
+    "source_statements": 1,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 1
+    }
+  },
+  {
+    "patch": "2026_08_13_world_06.sql",
+    "sha256": "df06bdb52e9af842455ad31fb076a1c45b553df27c8ffdcc701afa7b2832b4af",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_06.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_13_world_07.sql",
+    "sha256": "6772378ea932b650cc25d49700499ad7b4926f90499c448486ae473f0175de58",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_07.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_13_world_08.sql",
+    "sha256": "c39000ee88a938dd9aeead5a72d1ef182b1879ac0fe5a6ade44ead613942c1ef",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_08.sql",
+    "source_statements": 6,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 6
+    }
+  },
+  {
+    "patch": "2026_08_13_world_09.sql",
+    "sha256": "5274bfe3423f1dc5d37ad95897fb0398b09725b3781928f927606a077d12f70a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_13_world_09.sql",
+    "source_statements": 4,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 4
+    }
+  },
+  {
+    "patch": "2026_08_14_world_00.sql",
+    "sha256": "1dd2af7f31f84685d638949a6e5b93f7c7ef0122a2e38728b0bb0a71e6ac8939",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_00.sql",
+    "source_statements": 15,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "numeric/training/cleanup update retained for separate adaptation": 1,
+      "outside reviewed quest/starter AI subset": 14
+    }
+  },
+  {
+    "patch": "2026_08_14_world_01.sql",
+    "sha256": "9dea6798753a169b58012edbeddd5f2cd5570fe52dff8f117203a79880b5a6be",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_01.sql",
+    "source_statements": 44,
+    "selected_statements": 2,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "conditional quest update requires separate evidence": 1,
+      "numeric/training/cleanup update retained for separate adaptation": 1,
+      "outside reviewed quest/starter AI subset": 40
+    }
+  },
+  {
+    "patch": "2026_08_14_world_02.sql",
+    "sha256": "5fff87d003b9a03ca09905b9c3a083013e68285605caedb97e82e1694f2d8aec",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_02.sql",
+    "source_statements": 10,
+    "selected_statements": 1,
+    "status": "selected subset",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 9
+    }
+  },
+  {
+    "patch": "2026_08_14_world_03.sql",
+    "sha256": "d4be13cd5631337542604fefbb58c1b5c9bb0dccd11b2ca68b9fa44f18471003",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_03.sql",
+    "source_statements": 1,
+    "selected_statements": 1,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_14_world_04.sql",
+    "sha256": "378e77b09391c60a939b9395de2a41fbec12c9a59aa80e7563d40d41f7971ae8",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_04.sql",
+    "source_statements": 5,
+    "selected_statements": 5,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_14_world_05.sql",
+    "sha256": "f2fafb8cb1fb07de8aa944a78d5ff70d2627a8f50e14e4a97ed70c6198c23efc",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_05.sql",
+    "source_statements": 6,
+    "selected_statements": 6,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_14_world_06.sql",
+    "sha256": "e8ae8485905d021f745d50ef14070dd52136e0abdd997c7771b79fa86892b73d",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_14_world_06.sql",
+    "source_statements": 10,
+    "selected_statements": 10,
+    "status": "selected full data patch",
+    "remaining_reasons": {}
+  },
+  {
+    "patch": "2026_08_15_world_00.sql",
+    "sha256": "58172140c4ff081096bfebf8eca4c97858ad1acdc83bc50ac93b8cfe48ef972a",
+    "source": "https://github.com/ProjectSkyfire/SkyFire_548/blob/505f6e63a20c3ea75dfebb17f58e891f4e5fb44c/sql/old/5.4.8/world/SFDB_release_25.000_to_26.001/2026_08_15_world_00.sql",
+    "source_statements": 13,
+    "selected_statements": 0,
+    "status": "not in this batch",
+    "remaining_reasons": {
+      "outside reviewed quest/starter AI subset": 13
+    }
+  }
+]

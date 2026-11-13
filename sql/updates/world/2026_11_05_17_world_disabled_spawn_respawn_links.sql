@@ -1,0 +1,23 @@
+-- Retire respawn links to disabled database copies, not the encounter actors.
+-- Hadronox and its escort adds are dynamically summoned by the instance script;
+-- the old spawnMask0 copies cannot be linked-respawn masters. Preserve every
+-- creature/spawn and every usable link. Complete table backup required first.
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79075 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=0 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79076 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=0 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79077 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79078 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79079 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79080 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79081 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79082 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79083 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79084 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79085 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79086 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79087 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79088 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79098 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=0 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79163 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79164 AND l.linkedGuid=79097 AND l.linkType=0 AND c.map=601 AND c.spawnMask=6 AND m.map=601 AND m.spawnMask=0;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79234 AND l.linkedGuid=79249 AND l.linkType=0 AND c.map=600 AND c.spawnMask=0 AND m.map=600 AND m.spawnMask=6;
+DELETE l FROM linked_respawn l JOIN creature c ON c.guid=l.guid JOIN creature m ON m.guid=l.linkedGuid WHERE l.guid=79235 AND l.linkedGuid=79249 AND l.linkType=0 AND c.map=600 AND c.spawnMask=0 AND m.map=600 AND m.spawnMask=6;

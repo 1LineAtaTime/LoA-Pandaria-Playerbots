@@ -1,0 +1,299 @@
+{
+  "timestamp_utc": "2026-11-08T16:37:40.294875+00:00",
+  "revision": "d2a80b89e30597cf9a92d77d7c9b623e886a5717",
+  "suite_sha256": "eda80f2ee5919b143fad49e0060c306ba6b398a89308815eb986c91ba61e0003",
+  "harness_sha256": {
+    "qa_compare.py": "7c67e158ae68ba3614dc7f989bc493fca1aeb9d1ba395e4dae4d6e4090320365",
+    "qa_inventory.py": "3c474c069b2e54cfc5deae6c95d64683c6901472a6e41fb29421c046ec288352",
+    "qa_report.py": "b21ecbf8ac63d854945d8ef1576c1bd5d0f090f1dd7d26b59ff371c420598421",
+    "qa_run.py": "bf1e1950b79b00a8c0c055755d56e11bb46665c03d6d3505618a646d795f0247",
+    "qa_spec.py": "8facc39ccec9405bb1a9e3e52e1eb26a36b52cffd7ad58dabb84cb735ec99117",
+    "starter_campaign.py": "a78126457e29349d1c09543391955341c54b8b07f4688d1d637e17e5fdb582f9"
+  },
+  "gameplay": {
+    "counts": {
+      "blocked": 0,
+      "failed": 0,
+      "passed": 15,
+      "untested": 8
+    },
+    "complete": false,
+    "ready": false
+  },
+  "data": {
+    "counts": {
+      "blocked": 0,
+      "failed": 6,
+      "passed": 4,
+      "untested": 0
+    },
+    "complete": true,
+    "ready": false
+  },
+  "content_inventory": {
+    "quest_template": 18145,
+    "creature_template": 57634,
+    "item_template": 80022
+  },
+  "quest_coverage": {
+    "total": 18145,
+    "counts": {
+      "untested": 18140,
+      "passed": 3,
+      "partial": 2
+    },
+    "report": "quest-coverage.json",
+    "spell_and_boss_coverage": "not yet enumerated or validated"
+  },
+  "cleanup_verified": true,
+  "direct_account_residue_check": 0,
+  "audit_findings": [
+    {
+      "id": "objective_quest",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    },
+    {
+      "id": "objective_creature",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "8149",
+          "284684",
+          "108639"
+        ],
+        [
+          "8150",
+          "284686",
+          "108644"
+        ]
+      ]
+    },
+    {
+      "id": "objective_item",
+      "status": "failed",
+      "violation_count": 9,
+      "sample": [
+        [
+          "29048",
+          "251633",
+          "68676"
+        ],
+        [
+          "28940",
+          "252842",
+          "68604"
+        ],
+        [
+          "29466",
+          "254733",
+          "71961"
+        ],
+        [
+          "29056",
+          "256401",
+          "68680"
+        ],
+        [
+          "29046",
+          "256709",
+          "68674"
+        ],
+        [
+          "10794",
+          "273866",
+          "113135"
+        ],
+        [
+          "29534",
+          "255255",
+          "72108"
+        ],
+        [
+          "29554",
+          "261256",
+          "73366"
+        ],
+        [
+          "32475",
+          "269899",
+          "93660"
+        ]
+      ]
+    },
+    {
+      "id": "objective_gameobject",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "30759",
+          "272423",
+          "223458"
+        ],
+        [
+          "30974",
+          "268034",
+          "212375"
+        ]
+      ]
+    },
+    {
+      "id": "quest_start_target",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    },
+    {
+      "id": "quest_end_target",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    },
+    {
+      "id": "waypoint_ownership",
+      "status": "failed",
+      "violation_count": 3,
+      "sample": [
+        [
+          "564238",
+          "0"
+        ],
+        [
+          "564239",
+          "0"
+        ],
+        [
+          "564240",
+          "0"
+        ]
+      ]
+    },
+    {
+      "id": "waypoint_path",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "914942",
+          "9149420"
+        ],
+        [
+          "522984",
+          "522984"
+        ]
+      ]
+    },
+    {
+      "id": "active_smartai_ownership",
+      "status": "failed",
+      "violation_count": 62,
+      "sample": [
+        [
+          "4542"
+        ],
+        [
+          "7357"
+        ],
+        [
+          "8567"
+        ],
+        [
+          "10399"
+        ],
+        [
+          "19991"
+        ],
+        [
+          "23575"
+        ],
+        [
+          "29625"
+        ],
+        [
+          "29679"
+        ],
+        [
+          "32851"
+        ],
+        [
+          "35077"
+        ],
+        [
+          "35486"
+        ],
+        [
+          "37143"
+        ],
+        [
+          "37179"
+        ],
+        [
+          "37213"
+        ],
+        [
+          "39710"
+        ],
+        [
+          "39833"
+        ],
+        [
+          "39947"
+        ],
+        [
+          "39951"
+        ],
+        [
+          "40223"
+        ],
+        [
+          "40650"
+        ]
+      ]
+    },
+    {
+      "id": "shop_item_reference",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    }
+  ],
+  "unimplemented": [
+    {
+      "id": "quest-kill-objectives",
+      "reason": "Existing static combat route is unreliable for roaming targets; live movement/health tracking required."
+    },
+    {
+      "id": "quest-collect-and-use",
+      "reason": "Inventory, drop and item-use outcome assertions not implemented."
+    },
+    {
+      "id": "quest-escort-phase-vehicle",
+      "reason": "Needs authored route, phase and scene outcome expectations."
+    },
+    {
+      "id": "spell-mechanics",
+      "reason": "Needs class fixtures, target setup and damage/aura/resource assertions."
+    },
+    {
+      "id": "boss-encounters",
+      "reason": "Needs encounter phase, wipe/reset and reward contracts."
+    },
+    {
+      "id": "battlepay-transactions",
+      "reason": "Needs client packet decoding and delivery/DP assertions."
+    },
+    {
+      "id": "companions-and-auctions",
+      "reason": "Needs party travel/healing/loot and auction settlement contracts."
+    },
+    {
+      "id": "fresh-network-reconnect",
+      "reason": "First QA attempt closed the world connection during fresh reauthentication. Cause unresolved; historical failures retained. Character re-entry on the existing connection is tested separately."
+    }
+  ],
+  "report_directory": "out\\qa-20261108\\unattended-full",
+  "all_content_validated": false
+}

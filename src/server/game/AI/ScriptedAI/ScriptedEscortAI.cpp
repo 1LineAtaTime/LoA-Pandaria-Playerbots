@@ -138,7 +138,9 @@ void npc_escortAI::MoveInLineOfSight(Unit* who)
 
 void npc_escortAI::JustDied(Unit* /*killer*/)
 {
-    if (!HasEscortState(STATE_ESCORT_ESCORTING) || !m_uiPlayerGUID || !m_pQuestForEscort ||!HasEscortState(STATE_ESCORT_JUMPING))
+    // Walking and jumping are alternative route states, not simultaneous requirements.
+    // Requiring both left an incomplete quest behind when a normal escort died.
+    if (!HasEscortState(STATE_ESCORT_ESCORTING | STATE_ESCORT_JUMPING) || !m_uiPlayerGUID || !m_pQuestForEscort)
         return;
 
     if (Player* player = GetPlayerForEscort())
@@ -359,6 +361,11 @@ void npc_escortAI::MovementInform(uint32 moveType, uint32 pointId)
     }
     else
     {
+        // A late/duplicate movement notification can arrive after the final point.
+        // There is no waypoint to report once the route iterator reaches end().
+        if (CurrentWP == WaypointList.end())
+            return;
+
         //Make sure that we are still on the right waypoint
         if (CurrentWP->id != pointId)
         {

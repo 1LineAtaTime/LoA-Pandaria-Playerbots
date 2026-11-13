@@ -429,7 +429,32 @@ namespace MMAP
     void MapBuilder::buildSingleTile(uint32 mapID, uint32 tileX, uint32 tileY)
     {
         dtNavMesh* navMesh = nullptr;
-        buildNavMesh(mapID, navMesh);
+        // Adding one tile must keep the existing mesh origin. Recomputing it
+        // from a newer terrain directory can shift every tile index and make
+        // the new tile collide with an existing neighbor at runtime.
+        char existingMap[64];
+        snprintf(existingMap, sizeof(existingMap), "mmaps/%04u.mmap", mapID);
+        if (FILE* file = fopen(existingMap, "rb"))
+        {
+            dtNavMeshParams params{};
+            bool read = fread(&params, sizeof(params), 1, file) == 1;
+            fclose(file);
+            if (!read)
+            {
+                printf("Failed reading existing navmesh parameters; preserving existing map.\n");
+                return;
+            }
+            navMesh = dtAllocNavMesh();
+            if (!navMesh || dtStatusFailed(navMesh->init(&params)))
+            {
+                dtFreeNavMesh(navMesh);
+                printf("Invalid existing navmesh parameters; preserving existing map.\n");
+                return;
+            }
+            printf("[Map %04u] Reusing existing navmesh parameters.\n", mapID);
+        }
+        else
+            buildNavMesh(mapID, navMesh);
         if (!navMesh)
         {
             printf("Failed creating navmesh!              \n");

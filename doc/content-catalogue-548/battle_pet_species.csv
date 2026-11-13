@@ -1,0 +1,846 @@
+id,creature_id,summon_spell_id,name,comparison,behavior
+2,61892,0,Xelnath,client_relationship_present,not_evaluated
+39,2671,4055,Mechanical Squirrel,client_relationship_present,not_evaluated
+40,7385,10673,Bombay Cat,client_relationship_present,not_evaluated
+41,7384,10674,Cornish Rex Cat,client_relationship_present,not_evaluated
+42,7383,10675,Black Tabby Cat,client_relationship_present,not_evaluated
+43,7382,10676,Orange Tabby Cat,client_relationship_present,not_evaluated
+44,7380,10677,Siamese Cat,client_relationship_present,not_evaluated
+45,7381,10678,Silver Tabby Cat,client_relationship_present,not_evaluated
+46,7386,10679,White Kitten,client_relationship_present,not_evaluated
+47,7390,10680,Cockatiel,client_relationship_present,not_evaluated
+49,7391,10682,Hyacinth Macaw,client_relationship_present,not_evaluated
+50,7387,10683,Green Wing Macaw,client_relationship_present,not_evaluated
+51,7389,10684,Senegal,client_relationship_present,not_evaluated
+52,7394,10685,Ancona Chicken,client_relationship_present,not_evaluated
+55,7395,10688,Cockroach,client_relationship_present,not_evaluated
+56,7543,10695,Dark Whelpling,client_relationship_present,not_evaluated
+57,7547,10696,Azure Whelpling,client_relationship_present,not_evaluated
+58,7544,10697,Crimson Whelpling,client_relationship_present,not_evaluated
+59,7545,10698,Emerald Whelpling,client_relationship_present,not_evaluated
+64,7550,10703,Wood Frog,client_relationship_present,not_evaluated
+65,7549,10704,Tree Frog,client_relationship_present,not_evaluated
+67,7555,10706,Hawk Owl,client_relationship_present,not_evaluated
+68,7553,10707,Great Horned Owl,client_relationship_present,not_evaluated
+69,7554,0,Snowy Owl,client_relationship_present,not_evaluated
+70,14421,10709,Brown Prairie Dog,client_relationship_present,not_evaluated
+72,7560,10711,Snowshoe Rabbit,client_relationship_present,not_evaluated
+74,7561,10713,Albino Snake,client_relationship_present,not_evaluated
+75,7565,10714,Black Kingsnake,client_relationship_present,not_evaluated
+77,7562,10716,Brown Snake,client_relationship_present,not_evaluated
+78,7567,10717,Crimson Snake,client_relationship_present,not_evaluated
+83,8376,12243,Mechanical Chicken,client_relationship_present,not_evaluated
+84,30379,13548,Westfall Chicken,client_relationship_present,not_evaluated
+85,9656,15048,Pet Bombling,client_relationship_present,not_evaluated
+86,9657,15049,Lil' Smoky,client_relationship_present,not_evaluated
+87,9662,15067,Sprite Darter Hatchling,client_relationship_present,not_evaluated
+89,10259,15999,Worg Pup,client_relationship_present,not_evaluated
+90,10598,16450,Smolderweb Hatchling,client_relationship_present,not_evaluated
+92,11325,17707,Panda Cub,client_relationship_present,not_evaluated
+93,11326,17708,Mini Diablo,client_relationship_present,not_evaluated
+94,11327,17709,Zergling,client_relationship_present,not_evaluated
+95,12419,19772,Lifelike Toad,client_relationship_present,not_evaluated
+106,14878,23811,Jubling,client_relationship_present,not_evaluated
+107,15186,24696,Murky,client_relationship_present,not_evaluated
+111,15358,24988,Lurky,client_relationship_present,not_evaluated
+114,15429,25162,Disgusting Oozeling,client_relationship_present,not_evaluated
+115,15661,25849,Baby Shark,client_relationship_present,not_evaluated
+116,15699,26010,Tranquil Mechanical Yeti,client_relationship_present,not_evaluated
+117,15710,26045,Tiny Snowman,client_relationship_present,not_evaluated
+118,15706,26529,Winter Reindeer,client_relationship_present,not_evaluated
+119,15698,26533,Father Winter's Helper,client_relationship_present,not_evaluated
+120,15705,26541,Winter's Little Helper,client_relationship_present,not_evaluated
+121,16069,27241,Gurky,client_relationship_present,not_evaluated
+122,16085,27570,Peddlefeet,client_relationship_present,not_evaluated
+124,16456,28505,Poley,client_relationship_present,not_evaluated
+125,16547,28738,Speedy,client_relationship_present,not_evaluated
+126,16548,28739,Mr. Wiggles,client_relationship_present,not_evaluated
+127,16549,28740,Whiskers the Rat,client_relationship_present,not_evaluated
+128,16701,28871,Spirit of Summer,client_relationship_present,not_evaluated
+130,17255,30156,Hippogryph Hatchling,client_relationship_present,not_evaluated
+131,18381,32298,Netherwhelp,client_relationship_present,not_evaluated
+132,18839,33050,Magical Crawdad,client_relationship_present,not_evaluated
+136,20408,35156,Mana Wyrmling,client_relationship_present,not_evaluated
+137,20472,35239,Brown Rabbit,client_relationship_present,not_evaluated
+138,21010,35907,Blue Moth,client_relationship_present,not_evaluated
+139,21009,35909,Red Moth,client_relationship_present,not_evaluated
+140,21008,35910,Yellow Moth,client_relationship_present,not_evaluated
+141,21018,35911,White Moth,client_relationship_present,not_evaluated
+142,21055,36027,Golden Dragonhawk Hatchling,client_relationship_present,not_evaluated
+143,21064,36028,Red Dragonhawk Hatchling,client_relationship_present,not_evaluated
+144,21063,36029,Silver Dragonhawk Hatchling,client_relationship_present,not_evaluated
+145,21056,36031,Blue Dragonhawk Hatchling,client_relationship_present,not_evaluated
+146,21076,36034,Firefly,client_relationship_present,not_evaluated
+149,22445,39181,Miniwing,client_relationship_present,not_evaluated
+153,22943,39709,Wolpertinger,client_relationship_present,not_evaluated
+155,23198,40405,Lucky,client_relationship_present,not_evaluated
+156,23234,40549,Bananas,client_relationship_present,not_evaluated
+157,23231,40613,Willy,client_relationship_present,not_evaluated
+158,23258,40614,Egbert,client_relationship_present,not_evaluated
+159,23266,40634,Peanut,client_relationship_present,not_evaluated
+160,23274,40990,Stinker,client_relationship_present,not_evaluated
+162,23909,42609,Sinister Squashling,client_relationship_present,not_evaluated
+163,24388,43697,Toothy,client_relationship_present,not_evaluated
+164,24389,43698,Muckbreath,client_relationship_present,not_evaluated
+165,24480,43918,Mojo,client_relationship_present,not_evaluated
+166,24753,44369,Pint-Sized Pink Pachyderm,client_relationship_present,not_evaluated
+167,25062,45082,Tiny Sporebat,client_relationship_present,not_evaluated
+168,25109,45125,Rocket Chicken,client_relationship_present,not_evaluated
+169,25110,45127,Dragon Kite,client_relationship_present,not_evaluated
+170,25146,45174,Golden Pig,client_relationship_present,not_evaluated
+171,25147,45175,Silver Pig,client_relationship_present,not_evaluated
+172,25706,45890,Searing Scorchling,client_relationship_present,not_evaluated
+173,26050,46425,Snarly,client_relationship_present,not_evaluated
+174,26056,46426,Chuck,client_relationship_present,not_evaluated
+175,26119,46599,Phoenix Hatchling,client_relationship_present,not_evaluated
+179,27217,48406,Spirit of Competition,client_relationship_present,not_evaluated
+180,27346,48408,Essence of Competition,client_relationship_present,not_evaluated
+183,27914,49964,Ethereal Soul-Trader,client_relationship_present,not_evaluated
+186,28470,51716,Nether Ray Fry,client_relationship_present,not_evaluated
+187,28513,51851,Vampiric Batling,client_relationship_present,not_evaluated
+188,28883,52615,Frosty,client_relationship_present,not_evaluated
+189,29089,53082,Mini Tyrael,client_relationship_present,not_evaluated
+190,29147,53316,Ghostly Skull,client_relationship_present,not_evaluated
+191,24968,54187,Clockwork Rocket Bot,client_relationship_present,not_evaluated
+192,29726,55068,Mr. Chilly,client_relationship_present,not_evaluated
+193,31575,59250,Giant Sewer Rat,client_relationship_present,not_evaluated
+194,32589,61348,Tickbird Hatchling,client_relationship_present,not_evaluated
+195,32590,61349,White Tickbird Hatchling,client_relationship_present,not_evaluated
+196,32592,61350,Proto-Drake Whelp,client_relationship_present,not_evaluated
+197,32591,61351,Cobra Hatchling,client_relationship_present,not_evaluated
+198,32595,61357,Pengu,client_relationship_present,not_evaluated
+199,32643,61472,Kirin Tor Familiar,client_relationship_present,not_evaluated
+200,32791,61725,Spring Rabbit,client_relationship_present,not_evaluated
+201,32818,61773,Plump Turkey,client_relationship_present,not_evaluated
+202,32841,61855,Baby Blizzard Bear,client_relationship_present,not_evaluated
+203,32939,61991,Little Fawn,client_relationship_present,not_evaluated
+204,33188,62491,Teldrassil Sproutling,client_relationship_present,not_evaluated
+205,33194,62508,Dun Morogh Cub,client_relationship_present,not_evaluated
+206,33197,62510,Tirisfal Batling,client_relationship_present,not_evaluated
+207,33198,62513,Durotar Scorpion,client_relationship_present,not_evaluated
+209,33200,62516,Elwynn Lamb,client_relationship_present,not_evaluated
+210,33219,62542,Mulgore Hatchling,client_relationship_present,not_evaluated
+211,33226,62561,Strand Crawler,client_relationship_present,not_evaluated
+212,33205,62562,Ammen Vale Lashling,client_relationship_present,not_evaluated
+213,33227,62564,Enchanted Broom,client_relationship_present,not_evaluated
+214,33238,62609,Argent Squire,client_relationship_present,not_evaluated
+215,33274,62674,Mechanopeep,client_relationship_present,not_evaluated
+216,33239,62746,Argent Gruntling,client_relationship_present,not_evaluated
+217,33578,63318,Murkimus the Gladiator,client_relationship_present,not_evaluated
+218,33810,63712,Sen'jin Fetish,client_relationship_present,not_evaluated
+220,34278,65046,Withers,client_relationship_present,not_evaluated
+224,34364,65358,Calico Cat,client_relationship_present,not_evaluated
+225,33530,65381,Curious Oracle Hatchling,client_relationship_present,not_evaluated
+226,33529,65382,Curious Wolvar Pup,client_relationship_present,not_evaluated
+227,34587,65682,Warbot,client_relationship_present,not_evaluated
+228,34694,66030,Grunty,client_relationship_present,not_evaluated
+229,34724,66096,Shimmering Wyrmling,client_relationship_present,not_evaluated
+231,34930,66520,Jade Tiger,client_relationship_present,not_evaluated
+232,35396,67413,Darting Hatchling,client_relationship_present,not_evaluated
+233,35395,67414,Deviate Hatchling,client_relationship_present,not_evaluated
+234,35400,67415,Gundrak Hatchling,client_relationship_present,not_evaluated
+235,35387,67416,Leaping Hatchling,client_relationship_present,not_evaluated
+236,35399,67417,Obsidian Hatchling,client_relationship_present,not_evaluated
+237,35397,67418,Ravasaur Hatchling,client_relationship_present,not_evaluated
+238,35398,67419,Razormaw Hatchling,client_relationship_present,not_evaluated
+239,35394,67420,Razzashi Hatchling,client_relationship_present,not_evaluated
+240,35468,67527,Onyx Panther,client_relationship_present,not_evaluated
+241,36482,68767,Tuskarr Kite,client_relationship_present,not_evaluated
+242,36511,68810,Spectral Tiger Cub,client_relationship_present,not_evaluated
+243,36607,69002,Onyxian Whelpling,client_relationship_present,not_evaluated
+244,36871,69452,Core Hound Pup,client_relationship_present,not_evaluated
+245,36908,69535,Gryphon Hatchling,client_relationship_present,not_evaluated
+246,36909,69536,Wind Rider Cub,client_relationship_present,not_evaluated
+247,36910,69539,Zipao Tiger,client_relationship_present,not_evaluated
+248,36911,69541,Pandaren Monk,client_relationship_present,not_evaluated
+249,36979,69677,Lil' K.T.,client_relationship_present,not_evaluated
+250,37865,70613,Perky Pug,client_relationship_present,not_evaluated
+251,38374,71840,Toxic Wasteling,client_relationship_present,not_evaluated
+253,40198,74932,Frigid Frostling,client_relationship_present,not_evaluated
+254,40295,75134,Blue Clockwork Rocket Bot,client_relationship_present,not_evaluated
+255,40624,75613,Celestial Dragon,client_relationship_present,not_evaluated
+256,40703,75906,Lil' XT,client_relationship_present,not_evaluated
+257,40721,75936,Murkimus the Gladiator,client_relationship_present,not_evaluated
+258,42078,78381,Mini Thor,client_relationship_present,not_evaluated
+259,42177,78683,Blue Mini Jouster,client_relationship_present,not_evaluated
+260,42183,78685,Gold Mini Jouster,client_relationship_present,not_evaluated
+261,43800,81937,Personal World Destroyer,client_relationship_present,not_evaluated
+262,43916,82173,De-Weaponized Mechanical Companion,client_relationship_present,not_evaluated
+264,45128,84263,Crawling Claw,client_relationship_present,not_evaluated
+265,45247,84492,Pebble,client_relationship_present,not_evaluated
+266,45340,84752,Fossilized Hatchling,client_relationship_present,not_evaluated
+267,46898,93836,Enchanted Lantern,client_relationship_present,not_evaluated
+268,46896,87344,Lil' Deathwing,client_relationship_present,not_evaluated
+270,47944,89039,Dark Phoenix Hatchling,client_relationship_present,not_evaluated
+271,48107,89472,Rustberg Gull,client_relationship_present,not_evaluated
+272,48242,89670,Armadillo Pup,client_relationship_present,not_evaluated
+277,48609,90523,Clockwork Gnome,client_relationship_present,not_evaluated
+278,48641,90637,Fox Kit,client_relationship_present,not_evaluated
+279,48982,91343,Tiny Shale Spider,client_relationship_present,not_evaluated
+280,49586,92395,Guild Page,client_relationship_present,not_evaluated
+281,49588,92396,Guild Page,client_relationship_present,not_evaluated
+282,49587,92397,Guild Herald,client_relationship_present,not_evaluated
+283,49590,92398,Guild Herald,client_relationship_present,not_evaluated
+285,50468,93624,Landro's Lil' XT,client_relationship_present,not_evaluated
+286,50586,93739,Mr. Grubbs,client_relationship_present,not_evaluated
+287,51632,93813,Tiny Flamefly,client_relationship_present,not_evaluated
+289,51635,93817,Scooter the Snail,client_relationship_present,not_evaluated
+291,51090,93823,Singing Sunflower,client_relationship_present,not_evaluated
+292,50545,93837,Magic Lamp,client_relationship_present,not_evaluated
+293,50722,93838,Elementium Geode,client_relationship_present,not_evaluated
+294,51122,94070,Deathy,client_relationship_present,not_evaluated
+296,51601,95786,Moonkin Hatchling,client_relationship_present,not_evaluated
+297,51600,95787,Lil' Ragnaros,client_relationship_present,not_evaluated
+298,51649,95909,Moonkin Hatchling,client_relationship_present,not_evaluated
+301,52226,96571,Panther Cub,client_relationship_present,not_evaluated
+302,52343,96817,Landro's Lichling,client_relationship_present,not_evaluated
+303,52344,96819,Nightsaber Cub,client_relationship_present,not_evaluated
+306,52831,97638,Winterspring Cub,client_relationship_present,not_evaluated
+307,52894,97779,Lashtail Hatchling,client_relationship_present,not_evaluated
+308,53048,98079,Legs,client_relationship_present,not_evaluated
+309,53225,98571,Pterrordax Hatchling,client_relationship_present,not_evaluated
+310,53232,98587,Voodoo Figurine,client_relationship_present,not_evaluated
+311,53283,98736,Guardian Cub,client_relationship_present,not_evaluated
+316,53623,99578,Cenarion Hatchling,client_relationship_present,not_evaluated
+317,53658,99663,Hyjal Bear Cub,client_relationship_present,not_evaluated
+318,53661,99668,Crimson Lasher,client_relationship_present,not_evaluated
+319,53884,100330,Feline Familiar,client_relationship_present,not_evaluated
+320,54027,100576,Lil' Tarecgosa,client_relationship_present,not_evaluated
+321,54128,100684,Creepy Crate,client_relationship_present,not_evaluated
+323,54227,100970,Nuts,client_relationship_present,not_evaluated
+325,54374,101424,Brilliant Kaliri,client_relationship_present,not_evaluated
+328,54383,101493,Purple Puffer,client_relationship_present,not_evaluated
+329,54438,101606,Murkablo,client_relationship_present,not_evaluated
+330,54491,101733,Darkmoon Monkey,client_relationship_present,not_evaluated
+331,54539,101986,Alliance Balloon,client_relationship_present,not_evaluated
+332,54541,101989,Horde Balloon,client_relationship_present,not_evaluated
+333,54730,102317,Gregarious Grell,client_relationship_present,not_evaluated
+335,54487,103074,Darkmoon Turtle,client_relationship_present,not_evaluated
+336,55187,103076,Darkmoon Balloon,client_relationship_present,not_evaluated
+337,55215,103125,Lumpy,client_relationship_present,not_evaluated
+338,55356,103544,Darkmoon Tonk,client_relationship_present,not_evaluated
+339,55367,103549,Darkmoon Zeppelin,client_relationship_present,not_evaluated
+340,55386,103588,Sea Pony,client_relationship_present,not_evaluated
+341,55571,104047,Lunar Lantern,client_relationship_present,not_evaluated
+342,55574,104049,Festival Lantern,client_relationship_present,not_evaluated
+343,56031,105122,Darkmoon Cub,client_relationship_present,not_evaluated
+344,56082,105228,Green Balloon,client_relationship_present,not_evaluated
+345,56083,105229,Yellow Balloon,client_relationship_present,not_evaluated
+346,56266,105633,Fetish Shaman,client_relationship_present,not_evaluated
+347,58163,110029,Soul of the Aspects,client_relationship_present,not_evaluated
+348,59020,112994,Eye of the Legion,client_relationship_present,not_evaluated
+354,59216,0,PattyMack - WildBattlePet Test,client_relationship_present,not_evaluated
+374,60649,0,Black Lamb,client_relationship_present,not_evaluated
+375,62626,0,The Gurkster,client_relationship_present,not_evaluated
+378,61080,0,Rabbit,client_relationship_present,not_evaluated
+379,61081,0,Squirrel,client_relationship_present,not_evaluated
+380,62992,0,Bucktooth Flapper,client_relationship_present,not_evaluated
+381,61086,118414,Porcupette,client_relationship_present,not_evaluated
+382,61087,118417,Raccoon Kit,client_relationship_present,not_evaluated
+383,61088,0,Eternal Strider,client_relationship_present,not_evaluated
+384,61089,118419,Otter Pup,client_relationship_present,not_evaluated
+385,61143,0,Mouse,client_relationship_present,not_evaluated
+386,61141,0,Prairie Dog,client_relationship_present,not_evaluated
+387,61142,0,Snake,client_relationship_present,not_evaluated
+388,61158,0,Shore Crab,client_relationship_present,not_evaluated
+389,61160,0,Tiny Harvester,client_relationship_present,not_evaluated
+390,61750,0,Deer,client_relationship_present,not_evaluated
+391,61167,0,Mountain Cottontail,client_relationship_present,not_evaluated
+392,61168,0,Redridge Rat,client_relationship_present,not_evaluated
+393,61384,0,Cockroach,client_relationship_present,not_evaluated
+394,61170,0,Sheep,client_relationship_present,not_evaluated
+395,61171,0,Fledgling Buzzard,client_relationship_present,not_evaluated
+396,61253,0,Dusk Spiderling,client_relationship_present,not_evaluated
+397,61255,0,Skunk,client_relationship_present,not_evaluated
+398,61257,0,Black Rat,client_relationship_present,not_evaluated
+399,61258,0,Rat Snake,client_relationship_present,not_evaluated
+400,61259,0,Widow Spiderling,client_relationship_present,not_evaluated
+401,61312,0,Strand Crab,client_relationship_present,not_evaluated
+402,61370,0,Swamp Moth,client_relationship_present,not_evaluated
+403,61313,0,Parrot,client_relationship_present,not_evaluated
+404,61317,0,Long-tailed Mole,client_relationship_present,not_evaluated
+405,61318,0,Tree Python,client_relationship_present,not_evaluated
+406,61319,0,Beetle,client_relationship_present,not_evaluated
+407,61320,0,Forest Spiderling,client_relationship_present,not_evaluated
+408,61321,0,Lizard Hatchling,client_relationship_present,not_evaluated
+409,61322,0,Polly,client_relationship_present,not_evaluated
+410,61323,0,Wharf Rat,client_relationship_present,not_evaluated
+411,61324,0,Baby Ape,client_relationship_present,not_evaluated
+412,61327,0,Spider,client_relationship_present,not_evaluated
+414,61326,0,Scorpid,client_relationship_present,not_evaluated
+415,61328,0,Fire Beetle,client_relationship_present,not_evaluated
+416,61329,0,Scorpling,client_relationship_present,not_evaluated
+417,61366,0,Rat,client_relationship_present,not_evaluated
+418,61367,0,Water Snake,client_relationship_present,not_evaluated
+419,61071,0,Small Frog,client_relationship_present,not_evaluated
+420,61369,0,Toad,client_relationship_present,not_evaluated
+421,61314,0,Crimson Moth,client_relationship_present,not_evaluated
+422,61372,0,Moccasin,client_relationship_present,not_evaluated
+423,61383,0,Lava Crab,client_relationship_present,not_evaluated
+424,61169,0,Roach,client_relationship_present,not_evaluated
+425,61385,0,Ash Viper,client_relationship_present,not_evaluated
+427,61420,0,Ash Spiderling,client_relationship_present,not_evaluated
+428,61425,0,Molten Hatchling,client_relationship_present,not_evaluated
+429,61386,0,Lava Beetle,client_relationship_present,not_evaluated
+430,61438,0,Gold Beetle,client_relationship_present,not_evaluated
+431,61439,0,Rattlesnake,client_relationship_present,not_evaluated
+432,61440,0,Stripe-Tailed Scorpid,client_relationship_present,not_evaluated
+433,61441,0,Spiky Lizard,client_relationship_present,not_evaluated
+434,61456,0,Ram,client_relationship_present,not_evaluated
+437,61459,0,Little Black Ram,client_relationship_present,not_evaluated
+438,61443,0,King Snake,client_relationship_present,not_evaluated
+439,61375,0,Restless Shadeling,client_relationship_present,not_evaluated
+440,61689,0,Snow Cub,client_relationship_present,not_evaluated
+441,61690,0,Alpine Hare,client_relationship_present,not_evaluated
+442,61691,0,Irradiated Roach,client_relationship_present,not_evaluated
+443,61704,0,Grasslands Cottontail,client_relationship_present,not_evaluated
+444,61708,0,PattyMack 2.0 - WildBattlePet Test,client_relationship_present,not_evaluated
+445,61703,0,Tiny Twister,client_relationship_present,not_evaluated
+446,61718,0,Jade Oozeling,client_relationship_present,not_evaluated
+447,61165,0,Fawn,client_relationship_present,not_evaluated
+448,61751,0,Hare,client_relationship_present,not_evaluated
+449,61752,0,Brown Marmot,client_relationship_present,not_evaluated
+450,61753,0,Maggot,client_relationship_present,not_evaluated
+452,61757,0,Red-Tailed Chipmunk,client_relationship_present,not_evaluated
+453,61758,0,Infested Bear Cub,client_relationship_present,not_evaluated
+454,61889,0,Undercity Rat,client_relationship_present,not_evaluated
+455,61890,0,Blighted Squirrel,client_relationship_present,not_evaluated
+456,61826,0,Blighthawk,client_relationship_present,not_evaluated
+457,61830,0,Festering Maggot,client_relationship_present,not_evaluated
+458,61905,0,Lost of Lordaeron,client_relationship_present,not_evaluated
+459,62019,0,Cat,client_relationship_present,not_evaluated
+460,62020,0,Ruby Sapling,client_relationship_present,not_evaluated
+461,62022,0,Larva,client_relationship_present,not_evaluated
+462,62035,89472,Jacob the Test Seagull,client_relationship_present,not_evaluated
+463,62034,0,Spirit Crab,client_relationship_present,not_evaluated
+464,62050,0,Grey Moth,client_relationship_present,not_evaluated
+465,62051,0,Ravager Hatchling,client_relationship_present,not_evaluated
+466,62114,0,Spiny Lizard,client_relationship_present,not_evaluated
+467,62115,0,Dung Beetle,client_relationship_present,not_evaluated
+468,62116,0,Creepy Crawly,client_relationship_present,not_evaluated
+469,62118,0,Twilight Beetle,client_relationship_present,not_evaluated
+470,62117,0,Twilight Spider,client_relationship_present,not_evaluated
+471,62119,0,Robo-Chick,client_relationship_present,not_evaluated
+472,62120,0,Rabid Nut Varmint 5000,client_relationship_present,not_evaluated
+473,62121,0,Turquoise Turtle,client_relationship_present,not_evaluated
+474,62129,0,Cheetah Cub,client_relationship_present,not_evaluated
+475,62130,0,Giraffe Calf,client_relationship_present,not_evaluated
+476,62163,0,Gazelle,client_relationship_present,not_evaluated
+477,62176,0,Gazelle Fawn,client_relationship_present,not_evaluated
+478,62177,0,Forest Moth,client_relationship_present,not_evaluated
+479,62178,0,Elfin Rabbit,client_relationship_present,not_evaluated
+480,62181,0,Topaz Shale Hatchling,client_relationship_present,not_evaluated
+482,62184,0,Rock Viper,client_relationship_present,not_evaluated
+483,62185,0,Horny Toad,client_relationship_present,not_evaluated
+484,62186,0,Desert Spider,client_relationship_present,not_evaluated
+485,62187,0,Stone Armadillo,client_relationship_present,not_evaluated
+486,62188,0,Mule Deer,client_relationship_present,not_evaluated
+487,62189,0,Alpine Chipmunk,client_relationship_present,not_evaluated
+488,62190,0,Coral Snake,client_relationship_present,not_evaluated
+489,62201,0,Spawn of Onyxia,client_relationship_present,not_evaluated
+491,62257,0,Sand Kitten,client_relationship_present,not_evaluated
+492,62256,0,Stinkbug,client_relationship_present,not_evaluated
+493,62246,0,Shimmershell Snail,client_relationship_present,not_evaluated
+494,62258,0,Silithid Hatchling,client_relationship_present,not_evaluated
+495,62312,0,Frog,client_relationship_present,not_evaluated
+496,62313,0,Rusty Snail,client_relationship_present,not_evaluated
+497,62314,0,Tainted Cockroach,client_relationship_present,not_evaluated
+498,62315,0,Tainted Moth,client_relationship_present,not_evaluated
+499,62316,0,Tainted Rat,client_relationship_present,not_evaluated
+500,62317,0,Minfernal,client_relationship_present,not_evaluated
+502,62370,0,Spotted Bell Frog,client_relationship_present,not_evaluated
+503,62373,0,Silky Moth,client_relationship_present,not_evaluated
+504,62375,0,Diemetradon Hatchling,client_relationship_present,not_evaluated
+505,62255,0,Twilight Iguana,client_relationship_present,not_evaluated
+506,62191,0,Venomspitter Hatchling,client_relationship_present,not_evaluated
+507,62242,0,Crested Owl,client_relationship_present,not_evaluated
+508,62250,0,Darkshore Cub,client_relationship_present,not_evaluated
+509,61686,0,Tiny Bog Beast,client_relationship_present,not_evaluated
+510,62434,0,Rabbot,client_relationship_present,not_evaluated
+511,62523,0,Sidewinder,client_relationship_present,not_evaluated
+512,62524,0,Scarab Hatchling,client_relationship_present,not_evaluated
+513,62526,0,Qiraji Guardling,client_relationship_present,not_evaluated
+514,62555,0,Flayer Youngling,client_relationship_present,not_evaluated
+515,62564,0,Sporeling Sprout,client_relationship_present,not_evaluated
+517,62583,0,Warpstalker Hatchling,client_relationship_present,not_evaluated
+518,62620,0,Clefthoof Runt,client_relationship_present,not_evaluated
+519,62621,0,Fel Flame,client_relationship_present,not_evaluated
+521,62627,0,Fledgling Nether Ray,client_relationship_present,not_evaluated
+523,62640,0,Devouring Maggot,client_relationship_present,not_evaluated
+525,62648,0,Turkey,client_relationship_present,not_evaluated
+528,62628,0,Scalded Basilisk Hatchling,client_relationship_present,not_evaluated
+529,62669,0,Fjord Worg Pup,client_relationship_present,not_evaluated
+530,62697,0,Oily Slimeling,client_relationship_present,not_evaluated
+532,62816,0,Stunted Shardhorn,client_relationship_present,not_evaluated
+534,62819,0,Imperial Eagle Chick,client_relationship_present,not_evaluated
+535,62820,0,Water Waveling,client_relationship_present,not_evaluated
+536,62835,0,Tundra Penguin,client_relationship_present,not_evaluated
+537,62852,0,Dragonbone Hatchling,client_relationship_present,not_evaluated
+538,62854,0,Scourged Whelpling,client_relationship_present,not_evaluated
+539,62884,0,Grotto Vole,client_relationship_present,not_evaluated
+540,62885,0,Carrion Rat,client_relationship_present,not_evaluated
+541,62886,0,Fire-Proof Roach,client_relationship_present,not_evaluated
+542,62892,0,Mac Frog,client_relationship_present,not_evaluated
+543,62893,0,Locust,client_relationship_present,not_evaluated
+544,62895,0,Oasis Moth,client_relationship_present,not_evaluated
+545,62896,0,Leopard Scorpid,client_relationship_present,not_evaluated
+546,62899,0,Tol'vir Scarab,client_relationship_present,not_evaluated
+547,62888,0,Nordrassil Wisp,client_relationship_present,not_evaluated
+548,62900,0,Wildhammer Gryphon Hatchling,client_relationship_present,not_evaluated
+549,62904,0,Yellow-Bellied Marmot,client_relationship_present,not_evaluated
+550,62905,0,Highlands Mouse,client_relationship_present,not_evaluated
+552,62914,0,Twilight Fiendling,client_relationship_present,not_evaluated
+553,62921,0,Stowaway Rat,client_relationship_present,not_evaluated
+554,62922,0,Crimson Shale Hatchling,client_relationship_present,not_evaluated
+555,62924,0,Deepholm Cockroach,client_relationship_present,not_evaluated
+556,62925,0,Crystal Beetle,client_relationship_present,not_evaluated
+557,62395,0,Nether Faerie Dragon,client_relationship_present,not_evaluated
+558,62864,0,Arctic Fox Kit,client_relationship_present,not_evaluated
+559,62927,0,Crimson Geode,client_relationship_present,not_evaluated
+560,62953,0,Sea Gull,client_relationship_present,not_evaluated
+562,62991,0,Coral Adder,client_relationship_present,not_evaluated
+564,62994,0,Emerald Turtle,client_relationship_present,not_evaluated
+565,62997,0,Jungle Darter,client_relationship_present,not_evaluated
+566,62998,0,Mirror Strider,client_relationship_present,not_evaluated
+567,62999,0,Temple Snake,client_relationship_present,not_evaluated
+568,63001,0,Silkbead Snail,client_relationship_present,not_evaluated
+569,63002,0,Garden Frog,client_relationship_present,not_evaluated
+570,63003,0,Masked Tanuki,client_relationship_present,not_evaluated
+571,63004,0,Grove Viper,client_relationship_present,not_evaluated
+572,63005,0,Spirebound Crab,client_relationship_present,not_evaluated
+573,63006,0,Sandy Petrel,client_relationship_present,not_evaluated
+626,61829,0,Bat,client_relationship_present,not_evaluated
+627,61828,0,Infected Squirrel,client_relationship_present,not_evaluated
+628,61827,0,Infected Fawn,client_relationship_present,not_evaluated
+629,63097,123212,Shore Crawler,client_relationship_present,not_evaluated
+630,63098,123214,Gilnean Raven,client_relationship_present,not_evaluated
+631,62127,0,Emerald Boa,client_relationship_present,not_evaluated
+632,62364,0,Ash Lizard,client_relationship_present,not_evaluated
+633,61677,0,Mountain Skunk,client_relationship_present,not_evaluated
+634,62435,0,Crystal Spider,client_relationship_present,not_evaluated
+635,61325,0,Adder,client_relationship_present,not_evaluated
+637,62638,0,Skittering Cavern Crawler,client_relationship_present,not_evaluated
+638,62625,0,Nether Roach,client_relationship_present,not_evaluated
+639,62695,0,Borean Marmot,client_relationship_present,not_evaluated
+640,61755,0,Snowshoe Hare,client_relationship_present,not_evaluated
+641,62693,0,Arctic Hare,client_relationship_present,not_evaluated
+644,62641,0,Fjord Rat,client_relationship_present,not_evaluated
+645,62906,0,Highlands Turkey,client_relationship_present,not_evaluated
+646,62664,0,Chicken,client_relationship_present,not_evaluated
+647,62818,0,Grizzly Squirrel,client_relationship_present,not_evaluated
+648,61368,0,Huge Toad,client_relationship_present,not_evaluated
+649,62815,0,Biletoad,client_relationship_present,not_evaluated
+650,63365,123778,Terrible Turnip,client_relationship_present,not_evaluated
+652,63559,124000,Tiny Goldfish,client_relationship_present,not_evaluated
+665,54745,102353,Sand Scarab,client_relationship_present,not_evaluated
+666,63724,0,Elayna,client_relationship_present,not_evaluated
+671,63832,124660,Lucky Quilen Cub,client_relationship_present,not_evaluated
+675,62954,0,Stormwind Rat,client_relationship_present,not_evaluated
+677,64246,0,Shy Bandicoon,client_relationship_present,not_evaluated
+678,63304,0,Jungle Grub,client_relationship_present,not_evaluated
+679,64248,0,Summit Kid,client_relationship_present,not_evaluated
+680,63953,0,Kuitan Mongoose,client_relationship_present,not_evaluated
+699,63715,0,Jumping Spider,client_relationship_present,not_evaluated
+702,63919,0,Leopard Tree Frog,client_relationship_present,not_evaluated
+703,63716,0,Masked Tanuki Pup,client_relationship_present,not_evaluated
+705,65029,0,Amorous Rooster,client_relationship_present,not_evaluated
+706,63062,0,Bandicoon,client_relationship_present,not_evaluated
+707,63064,0,Bandicoon Kit,client_relationship_present,not_evaluated
+708,63094,0,Malayan Quillrat,client_relationship_present,not_evaluated
+709,63095,0,Malayan Quillrat Pup,client_relationship_present,not_evaluated
+710,63096,0,Marsh Fiddler,client_relationship_present,not_evaluated
+711,63057,0,Sifang Otter,client_relationship_present,not_evaluated
+712,63358,0,Sifang Otter Pup,client_relationship_present,not_evaluated
+713,63060,0,Softshell Snapling,client_relationship_present,not_evaluated
+714,65054,0,Feverbite Hatchling,client_relationship_present,not_evaluated
+715,65099,0,Wild Silkworm,client_relationship_present,not_evaluated
+716,63288,0,Amethyst Spiderling,client_relationship_present,not_evaluated
+717,63291,0,Savory Beetle,client_relationship_present,not_evaluated
+718,65124,0,Luyu Moth,client_relationship_present,not_evaluated
+722,65185,0,Mei Li Sparkler,client_relationship_present,not_evaluated
+723,63293,0,Spiny Terrapin,client_relationship_present,not_evaluated
+724,63550,0,Alpine Foxling,client_relationship_present,not_evaluated
+725,63551,0,Alpine Foxling Kit,client_relationship_present,not_evaluated
+726,63547,0,Plains Monitor,client_relationship_present,not_evaluated
+727,59702,0,Prairie Mouse,client_relationship_present,not_evaluated
+728,63585,0,Szechuan Chicken,client_relationship_present,not_evaluated
+729,63557,0,Tolai Hare,client_relationship_present,not_evaluated
+730,63558,0,Tolai Hare Pup,client_relationship_present,not_evaluated
+731,63555,0,Zooey Snake,client_relationship_present,not_evaluated
+732,65187,0,Amber Moth,client_relationship_present,not_evaluated
+733,63549,0,Grassland Hopper,client_relationship_present,not_evaluated
+737,65190,0,Mongoose,client_relationship_present,not_evaluated
+739,63954,0,Mongoose Pup,client_relationship_present,not_evaluated
+740,63957,0,Yakrat,client_relationship_present,not_evaluated
+741,64804,0,Silent Hedgehog,client_relationship_present,not_evaluated
+742,64242,0,Clouded Hedgehog,client_relationship_present,not_evaluated
+743,64352,0,Rapana Whelk,client_relationship_present,not_evaluated
+744,64238,0,Resilient Roach,client_relationship_present,not_evaluated
+745,63548,0,Crunchy Scorpion,client_relationship_present,not_evaluated
+746,65203,0,Emperor Crab,client_relationship_present,not_evaluated
+747,63850,0,Effervescent Glowfly,client_relationship_present,not_evaluated
+748,63838,0,Gilded Moth,client_relationship_present,not_evaluated
+749,63841,0,Golden Civet,client_relationship_present,not_evaluated
+750,63842,0,Golden Civet Kitten,client_relationship_present,not_evaluated
+751,63847,0,Dancing Water Skimmer,client_relationship_present,not_evaluated
+752,63849,0,Yellow-Bellied Bullfrog,client_relationship_present,not_evaluated
+753,65215,0,Garden Moth,client_relationship_present,not_evaluated
+754,65216,0,Shrine Fly,client_relationship_present,not_evaluated
+755,62887,0,Death's Head Cockroach,client_relationship_present,not_evaluated
+756,62916,0,Fungal Moth,client_relationship_present,not_evaluated
+757,14755,23531,Tiny Green Dragon,client_relationship_present,not_evaluated
+758,14756,23530,Tiny Red Dragon,client_relationship_present,not_evaluated
+792,65314,127816,Jade Crane Chick,client_relationship_present,not_evaluated
+800,65344,0,Muffin,client_relationship_present,not_evaluated
+802,65313,127813,Thundering Serpent Hatchling,client_relationship_present,not_evaluated
+817,65323,0,Wild Jade Hatchling,client_relationship_present,not_evaluated
+818,65324,0,Wild Golden Hatchling,client_relationship_present,not_evaluated
+819,65321,0,Wild Crimson Hatchling,client_relationship_present,not_evaluated
+820,64232,127815,Singing Cricket,client_relationship_present,not_evaluated
+821,63621,124152,Feral Vermling,client_relationship_present,not_evaluated
+823,62907,0,Highlands Skunk,client_relationship_present,not_evaluated
+824,65829,0,Ms. Croaker,client_relationship_present,not_evaluated
+825,65825,0,Mr. Growls,client_relationship_present,not_evaluated
+826,65826,0,Mrs. Skitters,client_relationship_present,not_evaluated
+827,65830,0,Lady Burninator,client_relationship_present,not_evaluated
+828,65831,0,Lord Landslide,client_relationship_present,not_evaluated
+829,65827,0,Madam Flapsalot,client_relationship_present,not_evaluated
+830,65828,0,Sir Buckethead,client_relationship_present,not_evaluated
+831,65833,0,Miss Mystical,client_relationship_present,not_evaluated
+832,65832,0,Boomy Jr.,client_relationship_present,not_evaluated
+833,65834,0,Dr. Stinky,client_relationship_present,not_evaluated
+834,64634,126251,Grinder,client_relationship_present,not_evaluated
+835,64632,126247,Hopling,client_relationship_present,not_evaluated
+836,64633,126249,Aqua Strider,client_relationship_present,not_evaluated
+837,62915,0,Emerald Shale Hatchling,client_relationship_present,not_evaluated
+838,62182,0,Amethyst Shale Hatchling,client_relationship_present,not_evaluated
+844,64899,126885,Mechanical Pandaren Dragonling,client_relationship_present,not_evaluated
+845,61877,120501,Jade Owl,client_relationship_present,not_evaluated
+846,61883,120507,Sapphire Cub,client_relationship_present,not_evaluated
+847,62829,122748,Fishy,client_relationship_present,not_evaluated
+848,59358,114090,Darkmoon Rabbit,client_relationship_present,not_evaluated
+849,66104,127008,Chi-Ji Kite,client_relationship_present,not_evaluated
+850,66105,127006,Yu'lon Kite,client_relationship_present,not_evaluated
+851,62894,0,Horned Lizard,client_relationship_present,not_evaluated
+855,66491,130759,Venus,client_relationship_present,not_evaluated
+856,66450,130726,Jade Tentacle,client_relationship_present,not_evaluated
+868,66950,131590,Pandaren Water Spirit,client_relationship_present,not_evaluated
+872,64335,0,Slither,client_relationship_present,not_evaluated
+873,64334,0,Fangs,client_relationship_present,not_evaluated
+874,65659,0,Teensy,client_relationship_present,not_evaluated
+875,65660,0,Clucks,client_relationship_present,not_evaluated
+876,65661,0,Foe Reaper 800,client_relationship_present,not_evaluated
+877,65668,0,Flipsy,client_relationship_present,not_evaluated
+878,66964,0,Dipsy,client_relationship_present,not_evaluated
+879,66965,0,Flufftail,client_relationship_present,not_evaluated
+880,65662,0,Darkwidow,client_relationship_present,not_evaluated
+881,65664,0,Blackfang,client_relationship_present,not_evaluated
+882,65665,0,Webwinder,client_relationship_present,not_evaluated
+883,66982,0,Emeralda,client_relationship_present,not_evaluated
+884,66983,0,Moonstalker,client_relationship_present,not_evaluated
+885,65677,0,Nanners,client_relationship_present,not_evaluated
+886,65675,0,Young Beaky,client_relationship_present,not_evaluated
+887,65676,0,Eyegouger,client_relationship_present,not_evaluated
+888,66930,0,Burgle,client_relationship_present,not_evaluated
+889,66144,0,Mumtar,client_relationship_present,not_evaluated
+890,66145,0,Spike,client_relationship_present,not_evaluated
+891,66154,0,Ripper,client_relationship_present,not_evaluated
+892,66155,0,Springtail,client_relationship_present,not_evaluated
+893,66156,0,Longneck,client_relationship_present,not_evaluated
+894,66329,0,Flutterby,client_relationship_present,not_evaluated
+895,66330,0,Oozer,client_relationship_present,not_evaluated
+896,66331,0,Mister Pinch,client_relationship_present,not_evaluated
+897,66333,0,Acidous,client_relationship_present,not_evaluated
+898,66334,0,Odoron,client_relationship_present,not_evaluated
+899,66335,0,Constrictor,client_relationship_present,not_evaluated
+900,66375,0,Rockhide,client_relationship_present,not_evaluated
+901,66376,0,Ambershell,client_relationship_present,not_evaluated
+902,66377,0,Bounder,client_relationship_present,not_evaluated
+903,66984,131650,Baneling,client_relationship_present,not_evaluated
+904,66361,0,Prancer,client_relationship_present,not_evaluated
+905,66363,0,Rasp,client_relationship_present,not_evaluated
+906,66364,0,Glimmer,client_relationship_present,not_evaluated
+907,66427,0,Whirls,client_relationship_present,not_evaluated
+908,66428,0,Cluckatron,client_relationship_present,not_evaluated
+909,66429,0,Gizmo,client_relationship_present,not_evaluated
+911,66438,0,Firetooth,client_relationship_present,not_evaluated
+912,66439,0,Flameclaw,client_relationship_present,not_evaluated
+913,66966,0,Blaze,client_relationship_present,not_evaluated
+915,66453,0,Cho'guana,client_relationship_present,not_evaluated
+916,66454,0,Plague,client_relationship_present,not_evaluated
+917,66455,0,Indigon,client_relationship_present,not_evaluated
+921,66443,0,Ultramus,client_relationship_present,not_evaluated
+922,66444,0,Beamer,client_relationship_present,not_evaluated
+923,66445,0,Hatewalker,client_relationship_present,not_evaluated
+924,66414,0,Lacewing,client_relationship_present,not_evaluated
+925,66416,0,Beacon,client_relationship_present,not_evaluated
+926,66417,0,Willow,client_relationship_present,not_evaluated
+927,66468,0,Blizzy,client_relationship_present,not_evaluated
+928,66469,0,Frostmaw,client_relationship_present,not_evaluated
+929,66470,0,Tinygos,client_relationship_present,not_evaluated
+931,66481,0,Plop,client_relationship_present,not_evaluated
+932,66482,0,Corpsefeeder,client_relationship_present,not_evaluated
+933,66483,0,Subject 142,client_relationship_present,not_evaluated
+934,66485,0,Plaguebringer,client_relationship_present,not_evaluated
+935,66486,0,Bleakspinner,client_relationship_present,not_evaluated
+936,66487,0,Carrion,client_relationship_present,not_evaluated
+937,66488,0,Obsidion,client_relationship_present,not_evaluated
+938,66489,0,Veridia,client_relationship_present,not_evaluated
+939,66490,0,Garnestrasz,client_relationship_present,not_evaluated
+941,66492,0,Anklor,client_relationship_present,not_evaluated
+942,66493,0,Croaker,client_relationship_present,not_evaluated
+943,66494,0,Dampwing,client_relationship_present,not_evaluated
+944,66495,0,Moltar,client_relationship_present,not_evaluated
+945,66496,0,Ignious,client_relationship_present,not_evaluated
+946,66497,0,Comet,client_relationship_present,not_evaluated
+947,66498,0,Nightstalker,client_relationship_present,not_evaluated
+948,66499,0,Bishibosh,client_relationship_present,not_evaluated
+949,66500,0,Jack,client_relationship_present,not_evaluated
+950,66531,0,Sploder,client_relationship_present,not_evaluated
+951,66532,0,Goliath,client_relationship_present,not_evaluated
+952,66533,0,ED-005,client_relationship_present,not_evaluated
+953,66534,0,Fungor,client_relationship_present,not_evaluated
+954,66535,0,Tripod,client_relationship_present,not_evaluated
+955,66536,0,Glitterfly,client_relationship_present,not_evaluated
+956,66537,0,Stompy,client_relationship_present,not_evaluated
+957,66538,0,Dramaticus,client_relationship_present,not_evaluated
+958,66539,0,Prince Wart,client_relationship_present,not_evaluated
+959,66540,0,Cragmaw,client_relationship_present,not_evaluated
+960,66541,0,Gnasher,client_relationship_present,not_evaluated
+961,66542,0,Chomps,client_relationship_present,not_evaluated
+962,66543,0,Netherbite,client_relationship_present,not_evaluated
+963,66544,0,Jadefire,client_relationship_present,not_evaluated
+964,66545,0,Arcanus,client_relationship_present,not_evaluated
+965,66613,0,Warble,client_relationship_present,not_evaluated
+966,66614,0,Gobbles,client_relationship_present,not_evaluated
+967,66615,0,Dinner,client_relationship_present,not_evaluated
+968,66616,0,Mort,client_relationship_present,not_evaluated
+969,66618,0,Stitch,client_relationship_present,not_evaluated
+970,66619,0,Spooky Strangler,client_relationship_present,not_evaluated
+971,66620,0,Rot,client_relationship_present,not_evaluated
+972,66996,0,Sleet,client_relationship_present,not_evaluated
+973,66997,0,Drogar,client_relationship_present,not_evaluated
+974,66624,0,Blight,client_relationship_present,not_evaluated
+975,66626,0,Fleshrender,client_relationship_present,not_evaluated
+976,66627,0,Cadavus,client_relationship_present,not_evaluated
+977,66628,0,Bloom,client_relationship_present,not_evaluated
+978,66629,0,Beakmaster X-225,client_relationship_present,not_evaluated
+979,66631,0,Grizzle,client_relationship_present,not_evaluated
+980,66806,0,Incinderous,client_relationship_present,not_evaluated
+981,66807,0,Ashtail,client_relationship_present,not_evaluated
+982,66808,0,Kali,client_relationship_present,not_evaluated
+983,66802,0,Fracture,client_relationship_present,not_evaluated
+984,66804,0,Crystallus,client_relationship_present,not_evaluated
+985,66805,0,Ruby,client_relationship_present,not_evaluated
+986,66809,0,Helios,client_relationship_present,not_evaluated
+987,66810,0,Amythel,client_relationship_present,not_evaluated
+988,66811,0,Twilight,client_relationship_present,not_evaluated
+989,66812,0,Clatter,client_relationship_present,not_evaluated
+990,66813,0,Spring,client_relationship_present,not_evaluated
+991,66814,0,Pyth,client_relationship_present,not_evaluated
+992,66709,0,Dor the Wall,client_relationship_present,not_evaluated
+993,66710,0,Fangor,client_relationship_present,not_evaluated
+994,66711,0,Skyshaper,client_relationship_present,not_evaluated
+995,66715,0,Brood of Mothallus,client_relationship_present,not_evaluated
+996,66716,0,Toothbreaker,client_relationship_present,not_evaluated
+997,66718,0,Siren,client_relationship_present,not_evaluated
+998,66712,0,Woodcarver,client_relationship_present,not_evaluated
+999,66713,0,Needleback,client_relationship_present,not_evaluated
+1000,66714,0,Lightstalker,client_relationship_present,not_evaluated
+1001,66719,0,Bleat,client_relationship_present,not_evaluated
+1002,66720,0,Lapin,client_relationship_present,not_evaluated
+1003,66721,0,Piqua,client_relationship_present,not_evaluated
+1004,66923,0,Skimmer,client_relationship_present,not_evaluated
+1005,66925,0,Mollus,client_relationship_present,not_evaluated
+1006,66926,0,Diamond,client_relationship_present,not_evaluated
+1007,66722,0,Mutilator,client_relationship_present,not_evaluated
+1008,66723,0,Pounder,client_relationship_present,not_evaluated
+1009,66724,0,Crusher,client_relationship_present,not_evaluated
+1010,66725,0,Whiskers,client_relationship_present,not_evaluated
+1011,66726,0,Stormlash,client_relationship_present,not_evaluated
+1012,66728,0,Chirrup,client_relationship_present,not_evaluated
+1013,67022,0,Wanderer's Festival Hatchling,client_relationship_present,not_evaluated
+1039,67230,132574,Imperial Moth,client_relationship_present,not_evaluated
+1040,67233,132580,Imperial Silkworm,client_relationship_present,not_evaluated
+1042,63370,123784,Red Cricket,client_relationship_present,not_evaluated
+1061,67319,132762,Darkmoon Hatchling,client_relationship_present,not_evaluated
+1062,67329,0,Darkmoon Glowfly,client_relationship_present,not_evaluated
+1063,67332,132789,Darkmoon Eye,client_relationship_present,not_evaluated
+1065,67384,0,Judgement,client_relationship_present,not_evaluated
+1066,67382,0,Fezwick,client_relationship_present,not_evaluated
+1067,67383,0,Honky-Tonk,client_relationship_present,not_evaluated
+1068,67443,0,Crow,client_relationship_present,not_evaluated
+1073,16445,28487,Terky,client_relationship_present,not_evaluated
+1117,68267,134538,Cinder Kitten,client_relationship_present,not_evaluated
+1124,68466,134892,Pandaren Fire Spirit,client_relationship_present,not_evaluated
+1125,68467,134894,Pandaren Air Spirit,client_relationship_present,not_evaluated
+1126,68468,134895,Pandaren Earth Spirit,client_relationship_present,not_evaluated
+1127,68502,132759,Spectral Cub,client_relationship_present,not_evaluated
+1128,68506,0,Sumprush Rodent,client_relationship_present,not_evaluated
+1129,68555,0,Ka'wi the Gorger,client_relationship_present,not_evaluated
+1130,68567,0,Crimson,client_relationship_present,not_evaluated
+1131,68568,0,Glowy,client_relationship_present,not_evaluated
+1132,68569,0,Marley,client_relationship_present,not_evaluated
+1133,68570,0,Tiptoe,client_relationship_present,not_evaluated
+1134,68572,0,Sludgy,client_relationship_present,not_evaluated
+1135,68575,0,Dusty,client_relationship_present,not_evaluated
+1136,68571,0,Whispertail,client_relationship_present,not_evaluated
+1137,68573,0,Darnak the Tunneler,client_relationship_present,not_evaluated
+1138,68577,0,Pandaren Water Spirit,client_relationship_present,not_evaluated
+1139,68580,0,Pandaren Fire Spirit,client_relationship_present,not_evaluated
+1140,68579,0,Pandaren Air Spirit,client_relationship_present,not_evaluated
+1141,68578,0,Pandaren Earth Spirit,client_relationship_present,not_evaluated
+1142,68601,135156,Clock'em,client_relationship_present,not_evaluated
+1143,68656,135254,Giant Bone Spider,client_relationship_present,not_evaluated
+1144,68657,135255,Fungal Abomination,client_relationship_present,not_evaluated
+1145,68655,135256,Mr. Bigglesworth,client_relationship_present,not_evaluated
+1146,68654,135257,Stitched Pup,client_relationship_present,not_evaluated
+1147,68665,135258,Harbinger of Flame,client_relationship_present,not_evaluated
+1149,68664,135259,Corefire Imp,client_relationship_present,not_evaluated
+1150,68666,135259,Ashstone Core,client_relationship_present,not_evaluated
+1151,68661,135263,Untamed Hatchling,client_relationship_present,not_evaluated
+1152,68662,135264,Chrominius,client_relationship_present,not_evaluated
+1153,68663,135265,Death Talon Whelpguard,client_relationship_present,not_evaluated
+1154,68660,135266,Viscidus Globule,client_relationship_present,not_evaluated
+1155,68659,135267,Anubisath Idol,client_relationship_present,not_evaluated
+1156,68658,135268,Mini Mindslayer,client_relationship_present,not_evaluated
+1157,68804,0,Harpy Youngling,client_relationship_present,not_evaluated
+1158,68805,0,Stunted Yeti,client_relationship_present,not_evaluated
+1159,68806,0,Lofty Libram,client_relationship_present,not_evaluated
+1160,68819,0,Arcane Eye,client_relationship_present,not_evaluated
+1161,68820,0,Infinite Whelpling,client_relationship_present,not_evaluated
+1162,68838,0,Fluxfire Feline,client_relationship_present,not_evaluated
+1163,68839,0,Anodized Robo Cub,client_relationship_present,not_evaluated
+1164,68841,0,Cogblade Raptor,client_relationship_present,not_evaluated
+1165,68845,0,Nexus Whelpling,client_relationship_present,not_evaluated
+1166,68846,0,Kun-Lai Runt,client_relationship_present,not_evaluated
+1167,68850,0,Emerald Proto-Whelp,client_relationship_present,not_evaluated
+1168,15361,25018,Murki,client_relationship_present,not_evaluated
+1174,69208,136484,Gusting Grimoire,client_relationship_present,not_evaluated
+1175,69648,0,Thundertail Flapper,client_relationship_present,not_evaluated
+1176,69649,137568,Red Panda,client_relationship_present,not_evaluated
+1177,69748,137977,Living Sandling,client_relationship_present,not_evaluated
+1178,69778,138082,Sunreaver Micro-Sentry,client_relationship_present,not_evaluated
+1179,69794,0,Electrified Razortooth,client_relationship_present,not_evaluated
+1180,69796,138087,Zandalari Kneebiter,client_relationship_present,not_evaluated
+1181,69818,0,Elder Python,client_relationship_present,not_evaluated
+1182,69819,0,Swamp Croaker,client_relationship_present,not_evaluated
+1183,69820,138161,Son of Animus,client_relationship_present,not_evaluated
+1184,69849,138287,Stunted Direhorn,client_relationship_present,not_evaluated
+1185,69848,138285,Spectral Porcupette,client_relationship_present,not_evaluated
+1187,68558,0,Gorespine,client_relationship_present,not_evaluated
+1188,68559,0,No-No,client_relationship_present,not_evaluated
+1189,68560,0,Greyhoof,client_relationship_present,not_evaluated
+1190,68561,0,Lucky Yi,client_relationship_present,not_evaluated
+1191,68562,0,Ti'un the Wanderer,client_relationship_present,not_evaluated
+1192,68563,0,Kafi,client_relationship_present,not_evaluated
+1193,68564,0,Dos-Ryga,client_relationship_present,not_evaluated
+1194,68565,0,Nitun,client_relationship_present,not_evaluated
+1195,68566,0,Skitterer Xi'a,client_relationship_present,not_evaluated
+1196,69891,138380,Sunfur Panda,client_relationship_present,not_evaluated
+1197,69893,138381,Snowy Panda,client_relationship_present,not_evaluated
+1198,69892,138382,Mountain Panda,client_relationship_present,not_evaluated
+1200,70083,138825,Pygmy Direhorn,client_relationship_present,not_evaluated
+1201,70098,138913,Spawn of G'nathus,client_relationship_present,not_evaluated
+1202,70144,139148,Ji-Kun Hatchling,client_relationship_present,not_evaluated
+1204,70082,138824,Pierre,client_relationship_present,not_evaluated
+1205,70154,139153,Direhorn Runt,client_relationship_present,not_evaluated
+1206,70257,139361,Tiny Red Carp,client_relationship_present,not_evaluated
+1207,70258,139362,Tiny Blue Carp,client_relationship_present,not_evaluated
+1208,70259,139363,Tiny Green Carp,client_relationship_present,not_evaluated
+1209,70260,139365,Tiny White Carp,client_relationship_present,not_evaluated
+1211,70451,139932,Zandalari Anklerender,client_relationship_present,not_evaluated
+1212,70452,139933,Zandalari Footslasher,client_relationship_present,not_evaluated
+1213,70453,139934,Zandalari Toenibbler,client_relationship_present,not_evaluated
+1226,71014,141433,Lil' Bad Wolf,client_relationship_present,not_evaluated
+1227,71015,141434,Menagerie Custodian,client_relationship_present,not_evaluated
+1228,71016,141435,Netherspace Abyssal,client_relationship_present,not_evaluated
+1229,71033,141451,Fiendish Imp,client_relationship_present,not_evaluated
+1230,71017,141436,Tideskipper,client_relationship_present,not_evaluated
+1231,71018,141437,Tainted Waveling,client_relationship_present,not_evaluated
+1232,71019,141446,Coilfang Stalker,client_relationship_present,not_evaluated
+1233,71020,141447,Pocket Reaver,client_relationship_present,not_evaluated
+1234,71021,141448,Lesser Voidcaller,client_relationship_present,not_evaluated
+1235,71022,141449,Phoenix Hawk Hatchling,client_relationship_present,not_evaluated
+1236,71023,141450,Tito,client_relationship_present,not_evaluated
+1237,71159,141789,Gahz'rooki,client_relationship_present,not_evaluated
+1238,71163,0,Unborn Val'kyr,client_relationship_present,not_evaluated
+1243,71199,142028,Living Fluid,client_relationship_present,not_evaluated
+1244,71200,142029,Viscous Horror,client_relationship_present,not_evaluated
+1245,71201,142030,Filthling,client_relationship_present,not_evaluated
+1247,71438,0,Doopy,client_relationship_present,not_evaluated
+1248,71488,142880,Blossoming Ancient,client_relationship_present,not_evaluated
+1255,71655,143637,Murkimus Tyrannicus,client_relationship_present,not_evaluated
+1256,71693,143703,Rascal-Bot,client_relationship_present,not_evaluated
+1257,71700,143732,Crafty,client_relationship_present,not_evaluated
+1258,71816,0,Angara,client_relationship_present,not_evaluated
+1259,71844,0,Widowling,client_relationship_present,not_evaluated
+1266,71942,145696,"Xu-Fu, Cub of Xuen",client_relationship_present,not_evaluated
+1267,72009,0,"Xu-Fu, Cub of Xuen",client_relationship_present,not_evaluated
+1268,72053,0,Trike,client_relationship_present,not_evaluated
+1269,72054,0,Screamer,client_relationship_present,not_evaluated
+1271,72055,0,Chaos,client_relationship_present,not_evaluated
+1276,72160,144761,Moon Moon,client_relationship_present,not_evaluated
+1277,72100,0,Lil' B,client_relationship_present,not_evaluated
+1278,72098,0,Au,client_relationship_present,not_evaluated
+1279,72099,0,Banks,client_relationship_present,not_evaluated
+1280,72103,0,Brewly,client_relationship_present,not_evaluated
+1281,72102,0,Chirps,client_relationship_present,not_evaluated
+1282,72101,0,Tonsa,client_relationship_present,not_evaluated
+1283,72105,0,Knowledge,client_relationship_present,not_evaluated
+1284,72104,0,Patience,client_relationship_present,not_evaluated
+1285,72106,0,Wisdom,client_relationship_present,not_evaluated
+1286,71898,0,Summer,client_relationship_present,not_evaluated
+1287,72097,0,Stormoen,client_relationship_present,not_evaluated
+1288,71897,0,Nairn,client_relationship_present,not_evaluated
+1289,72109,0,Monte,client_relationship_present,not_evaluated
+1290,72108,0,Rikki,client_relationship_present,not_evaluated
+1291,72107,0,Socks,client_relationship_present,not_evaluated
+1292,72110,0,Bolo,client_relationship_present,not_evaluated
+1293,72111,0,Li,client_relationship_present,not_evaluated
+1295,72112,0,Yen,client_relationship_present,not_evaluated
+1296,72113,0,Carpe Diem,client_relationship_present,not_evaluated
+1297,72114,0,River,client_relationship_present,not_evaluated
+1298,72115,0,Spirus,client_relationship_present,not_evaluated
+1299,72118,0,Cindy,client_relationship_present,not_evaluated
+1300,72116,0,Dah'da,client_relationship_present,not_evaluated
+1301,72117,0,Alex,client_relationship_present,not_evaluated
+1303,72462,145697,"Chi-Chi, Hatchling of Chi-Ji",client_relationship_present,not_evaluated
+1304,72463,145698,"Yu'la, Broodling of Yu'lon",client_relationship_present,not_evaluated
+1305,72464,145699,"Zao, Calfling of Niuzao",client_relationship_present,not_evaluated
+1311,72285,0,"Chi-Chi, Hatchling of Chi-Ji",client_relationship_present,not_evaluated
+1317,72291,0,"Yu'la, Broodling of Yu'lon",client_relationship_present,not_evaluated
+1319,72290,0,"Zao, Calfling of Niuzao",client_relationship_present,not_evaluated
+1320,73011,147124,Lil' Bling,client_relationship_present,not_evaluated
+1321,73534,0,Azure Crane Chick,client_relationship_present,not_evaluated
+1322,73352,15048,Blackfuse Bombling,client_relationship_present,not_evaluated
+1323,73533,148046,Ashleaf Spriteling,client_relationship_present,not_evaluated
+1324,73542,148068,Ashwing Moth,client_relationship_present,not_evaluated
+1325,73543,0,Flamering Moth,client_relationship_present,not_evaluated
+1326,73368,0,Skywisp Moth,client_relationship_present,not_evaluated
+1328,73356,138161,Ruby Droplet,client_relationship_present,not_evaluated
+1329,73532,148051,Dandelion Frolicker,client_relationship_present,not_evaluated
+1330,73364,148052,Death Adder Hatchling,client_relationship_present,not_evaluated
+1331,73350,148058,Droplet of Y'Shaarj,client_relationship_present,not_evaluated
+1332,73351,148059,Gooey Sha-ling,client_relationship_present,not_evaluated
+1333,73355,148060,Jademist Dancer,client_relationship_present,not_evaluated
+1334,73354,148061,Kovok,client_relationship_present,not_evaluated
+1335,73357,148551,Ominous Flame,client_relationship_present,not_evaluated
+1336,73367,148063,Skunky Alemental,client_relationship_present,not_evaluated
+1337,73366,148066,Spineclaw Crab,client_relationship_present,not_evaluated
+1338,73359,148067,Gulp Froglet,client_relationship_present,not_evaluated
+1339,73627,0,Lil' Oondasta,client_relationship_present,not_evaluated
+1343,73668,148373,Bonkers,client_relationship_present,not_evaluated
+1344,73688,148427,Vengeful Porcupette,client_relationship_present,not_evaluated
+1345,73730,148527,Gu'chi Swarmling,client_relationship_present,not_evaluated
+1346,73732,148530,Harmonious Porcupette,client_relationship_present,not_evaluated
+1348,73738,148552,Jadefire Spirit,client_relationship_present,not_evaluated
+1349,73741,148567,Rotten Little Helper,client_relationship_present,not_evaluated
+1350,73809,148684,Sky Lantern,client_relationship_present,not_evaluated
+1351,34770,66175,Macabre Marionette,client_relationship_present,not_evaluated
+1352,444,0,[UNUSED] Goreripper,client_relationship_present,not_evaluated
+1354,73977,0,C92 Annihilator,client_relationship_present,not_evaluated
+1363,74402,149787,Alterac Brew-Pup,client_relationship_present,not_evaluated
+1364,74405,149792,Murkalot,client_relationship_present,not_evaluated
+1365,74413,149810,Treasure Goblin,client_relationship_present,not_evaluated
+1386,77137,155748,Dread Hatchling,client_relationship_present,not_evaluated

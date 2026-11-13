@@ -1,0 +1,4263 @@
+{
+  "read_only": true,
+  "catalog_totals": {
+    "quests": 18145,
+    "spells": 95337,
+    "items": 80022,
+    "quest_objectives": 17682
+  },
+  "checks": [
+    "objective references for types0\u20135",
+    "item spell references including custom spells",
+    "quest starter/ender references"
+  ],
+  "behavioral_tests": {
+    "quest_playthroughs": 0,
+    "spell_casts": 0,
+    "item_use_tests": 0
+  },
+  "all_gameplay_passed": false,
+  "finding_counts": {
+    "objective_missing_item": 9,
+    "objective_missing_creature": 2,
+    "objective_missing_gameobject": 2,
+    "item_missing_spell": 519
+  },
+  "findings": [
+    {
+      "kind": "objective_missing_item",
+      "quest": 29048,
+      "objective": 251633,
+      "target": 68676
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 28940,
+      "objective": 252842,
+      "target": 68604
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 29466,
+      "objective": 254733,
+      "target": 71961
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 29056,
+      "objective": 256401,
+      "target": 68680
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 29046,
+      "objective": 256709,
+      "target": 68674
+    },
+    {
+      "kind": "objective_missing_creature",
+      "quest": 8149,
+      "objective": 284684,
+      "target": 108639
+    },
+    {
+      "kind": "objective_missing_creature",
+      "quest": 8150,
+      "objective": 284686,
+      "target": 108644
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 10794,
+      "objective": 273866,
+      "target": 113135
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 29534,
+      "objective": 255255,
+      "target": 72108
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 29554,
+      "objective": 261256,
+      "target": 73366
+    },
+    {
+      "kind": "objective_missing_gameobject",
+      "quest": 30759,
+      "objective": 272423,
+      "target": 223458
+    },
+    {
+      "kind": "objective_missing_gameobject",
+      "quest": 30974,
+      "objective": 268034,
+      "target": 212375
+    },
+    {
+      "kind": "objective_missing_item",
+      "quest": 32475,
+      "objective": 269899,
+      "target": 93660
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92549,
+      "slot": 1,
+      "spell": 79342,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 85711,
+      "slot": 2,
+      "spell": 124420,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 85686,
+      "slot": 2,
+      "spell": 122138,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 985,
+      "slot": 2,
+      "spell": 491,
+      "required_level": 18,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1032,
+      "slot": 2,
+      "spell": 5730,
+      "required_level": 8,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 79715,
+      "slot": 1,
+      "spell": 112871,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 72987,
+      "slot": 1,
+      "spell": 102696,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 69930,
+      "slot": 1,
+      "spell": 99422,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1229,
+      "slot": 2,
+      "spell": 693,
+      "required_level": 18,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 68009,
+      "slot": 1,
+      "spell": 94953,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 63148,
+      "slot": 1,
+      "spell": 89085,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 63030,
+      "slot": 1,
+      "spell": 88696,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1567,
+      "slot": 2,
+      "spell": 857,
+      "required_level": 30,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1574,
+      "slot": 2,
+      "spell": 543,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 3097,
+      "slot": 2,
+      "spell": 5505,
+      "required_level": 10,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 3133,
+      "slot": 2,
+      "spell": 5675,
+      "required_level": 30,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 3134,
+      "slot": 2,
+      "spell": 702,
+      "required_level": 4,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 3393,
+      "slot": 2,
+      "spell": 3172,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 4141,
+      "slot": 2,
+      "spell": 587,
+      "required_level": 6,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 4143,
+      "slot": 2,
+      "spell": 597,
+      "required_level": 12,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 4147,
+      "slot": 2,
+      "spell": 990,
+      "required_level": 22,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 4150,
+      "slot": 2,
+      "spell": 6127,
+      "required_level": 30,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 4152,
+      "slot": 2,
+      "spell": 6129,
+      "required_level": 32,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 4162,
+      "slot": 2,
+      "spell": 6139,
+      "required_level": 38,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 5139,
+      "slot": 2,
+      "spell": 467,
+      "required_level": 6,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 5644,
+      "slot": 2,
+      "spell": 5504,
+      "required_level": 4,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 5650,
+      "slot": 2,
+      "spell": 5506,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 5676,
+      "slot": 2,
+      "spell": 5502,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 5704,
+      "slot": 2,
+      "spell": 131,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 5724,
+      "slot": 2,
+      "spell": 1714,
+      "required_level": 22,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6648,
+      "slot": 2,
+      "spell": 8071,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6698,
+      "slot": 1,
+      "spell": 8299,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6707,
+      "slot": 1,
+      "spell": 8315,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6708,
+      "slot": 1,
+      "spell": 39704,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6711,
+      "slot": 1,
+      "spell": 8324,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6724,
+      "slot": 1,
+      "spell": 8357,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6728,
+      "slot": 1,
+      "spell": 8360,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8820,
+      "slot": 2,
+      "spell": 543,
+      "required_level": 30,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8843,
+      "slot": 2,
+      "spell": 543,
+      "required_level": 40,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8850,
+      "slot": 2,
+      "spell": 6127,
+      "required_level": 40,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8853,
+      "slot": 2,
+      "spell": 6129,
+      "required_level": 42,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8868,
+      "slot": 2,
+      "spell": 6127,
+      "required_level": 50,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8869,
+      "slot": 2,
+      "spell": 543,
+      "required_level": 50,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8871,
+      "slot": 2,
+      "spell": 6129,
+      "required_level": 52,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8892,
+      "slot": 2,
+      "spell": 6127,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 8897,
+      "slot": 2,
+      "spell": 543,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9043,
+      "slot": 2,
+      "spell": 5730,
+      "required_level": 8,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9057,
+      "slot": 2,
+      "spell": 131,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9058,
+      "slot": 2,
+      "spell": 131,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9089,
+      "slot": 2,
+      "spell": 131,
+      "required_level": 34,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9090,
+      "slot": 2,
+      "spell": 131,
+      "required_level": 34,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9091,
+      "slot": 2,
+      "spell": 131,
+      "required_level": 34,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9191,
+      "slot": 2,
+      "spell": 1714,
+      "required_level": 4,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9202,
+      "slot": 2,
+      "spell": 693,
+      "required_level": 18,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 9293,
+      "slot": 2,
+      "spell": 11453,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 11098,
+      "slot": 2,
+      "spell": 13522,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 11224,
+      "slot": 2,
+      "spell": 13933,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 13522,
+      "slot": 2,
+      "spell": 17638,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16216,
+      "slot": 2,
+      "spell": 20014,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16243,
+      "slot": 2,
+      "spell": 20051,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 45575,
+      "slot": 1,
+      "spell": 63691,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 43384,
+      "slot": 1,
+      "spell": 58262,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 43337,
+      "slot": 1,
+      "spell": 58166,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 43336,
+      "slot": 1,
+      "spell": 58173,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 42590,
+      "slot": 1,
+      "spell": 56439,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 20732,
+      "slot": 2,
+      "spell": 25081,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 20733,
+      "slot": 2,
+      "spell": 25082,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 40948,
+      "slot": 1,
+      "spell": 54910,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 40839,
+      "slot": 1,
+      "spell": 54803,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 39715,
+      "slot": 1,
+      "spell": 52394,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29871,
+      "slot": 1,
+      "spell": 35823,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29868,
+      "slot": 1,
+      "spell": 35820,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29841,
+      "slot": 1,
+      "spell": 35795,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 25667,
+      "slot": 1,
+      "spell": 32410,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22584,
+      "slot": 1,
+      "spell": 3231,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22024,
+      "slot": 1,
+      "spell": 27102,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22023,
+      "slot": 1,
+      "spell": 26743,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22541,
+      "slot": 2,
+      "spell": 27947,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22548,
+      "slot": 2,
+      "spell": 27962,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17887,
+      "slot": 1,
+      "spell": 22094,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17882,
+      "slot": 1,
+      "spell": 22089,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 11613,
+      "slot": 1,
+      "spell": 15303,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23715,
+      "slot": 1,
+      "spell": 30164,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23718,
+      "slot": 1,
+      "spell": 30173,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23719,
+      "slot": 1,
+      "spell": 30175,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23721,
+      "slot": 1,
+      "spell": 30177,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23722,
+      "slot": 1,
+      "spell": 30178,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23794,
+      "slot": 1,
+      "spell": 30331,
+      "required_level": 55,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23795,
+      "slot": 1,
+      "spell": 30336,
+      "required_level": 55,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23796,
+      "slot": 1,
+      "spell": 30338,
+      "required_level": 55,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 25848,
+      "slot": 2,
+      "spell": 32665,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 25849,
+      "slot": 2,
+      "spell": 32667,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 49376,
+      "slot": 1,
+      "spell": 69083,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44805,
+      "slot": 1,
+      "spell": 23789,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44432,
+      "slot": 1,
+      "spell": 60460,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38702,
+      "slot": 1,
+      "spell": 52019,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38489,
+      "slot": 1,
+      "spell": 51045,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38486,
+      "slot": 1,
+      "spell": 51042,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38485,
+      "slot": 1,
+      "spell": 51041,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35789,
+      "slot": 1,
+      "spell": 47095,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 34776,
+      "slot": 1,
+      "spell": 45591,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 33315,
+      "slot": 1,
+      "spell": 43005,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 33302,
+      "slot": 1,
+      "spell": 42929,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 33003,
+      "slot": 2,
+      "spell": 18061,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 32952,
+      "slot": 1,
+      "spell": 42012,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 32594,
+      "slot": 1,
+      "spell": 40558,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31850,
+      "slot": 1,
+      "spell": 39421,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31849,
+      "slot": 1,
+      "spell": 39411,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31848,
+      "slot": 1,
+      "spell": 39410,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31847,
+      "slot": 1,
+      "spell": 39408,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31846,
+      "slot": 1,
+      "spell": 39407,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31845,
+      "slot": 1,
+      "spell": 39406,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31844,
+      "slot": 1,
+      "spell": 39405,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31843,
+      "slot": 1,
+      "spell": 39404,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31842,
+      "slot": 1,
+      "spell": 39403,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30877,
+      "slot": 1,
+      "spell": 39409,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30711,
+      "slot": 1,
+      "spell": 37435,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30199,
+      "slot": 1,
+      "spell": 36286,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30198,
+      "slot": 1,
+      "spell": 36285,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30197,
+      "slot": 1,
+      "spell": 36284,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30195,
+      "slot": 1,
+      "spell": 36283,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30193,
+      "slot": 1,
+      "spell": 36282,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 30191,
+      "slot": 1,
+      "spell": 36281,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29874,
+      "slot": 1,
+      "spell": 35826,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29873,
+      "slot": 1,
+      "spell": 35825,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29872,
+      "slot": 1,
+      "spell": 35824,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29870,
+      "slot": 1,
+      "spell": 35822,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29869,
+      "slot": 1,
+      "spell": 35821,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29867,
+      "slot": 1,
+      "spell": 35819,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29866,
+      "slot": 1,
+      "spell": 35818,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29864,
+      "slot": 1,
+      "spell": 35817,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29863,
+      "slot": 1,
+      "spell": 35816,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29862,
+      "slot": 1,
+      "spell": 35815,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29861,
+      "slot": 1,
+      "spell": 35814,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29860,
+      "slot": 1,
+      "spell": 35813,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29859,
+      "slot": 1,
+      "spell": 35812,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29858,
+      "slot": 1,
+      "spell": 35811,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29857,
+      "slot": 1,
+      "spell": 35810,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29856,
+      "slot": 1,
+      "spell": 35809,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29854,
+      "slot": 1,
+      "spell": 35808,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29853,
+      "slot": 1,
+      "spell": 35807,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29852,
+      "slot": 1,
+      "spell": 35806,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29851,
+      "slot": 1,
+      "spell": 35805,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29850,
+      "slot": 1,
+      "spell": 35804,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29849,
+      "slot": 1,
+      "spell": 35803,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29848,
+      "slot": 1,
+      "spell": 35802,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29847,
+      "slot": 1,
+      "spell": 35801,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29846,
+      "slot": 1,
+      "spell": 35800,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29845,
+      "slot": 1,
+      "spell": 35799,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29844,
+      "slot": 1,
+      "spell": 35798,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29843,
+      "slot": 1,
+      "spell": 35797,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29842,
+      "slot": 1,
+      "spell": 35796,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29840,
+      "slot": 1,
+      "spell": 35794,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29839,
+      "slot": 1,
+      "spell": 35793,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29838,
+      "slot": 1,
+      "spell": 35792,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29837,
+      "slot": 1,
+      "spell": 35791,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28025,
+      "slot": 1,
+      "spell": 33631,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28261,
+      "slot": 1,
+      "spell": 32759,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28276,
+      "slot": 2,
+      "spell": 34005,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28277,
+      "slot": 2,
+      "spell": 34006,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 29877,
+      "slot": 1,
+      "spell": 1908,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31357,
+      "slot": 2,
+      "spell": 17638,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 33209,
+      "slot": 2,
+      "spell": 42736,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35433,
+      "slot": 1,
+      "spell": 34005,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35434,
+      "slot": 1,
+      "spell": 34006,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35435,
+      "slot": 1,
+      "spell": 27962,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35450,
+      "slot": 1,
+      "spell": 27947,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36955,
+      "slot": 1,
+      "spell": 47965,
+      "required_level": 78,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36960,
+      "slot": 1,
+      "spell": 47998,
+      "required_level": 76,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36963,
+      "slot": 1,
+      "spell": 48006,
+      "required_level": 80,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36964,
+      "slot": 1,
+      "spell": 48001,
+      "required_level": 72,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36965,
+      "slot": 1,
+      "spell": 48002,
+      "required_level": 79,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36968,
+      "slot": 1,
+      "spell": 48005,
+      "required_level": 75,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 36970,
+      "slot": 1,
+      "spell": 48006,
+      "required_level": 80,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 37330,
+      "slot": 2,
+      "spell": 44596,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 37331,
+      "slot": 2,
+      "spell": 44556,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 37332,
+      "slot": 2,
+      "spell": 44483,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 37333,
+      "slot": 2,
+      "spell": 44494,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 37334,
+      "slot": 2,
+      "spell": 44590,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38770,
+      "slot": 1,
+      "spell": 7454,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38784,
+      "slot": 1,
+      "spell": 7861,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38795,
+      "slot": 1,
+      "spell": 13522,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38815,
+      "slot": 1,
+      "spell": 13657,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38826,
+      "slot": 1,
+      "spell": 13794,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38843,
+      "slot": 1,
+      "spell": 13933,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38858,
+      "slot": 1,
+      "spell": 20014,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38891,
+      "slot": 1,
+      "spell": 25081,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38892,
+      "slot": 1,
+      "spell": 25082,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38907,
+      "slot": 1,
+      "spell": 27947,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38915,
+      "slot": 1,
+      "spell": 27962,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38941,
+      "slot": 1,
+      "spell": 34005,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38942,
+      "slot": 1,
+      "spell": 34006,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38950,
+      "slot": 1,
+      "spell": 44483,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38956,
+      "slot": 1,
+      "spell": 44494,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38969,
+      "slot": 1,
+      "spell": 44556,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38977,
+      "slot": 1,
+      "spell": 44590,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38982,
+      "slot": 1,
+      "spell": 44596,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 39300,
+      "slot": 1,
+      "spell": 52639,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 40677,
+      "slot": 1,
+      "spell": 54572,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 43234,
+      "slot": 1,
+      "spell": 13219,
+      "required_level": 72,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44559,
+      "slot": 2,
+      "spell": 57692,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44560,
+      "slot": 2,
+      "spell": 57694,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44561,
+      "slot": 2,
+      "spell": 57696,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44562,
+      "slot": 2,
+      "spell": 57699,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44563,
+      "slot": 2,
+      "spell": 57701,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44804,
+      "slot": 1,
+      "spell": 61729,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44964,
+      "slot": 1,
+      "spell": 50864,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 45280,
+      "slot": 1,
+      "spell": 63388,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 47507,
+      "slot": 2,
+      "spell": 67025,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 49130,
+      "slot": 1,
+      "spell": 68274,
+      "required_level": 80,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 49228,
+      "slot": 1,
+      "spell": 68662,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 55047,
+      "slot": 1,
+      "spell": 76199,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 58149,
+      "slot": 1,
+      "spell": 79637,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62312,
+      "slot": 1,
+      "spell": 86824,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 65359,
+      "slot": 2,
+      "spell": 92370,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 72102,
+      "slot": 2,
+      "spell": 102171,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 25801,
+      "slot": 2,
+      "spell": 32607,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23728,
+      "slot": 1,
+      "spell": 30190,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23727,
+      "slot": 1,
+      "spell": 30187,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23725,
+      "slot": 1,
+      "spell": 30183,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16302,
+      "slot": 1,
+      "spell": 20270,
+      "required_level": 8,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16316,
+      "slot": 1,
+      "spell": 20312,
+      "required_level": 18,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16317,
+      "slot": 1,
+      "spell": 20313,
+      "required_level": 28,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16318,
+      "slot": 1,
+      "spell": 20314,
+      "required_level": 38,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16319,
+      "slot": 1,
+      "spell": 20315,
+      "required_level": 48,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16320,
+      "slot": 1,
+      "spell": 20316,
+      "required_level": 58,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16326,
+      "slot": 1,
+      "spell": 20322,
+      "required_level": 14,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16327,
+      "slot": 1,
+      "spell": 20323,
+      "required_level": 24,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16328,
+      "slot": 1,
+      "spell": 20324,
+      "required_level": 34,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16329,
+      "slot": 1,
+      "spell": 20326,
+      "required_level": 44,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16330,
+      "slot": 1,
+      "spell": 20327,
+      "required_level": 54,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16331,
+      "slot": 1,
+      "spell": 20329,
+      "required_level": 12,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16346,
+      "slot": 1,
+      "spell": 20317,
+      "required_level": 20,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16347,
+      "slot": 1,
+      "spell": 20377,
+      "required_level": 30,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16348,
+      "slot": 1,
+      "spell": 20378,
+      "required_level": 40,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16349,
+      "slot": 1,
+      "spell": 20379,
+      "required_level": 50,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16350,
+      "slot": 1,
+      "spell": 20380,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16351,
+      "slot": 1,
+      "spell": 20381,
+      "required_level": 16,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16352,
+      "slot": 1,
+      "spell": 20382,
+      "required_level": 24,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16353,
+      "slot": 1,
+      "spell": 20383,
+      "required_level": 32,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16354,
+      "slot": 1,
+      "spell": 20384,
+      "required_level": 40,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16355,
+      "slot": 1,
+      "spell": 20385,
+      "required_level": 48,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16356,
+      "slot": 1,
+      "spell": 20386,
+      "required_level": 56,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16357,
+      "slot": 1,
+      "spell": 20387,
+      "required_level": 18,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16358,
+      "slot": 1,
+      "spell": 20388,
+      "required_level": 26,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16359,
+      "slot": 1,
+      "spell": 20389,
+      "required_level": 34,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16360,
+      "slot": 1,
+      "spell": 20390,
+      "required_level": 42,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16361,
+      "slot": 1,
+      "spell": 20391,
+      "required_level": 50,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16362,
+      "slot": 1,
+      "spell": 20392,
+      "required_level": 58,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16363,
+      "slot": 1,
+      "spell": 20393,
+      "required_level": 24,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16364,
+      "slot": 1,
+      "spell": 20394,
+      "required_level": 36,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16365,
+      "slot": 1,
+      "spell": 20395,
+      "required_level": 48,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16366,
+      "slot": 1,
+      "spell": 20396,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16368,
+      "slot": 1,
+      "spell": 20398,
+      "required_level": 28,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16371,
+      "slot": 1,
+      "spell": 20399,
+      "required_level": 36,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16372,
+      "slot": 1,
+      "spell": 20400,
+      "required_level": 44,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16373,
+      "slot": 1,
+      "spell": 20401,
+      "required_level": 52,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16374,
+      "slot": 1,
+      "spell": 20402,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16375,
+      "slot": 1,
+      "spell": 20403,
+      "required_level": 22,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16376,
+      "slot": 1,
+      "spell": 20404,
+      "required_level": 34,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16377,
+      "slot": 1,
+      "spell": 20405,
+      "required_level": 46,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16378,
+      "slot": 1,
+      "spell": 20406,
+      "required_level": 58,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16379,
+      "slot": 1,
+      "spell": 20407,
+      "required_level": 26,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16380,
+      "slot": 1,
+      "spell": 20408,
+      "required_level": 32,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16381,
+      "slot": 1,
+      "spell": 20426,
+      "required_level": 38,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16382,
+      "slot": 1,
+      "spell": 20427,
+      "required_level": 46,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16383,
+      "slot": 1,
+      "spell": 20428,
+      "required_level": 54,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16384,
+      "slot": 1,
+      "spell": 20429,
+      "required_level": 32,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16385,
+      "slot": 1,
+      "spell": 20430,
+      "required_level": 40,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16386,
+      "slot": 1,
+      "spell": 20431,
+      "required_level": 48,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16387,
+      "slot": 1,
+      "spell": 20432,
+      "required_level": 56,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16388,
+      "slot": 1,
+      "spell": 20433,
+      "required_level": 36,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16389,
+      "slot": 1,
+      "spell": 20434,
+      "required_level": 52,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16390,
+      "slot": 1,
+      "spell": 20435,
+      "required_level": 42,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22588,
+      "slot": 1,
+      "spell": 6476,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22587,
+      "slot": 1,
+      "spell": 26019,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22586,
+      "slot": 1,
+      "spell": 26020,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22585,
+      "slot": 1,
+      "spell": 8375,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 19004,
+      "slot": 2,
+      "spell": 23468,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 19005,
+      "slot": 2,
+      "spell": 23469,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 19609,
+      "slot": 1,
+      "spell": 24436,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 21835,
+      "slot": 1,
+      "spell": 26785,
+      "required_level": 68,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22043,
+      "slot": 1,
+      "spell": 27122,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22105,
+      "slot": 2,
+      "spell": 23469,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22179,
+      "slot": 1,
+      "spell": 27487,
+      "required_level": 68,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22181,
+      "slot": 1,
+      "spell": 27489,
+      "required_level": 64,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22182,
+      "slot": 1,
+      "spell": 27490,
+      "required_level": 70,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22183,
+      "slot": 1,
+      "spell": 27500,
+      "required_level": 63,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22184,
+      "slot": 1,
+      "spell": 27491,
+      "required_level": 66,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22185,
+      "slot": 1,
+      "spell": 27492,
+      "required_level": 64,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22186,
+      "slot": 1,
+      "spell": 27493,
+      "required_level": 68,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22187,
+      "slot": 1,
+      "spell": 27494,
+      "required_level": 70,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22188,
+      "slot": 1,
+      "spell": 27495,
+      "required_level": 62,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22189,
+      "slot": 1,
+      "spell": 27496,
+      "required_level": 70,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22190,
+      "slot": 1,
+      "spell": 27497,
+      "required_level": 64,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22042,
+      "slot": 1,
+      "spell": 27121,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22691,
+      "slot": 2,
+      "spell": 28414,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23711,
+      "slot": 1,
+      "spell": 30154,
+      "required_level": 52,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23730,
+      "slot": 1,
+      "spell": 30199,
+      "required_level": 61,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23731,
+      "slot": 1,
+      "spell": 30200,
+      "required_level": 69,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23734,
+      "slot": 1,
+      "spell": 30214,
+      "required_level": 50,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23745,
+      "slot": 1,
+      "spell": 30222,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 23755,
+      "slot": 1,
+      "spell": 30224,
+      "required_level": 68,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22041,
+      "slot": 1,
+      "spell": 27120,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22040,
+      "slot": 1,
+      "spell": 27119,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22039,
+      "slot": 1,
+      "spell": 27118,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 25469,
+      "slot": 1,
+      "spell": 32234,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22038,
+      "slot": 1,
+      "spell": 27117,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 25900,
+      "slot": 1,
+      "spell": 32852,
+      "required_level": 56,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22037,
+      "slot": 1,
+      "spell": 27116,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22036,
+      "slot": 1,
+      "spell": 27115,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22035,
+      "slot": 1,
+      "spell": 27114,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22034,
+      "slot": 1,
+      "spell": 27113,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22033,
+      "slot": 1,
+      "spell": 27112,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22032,
+      "slot": 1,
+      "spell": 27111,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22031,
+      "slot": 1,
+      "spell": 27110,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22030,
+      "slot": 1,
+      "spell": 27109,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22029,
+      "slot": 1,
+      "spell": 27108,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22028,
+      "slot": 1,
+      "spell": 27107,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22026,
+      "slot": 1,
+      "spell": 22092,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22025,
+      "slot": 1,
+      "spell": 27104,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22022,
+      "slot": 1,
+      "spell": 27093,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22021,
+      "slot": 1,
+      "spell": 26793,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 22020,
+      "slot": 1,
+      "spell": 26792,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28068,
+      "slot": 1,
+      "spell": 33703,
+      "required_level": 69,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28071,
+      "slot": 1,
+      "spell": 33704,
+      "required_level": 50,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28072,
+      "slot": 1,
+      "spell": 33705,
+      "required_level": 60,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 28073,
+      "slot": 1,
+      "spell": 33706,
+      "required_level": 70,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31279,
+      "slot": 1,
+      "spell": 132375,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 31279,
+      "slot": 2,
+      "spell": 132372,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35444,
+      "slot": 1,
+      "spell": 27926,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 35722,
+      "slot": 1,
+      "spell": 29820,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38377,
+      "slot": 1,
+      "spell": 50911,
+      "required_level": 70,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 38916,
+      "slot": 1,
+      "spell": 27964,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 41170,
+      "slot": 1,
+      "spell": 55152,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 41191,
+      "slot": 1,
+      "spell": 55171,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 43237,
+      "slot": 1,
+      "spell": 26785,
+      "required_level": 77,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44506,
+      "slot": 1,
+      "spell": 60875,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 44807,
+      "slot": 1,
+      "spell": 124,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 46103,
+      "slot": 1,
+      "spell": 63388,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 46104,
+      "slot": 1,
+      "spell": 63388,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 46105,
+      "slot": 1,
+      "spell": 63388,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 49355,
+      "slot": 1,
+      "spell": 69083,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 49369,
+      "slot": 1,
+      "spell": 69093,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 49538,
+      "slot": 1,
+      "spell": 69093,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 52716,
+      "slot": 2,
+      "spell": 88526,
+      "required_level": 75,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 19226,
+      "slot": 1,
+      "spell": 23674,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18982,
+      "slot": 1,
+      "spell": 23440,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18971,
+      "slot": 1,
+      "spell": 23435,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18970,
+      "slot": 1,
+      "spell": 23434,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18968,
+      "slot": 1,
+      "spell": 23433,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18669,
+      "slot": 1,
+      "spell": 23144,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18668,
+      "slot": 1,
+      "spell": 23143,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18667,
+      "slot": 1,
+      "spell": 23142,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18666,
+      "slot": 1,
+      "spell": 23141,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18599,
+      "slot": 1,
+      "spell": 30229,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18165,
+      "slot": 1,
+      "spell": 22590,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18164,
+      "slot": 1,
+      "spell": 22589,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18163,
+      "slot": 1,
+      "spell": 22588,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18162,
+      "slot": 1,
+      "spell": 22587,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 18161,
+      "slot": 1,
+      "spell": 22586,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17899,
+      "slot": 1,
+      "spell": 22106,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17898,
+      "slot": 1,
+      "spell": 22105,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17897,
+      "slot": 1,
+      "spell": 22104,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17896,
+      "slot": 1,
+      "spell": 22103,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17895,
+      "slot": 1,
+      "spell": 22102,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17894,
+      "slot": 1,
+      "spell": 22101,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17893,
+      "slot": 1,
+      "spell": 22100,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17892,
+      "slot": 1,
+      "spell": 22099,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17891,
+      "slot": 1,
+      "spell": 22098,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17888,
+      "slot": 1,
+      "spell": 22095,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17885,
+      "slot": 1,
+      "spell": 22092,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17884,
+      "slot": 1,
+      "spell": 22091,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17883,
+      "slot": 1,
+      "spell": 22090,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17830,
+      "slot": 1,
+      "spell": 22054,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17829,
+      "slot": 1,
+      "spell": 22053,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17828,
+      "slot": 1,
+      "spell": 22052,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 17827,
+      "slot": 1,
+      "spell": 22051,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16104,
+      "slot": 1,
+      "spell": 19932,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 16103,
+      "slot": 1,
+      "spell": 19931,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 13714,
+      "slot": 1,
+      "spell": 18063,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 12789,
+      "slot": 1,
+      "spell": 16872,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 6213,
+      "slot": 1,
+      "spell": 7407,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1655,
+      "slot": 2,
+      "spell": 990,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1403,
+      "slot": 1,
+      "spell": 834,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62338,
+      "slot": 1,
+      "spell": 86890,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62763,
+      "slot": 2,
+      "spell": 87805,
+      "required_level": 15,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62764,
+      "slot": 2,
+      "spell": 87813,
+      "required_level": 15,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62765,
+      "slot": 2,
+      "spell": 87835,
+      "required_level": 15,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62766,
+      "slot": 2,
+      "spell": 87837,
+      "required_level": 15,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62767,
+      "slot": 2,
+      "spell": 87839,
+      "required_level": 15,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 62773,
+      "slot": 2,
+      "spell": 87922,
+      "required_level": 15,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 66134,
+      "slot": 2,
+      "spell": 92375,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 70143,
+      "slot": 2,
+      "spell": 108819,
+      "required_level": 85,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1165,
+      "slot": 1,
+      "spell": 7291,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71955,
+      "slot": 2,
+      "spell": 101823,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71956,
+      "slot": 2,
+      "spell": 101824,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71957,
+      "slot": 2,
+      "spell": 101828,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71958,
+      "slot": 2,
+      "spell": 101825,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71959,
+      "slot": 2,
+      "spell": 101826,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71960,
+      "slot": 2,
+      "spell": 101827,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 71970,
+      "slot": 1,
+      "spell": 122350,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 77497,
+      "slot": 1,
+      "spell": 108949,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 77501,
+      "slot": 1,
+      "spell": 108956,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 1099,
+      "slot": 2,
+      "spell": 597,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 78960,
+      "slot": 1,
+      "spell": 110234,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 78961,
+      "slot": 1,
+      "spell": 110235,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 78962,
+      "slot": 1,
+      "spell": 110233,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 941,
+      "slot": 1,
+      "spell": 47,
+      "required_level": 100,
+      "quarantined_level_100_or_above": true
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 79802,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 80239,
+      "slot": 1,
+      "spell": 114726,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 85429,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 85430,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 85666,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 85,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87252,
+      "slot": 1,
+      "spell": 126509,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87756,
+      "slot": 2,
+      "spell": 127133,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87768,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87769,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87771,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87773,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87774,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87775,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87776,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 87777,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 89053,
+      "slot": 1,
+      "spell": 129201,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 89304,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 90500,
+      "slot": 2,
+      "spell": 131908,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 90655,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92580,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92582,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92584,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92586,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92588,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92590,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92592,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92594,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92596,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92598,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92600,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92602,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92604,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92606,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92608,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92610,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92612,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92614,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92616,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92618,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92620,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92622,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 92624,
+      "slot": 1,
+      "spell": 134279,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 93823,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 93824,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94160,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94161,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94162,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94163,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94164,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94165,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94166,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94167,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94168,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94169,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94170,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94171,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94172,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94173,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94174,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94175,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94176,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94177,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94178,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94179,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94180,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94181,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94182,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94183,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94184,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94185,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94186,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94187,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94188,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 94189,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 95057,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97278,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97279,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97280,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97281,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97282,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97283,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97284,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97285,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97286,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97287,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97288,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97289,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97321,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97445,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97450,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97559,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97560,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97561,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97563,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97566,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 97972,
+      "slot": 1,
+      "spell": 137059,
+      "required_level": 1,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 103649,
+      "slot": 1,
+      "spell": 147057,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 103649,
+      "slot": 2,
+      "spell": 147084,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 104115,
+      "slot": 2,
+      "spell": 132655,
+      "required_level": 0,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 104269,
+      "slot": 3,
+      "spell": 135930,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 104648,
+      "slot": 1,
+      "spell": 147057,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 104648,
+      "slot": 2,
+      "spell": 147084,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 104897,
+      "slot": 1,
+      "spell": 147057,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 104897,
+      "slot": 2,
+      "spell": 147084,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 105146,
+      "slot": 1,
+      "spell": 147057,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 105146,
+      "slot": 2,
+      "spell": 147084,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 105395,
+      "slot": 1,
+      "spell": 147057,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 105395,
+      "slot": 2,
+      "spell": 147084,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 105644,
+      "slot": 1,
+      "spell": 147057,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    },
+    {
+      "kind": "item_missing_spell",
+      "item": 105644,
+      "slot": 2,
+      "spell": 147084,
+      "required_level": 90,
+      "quarantined_level_100_or_above": false
+    }
+  ],
+  "coverage_limits": [
+    "No cast/damage/loot/phase/escort/vehicle/client UI validation",
+    "A reference existing does not establish correct behavior",
+    "Runtime spell corrections/difficulty selection are not executed here"
+  ]
+}

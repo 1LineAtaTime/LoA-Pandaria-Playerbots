@@ -254,7 +254,10 @@ class transport_merry_go_round : public TransportScript
             {
                 Map* map = transport->GetMap();
                 Creature* creature = new Creature();
-                if (!creature->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, PHASEMASK_NORMAL, passenger.first, 0, 0, passenger.second.GetPositionX(), passenger.second.GetPositionY(), passenger.second.GetPositionZ(), passenger.second.GetOrientation()))
+                float x, y, z, o;
+                passenger.second.GetPosition(x, y, z, o);
+                transport->CalculatePassengerPosition(x, y, z, &o);
+                if (!creature->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, PHASEMASK_NORMAL, passenger.first, 0, 0, x, y, z, o))
                 {
                     delete creature;
                     return;
@@ -262,14 +265,11 @@ class transport_merry_go_round : public TransportScript
 
                 creature->SetRespawnTime(0);
 
-                float x, y, z, o;
-                creature->GetPosition(x, y, z, o);
-
                 creature->SetTransport(transport);
                 creature->m_movementInfo.transport.guid = transport->GetGUID();
-                creature->m_movementInfo.transport.pos.Relocate(x, y, z, o);
-                transport->CalculatePassengerPosition(x, y, z, &o);
-                creature->Relocate(x, y, z, o);
+                creature->m_movementInfo.transport.pos.Relocate(passenger.second);
+                creature->SetHomePosition(x, y, z, o);
+                creature->SetTransportHomePosition(passenger.second);
 
                 bool spawned = false;
                 if (creature->IsInWorld())

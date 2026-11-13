@@ -111,3 +111,15 @@ SOAP, so they need the SOAP settings above. `.botscenario` is the playerbots tes
 By default the character stays in the world until the server times the socket out, so a test
 driver can keep using it after the script exits. Set `HEADLESS_LOGOUT=1` to send a clean logout
 when the session ends.
+
+### Automated starter campaign
+
+Run `python contrib/headless-client/starter_campaign.py --world-pid <PID> --report out/starter-report.json`
+from the repository root on Windows. It reads database credentials from the
+ignored runtime config, creates disposable ordinary accounts, checks real client
+creation/login and selected starter quest state/rewards, then removes its own
+accounts/characters through native console commands. The server must already be
+running. It does not target existing user characters. Use `--only-human --combat`
+for the bounded kill-credit route; that route is currently incomplete for moving
+targets and reports failure if it cannot finish, rather than granting credit.
+See `doc/loa-beta-integration-2026-11-07.md` for actual coverage and limitations.

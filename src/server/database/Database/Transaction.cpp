@@ -61,6 +61,12 @@ void TransactionBase::Append(char const* sql)
     m_queries.emplace_back(std::in_place_type<std::string>, sql);
 }
 
+void TransactionBase::AppendChecked(char const* sql, uint64 expectedAffectedRows)
+{
+    Append(sql);
+    m_queries.back().expectedAffectedRows = expectedAffectedRows;
+}
+
 //- Append a prepared statement to the transaction
 void TransactionBase::AppendPreparedStatement(PreparedStatementBase* stmt)
 {
@@ -99,14 +105,16 @@ bool TransactionTask::Execute(MySQLConnection* conn, std::shared_ptr<Transaction
 
         for (uint32 loopDuration = 0, startMSTime = getMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
         {
-            int retryError = TryExecute(conn, trans);
-            if (!retryError)
+            errorCode = TryExecute(conn, trans);
+            if (!errorCode)
                 return true;
+            if (errorCode != ER_LOCK_DEADLOCK)
+                break;
 
             // an error that repeating cannot fix (a duplicate key for instance): give up
-            if (!IsRetryableError(retryError))
+            if (!IsRetryableError(errorCode))
             {
-                TC_LOG_ERROR("sql.sql", "Deadlocked SQL Transaction failed with error %d on retry, giving up. Thread Id: %s", retryError, threadId.c_str());
+                TC_LOG_ERROR("sql.sql", "Deadlocked SQL Transaction failed with error %d on retry, giving up. Thread Id: %s", errorCode, threadId.c_str());
                 trans->Cleanup();
                 return false;
             }
@@ -114,7 +122,7 @@ bool TransactionTask::Execute(MySQLConnection* conn, std::shared_ptr<Transaction
             TC_LOG_WARN("sql.sql", "Deadlocked SQL Transaction, retrying. Loop timer: %u ms, Thread Id: %s", loopDuration, threadId.c_str());
         }
 
-        TC_LOG_ERROR("sql.sql", "Fatal deadlocked SQL Transaction, it will not be retried anymore. Thread Id: %s", threadId.c_str());
+        TC_LOG_ERROR("sql.sql", "SQL transaction retry stopped with error %d. Thread Id: %s", errorCode, threadId.c_str());
     }
 
     // Clean up now.

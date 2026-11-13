@@ -1,0 +1,65 @@
+{
+  "name": "loa-qa-reference-repairs-20261108",
+  "checks": [
+    {
+      "id": "missing_quest_items_restored",
+      "query": "SELECT entry FROM item_template WHERE entry IN (68604,72108) ORDER BY entry",
+      "expected_rows": [
+        [
+          "68604"
+        ],
+        [
+          "72108"
+        ]
+      ]
+    },
+    {
+      "id": "missing_quest_gameobject_restored",
+      "query": "SELECT entry FROM gameobject_template WHERE entry=212375",
+      "expected_rows": [
+        [
+          "212375"
+        ]
+      ]
+    },
+    {
+      "id": "orphan_addons_removed",
+      "query": "SELECT COUNT(*) FROM creature_addon WHERE guid IN (564238,564239,564240)",
+      "expected_rows": [
+        [
+          "0"
+        ]
+      ]
+    },
+    {
+      "id": "stationary_paths_cleared",
+      "query": "SELECT guid,path_id FROM creature_addon WHERE guid IN (914942,522984) ORDER BY guid",
+      "expected_rows": [
+        [
+          "522984",
+          "0"
+        ],
+        [
+          "914942",
+          "0"
+        ]
+      ]
+    },
+    {
+      "id": "native_less_reference_ai_restored",
+      "query": "SELECT entry,AIName,ScriptName FROM creature_template WHERE entry IN (35077,37143) ORDER BY entry",
+      "expected_rows": [
+        [
+          "35077",
+          "SmartAI",
+          ""
+        ],
+        [
+          "37143",
+          "SmartAI",
+          ""
+        ]
+      ]
+    }
+  ]
+}

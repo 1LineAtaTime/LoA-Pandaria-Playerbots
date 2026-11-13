@@ -541,7 +541,7 @@ void AddSC_shattrath_city()
 {
     RegisterCreatureAI(npc_raliq_the_drunk);
     new npc_salsalabim();
-    //new npc_shattrathflaskvendors();
+    new npc_shattrathflaskvendors();
     RegisterCreatureAI(npc_zephyr);
     RegisterCreatureAI(npc_kservant);
     RegisterCreatureAI(npc_ishanah);

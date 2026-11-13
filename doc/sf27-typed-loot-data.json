@@ -1,0 +1,9011 @@
+{
+  "pin": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "sources": [
+    {
+      "file": "2026_08_20_world_07.sql",
+      "sha256": "a3af54404f3e8c565ba418be49bbf8b7cd7ede8b5ee498df34bd2a31abc127cb",
+      "output_statements": 4,
+      "adaptations": [
+        "source pools are suffix pools; set local type=1 explicitly"
+      ]
+    },
+    {
+      "file": "2026_08_20_world_08.sql",
+      "sha256": "b4f2de8ce1d9d44bd61839f41df922b2d7911e7e4722751751991c20007e10f8",
+      "output_statements": 1,
+      "adaptations": [
+        "filter only suffix-type rows against actual client DBC; retain property-type rows"
+      ]
+    },
+    {
+      "file": "2026_08_26_world_03.sql",
+      "sha256": "a44d23bbf237a8432d08258194ac0e45a5f241b626c9515df9114db3ede67003",
+      "output_statements": 1,
+      "adaptations": []
+    },
+    {
+      "file": "2026_09_21_world_08.sql",
+      "sha256": "2fd9e55d6cfb8052c089e4126923d05a5066dfe47ce60d53af047eb6e6a20e0f",
+      "output_statements": 6,
+      "adaptations": []
+    },
+    {
+      "file": "2026_09_21_world_11.sql",
+      "sha256": "8fdf16713e2d66e7495b4c04c30c5bd668d0fabb78b2c416b66fc2ce5bc56f22",
+      "output_statements": 1,
+      "adaptations": [
+        "remove only when lower-GUID same-phase sibling actually exists"
+      ]
+    },
+    {
+      "file": "2026_11_05_world_00.sql",
+      "sha256": "235eca3f2b2112c2e20893857843c7870cd0e5fd1a6daaf63c6e3e1e4e2182bf",
+      "output_statements": 7,
+      "adaptations": []
+    },
+    {
+      "file": "2026_11_06_world_04.sql",
+      "sha256": "a6d4d257646cee205229bc902ffbf4b5bb59a9c32f1d029bd6a109e595fc6f5b",
+      "output_statements": 1,
+      "adaptations": [
+        "remove only when lower-GUID same-phase sibling actually exists"
+      ]
+    },
+    {
+      "file": "2026_11_06_world_05.sql",
+      "sha256": "d3893b3b5601c5cfd6fd9a5816f7b0bd0db0329b48974a60b407f6defcdd65b5",
+      "output_statements": 1,
+      "adaptations": [
+        "remove only when lower-GUID same-phase sibling actually exists"
+      ]
+    }
+  ],
+  "tables": [
+    "creature",
+    "creature_template",
+    "creature_template_addon",
+    "gameobject",
+    "gameobject_loot_template",
+    "item_enchantment_template",
+    "item_template",
+    "npc_spellclick_spells",
+    "smart_scripts"
+  ],
+  "desired": [
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "14",
+        "chance": "4.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "68",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "71",
+        "chance": "9.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "74",
+        "chance": "10.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "78",
+        "chance": "7.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "86",
+        "chance": "8.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "91",
+        "chance": "7.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "118",
+        "chance": "4.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "120",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "121",
+        "chance": "4.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "122",
+        "chance": "4.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "123",
+        "chance": "3.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "133",
+        "chance": "3.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "134",
+        "chance": "3.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "135",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "136",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "137",
+        "chance": "4.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "390",
+        "ench": "139",
+        "chance": "9.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "14",
+        "chance": "7.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "68",
+        "chance": "8.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "71",
+        "chance": "2.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "74",
+        "chance": "9.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "78",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "86",
+        "chance": "16.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "91",
+        "chance": "2.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "118",
+        "chance": "6.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "120",
+        "chance": "6.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "121",
+        "chance": "6.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "122",
+        "chance": "6.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "123",
+        "chance": "6.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "133",
+        "chance": "0.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "134",
+        "chance": "0.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "135",
+        "chance": "0.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "136",
+        "chance": "0.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "137",
+        "chance": "0.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "391",
+        "ench": "139",
+        "chance": "15.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "14",
+        "chance": "3.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "68",
+        "chance": "3.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "71",
+        "chance": "14.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "74",
+        "chance": "13.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "78",
+        "chance": "7.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "86",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "91",
+        "chance": "15.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "118",
+        "chance": "0.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "120",
+        "chance": "2.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "121",
+        "chance": "0.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "122",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "123",
+        "chance": "1.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "133",
+        "chance": "2.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "134",
+        "chance": "2.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "135",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "136",
+        "chance": "1.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "137",
+        "chance": "4.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "392",
+        "ench": "139",
+        "chance": "9.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "14",
+        "chance": "3.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "39",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "67",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "68",
+        "chance": "4.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "69",
+        "chance": "3.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "71",
+        "chance": "2.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "73",
+        "chance": "4.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "74",
+        "chance": "6.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "75",
+        "chance": "1.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "78",
+        "chance": "3.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "81",
+        "chance": "5.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "85",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "86",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "91",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "114",
+        "chance": "1.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "118",
+        "chance": "2.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "120",
+        "chance": "2.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "121",
+        "chance": "2.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "122",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "123",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "124",
+        "chance": "0.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "125",
+        "chance": "0.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "127",
+        "chance": "0.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "128",
+        "chance": "0.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "129",
+        "chance": "1.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "130",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "131",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "132",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "133",
+        "chance": "1.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "134",
+        "chance": "1.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "135",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "136",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "137",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "138",
+        "chance": "3.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "393",
+        "ench": "139",
+        "chance": "4.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "39",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "67",
+        "chance": "10.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "69",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "73",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "74",
+        "chance": "7.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "81",
+        "chance": "6.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "85",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "114",
+        "chance": "6.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "129",
+        "chance": "6.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "130",
+        "chance": "9.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "131",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "132",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "394",
+        "ench": "138",
+        "chance": "9.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "14",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "68",
+        "chance": "4.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "71",
+        "chance": "13.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "74",
+        "chance": "13.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "78",
+        "chance": "8.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "86",
+        "chance": "8.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "91",
+        "chance": "11.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "118",
+        "chance": "3.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "120",
+        "chance": "1.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "121",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "122",
+        "chance": "3.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "123",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "133",
+        "chance": "5.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "134",
+        "chance": "4.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "135",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "136",
+        "chance": "4.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "137",
+        "chance": "2.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "395",
+        "ench": "139",
+        "chance": "8.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "71",
+        "chance": "18.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "74",
+        "chance": "13.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "78",
+        "chance": "14.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "91",
+        "chance": "18.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "133",
+        "chance": "7.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "134",
+        "chance": "7.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "135",
+        "chance": "6.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "136",
+        "chance": "7.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "396",
+        "ench": "137",
+        "chance": "7.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "71",
+        "chance": "18.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "74",
+        "chance": "13.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "78",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "91",
+        "chance": "17.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "133",
+        "chance": "7.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "134",
+        "chance": "7.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "135",
+        "chance": "7.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "136",
+        "chance": "7.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "397",
+        "ench": "137",
+        "chance": "7.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "14",
+        "chance": "3.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "68",
+        "chance": "3.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "71",
+        "chance": "11.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "74",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "78",
+        "chance": "8.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "86",
+        "chance": "5.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "91",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "118",
+        "chance": "2.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "120",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "121",
+        "chance": "2.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "122",
+        "chance": "2.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "123",
+        "chance": "2.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "133",
+        "chance": "4.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "134",
+        "chance": "5.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "135",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "136",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "137",
+        "chance": "4.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "398",
+        "ench": "139",
+        "chance": "6.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "14",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "68",
+        "chance": "3.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "71",
+        "chance": "10.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "74",
+        "chance": "13.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "78",
+        "chance": "7.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "86",
+        "chance": "6.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "91",
+        "chance": "13.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "118",
+        "chance": "2.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "120",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "121",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "122",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "123",
+        "chance": "2.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "133",
+        "chance": "4.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "134",
+        "chance": "3.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "135",
+        "chance": "2.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "136",
+        "chance": "4.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "137",
+        "chance": "3.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "399",
+        "ench": "139",
+        "chance": "10.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "7",
+        "chance": "13.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "43",
+        "chance": "15.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "118",
+        "chance": "9.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "120",
+        "chance": "7.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "121",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "122",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "123",
+        "chance": "9.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "400",
+        "ench": "139",
+        "chance": "20.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "39",
+        "chance": "9.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "67",
+        "chance": "9.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "69",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "73",
+        "chance": "7.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "74",
+        "chance": "7.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "81",
+        "chance": "9.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "85",
+        "chance": "10.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "114",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "129",
+        "chance": "5.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "130",
+        "chance": "9.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "131",
+        "chance": "3.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "132",
+        "chance": "3.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "401",
+        "ench": "138",
+        "chance": "9.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "71",
+        "chance": "18.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "78",
+        "chance": "26.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "91",
+        "chance": "18.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "131",
+        "chance": "7.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "132",
+        "chance": "7.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "133",
+        "chance": "4.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "134",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "135",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "136",
+        "chance": "4.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "402",
+        "ench": "137",
+        "chance": "4.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "14",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "68",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "71",
+        "chance": "8.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "74",
+        "chance": "11.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "78",
+        "chance": "6.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "86",
+        "chance": "9.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "91",
+        "chance": "9.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "118",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "120",
+        "chance": "3.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "121",
+        "chance": "3.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "122",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "123",
+        "chance": "3.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "133",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "134",
+        "chance": "3.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "135",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "136",
+        "chance": "3.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "137",
+        "chance": "3.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "403",
+        "ench": "139",
+        "chance": "9.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "14",
+        "chance": "6.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "68",
+        "chance": "6.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "71",
+        "chance": "4.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "74",
+        "chance": "9.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "78",
+        "chance": "2.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "86",
+        "chance": "14.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "91",
+        "chance": "4.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "118",
+        "chance": "5.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "120",
+        "chance": "5.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "121",
+        "chance": "5.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "122",
+        "chance": "5.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "123",
+        "chance": "6.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "133",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "134",
+        "chance": "1.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "135",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "136",
+        "chance": "1.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "137",
+        "chance": "1.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "404",
+        "ench": "139",
+        "chance": "13.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "71",
+        "chance": "18.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "78",
+        "chance": "26.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "91",
+        "chance": "18.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "131",
+        "chance": "6.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "132",
+        "chance": "6.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "133",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "134",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "135",
+        "chance": "4.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "136",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "405",
+        "ench": "137",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "14",
+        "chance": "8.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "39",
+        "chance": "1.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "67",
+        "chance": "1.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "68",
+        "chance": "8.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "69",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "73",
+        "chance": "1.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "74",
+        "chance": "8.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "75",
+        "chance": "4.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "81",
+        "chance": "1.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "85",
+        "chance": "1.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "86",
+        "chance": "13.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "118",
+        "chance": "5.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "120",
+        "chance": "5.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "121",
+        "chance": "5.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "122",
+        "chance": "5.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "123",
+        "chance": "5.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "124",
+        "chance": "1.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "125",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "127",
+        "chance": "1.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "128",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "131",
+        "chance": "2.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "132",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "406",
+        "ench": "139",
+        "chance": "13.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "14",
+        "chance": "6.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "68",
+        "chance": "7.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "71",
+        "chance": "4.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "74",
+        "chance": "9.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "78",
+        "chance": "3.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "86",
+        "chance": "14.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "91",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "118",
+        "chance": "5.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "120",
+        "chance": "5.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "121",
+        "chance": "5.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "122",
+        "chance": "5.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "123",
+        "chance": "5.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "133",
+        "chance": "2.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "134",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "135",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "136",
+        "chance": "1.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "137",
+        "chance": "1.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "407",
+        "ench": "139",
+        "chance": "14.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "14",
+        "chance": "4.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "39",
+        "chance": "6.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "67",
+        "chance": "6.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "68",
+        "chance": "4.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "69",
+        "chance": "2.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "73",
+        "chance": "6.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "74",
+        "chance": "4.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "75",
+        "chance": "4.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "81",
+        "chance": "9.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "85",
+        "chance": "6.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "86",
+        "chance": "3.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "118",
+        "chance": "2.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "120",
+        "chance": "1.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "121",
+        "chance": "1.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "122",
+        "chance": "1.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "123",
+        "chance": "2.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "124",
+        "chance": "2.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "125",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "127",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "128",
+        "chance": "2.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "131",
+        "chance": "9.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "132",
+        "chance": "8.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "408",
+        "ench": "139",
+        "chance": "3.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "7",
+        "chance": "13.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "43",
+        "chance": "15.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "118",
+        "chance": "9.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "120",
+        "chance": "7.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "121",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "122",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "123",
+        "chance": "9.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "409",
+        "ench": "139",
+        "chance": "20.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "6",
+        "chance": "11.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "8",
+        "chance": "10.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "36",
+        "chance": "9.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "37",
+        "chance": "9.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "39",
+        "chance": "8.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "41",
+        "chance": "5.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "44",
+        "chance": "6.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "114",
+        "chance": "6.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "129",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "130",
+        "chance": "9.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "131",
+        "chance": "3.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "132",
+        "chance": "5.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "410",
+        "ench": "138",
+        "chance": "9.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "14",
+        "chance": "5.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "68",
+        "chance": "5.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "71",
+        "chance": "7.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "74",
+        "chance": "11.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "78",
+        "chance": "5.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "86",
+        "chance": "10.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "91",
+        "chance": "7.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "118",
+        "chance": "4.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "120",
+        "chance": "4.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "121",
+        "chance": "4.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "122",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "123",
+        "chance": "4.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "133",
+        "chance": "2.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "134",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "135",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "136",
+        "chance": "3.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "137",
+        "chance": "2.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "411",
+        "ench": "139",
+        "chance": "11.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "14",
+        "chance": "6.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "68",
+        "chance": "8.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "71",
+        "chance": "2.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "74",
+        "chance": "9.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "78",
+        "chance": "1.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "86",
+        "chance": "16.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "91",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "118",
+        "chance": "6.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "120",
+        "chance": "7.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "121",
+        "chance": "6.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "122",
+        "chance": "7.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "123",
+        "chance": "6.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "133",
+        "chance": "0.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "134",
+        "chance": "0.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "135",
+        "chance": "0.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "136",
+        "chance": "0.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "137",
+        "chance": "0.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "412",
+        "ench": "139",
+        "chance": "14.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "6",
+        "chance": "8.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "8",
+        "chance": "9.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "36",
+        "chance": "6.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "37",
+        "chance": "4.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "39",
+        "chance": "7.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "41",
+        "chance": "13.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "44",
+        "chance": "10.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "114",
+        "chance": "11.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "129",
+        "chance": "2.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "130",
+        "chance": "10.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "131",
+        "chance": "6.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "132",
+        "chance": "2.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "414",
+        "ench": "138",
+        "chance": "6.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "417",
+        "ench": "203",
+        "chance": "26.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "417",
+        "ench": "204",
+        "chance": "26.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "417",
+        "ench": "205",
+        "chance": "20.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "417",
+        "ench": "206",
+        "chance": "26.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "418",
+        "ench": "203",
+        "chance": "24.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "418",
+        "ench": "204",
+        "chance": "23.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "418",
+        "ench": "205",
+        "chance": "26.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "418",
+        "ench": "206",
+        "chance": "25.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "419",
+        "ench": "220",
+        "chance": "33.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "419",
+        "ench": "221",
+        "chance": "20.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "419",
+        "ench": "222",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "419",
+        "ench": "223",
+        "chance": "26.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "420",
+        "ench": "222",
+        "chance": "100.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "203",
+        "chance": "23.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "204",
+        "chance": "31.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "205",
+        "chance": "21.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "206",
+        "chance": "24.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "220",
+        "chance": "10.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "221",
+        "chance": "18.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "222",
+        "chance": "47.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "421",
+        "ench": "223",
+        "chance": "34.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "422",
+        "ench": "224",
+        "chance": "60.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "422",
+        "ench": "226",
+        "chance": "39.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "423",
+        "ench": "224",
+        "chance": "32.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "423",
+        "ench": "225",
+        "chance": "34.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "423",
+        "ench": "226",
+        "chance": "32.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "424",
+        "ench": "177",
+        "chance": "34.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "424",
+        "ench": "178",
+        "chance": "24.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "424",
+        "ench": "179",
+        "chance": "41.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "425",
+        "ench": "207",
+        "chance": "31.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "425",
+        "ench": "208",
+        "chance": "33.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "425",
+        "ench": "209",
+        "chance": "35.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "426",
+        "ench": "177",
+        "chance": "20.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "426",
+        "ench": "178",
+        "chance": "32.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "426",
+        "ench": "179",
+        "chance": "47.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "427",
+        "ench": "210",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "427",
+        "ench": "211",
+        "chance": "16.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "427",
+        "ench": "212",
+        "chance": "13.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "427",
+        "ench": "213",
+        "chance": "17.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "427",
+        "ench": "214",
+        "chance": "18.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "427",
+        "ench": "215",
+        "chance": "13.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "429",
+        "ench": "183",
+        "chance": "13.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "429",
+        "ench": "184",
+        "chance": "16.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "429",
+        "ench": "185",
+        "chance": "16.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "429",
+        "ench": "186",
+        "chance": "16.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "429",
+        "ench": "187",
+        "chance": "17.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "429",
+        "ench": "188",
+        "chance": "20.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "431",
+        "ench": "228",
+        "chance": "33.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "431",
+        "ench": "232",
+        "chance": "66.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "432",
+        "ench": "229",
+        "chance": "18.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "432",
+        "ench": "230",
+        "chance": "56.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "432",
+        "ench": "231",
+        "chance": "24.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "432",
+        "ench": "232",
+        "chance": "29.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "433",
+        "ench": "229",
+        "chance": "22.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "433",
+        "ench": "230",
+        "chance": "26.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "433",
+        "ench": "231",
+        "chance": "23.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "433",
+        "ench": "232",
+        "chance": "27.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "434",
+        "ench": "185",
+        "chance": "26.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "434",
+        "ench": "186",
+        "chance": "23.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "434",
+        "ench": "187",
+        "chance": "26.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "434",
+        "ench": "188",
+        "chance": "24.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "435",
+        "ench": "212",
+        "chance": "23.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "435",
+        "ench": "213",
+        "chance": "25.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "435",
+        "ench": "214",
+        "chance": "23.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "435",
+        "ench": "215",
+        "chance": "27.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "437",
+        "ench": "216",
+        "chance": "22.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "437",
+        "ench": "217",
+        "chance": "25.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "437",
+        "ench": "218",
+        "chance": "30.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "437",
+        "ench": "219",
+        "chance": "22.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "438",
+        "ench": "195",
+        "chance": "27.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "438",
+        "ench": "196",
+        "chance": "22.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "438",
+        "ench": "197",
+        "chance": "21.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "438",
+        "ench": "198",
+        "chance": "28.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "439",
+        "ench": "233",
+        "chance": "25.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "439",
+        "ench": "234",
+        "chance": "23.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "439",
+        "ench": "235",
+        "chance": "28.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "439",
+        "ench": "236",
+        "chance": "22.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "440",
+        "ench": "234",
+        "chance": "52.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "440",
+        "ench": "236",
+        "chance": "47.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "441",
+        "ench": "195",
+        "chance": "29.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "441",
+        "ench": "196",
+        "chance": "25.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "441",
+        "ench": "197",
+        "chance": "19.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "441",
+        "ench": "198",
+        "chance": "25.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "114",
+        "chance": "4.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "118",
+        "chance": "6.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "120",
+        "chance": "6.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "122",
+        "chance": "5.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "123",
+        "chance": "5.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "125",
+        "chance": "2.7000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "127",
+        "chance": "2.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "130",
+        "chance": "8.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "134",
+        "chance": "4.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "442",
+        "ench": "138",
+        "chance": "8.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "131",
+        "chance": "19.6000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "132",
+        "chance": "19.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "133",
+        "chance": "11.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "134",
+        "chance": "13.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "135",
+        "chance": "12.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "136",
+        "chance": "12.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "450",
+        "ench": "137",
+        "chance": "11.8000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "131",
+        "chance": "18.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "132",
+        "chance": "17.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "133",
+        "chance": "11.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "134",
+        "chance": "14.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "135",
+        "chance": "13.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "136",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "451",
+        "ench": "137",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "557",
+        "ench": "344",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "557",
+        "ench": "347",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "557",
+        "ench": "348",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "557",
+        "ench": "351",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "557",
+        "ench": "360",
+        "chance": "20.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "344",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "345",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "346",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "347",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "348",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "353",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "354",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "355",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "558",
+        "ench": "357",
+        "chance": "11.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "578",
+        "ench": "360",
+        "chance": "22.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "578",
+        "ench": "361",
+        "chance": "22.3000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "578",
+        "ench": "362",
+        "chance": "24.2000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "578",
+        "ench": "363",
+        "chance": "31.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "405",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "406",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "407",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "408",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "409",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "414",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "415",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "416",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "417",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "641",
+        "ench": "418",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "405",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "408",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "409",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "412",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "421",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "422",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "423",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "642",
+        "ench": "424",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "405",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "406",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "408",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "409",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "419",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "420",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "421",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "643",
+        "ench": "422",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "433",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "434",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "435",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "436",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "441",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "453",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "454",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "455",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "459",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "644",
+        "ench": "460",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "434",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "435",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "436",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "438",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "439",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "441",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "455",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "456",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "457",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "645",
+        "ench": "458",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "433",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "434",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "435",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "436",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "437",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "442",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "443",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "444",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "445",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "646",
+        "ench": "446",
+        "chance": "10.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "433",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "436",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "437",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "440",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "449",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "450",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "451",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "647",
+        "ench": "452",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "433",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "434",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "436",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "437",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "447",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "448",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "449",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "648",
+        "ench": "450",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "131",
+        "chance": "18.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "131",
+        "chance": "18.9000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "132",
+        "chance": "17.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "132",
+        "chance": "17.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "133",
+        "chance": "11.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "133",
+        "chance": "11.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "134",
+        "chance": "14.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "134",
+        "chance": "14.5000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "135",
+        "chance": "13.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "135",
+        "chance": "13.1000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "136",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "136",
+        "chance": "12.0000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "415",
+        "ench": "137",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "item_enchantment_template",
+      "values": {
+        "entry": "416",
+        "ench": "137",
+        "chance": "13.4000",
+        "type": "1"
+      },
+      "keys": [
+        "ench",
+        "entry",
+        "type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "21182",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "36374",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "21182",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Zeth''Gor Quest Credit Marker, Tower South - On Spellhit Summon Smoke Beacon - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "22401",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "36374",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "22401",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Zeth''Gor Quest Credit Marker, Tower North - On Spellhit Summon Smoke Beacon - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "22402",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "36374",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "22402",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Zeth''Gor Quest Credit Marker, Tower Forge - On Spellhit Summon Smoke Beacon - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "22403",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "36374",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "22403",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Zeth''Gor Quest Credit Marker, Tower Foothill - On Spellhit Summon Smoke Beacon - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "18110",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "31927",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "18110",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Windyreed Quest Credit (Big Hut) - On Spellhit Living Fire - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "18142",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "31927",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "18142",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Windyreed Quest Credit (Hut 01) - On Spellhit Living Fire - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "18143",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "31927",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "18143",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Windyreed Quest Credit (Hut 02) - On Spellhit Living Fire - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "18144",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "31927",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "18144",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Windyreed Quest Credit (Hut 03) - On Spellhit Living Fire - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "19723",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "34526",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "19723",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Invis BE Ballista - On Spellhit Burn Blood Elf Equipment - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "19724",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "34526",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "19724",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Invis BE Tent - On Spellhit Burn Blood Elf Equipment - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "25781",
+        "source_type": "0",
+        "id": "2",
+        "link": "3",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "45990",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "25781",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Oil Pool - On Spellhit Collect Oil - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "25781",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "61",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "0",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "41",
+        "action_param1": "10000",
+        "action_param2": "10000",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "1",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Oil Pool - On Spellhit Collect Oil - Despawn In 10000 ms'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "29692",
+        "source_type": "0",
+        "id": "1",
+        "link": "2",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "55037",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "29692",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Hut Fire - On Spellhit Fire Extinguisher - Quest Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "29692",
+        "source_type": "0",
+        "id": "2",
+        "link": "0",
+        "event_type": "61",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "0",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "41",
+        "action_param1": "0",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "1",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Hut Fire - On Spellhit Fire Extinguisher - Despawn Instant'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "npc_spellclick_spells",
+      "values": {
+        "npc_entry": "53561",
+        "spell_id": "99471",
+        "cast_flags": "1",
+        "user_type": "0"
+      },
+      "keys": [
+        "npc_entry",
+        "spell_id"
+      ]
+    },
+    {
+      "table": "npc_spellclick_spells",
+      "values": {
+        "npc_entry": "53561",
+        "spell_id": "99473",
+        "cast_flags": "2",
+        "user_type": "0"
+      },
+      "keys": [
+        "npc_entry",
+        "spell_id"
+      ]
+    }
+  ],
+  "sql_sha256": "7f1e082e0a8118d00c57091957e9419331744ec17a73b62e6a18c5f841a44e74",
+  "compatibility_fixes": [
+    "Thazzril uses actual template loot owner and retains existing quest-only item row",
+    "Stonebull Crayfish needs both published spellclick rows before static flag"
+  ]
+}

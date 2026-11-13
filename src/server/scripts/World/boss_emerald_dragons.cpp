@@ -22,6 +22,9 @@
 #include "Spell.h"
 #include "SpellAuraEffects.h"
 #include "PassiveAI.h"
+#include "Player.h"
+#include "DBCStores.h"
+#include "SpellMgr.h"
 
 //
 //  Emerald Dragon NPCs and IDs (kept here for reference)
@@ -709,60 +712,35 @@ class spell_dream_fog_sleep : public SpellScriptLoader
  * --- Spell: Mark of Nature
  */
 
-class MarkOfNatureTargetSelector
+// 25041: the native periodic marker check refers to server-only trigger25042,
+// absent from the 5.4.8 client data. Its original definition uses radius12
+// (100 yards), enemy players with25040, and applies25043. Perform that check
+// directly rather than replacing the death marker25040 with the sleep aura.
+class spell_mark_of_nature : public AuraScript
 {
-    public:
-        MarkOfNatureTargetSelector() { }
+    PrepareAuraScript(spell_mark_of_nature);
 
-        bool operator()(WorldObject* object)
-        {
-            // return those not tagged or already under the influence of Aura of Nature
-            if (Unit* unit = object->ToUnit())
-                return !(unit->HasAura(SPELL_MARK_OF_NATURE) && !unit->HasAura(SPELL_AURA_OF_NATURE));
-            return true;
-        }
-};
+    bool Validate(SpellInfo const*) override
+    {
+        return sSpellMgr->GetSpellInfo(SPELL_MARK_OF_NATURE) &&
+            sSpellMgr->GetSpellInfo(SPELL_AURA_OF_NATURE) && sSpellRadiusStore.LookupEntry(12);
+    }
 
-class spell_mark_of_nature : public SpellScriptLoader
-{
-    public:
-        spell_mark_of_nature() : SpellScriptLoader("spell_mark_of_nature") { }
+    void HandlePeriodic(AuraEffect const*)
+    {
+        PreventDefaultAction();
+        Unit* caster = GetTarget();
+        std::list<Player*> targets;
+        GetPlayerListInGrid(targets, caster, sSpellRadiusStore.LookupEntry(12)->RadiusMax);
+        for (Player* target : targets)
+            if (caster->IsValidAttackTarget(target) && target->HasAura(SPELL_MARK_OF_NATURE) && !target->HasAura(SPELL_AURA_OF_NATURE))
+                target->CastSpell(target, SPELL_AURA_OF_NATURE, true);
+    }
 
-        class spell_mark_of_nature_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_mark_of_nature_SpellScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) override
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_MARK_OF_NATURE))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_AURA_OF_NATURE))
-                    return false;
-                return true;
-            }
-
-            void FilterTargets(std::list<WorldObject*>& targets)
-            {
-                targets.remove_if(MarkOfNatureTargetSelector());
-            }
-
-            void HandleEffect(SpellEffIndex effIndex)
-            {
-                PreventHitDefaultEffect(effIndex);
-                GetHitUnit()->CastSpell(GetHitUnit(), SPELL_AURA_OF_NATURE, true);
-            }
-
-            void Register() override
-            {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_mark_of_nature_SpellScript::FilterTargets, EFFECT_0, TARGET_DEST_CASTER);
-                OnEffectHitTarget += SpellEffectFn(spell_mark_of_nature_SpellScript::HandleEffect, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
-            }
-        };
-
-        SpellScript* GetSpellScript() const override
-        {
-            return new spell_mark_of_nature_SpellScript();
-        }
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_mark_of_nature::HandlePeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
 };
 
 void AddSC_emerald_dragons()
@@ -779,5 +757,5 @@ void AddSC_emerald_dragons()
 
     // dragon spellscripts
     new spell_dream_fog_sleep();
-    new spell_mark_of_nature();
+    new aura_script<spell_mark_of_nature>("spell_mark_of_nature");
 };

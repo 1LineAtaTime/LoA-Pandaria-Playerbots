@@ -175,6 +175,10 @@ struct TC_GAME_API CreatureTemplate
     float   speed_run;
     float   scale;
     uint32  rank;
+    // Authored world melee values; scaled actors retain the class/level curve.
+    float   mindmg = 0.0f;
+    float   maxdmg = 0.0f;
+    uint32  attackpower = 0;
     uint32  dmgschool;
     float   dmg_multiplier;                                 // runtime-only (default 1.0, not loaded from DB); used by world events
     uint32  BaseAttackTime;
@@ -203,6 +207,7 @@ struct TC_GAME_API CreatureTemplate
     uint32  MovementType;
     CreatureMovementData Movement;
     float   HoverHeight;
+    float   DetectionRange = 20.0f; // Published per-template same-level aggro radius.
     float   ModHealth;
     float   ModMana;
     float   ModManaExtra;                                   // Added in 4.x, this value is usually 2 for a small group of creatures with double mana

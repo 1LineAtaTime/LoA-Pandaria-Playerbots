@@ -1425,6 +1425,9 @@ class ObjectMgr
 
         void SetHighestGuids();
 
+        // corpse.corpseGuid is unique across every map and instance.
+        ObjectGuid::LowType GenerateCorpseID() { return GetGuidSequenceGenerator<HighGuid::Corpse>().Generate(); }
+
         template<HighGuid type>
         inline ObjectGuidGeneratorBase& GetGenerator()
         {

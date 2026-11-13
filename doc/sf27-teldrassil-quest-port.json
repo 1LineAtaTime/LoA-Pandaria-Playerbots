@@ -1,0 +1,17 @@
+{
+  "pin": "a69eda918b5bd416078fd8d832560d0fd4fb9023",
+  "source_sha256": "abd3e8f6249f260880a721255055b6fe8b35ffa999556f3a5beee2eba7757ef6",
+  "source": "src/server/scripts/Kalimdor/zone_teldrassil.cpp",
+  "added": [
+    "npc_githyiss",
+    "npc_tarindrella",
+    "npc_bough_of_corruption",
+    "npc_citarre_mapleheart",
+    "npc_barrow_den_nightsaber"
+  ],
+  "preserved": [
+    "npc_mist",
+    "at_barrow_den_door"
+  ],
+  "status": "prepared; compile/deployment pending"
+}

@@ -705,20 +705,15 @@ class spell_light_wall_cosmetic : public SpellScriptLoader
             PrepareSpellScript(spell_light_wall_cosmetic_SpellScript);
 
 
-            void FilterTargets(std::list<WorldObject*>& targets)
+            void SelectTarget(WorldObject*& target)
             {
-                targets.remove_if ([](WorldObject* target) -> bool
-                {
-                    if (Creature* creature = target->ToCreature())
-                        return creature->GetEntry() != NPC_LIGHT_WALL_STALKER;
-
-                    return true;
-                });
+                if (target && (!target->ToCreature() || target->GetEntry() != NPC_LIGHT_WALL_STALKER))
+                    target = nullptr;
             }
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_light_wall_cosmetic_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+                OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_light_wall_cosmetic_SpellScript::SelectTarget, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
             }
         };
 

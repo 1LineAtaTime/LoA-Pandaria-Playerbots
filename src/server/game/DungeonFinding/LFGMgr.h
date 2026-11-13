@@ -413,6 +413,9 @@ class LFGMgr
         PartyResult CanBoot(ObjectGuid kguid, ObjectGuid vguid, uint32& timeLeft);
         /// Returns the number of boot votes needed for a specific group to boot a player
         uint8 GetBootVotesNeeded(ObjectGuid gguid);
+        bool IsPlayerbotMember(ObjectGuid guid) const;
+        bool IsSoloHumanLeader(Group const* group, Player const* player) const;
+        bool CanLeaderRemoveBot(Player const* player, ObjectGuid victim);
         /// Inits new proposal to boot a player
         void InitBoot(ObjectGuid gguid, ObjectGuid kguid, ObjectGuid vguid, std::string const& reason);
         /// Updates player boot proposal with new player answer

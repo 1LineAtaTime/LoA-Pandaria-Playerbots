@@ -1,0 +1,3758 @@
+{
+  "pin": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "sources": [
+    {
+      "file": "2026_08_17_world_01.sql",
+      "sha256": "b86143d361c639f3119af88d256fc51cf7237b78090b1661659dfe0b96baf0da",
+      "source_statements": 3,
+      "output_statements": 2,
+      "adaptations": [
+        "keyed upserts retain unrelated creature_queststarter content"
+      ]
+    },
+    {
+      "file": "2026_08_24_world_02.sql",
+      "sha256": "8ce843726a04f4c2871987ee7ade99bc5e45ab119fe187c289a2aaa93ac5fcf7",
+      "source_statements": 13,
+      "output_statements": 12,
+      "adaptations": [
+        "keyed upserts retain unrelated creature_template_addon content"
+      ]
+    },
+    {
+      "file": "2026_08_25_world_00.sql",
+      "sha256": "60035465d909382fac2eeba6b63799433e1650427a12811c6fcfdbde35ca7820",
+      "source_statements": 3,
+      "output_statements": 3,
+      "adaptations": [
+        "gameobject flags use active addon table and preserve other bits"
+      ]
+    },
+    {
+      "file": "2026_08_25_world_01.sql",
+      "sha256": "52ecd17170f074c87c757342498ff080b04060c1b52006c4ccd3d4e33ab7279f",
+      "source_statements": 5,
+      "output_statements": 6,
+      "adaptations": [
+        "mirror exploration/event flag into active quest addon"
+      ]
+    },
+    {
+      "file": "2026_08_31_world_01.sql",
+      "sha256": "e61ce2e65cad664c0738233193707d29b22137f1c6d52b2d769710e66c11074f",
+      "source_statements": 1,
+      "output_statements": 0,
+      "adaptations": [
+        "equivalent: unused legacy create-spell table; local DBC skill/race/class and SpellLevel gates remain active"
+      ]
+    },
+    {
+      "file": "2026_09_01_world_01.sql",
+      "sha256": "073b9cca1ed63e6b8256ae8517acbbc912be8220e8767d60a4aab3cf3e7dd718",
+      "source_statements": 1,
+      "output_statements": 1,
+      "adaptations": [
+        "gameobject flags use active addon table and preserve other bits"
+      ]
+    },
+    {
+      "file": "2026_09_01_world_02.sql",
+      "sha256": "5fa92c7a0dfe782e6e338c3a88f0f6e1e92086a4ac1369cd6be3c3d66d1aff96",
+      "source_statements": 2,
+      "output_statements": 2,
+      "adaptations": []
+    },
+    {
+      "file": "2026_09_06_world_00.sql",
+      "sha256": "34235bbc5449aceed8044c1312fb71cb4913b11954608977e93308ad04e5008d",
+      "source_statements": 6,
+      "output_statements": 4,
+      "adaptations": [
+        "keyed upserts retain unrelated creature_questender content",
+        "keyed upserts retain unrelated creature_queststarter content"
+      ]
+    },
+    {
+      "file": "2026_09_06_world_01.sql",
+      "sha256": "943c5d06adf7483f895b4e85d33cbd7e5de8627ea46435ab4c1224ed1dfee0aa",
+      "source_statements": 8,
+      "output_statements": 6,
+      "adaptations": [
+        "keyed upserts retain unrelated gossip_menu content",
+        "keyed upserts retain unrelated gossip_menu_option content"
+      ]
+    },
+    {
+      "file": "2026_09_14_world_00.sql",
+      "sha256": "bb9e976705d870e38c7d400f13b9e5023f5279a63a4901cf725c90fb0eb2925d",
+      "source_statements": 2,
+      "output_statements": 1,
+      "adaptations": [
+        "keyed upserts retain unrelated trinity_string content"
+      ]
+    },
+    {
+      "file": "2026_09_21_world_04.sql",
+      "sha256": "86415a1e94c793f35f4888d12f618a0029925c04ba12882379874ee12ae8626a",
+      "source_statements": 2,
+      "output_statements": 2,
+      "adaptations": []
+    },
+    {
+      "file": "2026_09_21_world_09.sql",
+      "sha256": "15df641399b29e52f0caf915fe33a77cd43c06f5261e2d1d1b75aa315bbec953",
+      "source_statements": 4,
+      "output_statements": 3,
+      "adaptations": [
+        "keyed upserts retain unrelated npc_spellclick_spells content"
+      ]
+    },
+    {
+      "file": "2026_10_04_world_02.sql",
+      "sha256": "f52547a95f8fac740ff1b4f5086c7db201fdd081ae64a59f4df1b9f9d8294b2d",
+      "source_statements": 4,
+      "output_statements": 3,
+      "adaptations": [
+        "keyed upserts retain unrelated creature_queststarter content"
+      ]
+    },
+    {
+      "file": "2026_10_22_world_00.sql",
+      "sha256": "13607a0297183c1110737effa4984b0a47034c6a24b8c140940c14ba397e799e",
+      "source_statements": 38,
+      "output_statements": 17,
+      "adaptations": [
+        "equivalent: unused legacy create-spell table; local DBC skill/race/class and SpellLevel gates remain active"
+      ]
+    },
+    {
+      "file": "2026_11_06_world_01.sql",
+      "sha256": "a4ec88b2a6c92c6796dbe02ea40b7d758fec70eca27d4fbd3c131ffad0e2025d",
+      "source_statements": 6,
+      "output_statements": 5,
+      "adaptations": [
+        "keyed upserts retain unrelated npc_trainer content"
+      ]
+    },
+    {
+      "file": "2026_11_06_world_02.sql",
+      "sha256": "32151951ece6ccb01a20498155a88c003d91f85c71b8fd949d274fd80070744e",
+      "source_statements": 3,
+      "output_statements": 3,
+      "adaptations": []
+    },
+    {
+      "file": "2026_11_06_world_03.sql",
+      "sha256": "2854f68756388888514907b615147bae8ecc608ce84dfa2e58652dbf4cb7220a",
+      "source_statements": 1,
+      "output_statements": 1,
+      "adaptations": []
+    }
+  ],
+  "tables": [
+    "conditions",
+    "creature_questender",
+    "creature_queststarter",
+    "creature_template",
+    "creature_template_addon",
+    "disables",
+    "gameobject_loot_template",
+    "gameobject_template_addon",
+    "gossip_menu",
+    "gossip_menu_option",
+    "npc_spellclick_spells",
+    "npc_trainer",
+    "playercreateinfo_action",
+    "quest_objective",
+    "quest_template",
+    "quest_template_addon",
+    "smart_scripts",
+    "trinity_string"
+  ],
+  "desired": [
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "43923",
+        "source_type": "0",
+        "id": "0",
+        "link": "0",
+        "event_type": "0",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "4000",
+        "event_param2": "6000",
+        "event_param3": "9000",
+        "event_param4": "11000",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "81193",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "2",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Forlorn Spirit - In Combat - Cast Unrelenting Anguish'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "43923",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "1",
+        "event_param1": "82198",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "80",
+        "action_param1": "4392300",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "1",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Forlorn Spirit - On Spellhit - Run Script'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "4392300",
+        "source_type": "9",
+        "id": "0",
+        "link": "0",
+        "event_type": "0",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "2000",
+        "event_param2": "2000",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "37",
+        "action_param1": "0",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "1",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Forlorn Spirit - On Script - Die'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "creature_template_addon",
+      "values": {
+        "entry": "43925",
+        "path_id": "0",
+        "mount": "0",
+        "bytes1": "0",
+        "bytes2": "0",
+        "emote": "0",
+        "auras": "'82199'",
+        "StandState": "0",
+        "VisFlags": "0",
+        "AnimTier": "0",
+        "SheathState": "0",
+        "PvPFlags": "0"
+      },
+      "keys": [
+        "entry"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "43925",
+        "source_type": "0",
+        "id": "0",
+        "link": "0",
+        "event_type": "54",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "0",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "80",
+        "action_param1": "4392500",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "1",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Soothing Incense Cloud - On Summon - Run Script'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "4392500",
+        "source_type": "9",
+        "id": "0",
+        "link": "0",
+        "event_type": "0",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "2000",
+        "event_param2": "2000",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "33",
+        "action_param1": "43930",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Soothing Incense Cloud - On Script - Give Credit'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "4392500",
+        "source_type": "9",
+        "id": "1",
+        "link": "0",
+        "event_type": "0",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "0",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "41",
+        "action_param1": "2000",
+        "action_param2": "2000",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "1",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Soothing Incense Cloud - On Script - Despawn'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "quest_objective",
+      "values": {
+        "questId": "26383",
+        "id": "2638300",
+        "index": "0",
+        "type": "10",
+        "objectId": "0",
+        "amount": "0",
+        "flags": "0",
+        "description": "'Use the teleportation tree in western Darnassus to reach Rut''theran Village, then speak to Vesprystus to secure a ride to Lor''danel.'"
+      },
+      "keys": [
+        "id",
+        "index",
+        "questId"
+      ]
+    },
+    {
+      "table": "quest_objective",
+      "values": {
+        "questId": "26385",
+        "id": "2638500",
+        "index": "0",
+        "type": "10",
+        "objectId": "0",
+        "amount": "0",
+        "flags": "0",
+        "description": "'Speak to Vesprystus in Rut''theran Village to secure a ride to Lor''danel.'"
+      },
+      "keys": [
+        "id",
+        "index",
+        "questId"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "3838",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "64",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "0",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "15",
+        "action_param1": "26383",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Vesprystus - On Gossip Hello - Credit quest 26383'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "3838",
+        "source_type": "0",
+        "id": "4",
+        "link": "0",
+        "event_type": "64",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "0",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "15",
+        "action_param1": "26385",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Vesprystus - On Gossip Hello - Credit quest 26385'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "gameobject_loot_template",
+      "values": {
+        "entry": "14980",
+        "item": "16332",
+        "ChanceOrQuestChance": "100",
+        "lootmode": "1",
+        "groupid": "0",
+        "mincountOrRef": "1",
+        "maxcount": "1"
+      },
+      "keys": [
+        "entry",
+        "item",
+        "lootmode"
+      ]
+    },
+    {
+      "table": "creature_queststarter",
+      "values": {
+        "id": "20604",
+        "quest": "7792"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_queststarter",
+      "values": {
+        "id": "20604",
+        "quest": "7798"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_queststarter",
+      "values": {
+        "id": "20604",
+        "quest": "10356"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_queststarter",
+      "values": {
+        "id": "20604",
+        "quest": "10357"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_queststarter",
+      "values": {
+        "id": "20604",
+        "quest": "10358"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_questender",
+      "values": {
+        "id": "20604",
+        "quest": "7792"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_questender",
+      "values": {
+        "id": "20604",
+        "quest": "7798"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_questender",
+      "values": {
+        "id": "20604",
+        "quest": "10356"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_questender",
+      "values": {
+        "id": "20604",
+        "quest": "10357"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "creature_questender",
+      "values": {
+        "id": "20604",
+        "quest": "10358"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "quest_objective",
+      "values": {
+        "questId": "10358",
+        "id": "1035800",
+        "index": "0",
+        "type": "1",
+        "objectId": "14047",
+        "amount": "20",
+        "flags": "0",
+        "description": "''"
+      },
+      "keys": [
+        "id",
+        "index",
+        "questId"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "708",
+        "TextID": "1260",
+        "entry": "708",
+        "text_id": "1260"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "1626",
+        "TextID": "2280",
+        "entry": "1626",
+        "text_id": "2280"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "5108",
+        "TextID": "6159",
+        "entry": "5108",
+        "text_id": "6159"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "5461",
+        "TextID": "6513",
+        "entry": "5461",
+        "text_id": "6513"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "5462",
+        "TextID": "6514",
+        "entry": "5462",
+        "text_id": "6514"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "7440",
+        "TextID": "9008",
+        "entry": "7440",
+        "text_id": "9008"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "7484",
+        "TextID": "9071",
+        "entry": "7484",
+        "text_id": "9071"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "7487",
+        "TextID": "9073",
+        "entry": "7487",
+        "text_id": "9073"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu",
+      "values": {
+        "MenuID": "9838",
+        "TextID": "13349",
+        "entry": "9838",
+        "text_id": "13349"
+      },
+      "keys": [
+        "entry",
+        "text_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "708",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "708",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "708",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "708",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "1626",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "1626",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "1626",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "1626",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "5108",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "5108",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "5108",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "5108",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "5461",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "5461",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "5461",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "5461",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "5462",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "5462",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "5462",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "5462",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "7440",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "7440",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "7440",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "7440",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "7484",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "7484",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "7484",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "7484",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "7487",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "7487",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "7487",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "7487",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "9838",
+        "OptionID": "0",
+        "OptionIcon": "7",
+        "OptionText": "'How do I form a guild?'",
+        "OptionBroadcastTextID": "3413",
+        "OptionType": "10",
+        "OptionNpcFlag": "262144",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "9838",
+        "id": "0",
+        "option_icon": "7",
+        "option_text": "'How do I form a guild?'",
+        "option_id": "10",
+        "npc_option_npcflag": "262144",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "gossip_menu_option",
+      "values": {
+        "MenuID": "9838",
+        "OptionID": "1",
+        "OptionIcon": "8",
+        "OptionText": "'I want to create a guild crest.'",
+        "OptionBroadcastTextID": "3415",
+        "OptionType": "11",
+        "OptionNpcFlag": "524288",
+        "ActionMenuID": "0",
+        "ActionPoiID": "0",
+        "BoxCoded": "0",
+        "BoxMoney": "0",
+        "BoxText": "NULL",
+        "BoxBroadcastTextID": "0",
+        "menu_id": "9838",
+        "id": "1",
+        "option_icon": "8",
+        "option_text": "'I want to create a guild crest.'",
+        "option_id": "11",
+        "npc_option_npcflag": "524288",
+        "action_menu_id": "0",
+        "action_poi_id": "0",
+        "box_coded": "0",
+        "box_money": "0",
+        "box_text": "NULL"
+      },
+      "keys": [
+        "id",
+        "menu_id"
+      ]
+    },
+    {
+      "table": "trinity_string",
+      "values": {
+        "entry": "2030",
+        "content_default": "'Ticket %u completed and its response was sent to the player.'"
+      },
+      "keys": [
+        "entry"
+      ]
+    },
+    {
+      "table": "disables",
+      "values": {
+        "sourceType": "0",
+        "entry": "32979",
+        "flags": "64",
+        "params_0": "''",
+        "params_1": "''",
+        "comment": "'Ignore LOS for Flaming Torch - quest 10078 bunnies sit inside the towers'"
+      },
+      "keys": [
+        "entry",
+        "sourceType"
+      ]
+    },
+    {
+      "table": "npc_spellclick_spells",
+      "values": {
+        "npc_entry": "48671",
+        "spell_id": "90672",
+        "cast_flags": "1",
+        "user_type": "0"
+      },
+      "keys": [
+        "npc_entry",
+        "spell_id"
+      ]
+    },
+    {
+      "table": "conditions",
+      "values": {
+        "SourceTypeOrReferenceId": "19",
+        "SourceGroup": "0",
+        "SourceEntry": "13661",
+        "SourceId": "0",
+        "ElseGroup": "0",
+        "ConditionTypeOrReference": "8",
+        "ConditionTarget": "0",
+        "ConditionValue1": "13655",
+        "ConditionValue2": "0",
+        "ConditionValue3": "0",
+        "NegativeCondition": "0",
+        "ErrorType": "0",
+        "ErrorTextId": "0",
+        "ScriptName": "''",
+        "Comment": "'Heartfelt Appreciation requires Explorers'' League Document (2 of 6) rewarded'"
+      },
+      "keys": [
+        "ConditionTarget",
+        "ConditionTypeOrReference",
+        "ConditionValue1",
+        "ConditionValue2",
+        "ConditionValue3",
+        "ElseGroup",
+        "SourceEntry",
+        "SourceGroup",
+        "SourceId",
+        "SourceTypeOrReferenceId"
+      ]
+    },
+    {
+      "table": "conditions",
+      "values": {
+        "SourceTypeOrReferenceId": "19",
+        "SourceGroup": "0",
+        "SourceEntry": "13661",
+        "SourceId": "0",
+        "ElseGroup": "0",
+        "ConditionTypeOrReference": "8",
+        "ConditionTarget": "0",
+        "ConditionValue1": "13656",
+        "ConditionValue2": "0",
+        "ConditionValue3": "0",
+        "NegativeCondition": "0",
+        "ErrorType": "0",
+        "ErrorTextId": "0",
+        "ScriptName": "''",
+        "Comment": "'Heartfelt Appreciation requires Explorers'' League Document (1 of 6) rewarded'"
+      },
+      "keys": [
+        "ConditionTarget",
+        "ConditionTypeOrReference",
+        "ConditionValue1",
+        "ConditionValue2",
+        "ConditionValue3",
+        "ElseGroup",
+        "SourceEntry",
+        "SourceGroup",
+        "SourceId",
+        "SourceTypeOrReferenceId"
+      ]
+    },
+    {
+      "table": "conditions",
+      "values": {
+        "SourceTypeOrReferenceId": "19",
+        "SourceGroup": "0",
+        "SourceEntry": "13661",
+        "SourceId": "0",
+        "ElseGroup": "0",
+        "ConditionTypeOrReference": "8",
+        "ConditionTarget": "0",
+        "ConditionValue1": "13657",
+        "ConditionValue2": "0",
+        "ConditionValue3": "0",
+        "NegativeCondition": "0",
+        "ErrorType": "0",
+        "ErrorTextId": "0",
+        "ScriptName": "''",
+        "Comment": "'Heartfelt Appreciation requires Explorers'' League Document (3 of 6) rewarded'"
+      },
+      "keys": [
+        "ConditionTarget",
+        "ConditionTypeOrReference",
+        "ConditionValue1",
+        "ConditionValue2",
+        "ConditionValue3",
+        "ElseGroup",
+        "SourceEntry",
+        "SourceGroup",
+        "SourceId",
+        "SourceTypeOrReferenceId"
+      ]
+    },
+    {
+      "table": "conditions",
+      "values": {
+        "SourceTypeOrReferenceId": "19",
+        "SourceGroup": "0",
+        "SourceEntry": "13661",
+        "SourceId": "0",
+        "ElseGroup": "0",
+        "ConditionTypeOrReference": "8",
+        "ConditionTarget": "0",
+        "ConditionValue1": "13658",
+        "ConditionValue2": "0",
+        "ConditionValue3": "0",
+        "NegativeCondition": "0",
+        "ErrorType": "0",
+        "ErrorTextId": "0",
+        "ScriptName": "''",
+        "Comment": "'Heartfelt Appreciation requires Explorers'' League Document (4 of 6) rewarded'"
+      },
+      "keys": [
+        "ConditionTarget",
+        "ConditionTypeOrReference",
+        "ConditionValue1",
+        "ConditionValue2",
+        "ConditionValue3",
+        "ElseGroup",
+        "SourceEntry",
+        "SourceGroup",
+        "SourceId",
+        "SourceTypeOrReferenceId"
+      ]
+    },
+    {
+      "table": "conditions",
+      "values": {
+        "SourceTypeOrReferenceId": "19",
+        "SourceGroup": "0",
+        "SourceEntry": "13661",
+        "SourceId": "0",
+        "ElseGroup": "0",
+        "ConditionTypeOrReference": "8",
+        "ConditionTarget": "0",
+        "ConditionValue1": "13659",
+        "ConditionValue2": "0",
+        "ConditionValue3": "0",
+        "NegativeCondition": "0",
+        "ErrorType": "0",
+        "ErrorTextId": "0",
+        "ScriptName": "''",
+        "Comment": "'Heartfelt Appreciation requires Explorers'' League Document (6 of 6) rewarded'"
+      },
+      "keys": [
+        "ConditionTarget",
+        "ConditionTypeOrReference",
+        "ConditionValue1",
+        "ConditionValue2",
+        "ConditionValue3",
+        "ElseGroup",
+        "SourceEntry",
+        "SourceGroup",
+        "SourceId",
+        "SourceTypeOrReferenceId"
+      ]
+    },
+    {
+      "table": "conditions",
+      "values": {
+        "SourceTypeOrReferenceId": "19",
+        "SourceGroup": "0",
+        "SourceEntry": "13661",
+        "SourceId": "0",
+        "ElseGroup": "0",
+        "ConditionTypeOrReference": "8",
+        "ConditionTarget": "0",
+        "ConditionValue1": "13660",
+        "ConditionValue2": "0",
+        "ConditionValue3": "0",
+        "NegativeCondition": "0",
+        "ErrorType": "0",
+        "ErrorTextId": "0",
+        "ScriptName": "''",
+        "Comment": "'Heartfelt Appreciation requires Explorers'' League Document (5 of 6) rewarded'"
+      },
+      "keys": [
+        "ConditionTarget",
+        "ConditionTypeOrReference",
+        "ConditionValue1",
+        "ConditionValue2",
+        "ConditionValue3",
+        "ElseGroup",
+        "SourceEntry",
+        "SourceGroup",
+        "SourceId",
+        "SourceTypeOrReferenceId"
+      ]
+    },
+    {
+      "table": "creature_queststarter",
+      "values": {
+        "id": "1153",
+        "quest": "13661"
+      },
+      "keys": [
+        "id",
+        "quest"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "2",
+        "class": "7",
+        "button": "9",
+        "action": "33697",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "2",
+        "class": "10",
+        "button": "9",
+        "action": "33697",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "2",
+        "class": "10",
+        "button": "81",
+        "action": "33697",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "11",
+        "class": "1",
+        "button": "9",
+        "action": "28880",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "11",
+        "class": "1",
+        "button": "81",
+        "action": "28880",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "11",
+        "class": "10",
+        "button": "9",
+        "action": "121093",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "11",
+        "class": "10",
+        "button": "81",
+        "action": "121093",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "10",
+        "class": "1",
+        "button": "9",
+        "action": "69179",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "10",
+        "class": "1",
+        "button": "81",
+        "action": "69179",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "10",
+        "class": "10",
+        "button": "9",
+        "action": "129597",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "playercreateinfo_action",
+      "values": {
+        "race": "10",
+        "class": "10",
+        "button": "81",
+        "action": "129597",
+        "type": "0"
+      },
+      "keys": [
+        "button",
+        "class",
+        "race"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2020",
+        "spellcost": "10",
+        "reqskill": "164",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2153",
+        "spellcost": "50",
+        "reqskill": "165",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2155",
+        "spellcost": "10",
+        "reqskill": "165",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2160",
+        "spellcost": "100",
+        "reqskill": "165",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2161",
+        "spellcost": "100",
+        "reqskill": "165",
+        "reqskillvalue": "55",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2162",
+        "spellcost": "100",
+        "reqskill": "165",
+        "reqskillvalue": "60",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2275",
+        "spellcost": "10",
+        "reqskill": "171",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2331",
+        "spellcost": "100",
+        "reqskill": "171",
+        "reqskillvalue": "25",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2332",
+        "spellcost": "150",
+        "reqskill": "171",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2334",
+        "spellcost": "250",
+        "reqskill": "171",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2337",
+        "spellcost": "1000",
+        "reqskill": "171",
+        "reqskillvalue": "55",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2372",
+        "spellcost": "10",
+        "reqskill": "182",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2385",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "10",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2386",
+        "spellcost": "200",
+        "reqskill": "197",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2392",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2393",
+        "spellcost": "25",
+        "reqskill": "197",
+        "reqskillvalue": "1",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2394",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2395",
+        "spellcost": "300",
+        "reqskill": "197",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2396",
+        "spellcost": "200",
+        "reqskill": "197",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2397",
+        "spellcost": "200",
+        "reqskill": "197",
+        "reqskillvalue": "60",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2402",
+        "spellcost": "250",
+        "reqskill": "197",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2581",
+        "spellcost": "10",
+        "reqskill": "186",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2658",
+        "spellcost": "200",
+        "reqskill": "186",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2659",
+        "spellcost": "200",
+        "reqskill": "186",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2661",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2662",
+        "spellcost": "50",
+        "reqskill": "164",
+        "reqskillvalue": "1",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2665",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2666",
+        "spellcost": "200",
+        "reqskill": "164",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2737",
+        "spellcost": "50",
+        "reqskill": "164",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2738",
+        "spellcost": "50",
+        "reqskill": "164",
+        "reqskillvalue": "20",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2739",
+        "spellcost": "50",
+        "reqskill": "164",
+        "reqskillvalue": "25",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "2964",
+        "spellcost": "100",
+        "reqskill": "197",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3116",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3170",
+        "spellcost": "50",
+        "reqskill": "171",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3293",
+        "spellcost": "250",
+        "reqskill": "164",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3294",
+        "spellcost": "500",
+        "reqskill": "164",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3304",
+        "spellcost": "50",
+        "reqskill": "186",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3319",
+        "spellcost": "50",
+        "reqskill": "164",
+        "reqskillvalue": "20",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3320",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "25",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3323",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3324",
+        "spellcost": "200",
+        "reqskill": "164",
+        "reqskillvalue": "45",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3326",
+        "spellcost": "250",
+        "reqskill": "164",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3753",
+        "spellcost": "75",
+        "reqskill": "165",
+        "reqskillvalue": "25",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3755",
+        "spellcost": "100",
+        "reqskill": "197",
+        "reqskillvalue": "45",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3756",
+        "spellcost": "150",
+        "reqskill": "165",
+        "reqskillvalue": "55",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3759",
+        "spellcost": "200",
+        "reqskill": "165",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3816",
+        "spellcost": "50",
+        "reqskill": "165",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3840",
+        "spellcost": "100",
+        "reqskill": "197",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3841",
+        "spellcost": "200",
+        "reqskill": "197",
+        "reqskillvalue": "60",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3842",
+        "spellcost": "300",
+        "reqskill": "197",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3911",
+        "spellcost": "10",
+        "reqskill": "197",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3914",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3922",
+        "spellcost": "115",
+        "reqskill": "202",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3923",
+        "spellcost": "130",
+        "reqskill": "202",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3925",
+        "spellcost": "150",
+        "reqskill": "202",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3929",
+        "spellcost": "250",
+        "reqskill": "202",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3931",
+        "spellcost": "250",
+        "reqskill": "202",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "3977",
+        "spellcost": "200",
+        "reqskill": "202",
+        "reqskillvalue": "60",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "4039",
+        "spellcost": "10",
+        "reqskill": "202",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7408",
+        "spellcost": "300",
+        "reqskill": "164",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7414",
+        "spellcost": "10",
+        "reqskill": "333",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7420",
+        "spellcost": "50",
+        "reqskill": "333",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7426",
+        "spellcost": "100",
+        "reqskill": "333",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7430",
+        "spellcost": "150",
+        "reqskill": "202",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7457",
+        "spellcost": "250",
+        "reqskill": "333",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7623",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7624",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7748",
+        "spellcost": "250",
+        "reqskill": "333",
+        "reqskillvalue": "60",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "7771",
+        "spellcost": "200",
+        "reqskill": "333",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "8465",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "40",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "8615",
+        "spellcost": "10",
+        "reqskill": "393",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "8776",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "8880",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "9065",
+        "spellcost": "150",
+        "reqskill": "165",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "9983",
+        "spellcost": "100",
+        "reqskill": "164",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "12045",
+        "spellcost": "50",
+        "reqskill": "197",
+        "reqskillvalue": "20",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "12046",
+        "spellcost": "300",
+        "reqskill": "197",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "14293",
+        "spellcost": "50",
+        "reqskill": "333",
+        "reqskillvalue": "10",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "14807",
+        "spellcost": "200",
+        "reqskill": "333",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25245",
+        "spellcost": "10",
+        "reqskill": "755",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25278",
+        "spellcost": "200",
+        "reqskill": "755",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25280",
+        "spellcost": "200",
+        "reqskill": "755",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25283",
+        "spellcost": "100",
+        "reqskill": "755",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25284",
+        "spellcost": "400",
+        "reqskill": "755",
+        "reqskillvalue": "60",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25287",
+        "spellcost": "400",
+        "reqskill": "755",
+        "reqskillvalue": "70",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "25490",
+        "spellcost": "300",
+        "reqskill": "755",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "26926",
+        "spellcost": "50",
+        "reqskill": "755",
+        "reqskillvalue": "5",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "26927",
+        "spellcost": "300",
+        "reqskill": "755",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "26928",
+        "spellcost": "100",
+        "reqskill": "755",
+        "reqskillvalue": "30",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "31252",
+        "spellcost": "100",
+        "reqskill": "755",
+        "reqskillvalue": "20",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "32178",
+        "spellcost": "100",
+        "reqskill": "755",
+        "reqskillvalue": "20",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "32179",
+        "spellcost": "100",
+        "reqskill": "755",
+        "reqskillvalue": "20",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "32801",
+        "spellcost": "200",
+        "reqskill": "755",
+        "reqskillvalue": "50",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "36523",
+        "spellcost": "600",
+        "reqskill": "755",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "37818",
+        "spellcost": "500",
+        "reqskill": "755",
+        "reqskillvalue": "65",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "45375",
+        "spellcost": "10",
+        "reqskill": "773",
+        "reqskillvalue": "0",
+        "reqlevel": "5"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "48248",
+        "spellcost": "50",
+        "reqskill": "773",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "50598",
+        "spellcost": "400",
+        "reqskill": "773",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "50605",
+        "spellcost": "400",
+        "reqskill": "773",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "50612",
+        "spellcost": "400",
+        "reqskill": "773",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "52739",
+        "spellcost": "150",
+        "reqskill": "773",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "52843",
+        "spellcost": "50",
+        "reqskill": "773",
+        "reqskillvalue": "35",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "53462",
+        "spellcost": "300",
+        "reqskill": "773",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "58472",
+        "spellcost": "50",
+        "reqskill": "773",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "58484",
+        "spellcost": "50",
+        "reqskill": "773",
+        "reqskillvalue": "15",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "201010",
+        "spell": "61288",
+        "spellcost": "1000",
+        "reqskill": "773",
+        "reqskillvalue": "75",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "47400",
+        "spell": "-201010",
+        "spellcost": "0",
+        "reqskill": "0",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "47418",
+        "spell": "-201010",
+        "spellcost": "0",
+        "reqskill": "0",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "47419",
+        "spell": "-201010",
+        "spellcost": "0",
+        "reqskill": "0",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "47420",
+        "spell": "-201010",
+        "spellcost": "0",
+        "reqskill": "0",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "npc_trainer",
+      "values": {
+        "entry": "50247",
+        "spell": "-201010",
+        "spellcost": "0",
+        "reqskill": "0",
+        "reqskillvalue": "0",
+        "reqlevel": "0"
+      },
+      "keys": [
+        "entry",
+        "spell"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "0",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "28730",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "61314",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - On Spellhit Arcane Torrent (mana) - Cast Quest Credit 8346'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "1",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "25046",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "61314",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - On Spellhit Arcane Torrent (energy) - Cast Quest Credit 8346'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "2",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "50613",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "61314",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - On Spellhit Arcane Torrent (runic power) - Cast Quest Credit 8346'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "3",
+        "link": "0",
+        "event_type": "0",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "4000",
+        "event_param2": "4000",
+        "event_param3": "10000",
+        "event_param4": "15000",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "25602",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "5",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - In Combat - Cast Faerie Fire'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "4",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "69179",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "61314",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - On Spellhit Arcane Torrent (rage) - Cast Quest Credit 8346'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "5",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "80483",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "61314",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - On Spellhit Arcane Torrent (focus) - Cast Quest Credit 8346'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    },
+    {
+      "table": "smart_scripts",
+      "values": {
+        "entryorguid": "15274",
+        "source_type": "0",
+        "id": "6",
+        "link": "0",
+        "event_type": "8",
+        "event_phase_mask": "0",
+        "event_chance": "100",
+        "event_flags": "0",
+        "event_param1": "129597",
+        "event_param2": "0",
+        "event_param3": "0",
+        "event_param4": "0",
+        "event_param5": "0",
+        "action_type": "11",
+        "action_param1": "61314",
+        "action_param2": "0",
+        "action_param3": "0",
+        "action_param4": "0",
+        "action_param5": "0",
+        "action_param6": "0",
+        "target_type": "7",
+        "target_param1": "0",
+        "target_param2": "0",
+        "target_param3": "0",
+        "target_x": "0",
+        "target_y": "0",
+        "target_z": "0",
+        "target_o": "0",
+        "comment": "'Mana Wyrm - On Spellhit Arcane Torrent (chi) - Cast Quest Credit 8346'"
+      },
+      "keys": [
+        "entryorguid",
+        "id",
+        "link",
+        "source_type"
+      ]
+    }
+  ],
+  "sql_sha256": "15e6b3ab00a28ad23fbaa81c385eb274f93dbea16a492d5d6529a76b313a57ba"
+}

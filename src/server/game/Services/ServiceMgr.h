@@ -19,6 +19,7 @@
 #define SERVICEMGR_H
 
 #include "Common.h"
+#include "DatabaseEnvFwd.h"
 #include <atomic>
 
 enum RidingSpells
@@ -156,7 +157,7 @@ public:
     void HandleChangeClass(Player* player, uint32 oldClass, uint32 newClass, uint32 /**/, std::string const& /**/);
     void HandleAntiError(Player* player, uint32, uint32, uint32, std::string const&);
 
-    void AddSpecificPlayerData(uint32 guid, uint32 oldRace, uint32 race, uint32 pClass, Player* player = nullptr, bool add = true, bool remove = false);
+    void AddSpecificPlayerData(uint32 guid, uint32 oldRace, uint32 race, uint32 pClass, Player* player = nullptr, bool add = true, bool remove = false, CharacterDatabaseTransaction transaction = nullptr);
 
     void DeletedItemNotify(uint32 guidLow, Item* item, uint8 type);
 

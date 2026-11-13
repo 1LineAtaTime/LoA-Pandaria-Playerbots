@@ -16,6 +16,8 @@
 */
 
 #include "ItemEnchantmentMgr.h"
+#include "RandomEnchantmentSelection.h"
+#include "Random.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
 #include "ObjectMgr.h"
@@ -65,7 +67,7 @@ void LoadRandomEnchantmentsTable()
             float chance = fields[2].GetFloat();
             ItemRandomEnchantmentType type = ItemRandomEnchantmentType(fields[3].GetUInt8());
 
-            if (chance < 0.000001f || chance > 100.0f)
+            if (!std::isfinite(chance) || chance < 0.000001f || chance > 100.0f)
             {
                 TC_LOG_ERROR("sql.sql", "Random item enchantment for entry %u type %u ench %u has invalid chance %f", entry, uint32(type), ench, chance);
                 continue;
@@ -116,30 +118,7 @@ uint32 GetItemEnchantMod(int32 entry, ItemRandomEnchantmentType type)
         return 0;
     }
 
-    double dRoll = rand_chance();
-    float fCount = 0;
-
-    for (auto&& ench_iter : tab->second)
-    {
-        fCount += ench_iter.chance;
-
-        if (fCount > dRoll)
-            return ench_iter.ench;
-    }
-
-    // we could get here only if sum of all enchantment chances is lower than 100%
-    dRoll = (irand(0, (int)floor(fCount * 100) + 1)) / 100;
-    fCount = 0;
-
-    for (auto&& ench_iter : tab->second)
-    {
-        fCount += ench_iter.chance;
-
-        if (fCount > dRoll)
-            return ench_iter.ench;
-    }
-
-    return 0;
+    return RandomEnchantmentSelection::Choose(tab->second, rand_norm());
 }
 
 uint32 GenerateEnchSuffixFactor(uint32 itemId)

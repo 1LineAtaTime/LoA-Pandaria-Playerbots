@@ -194,7 +194,7 @@ void FormationMovementGenerator::LaunchMovement(Creature* owner, Unit* target)
 
     Movement::MoveSplineInit init(owner);
     init.MoveTo(PositionToVector3(dest));
-    init.SetVelocity(velocity);
+    init.SetVelocity(velocity, __func__);
     init.Launch();
 
     _lastLeaderPosition = target->GetPosition();

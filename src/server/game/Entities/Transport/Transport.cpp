@@ -714,8 +714,13 @@ Creature* Transport::CreateNPCPassenger(uint32 guid, CreatureData const* data)
     Map* map = GetMap();
     Creature* creature = new Creature();
 
+    // DB passenger coordinates are local offsets. Supply the transport before
+    // loading so Creature::Create queries terrain at the world position.
+    creature->SetTransport(this);
+
     if (!creature->LoadCreatureFromDB(guid, map, false))
     {
+        creature->SetTransport(nullptr);
         delete creature;
         return NULL;
     }
@@ -762,8 +767,11 @@ GameObject* Transport::CreateGOPassenger(uint32 guid, GameObjectData const* data
     Map* map = GetMap();
     GameObject* go = new GameObject();
 
+    go->SetTransport(this);
+
     if (!go->LoadGameObjectFromDB(guid, map, false))
     {
+        go->SetTransport(nullptr);
         delete go;
         return NULL;
     }

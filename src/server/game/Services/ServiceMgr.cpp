@@ -348,9 +348,10 @@ void ServiceMgr::ExecutedServices(uint32 guid, uint8 type, std::string oldData, 
         uint8(type), guid, oldData.c_str(), newData.c_str(), TimeToTimestampStr(time(NULL)).c_str());
 }
 
-void ServiceMgr::AddSpecificPlayerData(uint32 guid, uint32 oldRace, uint32 race, uint32 playerClass, Player* player, bool add, bool remove)
+void ServiceMgr::AddSpecificPlayerData(uint32 guid, uint32 oldRace, uint32 race, uint32 playerClass, Player* player, bool add, bool remove, CharacterDatabaseTransaction transaction)
 {
-    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    bool const ownsTransaction = !transaction;
+    CharacterDatabaseTransaction trans = transaction ? transaction : CharacterDatabase.BeginTransaction();
     CharacterDatabasePreparedStatement* stmt;
 
     const uint32 raceQuests[MAX_RACES][120] =
@@ -575,7 +576,8 @@ void ServiceMgr::AddSpecificPlayerData(uint32 guid, uint32 oldRace, uint32 race,
         }
     }
 
-    CharacterDatabase.CommitTransaction(trans);
+    if (ownsTransaction)
+        CharacterDatabase.CommitTransaction(trans);
 }
 
 void ServiceMgr::_LoadPremium()

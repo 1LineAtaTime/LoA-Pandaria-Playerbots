@@ -33,6 +33,10 @@ EndScriptData */
 #include "GossipDef.h"
 #include "Transport.h"
 #include "Language.h"
+#include "ScriptedCreature.h"
+#include "ObjectAccessor.h"
+#include "SpellAuras.h"
+#include <sstream>
 
 #include <fstream>
 
@@ -94,6 +98,7 @@ public:
             { "los", &HandleDebugLoSCommand, rbac::RBAC_PERM_COMMAND_DEBUG_LOS, Trinity::ChatCommands::Console::No },
             { "moveflags", &HandleDebugMoveflagsCommand, rbac::RBAC_PERM_COMMAND_DEBUG_MOVEFLAGS, Trinity::ChatCommands::Console::No },
             { "transport", &HandleDebugTransportCommand, rbac::RBAC_PERM_COMMAND_DEBUG_TRANSPORT, Trinity::ChatCommands::Console::No },
+            { "questvisibility", &HandleQuestVisibility, rbac::RBAC_PERM_COMMAND_DEBUG_PHASE, Trinity::ChatCommands::Console::Yes },
             { "phase",          &HandleDebugPhaseCommand,               rbac::RBAC_PERM_COMMAND_DEBUG_PHASE, Trinity::ChatCommands::Console::No },
             { "casterror", &HandleDebugCastErrorCommand, rbac::RBAC_PERM_COMMAND_DEBUG_CASTERROR, Trinity::ChatCommands::Console::No },
             { "set", {
@@ -1676,6 +1681,47 @@ public:
             data.append(playersAddBuffer);
 
         handler->GetSession()->SendPacket(&data);
+        return true;
+    }
+
+    // Explicitly requested read-only snapshot: no aura/phase/quest mutation.
+    static bool HandleQuestVisibility(ChatHandler* handler, char const* args)
+    {
+        std::istringstream input(args ? args : "");
+        std::string name;
+        uint32 entry = 53566;
+        if (!(input >> name))
+            return false;
+        input >> entry;
+        Player* player = ObjectAccessor::FindPlayerByName(name);
+        if (!player || !player->IsInWorld())
+            return false;
+        std::ostringstream auras;
+        for (auto const& pair : player->GetAppliedAuras())
+            auras << pair.second->GetBase()->GetId() << ',';
+        TC_LOG_INFO("server.worldserver", "[QUESTVIS] player=%s map=%u zone=%u area=%u phase=%u invis=%u detect=%u xyz=%.2f/%.2f/%.2f auras=%s",
+            name.c_str(), player->GetMapId(), player->GetZoneId(), player->GetAreaId(), player->GetPhaseMask(),
+            player->m_invisibility.GetFlags(), player->m_invisibilityDetect.GetFlags(),
+            player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), auras.str().c_str());
+        std::list<Creature*> creatures;
+        GetCreatureListWithEntryInGrid(creatures, player, entry, 200.f);
+        for (Creature* npc : creatures)
+        {
+            std::ostringstream npcAuras;
+            for (auto const& pair : npc->GetAppliedAuras())
+                npcAuras << pair.second->GetBase()->GetId() << ',';
+            TC_LOG_INFO("server.worldserver", "[QUESTVIS] npc=%u spawn=%u phase=%u invis=%u detect=%u dist=%.2f playerSees=%u npcSees=%u samePhase=%u auras=%s",
+                npc->GetEntry(), npc->GetDBTableGUIDLow(), npc->GetPhaseMask(), npc->m_invisibility.GetFlags(), npc->m_invisibilityDetect.GetFlags(),
+                player->GetExactDist(npc), unsigned(player->CanSeeOrDetect(npc)), unsigned(npc->CanSeeOrDetect(player)),
+                unsigned(player->InSamePhase(npc)), npcAuras.str().c_str());
+        }
+        std::list<GameObject*> objects;
+        GetGameObjectListWithEntryInGrid(objects, player, entry, 200.f);
+        for (GameObject* object : objects)
+            TC_LOG_INFO("server.worldserver", "[QUESTVIS] object=%u spawn=%u phase=%u spawned=%u dist=%.2f playerSees=%u samePhase=%u",
+                object->GetEntry(), object->GetDBTableGUIDLow(), object->GetPhaseMask(), unsigned(object->isSpawned()),
+                player->GetExactDist(object), unsigned(player->CanSeeOrDetect(object)), unsigned(player->InSamePhase(object)));
+        handler->SendSysMessage("Read-only quest visibility snapshot written to Server.log.");
         return true;
     }
 

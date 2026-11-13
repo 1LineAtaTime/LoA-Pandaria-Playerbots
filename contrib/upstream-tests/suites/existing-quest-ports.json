@@ -1,0 +1,222 @@
+{
+  "name": "existing-native-ports-20261105",
+  "checks": [
+    {
+      "id": "native-port-34840",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34840;",
+      "expected_rows": [
+        [
+          "",
+          "npc_hot_rod_rolling_my_homies"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-34890",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34890;",
+      "expected_rows": [
+        [
+          "",
+          "npc_homies"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-34892",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34892;",
+      "expected_rows": [
+        [
+          "",
+          "npc_homies"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-34954",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34954;",
+      "expected_rows": [
+        [
+          "",
+          "npc_homies"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-34957",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34957;",
+      "expected_rows": [
+        [
+          "",
+          "npc_homies_summon"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-34958",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34958;",
+      "expected_rows": [
+        [
+          "",
+          "npc_homies_summon"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-34959",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=34959;",
+      "expected_rows": [
+        [
+          "",
+          "npc_homies_summon"
+        ]
+      ]
+    },
+    {
+      "id": "native-port-36331",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=36331;",
+      "expected_rows": [
+        [
+          "",
+          "npc_krennan_aranas_pillory"
+        ]
+      ]
+    },
+    {
+      "id": "homies-quest-hook",
+      "query": "SELECT ScriptName FROM quest_template_addon WHERE ID=14071;",
+      "expected_rows": [
+        [
+          "quest_rolling_with_my_homies"
+        ]
+      ]
+    },
+    {
+      "id": "no-foot-credit",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid IN (34890,34892,34954) AND source_type=0 AND action_type=33;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "horn-dispatcher",
+      "query": "SELECT ScriptName FROM spell_script_names WHERE spell_id=61178 ORDER BY ScriptName;",
+      "expected_rows": [
+        [
+          "spell_wintergrasp_grab_passenger"
+        ]
+      ]
+    },
+    {
+      "id": "radio",
+      "query": "SELECT ScriptName FROM spell_script_names WHERE spell_id=66299 ORDER BY ScriptName;",
+      "expected_rows": [
+        [
+          "spell_radio"
+        ]
+      ]
+    },
+    {
+      "id": "pillory-release",
+      "query": "SELECT ScriptName FROM spell_script_names WHERE spell_id=68639 AND ScriptName='spell_gilneas_forcecast_worgen_intro_completion';",
+      "expected_rows": [
+        [
+          "spell_gilneas_forcecast_worgen_intro_completion"
+        ]
+      ]
+    },
+    {
+      "id": "pillory-area",
+      "query": "SELECT quest_start,quest_end,autocast,quest_start_status,quest_end_status FROM spell_area WHERE spell=68630 AND area=4786;",
+      "expected_rows": [
+        [
+          14222,
+          14375,
+          1,
+          64,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "pillory-giver-phase",
+      "query": "SELECT phaseMask FROM creature WHERE guid=375757 AND id=36332;",
+      "expected_rows": [
+        [
+          4097
+        ]
+      ]
+    },
+    {
+      "id": "pillory-dialogue",
+      "query": "SELECT CreatureID,GroupID FROM creature_text WHERE (CreatureID=36331 AND GroupID=0) OR (CreatureID=36330 AND GroupID=1) OR (CreatureID=36332 AND GroupID IN (0,2)) ORDER BY CreatureID,GroupID;",
+      "expected_rows": [
+        [
+          36330,
+          1
+        ],
+        [
+          36331,
+          0
+        ],
+        [
+          36332,
+          0
+        ],
+        [
+          36332,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "legacy-boat-preserved",
+      "query": "SELECT command,datalong,datalong2,delay FROM event_scripts WHERE id=21888 ORDER BY datalong,delay,datalong2;",
+      "expected_rows": [
+        [
+          10,
+          34749,
+          300000,
+          0
+        ],
+        [
+          10,
+          34782,
+          300000,
+          0
+        ],
+        [
+          10,
+          34790,
+          120000,
+          0
+        ],
+        [
+          10,
+          34790,
+          120000,
+          0
+        ],
+        [
+          10,
+          34790,
+          120000,
+          0
+        ],
+        [
+          10,
+          34790,
+          120000,
+          0
+        ],
+        [
+          10,
+          52235,
+          1000,
+          1
+        ]
+      ]
+    }
+  ]
+}

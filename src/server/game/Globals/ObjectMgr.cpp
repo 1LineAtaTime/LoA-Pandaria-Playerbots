@@ -1,3 +1,4 @@
+#include "AuthoredCreatureDamage.h"
 /*
 * This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
@@ -55,6 +56,7 @@
 #include "Util.h"
 #include "DBCStructure.h"
 #include "Realm.h"
+#include "QuestAreaTriggerPolicy.h"
 
 ScriptMapMap sSpellScripts;
 ScriptMapMap sEventScripts;
@@ -439,9 +441,7 @@ void ObjectMgr::LoadCreatureTemplates()
     //                                            73           74         75           76           77          78            79          80          81          82          83
                                               "HoverHeight, Health_mod, Mana_mod, Mana_mod_extra, Armor_mod, RacialLeader, questItem1, questItem2, questItem3, questItem4, questItem5, "
     //                                            84           85          86           87            88                   89               90          91
-                                              " questItem6, movementId, RegenHealth, VignetteID, TrackingQuestID,  mechanic_immune_mask, flags_extra, ScriptName, "
-    //                                            92 (read as fields[87])
-                                              "DamageModifier "
+                                              " questItem6, movementId, RegenHealth, VignetteID, TrackingQuestID,  mechanic_immune_mask, flags_extra, ScriptName, ct.mindmg, ct.maxdmg, ct.attackpower, ct.detection_range, ct.sf27_damage_multiplier, ct.DamageModifier "
                                               "FROM creature_template ct LEFT JOIN creature_template_movement ctm ON ct.entry = ctm.CreatureId;");
 
     if (!result)
@@ -450,6 +450,7 @@ void ObjectMgr::LoadCreatureTemplates()
         return;
     }
 
+    ClearAuthoredCreatureDamage();
     _creatureTemplateStore.rehash(result->GetRowCount());
     do
     {
@@ -566,9 +567,19 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
         creatureTemplate.MechanicImmuneMask = fields[84].GetUInt32();
         creatureTemplate.flags_extra        = fields[85].GetUInt32();
         creatureTemplate.ScriptID           = GetScriptId(fields[86].GetString());
-        // AC ObjectMgr.cpp:628: the template's melee damage modifier, used on every map without a creature_template_difficulty
-        // row for the creature (the open world); a difficulty row replaces it (Creature::UpdateDamagePhysical)
-        creatureTemplate.dmg_multiplier     = fields[87].GetFloat();
+        creatureTemplate.dmg_multiplier     = 1.0f;
+        creatureTemplate.mindmg             = fields[87].GetFloat();
+        creatureTemplate.maxdmg             = fields[88].GetFloat();
+        creatureTemplate.attackpower        = fields[89].GetUInt32();
+        creatureTemplate.DetectionRange     = fields[90].GetFloat();
+        creatureTemplate.dmg_multiplier = fields[92].GetFloat();
+        if (!SetAuthoredCreatureDamage(entry, fields[91].GetFloat()))
+            TC_LOG_ERROR("sql.sql", "Creature (Entry: %u) has invalid sf27_damage_multiplier; authored multiplier disabled.", entry);
+        if (!std::isfinite(creatureTemplate.DetectionRange) || creatureTemplate.DetectionRange <= 0.0f || creatureTemplate.DetectionRange > MAX_AGGRO_RADIUS)
+        {
+            TC_LOG_ERROR("sql.sql", "Creature (Entry: %u) has invalid detection_range %f; using 20 yards.", entry, creatureTemplate.DetectionRange);
+            creatureTemplate.DetectionRange = 20.0f;
+        }
 }
 
 void ObjectMgr::LoadCreatureTemplateModels()
@@ -675,6 +686,11 @@ void ObjectMgr::LoadCreatureTemplateAddons()
         creatureAddon.mount             = fields[2].GetUInt32();
         creatureAddon.standState        = fields[3].GetUInt8();
         creatureAddon.animTier          = fields[4].GetUInt8();
+        if (creatureAddon.animTier >= static_cast<uint8>(AnimTier::Max))
+        {
+            TC_LOG_ERROR("sql.sql", "Creature template %lu has invalid animation tier %u; using ground to prevent client animation-table crashes.", uint64(entry), creatureAddon.animTier);
+            creatureAddon.animTier = static_cast<uint8>(AnimTier::Ground);
+        }
         creatureAddon.visFlags          = fields[5].GetUInt8();
         creatureAddon.sheathState       = fields[6].GetUInt8();
         creatureAddon.pvpFlags          = fields[7].GetUInt8();
@@ -684,10 +700,14 @@ void ObjectMgr::LoadCreatureTemplateAddons()
         creatureAddon.meleeAnimKit      = fields[11].GetUInt16();
 
         Tokenizer tokens(fields[12].GetString(), ' ');
-        uint8 i = 0;
-        creatureAddon.auras.resize(tokens.size());
+        // Empty space-separated fields are formatting, not spell 0. Keep only
+        // validated entries; resize() left zero-filled holes after a rejected aura.
+        creatureAddon.auras.clear();
+        creatureAddon.auras.reserve(tokens.size());
         for (Tokenizer::const_iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
         {
+            if (!**itr)
+                continue;
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(uint32(atol(*itr)));
             if (!spellInfo)
             {
@@ -704,7 +724,7 @@ void ObjectMgr::LoadCreatureTemplateAddons()
                 continue;
             }
 
-            creatureAddon.auras[i++] = spellInfo->Id;
+            creatureAddon.auras.push_back(spellInfo->Id);
         }
 
         if (creatureAddon.mount)
@@ -1174,6 +1194,11 @@ void ObjectMgr::LoadCreatureAddons()
         creatureAddon.mount                     = fields[2].GetUInt32();
         creatureAddon.standState                = fields[3].GetUInt8();
         creatureAddon.animTier                  = fields[4].GetUInt8();
+        if (creatureAddon.animTier >= static_cast<uint8>(AnimTier::Max))
+        {
+            TC_LOG_ERROR("sql.sql", "Creature spawn %lu has invalid animation tier %u; using ground to prevent client animation-table crashes.", uint64(guid), creatureAddon.animTier);
+            creatureAddon.animTier = static_cast<uint8>(AnimTier::Ground);
+        }
         creatureAddon.visFlags                  = fields[5].GetUInt8();
         creatureAddon.sheathState               = fields[6].GetUInt8();
         creatureAddon.pvpFlags                  = fields[7].GetUInt8();
@@ -1184,10 +1209,14 @@ void ObjectMgr::LoadCreatureAddons()
         creatureAddon.meleeAnimKit            = fields[12].GetUInt16();
 
         Tokenizer tokens(fields[13].GetString(), ' ');
-        uint8 i = 0;
-        creatureAddon.auras.resize(tokens.size());
+        // Empty space-separated fields are formatting, not spell 0. Keep only
+        // validated entries; resize() left zero-filled holes after a rejected aura.
+        creatureAddon.auras.clear();
+        creatureAddon.auras.reserve(tokens.size());
         for (Tokenizer::const_iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
         {
+            if (!**itr)
+                continue;
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(uint32(atol(*itr)));
             if (!spellInfo)
             {
@@ -1204,7 +1233,7 @@ void ObjectMgr::LoadCreatureAddons()
                 continue;
             }
 
-            creatureAddon.auras[i++] = spellInfo->Id;
+            creatureAddon.auras.push_back(spellInfo->Id);
         }
 
         if (creatureAddon.mount)
@@ -1351,7 +1380,7 @@ EquipmentInfo const* ObjectMgr::GetEquipmentInfo(uint32 entry, int8& id)
     {
         EquipmentInfoContainerInternal::const_iterator ritr = itr->second.begin();
         std::advance(ritr, urand(0u, itr->second.size() - 1));
-        id = std::distance(itr->second.begin(), ritr) + 1;
+        id = ritr->first; // Equipment set keys can be sparse; preserve the selected database ID.
         return &ritr->second;
     }
     else
@@ -4690,7 +4719,8 @@ void ObjectMgr::LoadQuests()
                         TC_LOG_ERROR("sql.sql", "Quest %u objective %u has non existing battlepet species id %u", qinfo->GetQuestId(), obj.ID, obj.ObjectID);
                     break;
                 case QUEST_OBJECTIVE_AREATRIGGER:
-                    if (!sAreaTriggerStore.LookupEntry(uint32(obj.ObjectID)) && obj.ObjectID != -1)
+                    if (!QuestAreaTriggerPolicy::IsGeneric(obj.ObjectID) &&
+                        (!QuestAreaTriggerPolicy::IsSpecific(obj.ObjectID) || !sAreaTriggerStore.LookupEntry(uint32(obj.ObjectID))))
                         TC_LOG_ERROR("sql.sql", "Quest %u objective %u has non existing AreaTrigger.db2 id %u", qinfo->GetQuestId(), obj.ID, obj.ObjectID);
                     break;
                 case QUEST_OBJECTIVE_MONEY:
@@ -4935,7 +4965,7 @@ void ObjectMgr::LoadQuests()
         }
 
         // fill additional data stores
-        if (uint32 prevQuestId = std::abs(qinfo->_prevQuestID))
+        if (uint32 prevQuestId = QuestDependencyPolicy::QuestId(qinfo->_prevQuestID))
         {
             auto prevQuestItr = _questTemplates.find(prevQuestId);
             if (prevQuestItr == _questTemplates.end())
@@ -4944,13 +4974,13 @@ void ObjectMgr::LoadQuests()
                 qinfo->DependentPreviousQuests.push_back(prevQuestId);
         }
 
-        if (uint32 nextQuestId = qinfo->_nextQuestID)
+        if (uint32 nextQuestId = QuestDependencyPolicy::QuestId(qinfo->_nextQuestID))
         {
             auto nextQuestItr = _questTemplates.find(nextQuestId);
             if (nextQuestItr == _questTemplates.end())
                 TC_LOG_ERROR("sql.sql", "Quest %d has NextQuestId %i, but no such quest", qinfo->GetQuestId(), qinfo->GetNextQuestId());
-            else
-                nextQuestItr->second->DependentPreviousQuests.push_back(qinfo->GetQuestId());
+            else if (int32 dependency = QuestDependencyPolicy::ReverseLink(qinfo->_nextQuestID, qinfo->GetQuestId()))
+                nextQuestItr->second->DependentPreviousQuests.push_back(dependency);
         }
 
         if (qinfo->_exclusiveGroup)
@@ -6126,8 +6156,8 @@ void ObjectMgr::LoadQuestAreaTriggers()
     for (auto const& pair : _questObjectives)
     {
         QuestObjective const* objective = pair.second;
-        if (objective->Type == QUEST_OBJECTIVE_AREATRIGGER)
-            _questAreaTriggerStore[objective->ID].insert(objective->QuestID);
+        if (objective->Type == QUEST_OBJECTIVE_AREATRIGGER && QuestAreaTriggerPolicy::IsSpecific(objective->ObjectID))
+            _questAreaTriggerStore[uint32(objective->ObjectID)].insert(objective->QuestID);
     }
 
     TC_LOG_INFO("server.loading", ">> Loaded %u quest trigger points in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
@@ -6413,7 +6443,23 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(WorldLocation const& lo
     {
         if (z > -500)
         {
-            TC_LOG_ERROR("misc", "ZoneId not found for map %u coords (%f, %f, %f)", MapId, x, y, z);
+            std::string requester = "none";
+            if (conditionObject)
+            {
+                // WorldLocation stores map/coordinates independently of Map*,
+                // so retain the requester even during login or a map transfer.
+                requester = Trinity::StringFormat("%s guid=%u map=%u inWorld=%u xyz=%.3f/%.3f/%.3f",
+                    conditionObject->GetName().c_str(), conditionObject->GetGUID().GetCounter(), conditionObject->GetMapId(), uint32(conditionObject->IsInWorld()),
+                    conditionObject->GetPositionX(), conditionObject->GetPositionY(), conditionObject->GetPositionZ());
+                if (Player* player = conditionObject->ToPlayer())
+                {
+                    WorldLocation corpse = player->GetCorpseLocation();
+                    requester += Trinity::StringFormat(" alive=%u teleport=%u corpseMap=%u corpseXYZ=%.3f/%.3f/%.3f",
+                        uint32(player->IsAlive()), uint32(player->IsBeingTeleported()), corpse.GetMapId(),
+                        corpse.GetPositionX(), corpse.GetPositionY(), corpse.GetPositionZ());
+                }
+            }
+            TC_LOG_ERROR("misc", "ZoneId not found for map %u coords (%f, %f, %f); graveyard requester: %s", MapId, x, y, z, requester.c_str());
             return GetDefaultGraveYard(team);
         }
     }
@@ -6862,6 +6908,26 @@ void ObjectMgr::SetHighestGuids()
     if (result)
         GetGuidSequenceGenerator<HighGuid::Item>().Set((*result)[0].GetUInt32() + 1);
 
+    // A redeemed donation token no longer exists in item_instance. Keep its
+    // durable receipt GUID outside the allocator range after a restart, or a
+    // newly created item could inherit that receipt and be mistaken for a token.
+    result = LoginDatabase.PQuery("SELECT COALESCE(MAX(item_guid),0) FROM battlepay_token_credit WHERE realm_id=%u", realm.Id.Realm);
+    if (!result)
+    {
+        TC_LOG_ERROR("server.loading", "Cannot read BattlePay token receipts for realm %u; apply the auth BattlePay migrations before starting the world", realm.Id.Realm);
+        World::StopNow(ERROR_EXIT_CODE);
+        return;
+    }
+    uint64 maxRedeemedItemGuid = (*result)[0].GetUInt64();
+    if (maxRedeemedItemGuid >= ObjectGuid::GetMaxCounter(HighGuid::Item) - 2)
+    {
+        TC_LOG_ERROR("server.loading", "BattlePay token receipt item GUIDs exhausted the item GUID range");
+        World::StopNow(ERROR_EXIT_CODE);
+        return;
+    }
+    if (maxRedeemedItemGuid >= GetGuidSequenceGenerator<HighGuid::Item>().GetNextAfterMaxUsed())
+        GetGuidSequenceGenerator<HighGuid::Item>().Set(uint32(maxRedeemedItemGuid + 1));
+
     // Cleanup other tables from not existed guids ( >= _hiItemGuid)
     uint32 hiItemGuid = GetGuidSequenceGenerator<HighGuid::Item>().GetNextAfterMaxUsed();
     CharacterDatabase.PExecute("DELETE FROM character_inventory WHERE item >= '%u'", hiItemGuid);      // One-time query
@@ -6889,9 +6955,12 @@ void ObjectMgr::SetHighestGuids()
     if (result)
         _muteId = (*result)[0].GetUInt32() + 1;
 
-//    result = CharacterDatabase.Query("SELECT MAX(corpseGuid) FROM corpse");
-//    if (result)
-//        _hiCorpseGuid = (*result)[0].GetUInt32()+1;
+    // Map-local counters collide with persisted corpses on other maps, or after
+    // a restart. New corpses share a realm-wide allocator; loaded corpses keep
+    // their saved ID rather than consuming an unrelated map-local ID.
+    result = CharacterDatabase.Query("SELECT MAX(corpseGuid) FROM corpse");
+    if (result)
+        GetGuidSequenceGenerator<HighGuid::Corpse>().Set((*result)[0].GetUInt32() + 1);
 
     result = CharacterDatabase.Query("SELECT MAX(setguid) FROM character_equipmentsets");
     if (result)
@@ -7000,7 +7069,7 @@ inline void CheckGOLockId(GameObjectTemplate const* goInfo, uint32 dataN, uint32
         return;
 
     TC_LOG_ERROR("sql.sql", "Gameobject (Entry: %u GoType: %u) have data%d=%u but lock (Id: %u) not found.",
-        goInfo->entry, goInfo->type, N, goInfo->door.lockId, goInfo->door.lockId);
+        goInfo->entry, goInfo->type, N, dataN, dataN);
 }
 
 inline void CheckGOLinkedTrapId(GameObjectTemplate const* goInfo, uint32 dataN, uint32 N)
@@ -9498,41 +9567,41 @@ void ObjectMgr::LoadScriptNames()
     _scriptNamesStore.emplace_back("");
 
     QueryResult result = WorldDatabase.Query(
-        "SELECT DISTINCT(ScriptName) FROM achievement_criteria_data WHERE ScriptName <> '' AND type = 11 "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM achievement_criteria_data WHERE ScriptName <> '' AND type = 11 "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM battleground_template WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM battleground_template WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM creature WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM creature WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM creature_template WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM creature_template WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM gameobject WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM gameobject WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM gameobject_template WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM gameobject_template WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM item_script_names WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM item_script_names WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM areatrigger_scripts WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM areatrigger_scripts WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM spell_script_names WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM spell_script_names WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM game_weather WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM game_weather WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM conditions WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM conditions WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM game_event WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM game_event WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM outdoorpvp_template WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM outdoorpvp_template WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM world_map_template WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM world_map_template WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(script) FROM instance_template WHERE script <> '' "
+        "SELECT DISTINCT(CONVERT(script USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM instance_template WHERE script <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM scene_template WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM scene_template WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM quest_template_addon WHERE ScriptName <> '' "
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM quest_template_addon WHERE ScriptName <> '' "
         "UNION "
-        "SELECT DISTINCT(ScriptName) FROM spell_areatrigger_template WHERE ScriptName <> ''");
+        "SELECT DISTINCT(CONVERT(ScriptName USING utf8mb4) COLLATE utf8mb4_unicode_ci) FROM spell_areatrigger_template WHERE ScriptName <> ''");
 
     if (!result)
     {
@@ -11025,10 +11094,9 @@ void ObjectMgr::LoadRealmCompletedChallenges()
                                                  "member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec FROM group_completed_challenges");
     if (!result)
     {
-        TC_LOG_INFO("server.loading", ">> Loaded 0 group completed challenges. DB table `group_completed_challenges` is empty (expected on a fresh character DB).");
-        return;
+        TC_LOG_INFO("server.loading", ">> No group challenge completions recorded.");
     }
-
+    else
     do
     {
         Field* fields = result->Fetch();
@@ -11059,10 +11127,9 @@ void ObjectMgr::LoadRealmCompletedChallenges()
                                      "member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec FROM guild_completed_challenges");
     if (!result)
     {
-        TC_LOG_ERROR("server.loading", ">> Loaded 0 guild completed challenges. DB table `guild_completed_challenges` is empty.");
-        return;
+        TC_LOG_INFO("server.loading", ">> No guild challenge completions recorded.");
     }
-
+    else
     do
     {
         Field* fields = result->Fetch();
@@ -11087,7 +11154,7 @@ void ObjectMgr::LoadRealmCompletedChallenges()
     }
     while (result->NextRow());
 
-    TC_LOG_ERROR("server.loading", ">> Loaded %u realm completed challenges in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u realm completed challenges in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadChallengeRewards()
@@ -11459,7 +11526,7 @@ void ObjectMgr::LoadObjectVisibilityState()
     QueryResult result = WorldDatabase.Query("SELECT entryorguid, type+0, visibilityQuestID, visibilityQuestState FROM object_visibility_state");
     if (!result)
     {
-        TC_LOG_ERROR("server.loading", ">> Loaded 0 object visibility state data. DB table `object_visibility_state` is empty.");
+        TC_LOG_INFO("server.loading", ">> No optional object visibility overrides configured.");
         return;
     }
 

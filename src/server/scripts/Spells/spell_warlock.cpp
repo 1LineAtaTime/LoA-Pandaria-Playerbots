@@ -3336,6 +3336,18 @@ class spell_warl_havoc_target_selector : public SpellScript
 
     bool handled = false;
 
+    static bool HasHavocTarget(SpellInfo const* spell, SpellEffIndex index)
+    {
+        return spell && spell->Effects[index].IsEffect() &&
+            (spell->Effects[index].TargetA.GetTarget() == TARGET_UNIT_TARGET_ENEMY ||
+             spell->Effects[index].TargetB.GetTarget() == TARGET_UNIT_TARGET_ENEMY);
+    }
+
+    bool Validate(SpellInfo const* spell) override
+    {
+        return HasHavocTarget(spell, EFFECT_0) || HasHavocTarget(spell, EFFECT_1);
+    }
+
     void SelectTargets(std::list<WorldObject*>& targets)
     {
         Unit* caster = GetCaster();
@@ -3380,11 +3392,13 @@ class spell_warl_havoc_target_selector : public SpellScript
 
     void Register() override
     {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_0, TARGET_UNIT_TARGET_ENEMY);
-        // Only some of the Havoc spells have a second enemy-target effect.
-        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId))
-            if (spell->Effects[EFFECT_1].TargetA.GetTarget() == TARGET_UNIT_TARGET_ENEMY || spell->Effects[EFFECT_1].TargetB.GetTarget() == TARGET_UNIT_TARGET_ENEMY)
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_1, TARGET_UNIT_TARGET_ENEMY);
+        // Havoc duplicates whichever enemy-target effects the spell actually
+        // has. Several supported spells only have effect 0, not effect 1.
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+        if (HasHavocTarget(spell, EFFECT_0))
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_0, TARGET_UNIT_TARGET_ENEMY);
+        if (HasHavocTarget(spell, EFFECT_1))
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_1, TARGET_UNIT_TARGET_ENEMY);
         AfterCast += SpellCastFn(spell_warl_havoc_target_selector::HandleCast);
     }
 };
@@ -3576,9 +3590,7 @@ class spell_warl_command_demon : public SpellScript
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_warl_command_demon::CheckCast);
-        // Felstorm/Wrathstorm (119914, 119915) carry a FORCE_CAST effect instead of a DUMMY.
-        SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
-        if (spell && spell->Effects[EFFECT_0].Effect == SPELL_EFFECT_FORCE_CAST)
+        if (sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].IsEffect(SPELL_EFFECT_FORCE_CAST))
             OnEffectHitTarget += SpellEffectFn(spell_warl_command_demon::SuppressDefault, EFFECT_0, SPELL_EFFECT_FORCE_CAST);
         else
             OnEffectHitTarget += SpellEffectFn(spell_warl_command_demon::SuppressDefault, EFFECT_0, SPELL_EFFECT_DUMMY);
@@ -3744,11 +3756,11 @@ class spell_warl_demonic_gateway_summon : public SpellScript
 
     void Register() override
     {
-        // 113890 (purple) uses target 125, 113886 (green) uses target 138: bind the one the spell has.
-        if (m_scriptSpellId == 113890)
+        // Each summon spell has one destination type, not both gateway types.
+        if (sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].TargetA.GetTarget() == TARGET_UNK_125)
             OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestPurple, EFFECT_0, TARGET_UNK_125);
         else
-            OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestGreen,  EFFECT_0, TARGET_UNK_138);
+            OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestGreen, EFFECT_0, TARGET_UNK_138);
     }
 };
 
@@ -4913,153 +4925,39 @@ class spell_warl_nightfall : public AuraScript
     }
 };
 
+void AddSC_skyfire27_warlock();
+
 void AddSC_warlock_spell_scripts()
 {
-    new aura_script<spell_warl_health_funnel>("spell_warl_health_funnel");
-    new spell_script<spell_warl_health_funnel_soulburn>("spell_warl_health_funnel_soulburn");
     new spell_warl_soulburn_seed_of_corruption_damage();
     new spell_script<spell_warl_soulburn_seed_of_corruption>("spell_warl_soulburn_seed_of_corruption");
-    new aura_script<spell_warl_soulburn_override>("spell_warl_soulburn_override");
-    new spell_script<spell_soulburn_consumer>("spell_soulburn_consumer");
-    new spell_script<spell_warl_curse_of_exhaustion_soulburn>("spell_warl_curse_of_exhaustion_soulburn");
-    new spell_warl_glyph_of_soulwell();
-    new spell_warl_glyph_of_imp_swarm();
-    new spell_script<spell_warl_unbound_will>("spell_warl_unbound_will");
     new spell_warl_kil_jaedens_cunning();
     new spell_warl_shield_of_shadow();
-    new spell_script<spell_warl_flames_of_xoroth>("spell_warl_flames_of_xoroth");
-    new spell_warl_soul_link();
-    new spell_script<spell_warl_decimate>("spell_warl_decimate");
-    new spell_script<spell_warl_chaos_wave>("spell_warl_chaos_wave");
-    new aura_script<spell_warl_dark_bargain_on_absorb>("spell_warl_dark_bargain_on_absorb");
-    new aura_script<spell_warl_dark_regeneration>("spell_warl_dark_regeneration");
-    new spell_warl_sacrificial_pact();
-    new spell_warl_twilight_ward_s12();
-    new aura_script<spell_warl_burning_rush>("spell_warl_burning_rush");
-    new spell_script<spell_warl_conflagrate_aura>("spell_warl_conflagrate_aura");
-    new aura_script<spell_warl_shadowburn>("spell_warl_shadowburn");
-    new aura_script<spell_warl_burning_embers>("spell_warl_burning_embers");
     new spell_warl_soul_harverst();
-    new spell_script<spell_warl_life_tap>("spell_warl_life_tap");
-    new aura_script<spell_warl_life_tap_heal_absorb>("spell_warl_life_tap_heal_absorb");
-    new spell_script<spell_warl_fear>("spell_warl_fear");
-    new spell_warl_banish();
-    new spell_warl_soulshatter();
-    new aura_script<spell_warl_unstable_affliction>("spell_warl_unstable_affliction");
-    new aura_script<spell_warl_backlash>("spell_warl_backlash");
-    new spell_script<spell_warl_blood_horror>("spell_warl_blood_horror");
     new aura_script<spell_warl_blood_horror_aura>("spell_warl_blood_horror_aura");
-    new spell_warl_haunt();
-    new spell_warl_singe_magic();
-    new aura_script<spell_warl_glyph_of_shadow_bolt>("spell_warl_glyph_of_shadow_bolt");
-    new aura_script<spell_warl_glyph_of_shadow_bolt_spec_fix>("spell_warl_glyph_of_shadow_bolt_spec_fix");
-    new spell_script<spell_warl_shadow_bolt_glyphed>("spell_warl_shadow_bolt_glyphed");
-    new aura_script<spell_warl_grimoire_of_supremacy>("spell_warl_grimoire_of_supremacy");
     new aura_script<spell_warl_grimoire_of_service_server_side>("spell_warl_grimoire_of_service_server_side");
-    new aura_script<spell_warl_grimoire_of_sacrifice>("spell_warl_grimoire_of_sacrifice");
     new aura_script<spell_warl_grimoire_of_sacrifice_health_fix>("spell_warl_grimoire_of_sacrifice_health_fix");
-    new spell_script<spell_warl_grimoire_of_sacrifice_selector>("spell_warl_grimoire_of_sacrifice_selector");
-    new aura_script<spell_warl_wild_imp>("spell_warl_wild_imp");
     new aura_script<spell_gen_fel_energy>("spell_gen_fel_energy");
     new creature_script<npc_warlock_guardian>("npc_warlock_guardian");
     new creature_script<npc_wild_imp>("npc_wild_imp");
     new creature_script<npc_grimoire_of_service_pet>("npc_grimoire_of_service_pet");
     new creature_script<npc_doomguard>("npc_doomguard");
     new creature_script<npc_warl_infernal>("npc_warl_infernal");
-    new spell_script<spell_warl_summon_doomguard>("spell_warl_summon_doomguard");
-    new spell_script<spell_warl_doombolt>("spell_warl_doombolt");
     new spell_script<spell_warl_demonic_fury_energize>("spell_warl_demonic_fury_energize");
     new spell_script<spell_warl_demonic_fury_visual_controller>("spell_warl_demonic_fury_visual_controller");
-    new spell_script<spell_warl_hellfire>("spell_warl_hellfire");
-    new aura_script<spell_warl_mastery_master_demonologist>("spell_warl_mastery_master_demonologist");
-    new aura_script<spell_warl_master_demonologist>("spell_warl_master_demonologist");
-    new aura_script<spell_warl_demonic_fury>("spell_warl_demonic_fury");
-    new aura_script<spell_warl_metamorphosis>("spell_warl_metamorphosis");
     new aura_script<spell_warl_soul_shards>("spell_warl_soul_shards");
-    new spell_script<spell_warl_ember_consumer>("spell_warl_ember_consumer");
-    new spell_script<spell_warl_ember_tap>("spell_warl_ember_tap");
-    new aura_script<spell_warl_glyph_of_ember_tap>("spell_warl_glyph_of_ember_tap");
-    new spell_script<spell_warl_fire_and_brimstone>("spell_warl_fire_and_brimstone");
-    new spell_script<spell_warl_fire_and_brimstone_spell>("spell_warl_fire_and_brimstone_spell");
-    new aura_script<spell_warl_fire_and_brimstone_immolate>("spell_warl_fire_and_brimstone_immolate");
     new spell_script<spell_warl_always_cirt>("spell_warl_always_cirt");
-    new spell_script<spell_warl_imp_swarm>("spell_warl_imp_swarm");
-    new spell_script<spell_warl_fel_firebolt>("spell_warl_fel_firebolt");
-    new aura_script<spell_warl_shadowflame>("spell_warl_shadowflame");
-    new aura_script<spell_warl_molten_core>("spell_warl_molten_core");
-    new aura_script<spell_warl_seed_of_corruption>("spell_warl_seed_of_corruption");
-    new spell_script<spell_warl_seed_of_corruption_soulburn_explode>("spell_warl_seed_of_corruption_soulburn_explode");
-    new aura_script<spell_warl_malefic_grasp>("spell_warl_malefic_grasp");
-    new aura_script<spell_warl_drain_soul>("spell_warl_drain_soul");
-    new aura_script<spell_warl_agony>("spell_warl_agony");
-    new spell_script<spell_warl_agony_instant_tick>("spell_warl_agony_instant_tick");
-    new spell_script<spell_warl_soul_swap>("spell_warl_soul_swap");
     new aura_script<spell_warl_soul_swap_aura>("spell_warl_soul_swap_aura");
-    new spell_script<spell_warl_soul_swap_exhale>("spell_warl_soul_swap_exhale");
-    new spell_script<spell_warl_soul_swap_soulburn>("spell_warl_soul_swap_soulburn");
-    new aura_script<spell_warl_dark_apotheosis>("spell_warl_dark_apotheosis");
-    new aura_script<spell_warl_metamorphosis_overrides>("spell_warl_metamorphosis_overrides");
-    new aura_script<spell_warl_demonic_calling>("spell_warl_demonic_calling");
-    new aura_script<spell_warl_glyph_of_demon_hunting>("spell_warl_glyph_of_demon_hunting");
-    new spell_script<spell_warl_demonic_leap>("spell_warl_demonic_leap");
-    new spell_script<spell_warl_demonic_leap_jump>("spell_warl_demonic_leap_jump");
-    new spell_script<spell_warl_healthstone>("spell_warl_healthstone");
-    new aura_script<spell_warl_healthstone_glyphed>("spell_warl_healthstone_glyphed");
-    new aura_script<spell_warl_demonic_circle_summon>("spell_warl_demonic_circle_summon");
-    new aura_script<spell_warl_demonic_circle_teleport>("spell_warl_demonic_circle_teleport");
-    new aura_script<spell_warl_backdraft_proc_driver>("spell_warl_backdraft_proc_driver");
-    new aura_script<spell_warl_backdraft>("spell_warl_backdraft");
-    new spell_script<spell_warl_backdraft_consumer>("spell_warl_backdraft_consumer");
-    new spell_script<spell_warl_soulstone>("spell_warl_soulstone");
-    new spell_script<spell_warl_soulstone_resurrect>("spell_warl_soulstone_resurrect");
-    new aura_script<spell_warl_havoc>("spell_warl_havoc");
-    new spell_script<spell_warl_havoc_target_selector>("spell_warl_havoc_target_selector");
-    new aura_script<spell_warl_rain_of_fire>("spell_warl_rain_of_fire");
-    new aura_script<spell_warl_soul_link>("spell_warl_soul_link");
-    new aura_script<spell_warl_soul_leech>("spell_warl_soul_leech");
-    new aura_script<spell_warl_override_command_demon>("spell_warl_override_command_demon");
-    new spell_script<spell_warl_command_demon>("spell_warl_command_demon");
-    new spell_script<spell_warl_command_demon_cooldown>("spell_warl_command_demon_cooldown");
-    new spell_script<spell_warl_create_healthstone>("spell_warl_create_healthstone");
-    new spell_script<spell_warl_hand_of_guldan>("spell_warl_hand_of_guldan");
-    new spell_script<spell_warl_hand_of_guldan_glyphed>("spell_warl_hand_of_guldan_glyphed");
-    new spell_script<spell_warl_demonic_gateway>("spell_warl_demonic_gateway");
-    new spell_script<spell_warl_demonic_gateway_summon>("spell_warl_demonic_gateway_summon");
-    new aura_script<spell_warl_demonic_gateway_aura>("spell_warl_demonic_gateway_aura");
     new creature_script<npc_demonic_gateway>("npc_demonic_gateway");
-    new aura_script<spell_warl_drain_life>("spell_warl_drain_life");
-    new aura_script<spell_warl_glyph_of_siphon_life>("spell_warl_glyph_of_siphon_life");
-    new spell_script<spell_warl_glyph_of_siphon_life_heal>("spell_warl_glyph_of_siphon_life_heal");
-    new aura_script<spell_warl_chaos_bolt_dot>("spell_warl_chaos_bolt_dot");
-    new spell_script<spell_warl_pet_auto_cast>("spell_warl_pet_auto_cast");
-    new spell_script<spell_warl_shadow_bulwark>("spell_warl_shadow_bulwark");
-    new spell_script<spell_warl_suffering>("spell_warl_suffering");
-    new spell_script<spell_warl_seduction>("spell_warl_seduction");
-    new spell_script<spell_warl_shadow_shield>("spell_warl_shadow_shield");
-    new aura_script<spell_warl_shadow_shield_aura>("spell_warl_shadow_shield_aura");
-    new spell_script<spell_warl_touch_of_chaos>("spell_warl_touch_of_chaos");
     new aura_script<spell_warl_howl_of_terror_cooldown>("spell_warl_howl_of_terror_cooldown");
-    new spell_script<spell_warl_legion_strike>("spell_warl_legion_strike");
-    new spell_script<spell_warl_devour_magic>("spell_warl_devour_magic");
-    new spell_script<spell_warl_devour_magic_heal>("spell_warl_devour_magic_heal");
     new aura_script<spell_warl_glyph_of_demon_training>("spell_warl_glyph_of_demon_training");
-    new spell_script<spell_warl_glyph_of_demon_training_seduction>("spell_warl_glyph_of_demon_training_seduction");
     new spell_script<spell_warl_glyph_of_demon_trainig_firebolt>("spell_warl_glyph_of_demon_trainig_firebolt");
-    new spell_script<spell_warl_glyph_of_carrion_swarm>("spell_warl_glyph_of_carrion_swarm");
-    new spell_script<spell_warl_unending_breath_soulburn>("spell_warl_unending_breath_soulburn");
     new spell_script<spell_warl_soul_shards_visual_test>("spell_warl_soul_shards_visual_test");
     new spell_script<spell_warl_ember_test>("spell_warl_ember_test");
     new spell_script<spell_warl_glyph_of_felguard>("spell_warl_glyph_of_felguard");
     new spell_script<spell_warl_glyph_of_felguard_loading>("spell_warl_glyph_of_felguard_loading");
     new aura_script<spell_warl_glyph_of_verdant_spheres>("spell_warl_glyph_of_verdant_spheres");
-    new aura_script<spell_warl_glyph_of_soul_consumption>("spell_warl_glyph_of_soul_consumption");
-    new aura_script<spell_warl_archimondes_darkness>("spell_warl_archimondes_darkness");
-    new aura_script<spell_warl_t16_2p_bonus>("spell_warl_t16_2p_bonus");
-    new aura_script<spell_warl_t16_4p_bonus>("spell_warl_t16_4p_bonus");
     new aura_script<spell_warl_haunt_t16>("spell_warl_haunt_t16");
-    new aura_script<spell_warl_fury_ward_fix>("spell_warl_fury_ward_fix");
-    new aura_script<spell_warl_twilight_ward_fix>("spell_warl_twilight_ward_fix");
-    new aura_script<spell_warl_meteor_slam>("spell_warl_meteor_slam");
-    new aura_script<spell_warl_corruption>("spell_warl_corruption");
     new aura_script<spell_warl_nightfall>("spell_warl_nightfall");
+    AddSC_skyfire27_warlock();
 }

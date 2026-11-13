@@ -16,6 +16,10 @@
 */
 
 #include "Player.h"
+#include "CuratedPlayerNames.h"
+#include <mutex>
+#include "CompanionLoot.h"
+#include "QuestAreaTriggerPolicy.h"
 #include "RBAC.h"
 #include "GameClient.h"
 #include "AccountMgr.h"
@@ -26,6 +30,7 @@
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
 #include "BattlePetMgr.h"
+#include "BattlePayQueries.h"
 #include "CellImpl.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
@@ -95,6 +100,7 @@
 #include "WorldSession.h"
 #include "WorldStateBuilder.h"
 #include "MovementStructures.h"
+#include "MovementInputPolicy.h"
 #include "Config.h"
 #include "ServiceMgr.h"
 #include "AnticheatMgr.h"
@@ -501,6 +507,9 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     m_session->SetPlayer(this);
 
     m_name = createInfo->Name;
+
+    if (!CuratedPlayerNames::Claim(m_name, guidlow, GetSession()->GetAccountId()))
+        return false;
 
     PlayerInfo const* info = sObjectMgr->GetPlayerInfo(createInfo->Race, createInfo->Class);
     if (!info)
@@ -1912,9 +1921,13 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // issue #101: do this here, in case the teleport failed in the checks above. A teleport that is
     // not part of a taxi flight must end the flight cleanly; the cross-map taxi hop passes
     // TELE_TO_NOT_LEAVE_TAXI so the flight generator keeps its state and resumes on the new map.
-    if (!(options & TELE_TO_NOT_LEAVE_TAXI) && IsInFlight())
+    if (MovementInputPolicy::ShouldClearTaxiForTeleport((options & TELE_TO_NOT_LEAVE_TAXI) != 0, IsInFlight(), !m_taxi.empty()))
     {
-        GetMotionMaster()->MovementExpired();
+        // Between legs the flying flag can already be clear while the route
+        // remains queued. An unrelated teleport must not carry that route to
+        // another city/map, or the next login tries to resume an obsolete leg.
+        if (IsInFlight() || GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
+            GetMotionMaster()->MovementExpired();
         CleanupAfterTaxiFlight();
     }
     // #960: a route left behind by a flight that already ended without CleanupAfterTaxiFlight (this core's
@@ -5292,7 +5305,7 @@ Corpse* Player::CreateCorpse()
     Corpse* corpse = new Corpse((m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH) ? CORPSE_RESURRECTABLE_PVP : CORPSE_RESURRECTABLE_PVE);
     SetPvPDeath(false);
 
-    if (!corpse->Create(GetMap()->GenerateLowGuid<HighGuid::Corpse>(), this))
+    if (!corpse->Create(sObjectMgr->GenerateCorpseID(), this))
     {
         delete corpse;
         return nullptr;
@@ -11355,34 +11368,40 @@ uint64 Player::GetDonateTokens() const
         return 0;
 
     Field* fields = result_don->Fetch();
-    uint64 balans = fields[0].GetUInt32();
-
-    return balans;
+    int64 balance = fields[0].GetInt64();
+    return balance >= 0 && uint64(balance) <= uint64(INT32_MAX) ? uint64(balance) : 0;
 }
 
-void Player::DestroyDonateTokenCount(uint64 count)
+bool Player::DestroyDonateTokenCount(uint64 count)
 {
+    if (count > uint64(INT32_MAX))
+        return false;
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BATTLEPAY_DECREMENT_COINS);
-    stmt->setUInt32(0, count);
+    stmt->setUInt64(0, count);
     stmt->setUInt32(1, GetSession()->GetAccountId());    
-    LoginDatabase.Query(stmt);
+    stmt->setUInt64(2, count);
+    uint64 affected = 0;
+    return LoginDatabase.DirectExecuteChecked(stmt, &affected) && affected == 1;
 }
 
-void Player::AddDonateTokenCount(uint64 count)
+bool Player::AddDonateTokenCount(uint64 count, uint32 sourceItemGuid)
 {
-    // add coins
-    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BATTLEPAY_INCREMENT_COINS);
-    stmt->setUInt32(0, count);
-    stmt->setUInt32(1, GetSession()->GetAccountId());    
-    LoginDatabase.Query(stmt);
-    
-    // Register the wow token
-    LoginDatabasePreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_INS_WOW_TOKEN);
-    stmt2->setUInt32(0, GetSession()->GetAccountId());
-    stmt2->setUInt32(1, GetGUID());
-    stmt2->setUInt32(2, realm.Id.Realm);
-    stmt2->setUInt32(3, (count / 10000));
-    LoginDatabase.Query(stmt2);
+    if (!sourceItemGuid || !count || count > uint64(INT32_MAX))
+        return false;
+    uint32 account = GetSession()->GetAccountId();
+    auto trans = LoginDatabase.BeginTransaction();
+    trans->PAppend("INSERT IGNORE INTO battlepay_token_credit(realm_id,item_guid,account_id,character_guid,amount) VALUES(%u,%u,%u,%u,%llu)", realm.Id.Realm, sourceItemGuid, account, GetGUID().GetCounter(), count);
+    std::string credit = Trinity::StringFormat(BattlePayQueries::TokenCredit, realm.Id.Realm, sourceItemGuid, account, count);
+    // A successful multi-table update changes both the wallet and receipt rows.
+    // A repeated credit or insufficient balance space rolls this whole attempt
+    // back before logging. The durable receipt still resolves repeated requests.
+    trans->AppendChecked(credit.c_str(), 2);
+    trans->PAppend("INSERT INTO wow_token(accountId,characterGuid,realm,coins) VALUES(%u,%u,%u,%u)", account, GetGUID().GetCounter(), realm.Id.Realm, uint32(count / 10000));
+    LoginDatabase.AsyncCommitTransaction(trans).m_future.get();
+    QueryResult result = LoginDatabase.PQuery("SELECT applied FROM battlepay_token_credit WHERE realm_id=%u AND item_guid=%u AND account_id=%u AND amount=%llu", realm.Id.Realm, sourceItemGuid, account, count);
+    if (!result || result->Fetch()[0].GetUInt8() != 1)
+        return false;
+    return true;
 }
 
 void Player::SendBattlePayMessage(std::string const& n)
@@ -16314,6 +16333,12 @@ bool Player::CanRewardQuest(Quest const* quest, bool msg)
 
 bool Player::CanRewardQuest(Quest const* quest, uint32 rewardId, bool msg)
 {
+    // Storage checks do not replace completion/repeatability/objective checks.
+    // Turn-in quests can reach this overload again after being rewarded; without
+    // the shared gate a replay pays money/reputation while XP is awarded once.
+    if (!CanRewardQuest(quest, msg))
+        return false;
+
     ItemPosCountVec dest;
     if (quest->GetRewChoiceItemsCount() > 0)
     {
@@ -17044,7 +17069,7 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
     if (!qInfo->GetPrevQuestId())
         return true;
 
-    uint32 prevId = std::abs(qInfo->GetPrevQuestId());
+    uint32 prevId = QuestDependencyPolicy::QuestId(qInfo->GetPrevQuestId());
     // If positive previous quest rewarded, return true
     if (qInfo->GetPrevQuestId() > 0 && IsQuestRewarded(prevId))
         return true;
@@ -17072,14 +17097,15 @@ bool Player::SatisfyQuestDependentPreviousQuests(Quest const* qInfo, bool msg) c
     if (qInfo->DependentPreviousQuests.empty())
         return true;
 
-    for (uint32 prevId : qInfo->DependentPreviousQuests)
+    for (int32 dependency : qInfo->DependentPreviousQuests)
     {
+        uint32 prevId = QuestDependencyPolicy::QuestId(dependency);
         // checked in startup
         Quest const* questInfo = sObjectMgr->GetQuestTemplate(prevId);
         ASSERT(questInfo);
 
-        // If any of the positive previous quests completed, return true
-        if (IsQuestRewarded(prevId))
+        // Signed SF links retain their "taken" versus "rewarded" requirement.
+        if (QuestDependencyPolicy::Satisfied(dependency, IsQuestRewarded(prevId), GetQuestStatus(prevId) != QUEST_STATUS_NONE))
         {
             // skip one-from-all exclusive group
             if (questInfo->GetExclusiveGroup() >= 0)
@@ -17097,7 +17123,7 @@ bool Player::SatisfyQuestDependentPreviousQuests(Quest const* qInfo, bool msg) c
                     continue;
 
                 // alternative quest from group also must be completed and rewarded (reported)
-                if (!IsQuestRewarded(exclude_Id))
+                if (!QuestDependencyPolicy::Satisfied(dependency, IsQuestRewarded(exclude_Id), GetQuestStatus(exclude_Id) != QUEST_STATUS_NONE))
                 {
                     if (msg)
                     {
@@ -17780,6 +17806,17 @@ void Player::AreaExploredOrEventHappens(uint32 questId)
             if (!q_status.Explored && q_status.Status != QUEST_STATUS_FAILED)
             {
                 q_status.Explored = true;
+                // Generic legacy exploration objectives need the same credit as
+                // physical trigger objectives. Keep every other objective gated.
+                if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
+                    for (QuestObjective const& objective : quest->Objectives)
+                        if (objective.Type == QUEST_OBJECTIVE_AREATRIGGER &&
+                            QuestAreaTriggerPolicy::IsGeneric(objective.ObjectID) && !GetQuestObjectiveCounter(objective.ID))
+                        {
+                            m_questObjectiveStatus[objective.ID] = 1;
+                            MarkQuestObjectiveToSave(questId, objective.ID);
+                            SendQuestUpdateAddCreditSimple(quest, &objective);
+                        }
                 m_QuestStatusSave[questId] = true;
                 SetQuestSlotState(log_slot, QUEST_STATE_COMPLETE);
                 // m_QuestStatusSave[questId] = QUEST_DEFAULT_SAVE_TYPE;
@@ -20172,7 +20209,9 @@ void Player::_LoadMail()
             m->deliver_time   = time_t(fields[8].GetUInt32());
             m->money          = fields[9].GetUInt64();
             m->COD            = fields[10].GetUInt64();
-            m->checked        = fields[11].GetUInt32();
+            // The prepared result is a raw TINYINT. Reading four bytes can
+            // produce invalid flags and make the next character save fail.
+            m->checked        = fields[11].GetUInt8();
             m->stationery     = fields[12].GetUInt8();
             m->mailTemplateId = fields[13].GetInt16();
 
@@ -21409,7 +21448,19 @@ void Player::SaveToDB(bool create /*=false*/)
     if (m_session->isLogingOut() || !sWorld->getBoolConfig(CONFIG_STATS_SAVE_ONLY_ON_LOGOUT))
         _SaveStats(trans);
 
-    CharacterDatabase.CommitTransaction(trans);
+    // The client requests its character list immediately after CHAR_CREATE_SUCCESS.
+    // Multiple asynchronous workers can otherwise enumerate before this insert
+    // commits. Wait on the database worker's result: the save statements are
+    // prepared for asynchronous connections, not the synchronous connection pool.
+    // Ordinary saves and bulk random-bot creation retain the fire-and-forget path.
+    if (create && !GetSession()->IsBot())
+    {
+        TransactionCallback creationCommit = CharacterDatabase.AsyncCommitTransaction(trans);
+        if (!creationCommit.m_future.get())
+            TC_LOG_ERROR("entities.player.character", "Initial character transaction failed for account %u, GUID %u", GetSession()->GetAccountId(), GetGUID().GetCounter());
+    }
+    else
+        CharacterDatabase.CommitTransaction(trans);
 
     // save pet (hunter pet level and experience and all type pets health/mana).
     if (Pet* pet = GetPet())
@@ -23752,39 +23803,50 @@ void Player::CleanupAfterTaxiFlight()
 
 void Player::ContinueTaxiFlight()
 {
-    uint32 sourceNode = m_taxi.GetTaxiSource();
-    if (!sourceNode)
-        return;
-
-    TC_LOG_DEBUG("entities.unit", "WORLD: Restart character %u taxi flight", GetGUID().GetCounter());
-
-    uint32 mountDisplayId = sObjectMgr->GetTaxiMountDisplayId(sourceNode, GetTeam(), true);
-    if (!mountDisplayId)
-        return;
-
-    uint32 path = m_taxi.GetCurrentTaxiPath();
-
-    TaxiPathNodeList const& nodeList = sTaxiPathNodesByPath[path];
-
-    uint32 startNode = m_taxi.GetLastNodeIndex() + 1;
-    // #953 (AC Player::ContinueTaxiFlight skips nodes at another map, AC Player.cpp:10655-10657): a saved flight whose
-    // next node is on another map (a cross-map route interrupted at the hop) was replayed on the player's own map, so
-    // it flew the other map's leg here and landed off the world (zone 0; 85 random bots after 9 h at 1000 bots). A
-    // route that cannot continue from this map is dropped, and so is one already past its last node.
-    // #960: AC drops such a route silently (AC Player.cpp:10676-10681, "no proper node was found" ->
-    // ClearTaxiDestinations). Since SaveToDB stores a route only in flight, what still reaches this is rows saved before
-    // #960 and a flight saved while it waited at a map border for its cross-map hop (AC drops that one too).
-    if (startNode >= nodeList.size() || nodeList[startNode].MapId != GetMapId())
+    // A completed leg can be saved before the spline-done packet (bots have no
+    // client to send it). Consume only verified arrivals, then resume the next
+    // leg. The loop always pops a destination or returns, including malformed
+    // multi-leg routes loaded from storage.
+    while (uint32 sourceNode = m_taxi.GetTaxiSource())
     {
-        TC_LOG_DEBUG("entities.unit", "Player::ContinueTaxiFlight %s (guid %u) node %u, path : %u, map %u - dropped",
-            GetName().c_str(), GetGUID().GetCounter(), startNode, path, GetMapId());
-        if (IsInFlight())
-            GetMotionMaster()->MovementExpired();
-        CleanupAfterTaxiFlight();
+        uint32 path = m_taxi.GetCurrentTaxiPath();
+        if (path >= sTaxiPathNodesByPath.size() || sTaxiPathNodesByPath[path].size() < 2)
+        {
+            TC_LOG_ERROR("movement.taxi", "Player::ContinueTaxiFlight: GUID %u has invalid path %u from node %u; clearing unusable taxi state",
+                GetGUID().GetCounter(), path, sourceNode);
+            CleanupAfterTaxiFlight();
+            return;
+        }
+
+        TaxiPathNodeList const& nodeList = sTaxiPathNodesByPath[path];
+        TaxiPathNodeEntry const& end = nodeList[nodeList.size() - 1];
+        if (MovementInputPolicy::HasCompletedTaxiLeg(m_taxi.GetLastNodeIndex(), uint32(nodeList.size()),
+            GetMapId(), end.MapId, GetExactDist(end.LocX, end.LocY, end.LocZ)))
+        {
+            if (m_taxi.NextTaxiDestination())
+                continue;
+            CleanupAfterTaxiFlight();
+            SetFallInformation(0, GetPositionZ());
+            return;
+        }
+
+        uint32 startNode = m_taxi.GetLastNodeIndex() + 1;
+        if (startNode >= nodeList.size() || nodeList[startNode].MapId != GetMapId())
+        {
+            TC_LOG_ERROR("movement.taxi", "Player::ContinueTaxiFlight: GUID %u cannot resume node %u of %u on path %u, map %u source %u destination %u position (%.3f,%.3f,%.3f); clearing unusable taxi state",
+                GetGUID().GetCounter(), startNode, uint32(nodeList.size()), path, GetMapId(), sourceNode,
+                m_taxi.GetTaxiDestination(), GetPositionX(), GetPositionY(), GetPositionZ());
+            CleanupAfterTaxiFlight();
+            return;
+        }
+
+        uint32 mountDisplayId = sObjectMgr->GetTaxiMountDisplayId(sourceNode, GetTeam(), true);
+        if (!mountDisplayId)
+            return;
+        TC_LOG_DEBUG("entities.unit", "WORLD: Restart character %u taxi flight", GetGUID().GetCounter());
+        GetSession()->SendDoFlight(mountDisplayId, path, startNode);
         return;
     }
-
-    GetSession()->SendDoFlight(mountDisplayId, path, startNode);
 }
 
 void Player::ProhibitSpellSchool(SpellSchoolMask schoolMask, uint32 unTimeMs)
@@ -27061,7 +27123,7 @@ void Player::SetClientControl(Unit* target, bool allowMove)
 
     if (allowMove)
         SetMover(target);
-    else
+    else if (m_clientMoverGuid == target->GetGUID().GetRawValue())
         m_clientMoverGuid = 0;
 
     GetSession()->GetGameClient()->SetMovedUnit(target, allowMove);
@@ -27286,6 +27348,10 @@ PartyResult Player::CanUninviteFromGroup(std::string const* membername, ObjectGu
 
     if (grp->isLFGGroup())
     {
+        ObjectGuid target = memberguid ? memberguid : membername ? grp->GetMemberGUID(*membername) : ObjectGuid::Empty;
+        if (sLFGMgr->CanLeaderRemoveBot(this, target))
+            return ERR_PARTY_RESULT_OK;
+
         if (grp->IsFlex() && grp->IsLeader(GetGUID()))
             return ERR_PARTY_RESULT_OK;
 
@@ -27443,42 +27509,38 @@ void Player::StopCastingBindSight()
 
 void Player::SetViewpoint(WorldObject* target, bool apply)
 {
+    ASSERT(target);
+    ObjectGuid const current = GetGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT);
     if (apply)
     {
-        TC_LOG_DEBUG("maps", "Player::CreateViewpoint: Player %s create seer %u (TypeId: %u).", GetName().c_str(), target->GetEntry(), target->GetTypeId());
-
-        // Clear existing farsight object before setting a new one
-        if (ObjectGuid oldFarsight = GetGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT))
-            SetGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT, ObjectGuid());
-
-        if (!AddGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT, target->GetGUID()))
+        // Repeated vehicle/control notifications must not register duplicate
+        // shared-vision listeners. Release the previous owner before switching.
+        if (current == target->GetGUID())
         {
-            TC_LOG_FATAL("entities.player", "Player::CreateViewpoint: Player %s cannot add new viewpoint!", GetName().c_str());
+            SetSeer(target);
             return;
         }
+        if (WorldObject* previous = GetViewpoint())
+            if (Unit* unit = previous->ToUnit(); unit && unit != GetVehicleBase())
+                unit->RemovePlayerFromVision(this);
 
-        if (Unit* targetUnit = target->ToUnit(); targetUnit && targetUnit != GetVehicleBase())
-            targetUnit->AddPlayerToVision(this);
+        SetGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT, target->GetGUID());
+        if (Unit* unit = target->ToUnit(); unit && unit != GetVehicleBase())
+            unit->AddPlayerToVision(this);
         SetSeer(target);
     }
     else
     {
-        TC_LOG_DEBUG("maps", "Player::CreateViewpoint: Player %s remove seer", GetName().c_str());
-
-        if (!RemoveGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT, target->GetGUID()))
-        {
-            TC_LOG_FATAL("entities.player", "Player::CreateViewpoint: Player %s cannot remove current viewpoint!", GetName().c_str());
+        // A non-driving passenger can lose client control without ever owning
+        // a farsight camera. A late release from an older vehicle must also
+        // leave a newer active camera alone. Both are normal lifecycle events.
+        if ((!current && m_seer != target) || (current && current != target->GetGUID()))
             return;
-        }
 
-        if (Unit* targetUnit = target->ToUnit(); targetUnit && targetUnit != GetVehicleBase())
-            targetUnit->RemovePlayerFromVision(this);
-
-        //must immediately set seer back otherwise may crash
-        SetSeer(this);
-
-        //WorldPacket data(SMSG_CLEAR_FAR_SIGHT_IMMEDIATE, 0);
-        //GetSession()->SendPacket(&data);
+        SetGuidValue(PLAYER_FIELD_FARSIGHT_OBJECT, ObjectGuid());
+        if (Unit* unit = target->ToUnit(); unit && unit != GetVehicleBase())
+            unit->RemovePlayerFromVision(this);
+        SetSeer(this); // Never retain a seer pointing at a departing summon.
     }
 }
 
@@ -27837,6 +27899,7 @@ void Player::AutoStoreLoot(uint8 bag, uint8 slot, uint32 loot_id, LootStore cons
 
 void Player::StoreLootItem(uint8 lootSlot, Loot* loot, Object* src, AELootResult* lootResult)
 {
+    if (IsGoldOnlyCompanion(this)) return;
     QuestItem* qitem    = nullptr;
     QuestItem* ffaitem  = nullptr;
     QuestItem* conditem = nullptr;
@@ -30181,16 +30244,10 @@ void Player::SanitizeMovementInfo(MovementInfo* mi, bool afterAnticheat)
 
 void Player::SaveResearchDigsiteToDB(ResearchDigsite* digsite)
 {
-    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-
-    // DELETE FROM character_research_digsites WHERE guid = ? AND digsiteId = ?
-    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_RESEARCH_DIGSITE);
-    stmt->setUInt32(0, GetGUID().GetCounter());
-    stmt->setUInt32(1, digsite->GetDigsiteId());
-    trans->Append(stmt);
-
-    // INSERT INTO character_research_digsites (guid, digsiteId, currentFindGUID, remainingFindCount) VALUES (?, ?, ?, ?)
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_RESEARCH_DIGSITE);
+    // A delete followed by an insert on the same primary key can deadlock
+    // when bot initialization saves the same digsite concurrently. The
+    // prepared statement is an atomic insert-or-update instead.
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_RESEARCH_DIGSITE);
     stmt->setUInt32(0, GetGUID().GetCounter());
     stmt->setUInt32(1, digsite->GetDigsiteId());
     if (ArchaeologyFindInfo const* find = digsite->GetArchaeologyFind())
@@ -30199,8 +30256,7 @@ void Player::SaveResearchDigsiteToDB(ResearchDigsite* digsite)
         stmt->setUInt32(2, 0);
 
     stmt->setUInt8(3, digsite->GetRemainingFindCount());
-    trans->Append(stmt);
-    CharacterDatabase.CommitTransaction(trans);
+    CharacterDatabase.Execute(stmt);
 }
 
 void Player::DeleteResearchDigsite(ResearchDigsite* digsite)
@@ -32093,4 +32149,135 @@ void Player::PlayerSendSetPhaseShift(std::set<uint32> const& phaseIds)
     RebuildTerrainSwaps(); // to set default map swaps
 
     GetSession()->SendSetPhaseShift(phaseIds, GetTerrainSwaps(), GetWorldMapSwaps());
+}
+
+
+namespace CuratedPlayerNames
+{
+namespace
+{
+struct Candidate
+{
+    std::string name;
+    uint8 gender, cls, race;
+    uint32 weight;
+};
+std::mutex poolMutex;
+std::vector<Candidate> pool;
+bool poolLoaded = false;
+uint32 hintFallbacks = 0;
+}
+
+bool Enabled()
+{
+    return sConfigMgr->GetBoolDefault("AiPlayerbot.CuratedNames.Enable", false);
+}
+
+bool Claim(std::string const& name, uint32 guid, uint32 account, bool requireCandidate)
+{
+    if (!Enabled())
+        return true;
+    std::string escaped = name;
+    CharacterDatabase.EscapeString(escaped);
+    QueryResult row = CharacterDatabase.PQuery(
+        "SELECT owner_guid,owner_account FROM playerbot_curated_names WHERE name='%s' AND enabled=1", escaped.c_str());
+    if (!row)
+        return !requireCandidate; // Human names outside the pool retain normal rules.
+    if (row->Fetch()[0].GetUInt32() == guid && row->Fetch()[1].GetUInt32() == account)
+        return true;
+    CharacterDatabase.DirectPExecute(
+        "UPDATE playerbot_curated_names SET owner_guid=%u,owner_account=%u,reserved_at=CURRENT_TIMESTAMP "
+        "WHERE name='%s' AND owner_guid=0 AND enabled=1 AND NOT EXISTS "
+        "(SELECT 1 FROM characters WHERE name='%s' AND guid<>%u)",
+        guid, account, escaped.c_str(), escaped.c_str(), guid);
+    row = CharacterDatabase.PQuery("SELECT owner_guid,owner_account FROM playerbot_curated_names WHERE name='%s'", escaped.c_str());
+    return row && row->Fetch()[0].GetUInt32() == guid && row->Fetch()[1].GetUInt32() == account;
+}
+
+void Release(std::string const& name, uint32 guid, uint32 account)
+{
+    if (!Enabled() || name.empty())
+        return;
+    std::string escaped = name;
+    CharacterDatabase.EscapeString(escaped);
+    CharacterDatabase.DirectPExecute(
+        "UPDATE playerbot_curated_names SET owner_guid=0,owner_account=0 WHERE name='%s' AND owner_guid=%u AND owner_account=%u "
+        "AND NOT EXISTS (SELECT 1 FROM characters WHERE guid=%u AND name='%s')", escaped.c_str(), guid, account, guid, escaped.c_str());
+}
+
+std::string Pick(uint32 guid, uint32 account, uint8 race, uint8 cls, uint8 gender)
+{
+    std::lock_guard<std::mutex> guard(poolMutex);
+    if (!poolLoaded)
+    {
+        poolLoaded = true;
+        // Recover interrupted, uncommitted claims. Persisted characters are never released.
+        CharacterDatabase.DirectExecute(
+            "UPDATE playerbot_curated_names n LEFT JOIN characters c ON c.guid=n.owner_guid AND c.account=n.owner_account AND c.name=n.name "
+            "SET n.owner_guid=0,n.owner_account=0 WHERE n.owner_guid<>0 AND c.guid IS NULL "
+            "AND n.reserved_at < CURRENT_TIMESTAMP - INTERVAL 10 MINUTE");
+        uint32 rejected = 0;
+        if (QueryResult rows = CharacterDatabase.Query(
+            "SELECT n.name,n.gender_hint,n.class_hint,n.race_hint,n.weight FROM playerbot_curated_names n "
+            "WHERE n.enabled=1 AND n.owner_guid=0 AND NOT EXISTS (SELECT 1 FROM characters c WHERE c.name=n.name)"))
+        {
+            do
+            {
+                Field* f = rows->Fetch();
+                std::string name = f[0].GetString();
+                if (sObjectMgr->CheckPlayerName(name, true) != CHAR_NAME_SUCCESS || sObjectMgr->IsReservedName(name))
+                {
+                    ++rejected;
+                    continue;
+                }
+                pool.push_back({ name, f[1].GetUInt8(), f[2].GetUInt8(), f[3].GetUInt8(), std::max(1u, f[4].GetUInt32()) });
+            } while (rows->NextRow());
+        }
+        TC_LOG_INFO("playerbots", "[CURATED] Loaded %u available names; %u rejected by native validation", uint32(pool.size()), rejected);
+    }
+    uint32 roll = urand(0, 99);
+    uint8 preferredGender = gender == GENDER_FEMALE ? 1 : 2;
+    auto preferred = [&](Candidate const& c)
+    {
+        if (roll < 15) return c.cls == cls;
+        if (roll < 20) return c.race == race || (c.race == RACE_PANDAREN_NEUTRAL && (race == RACE_PANDAREN_ALLIANCE || race == RACE_PANDAREN_HORDE));
+        if (roll < (gender == GENDER_FEMALE ? 45u : 35u)) return c.gender == preferredGender;
+        return c.gender == 0 && c.cls == 0 && c.race == 0;
+    };
+    while (!pool.empty())
+    {
+        uint32 total = 0;
+        for (Candidate const& c : pool) if (preferred(c)) total += c.weight;
+        bool const usePreferred = total != 0;
+        if (!usePreferred) ++hintFallbacks;
+        if (!usePreferred) for (Candidate const& c : pool) total += c.weight;
+        uint32 ticket = urand(1, total);
+        size_t chosen = 0;
+        for (; chosen < pool.size(); ++chosen)
+        {
+            if (usePreferred && !preferred(pool[chosen])) continue;
+            if (ticket <= pool[chosen].weight) break;
+            ticket -= pool[chosen].weight;
+        }
+        std::string name = pool[chosen].name;
+        std::swap(pool[chosen], pool.back());
+        pool.pop_back();
+        if (Claim(name, guid, account, true))
+            return name;
+    }
+    TC_LOG_ERROR("playerbots", "[CURATED] Candidate pool exhausted; provisioning stopped, no generated-name fallback");
+    return {};
+}
+
+bool Exhausted()
+{
+    std::lock_guard<std::mutex> guard(poolMutex);
+    return poolLoaded && pool.empty();
+}
+
+uint32 HintFallbacks()
+{
+    std::lock_guard<std::mutex> guard(poolMutex);
+    return hintFallbacks;
+}
 }

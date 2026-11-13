@@ -1,4 +1,4 @@
-﻿/*
+/*
 * This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
@@ -16,6 +16,8 @@
 */
 
 #include "PlayerbotMgr.h"
+#include "AchievementMgr.h"
+#include "CompanionAccess.h"
 #include "RBAC.h"
 
 #include <cstdio>
@@ -51,6 +53,7 @@
 // world thread. Record the request here and apply it in PlayerbotMgr::OnBotLoginInternal, which runs on the
 // world thread once the bot is in the world (AC queues the same work onto its world-thread processor).
 static std::mutex sAddclassMutex;
+static std::map<ObjectGuid, uint32> sAddclassSpec;
 static std::map<ObjectGuid, uint32> sAddclassPending; // bot guid -> master level at the time of the command
 
 PlayerbotHolder::PlayerbotHolder() : PlayerbotAIBase(false) {}
@@ -74,6 +77,15 @@ public:
 
 void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId)
 {
+    if (masterAccountId)
+    {
+        WorldSession* session = sWorld->FindSession(masterAccountId);
+        if (!session || !CanUseCompanions(session->GetPlayer()))
+            return;
+        uint32 limit = uint32(std::max(0, std::min(39, sConfigMgr->GetIntDefault("AiPlayerbot.Companion.MaxBots", 39))));
+        if (playerBots.size() + botLoading.size() >= limit)
+            return;
+    }
     // bot is loading
     if (botLoading.find(playerGuid) != botLoading.end())
     {
@@ -135,6 +147,18 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
 
 void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder const& holder)
 {
+    if (holder.GetMasterAccountId())
+    {
+        WorldSession* session = sWorld->FindSession(holder.GetMasterAccountId());
+        if (!session || !CanUseCompanions(session->GetPlayer()))
+        {
+            botLoading.erase(holder.GetGuid());
+            std::lock_guard<std::mutex> lock(sAddclassMutex);
+            sAddclassPending.erase(holder.GetGuid());
+            sAddclassSpec.erase(holder.GetGuid());
+            return;
+        }
+    }
     uint32 botAccountId = holder.GetAccountId();
     ObjectGuid botGUID = holder.GetGuid();
 
@@ -143,6 +167,14 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
     // Créer une session WorldSession pour le bot
     WorldSession* botSession = new WorldSession(botAccountId, "", nullptr, AccountTypes::SEC_PLAYER, Expansions::EXPANSION_MISTS_OF_PANDARIA, 0, LOCALE_frFR, 0, false, false, true, true /*isBot, as AC*/);
 
+    // Bot sessions bypass the socket's InitializeSession callback. Restore their
+    // account achievements too, before character initialization evaluates them.
+    CharacterDatabasePreparedStatement* achievementQuery = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_ACHIEVEMENT);
+    achievementQuery->setUInt32(0, botAccountId);
+    PreparedQueryResult accountAchievements = CharacterDatabase.Query(achievementQuery);
+    achievementQuery = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_ACHIEVEMENT_PROGRESS);
+    achievementQuery->setUInt32(0, botAccountId);
+    botSession->GetAchievementMgr().LoadFromDB(accountAchievements, CharacterDatabase.Query(achievementQuery));
     botSession->HandlePlayerLogin(holder);  // will delete lqh
     Player* bot = botSession->GetPlayer();
     if (!bot)
@@ -152,6 +184,9 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
         botSession->LogoutPlayer(true);
         delete botSession;
         botLoading.erase(botGUID);
+        std::lock_guard<std::mutex> lock(sAddclassMutex);
+        sAddclassPending.erase(botGUID);
+        sAddclassSpec.erase(botGUID);
         return;
     }
 
@@ -171,7 +206,7 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
     {
         allowed = true;
     }
-    else if (masterSession /* && sPlayerbotAIConfig->allowGuildBots*/ && bot->GetGuildId() != 0 && bot->GetGuildId() == masterPlayer->GetGuildId())
+    else if (masterPlayer /* && sPlayerbotAIConfig->allowGuildBots*/ && bot->GetGuildId() != 0 && bot->GetGuildId() == masterPlayer->GetGuildId())
     {
         allowed = true;
     }
@@ -193,8 +228,8 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
             TC_LOG_DEBUG("playerbots", "PlayerbotMgr not found for master player with GUID: %u", masterPlayer->GetGUID().GetCounter());
         }
 
-        uint32 count = mgr->GetPlayerbotsCount();
-        uint32 cls_count = mgr->GetPlayerbotsCountByClass(bot->GetClass());
+        uint32 count = mgr ? mgr->GetPlayerbotsCount() : UINT32_MAX;
+        uint32 cls_count = mgr ? mgr->GetPlayerbotsCountByClass(bot->GetClass()) : UINT32_MAX;
         if (count >= sPlayerbotAIConfig->maxAddedBots)
         {
             allowed = false;
@@ -219,6 +254,9 @@ void PlayerbotHolder::HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder con
         TC_LOG_ERROR("playerbots", "Bot error on logging: %s", out.str().c_str());
         botSession->LogoutPlayer(true);
         delete botSession;
+        std::lock_guard<std::mutex> lock(sAddclassMutex);
+        sAddclassPending.erase(botGUID);
+        sAddclassSpec.erase(botGUID);
     }
 
     botLoading.erase(botGUID);
@@ -446,7 +484,7 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
         }  // if instant logout possible, do it
         else if (bot && (logout || !botWorldSessionPtr->isLogingOut()))
         {
-            botAI->TellMaster("Goodbye!");
+            if (!sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.SilentGreetings", true)) botAI->TellMaster("Goodbye!");
             { std::unique_lock<std::shared_mutex> guard(playerBotsMutex); playerBots.erase(guid); }                  // deletes bot player ptr inside this WorldSession PlayerBotMap
             botWorldSessionPtr->LogoutPlayer(true);  // this will delete the bot Player object and PlayerbotAI object
             delete botWorldSessionPtr;               // finally delete the bot's WorldSession
@@ -463,7 +501,7 @@ void PlayerbotHolder::DisablePlayerBot(ObjectGuid guid)
         {
             return;
         }
-        botAI->TellMaster("Goodbye!");
+        if (!sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.SilentGreetings", true)) botAI->TellMaster("Goodbye!");
         bot->StopMoving();
         bot->GetMotionMaster()->Clear();
 
@@ -486,6 +524,9 @@ void PlayerbotHolder::DisablePlayerBot(ObjectGuid guid)
 
         { std::unique_lock<std::shared_mutex> guard(playerBotsMutex); playerBots.erase(guid); }  // deletes bot player ptr inside this WorldSession PlayerBotMap
 
+        // The holder and the global AI registry are separate maps. Erasing only
+        // the holder left GET_PLAYERBOT_AI returning this freed AI on later ticks.
+        sPlayerbotsMgr->RemovePlayerBotData(guid, true);
         delete botAI;
     }
 }
@@ -590,7 +631,7 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     // set delay on login
     botAI->SetNextCheckDelay(urand(2000, 4000));
 
-    botAI->TellMaster("Hello!");
+    if (!sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.SilentGreetings", true)) botAI->TellMaster("Hello!");
 
     if (master && master->GetGroup() && !group)
     {
@@ -788,6 +829,8 @@ std::string const PlayerbotHolder::ProcessBotCommand(std::string const cmd, Obje
     {
         if (Player* master = botAI->GetMaster())
         {
+            if (!master->GetSession() || master->GetSession()->GetAccountId() != masterAccountId)
+                return "not your bot";
             if (cmd == "init=white" || cmd == "init=common")
             {
                 BotFactory(bot, master->GetLevel(), ITEM_QUALITY_NORMAL).Randomize(false);
@@ -868,7 +911,12 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
 {
     std::vector<std::string> messages;
 
-    if (!*args)
+    if (master && !CanUseCompanions(master))
+    {
+        messages.push_back("Companion access requires the configured minimum level and account rank.");
+        return messages;
+    }
+    if (!args || !*args)
     {
         messages.push_back("usage: list/reload/tweak/self or add/init/remove PLAYERNAME\n");
         messages.push_back("usage: addclass CLASSNAME");
@@ -877,6 +925,7 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
 
     char* cmd = strtok((char*)args, " ");
     char* charname = strtok(nullptr, " ");
+    char* specArg = strtok(nullptr, " ");
     if (!cmd)
     {
         messages.push_back("usage: list/reload/tweak/self or add/init/remove PLAYERNAME or addclass CLASSNAME");
@@ -899,12 +948,13 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
     }
     if (!strcmp(cmd, "setspec") && master && master->GetTarget())
     {
+        if (!charname) return messages;
         uint32 tab = std::atoi(charname);
         WorldPacket p(CMSG_SET_PRIMARY_TALENT_TREE);
         p << tab;
 
         auto bot = ObjectAccessor::FindConnectedPlayer(master->GetTarget());
-        if (bot)
+        if (bot && charname && GET_PLAYERBOT_AI(bot) && GET_PLAYERBOT_AI(bot)->GetMaster() == master)
         {
             bot->ResetTalents(true, true, true);
             bot->GetSession()->HandeSetTalentSpecialization(p);
@@ -921,6 +971,12 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
 
     if (!strcmp(cmd, "addclass"))
     {
+        if (!master || !CompanionPolicy::Capacity(uint32(playerBots.size()), uint32(botLoading.size()),
+            sConfigMgr->GetIntDefault("AiPlayerbot.Companion.MaxBots", 39)))
+        {
+            messages.push_back("Companion limit reached (including pending logins).");
+            return messages;
+        }
         if (!charname)
         {
             messages.push_back(
@@ -978,6 +1034,12 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
             return messages;
         }
         TeamId teamId = master->GetTeamId();
+        if (specArg && (strlen(specArg) != 1 || specArg[0] < '0' ||
+            specArg[0] > (claz == CLASS_DRUID ? '3' : '2')))
+        {
+            messages.push_back("Invalid specialization tab for this class.");
+            return messages;
+        }
         GuidVector guidCache = sRandomPlayerbotMgr->AddclassCache()[RandomPlayerbotMgr::GetTeamClassIdx(teamId == TEAM_ALLIANCE, claz)];
         
         std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
@@ -992,9 +1054,21 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
 
             {
                 std::lock_guard<std::mutex> lock(sAddclassMutex);
+                if (sAddclassPending.count(guid))
+                    continue;
                 sAddclassPending[guid] = master->GetLevel();
+                if (specArg && strlen(specArg) == 1 && specArg[0] >= '0' && specArg[0] <= '3')
+                    sAddclassSpec[guid] = uint32(specArg[0] - '0');
             }
             AddPlayerBot(guid, master->GetSession()->GetAccountId());
+            if (!botLoading.count(guid))
+            {
+                std::lock_guard<std::mutex> lock(sAddclassMutex);
+                sAddclassPending.erase(guid);
+                sAddclassSpec.erase(guid);
+                messages.push_back("Companion login request could not be queued.");
+                return messages;
+            }
             
             messages.push_back("Add class " + std::string(charname));
             return messages;
@@ -1392,12 +1466,29 @@ void PlayerbotMgr::OnBotLoginInternal(Player* const bot)
     }
     if (addclassLevel)
     {
-        sRandomPlayerbotMgr->SetValue(bot, "level", addclassLevel);
-        sRandomPlayerbotMgr->Randomize(bot);
-        BotFactory factory(bot, bot->GetLevel());
-        factory.InitTalentsTree(true);
+        // Companion creation must use the requested master level. The random
+        // population manager can choose another level and teleport the bot away.
+        BotFactory factory(bot, addclassLevel);
+        factory.Randomize(false);
+        uint32 requestedSpec = UINT32_MAX;
+        {
+            std::lock_guard<std::mutex> lock(sAddclassMutex);
+            auto it = sAddclassSpec.find(bot->GetGUID());
+            if (it != sAddclassSpec.end()) { requestedSpec = it->second; sAddclassSpec.erase(it); }
+        }
+        if (requestedSpec != UINT32_MAX)
+        {
+            bot->ResetTalents(true, true, true);
+            WorldPacket packet(CMSG_SET_PRIMARY_TALENT_TREE);
+            packet << requestedSpec;
+            bot->GetSession()->HandeSetTalentSpecialization(packet);
+            bot->ActivateSpec(0);
+        }
+        factory.InitTalentsTree(requestedSpec == UINT32_MAX);
         factory.InitGlyphs(false);  // #734, AC PlayerbotFactory::Randomize order (talents, then glyphs)
         factory.InitEquipment(true);
+        bot->UpdateAllStats();
+        bot->SetHealth(bot->GetMaxHealth());
     }
 
     TC_LOG_INFO("playerbots", "Bot %s logged in - Active spec tab: %u Spec: %u ", bot->GetName().c_str(), (uint32)bot->GetActiveSpec(), (uint32)bot->GetSpecialization());
@@ -1555,7 +1646,11 @@ PlayerbotAI* PlayerbotsMgr::GetPlayerbotAI(Player* player)
     if (itr != _playerbotsAIMap.end())
     {
         if (itr->second->IsBotAI())
-            return reinterpret_cast<PlayerbotAI*>(itr->second);
+        {
+            PlayerbotAI* ai = static_cast<PlayerbotAI*>(itr->second);
+            // A new session can reuse a character GUID, but never the old Player.
+            return ai->GetBot() == player ? ai : nullptr;
+        }
     }
 
     return nullptr;

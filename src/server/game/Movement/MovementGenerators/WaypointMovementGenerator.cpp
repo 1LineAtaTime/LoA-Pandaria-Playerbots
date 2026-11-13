@@ -319,7 +319,7 @@ bool FlightPathMovementGenerator::DoReset(Player* player)
     init.SetUncompressed();
     init.SetWalk(true);
     float speed = PLAYER_FLIGHT_SPEED * player->GetTotalAuraMultiplier(SPELL_AURA_MOD_TAXI_FLIGHT_SPEED);
-    init.SetVelocity(speed);
+    init.SetVelocity(speed, __func__);
     init.Launch();
     return true;
 }

@@ -435,7 +435,7 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recvData)
 
     if (grp->IsMember(guid))
     {
-        Player::RemoveFromGroup(grp, guid, grp->IsFlex() ? GROUP_REMOVEMETHOD_KICK_LFG : GROUP_REMOVEMETHOD_KICK, GetPlayer()->GetGUID(), reason.c_str());
+        Player::RemoveFromGroup(grp, guid, (grp->IsFlex() || sLFGMgr->CanLeaderRemoveBot(GetPlayer(), guid)) ? GROUP_REMOVEMETHOD_KICK_LFG : GROUP_REMOVEMETHOD_KICK, GetPlayer()->GetGUID(), reason.c_str());
         return;
     }
 
@@ -634,6 +634,13 @@ void WorldSession::HandleLootMethodOpcode(WorldPacket& recvData)
     if (!group->IsLeader(GetPlayer()->GetGUID()))
         return;
     /********************/
+
+    if (lootMethod > NEED_BEFORE_GREED || lootThreshold < ITEM_QUALITY_UNCOMMON || lootThreshold > ITEM_QUALITY_ARTIFACT)
+        return;
+    if (group->isLFGGroup() && !sLFGMgr->IsSoloHumanLeader(group, GetPlayer()))
+        return;
+    if (lootMethod == MASTER_LOOT && !group->IsMember(lootMaster))
+        return;
 
     // everything's fine, do it
     group->SetLootMethod((LootMethod)lootMethod);

@@ -17,6 +17,7 @@
  */
 
 #include "PlayerbotSecurity.h"
+#include "CompanionAccess.h"
 #include "RBAC.h"
 
 #include "Creature.h"
@@ -45,6 +46,8 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* rea
         return PLAYERBOT_SECURITY_DENY_ALL;
     }
 
+    if (!CanUseCompanions(from))
+        return PLAYERBOT_SECURITY_DENY_ALL;
     // GMs always have full access.
     if (from->GetSession()->HasPermission(rbac::RBAC_PERM_COMMAND_GM))
         return PLAYERBOT_SECURITY_ALLOW_ALL;

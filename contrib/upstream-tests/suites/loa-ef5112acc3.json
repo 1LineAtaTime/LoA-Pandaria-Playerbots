@@ -1,0 +1,12 @@
+{
+  "name": "loa-ef5112acc3-deployment-references",
+  "checks": [
+    {"id":"anvilward_attacks_stored_player","query":"SELECT action_type,target_type,target_param1 FROM smart_scripts WHERE entryorguid=15420 AND source_type=0 AND id=8","expected_rows":[["49","12","1"]]},
+    {"id":"tainted_soil_native_binding","query":"SELECT ScriptName FROM gameobject_template WHERE entry=180921","expected_rows":[["go_tainted_soil"]]},
+    {"id":"courier_has_patrol","query":"SELECT c.MovementType,COUNT(w.point)>1 FROM creature c JOIN creature_addon a ON a.guid=c.guid JOIN waypoint_data w ON w.id=a.path_id WHERE c.guid=161449 AND c.id=2714 GROUP BY c.guid,c.MovementType","expected_rows":[["2","1"]]},
+    {"id":"valorcall_has_patrol","query":"SELECT c.MovementType,COUNT(w.point)>100 FROM creature c JOIN creature_addon a ON a.guid=c.guid JOIN waypoint_data w ON w.id=a.path_id WHERE c.guid=160855 AND c.id=2612 GROUP BY c.guid,c.MovementType","expected_rows":[["2","1"]]},
+    {"id":"digger_above_cave_floor","query":"SELECT ABS(position_z-144.7)<0.01 FROM creature WHERE guid=160074 AND id=2574","expected_rows":[["1"]]},
+    {"id":"duplicate_kovork_removed","query":"SELECT COUNT(*) FROM creature WHERE guid=11658 AND id=2603","expected_rows":[["0"]]},
+    {"id":"objective_pois_linked","query":"SELECT COUNT(*)>1000 FROM quest_poi WHERE QuestObjectiveId<>0","expected_rows":[["1"]]}
+  ]
+}

@@ -41,7 +41,6 @@ void WorldSession::HandleBattlePayGetProductList(WorldPacket& /*recvData*/)
     }
 
     sBattlePayMgr->SendBattlePayProductList(this);
-    sBattlePayMgr->SendPointsBalance(this);
 }
 
 void WorldSession::HandleBattlePayStartPurchase(WorldPacket& recvData)
@@ -71,9 +70,7 @@ void WorldSession::HandleBattlePayStartPurchase(WorldPacket& recvData)
     recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[2]);
 
-    uint32 purchaseId = irand(1, 999999); // temp solution
-
-    sBattlePayMgr->AddQuenedPurchaseResponse(PurchaseInfo(this, guid, purchaseId, productID, BATTLE_PAY_PURCHASE_STATUS_READY, BATTLE_PAY_RESULT_OK, clientToken, 0, false), 500);
+    sBattlePayMgr->StartPurchase(this, guid, productID, clientToken);
 }
 
 void WorldSession::HandleBattlePayGetPurchaseList(WorldPacket& /*recvData*/)
@@ -87,31 +84,11 @@ void WorldSession::HandleBattlePayConfirmPurchaseResponse(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_BATTLE_PAY_CONFIRM_PURCHASE_RESPONSE");
 
-    uint64 currentPrice = recvData.read<uint64>(); // TODO: use it!
+    uint64 currentPrice = recvData.read<uint64>();
     uint32 serverToken = recvData.read<uint32>();
     bool confirm = recvData.read<bool>();
 
-    // #969: the step of this account, and only while it waits for this confirmation. A repeated or
-    // late confirm (after BUYING was queued or the purchase finished) used to queue a second delivery
-    // and a second charge: two boosts.
-    PurchaseInfo* purchase = sBattlePayMgr->GetPurchaseInfo(this);
-    if (!purchase || purchase->PurchaseStatus != BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY || purchase->ResultCode != BATTLE_PAY_RESULT_OK || !purchase->ServerToken)
-    {
-        TC_LOG_DEBUG("network", "WorldSession::HandleBattlePayConfirmPurchaseResponse: no purchase waiting for confirmation (account %u), ignored.", GetAccountId());
-        return;
-    }
-
-    if (confirm && serverToken == purchase->ServerToken)
-    {
-        PurchaseInfo buying(this, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_BUYING, BATTLE_PAY_RESULT_OK, purchase->ClientToken, serverToken, false);
-        sBattlePayMgr->AddQuenedPurchaseResponse(buying, 8000); // do not touch timers! everything here should be as it is! decreasing timer will cause errors, for example: window with purchase close automatically and causing random client crashes
-    }
-    else
-    {
-        PurchaseInfo declined(this, purchase->SelectedPlayer, purchase->PurchaseId, purchase->ProductId, BATTLE_PAY_PURCHASE_STATUS_ALLOWED_TO_BUY, BATTLE_PAY_RESULT_DECLINED, purchase->ClientToken, 0, false);
-        purchase->ServerToken = 0; // a declined purchase can not be confirmed afterwards
-        sBattlePayMgr->SendBattlePayPurchaseUpdate(&declined);
-    }
+    sBattlePayMgr->ConfirmPurchase(this, currentPrice, serverToken, confirm);
 }
 
 void WorldSession::HandleBattlePayCharBoost(WorldPacket& recvData)
@@ -167,8 +144,9 @@ void WorldSession::HandleBattlePayCharBoost(WorldPacket& recvData)
     {
         uint32 charInfo = recvData.read<uint32>();
 
+        if (!GetBoost()->SetBoostedCharInfo(guid, CHARACTER_BOOST_ITEMS, (charInfo & CHARACTER_BOOST_SPEC_MASK), (charInfo & CHARACTER_BOOST_FACTION_ALLIANCE)))
+            return;
         sBattlePayMgr->SendBattlePayDistributionUpdate(this, BATTLE_PAY_SERVICE_BOOST, CHARACTER_BOOST_CHOOSED);
-        GetBoost()->SetBoostedCharInfo(guid, CHARACTER_BOOST_ITEMS, (charInfo & CHARACTER_BOOST_SPEC_MASK), (charInfo & CHARACTER_BOOST_FACTION_ALLIANCE));
 
         WorldPacket data(SMSG_CHARACTER_UPGRADE_STARTED, 8);
         data.WriteBit(guid[6]);

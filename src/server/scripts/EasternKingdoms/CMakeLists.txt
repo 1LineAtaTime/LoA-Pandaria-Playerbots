@@ -170,6 +170,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/Deadmines/boss_captain_cookie.cpp
   EasternKingdoms/Deadmines/boss_foereaper5000.cpp
   EasternKingdoms/Deadmines/boss_glubtok.cpp
+  EasternKingdoms/Deadmines/boss_glubtok_sf27.cpp
   EasternKingdoms/Deadmines/boss_helix_gearbreaker.cpp
   EasternKingdoms/Deadmines/boss_vanessa_vancleef.cpp
   EasternKingdoms/Deadmines/instance_deadmines.cpp

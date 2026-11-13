@@ -144,6 +144,7 @@ set(scripts_STAT_SRCS
   Kalimdor/zone_thousand_needles.cpp
   Kalimdor/zone_ashenvale.cpp
   Kalimdor/zone_teldrassil.cpp
+  Kalimdor/zone_teldrassil_sf27.cpp
   Kalimdor/OnyxiasLair/boss_onyxia.cpp
   Kalimdor/OnyxiasLair/onyxias_lair.h
   Kalimdor/OnyxiasLair/instance_onyxias_lair.cpp

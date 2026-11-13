@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "gameplay_tested": false,
+  "full_row_preservation": true,
+  "idempotent": true,
+  "source_updates": 12,
+  "matched_by_update": [
+    1,
+    1,
+    58,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    0,
+    2
+  ],
+  "contracts": 64,
+  "changed_rows": {
+    "conditions": 3,
+    "creature_template": 58,
+    "gossip_menu_option": 0,
+    "quest_template_addon": 0
+  },
+  "fixture_removed": true
+}

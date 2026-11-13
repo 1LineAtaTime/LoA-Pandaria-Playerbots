@@ -1,0 +1,660 @@
+{
+  "schema_version": 1,
+  "generator_sha256": "873d029bc4eaf9135ef2c2195c77252ad8a52c774c254f6e97a30e139cb5e849",
+  "snapshot_note": "Independent SELECT snapshots of public world definitions; no account/character data. Data can change if a concurrent migration runs.",
+  "generated_utc": "2026-11-08T18:04:53.803605+00:00",
+  "target": "5.4.8 build 18414",
+  "reference_caveat": "Local DB2 headers often record 18273; extraction/build provenance needs verification. No claim that local assets are a pristine 18414 master.",
+  "world_schema": "mop_loa_world",
+  "source_revision": "b7a409b377d96e7ccc101d2b07d14420b1fbfc4b",
+  "categories": [
+    {
+      "category": "quests",
+      "records": 18161,
+      "comparison": {
+        "present_in_both": 18028,
+        "reference_only_review": 16,
+        "server_only_review": 117
+      },
+      "name_difference_rows": 1,
+      "note": "Union of client QuestV2 IDs and peer LoA quest definitions. Includes obsolete/test content; not an active-quest whitelist."
+    },
+    {
+      "category": "items",
+      "records": 88306,
+      "comparison": {
+        "present_in_both": 79923,
+        "server_only_review": 101,
+        "reference_only_review": 8282
+      },
+      "name_difference_rows": 4,
+      "note": "Client Item/Item-sparse union; absent IDs require build/hotfix/test-content review before import."
+    },
+    {
+      "category": "item_sparse_coverage",
+      "records": 72187,
+      "comparison": {
+        "present_in_both": 72187
+      },
+      "name_difference_rows": 0,
+      "note": "Separate sparse item-detail subset; not all Item.db2 IDs have sparse rows."
+    },
+    {
+      "category": "creatures",
+      "records": 57638,
+      "comparison": {
+        "present_in_both": 57514,
+        "server_only_review": 120,
+        "reference_only_review": 4
+      },
+      "name_difference_rows": 7,
+      "note": "Peer-reference comparison. Creature.db2 is only a client subset and is not used as a universal NPC list."
+    },
+    {
+      "category": "boss_candidates",
+      "records": 1425,
+      "comparison": {
+        "server_candidate_only": 1425
+      },
+      "name_difference_rows": 0,
+      "note": "Union of rank=3, instance-bind flag, encounter-credit creature and boss_* script candidates; not a complete or verified boss list."
+    },
+    {
+      "category": "gameobjects",
+      "records": 41373,
+      "comparison": {
+        "reference_only_review": 7006,
+        "present_in_both": 34358,
+        "server_only_review": 9
+      },
+      "name_difference_rows": 307,
+      "note": "Peer-reference templates; definition presence does not prove spawns, phases or interactions."
+    },
+    {
+      "category": "spells",
+      "records": 94842,
+      "comparison": {
+        "client_asset_present": 94842
+      },
+      "name_difference_rows": 0,
+      "note": "Many spells are data-driven and need no C++ script. Client availability is not a mechanics test."
+    },
+    {
+      "category": "dungeon_encounters",
+      "records": 699,
+      "comparison": {
+        "credit_mapping_absent_review": 212,
+        "credit_mapping_present": 487
+      },
+      "name_difference_rows": 0,
+      "note": "Direct DungeonEncounter ID to instance_encounters entry comparison. Script-controlled encounter credit may need separate inspection."
+    },
+    {
+      "category": "journal_instances",
+      "records": 83,
+      "comparison": {
+        "client_journal_entry": 83
+      },
+      "name_difference_rows": 0,
+      "note": "Client journal instance index, including historical/unused entries."
+    },
+    {
+      "category": "journal_encounters",
+      "records": 430,
+      "comparison": {
+        "client_journal_entry": 430
+      },
+      "name_difference_rows": 0,
+      "note": "Journal IDs are not DungeonEncounter IDs; do not join them by numeric equality."
+    },
+    {
+      "category": "journal_boss_actors",
+      "records": 507,
+      "comparison": {
+        "name_candidates_review": 507
+      },
+      "name_difference_rows": 0,
+      "note": "Display IDs are not creature template IDs. Exact names are only candidates, including phase variants; never a proof of a missing/working boss."
+    },
+    {
+      "category": "maps",
+      "records": 288,
+      "comparison": {
+        "client_asset_present": 288
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "areas",
+      "records": 3991,
+      "comparison": {
+        "client_asset_present": 3991
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "achievements",
+      "records": 3793,
+      "comparison": {
+        "client_asset_present": 3793
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "currencies",
+      "records": 59,
+      "comparison": {
+        "client_asset_present": 59
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "factions",
+      "records": 501,
+      "comparison": {
+        "client_asset_present": 501
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "classes",
+      "records": 11,
+      "comparison": {
+        "client_asset_present": 11
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "races",
+      "records": 26,
+      "comparison": {
+        "client_asset_present": 26
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "specializations",
+      "records": 37,
+      "comparison": {
+        "client_asset_present": 37
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "skill_lines",
+      "records": 171,
+      "comparison": {
+        "client_asset_present": 171
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "taxi_nodes",
+      "records": 621,
+      "comparison": {
+        "client_asset_present": 621
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "lfg_activities",
+      "records": 343,
+      "comparison": {
+        "client_asset_present": 343
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "talents",
+      "records": 198,
+      "comparison": {
+        "client_asset_present": 198
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "battlegrounds_arenas",
+      "records": 25,
+      "comparison": {
+        "client_asset_present": 25
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "achievement_criteria",
+      "records": 10836,
+      "comparison": {
+        "client_asset_present": 10836
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "scenarios",
+      "records": 50,
+      "comparison": {
+        "client_asset_present": 50
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "scenario_steps",
+      "records": 185,
+      "comparison": {
+        "client_asset_present": 185
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "research_projects",
+      "records": 179,
+      "comparison": {
+        "client_asset_present": 179
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "research_branches",
+      "records": 13,
+      "comparison": {
+        "client_asset_present": 13
+      },
+      "name_difference_rows": 0,
+      "note": "Loaded client table inventory only; no independent mechanics/availability verdict."
+    },
+    {
+      "category": "skill_ability_links",
+      "records": 8240,
+      "comparison": {
+        "client_relationship_present": 8240
+      },
+      "name_difference_rows": 0,
+      "note": "Relationship inventory, not a comprehensive playable recipe/mount/pet acceptance list."
+    },
+    {
+      "category": "taxi_paths",
+      "records": 2296,
+      "comparison": {
+        "client_relationship_present": 2296
+      },
+      "name_difference_rows": 0,
+      "note": "Relationship inventory, not a comprehensive playable recipe/mount/pet acceptance list."
+    },
+    {
+      "category": "mount_item_links",
+      "records": 509,
+      "comparison": {
+        "client_relationship_present": 509
+      },
+      "name_difference_rows": 0,
+      "note": "Relationship inventory, not a comprehensive playable recipe/mount/pet acceptance list."
+    },
+    {
+      "category": "battle_pet_species",
+      "records": 845,
+      "comparison": {
+        "client_relationship_present": 845
+      },
+      "name_difference_rows": 0,
+      "note": "Relationship inventory, not a comprehensive playable recipe/mount/pet acceptance list."
+    },
+    {
+      "category": "profession_recipe_candidates",
+      "records": 5696,
+      "comparison": {
+        "profession_ability_candidate": 5696
+      },
+      "name_difference_rows": 0,
+      "note": "Primary/secondary profession ability candidates (skill categories 9/11), not all obtainable recipe items or discoveries."
+    },
+    {
+      "category": "world_systems",
+      "records": 24,
+      "comparison": {
+        "observed_server_metadata_only": 24
+      },
+      "name_difference_rows": 0,
+      "note": "Exact counts of supporting systems; no reference-completeness verdict. No personal/account tables read."
+    },
+    {
+      "category": "reference_integrity_findings",
+      "records": 10,
+      "comparison": {
+        "not_compared": 10
+      },
+      "name_difference_rows": 0,
+      "note": "Concrete current references needing review; not automatically an active/obtainable quest."
+    }
+  ],
+  "sources": [
+    {
+      "file": "loa-world-reference.sql",
+      "sha256": "ab00066b89ab79649e2cd475781f4aecbd394c5520b3a9584fdcf45ae429f28a",
+      "kind": "LoA community database peer reference; not Blizzard complete truth",
+      "release": "v1.0.4",
+      "commit": "e135742e1891d3e653d27966da2dc70e793f203e",
+      "url": "https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/v1.0.4",
+      "verified_archive_member": "world.sql"
+    },
+    {
+      "file": "QuestV2.dbc",
+      "magic": "WDBC",
+      "records": 16839,
+      "fields": 2,
+      "record_bytes": 8,
+      "string_bytes": 1,
+      "sha256": "62ba32c5b1f5c51e3aea06d94ef95db85c469a1c23b74e2e731c9b8910e0153a"
+    },
+    {
+      "file": "Item.db2",
+      "magic": "WDB2",
+      "records": 88205,
+      "fields": 8,
+      "record_bytes": 32,
+      "string_bytes": 1,
+      "sha256": "7a5cf5b6cd445936fab139cdba2ae1a416ee72f553e10a50e7b253163bbfc717",
+      "header_build": 18273,
+      "locale_mask": 4294967295,
+      "min_id": 0,
+      "max_id": 0,
+      "table_hash": 1344507586,
+      "header_extra": 0
+    },
+    {
+      "file": "Item-sparse.db2",
+      "magic": "WDB2",
+      "records": 72187,
+      "fields": 134,
+      "record_bytes": 536,
+      "string_bytes": 2229544,
+      "sha256": "a20bb45581126daf971d5f9ab0b056372ba53718a8986f7854ab83e6d7b9f2b1",
+      "header_build": 18273,
+      "locale_mask": 1,
+      "min_id": 17,
+      "max_id": 112353,
+      "table_hash": 2442913102,
+      "header_extra": 0
+    },
+    {
+      "file": "Spell.dbc",
+      "magic": "WDBC",
+      "records": 94842,
+      "fields": 25,
+      "record_bytes": 100,
+      "string_bytes": 4382713,
+      "sha256": "72b5b6756843ec151d10578f90f2eff12e000e3dab616222d21ae41b1d890e9c"
+    },
+    {
+      "file": "DungeonEncounter.dbc",
+      "magic": "WDBC",
+      "records": 699,
+      "fields": 9,
+      "record_bytes": 36,
+      "string_bytes": 8811,
+      "sha256": "11ffaef9aa5ea0ed68a994904da0981b5c477606a64053e2c7b09e06a84452e9"
+    },
+    {
+      "file": "JournalInstance.dbc",
+      "magic": "WDBC",
+      "records": 83,
+      "fields": 8,
+      "record_bytes": 32,
+      "string_bytes": 25931,
+      "sha256": "3e86c8c3cfbabd96973452e65d78d02e77e8e154a9332e05adcb726fba8c6d1c"
+    },
+    {
+      "file": "JournalEncounter.dbc",
+      "magic": "WDBC",
+      "records": 430,
+      "fields": 12,
+      "record_bytes": 48,
+      "string_bytes": 139112,
+      "sha256": "b978936a82f5cdc6e3893de70c96327b2ff4e3c55f89a53a21d09251af5de897"
+    },
+    {
+      "file": "JournalEncounterCreature.dbc",
+      "magic": "WDBC",
+      "records": 507,
+      "fields": 7,
+      "record_bytes": 28,
+      "string_bytes": 7931,
+      "sha256": "ebae3e4fbf21612c6d5885a5144cf0c0c679c27956292b826ef11192e5178f61"
+    },
+    {
+      "file": "Map.dbc",
+      "magic": "WDBC",
+      "records": 288,
+      "fields": 19,
+      "record_bytes": 76,
+      "string_bytes": 17314,
+      "sha256": "0ce2a96a93a8635bc612f1b1c860a0ca721a5d983ac85e41f52e8df9de321b64"
+    },
+    {
+      "file": "AreaTable.dbc",
+      "magic": "WDBC",
+      "records": 3991,
+      "fields": 30,
+      "record_bytes": 120,
+      "string_bytes": 113966,
+      "sha256": "bc2921a213ac5fe12b585a21aee35f39d31c2591dff9b60a4a30edfd407a12b1"
+    },
+    {
+      "file": "Achievement.dbc",
+      "magic": "WDBC",
+      "records": 3793,
+      "fields": 15,
+      "record_bytes": 60,
+      "string_bytes": 286505,
+      "sha256": "5d5cfe6bed367f41fd98a09dc4281a76bf6b71f08f1c258b9a2601203a1e637f"
+    },
+    {
+      "file": "CurrencyTypes.dbc",
+      "magic": "WDBC",
+      "records": 59,
+      "fields": 12,
+      "record_bytes": 48,
+      "string_bytes": 5118,
+      "sha256": "2f3b4bb91d526e796a1ec7a8892edaa09b8324132c5f54e755ce8d75a1215f28"
+    },
+    {
+      "file": "Faction.dbc",
+      "magic": "WDBC",
+      "records": 501,
+      "fields": 28,
+      "record_bytes": 112,
+      "string_bytes": 26103,
+      "sha256": "a57c072263006619e29df12ef2a1ba9c33955305f2e75a7b12d96d98d913ffd7"
+    },
+    {
+      "file": "ChrClasses.dbc",
+      "magic": "WDBC",
+      "records": 11,
+      "fields": 18,
+      "record_bytes": 72,
+      "string_bytes": 170,
+      "sha256": "de752077fd04b04cf28f728a849f082acf6b342703b27efc51a9969ed6aa9505"
+    },
+    {
+      "file": "ChrRaces.dbc",
+      "magic": "WDBC",
+      "records": 26,
+      "fields": 36,
+      "record_bytes": 144,
+      "string_bytes": 415,
+      "sha256": "e6ee973125e823200684ef4e51b6120a782522bc638262cc90c2725d4c9f8ad4"
+    },
+    {
+      "file": "ChrSpecialization.dbc",
+      "magic": "WDBC",
+      "records": 37,
+      "fields": 14,
+      "record_bytes": 56,
+      "string_bytes": 3855,
+      "sha256": "7ab706287bd460f6e29dc792ee1abb94729a8bbc8778be5966b761222a281bb3"
+    },
+    {
+      "file": "SkillLine.dbc",
+      "magic": "WDBC",
+      "records": 171,
+      "fields": 9,
+      "record_bytes": 36,
+      "string_bytes": 5794,
+      "sha256": "66bfed25f334112bb889a4e8726180ad7e59db2dfded5d8537d945c5cfe704ad"
+    },
+    {
+      "file": "TaxiNodes.dbc",
+      "magic": "WDBC",
+      "records": 621,
+      "fields": 12,
+      "record_bytes": 48,
+      "string_bytes": 21736,
+      "sha256": "1e91c8ea0c30720877e24c5110a5457442c4792fda2de6acf11e5c90d5c5c390"
+    },
+    {
+      "file": "LFGDungeons.dbc",
+      "magic": "WDBC",
+      "records": 343,
+      "fields": 29,
+      "record_bytes": 116,
+      "string_bytes": 9730,
+      "sha256": "42c4427a52d9bbe136749a24ae30080833ce70366e400853238fcd571dd355f8"
+    },
+    {
+      "file": "Talent.dbc",
+      "magic": "WDBC",
+      "records": 198,
+      "fields": 11,
+      "record_bytes": 44,
+      "string_bytes": 1482,
+      "sha256": "e8f418af0dfb0faafc716a6bd7a65833b3277ec64c2c641796c83fe0df5741a1"
+    },
+    {
+      "file": "BattleMasterList.dbc",
+      "magic": "WDBC",
+      "records": 25,
+      "fields": 30,
+      "record_bytes": 120,
+      "string_bytes": 446,
+      "sha256": "794af7a66c454be2d3522a9c431d1f99b2e155f7eb0e7c5a583328d2a3f52775"
+    },
+    {
+      "file": "Achievement_Criteria.dbc",
+      "magic": "WDBC",
+      "records": 10836,
+      "fields": 23,
+      "record_bytes": 96,
+      "string_bytes": 128269,
+      "sha256": "d5d437a7b6006299efc9806906a05a8dec116ea1906ad6bd03f852b350590ec4"
+    },
+    {
+      "file": "Scenario.dbc",
+      "magic": "WDBC",
+      "records": 50,
+      "fields": 3,
+      "record_bytes": 12,
+      "string_bytes": 865,
+      "sha256": "9407e415552e7c3ce1717bfd6158ba979658bf2500ffb94edabac4e71617691a"
+    },
+    {
+      "file": "ScenarioStep.dbc",
+      "magic": "WDBC",
+      "records": 185,
+      "fields": 7,
+      "record_bytes": 28,
+      "string_bytes": 11135,
+      "sha256": "efe7320c38897173678c3ad8b7b0bd63eb00c9a340459bd7d6fa282758a1183a"
+    },
+    {
+      "file": "ResearchProject.dbc",
+      "magic": "WDBC",
+      "records": 179,
+      "fields": 9,
+      "record_bytes": 36,
+      "string_bytes": 17337,
+      "sha256": "46510a9ea966418e122e5f81fc76816fa89f73a7a5d04c05ed57507a29b8f0aa"
+    },
+    {
+      "file": "ResearchBranch.dbc",
+      "magic": "WDBC",
+      "records": 13,
+      "fields": 6,
+      "record_bytes": 24,
+      "string_bytes": 550,
+      "sha256": "d035552e41c29bed1dadd58f0ef563d934545e36d9fa131a8ce417ec0f4dc69e"
+    },
+    {
+      "file": "SkillLineAbility.dbc",
+      "magic": "WDBC",
+      "records": 8240,
+      "fields": 13,
+      "record_bytes": 52,
+      "string_bytes": 1,
+      "sha256": "48f6ca0160f62f2073f5c1e48b474cb937622b1a8466650db761955cb6c9fd3f"
+    },
+    {
+      "file": "TaxiPath.dbc",
+      "magic": "WDBC",
+      "records": 2296,
+      "fields": 4,
+      "record_bytes": 16,
+      "string_bytes": 1,
+      "sha256": "44cb033c264e6724ba47426ce9fb28c65aa8d3aae020e3fb3ec8631ce4a4c33b"
+    },
+    {
+      "file": "ItemToMountSpell.db2",
+      "magic": "WDB2",
+      "records": 509,
+      "fields": 2,
+      "record_bytes": 8,
+      "string_bytes": 1,
+      "sha256": "eacbb07aa40d809f8edf6198d3183b09741877675be10f500a13efb144744fe0",
+      "header_build": 18273,
+      "locale_mask": 4294967295,
+      "min_id": 0,
+      "max_id": 0,
+      "table_hash": 1440631488,
+      "header_extra": 0
+    },
+    {
+      "file": "BattlePetSpecies.db2",
+      "magic": "WDB2",
+      "records": 845,
+      "fields": 9,
+      "record_bytes": 36,
+      "string_bytes": 101209,
+      "sha256": "b30b9615cba236f14715e3f080f470a86ca2c446a1d904734339ab60f5e08b12",
+      "header_build": 18273,
+      "locale_mask": 1,
+      "min_id": 0,
+      "max_id": 0,
+      "table_hash": 1821637041,
+      "header_extra": 0
+    }
+  ],
+  "reference_sql": {
+    "file": "loa-world-reference.sql",
+    "sha256": "ab00066b89ab79649e2cd475781f4aecbd394c5520b3a9584fdcf45ae429f28a",
+    "kind": "LoA community database peer reference; not Blizzard complete truth",
+    "release": "v1.0.4",
+    "commit": "e135742e1891d3e653d27966da2dc70e793f203e",
+    "url": "https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/v1.0.4",
+    "verified_archive_member": "world.sql"
+  },
+  "all_content_verified": false
+}

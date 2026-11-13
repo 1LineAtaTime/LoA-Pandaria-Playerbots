@@ -134,6 +134,17 @@ void GameObject::CleanupsBeforeDelete(bool finalCleanup)
         RemoveFromOwner();
 }
 
+void GameObject::SetOwnerGUID(ObjectGuid owner)
+{
+    ObjectGuid previous = GetOwnerGUID();
+    ASSERT(!owner || !previous || previous == owner);
+    if (previous && previous != owner && FindMap())
+        if (Unit* creator = ObjectAccessor::GetUnit(*this, previous))
+            creator->RemoveCreatedGameObjectReference(this);
+    m_spawnedByDefault = false;
+    SetGuidValue(GAMEOBJECT_FIELD_CREATED_BY, owner);
+}
+
 void GameObject::RemoveFromOwner()
 {
     ObjectGuid ownerGUID = GetOwnerGUID();
@@ -918,6 +929,9 @@ bool GameObject::LoadGameObjectFromDB(uint32 guid, Map* map, bool addToMap)
     float y = data->posY;
     float z = data->posZ;
     float ang = data->orientation;
+
+    if (Transport* transport = GetTransport())
+        transport->CalculatePassengerPosition(x, y, z, &ang);
 
     uint32 animprogress = data->animprogress;
     GOState go_state = data->go_state;

@@ -157,10 +157,14 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool /*minimal*/)
         return;
 
     uint32 maxAllowedBotCount = GetEventValue(0, "bot_count");
-    if (!maxAllowedBotCount || (maxAllowedBotCount < sPlayerbotAIConfig->minRandomBots ||
-        maxAllowedBotCount > sPlayerbotAIConfig->maxRandomBots))
+    // Operational ramp below the configured final range; 0 restores normal min/max.
+    // Read dynamically so a staged load test needs no recompile or repeated restart.
+    uint32 const rampTarget = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.OnlineTargetOverride", 0)));
+    uint32 const effectiveMin = rampTarget ? std::min(rampTarget, sPlayerbotAIConfig->maxRandomBots) : sPlayerbotAIConfig->minRandomBots;
+    uint32 const effectiveMax = rampTarget ? effectiveMin : sPlayerbotAIConfig->maxRandomBots;
+    if (!maxAllowedBotCount || maxAllowedBotCount < effectiveMin || maxAllowedBotCount > effectiveMax)
     {
-        maxAllowedBotCount = sPlayerbotAIConfig->minRandomBots + (std::rand() % (sPlayerbotAIConfig->maxRandomBots - sPlayerbotAIConfig->minRandomBots + 1));
+        maxAllowedBotCount = effectiveMin + (std::rand() % (effectiveMax - effectiveMin + 1));
         auto randomInterval = sPlayerbotAIConfig->randomBotCountChangeMinInterval +
             (std::rand() % (sPlayerbotAIConfig->randomBotCountChangeMaxInterval - sPlayerbotAIConfig->randomBotCountChangeMinInterval + 1));
         SetEventValue(0, "bot_count", maxAllowedBotCount, randomInterval);
@@ -669,6 +673,8 @@ namespace
 bool PickDeferredPandarenFaction(Player* bot);   // #952, defined below
 }
 
+namespace { bool TryDalaranCityVisit(Player* bot); }
+
 bool RandomPlayerbotMgr::ProcessBot(Player* player)
 {
     ObjectGuid bot = player->GetGUID();
@@ -755,6 +761,10 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
             return false;
         }
 
+        // Bounded capital visitors are drawn only from eligible idle random bots.
+        if (TryDalaranCityVisit(player))
+            return true;
+
         // #952: a neutral Pandaren that reached the Wandering Isle's exit level on the isle picks its faction now,
         // without waiting for its next teleport for level or login.
         if (PickDeferredPandarenFaction(player))
@@ -776,6 +786,10 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
                 pmo->finish();
             return true;
         }
+
+        if (player->GetZoneId() == 4395 && player->GetPositionZ() > 630.0f &&
+            GetValue(player, "city_visit_until") > uint32(time(nullptr)))
+            return false; // Finish the visit before the ordinary periodic relocation.
 
         uint32 teleport = GetEventValue(bot, "teleport");
         if (!teleport)
@@ -1015,6 +1029,96 @@ bool RandomTeleportToLocs(Player* bot, std::vector<WorldLocation> const& locs, b
         return true;
     }
     return false;
+}
+
+bool TryDalaranCityVisit(Player* bot)
+{
+    if (!sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true)) return false;
+    uint32 target = uint32(std::max(0, std::min(64, sConfigMgr->GetIntDefault("AiPlayerbot.CityLife.DalaranTarget", 24))));
+    if (!target || !bot || !sRandomPlayerbotMgr->IsRandomBot(bot) || bot->GetLevel() < 70 ||
+        !bot->IsInWorld() || !bot->IsAlive() || bot->IsBeingTeleported() || bot->GetInstanceId() ||
+        !WorldPosition(bot).isOverworld() || bot->GetRace() == RACE_PANDAREN_NEUTRAL ||
+        bot->GetGroup() || bot->IsInCombat() || bot->IsInFlight() || bot->GetTransport() || bot->GetVehicle() ||
+        bot->duel || bot->InBattlegroundQueue() || bot->InBattleground() || bot->IsNonMeleeSpellCasted(true) ||
+        BotScenario::WantsTrail(bot)) return false;
+    PlayerbotAI* ai = GET_PLAYERBOT_AI(bot);
+    if (!ai || ai->HasActivePlayerMaster() || !ai->HasStrategy("new rpg", BOT_STATE_NON_COMBAT)) return false;
+    NewRpgStatus status = ai->GetRpgInfo().GetStatus();
+    if (status != RPG_IDLE && status != RPG_REST && status != RPG_WANDER_RANDOM && status != RPG_WANDER_NPC) return false;
+
+    static std::mutex gate;
+    std::unique_lock<std::mutex> lock(gate, std::try_to_lock);
+    if (!lock.owns_lock()) return false;
+    static time_t censusAt = 0, admissionAt = 0;
+    static uint32 present = 0;
+    time_t now = time(nullptr);
+    uint32 stay = uint32(std::max(300, std::min(3600, sConfigMgr->GetIntDefault("AiPlayerbot.CityLife.VisitSeconds", 1200))));
+    if (now >= censusAt)
+    {
+        present = 0;
+        for (Player* resident : sRandomPlayerbotMgr->GetPlayerBotsSnapshot())
+            if (resident && resident->IsInWorld() && !resident->IsBeingTeleported() && resident->IsAlive() && resident->GetZoneId() == 4395 &&
+                resident->GetPositionZ() > 630.0f && !resident->GetGroup())
+            {
+                ++present;
+                if (present <= target)
+                    if (PlayerbotAI* rai = GET_PLAYERBOT_AI(resident))
+                        if (!rai->HasActivePlayerMaster() && resident->GetLevel() >= 70 &&
+                            !sRandomPlayerbotMgr->GetValue(resident, "city_visit_until"))
+                            sRandomPlayerbotMgr->SetValue(resident, "city_visit_until", uint32(now) + stay);
+            }
+        censusAt = now + 30;
+    }
+    if (bot->GetZoneId() == 4395)
+    {
+        uint32 until = sRandomPlayerbotMgr->GetValue(bot, "city_visit_until");
+        if (!until || until > uint32(now)) return false;
+        for (Player* player : sRandomPlayerbotMgr->GetPlayers())
+            if (player && player->IsInWorld() && player->GetMapId() == bot->GetMapId() && bot->GetDistance(player) < 150.0f)
+            {
+                sRandomPlayerbotMgr->SetValue(bot, "city_visit_until", uint32(now) + stay);
+                return false; // Extend a watched visit rather than visibly disappear.
+            }
+        if (RandomTeleportToLocs(bot, sTravelMgr.GetTeleportLocations(bot)))
+        {
+            sRandomPlayerbotMgr->SetValue(bot, "city_visit_until", 0);
+            return true;
+        }
+        return false;
+    }
+    if (present >= target || now < admissionAt || RoamTransport::DefersRandomTeleport(bot)) return false;
+    for (Player* player : sRandomPlayerbotMgr->GetPlayers())
+        if (player && player->IsInWorld() && player->GetMapId() == bot->GetMapId() && bot->GetDistance(player) < 150.0f)
+            return false; // Invisible GMs count too: don't disappear in front of observers.
+
+    std::vector<WorldLocation> locations;
+    WorldLocation const anchors[] = {
+        WorldLocation(571, 5905.52f, 627.21f, 646.96f), WorldLocation(571, 5797.57f, 680.74f, 647.16f),
+        WorldLocation(571, 5762.86f, 628.57f, 650.18f), WorldLocation(571, 5627.75f, 702.13f, 652.64f)};
+    auto bots = sRandomPlayerbotMgr->GetPlayerBotsSnapshot();
+    for (WorldLocation loc : anchors)
+    {
+        float angle = float(bot->GetGUID().GetCounter() % 6283) / 1000.0f;
+        loc.Relocate(loc.GetPositionX() + 4.0f * std::cos(angle), loc.GetPositionY() + 4.0f * std::sin(angle), loc.GetPositionZ());
+        Map* map = sMapMgr->FindMap(571, 0);
+        if (!map) continue;
+        float floor = map->GetHeight(bot->GetPhaseMask(), loc.GetPositionX(), loc.GetPositionY(), loc.GetPositionZ()+0.5f);
+        if (floor <= INVALID_HEIGHT || std::fabs(floor - loc.GetPositionZ()) > 4.0f ||
+            map->GetZoneId(bot->GetPhaseMask(), loc.GetPositionX(), loc.GetPositionY(), floor+0.1f) != 4395)
+            continue; // Never snap a street arrival down through a sewer opening.
+        bool occupied = false;
+        for (Player* other : bots)
+            if (other && other->IsInWorld() && other->GetMapId() == 571 && other->GetExactDist(loc) < 6.0f) { occupied = true; break; }
+        for (Player* player : sRandomPlayerbotMgr->GetPlayers())
+            if (player && player->IsInWorld() && player->GetMapId() == 571 && player->GetExactDist(loc) < 60.0f) { occupied = true; break; }
+        if (!occupied) locations.push_back(loc);
+    }
+    admissionAt = now + 15;
+    if (locations.empty() || !RandomTeleportToLocs(bot, locations)) return false;
+    sRandomPlayerbotMgr->SetValue(bot, "city_visit_until", uint32(now) + stay);
+    ++present;
+    TC_LOG_INFO("playerbots", "[CITY] Admitted one idle level70+ bot to Dalaran surface (%u/%u); visit %us", present, target, stay);
+    return true;
 }
 
 // #228: the neutral Pandaren faction pick (moved here unchanged from OnBotLoginInternal so #952 can also call it).
@@ -3690,7 +3794,10 @@ void RandomPlayerbotMgr::AssignAccountTypes()
     {
         do
         {
-            allRandomBotAccounts.push_back(allAccounts->Fetch()[0].GetUInt32());
+            uint32 const id = allAccounts->Fetch()[0].GetUInt32();
+            if (!sConfigMgr->GetBoolDefault("AiPlayerbot.CuratedNames.Enable", false) ||
+                CharacterDatabase.PQuery("SELECT account_id FROM playerbot_roster_accounts WHERE account_id=%u", id))
+                allRandomBotAccounts.push_back(id);
         } while (allAccounts->NextRow());
     }
 

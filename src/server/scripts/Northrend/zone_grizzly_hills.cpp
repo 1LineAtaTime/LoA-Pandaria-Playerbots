@@ -192,6 +192,11 @@ public:
     {
         if (quest->GetQuestId() == QUEST_PERILOUS_ADVENTURE)
         {
+            // A second accept (including a party bot) must not restart the
+            // active escort or redirect Mr. Floppy away from it.
+            npc_escortAI* escort = CAST_AI(npc_emily::npc_emilyAI, creature->AI());
+            if (!escort || escort->HasEscortState(STATE_ESCORT_ESCORTING))
+                return true;
             creature->AI()->Talk(SAY_QUEST_ACCEPT);
             if (Creature* Mrfloppy = GetClosestCreatureWithEntry(creature, NPC_MRFLOPPY, 180.0f))
                 Mrfloppy->GetMotionMaster()->MoveFollow(creature, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);

@@ -1,0 +1,14 @@
+id,name,comparison,behavior
+1,Dwarf,client_asset_present,not_evaluated
+2,Draenei,client_asset_present,not_evaluated
+3,Fossil,client_asset_present,not_evaluated
+4,Night Elf,client_asset_present,not_evaluated
+5,Nerubian,client_asset_present,not_evaluated
+6,Orc,client_asset_present,not_evaluated
+7,Tol'vir,client_asset_present,not_evaluated
+8,Troll,client_asset_present,not_evaluated
+27,Vrykul,client_asset_present,not_evaluated
+29,Mantid,client_asset_present,not_evaluated
+229,Pandaren,client_asset_present,not_evaluated
+231,Mogu,client_asset_present,not_evaluated
+315,UNUSED,client_asset_present,not_evaluated

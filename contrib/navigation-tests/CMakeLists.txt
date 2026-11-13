@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(DetourEdgeRegression LANGUAGES CXX)
+enable_testing()
+set(DETOUR ../../dep/recastnavigation/Detour)
+add_executable(detour_edge_tests detail_edge_tests.cpp ${DETOUR}/Source/DetourCommon.cpp ${DETOUR}/Source/DetourAlloc.cpp)
+target_include_directories(detour_edge_tests PRIVATE ${DETOUR}/Include)
+add_test(NAME detour_edge_tests COMMAND detour_edge_tests)

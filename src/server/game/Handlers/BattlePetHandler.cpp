@@ -281,7 +281,10 @@ void WorldSession::HandleBattlePetRequestJournal(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_BATTLE_PET_REQUEST_JOURNAL");
 
-    GetPlayer()->GetBattlePetMgr().SendBattlePetJournal();
+    if (recvData.GetOpcode() == CMSG_BATTLE_PET_REQUEST_JOURNAL_LOCK)
+        GetPlayer()->GetBattlePetMgr().SendBattlePetJournalLock();
+    else
+        GetPlayer()->GetBattlePetMgr().SendBattlePetJournal();
 }
 
 void WorldSession::HandleBattlePetSetBattleSlot(WorldPacket& recvData)

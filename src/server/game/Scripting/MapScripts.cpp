@@ -29,10 +29,20 @@
 #include "Transport.h"
 #include "WaypointManager.h"
 #include "World.h"
+#include "SmartScriptMgr.h"
 
 /// Put scripts in the execution queue
 void Map::ScriptsStart(ScriptMapMap const& scripts, uint32 id, Object* source, Object* target)
 {
+    // Authored legacy sequences can include extra quest triggers/delays not
+    // represented by the imported SmartAI rows. Preserve them as authoritative.
+    if (&scripts == &sEventScripts && scripts.find(id) == scripts.end())
+    {
+        WorldObject* eventSource = source ? source->ToWorldObject() : nullptr;
+        WorldObject* eventTarget = target ? target->ToWorldObject() : nullptr;
+        if (sSmartScriptMgr->ProcessWorldEvent(id, eventSource ? eventSource : eventTarget, eventTarget))
+            return;
+    }
     ///- Find the script map
     ScriptMapMap::const_iterator s = scripts.find(id);
     if (s == scripts.end())

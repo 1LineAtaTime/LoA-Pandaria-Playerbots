@@ -2504,60 +2504,10 @@ class spell_q12641_recall_eye_of_acherus : public SpellScript
     }
 };
 
+void AddSC_skyfire27_quest();
+
 void AddSC_quest_spell_scripts()
 {
-    new spell_q55_sacred_cleansing();
-    new spell_q2203_thaumaturgy_channel();
-    new spell_q5206_test_fetid_skull();
-    new spell_q6124_6129_apply_salve();
-    new spell_q10255_administer_antidote();
-    new spell_q11396_11399_force_shield_arcane_purple_x3();
-    new spell_q11396_11399_scourging_crystal_controller();
-    new spell_q11396_11399_scourging_crystal_controller_dummy();
-    new spell_q11515_fel_siphon_dummy();
-    new spell_q11587_arcane_prisoner_rescue();
-    new spell_q11730_ultrasonic_screwdriver();
-    new spell_q12459_seeds_of_natures_wrath();
-    new spell_q12634_despawn_fruit_tosser();
-    new spell_q12683_take_sputum_sample();
-    new spell_q12851_going_bearback();
-    new spell_q12937_relief_for_the_fallen();
-    new spell_q10041_q10040_who_are_they();
-    new spell_symbol_of_life_dummy();
-    new spell_q12659_ahunaes_knife();
-    new spell_script<spell_q9874_liquid_fire>("spell_q9874_liquid_fire");
-    new spell_q12805_lifeblood_dummy();
-    new spell_q13280_13283_plant_battle_standard();
-    new spell_q14112_14145_chum_the_water();
-    new spell_q9452_cast_net();
-    new spell_q12987_read_pronouncement();
-    new spell_q12277_wintergarde_mine_explosion();
-    new spell_q12066_bunny_kill_credit();
-    new spell_q12735_song_of_cleansing();
-    new spell_q12372_cast_from_gossip_trigger();
-    new spell_q12372_destabilize_azure_dragonshrine_dummy();
-    new spell_q11010_q11102_q11023_aggro_check_aura();
-    new spell_q11010_q11102_q11023_aggro_check();
-    new spell_q11010_q11102_q11023_aggro_burst();
-    new spell_q11010_q11102_q11023_choose_loc();
-    new spell_q11010_q11102_q11023_q11008_check_fly_mount();
-    new spell_q12372_azure_on_death_force_whisper();
-    new spell_q12527_zuldrak_rat();
-    new spell_q12661_q12669_q12676_q12677_q12713_summon_stefan();
-    new spell_q12730_quenching_mist();
-    new spell_q13291_q13292_q13239_q13261_frostbrood_skytalon_grab_decoy();
-    new spell_q13291_q13292_q13239_q13261_armored_decoy_summon_skytalon();
-    new spell_q12847_summon_soul_moveto_bunny();
-    new spell_q13011_bear_flank_master();
-    new spell_q13086_cannons_target();
-    new spell_q12690_burst_at_the_seams();
-    new spell_q12308_escape_from_silverbrook_summon_worgen();
-    new spell_q12308_escape_from_silverbrook();
-    new spell_q12619_emblazon_runeblade();
-    new spell_q12619_emblazon_runeblade_effect();
-    new spell_q12919_gymers_grab();
-    new spell_q12919_gymers_throw();
-    new spell_q28813_get_our_boys_back_dummy();
     new spell_script<spell_q31450>("spell_q31450");
     new spell_script<spell_q32683_q32726_ghostly_skeleton_key>("spell_q32683_q32726_ghostly_skeleton_key");
     new spell_script<spell_q12414_hand_over_reins>("spell_q12414_hand_over_reins");
@@ -2568,4 +2518,5 @@ void AddSC_quest_spell_scripts()
     new spell_script<spell_q14100_q14111_make_player_destroy_totems>("spell_q14100_q14111_make_player_destroy_totems");
     new spell_script<spell_q12641_recall_eye_of_acherus>("spell_q12641_recall_eye_of_acherus");
 
+    AddSC_skyfire27_quest();
 }

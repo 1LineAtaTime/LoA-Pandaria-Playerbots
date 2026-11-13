@@ -1,0 +1,4476 @@
+{
+  "release_source_pin": "f7a9880b9452e4db900dc9ff783b7b6be3aeeb86",
+  "active_native": "302cec2779",
+  "missing_registered_names": 860,
+  "provided_in_published_source": 83,
+  "not_found_in_release_source": 777,
+  "scope": "Exact literal source lookup for active startup missing-registration names. Source presence is not registration, semantic equivalence, integration or gameplay acceptance. Literal matches can include comments, retired encounters and alternate active implementations; they are not automatically missing fixes.",
+  "scripts": [
+    {
+      "name": "AreaTrigger_amber_hibernal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "AreaTrigger_at_catacombs",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "AreaTrigger_at_catacombs_entrance",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "AreaTrigger_at_ghastly_confines",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "AreaTrigger_at_ghastly_ending",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "AreaTrigger_at_morrowchamber_one",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "ConfessionGlyph",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "FastArenaCrystal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "achievement_on_the_rocks",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardeKeep/boss_keleseth.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "achievement_shatter_resistant",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/HallsOfLightning/boss_volkhan.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "at_alizabal_intro",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/BaradinHold/boss_alizabal.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "at_eye_of_eternity_improvised_floor",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "at_hor_intro_start",
+      "source_paths": [
+        "src/server/scripts/Northrend/FrozenHalls/HallsOfReflection/halls_of_reflection.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "at_madrigosa",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "at_svala_intro",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "at_twiggy_flathead",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "at_twilight_grove",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_arcanist_doan",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_arcanist_doan.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_arlokk",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_azshir_the_sleepless",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_azshir_the_sleepless.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_bloodmage_thalnos",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_bloodmage_thalnos.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_boss_ras_frostwhisper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_darkmaster_gandling",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_death_knight_darkreaver",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_doctor_theolen_krastinov",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_fenstalker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_gahzranka",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_hakkar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_herod",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_herod.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_houndmaster_loksey",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_houndmaster_loksey.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_illucia_barov",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_instructor_malicia",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_interrogator_vishas",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_interrogator_vishas.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_jeklik",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_jindo",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_kirtonos_the_herald",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_koragg",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_kormok",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_lord_alexei_barov",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_lord_raadan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_lorekeeper_polkelt",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_marli",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_mr_smite",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_protectors_of_the_endless",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_scarlet_commander_mograine",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_mograine_and_whitemane.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_scorn",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_scorn.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "boss_the_ravenian",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_thekal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_thurg",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_trial_of_king",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_tuten_kash",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_twilight_corrupter",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "boss_vectus",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "generic_vehicleAI_toc5",
+      "source_paths": [
+        "src/server/scripts/Northrend/CrusadersColiseum/TrialOfTheChampion/boss_grand_champions.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "gerenic_creature",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_abandoned_mole_machine",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_atalai_statue",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/SunkenTemple/sunken_temple.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "go_brazier_of_the_herald",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_crystalline_tear",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/zone_silithus.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "go_door_lever_dm",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_dungeon_archaeology_quest",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_empty_keg_cleaning_house",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_enormous_landslide",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_gong_of_bethekk",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_iruxos",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_kael_orb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_loosely_turned_soil",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_headless_horseman.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "go_mausoleum_door",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_mausoleum_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_mole_machine_console",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_movie_orb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_panther_cage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "go_rattlegore_iron_door",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_abandoned_wreckage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_amber_chunk",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_ancient_amber_chunk_womb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_dakdaks_altar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_dyn_gobelin",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_goblin_escape_pod",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_grummle_package",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_improvised_rod",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_jade_mines_rubble",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_jun_lien_fishing_rack",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_kokos_altar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_restorative_body",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_restorative_heart",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_restorative_mind",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_restorative_spirit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_shrine_of_seekers_body",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_shrine_of_seekers_breath",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_shrine_of_seekers_heart",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_sonar_tower",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "gob_taktaks_altar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "high_priestess_azil_gravity_well_script",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "item_brewfest_ChugAndChuck",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "item_brewfest_ram_reins",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "item_isengard_bonus_reward",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "mob_lurking_tiger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "mob_pandriarch_bramblestaff",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "mob_pandriarch_goldendraft",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "mob_pandriarch_windfur",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_adjunct_zetuk",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_afd_royale_controller",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_afd_royale_ring",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_alliance_horde_trainee",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_amber_beam_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_amber_chunk_mistblade",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_amber_lost_in_the_woods",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_an_windfur",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_an_windfur_follow",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_anachronos_quest_trigger",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/zone_silithus.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_anachronos_the_ancient",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/zone_silithus.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_ancestral_wolf",
+      "source_paths": [
+        "src/server/scripts/Outland/zone_hellfire_peninsula.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_ancient_guardian",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_andorhal_tower",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_april_fools_admin_menu",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_aran_blizzard",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_arcanic_oubliette",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_arenamaster",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_arugal_voidwalker",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_attacking_hozen",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_bambo",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_barrow_bush",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_bartleby",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_batrider",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_battlesworn_paratrooper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_belnistrasz",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_blasting_barrel",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_blaze",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_blazing_monstrosity",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_bluesaddle",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_bold_karasshi",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_boot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_brann_bronzebeard_keystone",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_brewfest_apple_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_brewfest_ram_master",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_brewfest_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_brewgarden_defender",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_broggok_poison_cloud",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_brother_yakshoe_dooker_dome",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_burning_blade_raider_34594",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_burning_cupboard",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_cairne_bloodhoof",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/zone_thunder_bluff.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_calvin_montague",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_candy_cane",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_captain_doren",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_captain_doren_thunder_hold",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_captain_ripflesh",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_captain_soggy",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_captain_soggy_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_captured_yak",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_caravan_moving",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_cart_controller",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_cart_tender",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_cave_in_stalker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chains_of_woe",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chauve_souris_capture",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_cheer_yimo_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_broken_dreams",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_evie_grave",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_evie_grave_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_great_minds_drink_alike",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_resolution",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_stormstout_brewgarden",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_stormstout_cleaning_house",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_stormstout_morrowchamber",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_stormstout_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_chen_stormstout_votfw",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_clintar_spirit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_commander_belmont_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_commander_eligor_dawnbringer",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_commander_lorna_crowley",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_crazed_colossus",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_creature_generator_akama",
+      "source_paths": [
+        "src/server/scripts/Outland/BlackTemple/boss_shade_of_akama.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_crystal_spike_trigger",
+      "source_paths": [
+        "src/server/scripts/Northrend/Nexus/Nexus/boss_ormorok.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_dark_blaze",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_dark_iron_guzzler",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_darkhatcher_skulker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_deckhand_conversation",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_demon_fire",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_dmongs_torch",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_dog_soggys_gamble",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_dragon_launcher",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_dread_lurker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_dual_spec",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_eastern_smoke_trail",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_eddy_cleaning_house",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_eddy_water_bubbles",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_egg_pile",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_elder_hou_revelations",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_elder_sage_wind_yi",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_elder_shiao",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ellie_honeypaw",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ellie_honeypaw_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_explosion_volcano",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_fieldwatcher_mao",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_fizzy_yellow_spirit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_flame_crash",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_flanking_mogul",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_flarecore_golem",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_forsaken_catapult",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_forsaken_vanguard",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_friend_gob",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gai_lan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gao_ran_cannoneer",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gatrul_garrosh_ar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gatrul_gatruls_fall",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_general_nazgrim_jadeforest_ship",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_general_nazgrim_thunder_hold",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_general_nazim_Ship",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_generic_harpoon_cannon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gi_oh",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gilnean_militia",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gilneas_liberation_front",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gizmo",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gnoll_decoy",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gorai_cleansing_mere",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gorai_the_ritual",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gorrok_hostile_natives",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_great_bear_spirit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_grookin_whomper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_grummle_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gunship_fire_bunny",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_gwen_armstead",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_han_stormstout",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_han_stormstout_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_harbinger_of_flame",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_harpoon_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_harpoon_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_harrison_jones",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_hawkmaster_nurong_farwatch",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_head_caravan_kodo_34577",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_healing_ward",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_hemet_parental_mastery",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_hidden_master_summons",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_high_elder_cloudfall",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_high_elder_cloudfall_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_hiveling_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_homunculus",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_hozen_gutripper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_hozen_mudflinger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_idol_room_spawner",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_image_archmage_xylem",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_imp_in_a_ball",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_init_balloon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_initial_chief_rikkitu",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_initial_zinjun",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_injured_gao_ran_blackguard",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_instructor_xann",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_invis_legion_teleporter",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_isengard_daily_quests",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_iyyokuk_the_lucid",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_iyyokuk_the_lucid_klaxxivess",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_jahesh_of_osul",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ji_firepaw_cinematic",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_jiao_leviathan_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_jikun_teleport",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_jilu_cart",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_jin_warmkeg",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_jinyu_attacker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kai_lin_honeydew_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kanati_greycloud",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kao_zouchin_village",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_karoz_the_locust_klaxxivess",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kaztik_end_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kaztik_flying_away",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kaztik_klaxxivess",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kaztik_the_manipulator_questgiver",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kaztik_the_manipulator_reunited",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_keg_bomb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kilruk_amber_is_life",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kilruk_angel_of_death",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kilrum_wind_reaver_dread_clutch",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kilrum_wind_reaver_flight",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kilrum_wind_reaver_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_king_genn_greymane_c2",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_king_jokkum_vehicle",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kiryn_friend_of_my_enemy",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kiryn_grookyn_hill",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kiryn_hostile_natives",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kiryn_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kiryn_on_the_right_track",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kiryn_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_klaxxi_va_lk",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_korkron_dubs_thunder_hold",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_korkron_elite_thunder_hold",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_koro_mistwalker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_koro_unsafe_passage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_korthik_battlesinger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_korven_klaxxivess",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_korven_the_prime_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kota_kon_gossip",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kota_kon_phased",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_kota_kon_vehicle",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_krennan_aranas_c2",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_krikthik_deep_scout",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_krikthik_glider",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lady_fung",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lady_katrana_prestor",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lao_chin_bridge_escort",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lao_chin_bridge_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lao_chin_dusklight_bridge",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lao_chin_iron_belly_winters_blossom",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lao_wall",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lava_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_leveladjusments",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_leviathan_weak_point",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_li_li",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_li_li_day_off",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lianne_gobelin",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lifelike_jade_statue",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lili_cleaning_house",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lili_great_minds_drink_alike",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lili_voftw",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lo_wanderbrew",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_loon_mai",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lord_darius_crowley_gilneas",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lorewalker_cho_29822",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lorewalker_cho_zouchin_village",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lorna_crowley_duskhaven",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lorna_crowley_vehicle",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lucky_eightcoins",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_lya_ten_songs_brewgarden",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_malik_klaxxivess",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_malik_klaxxivess_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mandokir_ohgan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mantid_bunny_amber_womb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mariam_spellwalker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_marksman_lann",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_marksmann_lann_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_angler_ju_lien",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_angler_ju_lien_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_cheng_female_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_cheng_female_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_cheng_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_cheng_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_cheng_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_hight_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_hight_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_hsu_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_hsu_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_kistane_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_kistane_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_shang_xi_grave",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_shang_xi_grave_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_tsang_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_tsang_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_woo_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_woo_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_yoon_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_master_yoon_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mature_flame_hound",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mayor_honeydew",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_merchant_shi",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mh_aronus",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mindless_skeleton",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mishi_seal_is_broken",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mishi_summoner",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mist_hopper_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mistblade_ripper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_misthopper_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mok_mok",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mok_mok_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_molten_barrage",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_motherseed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mountain_yak",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mountaineer_pebblebitty",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mudmug_cleaning_house",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mudmug_great_minds_drink_alike",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mudmug_water_hunt",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_muskpaw_jr",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_myranda_the_hag",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_mysterious_voice",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nakkrakas",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_naladu",
+      "source_paths": [
+        "src/server/scripts/Outland/zone_hellfire_peninsula.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_nasty_weed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nazgrim_summoned_doren",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nephew_burrbery",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nephew_burrbery_phased",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nether_vapor",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_northwest_smoke_trail",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_norvakess_battlefront",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nurong_cannon_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nurong_cannon_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nurong_endevent",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nurong_fighting_voress",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_nurong_summoned_shado_pan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ogo_the_elder",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ogo_the_younger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_omega_stance",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_anraphet.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_oracle_hissir",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_orbiss",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_orbiss_mists_opportunity",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_orbiss_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ordo_raider",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_oscillating_frequency_scanner_master_bunny",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pandaren_prisoner",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_paragon_chat_controller",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pathstalker_unsafe_passage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pei_zhi",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pei_zhi_bridge_earth_and_sky",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pet_guy",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_phaseswift",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pool_of_corruption",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_premium",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_premium_class_trainer",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_premium_professions",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_premium_vendor",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pri_divine_star",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_prince_anduin_decisionquestGiver",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_profession_skills",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_pulsing_pumpkin",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_headless_horseman.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_qiraj_war_spawn",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/zone_silithus.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_quintessence_of_despair",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ragged_john",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rampaging_worgen",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_reckful_tribute",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rell_garrosh_ar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rell_lost_in_the_woods",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rell_pearlfin_village",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_riding_bat",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rikkal_the_dissector_questgiver",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rikkitun_chanter",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rikktal_the_dissector_wakens",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_riko_friend_of_my_enemy",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_riko_grookyn_hill",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_riko_hostile_natives",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_riko_on_the_right_track",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rivett_boom_bait",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rivett_boom_goes_doonamite",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rivett_cluchpop_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rivett_clutchpop_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_rocco_whipshank_34578",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_runeforging",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ruthers",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sage_liao_zouchin_province",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sapmaster_vu",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sapmaster_vu_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scared_pandaren_cub",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scarlet_trainee",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_herod.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_scourge_hulk",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardePinnacle/boss_svala.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_scout_jai_gan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_jai_gan_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_long",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_long_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_wei_chen",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_wei_chen_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_ying",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_scout_ying_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_searing_gaze",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_seething_hatred_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sergeant_cleese",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sergeant_gorrok_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sergeant_gorrok_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sha_of_hatred",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sha_portal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shade_of_jindo",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shado_master_chong",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shado_pan_caravan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shadowfang_prisoner",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_shao_the_defiant",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shattrathflaskvendors",
+      "source_paths": [
+        "src/server/scripts/Outland/zone_shattrath_city.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_shin_whispercloud",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ship_explosion_1",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ship_explosion_2",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shokia_grookyn_hill",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shokia_hostile_natives",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shokia_initial",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shokia_on_the_right_track",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shokia_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shomi",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shomi_enemies_at_our_door",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shomi_zouchin_village",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_shomi_zouchin_village_escort",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_silken_farm_exploration_credit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ska_shooting_device",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_skeer_the_bloodseeker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sky_admiral_rogers",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sliver",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_socks",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_solo_queue",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_southern_smoke_trail",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_spawn_of_marli",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_spectator",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardePinnacle/boss_svala.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_spike_trap",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_spring_drifter",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_steam_bunny",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sully_fire_from_the_sky",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sully_pearlfin_village",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_chen_brewgarden",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_chen_horrid_march",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_gyrocopter_strongarm",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_gyrocopter_strongarm_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_lya_ten_songs",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_rikkitu_chief",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_swamer",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_tai_ho_shado_pan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_summoned_zinjun",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_suna_camp_osul",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_suspicious_rock",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_swift_mountain_horse",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_sya_zhong",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_tai_ho_shado_pan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taiho_incursion",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_battlefront",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_battlefront_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_bridge_transition",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_gao_end_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_gao_ran",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_spyglass",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_spyglass_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taoshi_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_fighting_sha",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_gao_end_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_joining_the_hunt",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_pawdon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_summoned_doren",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_bridge_end_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_gao_ran",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_longying",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_rensai",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_sikvess_questgiver",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_sikvess_start",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_taran_zhu_thunder_hold",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_thalnos_fallen_crusader",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_thalnos_spirits",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_the_masters_flame",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_the_scourge_cauldron",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_thieving_plainshawk",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_thunder_hold_munitions",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_tian_instructor",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_tiny_weed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_toothrow_skulker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_torturer_leCraft",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_totem_of_harmony",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_totem_of_kindness",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_totem_of_serenity",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_totem_of_tranquility",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_tracy_proudwell",
+      "source_paths": [
+        "src/server/scripts/Outland/zone_hellfire_peninsula.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_trainee_stifled_pride",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_training_bag",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_tribunal_of_ages",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_trollbane",
+      "source_paths": [
+        "src/server/scripts/Outland/zone_hellfire_peninsula.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_tushui_monk_guard",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_tvs_black_prince",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ugly_weed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_vigilant_watchman",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_vilebranch_speaker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_voljin_zulaman",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_voress_summoned",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_water_village_exploration_credit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_waterbite_creeper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_waterfall_exploration_credit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_western_smoke_trail",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_whisperclouds_balloon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_whisperclouds_baloon_up",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_whitefeather_crane",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_widow_greenpaw_hostile_natives",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_widow_greenpaw_jade_witch",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_wild_plains_yak",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_wisp_invis",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ScarletMonastery/boss_headless_horseman.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "npc_worgen_rebel",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_worgen_warrior",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_xiao_tu",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_xiao_tu_hatreds_vice",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_xiao_voftw",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_ya_firebough",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_yalia_sagewhisper",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_yalia_sagewhisper_totem_event",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_yauj_brood",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_yi_mo_lonbow_despair",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_young_alliance_soldier",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zandalari_prisoner",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zanthik_impaler",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zealot_lorkhan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zealot_zath",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zouchin_village_amani_behemoth",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zouchin_village_amani_berserker",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zouchin_village_zouchin_defender",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zouchin_villager_conversation",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zulaman_hostage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npc_zulian_prowler",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "npcs_dithers_and_arbington",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "nurong_to_shao_pan",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "pyrewood_ambush",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "sat_drain_barell",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "sat_drain_barrel",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "shang_xi_air_balloon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_ahn_kahet_swarm",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_alysrazor_aggro_closest",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_alysrazor_cosmetic_egg_xplosion",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_alysrazor_turn_monstrosity",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/Firelands/boss_alysrazor.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_angel_of_death",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_anhuur_activate_beacons",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_temple_guardian_anhuur.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_anhuur_disable_beacon_beams",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_temple_guardian_anhuur.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_anhuur_divine_reckoning",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_temple_guardian_anhuur.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_anhuur_shield_of_light",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_temple_guardian_anhuur.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_anraphet_alpha_beams",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_anraphet.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_anraphet_omega_stance_summon",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_anraphet.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_anshal_nurture_summon_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_assembly_rune_of_summoning",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_assembly_of_iron.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_auriaya_strenght_of_the_pack",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_auriaya.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_bag_aura",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_banging_the_gong",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_bank_67495",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_bank_67496",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_bank_67497",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_bank_67498",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_bank_67499",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_barrel_periodic",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_blood_queen_essence_of_the_blood_queen",
+      "source_paths": [
+        "src/server/scripts/Northrend/IcecrownCitadel/boss_blood_queen_lana_thel.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_boot_gob",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_brewfest_speed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_broggok_poison_cloud",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_carbonation_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_crackling_jade_lightning",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_crossfaction_bg_set_faction_a",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_crossfaction_bg_set_faction_h",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_crystal_spike",
+      "source_paths": [
+        "src/server/scripts/Northrend/Nexus/Nexus/boss_ormorok.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_cultist_dark_martyrdom",
+      "source_paths": [
+        "src/server/scripts/Northrend/IcecrownCitadel/boss_lady_deathwhisper.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_cultist_dark_martyrdrom",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_curse_of_the_worgen_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_devourer_of_souls_mirrored_soul",
+      "source_paths": [
+        "src/server/scripts/Northrend/FrozenHalls/ForgeOfSouls/boss_devourer_of_souls.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_devourer_of_souls_mirrored_soul_proc",
+      "source_paths": [
+        "src/server/scripts/Northrend/FrozenHalls/ForgeOfSouls/boss_devourer_of_souls.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_devourer_of_souls_mirrored_soul_target_selector",
+      "source_paths": [
+        "src/server/scripts/Northrend/FrozenHalls/ForgeOfSouls/boss_devourer_of_souls.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_dk_improved_blood_presence",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dk_unholy_presence",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_enrage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_glyph_of_one_with_nature",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_glyph_of_starfire_proc",
+      "source_paths": [
+        "src/server/scripts/Spells/spell_druid.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_dru_insect_swarm",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_mark_of_the_wild_stats",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_natures_cure",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_one_with_nature",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_rip",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_soul_of_the_forest_eclipse",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_typhoon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_ursols_vortex",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_ursols_vortex_snare",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_dru_wild_charge_feral",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_earthrager_ptah_explosion",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_earthrager_ptah.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_earthrager_ptah_flame_bolt",
+      "source_paths": [
+        "src/server/scripts/Kalimdor/HallsOfOrigination/boss_earthrager_ptah.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_elder_nadox_guardian",
+      "source_paths": [
+        "src/server/scripts/Northrend/AzjolNerub/Ahnkahet/boss_elder_nadox.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_enduring_elixir_of_wisdom",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_ex_49375",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_ex_absorb_aura",
+      "source_paths": [
+        "src/server/scripts/Examples/example_spell.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_fixate",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardeKeep/utgarde_keep.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_flying_kick",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_focus_light_bar",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_frost_tomb",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardeKeep/boss_keleseth.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_garajal_lifes_thread_periodic",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_garajal_spiritual_innervation_special",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gathered_storms_trigger_cast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_dark_iron_dwarf_spawn",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_dark_iron_knockback_test",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_demon_hunters_aspect",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_eject_all_passengers",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_eject_passenger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_gm_freeze",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_ribbon_pole_dancer_check",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_singing_sunflower",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gen_throw_shield",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_genancient_knowledge",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_general_vezax_mark_of_the_faceless",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_general_vezax.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_general_vezax_mark_of_the_faceless_leech",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_general_vezax.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_general_vezax_saronite_vapors",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_general_vezax.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_glyph_of_deaths_embrace",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_gordunni_trap",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_grobbulus_mutating_injection",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_grobbulus_poison_cloud",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hor_evasion",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hor_start_halls_of_reflection_quest_ae",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hozen_snack",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hun_blink_strike",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hun_rapid_fire",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hun_readiness",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hun_viper_attack_speed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_hunt_steady_shot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_below_zero",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_burning_pitch",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_burning_pitch_selector",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_cannon_blast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_check_for_players",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_gunship_fall_teleport",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_incinerating_blast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_on_gunship_deck",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_overheat",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_periodic_trigger_with_power_cost",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_rocket_artillery",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_rocket_artillery_explosion",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_rocket_pack",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_rocket_pack_useable",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_teleport_players_on_victory",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_igb_teleport_to_enemy_ship",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_ingvar_summon_banshee",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_ingvar_woe_strike",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_item_bad_juju",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_item_stay_of_execution",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_jade_forest_chos_firework",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_jokkum_scriptcast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_kobai_possessed_by_rage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_koegler_fireball_valley",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_kormok_summon_bone_mages",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_kormok_summon_bone_minions",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_leap_smash",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_light_of_blades",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_load_into_catapult",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_flame_leviathan.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_loken_pulsing_shockwave",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/HallsOfLightning/boss_loken.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_lord_victor_nefarius_shadow_infusion",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_arcane_brilliance_stats",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_cone_of_cold",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_dalaran_brilliance",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_frost_bomb_cooldown_reduction",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_glyph_of_fire_blast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_ice_barrier",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_ice_ward",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_ignite_dot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_invocation",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mage_replenish_mana",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mandokir_devastating_slam_damage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_marwyn_shared_suffering",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mastery_icicles",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mh_ragnaros",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_bomb_bot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_clear_fires",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_despawn_assault_bots",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_fire_search",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_flame_suppressant",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_magnetic_core",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_napalm_shell",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_p3wx2_laser_barrage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_plasma_blast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_proximity_explosion",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_proximity_mines",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_proximity_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_rapid_burst",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_rocket_strike",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_rocket_strike_damage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_rocket_strike_target_select",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_self_repair",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_spinning_up",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_assault_bot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_assault_bot_target",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_fire_bot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_fire_bot_target",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_flames_spread",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_frost_bomb_target",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_junk_bot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_summon_junk_bot_target",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mimiron_weld",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mindless_abomination_explosion_fx_master",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mogu_tears",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_monk_glyph_of_mana_tea",
+      "source_paths": [
+        "src/server/scripts/Spells/spell_monk.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_monk_mana_tea_stacks",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_monk_teachings_of_the_monastery",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_mount_caravan_kodo_cue_part2_65669",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_occuthar_eyes_of_occuthar_vehicle",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/BaradinHold/boss_occuthar.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_occuthar_focused_fire",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/BaradinHold/boss_occuthar.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_occuthar_occuthars_destruction",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/BaradinHold/boss_occuthar.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_oscillating_field",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_blessing_of_kings",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_blessing_of_might",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_cleanse",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_consecration_area",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_glyph_of_holy_light",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_glyph_of_the_luminous_charger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_holy_shock_damage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_holy_shock_heal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_lights_hammer_heal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_seal_of_truth",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pal_unbreakable_spirit",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pandaria_enchants",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_paralyze_pinnacle",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardePinnacle/boss_svala.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_perfection_action",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pool_of_feed_dmg_aura",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pri_divine_hymn",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pri_hymn_of_hope",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pri_leap_of_faith_effect_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pri_mana_burn",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pri_power_word_fortitude_stats",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_pri_reflective_shield_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_prince_taldaram_conjure_flame_sphere",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_prince_taldaram_flame_sphere_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_promo_loot",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_putricide_ooze_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_quest29523_summon_living_air",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_razelikh_teleport_group",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_reanimate_imperial_guard",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_reversal_eff",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_rimefang_icy_blast",
+      "source_paths": [
+        "src/server/scripts/Northrend/IcecrownCitadel/boss_sindragosa.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_rog_assassasins_resolve",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_rogue_rapture",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_romoogg_call_for_help",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_romoogg_chains_of_woe_tele",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_romoogg_quake",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_rotface_slime_spray",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_round_up_horse",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sha_earthbind_totem",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sha_healing_rain_heal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sha_item_t10_elemental_2p_bonus",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sha_solar_beam",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sha_spirit_bite",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sha_spirit_wolf_leap",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_shadow_pan_flare",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_shadow_portal",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_shadow_portal_rooms",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_shadowfang_keep_haunting_spirits",
+      "source_paths": [
+        "src/server/scripts/EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_shango_tracks",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_shredder_delivery",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_sindragosa_frost_breath",
+      "source_paths": [
+        "src/server/scripts/Northrend/IcecrownCitadel/boss_sindragosa.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_sindragosa_ice_tomb_dummy",
+      "source_paths": [
+        "src/server/scripts/Northrend/IcecrownCitadel/boss_sindragosa.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_sonic_divebomb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_soo_shockwave_circle",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_spiced_punch",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_spirit_targeting",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_spring_drifter_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_summon_hozen",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_supply_barrage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_talon_king_ikiss_blink",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_terrastra_grounded",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_thalnos_evict_soul_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_thalnos_spirit_gale",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_thalnos_spirit_visual",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_tharon_ja_clear_gift_of_tharon_ja",
+      "source_paths": [
+        "src/server/scripts/Northrend/DraktharonKeep/boss_tharon_ja.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_the_lich_king_dark_hunger",
+      "source_paths": [
+        "src/server/scripts/Northrend/IcecrownCitadel/boss_the_lich_king.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_threatening_gaze",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_trollgore_consume",
+      "source_paths": [
+        "src/server/scripts/Northrend/DraktharonKeep/boss_trollgore.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_trollgore_corpse_explode",
+      "source_paths": [
+        "src/server/scripts/Northrend/DraktharonKeep/boss_trollgore.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_tyrannus_rimefang_icy_blast",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_uk_second_wind_proc",
+      "source_paths": [
+        "src/server/scripts/Northrend/UtgardeKeep/UtgardeKeep/utgarde_keep.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_ulduar_proximity_mines",
+      "source_paths": [
+        "src/server/scripts/Northrend/Ulduar/Ulduar/boss_mimiron.cpp"
+      ],
+      "status": "published_source_available_review_ownership"
+    },
+    {
+      "name": "spell_veranus_summon",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_war_heroic_throw",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_bane_of_doom",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_demon_soul",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_glyph_of_nightmares",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_glyph_of_shadowflame",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_harvest_life",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_rain_of_fire_damage",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_shadow_ward",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_soul_link_dummy",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_soulburn_health_funnel",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warl_soulburn_remove",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_bloodbath_bleed",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_glyph_of_gag_order",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_glyph_of_incite",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_glyph_of_sunder_armor",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_impaling_throws",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_second_wind_trigger",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_shields_visual",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_shouts",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_slam",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_warr_weaponmaster",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_water_auras",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_water_bubble_knockback",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "spell_windsoul_totem_aura",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "vehicle_burning_blade_mount_34593",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "vehicle_hotseat_34582",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    },
+    {
+      "name": "xaril_the_poisoned_mind_womb",
+      "source_paths": [],
+      "status": "not_found_in_this_release_source"
+    }
+  ]
+}

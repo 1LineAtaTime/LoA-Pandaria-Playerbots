@@ -1718,7 +1718,9 @@ public:
     }
 };
 
+void AddSC_skyfire27_pet();
+
 void AddSC_pet_spell_scripts()
 {
-    new spell_gen_pet_calculate();
+    AddSC_skyfire27_pet();
 }

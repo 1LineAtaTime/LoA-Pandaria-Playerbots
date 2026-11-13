@@ -1,0 +1,143 @@
+[
+  {
+    "commit": "a944477abf",
+    "title": "Fix multiple null pointer dereference issues and redundant checks (#448)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "0d68d4f5d1",
+    "title": "Chat: give ChatCommandHolder a virtual destructor (#457)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "5d50ae9d71",
+    "title": "Core/Creature: neutral creatures fight back against ranged attackers (#452)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "5df94c2366",
+    "title": "Core/Groups: fix null dereference in Group::IsGuildGroup (#441)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "6ca6516e02",
+    "title": "Core/Spells: fix use-after-free in Spell::SearchChainTargets (#449)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "d6c54460a1",
+    "title": "Scripts/Ulduar: prevent endless engage recursion in Assembly of Iron (#437)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "092bf3a374",
+    "title": "Core/AuctionHouse: fix use-after-free of pending auctions (#453)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "a18e938264",
+    "title": "Scripts/Azuremyst: do not keep raw Player pointers",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "afae92b614",
+    "title": "Core/AHBot: add a posted auction to the auction house once (#465)",
+    "status": "already_applied"
+  },
+  {
+    "commit": "51fb27e10a",
+    "title": "Core/Guilds: store guild member profession recipes as numbers (#459)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "684fb56d95",
+    "title": "Core/BattlePet: keep the battle pet loadout across logins (#467)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "24dd3ba970",
+    "title": "Core/Movement: refresh the position data after a far teleport (#468)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "587aaf5a20",
+    "title": "Core/Player: do not use a combo target that has left the map (#471)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "0d660bd7bc",
+    "title": "Core/Unit: crash in SetPhased when a controlled unit leaves the control list during the phase change (#478)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "e3ce53972e",
+    "title": "Scripts/Commands: pass the entry to the .list creature chat line (#480)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "9758907a3a",
+    "title": "Core/Database: select the entry in WORLD_SEL_CREATURE_TEMPLATE (#481)",
+    "status": "equivalent_already_present",
+    "evidence": "WORLD_SEL_CREATURE_TEMPLATE already selects ct.entry and retains custom extra damage fields."
+  },
+  {
+    "commit": "57a086078b",
+    "title": "AI/TotemAI: derive from NullCreatureAI so totems do not follow their owner on spawn (#482)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "d6cca26b28",
+    "title": "core(auras): RemoveAurasByTypeOnImmunity keeps the effect pointer before advancing (Displaced Energy 142913 read the next element)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "7989eedaeb",
+    "title": "ai: summons get On Respawn once and keep an escort started before their first update (AC parity)",
+    "status": "needs_adaptation"
+  },
+  {
+    "commit": "a2a330b8d9",
+    "title": "core(ai): JustEnteredCombat keeps an engagement when no fight starts (AC/TC guard)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "12d7e9dab3",
+    "title": "pet: save pet auras with AC's filter (Pet::_SaveAuras)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "599c7ab7b9",
+    "title": "core(quest): a scripted \"event happens\" counts the quest's event objective; Call of Duty (Horde) gets its kill credit at Erunak",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "51c0360302",
+    "title": "Core/Creature: apply the anim kits of creature_addon",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "3a64ae4ff8",
+    "title": "AI/PetAI: a guardian summoned by a creature attacks its owners attacker",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "af9a33941e",
+    "title": "Core/AI: a passive creature evades only once nobody is fighting it (Hogger could not be finished)",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "9880848f6e",
+    "title": "Core/Auras: Keep a flat max health malus from leaving its target alive at 0 health",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "e09eee4800",
+    "title": "Core/Unit: Keep stat updates from resetting the alternate power maximum",
+    "status": "deployed_2026_11_07"
+  },
+  {
+    "commit": "8a26cd41fe",
+    "title": "AI/SmartAI: Show an auto-accepted quest when SmartAI adds it",
+    "status": "deployed_2026_11_07"
+  }
+]

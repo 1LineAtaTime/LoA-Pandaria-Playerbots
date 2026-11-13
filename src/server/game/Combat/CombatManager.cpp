@@ -389,5 +389,7 @@ bool CombatManager::UpdateOwnerCombatState() const
     else
         _owner->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
 
-    return true;
+    // SetInCombatState may decline the transition (dead/evading units).
+    // Callers notify enter/exit AI only when the requested flag change happened.
+    return _owner->IsInCombat() == combatState;
 }

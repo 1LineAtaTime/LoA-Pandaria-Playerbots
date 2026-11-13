@@ -1,0 +1,5752 @@
+{
+  "missing_names_across_all_script_types": 864,
+  "creature_templates": 609,
+  "creature_templates_with_spawns": 348,
+  "active_quest_actor_templates": 97,
+  "missing_names": [
+    "AreaTrigger_amber_hibernal",
+    "AreaTrigger_at_catacombs",
+    "AreaTrigger_at_catacombs_entrance",
+    "AreaTrigger_at_ghastly_confines",
+    "AreaTrigger_at_ghastly_ending",
+    "AreaTrigger_at_morrowchamber_one",
+    "ConfessionGlyph",
+    "FastArenaCrystal",
+    "achievement_on_the_rocks",
+    "achievement_shatter_resistant",
+    "at_alizabal_intro",
+    "at_eye_of_eternity_improvised_floor",
+    "at_hor_intro_start",
+    "at_madrigosa",
+    "at_svala_intro",
+    "at_twiggy_flathead",
+    "at_twilight_grove",
+    "boss_arcanist_doan",
+    "boss_arlokk",
+    "boss_azshir_the_sleepless",
+    "boss_bloodmage_thalnos",
+    "boss_boss_ras_frostwhisper",
+    "boss_darkmaster_gandling",
+    "boss_death_knight_darkreaver",
+    "boss_doctor_theolen_krastinov",
+    "boss_fenstalker",
+    "boss_gahzranka",
+    "boss_hakkar",
+    "boss_herod",
+    "boss_houndmaster_loksey",
+    "boss_illucia_barov",
+    "boss_instructor_malicia",
+    "boss_interrogator_vishas",
+    "boss_jeklik",
+    "boss_jindo",
+    "boss_kirtonos_the_herald",
+    "boss_koragg",
+    "boss_kormok",
+    "boss_lord_alexei_barov",
+    "boss_lord_raadan",
+    "boss_lorekeeper_polkelt",
+    "boss_marli",
+    "boss_mr_smite",
+    "boss_protectors_of_the_endless",
+    "boss_scarlet_commander_mograine",
+    "boss_scorn",
+    "boss_the_ravenian",
+    "boss_thekal",
+    "boss_thurg",
+    "boss_trial_of_king",
+    "boss_tuten_kash",
+    "boss_twilight_corrupter",
+    "boss_vectus",
+    "generic_vehicleAI_toc5",
+    "gerenic_creature",
+    "go_abandoned_mole_machine",
+    "go_atalai_statue",
+    "go_brazier_of_the_herald",
+    "go_crystalline_tear",
+    "go_door_lever_dm",
+    "go_dungeon_archaeology_quest",
+    "go_empty_keg_cleaning_house",
+    "go_enormous_landslide",
+    "go_gong_of_bethekk",
+    "go_iruxos",
+    "go_kael_orb",
+    "go_loosely_turned_soil",
+    "go_mausoleum_door",
+    "go_mausoleum_trigger",
+    "go_mole_machine_console",
+    "go_movie_orb",
+    "go_panther_cage",
+    "go_rattlegore_iron_door",
+    "gob_abandoned_wreckage",
+    "gob_amber_chunk",
+    "gob_ancient_amber_chunk_womb",
+    "gob_dakdaks_altar",
+    "gob_dyn_gobelin",
+    "gob_goblin_escape_pod",
+    "gob_grummle_package",
+    "gob_improvised_rod",
+    "gob_jade_mines_rubble",
+    "gob_jun_lien_fishing_rack",
+    "gob_kokos_altar",
+    "gob_restorative_body",
+    "gob_restorative_heart",
+    "gob_restorative_mind",
+    "gob_restorative_spirit",
+    "gob_shrine_of_seekers_body",
+    "gob_shrine_of_seekers_breath",
+    "gob_shrine_of_seekers_heart",
+    "gob_sonar_tower",
+    "gob_taktaks_altar",
+    "high_priestess_azil_gravity_well_script",
+    "item_brewfest_ChugAndChuck",
+    "item_brewfest_ram_reins",
+    "item_isengard_bonus_reward",
+    "mob_lurking_tiger",
+    "mob_pandriarch_bramblestaff",
+    "mob_pandriarch_goldendraft",
+    "mob_pandriarch_windfur",
+    "npc_adjunct_zetuk",
+    "npc_afd_royale_controller",
+    "npc_afd_royale_ring",
+    "npc_alliance_horde_trainee",
+    "npc_amber_beam_trigger",
+    "npc_amber_chunk_mistblade",
+    "npc_amber_lost_in_the_woods",
+    "npc_an_windfur",
+    "npc_an_windfur_follow",
+    "npc_anachronos_quest_trigger",
+    "npc_anachronos_the_ancient",
+    "npc_ancestral_wolf",
+    "npc_ancient_guardian",
+    "npc_andorhal_tower",
+    "npc_april_fools_admin_menu",
+    "npc_aran_blizzard",
+    "npc_arcanic_oubliette",
+    "npc_arenamaster",
+    "npc_arugal_voidwalker",
+    "npc_attacking_hozen",
+    "npc_bambo",
+    "npc_barrow_bush",
+    "npc_bartleby",
+    "npc_batrider",
+    "npc_battlesworn_paratrooper",
+    "npc_belnistrasz",
+    "npc_blasting_barrel",
+    "npc_blaze",
+    "npc_blazing_monstrosity",
+    "npc_bluesaddle",
+    "npc_bold_karasshi",
+    "npc_boot",
+    "npc_brann_bronzebeard_keystone",
+    "npc_brewfest_apple_trigger",
+    "npc_brewfest_ram_master",
+    "npc_brewfest_trigger",
+    "npc_brewgarden_defender",
+    "npc_broggok_poison_cloud",
+    "npc_brother_yakshoe_dooker_dome",
+    "npc_burning_blade_raider_34594",
+    "npc_burning_cupboard",
+    "npc_cairne_bloodhoof",
+    "npc_calvin_montague",
+    "npc_candy_cane",
+    "npc_captain_doren",
+    "npc_captain_doren_thunder_hold",
+    "npc_captain_ripflesh",
+    "npc_captain_soggy",
+    "npc_captain_soggy_summoned",
+    "npc_captured_yak",
+    "npc_caravan_moving",
+    "npc_cart_controller",
+    "npc_cart_tender",
+    "npc_cave_in_stalker",
+    "npc_chains_of_woe",
+    "npc_chauve_souris_capture",
+    "npc_cheer_yimo_trigger",
+    "npc_chen_broken_dreams",
+    "npc_chen_evie_grave",
+    "npc_chen_evie_grave_summoned",
+    "npc_chen_great_minds_drink_alike",
+    "npc_chen_resolution",
+    "npc_chen_stormstout_brewgarden",
+    "npc_chen_stormstout_cleaning_house",
+    "npc_chen_stormstout_morrowchamber",
+    "npc_chen_stormstout_summoned",
+    "npc_chen_stormstout_votfw",
+    "npc_clintar_spirit",
+    "npc_commander_belmont_summoned",
+    "npc_commander_eligor_dawnbringer",
+    "npc_commander_lorna_crowley",
+    "npc_crazed_colossus",
+    "npc_creature_generator_akama",
+    "npc_crystal_spike_trigger",
+    "npc_dark_blaze",
+    "npc_dark_iron_guzzler",
+    "npc_darkhatcher_skulker",
+    "npc_deckhand_conversation",
+    "npc_demon_fire",
+    "npc_dmongs_torch",
+    "npc_dog_soggys_gamble",
+    "npc_dragon_launcher",
+    "npc_dread_lurker",
+    "npc_dual_spec",
+    "npc_eastern_smoke_trail",
+    "npc_eddy_cleaning_house",
+    "npc_eddy_water_bubbles",
+    "npc_egg_pile",
+    "npc_elder_hou_revelations",
+    "npc_elder_sage_wind_yi",
+    "npc_elder_shiao",
+    "npc_ellie_honeypaw",
+    "npc_ellie_honeypaw_summoned",
+    "npc_explosion_volcano",
+    "npc_fieldwatcher_mao",
+    "npc_fizzy_yellow_spirit",
+    "npc_flame_crash",
+    "npc_flanking_mogul",
+    "npc_flarecore_golem",
+    "npc_forsaken_catapult",
+    "npc_forsaken_vanguard",
+    "npc_friend_gob",
+    "npc_gai_lan",
+    "npc_gao_ran_cannoneer",
+    "npc_gatrul_garrosh_ar",
+    "npc_gatrul_gatruls_fall",
+    "npc_general_nazgrim_jadeforest_ship",
+    "npc_general_nazgrim_thunder_hold",
+    "npc_general_nazim_Ship",
+    "npc_generic_harpoon_cannon",
+    "npc_gi_oh",
+    "npc_gilnean_militia",
+    "npc_gilneas_liberation_front",
+    "npc_gizmo",
+    "npc_gnoll_decoy",
+    "npc_gorai_cleansing_mere",
+    "npc_gorai_the_ritual",
+    "npc_gorrok_hostile_natives",
+    "npc_great_bear_spirit",
+    "npc_grookin_whomper",
+    "npc_grummle_trigger",
+    "npc_gunship_fire_bunny",
+    "npc_gwen_armstead",
+    "npc_han_stormstout",
+    "npc_han_stormstout_summoned",
+    "npc_harbinger_of_flame",
+    "npc_harpoon_initial",
+    "npc_harpoon_summoned",
+    "npc_harrison_jones",
+    "npc_hawkmaster_nurong_farwatch",
+    "npc_head_caravan_kodo_34577",
+    "npc_healing_ward",
+    "npc_hemet_parental_mastery",
+    "npc_hidden_master_summons",
+    "npc_high_elder_cloudfall",
+    "npc_high_elder_cloudfall_event",
+    "npc_hiveling_summoned",
+    "npc_homunculus",
+    "npc_hozen_gutripper",
+    "npc_hozen_mudflinger",
+    "npc_idol_room_spawner",
+    "npc_image_archmage_xylem",
+    "npc_imp_in_a_ball",
+    "npc_init_balloon",
+    "npc_initial_chief_rikkitu",
+    "npc_initial_zinjun",
+    "npc_injured_gao_ran_blackguard",
+    "npc_instructor_xann",
+    "npc_invis_legion_teleporter",
+    "npc_isengard_daily_quests",
+    "npc_iyyokuk_the_lucid",
+    "npc_iyyokuk_the_lucid_klaxxivess",
+    "npc_jahesh_of_osul",
+    "npc_ji_firepaw_cinematic",
+    "npc_jiao_leviathan_summoned",
+    "npc_jikun_teleport",
+    "npc_jilu_cart",
+    "npc_jin_warmkeg",
+    "npc_jinyu_attacker",
+    "npc_kai_lin_honeydew_summoned",
+    "npc_kanati_greycloud",
+    "npc_kao_zouchin_village",
+    "npc_karoz_the_locust_klaxxivess",
+    "npc_kaztik_end_event",
+    "npc_kaztik_flying_away",
+    "npc_kaztik_klaxxivess",
+    "npc_kaztik_the_manipulator_questgiver",
+    "npc_kaztik_the_manipulator_reunited",
+    "npc_keg_bomb",
+    "npc_kilruk_amber_is_life",
+    "npc_kilruk_angel_of_death",
+    "npc_kilrum_wind_reaver_dread_clutch",
+    "npc_kilrum_wind_reaver_flight",
+    "npc_kilrum_wind_reaver_initial",
+    "npc_king_genn_greymane_c2",
+    "npc_king_jokkum_vehicle",
+    "npc_kiryn_friend_of_my_enemy",
+    "npc_kiryn_grookyn_hill",
+    "npc_kiryn_hostile_natives",
+    "npc_kiryn_initial",
+    "npc_kiryn_on_the_right_track",
+    "npc_kiryn_summoned",
+    "npc_klaxxi_va_lk",
+    "npc_korkron_dubs_thunder_hold",
+    "npc_korkron_elite_thunder_hold",
+    "npc_koro_mistwalker",
+    "npc_koro_unsafe_passage",
+    "npc_korthik_battlesinger",
+    "npc_korven_klaxxivess",
+    "npc_korven_the_prime_initial",
+    "npc_kota_kon_gossip",
+    "npc_kota_kon_phased",
+    "npc_kota_kon_vehicle",
+    "npc_krennan_aranas_c2",
+    "npc_krikthik_deep_scout",
+    "npc_krikthik_glider",
+    "npc_lady_fung",
+    "npc_lady_katrana_prestor",
+    "npc_lao_chin_bridge_escort",
+    "npc_lao_chin_bridge_event",
+    "npc_lao_chin_dusklight_bridge",
+    "npc_lao_chin_iron_belly_winters_blossom",
+    "npc_lao_wall",
+    "npc_lava_trigger",
+    "npc_leveladjusments",
+    "npc_leviathan_weak_point",
+    "npc_li_li",
+    "npc_li_li_day_off",
+    "npc_lianne_gobelin",
+    "npc_lifelike_jade_statue",
+    "npc_lili_cleaning_house",
+    "npc_lili_great_minds_drink_alike",
+    "npc_lili_voftw",
+    "npc_lo_wanderbrew",
+    "npc_loon_mai",
+    "npc_lord_darius_crowley_gilneas",
+    "npc_lorewalker_cho_29822",
+    "npc_lorewalker_cho_zouchin_village",
+    "npc_lorna_crowley_duskhaven",
+    "npc_lorna_crowley_vehicle",
+    "npc_lucky_eightcoins",
+    "npc_lya_ten_songs_brewgarden",
+    "npc_malik_klaxxivess",
+    "npc_malik_klaxxivess_summoned",
+    "npc_mandokir_ohgan",
+    "npc_mantid_bunny_amber_womb",
+    "npc_mariam_spellwalker",
+    "npc_marksman_lann",
+    "npc_marksmann_lann_summoned",
+    "npc_master_angler_ju_lien",
+    "npc_master_angler_ju_lien_summoned",
+    "npc_master_cheng_female_initial",
+    "npc_master_cheng_female_summoned",
+    "npc_master_cheng_initial",
+    "npc_master_cheng_summoned",
+    "npc_master_cheng_trigger",
+    "npc_master_hight_initial",
+    "npc_master_hight_summoned",
+    "npc_master_hsu_initial",
+    "npc_master_hsu_summoned",
+    "npc_master_kistane_initial",
+    "npc_master_kistane_summoned",
+    "npc_master_shang_xi_grave",
+    "npc_master_shang_xi_grave_summoned",
+    "npc_master_tsang_initial",
+    "npc_master_tsang_summoned",
+    "npc_master_woo_initial",
+    "npc_master_woo_summoned",
+    "npc_master_yoon_initial",
+    "npc_master_yoon_summoned",
+    "npc_mature_flame_hound",
+    "npc_mayor_honeydew",
+    "npc_merchant_shi",
+    "npc_mh_aronus",
+    "npc_mindless_skeleton",
+    "npc_mishi_seal_is_broken",
+    "npc_mishi_summoner",
+    "npc_mist_hopper_summoned",
+    "npc_mistblade_ripper",
+    "npc_misthopper_initial",
+    "npc_mok_mok",
+    "npc_mok_mok_summoned",
+    "npc_molten_barrage",
+    "npc_motherseed",
+    "npc_mountain_yak",
+    "npc_mountaineer_pebblebitty",
+    "npc_mudmug_cleaning_house",
+    "npc_mudmug_great_minds_drink_alike",
+    "npc_mudmug_water_hunt",
+    "npc_muskpaw_jr",
+    "npc_myranda_the_hag",
+    "npc_mysterious_voice",
+    "npc_nakkrakas",
+    "npc_naladu",
+    "npc_nasty_weed",
+    "npc_nazgrim_summoned_doren",
+    "npc_nephew_burrbery",
+    "npc_nephew_burrbery_phased",
+    "npc_nether_vapor",
+    "npc_northwest_smoke_trail",
+    "npc_norvakess_battlefront",
+    "npc_nurong_cannon_initial",
+    "npc_nurong_cannon_summoned",
+    "npc_nurong_endevent",
+    "npc_nurong_fighting_voress",
+    "npc_nurong_summoned_shado_pan",
+    "npc_ogo_the_elder",
+    "npc_ogo_the_younger",
+    "npc_omega_stance",
+    "npc_oracle_hissir",
+    "npc_orbiss",
+    "npc_orbiss_mists_opportunity",
+    "npc_orbiss_summoned",
+    "npc_ordo_raider",
+    "npc_oscillating_frequency_scanner_master_bunny",
+    "npc_pandaren_prisoner",
+    "npc_paragon_chat_controller",
+    "npc_pathstalker_unsafe_passage",
+    "npc_pei_zhi",
+    "npc_pei_zhi_bridge_earth_and_sky",
+    "npc_pet_guy",
+    "npc_phaseswift",
+    "npc_pool_of_corruption",
+    "npc_premium",
+    "npc_premium_class_trainer",
+    "npc_premium_professions",
+    "npc_premium_vendor",
+    "npc_pri_divine_star",
+    "npc_prince_anduin_decisionquestGiver",
+    "npc_profession_skills",
+    "npc_pulsing_pumpkin",
+    "npc_qiraj_war_spawn",
+    "npc_quintessence_of_despair",
+    "npc_ragged_john",
+    "npc_rampaging_worgen",
+    "npc_reckful_tribute",
+    "npc_rell_garrosh_ar",
+    "npc_rell_lost_in_the_woods",
+    "npc_rell_pearlfin_village",
+    "npc_riding_bat",
+    "npc_rikkal_the_dissector_questgiver",
+    "npc_rikkitun_chanter",
+    "npc_rikktal_the_dissector_wakens",
+    "npc_riko_friend_of_my_enemy",
+    "npc_riko_grookyn_hill",
+    "npc_riko_hostile_natives",
+    "npc_riko_on_the_right_track",
+    "npc_rivett_boom_bait",
+    "npc_rivett_boom_goes_doonamite",
+    "npc_rivett_cluchpop_summoned",
+    "npc_rivett_clutchpop_initial",
+    "npc_rocco_whipshank_34578",
+    "npc_runeforging",
+    "npc_ruthers",
+    "npc_sage_liao_zouchin_province",
+    "npc_sapmaster_vu",
+    "npc_sapmaster_vu_summoned",
+    "npc_scared_pandaren_cub",
+    "npc_scarlet_trainee",
+    "npc_scourge_hulk",
+    "npc_scout_jai_gan",
+    "npc_scout_jai_gan_summoned",
+    "npc_scout_long",
+    "npc_scout_long_summoned",
+    "npc_scout_wei_chen",
+    "npc_scout_wei_chen_summoned",
+    "npc_scout_ying",
+    "npc_scout_ying_summoned",
+    "npc_searing_gaze",
+    "npc_seething_hatred_event",
+    "npc_sergeant_cleese",
+    "npc_sergeant_gorrok_initial",
+    "npc_sergeant_gorrok_summoned",
+    "npc_sha_of_hatred",
+    "npc_sha_portal",
+    "npc_shade_of_jindo",
+    "npc_shado_master_chong",
+    "npc_shado_pan_caravan",
+    "npc_shadowfang_prisoner",
+    "npc_shao_the_defiant",
+    "npc_shattrathflaskvendors",
+    "npc_shin_whispercloud",
+    "npc_ship_explosion_1",
+    "npc_ship_explosion_2",
+    "npc_shokia_grookyn_hill",
+    "npc_shokia_hostile_natives",
+    "npc_shokia_initial",
+    "npc_shokia_on_the_right_track",
+    "npc_shokia_summoned",
+    "npc_shomi",
+    "npc_shomi_enemies_at_our_door",
+    "npc_shomi_zouchin_village",
+    "npc_shomi_zouchin_village_escort",
+    "npc_silken_farm_exploration_credit",
+    "npc_ska_shooting_device",
+    "npc_skeer_the_bloodseeker",
+    "npc_sky_admiral_rogers",
+    "npc_sliver",
+    "npc_socks",
+    "npc_solo_queue",
+    "npc_southern_smoke_trail",
+    "npc_spawn_of_marli",
+    "npc_spectator",
+    "npc_spike_trap",
+    "npc_spring_drifter",
+    "npc_steam_bunny",
+    "npc_sully_fire_from_the_sky",
+    "npc_sully_pearlfin_village",
+    "npc_summoned_chen_brewgarden",
+    "npc_summoned_chen_horrid_march",
+    "npc_summoned_gyrocopter_strongarm",
+    "npc_summoned_gyrocopter_strongarm_event",
+    "npc_summoned_lya_ten_songs",
+    "npc_summoned_rikkitu_chief",
+    "npc_summoned_swamer",
+    "npc_summoned_tai_ho_shado_pan",
+    "npc_summoned_zinjun",
+    "npc_suna_camp_osul",
+    "npc_suspicious_rock",
+    "npc_swift_mountain_horse",
+    "npc_sya_zhong",
+    "npc_tai_ho_shado_pan",
+    "npc_taiho_incursion",
+    "npc_taoshi_battlefront",
+    "npc_taoshi_battlefront_summoned",
+    "npc_taoshi_bridge_transition",
+    "npc_taoshi_gao_end_event",
+    "npc_taoshi_gao_ran",
+    "npc_taoshi_spyglass",
+    "npc_taoshi_spyglass_summon",
+    "npc_taoshi_summoned",
+    "npc_taran_fighting_sha",
+    "npc_taran_gao_end_event",
+    "npc_taran_joining_the_hunt",
+    "npc_taran_pawdon",
+    "npc_taran_summoned_doren",
+    "npc_taran_zhu_bridge_end_event",
+    "npc_taran_zhu_gao_ran",
+    "npc_taran_zhu_longying",
+    "npc_taran_zhu_rensai",
+    "npc_taran_zhu_sikvess_questgiver",
+    "npc_taran_zhu_sikvess_start",
+    "npc_taran_zhu_summoned",
+    "npc_taran_zhu_thunder_hold",
+    "npc_thalnos_fallen_crusader",
+    "npc_thalnos_spirits",
+    "npc_the_masters_flame",
+    "npc_the_scourge_cauldron",
+    "npc_thieving_plainshawk",
+    "npc_thunder_hold_munitions",
+    "npc_tian_instructor",
+    "npc_tiny_weed",
+    "npc_toothrow_skulker",
+    "npc_torturer_leCraft",
+    "npc_totem_of_harmony",
+    "npc_totem_of_kindness",
+    "npc_totem_of_serenity",
+    "npc_totem_of_tranquility",
+    "npc_tracy_proudwell",
+    "npc_trainee_stifled_pride",
+    "npc_training_bag",
+    "npc_tribunal_of_ages",
+    "npc_trollbane",
+    "npc_tushui_monk_guard",
+    "npc_tvs_black_prince",
+    "npc_ugly_weed",
+    "npc_vigilant_watchman",
+    "npc_vilebranch_speaker",
+    "npc_voljin_zulaman",
+    "npc_voress_summoned",
+    "npc_water_village_exploration_credit",
+    "npc_waterbite_creeper",
+    "npc_waterfall_exploration_credit",
+    "npc_western_smoke_trail",
+    "npc_whisperclouds_balloon",
+    "npc_whisperclouds_baloon_up",
+    "npc_whitefeather_crane",
+    "npc_widow_greenpaw_hostile_natives",
+    "npc_widow_greenpaw_jade_witch",
+    "npc_wild_plains_yak",
+    "npc_wisp_invis",
+    "npc_worgen_alpha_c1",
+    "npc_worgen_alpha_c2",
+    "npc_worgen_rebel",
+    "npc_worgen_runt_c1",
+    "npc_worgen_runt_c2",
+    "npc_worgen_warrior",
+    "npc_xiao_tu",
+    "npc_xiao_tu_hatreds_vice",
+    "npc_xiao_voftw",
+    "npc_ya_firebough",
+    "npc_yalia_sagewhisper",
+    "npc_yalia_sagewhisper_totem_event",
+    "npc_yauj_brood",
+    "npc_yi_mo_lonbow_despair",
+    "npc_young_alliance_soldier",
+    "npc_zandalari_prisoner",
+    "npc_zanthik_impaler",
+    "npc_zealot_lorkhan",
+    "npc_zealot_zath",
+    "npc_zouchin_village_amani_behemoth",
+    "npc_zouchin_village_amani_berserker",
+    "npc_zouchin_village_zouchin_defender",
+    "npc_zouchin_villager_conversation",
+    "npc_zulaman_hostage",
+    "npc_zulian_prowler",
+    "npcs_dithers_and_arbington",
+    "nurong_to_shao_pan",
+    "pyrewood_ambush",
+    "sat_drain_barell",
+    "sat_drain_barrel",
+    "shang_xi_air_balloon",
+    "spell_ahn_kahet_swarm",
+    "spell_alysrazor_aggro_closest",
+    "spell_alysrazor_cosmetic_egg_xplosion",
+    "spell_alysrazor_turn_monstrosity",
+    "spell_angel_of_death",
+    "spell_anhuur_activate_beacons",
+    "spell_anhuur_disable_beacon_beams",
+    "spell_anhuur_divine_reckoning",
+    "spell_anhuur_shield_of_light",
+    "spell_anraphet_alpha_beams",
+    "spell_anraphet_omega_stance_summon",
+    "spell_anshal_nurture_summon_trigger",
+    "spell_assembly_rune_of_summoning",
+    "spell_auriaya_strenght_of_the_pack",
+    "spell_bag_aura",
+    "spell_banging_the_gong",
+    "spell_bank_67495",
+    "spell_bank_67496",
+    "spell_bank_67497",
+    "spell_bank_67498",
+    "spell_bank_67499",
+    "spell_barrel_periodic",
+    "spell_blood_queen_essence_of_the_blood_queen",
+    "spell_boot_gob",
+    "spell_brewfest_speed",
+    "spell_broggok_poison_cloud",
+    "spell_carbonation_summon",
+    "spell_crackling_jade_lightning",
+    "spell_crossfaction_bg_set_faction_a",
+    "spell_crossfaction_bg_set_faction_h",
+    "spell_crystal_spike",
+    "spell_cultist_dark_martyrdom",
+    "spell_cultist_dark_martyrdrom",
+    "spell_curse_of_the_worgen_summon",
+    "spell_devourer_of_souls_mirrored_soul",
+    "spell_devourer_of_souls_mirrored_soul_proc",
+    "spell_devourer_of_souls_mirrored_soul_target_selector",
+    "spell_dk_improved_blood_presence",
+    "spell_dk_unholy_presence",
+    "spell_dru_enrage",
+    "spell_dru_glyph_of_one_with_nature",
+    "spell_dru_glyph_of_starfire_proc",
+    "spell_dru_insect_swarm",
+    "spell_dru_mark_of_the_wild_stats",
+    "spell_dru_natures_cure",
+    "spell_dru_one_with_nature",
+    "spell_dru_rip",
+    "spell_dru_soul_of_the_forest_eclipse",
+    "spell_dru_typhoon",
+    "spell_dru_ursols_vortex",
+    "spell_dru_ursols_vortex_snare",
+    "spell_dru_wild_charge_feral",
+    "spell_earthrager_ptah_explosion",
+    "spell_earthrager_ptah_flame_bolt",
+    "spell_elder_nadox_guardian",
+    "spell_enduring_elixir_of_wisdom",
+    "spell_ex_49375",
+    "spell_ex_absorb_aura",
+    "spell_fixate",
+    "spell_flying_kick",
+    "spell_focus_light_bar",
+    "spell_frost_tomb",
+    "spell_garajal_lifes_thread_periodic",
+    "spell_garajal_spiritual_innervation_special",
+    "spell_gathered_storms_trigger_cast",
+    "spell_gen_dark_iron_dwarf_spawn",
+    "spell_gen_dark_iron_knockback_test",
+    "spell_gen_demon_hunters_aspect",
+    "spell_gen_eject_all_passengers",
+    "spell_gen_eject_passenger",
+    "spell_gen_gm_freeze",
+    "spell_gen_ribbon_pole_dancer_check",
+    "spell_gen_singing_sunflower",
+    "spell_gen_throw_shield",
+    "spell_genancient_knowledge",
+    "spell_general_vezax_mark_of_the_faceless",
+    "spell_general_vezax_mark_of_the_faceless_leech",
+    "spell_general_vezax_saronite_vapors",
+    "spell_glyph_of_deaths_embrace",
+    "spell_gordunni_trap",
+    "spell_grobbulus_mutating_injection",
+    "spell_grobbulus_poison_cloud",
+    "spell_hor_evasion",
+    "spell_hor_start_halls_of_reflection_quest_ae",
+    "spell_hozen_snack",
+    "spell_hun_blink_strike",
+    "spell_hun_rapid_fire",
+    "spell_hun_readiness",
+    "spell_hun_viper_attack_speed",
+    "spell_hunt_steady_shot",
+    "spell_igb_below_zero",
+    "spell_igb_burning_pitch",
+    "spell_igb_burning_pitch_selector",
+    "spell_igb_cannon_blast",
+    "spell_igb_check_for_players",
+    "spell_igb_gunship_fall_teleport",
+    "spell_igb_incinerating_blast",
+    "spell_igb_on_gunship_deck",
+    "spell_igb_overheat",
+    "spell_igb_periodic_trigger_with_power_cost",
+    "spell_igb_rocket_artillery",
+    "spell_igb_rocket_artillery_explosion",
+    "spell_igb_rocket_pack",
+    "spell_igb_rocket_pack_useable",
+    "spell_igb_teleport_players_on_victory",
+    "spell_igb_teleport_to_enemy_ship",
+    "spell_ingvar_summon_banshee",
+    "spell_ingvar_woe_strike",
+    "spell_item_bad_juju",
+    "spell_item_stay_of_execution",
+    "spell_jade_forest_chos_firework",
+    "spell_jokkum_scriptcast",
+    "spell_kobai_possessed_by_rage",
+    "spell_koegler_fireball_valley",
+    "spell_kormok_summon_bone_mages",
+    "spell_kormok_summon_bone_minions",
+    "spell_leap_smash",
+    "spell_light_of_blades",
+    "spell_load_into_catapult",
+    "spell_loken_pulsing_shockwave",
+    "spell_lord_victor_nefarius_shadow_infusion",
+    "spell_mage_arcane_brilliance_stats",
+    "spell_mage_cone_of_cold",
+    "spell_mage_dalaran_brilliance",
+    "spell_mage_frost_bomb_cooldown_reduction",
+    "spell_mage_glyph_of_fire_blast",
+    "spell_mage_ice_barrier",
+    "spell_mage_ice_ward",
+    "spell_mage_ignite_dot",
+    "spell_mage_invocation",
+    "spell_mage_replenish_mana",
+    "spell_mandokir_devastating_slam_damage",
+    "spell_marwyn_shared_suffering",
+    "spell_mastery_icicles",
+    "spell_mh_ragnaros",
+    "spell_mimiron_bomb_bot",
+    "spell_mimiron_clear_fires",
+    "spell_mimiron_despawn_assault_bots",
+    "spell_mimiron_fire_search",
+    "spell_mimiron_flame_suppressant",
+    "spell_mimiron_magnetic_core",
+    "spell_mimiron_napalm_shell",
+    "spell_mimiron_p3wx2_laser_barrage",
+    "spell_mimiron_plasma_blast",
+    "spell_mimiron_proximity_explosion",
+    "spell_mimiron_proximity_mines",
+    "spell_mimiron_proximity_trigger",
+    "spell_mimiron_rapid_burst",
+    "spell_mimiron_rocket_strike",
+    "spell_mimiron_rocket_strike_damage",
+    "spell_mimiron_rocket_strike_target_select",
+    "spell_mimiron_self_repair",
+    "spell_mimiron_spinning_up",
+    "spell_mimiron_summon_assault_bot",
+    "spell_mimiron_summon_assault_bot_target",
+    "spell_mimiron_summon_fire_bot",
+    "spell_mimiron_summon_fire_bot_target",
+    "spell_mimiron_summon_flames_spread",
+    "spell_mimiron_summon_frost_bomb_target",
+    "spell_mimiron_summon_junk_bot",
+    "spell_mimiron_summon_junk_bot_target",
+    "spell_mimiron_weld",
+    "spell_mindless_abomination_explosion_fx_master",
+    "spell_mogu_tears",
+    "spell_monk_glyph_of_mana_tea",
+    "spell_monk_mana_tea_stacks",
+    "spell_monk_teachings_of_the_monastery",
+    "spell_mount_caravan_kodo_cue_part2_65669",
+    "spell_occuthar_eyes_of_occuthar_vehicle",
+    "spell_occuthar_focused_fire",
+    "spell_occuthar_occuthars_destruction",
+    "spell_oscillating_field",
+    "spell_pal_blessing_of_kings",
+    "spell_pal_blessing_of_might",
+    "spell_pal_cleanse",
+    "spell_pal_consecration_area",
+    "spell_pal_glyph_of_holy_light",
+    "spell_pal_glyph_of_the_luminous_charger",
+    "spell_pal_holy_shock_damage",
+    "spell_pal_holy_shock_heal",
+    "spell_pal_lights_hammer_heal",
+    "spell_pal_seal_of_truth",
+    "spell_pal_unbreakable_spirit",
+    "spell_pandaria_enchants",
+    "spell_paralyze_pinnacle",
+    "spell_perfection_action",
+    "spell_pool_of_feed_dmg_aura",
+    "spell_pri_divine_hymn",
+    "spell_pri_hymn_of_hope",
+    "spell_pri_leap_of_faith_effect_trigger",
+    "spell_pri_mana_burn",
+    "spell_pri_power_word_fortitude_stats",
+    "spell_pri_reflective_shield_trigger",
+    "spell_prince_taldaram_conjure_flame_sphere",
+    "spell_prince_taldaram_flame_sphere_summon",
+    "spell_promo_loot",
+    "spell_putricide_ooze_summon",
+    "spell_quest29523_summon_living_air",
+    "spell_razelikh_teleport_group",
+    "spell_reanimate_imperial_guard",
+    "spell_reversal_eff",
+    "spell_rimefang_icy_blast",
+    "spell_rog_assassasins_resolve",
+    "spell_rogue_rapture",
+    "spell_romoogg_call_for_help",
+    "spell_romoogg_chains_of_woe_tele",
+    "spell_romoogg_quake",
+    "spell_rotface_slime_spray",
+    "spell_round_up_horse",
+    "spell_sha_earthbind_totem",
+    "spell_sha_healing_rain_heal",
+    "spell_sha_item_t10_elemental_2p_bonus",
+    "spell_sha_solar_beam",
+    "spell_sha_spirit_bite",
+    "spell_sha_spirit_wolf_leap",
+    "spell_shadow_pan_flare",
+    "spell_shadow_portal",
+    "spell_shadow_portal_rooms",
+    "spell_shadowfang_keep_haunting_spirits",
+    "spell_shango_tracks",
+    "spell_shredder_delivery",
+    "spell_sindragosa_frost_breath",
+    "spell_sindragosa_ice_tomb_dummy",
+    "spell_sonic_divebomb",
+    "spell_soo_shockwave_circle",
+    "spell_spiced_punch",
+    "spell_spirit_targeting",
+    "spell_spring_drifter_summon",
+    "spell_summon_hozen",
+    "spell_supply_barrage",
+    "spell_talon_king_ikiss_blink",
+    "spell_terrastra_grounded",
+    "spell_thalnos_evict_soul_summon",
+    "spell_thalnos_spirit_gale",
+    "spell_thalnos_spirit_visual",
+    "spell_tharon_ja_clear_gift_of_tharon_ja",
+    "spell_the_lich_king_dark_hunger",
+    "spell_threatening_gaze",
+    "spell_trollgore_consume",
+    "spell_trollgore_corpse_explode",
+    "spell_tyrannus_rimefang_icy_blast",
+    "spell_uk_second_wind_proc",
+    "spell_ulduar_proximity_mines",
+    "spell_veranus_summon",
+    "spell_war_heroic_throw",
+    "spell_warl_bane_of_doom",
+    "spell_warl_demon_soul",
+    "spell_warl_glyph_of_nightmares",
+    "spell_warl_glyph_of_shadowflame",
+    "spell_warl_harvest_life",
+    "spell_warl_rain_of_fire_damage",
+    "spell_warl_shadow_ward",
+    "spell_warl_soul_link_dummy",
+    "spell_warl_soulburn_health_funnel",
+    "spell_warl_soulburn_remove",
+    "spell_warr_bloodbath_bleed",
+    "spell_warr_glyph_of_gag_order",
+    "spell_warr_glyph_of_incite",
+    "spell_warr_glyph_of_sunder_armor",
+    "spell_warr_impaling_throws",
+    "spell_warr_second_wind_trigger",
+    "spell_warr_shields_visual",
+    "spell_warr_shouts",
+    "spell_warr_slam",
+    "spell_warr_weaponmaster",
+    "spell_water_auras",
+    "spell_water_bubble_knockback",
+    "spell_windsoul_totem_aura",
+    "vehicle_burning_blade_mount_34593",
+    "vehicle_hotseat_34582",
+    "xaril_the_poisoned_mind_womb"
+  ],
+  "creatures": [
+    {
+      "entry": 646,
+      "name": "Mr. Smite",
+      "unavailable_script": "boss_mr_smite",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 1749,
+      "name": "Lady Katrana Prestor",
+      "unavailable_script": "npc_lady_katrana_prestor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 1853,
+      "name": "Darkmaster Gandling",
+      "unavailable_script": "boss_darkmaster_gandling",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 2058,
+      "name": "Deathstalker Faerleia",
+      "unavailable_script": "pyrewood_ambush",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 2870,
+      "name": "[UNUSED] Henria Derth",
+      "unavailable_script": "spell_ex_49375",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3057,
+      "name": "Cairne Bloodhoof",
+      "unavailable_script": "npc_cairne_bloodhoof",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3836,
+      "name": "Mountaineer Pebblebitty",
+      "unavailable_script": "npc_mountaineer_pebblebitty",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3849,
+      "name": "Deathstalker Adamant",
+      "unavailable_script": "npc_shadowfang_prisoner",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3850,
+      "name": "Sorcerer Ashcrombe",
+      "unavailable_script": "npc_shadowfang_prisoner",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3974,
+      "name": "Houndmaster Loksey",
+      "unavailable_script": "boss_houndmaster_loksey",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3975,
+      "name": "Herod",
+      "unavailable_script": "boss_herod",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3976,
+      "name": "Scarlet Commander Mograine",
+      "unavailable_script": "boss_scarlet_commander_mograine",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 3983,
+      "name": "Interrogator Vishas",
+      "unavailable_script": "boss_interrogator_vishas",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 4543,
+      "name": "Bloodmage Thalnos",
+      "unavailable_script": "boss_bloodmage_thalnos",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 4627,
+      "name": "Arugal's Voidwalker",
+      "unavailable_script": "npc_arugal_voidwalker",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 6090,
+      "name": "Bartleby",
+      "unavailable_script": "npc_bartleby",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 6487,
+      "name": "Arcanist Doan",
+      "unavailable_script": "boss_arcanist_doan",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 6490,
+      "name": "Azshir the Sleepless",
+      "unavailable_script": "boss_azshir_the_sleepless",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 6575,
+      "name": "Scarlet Trainee",
+      "unavailable_script": "npc_scarlet_trainee",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 6784,
+      "name": "Calvin Montague",
+      "unavailable_script": "npc_calvin_montague",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 7355,
+      "name": "Tuten'kash",
+      "unavailable_script": "boss_tuten_kash",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 7951,
+      "name": "Zas'Tysh",
+      "unavailable_script": "npc_premium",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 8516,
+      "name": "Belnistrasz",
+      "unavailable_script": "npc_belnistrasz",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 8611,
+      "name": "Idol Room Spawner",
+      "unavailable_script": "npc_idol_room_spawner",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 9563,
+      "name": "Ragged John",
+      "unavailable_script": "npc_ragged_john",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10432,
+      "name": "Vectus",
+      "unavailable_script": "boss_vectus",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10502,
+      "name": "Lady Illucia Barov",
+      "unavailable_script": "boss_illucia_barov",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10504,
+      "name": "Lord Alexei Barov",
+      "unavailable_script": "boss_lord_alexei_barov",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10505,
+      "name": "Instructor Malicia",
+      "unavailable_script": "boss_instructor_malicia",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10506,
+      "name": "Kirtonos the Herald",
+      "unavailable_script": "boss_kirtonos_the_herald",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10507,
+      "name": "The Ravenian",
+      "unavailable_script": "boss_the_ravenian",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10508,
+      "name": "Ras Frostwhisper",
+      "unavailable_script": "boss_boss_ras_frostwhisper",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10901,
+      "name": "Lorekeeper Polkelt",
+      "unavailable_script": "boss_lorekeeper_polkelt",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10902,
+      "name": "Andorhal Tower One",
+      "unavailable_script": "npc_andorhal_tower",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10903,
+      "name": "Andorhal Tower Two",
+      "unavailable_script": "npc_andorhal_tower",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10904,
+      "name": "Andorhal Tower Three",
+      "unavailable_script": "npc_andorhal_tower",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 10905,
+      "name": "Andorhal Tower Four",
+      "unavailable_script": "npc_andorhal_tower",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11056,
+      "name": "Alchemist Arbington",
+      "unavailable_script": "npcs_dithers_and_arbington",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11057,
+      "name": "Apothecary Dithers",
+      "unavailable_script": "npcs_dithers_and_arbington",
+      "spawn_count": 1,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11152,
+      "name": "The Scourge Cauldron",
+      "unavailable_script": "npc_the_scourge_cauldron",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11197,
+      "name": "Mindless Skeleton",
+      "unavailable_script": "npc_mindless_skeleton",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11261,
+      "name": "Doctor Theolen Krastinov",
+      "unavailable_script": "boss_doctor_theolen_krastinov",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11347,
+      "name": "Zealot Lor'Khan",
+      "unavailable_script": "npc_zealot_lorkhan",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11348,
+      "name": "Zealot Zath",
+      "unavailable_script": "npc_zealot_zath",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11380,
+      "name": "Jin'do the Hexxer",
+      "unavailable_script": "boss_jindo",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11391,
+      "name": "Vilebranch Speaker",
+      "unavailable_script": "npc_vilebranch_speaker",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11660,
+      "name": "[UNUSED] Molten Colossus",
+      "unavailable_script": "npc_crazed_colossus",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11872,
+      "name": "Myranda the Hag",
+      "unavailable_script": "npc_myranda_the_hag",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 11956,
+      "name": "Great Bear Spirit",
+      "unavailable_script": "npc_great_bear_spirit",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14509,
+      "name": "High Priest Thekal",
+      "unavailable_script": "boss_thekal",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14510,
+      "name": "High Priestess Mar'li",
+      "unavailable_script": "boss_marli",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14515,
+      "name": "High Priestess Arlokk",
+      "unavailable_script": "boss_arlokk",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14516,
+      "name": "Death Knight Darkreaver",
+      "unavailable_script": "boss_death_knight_darkreaver",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14517,
+      "name": "High Priestess Jeklik",
+      "unavailable_script": "boss_jeklik",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14693,
+      "name": "Scorn",
+      "unavailable_script": "boss_scorn",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14834,
+      "name": "Hakkar",
+      "unavailable_script": "boss_hakkar",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14965,
+      "name": "Frenzied Bloodseeker Bat",
+      "unavailable_script": "npc_batrider",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14986,
+      "name": "Shade of Jin'do",
+      "unavailable_script": "npc_shade_of_jindo",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 14987,
+      "name": "Powerful Healing Ward",
+      "unavailable_script": "npc_healing_ward",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15041,
+      "name": "Spawn of Mar'li",
+      "unavailable_script": "npc_spawn_of_marli",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15101,
+      "name": "Zulian Prowler",
+      "unavailable_script": "npc_zulian_prowler",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15114,
+      "name": "Gahz'ranka",
+      "unavailable_script": "boss_gahzranka",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15243,
+      "name": "[UNUSED] Vekniss Wasprider",
+      "unavailable_script": "npc_trainee_stifled_pride",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15381,
+      "name": "Anachronos the Ancient",
+      "unavailable_script": "npc_anachronos_the_ancient",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15414,
+      "name": "Qiraji Wasp",
+      "unavailable_script": "npc_qiraj_war_spawn",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15454,
+      "name": "Anachronos Quest Trigger Invisible",
+      "unavailable_script": "npc_anachronos_quest_trigger",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15621,
+      "name": "Yauj Brood",
+      "unavailable_script": "npc_yauj_brood",
+      "spawn_count": 4,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 15625,
+      "name": "Twilight Corrupter",
+      "unavailable_script": "boss_twilight_corrupter",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 16118,
+      "name": "Kormok",
+      "unavailable_script": "boss_kormok",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 16539,
+      "name": "Homunculus",
+      "unavailable_script": "npc_homunculus",
+      "spawn_count": 16,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 16819,
+      "name": "Force Commander Danath Trollbane",
+      "unavailable_script": "npc_trollbane",
+      "spawn_count": 1,
+      "quest_starts": 9,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 17077,
+      "name": "Ancestral Spirit Wolf",
+      "unavailable_script": "npc_ancestral_wolf",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 17161,
+      "name": "Blizzard (Shade of Aran)",
+      "unavailable_script": "npc_aran_blizzard",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 17249,
+      "name": "Landro Longshot",
+      "unavailable_script": "npc_premium",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 17457,
+      "name": "Actor Evil (DND)",
+      "unavailable_script": "npc_lianne_gobelin",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 17662,
+      "name": "Broggok Poison Cloud",
+      "unavailable_script": "npc_broggok_poison_cloud",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 18266,
+      "name": "Warrant Officer Tracy Proudwell",
+      "unavailable_script": "npc_tracy_proudwell",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 19361,
+      "name": "Naladu",
+      "unavailable_script": "npc_naladu",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 21002,
+      "name": "Nether Vapor",
+      "unavailable_script": "npc_nether_vapor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 21760,
+      "name": "Oscillating Frequency Scanner Master Bunny",
+      "unavailable_script": "npc_oscillating_frequency_scanner_master_bunny",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 21807,
+      "name": "Invis Legion Teleporter",
+      "unavailable_script": "npc_invis_legion_teleporter",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 22901,
+      "name": "Clintar's Spirit",
+      "unavailable_script": "npc_clintar_spirit",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23069,
+      "name": "Demon Fire",
+      "unavailable_script": "npc_demon_fire",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23210,
+      "name": "Creature Generator (Akama)",
+      "unavailable_script": "npc_creature_generator_akama",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23224,
+      "name": "Imp in a Ball",
+      "unavailable_script": "npc_imp_in_a_ball",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23259,
+      "name": "Blaze",
+      "unavailable_script": "npc_blaze",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23336,
+      "name": "Flame Crash",
+      "unavailable_script": "npc_flame_crash",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23483,
+      "name": "Arcanist Xorith",
+      "unavailable_script": "npc_shattrathflaskvendors",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23484,
+      "name": "Haldor the Compulsive",
+      "unavailable_script": "npc_shattrathflaskvendors",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23558,
+      "name": "Neill Ramstein",
+      "unavailable_script": "npc_brewfest_ram_master",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23686,
+      "name": "Headless Horseman Flame Bunny",
+      "unavailable_script": "npc_wisp_invis",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23694,
+      "name": "Pulsing Pumpkin",
+      "unavailable_script": "npc_pulsing_pumpkin",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23709,
+      "name": "Dark Iron Guzzler",
+      "unavailable_script": "npc_dark_iron_guzzler",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23790,
+      "name": "Tanzar",
+      "unavailable_script": "npc_zulaman_hostage",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 23999,
+      "name": "Harkor",
+      "unavailable_script": "npc_zulaman_hostage",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24001,
+      "name": "Ashli",
+      "unavailable_script": "npc_zulaman_hostage",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24024,
+      "name": "Kraz",
+      "unavailable_script": "npc_zulaman_hostage",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24034,
+      "name": "Headless Horseman - Wisp Invis",
+      "unavailable_script": "npc_wisp_invis",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24202,
+      "name": "[DND] Brewfest Barker Bunny 1",
+      "unavailable_script": "npc_brewfest_trigger",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24203,
+      "name": "[DND] Brewfest Barker Bunny 2",
+      "unavailable_script": "npc_brewfest_trigger",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24204,
+      "name": "[DND] Brewfest Barker Bunny 3",
+      "unavailable_script": "npc_brewfest_trigger",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24205,
+      "name": "[DND] Brewfest Barker Bunny 4",
+      "unavailable_script": "npc_brewfest_trigger",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24241,
+      "name": "Thurg",
+      "unavailable_script": "boss_thurg",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24243,
+      "name": "Lord Raadan",
+      "unavailable_script": "boss_lord_raadan",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24245,
+      "name": "Fenstalker",
+      "unavailable_script": "boss_fenstalker",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24247,
+      "name": "Koragg",
+      "unavailable_script": "boss_koragg",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24337,
+      "name": "[DND] Brewfest Delivery Bunny",
+      "unavailable_script": "npc_brewfest_apple_trigger",
+      "spawn_count": 7,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24358,
+      "name": "Harrison Jones",
+      "unavailable_script": "npc_harrison_jones",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24497,
+      "name": "Ram Master Ray",
+      "unavailable_script": "npc_brewfest_ram_master",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 24552,
+      "name": "Sliver",
+      "unavailable_script": "npc_sliver",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 26555,
+      "name": "Scourge Hulk",
+      "unavailable_script": "npc_scourge_hulk",
+      "spawn_count": 7,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 26667,
+      "name": "Dragonflayer Spectator",
+      "unavailable_script": "npc_spectator",
+      "spawn_count": 9,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 27079,
+      "name": "Crystal Spike Trigger",
+      "unavailable_script": "npc_crystal_spike_trigger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 27101,
+      "name": "Crystal Spike Initial Trigger",
+      "unavailable_script": "npc_crystal_spike_trigger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 27714,
+      "name": "7th Legion Chain Gun",
+      "unavailable_script": "npc_generic_harpoon_cannon",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 27784,
+      "name": "Commander Eligor Dawnbringer",
+      "unavailable_script": "npc_commander_eligor_dawnbringer",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 28265,
+      "name": "Searing Gaze",
+      "unavailable_script": "npc_searing_gaze",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 28554,
+      "name": "Torturer LeCraft",
+      "unavailable_script": "npc_torturer_leCraft",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 29093,
+      "name": "Ian Drake",
+      "unavailable_script": "npc_premium",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 30331,
+      "name": "King Jokkum",
+      "unavailable_script": "npc_king_jokkum_vehicle",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 30337,
+      "name": "Jotunheim Rapid-Fire Harpoon",
+      "unavailable_script": "npc_generic_harpoon_cannon",
+      "spawn_count": 15,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 30897,
+      "name": "Marnak",
+      "unavailable_script": "npc_tribunal_of_ages",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 30898,
+      "name": "Kaddrak",
+      "unavailable_script": "npc_tribunal_of_ages",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 30899,
+      "name": "Abedneum",
+      "unavailable_script": "npc_tribunal_of_ages",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 31810,
+      "name": "Brann Bronzebeard",
+      "unavailable_script": "npc_brann_bronzebeard_keystone",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33217,
+      "name": "Stormwind Steed",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33316,
+      "name": "Ironforge Ram",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33317,
+      "name": "Gnomeregan Mechanostrider",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33318,
+      "name": "Exodar Elekk",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33319,
+      "name": "Darnassian Nightsaber",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33320,
+      "name": "Orgrimmar Wolf",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33321,
+      "name": "Darkspear Raptor",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33322,
+      "name": "Thunder Bluff Kodo",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33323,
+      "name": "Silvermoon Hawkstrider",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 33324,
+      "name": "Forsaken Warhorse",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34577,
+      "name": "Head Caravan Kodo",
+      "unavailable_script": "npc_head_caravan_kodo_34577",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34578,
+      "name": "Rocco Whipshank",
+      "unavailable_script": "npc_rocco_whipshank_34578",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34582,
+      "name": "The Hotseat",
+      "unavailable_script": "vehicle_hotseat_34582",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34593,
+      "name": "Burning Blade Mount",
+      "unavailable_script": "vehicle_burning_blade_mount_34593",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34594,
+      "name": "Burning Blade Raider",
+      "unavailable_script": "npc_burning_blade_raider_34594",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34658,
+      "name": "Jaelyne Evensong's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 34884,
+      "name": "Rampaging Worgen",
+      "unavailable_script": "npc_rampaging_worgen",
+      "spawn_count": 44,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35053,
+      "name": "Candy Cane",
+      "unavailable_script": "npc_candy_cane",
+      "spawn_count": 3,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35167,
+      "name": "Worgen Alpha",
+      "unavailable_script": "npc_worgen_alpha_c2",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35170,
+      "name": "Worgen Alpha",
+      "unavailable_script": "npc_worgen_alpha_c1",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35186,
+      "name": "Kezan Partygoer",
+      "unavailable_script": "npc_bambo",
+      "spawn_count": 28,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35188,
+      "name": "Worgen Runt",
+      "unavailable_script": "npc_worgen_runt_c1",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35456,
+      "name": "Worgen Runt",
+      "unavailable_script": "npc_worgen_runt_c2",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35633,
+      "name": "Ambrose Boltspark's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35634,
+      "name": "Deathstalker Visceri's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35635,
+      "name": "Eressea Dawnsinger's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35636,
+      "name": "Lana Stouthammer's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35637,
+      "name": "Marshal Jacob Alerius' Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35638,
+      "name": "Mokra the Skullcrusher's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35640,
+      "name": "Runok Wildmane's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35641,
+      "name": "Zul'tore's Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35768,
+      "name": "Colosos' Mount",
+      "unavailable_script": "generic_vehicleAI_toc5",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35839,
+      "name": "Sergeant Cleese",
+      "unavailable_script": "npc_sergeant_cleese",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35872,
+      "name": "Myriam Spellwaker",
+      "unavailable_script": "npc_mariam_spellwalker",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 35907,
+      "name": "Krennan Aranas",
+      "unavailable_script": "npc_krennan_aranas_c2",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 36283,
+      "name": "Forsaken Catapult",
+      "unavailable_script": "npc_forsaken_catapult",
+      "spawn_count": 7,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 36332,
+      "name": "King Genn Greymane",
+      "unavailable_script": "npc_king_genn_greymane_c2",
+      "spawn_count": 3,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 36336,
+      "name": "Image of Archmage Xylem",
+      "unavailable_script": "npc_image_archmage_xylem",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 36452,
+      "name": "Gwen Armstead",
+      "unavailable_script": "npc_gwen_armstead",
+      "spawn_count": 1,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 36457,
+      "name": "Lorna Crowley",
+      "unavailable_script": "npc_lorna_crowley_duskhaven",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 36741,
+      "name": "Swift Mountain Horse",
+      "unavailable_script": "npc_swift_mountain_horse",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 38221,
+      "name": "Gilnean Militia",
+      "unavailable_script": "npc_gilnean_militia",
+      "spawn_count": 74,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 38348,
+      "name": "Worgen Warrior",
+      "unavailable_script": "npc_worgen_warrior",
+      "spawn_count": 44,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 38387,
+      "name": "Sassy Hardwrench",
+      "unavailable_script": "npc_boot",
+      "spawn_count": 5,
+      "quest_starts": 13,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 38415,
+      "name": "Lord Darius Crowley",
+      "unavailable_script": "npc_lord_darius_crowley_gilneas",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 38540,
+      "name": "Captured Riding Bat",
+      "unavailable_script": "npc_riding_bat",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 38615,
+      "name": "Captured Riding Bat",
+      "unavailable_script": "npc_chauve_souris_capture",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 39128,
+      "name": "Aronus",
+      "unavailable_script": "npc_mh_aronus",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 39895,
+      "name": "Kanati Greycloud",
+      "unavailable_script": "npc_kanati_greycloud",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 40228,
+      "name": "Cave In Stalker",
+      "unavailable_script": "npc_cave_in_stalker",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 40447,
+      "name": "Chains of Woe",
+      "unavailable_script": "npc_chains_of_woe",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 41194,
+      "name": "Omega Stance",
+      "unavailable_script": "npc_omega_stance",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 44775,
+      "name": "Generic Bunny - PRK (Large AOI)",
+      "unavailable_script": "npc_amber_beam_trigger",
+      "spawn_count": 91,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 44791,
+      "name": "Forsaken Trooper",
+      "unavailable_script": "npc_gilneas_liberation_front",
+      "spawn_count": 25,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 44792,
+      "name": "Forsaken Trooper",
+      "unavailable_script": "npc_gilneas_liberation_front",
+      "spawn_count": 19,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 45280,
+      "name": "Forsaken Vanguard",
+      "unavailable_script": "npc_forsaken_vanguard",
+      "spawn_count": 128,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 45292,
+      "name": "Worgen Rebel",
+      "unavailable_script": "npc_worgen_rebel",
+      "spawn_count": 35,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 45557,
+      "name": "Deathstalker Commander Belmont",
+      "unavailable_script": "npc_commander_belmont_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 45997,
+      "name": "Commander Lorna Crowley",
+      "unavailable_script": "npc_commander_lorna_crowley",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 46001,
+      "name": "Commander Lorna Crowley",
+      "unavailable_script": "npc_lorna_crowley_vehicle",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 49685,
+      "name": "PvG Level Endless Massive Completed",
+      "unavailable_script": "boss_protectors_of_the_endless",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 52157,
+      "name": "Ohgan",
+      "unavailable_script": "npc_mandokir_ohgan",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 52924,
+      "name": "Vol'jin",
+      "unavailable_script": "npc_voljin_zulaman",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 53786,
+      "name": "Blazing Monstrosity",
+      "unavailable_script": "npc_blazing_monstrosity",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 53787,
+      "name": "Molten Barrage",
+      "unavailable_script": "npc_molten_barrage",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 53788,
+      "name": "Molten Barrage",
+      "unavailable_script": "npc_molten_barrage",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 53791,
+      "name": "Blazing Monstrosity",
+      "unavailable_script": "npc_blazing_monstrosity",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 53793,
+      "name": "Harbinger of Flame",
+      "unavailable_script": "npc_harbinger_of_flame",
+      "spawn_count": 13,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 53795,
+      "name": "Egg Pile",
+      "unavailable_script": "npc_egg_pile",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 54617,
+      "name": "Rell Nightwind",
+      "unavailable_script": "npc_rell_garrosh_ar",
+      "spawn_count": 3,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 54914,
+      "name": "High Elder Cloudfall",
+      "unavailable_script": "npc_high_elder_cloudfall",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 54917,
+      "name": "Instructor Xann",
+      "unavailable_script": "npc_instructor_xann",
+      "spawn_count": 2,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55009,
+      "name": "Shao the Defiant",
+      "unavailable_script": "npc_shao_the_defiant",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55015,
+      "name": "Whitefeather Crane",
+      "unavailable_script": "npc_whitefeather_crane",
+      "spawn_count": 29,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55042,
+      "name": "High Elder Cloudfall",
+      "unavailable_script": "npc_high_elder_cloudfall_event",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55054,
+      "name": "General Nazgrim",
+      "unavailable_script": "npc_general_nazim_Ship",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55135,
+      "name": "General Nazgrim",
+      "unavailable_script": "npc_general_nazgrim_jadeforest_ship",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55141,
+      "name": "Shademaster Kiryn",
+      "unavailable_script": "npc_kiryn_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55142,
+      "name": "Shademaster Kiryn",
+      "unavailable_script": "npc_kiryn_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55146,
+      "name": "Rivett Clutchpop",
+      "unavailable_script": "npc_rivett_clutchpop_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55149,
+      "name": "Rivett Clutchpop",
+      "unavailable_script": "npc_rivett_cluchpop_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55162,
+      "name": "Sergeant Gorrok",
+      "unavailable_script": "npc_sergeant_gorrok_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55169,
+      "name": "Sergeant Gorrok",
+      "unavailable_script": "npc_sergeant_gorrok_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55170,
+      "name": "Shokia",
+      "unavailable_script": "npc_shokia_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55171,
+      "name": "Shokia",
+      "unavailable_script": "npc_shokia_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55183,
+      "name": "Training Bag",
+      "unavailable_script": "npc_training_bag",
+      "spawn_count": 6,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55184,
+      "name": "Training Bag",
+      "unavailable_script": "npc_training_bag",
+      "spawn_count": 6,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55199,
+      "name": "Tian Instructor",
+      "unavailable_script": "npc_tian_instructor",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55234,
+      "name": "An Windfur",
+      "unavailable_script": "npc_an_windfur",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55267,
+      "name": "Scared Pandaren Cub",
+      "unavailable_script": "npc_scared_pandaren_cub",
+      "spawn_count": 8,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55274,
+      "name": "An Windfur",
+      "unavailable_script": "npc_an_windfur_follow",
+      "spawn_count": 2,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55282,
+      "name": "Sully \"The Pickle\" McLeary",
+      "unavailable_script": "npc_sully_pearlfin_village",
+      "spawn_count": 2,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55286,
+      "name": "Sully \"The Pickle\" McLeary",
+      "unavailable_script": "npc_sully_fire_from_the_sky",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55299,
+      "name": "Raccoon",
+      "unavailable_script": "npc_gizmo",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55333,
+      "name": "Rell Nightwind",
+      "unavailable_script": "npc_rell_pearlfin_village",
+      "spawn_count": 2,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55335,
+      "name": "Rell Nightwind",
+      "unavailable_script": "npc_rell_lost_in_the_woods",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55343,
+      "name": "Amber Kearnen",
+      "unavailable_script": "npc_amber_lost_in_the_woods",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55368,
+      "name": "Widow Greenpaw",
+      "unavailable_script": "npc_widow_greenpaw_jade_witch",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55378,
+      "name": "Lifelike Jade Statue",
+      "unavailable_script": "npc_lifelike_jade_statue",
+      "spawn_count": 7,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55381,
+      "name": "Widow Greenpaw",
+      "unavailable_script": "npc_widow_greenpaw_hostile_natives",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55403,
+      "name": "Zin'Jun",
+      "unavailable_script": "npc_initial_zinjun",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55497,
+      "name": "Zin'Jun",
+      "unavailable_script": "npc_summoned_zinjun",
+      "spawn_count": 0,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55555,
+      "name": "Hozen Mudflinger",
+      "unavailable_script": "npc_hozen_mudflinger",
+      "spawn_count": 6,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55611,
+      "name": "Socks",
+      "unavailable_script": "npc_socks",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55614,
+      "name": "Pei-Zhi",
+      "unavailable_script": "npc_pei_zhi",
+      "spawn_count": 1,
+      "quest_starts": 6,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55646,
+      "name": "Shademaster Kiryn",
+      "unavailable_script": "npc_kiryn_grookyn_hill",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55647,
+      "name": "Shokia",
+      "unavailable_script": "npc_shokia_grookyn_hill",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55648,
+      "name": "Riko",
+      "unavailable_script": "npc_riko_grookyn_hill",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55668,
+      "name": "Riko",
+      "unavailable_script": "npc_riko_hostile_natives",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55669,
+      "name": "Shokia",
+      "unavailable_script": "npc_shokia_hostile_natives",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55670,
+      "name": "Shademaster Kiryn",
+      "unavailable_script": "npc_kiryn_hostile_natives",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55672,
+      "name": "Master Shang Xi",
+      "unavailable_script": "npc_master_shang_xi_grave",
+      "spawn_count": 2,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55674,
+      "name": "Recovered Gyrocopter",
+      "unavailable_script": "npc_summoned_gyrocopter_strongarm",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55676,
+      "name": "Recovered Gyrocopter",
+      "unavailable_script": "npc_summoned_gyrocopter_strongarm_event",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55678,
+      "name": "Riko",
+      "unavailable_script": "npc_riko_on_the_right_track",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55679,
+      "name": "Shokia",
+      "unavailable_script": "npc_shokia_on_the_right_track",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55680,
+      "name": "Shademaster Kiryn",
+      "unavailable_script": "npc_kiryn_on_the_right_track",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55686,
+      "name": "Riko",
+      "unavailable_script": "npc_riko_friend_of_my_enemy",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55688,
+      "name": "Shademaster Kiryn",
+      "unavailable_script": "npc_kiryn_friend_of_my_enemy",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55770,
+      "name": "Young Alliance Soldier",
+      "unavailable_script": "npc_young_alliance_soldier",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55918,
+      "name": "Shang Xi's Hot Air Balloon",
+      "unavailable_script": "npc_init_balloon",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 55963,
+      "name": "Pei-Zhi",
+      "unavailable_script": "npc_pei_zhi_bridge_earth_and_sky",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56034,
+      "name": "Thieving Plainshawk",
+      "unavailable_script": "npc_thieving_plainshawk",
+      "spawn_count": 12,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56110,
+      "name": "Xiao",
+      "unavailable_script": "npc_xiao_voftw",
+      "spawn_count": 1,
+      "quest_starts": 6,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56133,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_stormstout_votfw",
+      "spawn_count": 10,
+      "quest_starts": 15,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56138,
+      "name": "Li Li",
+      "unavailable_script": "npc_li_li",
+      "spawn_count": 9,
+      "quest_starts": 6,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56146,
+      "name": "Barrow Bush",
+      "unavailable_script": "npc_barrow_bush",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56149,
+      "name": "Rake Tree",
+      "unavailable_script": "npc_barrow_bush",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56150,
+      "name": "Hoe Tree",
+      "unavailable_script": "npc_barrow_bush",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56151,
+      "name": "Plow Plant",
+      "unavailable_script": "npc_barrow_bush",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56206,
+      "name": "Pandriarch Windfur",
+      "unavailable_script": "mob_pandriarch_windfur",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56209,
+      "name": "Pandriarch Bramblestaff",
+      "unavailable_script": "mob_pandriarch_bramblestaff",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56210,
+      "name": "Pandriarch Goldendraft",
+      "unavailable_script": "mob_pandriarch_goldendraft",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56222,
+      "name": "Bold Karasshi",
+      "unavailable_script": "npc_bold_karasshi",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56267,
+      "name": "Lorewalker Cho",
+      "unavailable_script": "npc_lorewalker_cho_29822",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56343,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_stormstout_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56344,
+      "name": "Li Li",
+      "unavailable_script": "npc_lili_voftw",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56406,
+      "name": "Rivett Clutchpop",
+      "unavailable_script": "npc_rivett_boom_bait",
+      "spawn_count": 3,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56410,
+      "name": "Sergeant Gorrok",
+      "unavailable_script": "npc_gorrok_hostile_natives",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56434,
+      "name": "Anduin Wrynn",
+      "unavailable_script": "npc_prince_anduin_decisionquestGiver",
+      "spawn_count": 2,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56474,
+      "name": "Mudmug",
+      "unavailable_script": "npc_mudmug_water_hunt",
+      "spawn_count": 4,
+      "quest_starts": 7,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56525,
+      "name": "Rivett Clutchpop",
+      "unavailable_script": "npc_rivett_boom_goes_doonamite",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56546,
+      "name": "Silk Farm Exploration Credit",
+      "unavailable_script": "npc_silken_farm_exploration_credit",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56547,
+      "name": "Water Village Exploration Credit",
+      "unavailable_script": "npc_water_village_exploration_credit",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56548,
+      "name": "Waterfall Exploration Credit",
+      "unavailable_script": "npc_waterfall_exploration_credit",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56549,
+      "name": "Li Li",
+      "unavailable_script": "npc_li_li_day_off",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56570,
+      "name": "Skat Shooting Vehicle",
+      "unavailable_script": "npc_ska_shooting_device",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56571,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_great_minds_drink_alike",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56572,
+      "name": "Li Li",
+      "unavailable_script": "npc_lili_great_minds_drink_alike",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56573,
+      "name": "Mudmug",
+      "unavailable_script": "npc_mudmug_great_minds_drink_alike",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56582,
+      "name": "Grookin Whomper",
+      "unavailable_script": "npc_grookin_whomper",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56624,
+      "name": "Jinyu Tactician",
+      "unavailable_script": "npc_jinyu_attacker",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56649,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_broken_dreams",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56686,
+      "name": "Master Shang Xi",
+      "unavailable_script": "npc_master_shang_xi_grave_summoned",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56720,
+      "name": "Loon Mai",
+      "unavailable_script": "npc_loon_mai",
+      "spawn_count": 1,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56866,
+      "name": "Clever Ashyo",
+      "unavailable_script": "npc_hidden_master_summons",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 56879,
+      "name": "Krik'thik Glider",
+      "unavailable_script": "npc_krikthik_glider",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57199,
+      "name": "Lin Tenderpaw",
+      "unavailable_script": "npc_hidden_master_summons",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57242,
+      "name": "Elder Sage Wind-Yi",
+      "unavailable_script": "npc_elder_sage_wind_yi",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57250,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_resolution",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57306,
+      "name": "Ugly Weed",
+      "unavailable_script": "npc_ugly_weed",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57307,
+      "name": "Tiny Weed",
+      "unavailable_script": "npc_tiny_weed",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57308,
+      "name": "Nasty Weed",
+      "unavailable_script": "npc_nasty_weed",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57385,
+      "name": "Gai Lan",
+      "unavailable_script": "npc_gai_lan",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57712,
+      "name": "Delivery Cart Tender",
+      "unavailable_script": "npc_cart_tender",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57714,
+      "name": "Kang Bramblestaff",
+      "unavailable_script": "npc_hidden_master_summons",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57715,
+      "name": "Ken-Ken",
+      "unavailable_script": "npc_hidden_master_summons",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 57739,
+      "name": "Ji Firepaw",
+      "unavailable_script": "npc_ji_firepaw_cinematic",
+      "spawn_count": 2,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58014,
+      "name": "Eddy",
+      "unavailable_script": "npc_eddy_cleaning_house",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58253,
+      "name": "Fizzy Yellow Spirit",
+      "unavailable_script": "npc_fizzy_yellow_spirit",
+      "spawn_count": 42,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58360,
+      "name": "Quintessence of Despair",
+      "unavailable_script": "npc_quintessence_of_despair",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58410,
+      "name": "Yi-Mo Longbrow",
+      "unavailable_script": "npc_yi_mo_lonbow_despair",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58461,
+      "name": "Hemet Nesingwary Jr.",
+      "unavailable_script": "npc_hemet_parental_mastery",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58547,
+      "name": "Koro Mistwalker",
+      "unavailable_script": "npc_koro_mistwalker",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58780,
+      "name": "Dark Blaze",
+      "unavailable_script": "npc_dark_blaze",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58804,
+      "name": "Toothrow Skulker",
+      "unavailable_script": "npc_toothrow_skulker",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58808,
+      "name": "Waterbite Creeper",
+      "unavailable_script": "npc_waterbite_creeper",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58898,
+      "name": "Vigilant Watchman",
+      "unavailable_script": "npc_vigilant_watchman",
+      "spawn_count": 5,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58943,
+      "name": "Hozen Gutripper",
+      "unavailable_script": "npc_hozen_gutripper",
+      "spawn_count": 29,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 58978,
+      "name": "Koro Mistwalker",
+      "unavailable_script": "npc_koro_unsafe_passage",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59098,
+      "name": "Riverblade Pathstalker",
+      "unavailable_script": "npc_pathstalker_unsafe_passage",
+      "spawn_count": 36,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59155,
+      "name": "Book Case",
+      "unavailable_script": "npc_burning_cupboard",
+      "spawn_count": 8,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59254,
+      "name": "Lo Wanderbrew",
+      "unavailable_script": "npc_lo_wanderbrew",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59263,
+      "name": "Merchant Shi",
+      "unavailable_script": "npc_merchant_shi",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59354,
+      "name": "Muskpaw Jr.",
+      "unavailable_script": "npc_muskpaw_jr",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59371,
+      "name": "Lucky Eightcoins",
+      "unavailable_script": "npc_lucky_eightcoins",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59591,
+      "name": "The Master's Flame",
+      "unavailable_script": "npc_the_masters_flame",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59610,
+      "name": "Wild Plains Yak",
+      "unavailable_script": "npc_wild_plains_yak",
+      "spawn_count": 31,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59611,
+      "name": "Captured Yak",
+      "unavailable_script": "npc_captured_yak",
+      "spawn_count": 3,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59649,
+      "name": "Tushui Monk",
+      "unavailable_script": "npc_tushui_monk_guard",
+      "spawn_count": 4,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59884,
+      "name": "Fallen Crusader",
+      "unavailable_script": "npc_thalnos_fallen_crusader",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 59893,
+      "name": "Empowering Spirit",
+      "unavailable_script": "npc_thalnos_spirits",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60001,
+      "name": "Ji-Lu's Cart",
+      "unavailable_script": "npc_jilu_cart",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60008,
+      "name": "Mok Mok",
+      "unavailable_script": "npc_mok_mok",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60034,
+      "name": "Neverrest Caravan Attack Controller",
+      "unavailable_script": "npc_cart_controller",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60038,
+      "name": "Pandaren Prisoner",
+      "unavailable_script": "npc_pandaren_prisoner",
+      "spawn_count": 11,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60056,
+      "name": "Mok Mok",
+      "unavailable_script": "npc_mok_mok_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60138,
+      "name": "Knucklethump Attacker",
+      "unavailable_script": "npc_attacking_hozen",
+      "spawn_count": 12,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60161,
+      "name": "Shado-Master Chong",
+      "unavailable_script": "npc_shado_master_chong",
+      "spawn_count": 1,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60178,
+      "name": "Sya Zhong",
+      "unavailable_script": "npc_sya_zhong",
+      "spawn_count": 2,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60187,
+      "name": "Jin Warmkeg",
+      "unavailable_script": "npc_jin_warmkeg",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60189,
+      "name": "Ya Firebough",
+      "unavailable_script": "npc_ya_firebough",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60190,
+      "name": "Old Lady Fung",
+      "unavailable_script": "npc_lady_fung",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60213,
+      "name": "Brother Yakshoe",
+      "unavailable_script": "npc_brother_yakshoe_dooker_dome",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60565,
+      "name": "Shang Xi's Hot Air Balloon",
+      "unavailable_script": "shang_xi_air_balloon",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60572,
+      "name": "Nakk'rakas",
+      "unavailable_script": "npc_nakkrakas",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60587,
+      "name": "Kota Kon",
+      "unavailable_script": "npc_kota_kon_gossip",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60622,
+      "name": "Orbiss",
+      "unavailable_script": "npc_orbiss_summoned",
+      "spawn_count": 2,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60679,
+      "name": "Nephew Burrberry",
+      "unavailable_script": "npc_nephew_burrbery",
+      "spawn_count": 2,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60680,
+      "name": "Nephew Burrberry",
+      "unavailable_script": "npc_nephew_burrbery_phased",
+      "spawn_count": 9,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60684,
+      "name": "Suna Silentstrike",
+      "unavailable_script": "npc_suna_camp_osul",
+      "spawn_count": 2,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60686,
+      "name": "Dmong's Torch",
+      "unavailable_script": "npc_dmongs_torch",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60688,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_longying",
+      "spawn_count": 1,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60702,
+      "name": "Kota Kon",
+      "unavailable_script": "npc_kota_kon_phased",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60754,
+      "name": "Kota Kon",
+      "unavailable_script": "npc_kota_kon_vehicle",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60767,
+      "name": "Captain Ripflesh",
+      "unavailable_script": "npc_captain_ripflesh",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60775,
+      "name": "Gnoll Decoy",
+      "unavailable_script": "npc_gnoll_decoy",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60802,
+      "name": "Jahesh of Osul",
+      "unavailable_script": "npc_jahesh_of_osul",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60847,
+      "name": "Flanking Mogu",
+      "unavailable_script": "npc_flanking_mogul",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60857,
+      "name": "Orbiss",
+      "unavailable_script": "npc_orbiss",
+      "spawn_count": 1,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60862,
+      "name": "Steam Bunny",
+      "unavailable_script": "npc_steam_bunny",
+      "spawn_count": 28,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60864,
+      "name": "Yalia Sagewhisper",
+      "unavailable_script": "npc_yalia_sagewhisper",
+      "spawn_count": 3,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60871,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60880,
+      "name": "Orbiss",
+      "unavailable_script": "npc_orbiss_mists_opportunity",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60902,
+      "name": "Sage Liao",
+      "unavailable_script": "npc_sage_liao_zouchin_province",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60903,
+      "name": "Xiao Tu",
+      "unavailable_script": "npc_xiao_tu",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60933,
+      "name": "Totem of Kindness",
+      "unavailable_script": "npc_totem_of_kindness",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60948,
+      "name": "Kill Credit: Last Toll of the Yaungol 1",
+      "unavailable_script": "npc_eastern_smoke_trail",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60949,
+      "name": "Kill Credit: Last Toll of the Yaungol 2",
+      "unavailable_script": "npc_western_smoke_trail",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60950,
+      "name": "Kill Credit: Last Toll of the Yaungol 3",
+      "unavailable_script": "npc_southern_smoke_trail",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60990,
+      "name": "Totem of Tranquility",
+      "unavailable_script": "npc_totem_of_tranquility",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 60991,
+      "name": "Totem of Serenity",
+      "unavailable_script": "npc_totem_of_serenity",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61015,
+      "name": "Yalia Sagewhisper",
+      "unavailable_script": "npc_yalia_sagewhisper_totem_event",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61016,
+      "name": "Lao-Chin the Iron Belly",
+      "unavailable_script": "npc_lao_chin_dusklight_bridge",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61020,
+      "name": "Hawkmaster Nurong",
+      "unavailable_script": "npc_hawkmaster_nurong_farwatch",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61021,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_battlefront",
+      "spawn_count": 3,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61024,
+      "name": "Seething Hatred",
+      "unavailable_script": "npc_seething_hatred_event",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61062,
+      "name": "Totem of Harmony",
+      "unavailable_script": "npc_totem_of_harmony",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61065,
+      "name": "Waterspeaker Gorai",
+      "unavailable_script": "npc_gorai_cleansing_mere",
+      "spawn_count": 0,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61066,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_gao_ran",
+      "spawn_count": 1,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61161,
+      "name": "Bluesaddle",
+      "unavailable_script": "npc_bluesaddle",
+      "spawn_count": 2,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61163,
+      "name": "Ruthers",
+      "unavailable_script": "npc_ruthers",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61175,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61205,
+      "name": "Shado-Pan Caravan",
+      "unavailable_script": "npc_shado_pan_caravan",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61206,
+      "name": "Shado-Pan Caravan",
+      "unavailable_script": "npc_caravan_moving",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61207,
+      "name": "Xiao Tu",
+      "unavailable_script": "npc_xiao_tu_hatreds_vice",
+      "spawn_count": 3,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61291,
+      "name": "Kill Credit: Last Toll of the Yaungol 4",
+      "unavailable_script": "npc_northwest_smoke_trail",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61371,
+      "name": "Lorewalker Cho",
+      "unavailable_script": "npc_lorewalker_cho_zouchin_village",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61374,
+      "name": "Krik'thik Deep-Scout",
+      "unavailable_script": "npc_krikthik_deep_scout",
+      "spawn_count": 16,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61378,
+      "name": "Scout Wei-Chin",
+      "unavailable_script": "npc_scout_wei_chen",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61380,
+      "name": "Shin Whispercloud",
+      "unavailable_script": "npc_shin_whispercloud",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61381,
+      "name": "Exhausted Defender",
+      "unavailable_script": "npc_zouchin_village_zouchin_defender",
+      "spawn_count": 17,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61390,
+      "name": "Tai Ho",
+      "unavailable_script": "npc_taiho_incursion",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61395,
+      "name": "Scout Long",
+      "unavailable_script": "npc_scout_long",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61396,
+      "name": "Scout Ying",
+      "unavailable_script": "npc_scout_ying",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61397,
+      "name": "Scout Jai-gan",
+      "unavailable_script": "npc_scout_jai_gan",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61426,
+      "name": "Shado-Pan Spike Trap",
+      "unavailable_script": "npc_spike_trap",
+      "spawn_count": 22,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61482,
+      "name": "Tai Ho",
+      "unavailable_script": "npc_tai_ho_shado_pan",
+      "spawn_count": 2,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61500,
+      "name": "Pool of Corruption",
+      "unavailable_script": "npc_pool_of_corruption",
+      "spawn_count": 9,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61503,
+      "name": "Shomi",
+      "unavailable_script": "npc_shomi_zouchin_village",
+      "spawn_count": 2,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61524,
+      "name": "Scout Wei-chin",
+      "unavailable_script": "npc_scout_wei_chen_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61525,
+      "name": "Scout Jai-Gan",
+      "unavailable_script": "npc_scout_jai_gan_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61526,
+      "name": "Scout Ying",
+      "unavailable_script": "npc_scout_ying_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61527,
+      "name": "Scout Long",
+      "unavailable_script": "npc_scout_long_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61534,
+      "name": "Shomi",
+      "unavailable_script": "npc_shomi_zouchin_village_escort",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61545,
+      "name": "Koa",
+      "unavailable_script": "npc_kao_zouchin_village",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61563,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_gao_ran",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61580,
+      "name": "Ogo the Elder",
+      "unavailable_script": "npc_ogo_the_elder",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61581,
+      "name": "Ogo the Younger",
+      "unavailable_script": "npc_ogo_the_younger",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61582,
+      "name": "Waterspeaker Gorai",
+      "unavailable_script": "npc_gorai_the_ritual",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61601,
+      "name": "Lava",
+      "unavailable_script": "npc_lava_trigger",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61658,
+      "name": "Mature Flame Hound",
+      "unavailable_script": "npc_mature_flame_hound",
+      "spawn_count": 19,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61692,
+      "name": "Injured Gao-Ran Blackguard",
+      "unavailable_script": "npc_injured_gao_ran_blackguard",
+      "spawn_count": 15,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61702,
+      "name": "Gao-Ran Cannoneer",
+      "unavailable_script": "npc_gao_ran_cannoneer",
+      "spawn_count": 15,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61780,
+      "name": "Suspicious Rock",
+      "unavailable_script": "npc_suspicious_rock",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61820,
+      "name": "Lao-Chin the Iron Belly",
+      "unavailable_script": "npc_lao_chin_iron_belly_winters_blossom",
+      "spawn_count": 4,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 61970,
+      "name": "Mistblade Ripper",
+      "unavailable_script": "npc_mistblade_ripper",
+      "spawn_count": 24,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62024,
+      "name": "Dragon Launcher",
+      "unavailable_script": "npc_dragon_launcher",
+      "spawn_count": 14,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62090,
+      "name": "Mantid Bunny",
+      "unavailable_script": "npc_mantid_bunny_amber_womb",
+      "spawn_count": 12,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62093,
+      "name": "Lao-Chin the Iron Belly",
+      "unavailable_script": "npc_lao_wall",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62105,
+      "name": "Mountain Yak",
+      "unavailable_script": "npc_mountain_yak",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62166,
+      "name": "Marksman Lann",
+      "unavailable_script": "npc_marksman_lann",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62180,
+      "name": "Korven the Prime",
+      "unavailable_script": "npc_korven_klaxxivess",
+      "spawn_count": 3,
+      "quest_starts": 6,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62192,
+      "name": "Keg Bomb",
+      "unavailable_script": "npc_keg_bomb",
+      "spawn_count": 9,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62202,
+      "name": "Kil'ruk the Wind-Reaver",
+      "unavailable_script": "npc_kilrum_wind_reaver_initial",
+      "spawn_count": 1,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62232,
+      "name": "Korven the Prime",
+      "unavailable_script": "npc_korven_the_prime_initial",
+      "spawn_count": 0,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62269,
+      "name": "Voress'thalik",
+      "unavailable_script": "npc_voress_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62274,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_rensai",
+      "spawn_count": 2,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62275,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_sikvess_questgiver",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62299,
+      "name": "Amani Berserker",
+      "unavailable_script": "npc_zouchin_village_amani_berserker",
+      "spawn_count": 10,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62300,
+      "name": "Kor'thik Swarmer",
+      "unavailable_script": "npc_summoned_swamer",
+      "spawn_count": 17,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62302,
+      "name": "Nurong's Cannon",
+      "unavailable_script": "npc_nurong_cannon_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62324,
+      "name": "Norvakess",
+      "unavailable_script": "npc_norvakess_battlefront",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62366,
+      "name": "Shomi",
+      "unavailable_script": "npc_shomi_enemies_at_our_door",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62394,
+      "name": "Zan'thik Impaler",
+      "unavailable_script": "npc_zanthik_impaler",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62400,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_gao_end_event",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62410,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_gao_end_event",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62412,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_joining_the_hunt",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62413,
+      "name": "Kil'ruk the Wind-Reaver",
+      "unavailable_script": "npc_kilrum_wind_reaver_flight",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62436,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_bridge_transition",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62444,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_battlefront_summoned",
+      "spawn_count": 0,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62529,
+      "name": "Lao-Chin the Iron Belly",
+      "unavailable_script": "npc_lao_chin_bridge_event",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62541,
+      "name": "Sha of Hatred",
+      "unavailable_script": "npc_sha_of_hatred",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62547,
+      "name": "Tai Ho",
+      "unavailable_script": "npc_summoned_tai_ho_shado_pan",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62574,
+      "name": "Hawkmaster Nurong",
+      "unavailable_script": "npc_nurong_fighting_voress",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62578,
+      "name": "Sik'thik Hiveling",
+      "unavailable_script": "npc_hiveling_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62588,
+      "name": "Kil'ruk the Wind-Reaver",
+      "unavailable_script": "npc_kilruk_angel_of_death",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62591,
+      "name": "Blasting Barrel",
+      "unavailable_script": "npc_blasting_barrel",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62601,
+      "name": "Motherseed",
+      "unavailable_script": "npc_motherseed",
+      "spawn_count": 11,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62629,
+      "name": "Zandalari Prisoner",
+      "unavailable_script": "npc_zandalari_prisoner",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62666,
+      "name": "Sapmaster Vu",
+      "unavailable_script": "npc_sapmaster_vu",
+      "spawn_count": 4,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62667,
+      "name": "Lya of Ten Songs",
+      "unavailable_script": "npc_lya_ten_songs_brewgarden",
+      "spawn_count": 3,
+      "quest_starts": 6,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62670,
+      "name": "Arcanic Oubliette",
+      "unavailable_script": "npc_arcanic_oubliette",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62730,
+      "name": "Lao-Chin the Iron Belly",
+      "unavailable_script": "npc_lao_chin_bridge_escort",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62736,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_bridge_end_event",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62747,
+      "name": "Nurong's Cannon",
+      "unavailable_script": "npc_nurong_cannon_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62751,
+      "name": "Dread Lurker",
+      "unavailable_script": "npc_dread_lurker",
+      "spawn_count": 13,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62758,
+      "name": "Kor'thik Battlesinger",
+      "unavailable_script": "npc_korthik_battlesinger",
+      "spawn_count": 32,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62771,
+      "name": "Chief Rikkitun",
+      "unavailable_script": "npc_initial_chief_rikkitu",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62773,
+      "name": "Iyyokuk the Lucid",
+      "unavailable_script": "npc_iyyokuk_the_lucid",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62774,
+      "name": "Malik the Unscathed",
+      "unavailable_script": "npc_malik_klaxxivess",
+      "spawn_count": 3,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62775,
+      "name": "Zouchin Villager",
+      "unavailable_script": "npc_zouchin_villager_conversation",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62776,
+      "name": "Han Stormstout",
+      "unavailable_script": "npc_han_stormstout",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62779,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_stormstout_brewgarden",
+      "spawn_count": 3,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62786,
+      "name": "Hawkmaster Nurong",
+      "unavailable_script": "nurong_to_shao_pan",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62788,
+      "name": "Hawkmaster Nurong",
+      "unavailable_script": "npc_nurong_summoned_shado_pan",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62803,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_fighting_sha",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62960,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_summoned_chen_brewgarden",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62963,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_summoned_chen_horrid_march",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62973,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_evie_grave_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 62987,
+      "name": "Han Stormstout",
+      "unavailable_script": "npc_han_stormstout_summoned",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63000,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_stormstout_morrowchamber",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63017,
+      "name": "Darkhatched Skulker",
+      "unavailable_script": "npc_darkhatcher_skulker",
+      "spawn_count": 18,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63033,
+      "name": "Brewgarden Defender",
+      "unavailable_script": "npc_brewgarden_defender",
+      "spawn_count": 8,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63043,
+      "name": "Lya of Ten Songs",
+      "unavailable_script": "npc_summoned_lya_ten_songs",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63054,
+      "name": "Sapmaster Vu",
+      "unavailable_script": "npc_sapmaster_vu_summoned",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63071,
+      "name": "Skeer the Bloodseeker",
+      "unavailable_script": "npc_skeer_the_bloodseeker",
+      "spawn_count": 3,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63118,
+      "name": "Chief Rikkitun",
+      "unavailable_script": "npc_summoned_rikkitu_chief",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63280,
+      "name": "Deckhand",
+      "unavailable_script": "npc_deckhand_conversation",
+      "spawn_count": 7,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63317,
+      "name": "Captain \"Soggy\" Su-Dao",
+      "unavailable_script": "npc_captain_soggy",
+      "spawn_count": 3,
+      "quest_starts": 3,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63330,
+      "name": "Jiao",
+      "unavailable_script": "npc_jiao_leviathan_summoned",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63345,
+      "name": "Whispercloud's Balloon",
+      "unavailable_script": "npc_whisperclouds_balloon",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63362,
+      "name": "Whispercloud's Balloon",
+      "unavailable_script": "npc_whisperclouds_baloon_up",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63363,
+      "name": "Whispercloud's Balloon",
+      "unavailable_script": "npc_whisperclouds_baloon_up",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63366,
+      "name": "The Spring Drifter",
+      "unavailable_script": "npc_spring_drifter",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63381,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_stormstout_cleaning_house",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63382,
+      "name": "Li Li",
+      "unavailable_script": "npc_lili_cleaning_house",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63383,
+      "name": "Mudmug",
+      "unavailable_script": "npc_mudmug_cleaning_house",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63505,
+      "name": "Shomi",
+      "unavailable_script": "npc_shomi",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63516,
+      "name": "Amani Behemoth",
+      "unavailable_script": "npc_zouchin_village_amani_behemoth",
+      "spawn_count": 5,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63524,
+      "name": "Elder Hou",
+      "unavailable_script": "npc_elder_hou_revelations",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63535,
+      "name": "Elder Shiao",
+      "unavailable_script": "npc_elder_shiao",
+      "spawn_count": 3,
+      "quest_starts": 5,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63602,
+      "name": "Elder Shu",
+      "unavailable_script": "npc_shomi_enemies_at_our_door",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63606,
+      "name": "Xaril the Poisoned Mind",
+      "unavailable_script": "xaril_the_poisoned_mind_womb",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63758,
+      "name": "Kaz'tik the Manipulator",
+      "unavailable_script": "npc_kaztik_klaxxivess",
+      "spawn_count": 2,
+      "quest_starts": 7,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63764,
+      "name": "Battleworn Paratrooper",
+      "unavailable_script": "npc_battlesworn_paratrooper",
+      "spawn_count": 16,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63782,
+      "name": "Battleworn Paratrooper",
+      "unavailable_script": "npc_battlesworn_paratrooper",
+      "spawn_count": 20,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63820,
+      "name": "Alliance Trainee",
+      "unavailable_script": "npc_alliance_horde_trainee",
+      "spawn_count": 36,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63821,
+      "name": "Horde Trainee",
+      "unavailable_script": "npc_alliance_horde_trainee",
+      "spawn_count": 11,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63876,
+      "name": "Kaz'tik the Manipulator",
+      "unavailable_script": "npc_kaztik_the_manipulator_questgiver",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63955,
+      "name": "Dog",
+      "unavailable_script": "npc_dog_soggys_gamble",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 63998,
+      "name": "Oracle Hiss'ir",
+      "unavailable_script": "npc_oracle_hissir",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64013,
+      "name": "Kaz'tik the Manipulator",
+      "unavailable_script": "npc_kaztik_the_manipulator_reunited",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64222,
+      "name": "Leviathan Weak Point A",
+      "unavailable_script": "npc_leviathan_weak_point",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64228,
+      "name": "Leviathan Weak Point B",
+      "unavailable_script": "npc_leviathan_weak_point",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64229,
+      "name": "Leviathan Weak Point C",
+      "unavailable_script": "npc_leviathan_weak_point",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64230,
+      "name": "Leviathan Weak Point D",
+      "unavailable_script": "npc_leviathan_weak_point",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64235,
+      "name": "Mist-Hopper Harpoon Cannon",
+      "unavailable_script": "npc_harpoon_initial",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64236,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_sikvess_start",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64244,
+      "name": "Mishi",
+      "unavailable_script": "npc_mishi_summoner",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64249,
+      "name": "Mishi",
+      "unavailable_script": "npc_mishi_seal_is_broken",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64252,
+      "name": "Mist-Hopper Jr.",
+      "unavailable_script": "npc_mist_hopper_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64259,
+      "name": "Master Angler Ju Lien",
+      "unavailable_script": "npc_master_angler_ju_lien",
+      "spawn_count": 2,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64269,
+      "name": "Sha of Doubt Portal",
+      "unavailable_script": "npc_sha_portal",
+      "spawn_count": 18,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64344,
+      "name": "Kaz'tik the Manipulator",
+      "unavailable_script": "npc_kaztik_end_event",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64350,
+      "name": "Mist-Hopper Jr.",
+      "unavailable_script": "npc_misthopper_initial",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64378,
+      "name": "Captain \"Soggy\" Su-Dao",
+      "unavailable_script": "npc_captain_soggy_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64490,
+      "name": "Kaz'tik the Manipulator",
+      "unavailable_script": "npc_kaztik_flying_away",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 64868,
+      "name": "Kor'kron Dubs",
+      "unavailable_script": "npc_korkron_dubs_thunder_hold",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65253,
+      "name": "Rik'kal the Dissector",
+      "unavailable_script": "npc_rikkal_the_dissector_questgiver",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65303,
+      "name": "Ka'roz the Locust",
+      "unavailable_script": "npc_karoz_the_locust_klaxxivess",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65305,
+      "name": "Iyyokuk the Lucid",
+      "unavailable_script": "npc_iyyokuk_the_lucid_klaxxivess",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65327,
+      "name": "Marksman Lann",
+      "unavailable_script": "npc_marksmann_lann_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65354,
+      "name": "Ancient Amber Chunk",
+      "unavailable_script": "npc_amber_chunk_mistblade",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65357,
+      "name": "A Mysterious Voice",
+      "unavailable_script": "npc_mysterious_voice",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65371,
+      "name": "Kil'ruk the Wind-Reaver",
+      "unavailable_script": "npc_kilrum_wind_reaver_dread_clutch",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65395,
+      "name": "Klaxxi'va Ik",
+      "unavailable_script": "npc_klaxxi_va_lk",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65400,
+      "name": "Krik'thik Glider",
+      "unavailable_script": "npc_krikthik_glider",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65422,
+      "name": "Malik the Unscathed",
+      "unavailable_script": "npc_malik_klaxxivess_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65436,
+      "name": "Rikkitun Chanter",
+      "unavailable_script": "npc_rikkitun_chanter",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65450,
+      "name": "Ancient Guardian",
+      "unavailable_script": "npc_ancient_guardian",
+      "spawn_count": 13,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65478,
+      "name": "Adjunct Zet'uk",
+      "unavailable_script": "npc_adjunct_zetuk",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65619,
+      "name": "Kil'ruk the Wind-Reaver",
+      "unavailable_script": "npc_kilruk_amber_is_life",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65690,
+      "name": "Hawkmaster Nurong",
+      "unavailable_script": "npc_nurong_endevent",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65713,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_spyglass_summon",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65714,
+      "name": "Taoshi",
+      "unavailable_script": "npc_taoshi_spyglass",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65899,
+      "name": "Master Kistane",
+      "unavailable_script": "npc_master_kistane_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65928,
+      "name": "Ordo Raider",
+      "unavailable_script": "npc_ordo_raider",
+      "spawn_count": 18,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65960,
+      "name": "Master Woo",
+      "unavailable_script": "npc_master_woo_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 65977,
+      "name": "Master Hsu",
+      "unavailable_script": "npc_master_hsu_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66052,
+      "name": "Captain Doren",
+      "unavailable_script": "npc_captain_doren",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66073,
+      "name": "Master Yoon",
+      "unavailable_script": "npc_master_yoon_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66138,
+      "name": "Master Cheng",
+      "unavailable_script": "npc_master_cheng_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66149,
+      "name": "Master Tsang",
+      "unavailable_script": "npc_master_tsang_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66169,
+      "name": "Farraki Dervish",
+      "unavailable_script": "npc_zouchin_village_amani_berserker",
+      "spawn_count": 8,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66180,
+      "name": "Master Cheng",
+      "unavailable_script": "npc_master_cheng_female_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66207,
+      "name": "Master Hsu",
+      "unavailable_script": "npc_master_hsu_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66220,
+      "name": "Mayor Honeydew",
+      "unavailable_script": "npc_mayor_honeydew",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66235,
+      "name": "Fieldwatcher Mao",
+      "unavailable_script": "npc_fieldwatcher_mao",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66253,
+      "name": "Master Kistane",
+      "unavailable_script": "npc_master_kistane_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66254,
+      "name": "Master Woo",
+      "unavailable_script": "npc_master_woo_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66255,
+      "name": "Master Yoon",
+      "unavailable_script": "npc_master_yoon_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66256,
+      "name": "Master Cheng",
+      "unavailable_script": "npc_master_cheng_female_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66257,
+      "name": "Master Tsang",
+      "unavailable_script": "npc_master_tsang_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66258,
+      "name": "Master Cheng",
+      "unavailable_script": "npc_master_cheng_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66276,
+      "name": "Ga'trul",
+      "unavailable_script": "npc_gatrul_gatruls_fall",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66283,
+      "name": "Captain Doren",
+      "unavailable_script": "npc_captain_doren_thunder_hold",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66292,
+      "name": "Sky Admiral Rogers",
+      "unavailable_script": "npc_sky_admiral_rogers",
+      "spawn_count": 3,
+      "quest_starts": 4,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66308,
+      "name": "Thunder Hold Munitions",
+      "unavailable_script": "npc_thunder_hold_munitions",
+      "spawn_count": 45,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66396,
+      "name": "Ga'trul",
+      "unavailable_script": "npc_gatrul_garrosh_ar",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66400,
+      "name": "Ship 1 Kill Credit",
+      "unavailable_script": "npc_ship_explosion_1",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66401,
+      "name": "Ship 2 Kill Credit",
+      "unavailable_script": "npc_ship_explosion_2",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66583,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_pawdon",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66643,
+      "name": "General Nazgrim",
+      "unavailable_script": "npc_nazgrim_summoned_doren",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66644,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_summoned_doren",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66656,
+      "name": "General Nazgrim",
+      "unavailable_script": "npc_general_nazgrim_thunder_hold",
+      "spawn_count": 1,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66657,
+      "name": "Taran Zhu",
+      "unavailable_script": "npc_taran_zhu_thunder_hold",
+      "spawn_count": 1,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66660,
+      "name": "Ellie Honeypaw",
+      "unavailable_script": "npc_ellie_honeypaw",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66662,
+      "name": "Gi-Oh",
+      "unavailable_script": "npc_gi_oh",
+      "spawn_count": 3,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66732,
+      "name": "Master Hight",
+      "unavailable_script": "npc_master_hight_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66744,
+      "name": "Master Hight",
+      "unavailable_script": "npc_master_hight_initial",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66795,
+      "name": "Gunship Fire Bunny",
+      "unavailable_script": "npc_gunship_fire_bunny",
+      "spawn_count": 53,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66825,
+      "name": "Ellie Honeypaw",
+      "unavailable_script": "npc_ellie_honeypaw_summoned",
+      "spawn_count": 0,
+      "quest_starts": 1,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66853,
+      "name": "Kai-Lin Honeydew",
+      "unavailable_script": "npc_kai_lin_honeydew_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 66915,
+      "name": "Kor'kron Elite",
+      "unavailable_script": "npc_korkron_elite_thunder_hold",
+      "spawn_count": 11,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 67002,
+      "name": "Master Angler Ju Lien",
+      "unavailable_script": "npc_master_angler_ju_lien_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 67060,
+      "name": "Master Cheng",
+      "unavailable_script": "npc_master_cheng_trigger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 67064,
+      "name": "Paragon Chat Controller",
+      "unavailable_script": "npc_paragon_chat_controller",
+      "spawn_count": 2,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 67091,
+      "name": "Rik'kal the Dissector",
+      "unavailable_script": "npc_rikktal_the_dissector_wakens",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 67138,
+      "name": "Chen Stormstout",
+      "unavailable_script": "npc_chen_evie_grave",
+      "spawn_count": 2,
+      "quest_starts": 2,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 67231,
+      "name": "Trial of the King",
+      "unavailable_script": "boss_trial_of_king",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 70640,
+      "name": "Ji-Kun Area Trigger Dummy [DNT]",
+      "unavailable_script": "npc_jikun_teleport",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 71107,
+      "name": "Xuen",
+      "unavailable_script": "gerenic_creature",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 71144,
+      "name": "Niuzao",
+      "unavailable_script": "gerenic_creature",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 71169,
+      "name": "Chi-Ji",
+      "unavailable_script": "gerenic_creature",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 71886,
+      "name": "Water Bubble",
+      "unavailable_script": "npc_eddy_water_bubbles",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 73319,
+      "name": "Wrathion",
+      "unavailable_script": "npc_tvs_black_prince",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 73527,
+      "name": "Flarecore Golem",
+      "unavailable_script": "npc_flarecore_golem",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 73692,
+      "name": "Divine Star",
+      "unavailable_script": "npc_pri_divine_star",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 170000,
+      "name": "AFD Royale - Controller",
+      "unavailable_script": "npc_afd_royale_controller",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 170001,
+      "name": "Ring",
+      "unavailable_script": "npc_afd_royale_ring",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190000,
+      "name": "Isengard Menu",
+      "unavailable_script": "npc_premium",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190001,
+      "name": "Premium Vendor",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190002,
+      "name": "Isengard Daily Quests",
+      "unavailable_script": "npc_isengard_daily_quests",
+      "spawn_count": 0,
+      "quest_starts": 110,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190003,
+      "name": "Premium Profession Trainer",
+      "unavailable_script": "npc_premium_professions",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190004,
+      "name": "Premium Class Trainer",
+      "unavailable_script": "npc_premium_class_trainer",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190005,
+      "name": "Arena Spectator",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190006,
+      "name": "Reforge",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190007,
+      "name": "Transmogrification",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190008,
+      "name": "Void Storage",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190009,
+      "name": "Item Upgrade",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190010,
+      "name": "Black Market",
+      "unavailable_script": "npc_premium_vendor",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190011,
+      "name": "Isengard Admin Menu",
+      "unavailable_script": "npc_april_fools_admin_menu",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 190013,
+      "name": " Isengard Solo Queue Npc",
+      "unavailable_script": "npc_solo_queue",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 191000,
+      "name": "Arena Master",
+      "unavailable_script": "npc_arenamaster",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 191001,
+      "name": "Pet Guy",
+      "unavailable_script": "npc_pet_guy",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 224270,
+      "name": "Professions",
+      "unavailable_script": "npc_profession_skills",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 224271,
+      "name": "Dual Spec",
+      "unavailable_script": "npc_dual_spec",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 224272,
+      "name": "Runeforging",
+      "unavailable_script": "npc_runeforging",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 224276,
+      "name": "Level Adjustments",
+      "unavailable_script": "npc_leveladjusments",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 241102,
+      "name": "Generateur explosions",
+      "unavailable_script": "npc_explosion_volcano",
+      "spawn_count": 22,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 511513,
+      "name": "Yi-Mo Longbrow Bunny Quest Cheer Up, Yi-Mo",
+      "unavailable_script": "npc_cheer_yimo_trigger",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 555501,
+      "name": "Lurking Tiger",
+      "unavailable_script": "mob_lurking_tiger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 555502,
+      "name": "Lurking Tiger",
+      "unavailable_script": "mob_lurking_tiger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 555503,
+      "name": "Lurking Tiger",
+      "unavailable_script": "mob_lurking_tiger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 555504,
+      "name": "Lurking Tiger",
+      "unavailable_script": "mob_lurking_tiger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 555505,
+      "name": "Lurking Tiger",
+      "unavailable_script": "mob_lurking_tiger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 594810,
+      "name": "Grummle Grummle Trigger",
+      "unavailable_script": "npc_grummle_trigger",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 642350,
+      "name": "Mist-Hopper Harpoon Cannon",
+      "unavailable_script": "npc_harpoon_summoned",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 777777,
+      "name": "Reckful",
+      "unavailable_script": "npc_reckful_tribute",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 934957,
+      "name": "Ace",
+      "unavailable_script": "npc_friend_gob",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 934958,
+      "name": "Gobber",
+      "unavailable_script": "npc_friend_gob",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 934959,
+      "name": "Izzy",
+      "unavailable_script": "npc_friend_gob",
+      "spawn_count": 1,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    },
+    {
+      "entry": 9100000,
+      "name": "PhaseSwitch",
+      "unavailable_script": "npc_phaseswift",
+      "spawn_count": 0,
+      "quest_starts": 0,
+      "native_parity": "unimplemented_or_binding_needs_mapping"
+    }
+  ],
+  "previous_totals": {
+    "missing_names_across_all_script_types": 876,
+    "creature_templates": 621,
+    "creature_templates_with_spawns": 356,
+    "active_quest_actor_templates": 103
+  }
+}

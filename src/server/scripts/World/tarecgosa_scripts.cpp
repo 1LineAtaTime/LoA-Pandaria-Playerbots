@@ -66,20 +66,26 @@ class npc_anachronos_15192 : public CreatureScript
             player->PlayerTalkClass->ClearMenus();
             if (action == ACTION_A_WRINKIE_IN_TIME)
             {
+                if (player->GetQuestStatus(29134) != QUEST_STATUS_INCOMPLETE)
+                    return false;
                 player->KilledMonsterCredit(52605, ObjectGuid::Empty);
             }
             else if (action == ACTION_ON_A_WING_AND_A_PRAYER)
             {
-                uint32 curItemCount = player->GetItemCount(69238, false);
+                if (player->GetQuestStatus(29193) != QUEST_STATUS_INCOMPLETE)
+                    return false;
+                uint32 curItemCount = player->GetItemCount(69238, true);
                 if (curItemCount >= 1)
                     return false;
                 
                 ItemPosCountVec dest;
-                uint8 msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, 49661, 1);
+                uint8 msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, 69238, 1);
                 if (msg == EQUIP_ERR_OK)
                 {
-                    Item* item = player->StoreNewItem(dest, 69238, true);
-                    player->SendNewItem(item, 1, true, false);
+                    if (Item* item = player->StoreNewItem(dest, 69238, true))
+                        player->SendNewItem(item, 1, true, false);
+                    else
+                        return false;
                 }
                 else
                     return false;
@@ -125,7 +131,6 @@ class npc_tarecgosa_52835 : public CreatureScript
                 if (who->ToPlayer()->GetQuestStatus(29193) == QUEST_STATUS_INCOMPLETE)
                 {
                     who->ToPlayer()->KilledMonsterCredit(52832, ObjectGuid::Empty);
-                    who->ToPlayer()->CompleteQuest(29193);
                 }
             }
         };
@@ -368,7 +373,8 @@ class npc_hallegosa : public CreatureScript
 {
     bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
     {
-        creature->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        if (quest->GetQuestId() == 29309 || quest->GetQuestId() == 29312)
+            creature->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
 
         return true;
     }
@@ -378,6 +384,10 @@ class npc_hallegosa : public CreatureScript
 
         bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 /*action*/) override
         {
+            uint32 questId = creature->GetMapId() == 1 ? 29309 : 29312;
+            if (player->GetQuestStatus(questId) != QUEST_STATUS_INCOMPLETE ||
+                !creature->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+                return false;
             player->PlayerTalkClass->ClearMenus();
             player->CLOSE_GOSSIP_MENU();
 
@@ -403,8 +413,10 @@ class npc_hallegosa : public CreatureScript
             void JustAppeared() override
             {
                 ScriptedAI::JustAppeared();
+                events.Reset();
                 me->RemoveAllAuras();
                 me->SetCanFly(false);
+                me->SetDisableGravity(false);
                 curPoint = 0;
                 me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
             }
@@ -656,7 +668,8 @@ class npc_stalker_53422 : public CreatureScript
 
             void OnQuestReward(Player* player, const Quest* quest, uint32 data) override
             {
-                me->DespawnOrUnsummon();
+                if (quest->GetQuestId() == 29309 || quest->GetQuestId() == 29312)
+                    me->DespawnOrUnsummon();
             }
         };
 
@@ -670,7 +683,7 @@ void AddSC_tarecgosa_scripts()
 {
     new npc_anachronos_15192();
     new npc_tarecgosa_52835();
-    new npc_thyrinar();
+    // Keep the active SmartAI combat fallback until native encounter parity is tested.
     new npc_tarecgosa_53098();
     new npc_kalecgos_53149();
     new npc_kalecgos_53349();

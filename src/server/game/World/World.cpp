@@ -2437,6 +2437,11 @@ void World::SetInitialWorldSettings()
     ///- Initialize MapManager
     TC_LOG_INFO("server.loading", "Starting Map System");
     sMapMgr->Initialize();
+    // Gilneas liquid overlays are looked up by map workers. Allocate their empty
+    // base maps here before world updates rather than mutating the map registry
+    // during an NPC/player terrain query. Individual terrain tiles remain lazy.
+    sMapMgr->CreateBaseMap(655);
+    sMapMgr->CreateBaseMap(656);
 
     TC_LOG_INFO("server.loading", "Starting Game Event system...");
     uint32 nextGameEvent = sGameEventMgr->StartSystem();
@@ -4099,11 +4104,14 @@ void World::ProcessQueryCallbacks()
 
 void World::ReloadRBAC()
 {
-    // Passive reload, we mark the data as invalidated and next time a permission is checked it will be reloaded
+    // Drop each session's expanded permission set, then reload definitions and
+    // role links. Invalidating sessions alone keeps newly installed permissions
+    // invisible because RBACData expands them through AccountMgr's cached graph.
     TC_LOG_INFO("rbac", "World::ReloadRBAC()");
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
         if (WorldSession* session = itr->second)
             session->InvalidateRBACData();
+    sAccountMgr->LoadRBAC();
 }
 
 /**

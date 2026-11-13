@@ -32,6 +32,69 @@
 #include "SpellInfo.h"
 
 #include "SmartScriptMgr.h"
+#include "ImmediateEventSummons.h"
+#include "ConditionMgr.h"
+#include <cmath>
+
+namespace
+{
+    ImmediateEventSummons::Node WorldEventNode(SmartScriptHolder const& e)
+    {
+        bool supported = (e.GetEventType() == SMART_EVENT_UPDATE || e.GetEventType() == SMART_EVENT_LINK) &&
+            !e.event.event_phase_mask && !e.event.event_flags &&
+            !e.event.raw.param1 && !e.event.raw.param2 && !e.event.raw.param3 && !e.event.raw.param4 && !e.event.raw.param5 &&
+            e.GetActionType() == SMART_ACTION_SUMMON_CREATURE && e.action.summonCreature.type == TEMPSUMMON_TIMED_DESPAWN &&
+            !e.action.raw.param4 && !e.action.raw.param5 && !e.action.raw.param6 &&
+            e.GetTargetType() == SMART_TARGET_POSITION &&
+            !e.target.raw.param1 && !e.target.raw.param2 && !e.target.raw.param3 && !e.target.raw.param4 &&
+            std::isfinite(e.target.x) && std::isfinite(e.target.y) && std::isfinite(e.target.z) && std::isfinite(e.target.o);
+        return { e.event_id, e.link, e.GetEventType() == SMART_EVENT_LINK, e.event.event_chance, supported };
+    }
+}
+
+bool SmartAIMgr::ProcessWorldEvent(uint32 eventId, WorldObject* source, WorldObject* target)
+{
+    auto const& scripts = mEventMap[SMART_SCRIPT_TYPE_EVENT];
+    auto found = scripts.find(int32(eventId));
+    if (found == scripts.end() || !source || !source->IsInWorld())
+        return false;
+    Unit* invoker = source->ToUnit();
+    if (!invoker && target)
+        invoker = target->ToUnit();
+    // Summon callbacks can reload SmartAI data. Keep row references local.
+    SmartAIEventList const events = found->second;
+    for (SmartScriptHolder const& root : events)
+    {
+        if (root.GetEventType() == SMART_EVENT_LINK ||
+            !ImmediateEventSummons::PassesChance(root.event.event_chance, urand(0, 99)))
+            continue;
+        SmartScriptHolder const* current = &root;
+        while (current)
+        {
+            if (!sConditionMgr->IsObjectMeetingSmartEventConditions(current->entryOrGuid, current->event_id,
+                    SMART_SCRIPT_TYPE_EVENT, invoker, source))
+                break;
+            if (!source->SummonCreature(current->action.summonCreature.creature,
+                    current->target.x, current->target.y, current->target.z, current->target.o,
+                    TEMPSUMMON_TIMED_DESPAWN, Milliseconds(current->action.summonCreature.duration)))
+                TC_LOG_ERROR("scripts.ai", "World event %u row %u failed to summon creature %u on map %u at (%f,%f,%f)",
+                    eventId, current->event_id, current->action.summonCreature.creature,
+                    source->GetMapId(), current->target.x, current->target.y, current->target.z);
+            uint32 link = current->link;
+            current = nullptr;
+            if (link)
+                for (SmartScriptHolder const& next : events)
+                    if (next.event_id == link)
+                    {
+                        current = &next;
+                        break;
+                    }
+        }
+    }
+    // Even zero successful chance/condition checks consume the event. Falling
+    // through would execute overlapping unconditional legacy summons.
+    return true;
+}
 
 #define TC_SAI_IS_BOOLEAN_VALID(e, value) \
 { \
@@ -141,6 +204,8 @@ SmartAIMgr* SmartAIMgr::instance()
 void SmartAIMgr::LoadSmartAIFromDB()
 {
     uint32 oldMSTime = getMSTime();
+    std::set<int32> invalidWorldEvents;
+    std::set<int32> legacyWorldEvents;
 
     for (uint8 i = 0; i < SMART_SCRIPT_TYPE_MAX; i++)
         mEventMap[i].clear();  //Drop Existing SmartAI List
@@ -195,6 +260,17 @@ void SmartAIMgr::LoadSmartAIFromDB()
 
         temp.entryOrGuid = fields[0].GetInt32();
         SmartScriptType source_type = (SmartScriptType)fields[1].GetUInt8();
+        if (source_type == SMART_SCRIPT_TYPE_EVENT && temp.entryOrGuid <= 0)
+        {
+            TC_LOG_ERROR("sql.sql", "SmartAIMgr: World event ID %d must be positive, skipped.", temp.entryOrGuid);
+            continue;
+        }
+        if (source_type == SMART_SCRIPT_TYPE_EVENT && sEventScripts.find(uint32(temp.entryOrGuid)) != sEventScripts.end())
+        {
+            if (legacyWorldEvents.insert(temp.entryOrGuid).second)
+                TC_LOG_INFO("server.loading", "World event %d uses its existing legacy sequence; overlapping SmartAI metadata is not executed.", temp.entryOrGuid);
+            continue;
+        }
         if (source_type >= SMART_SCRIPT_TYPE_MAX)
         {
             TC_LOG_ERROR("sql.sql", "SmartAIMgr::LoadSmartAIFromDB: invalid source_type (%u), skipped loading.", uint32(source_type));
@@ -239,6 +315,8 @@ void SmartAIMgr::LoadSmartAIFromDB()
                 }
                 case SMART_SCRIPT_TYPE_TIMED_ACTIONLIST:
                     break;//nothing to check, really
+                case SMART_SCRIPT_TYPE_EVENT:
+                    break; // Validate the full immediate-summon graph below.
                 default:
                     TC_LOG_ERROR("sql.sql", "SmartAIMgr::LoadSmartAIFromDB: not yet implemented source_type %u", (uint32)source_type);
                     continue;
@@ -287,11 +365,19 @@ void SmartAIMgr::LoadSmartAIFromDB()
 
         //check target
         if (!IsTargetValid(temp))
+        {
+            if (source_type == SMART_SCRIPT_TYPE_EVENT)
+                invalidWorldEvents.insert(temp.entryOrGuid);
             continue;
+        }
 
         // check all event and action params
         if (!IsEventValid(temp))
+        {
+            if (source_type == SMART_SCRIPT_TYPE_EVENT)
+                invalidWorldEvents.insert(temp.entryOrGuid);
             continue;
+        }
 
         // creature entry / guid not found in storage, create empty event list for it and increase counters
         auto& eventmap = mEventMap[source_type];
@@ -306,6 +392,21 @@ void SmartAIMgr::LoadSmartAIFromDB()
     }
     while (result->NextRow());
 
+    auto& worldEvents = mEventMap[SMART_SCRIPT_TYPE_EVENT];
+    for (auto itr = worldEvents.begin(); itr != worldEvents.end(); )
+    {
+        std::vector<ImmediateEventSummons::Node> nodes;
+        for (SmartScriptHolder const& event : itr->second)
+            nodes.push_back(WorldEventNode(event));
+        if (invalidWorldEvents.count(itr->first) || !ImmediateEventSummons::Validate(nodes))
+        {
+            TC_LOG_ERROR("sql.sql", "SmartAIMgr: World event %d has an invalid graph or unsupported behavior; only immediate timed position summons are supported, entire event skipped.", itr->first);
+            itr = worldEvents.erase(itr);
+            --count;
+        }
+        else
+            ++itr;
+    }
     TC_LOG_INFO("server.loading", ">> Loaded %u SmartAI scripts in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 
 }
@@ -399,7 +500,9 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
         TC_LOG_ERROR("sql.sql", "SmartAIMgr: EntryOrGuid %d, event type %u can not be used for Script type %u", e.entryOrGuid, e.GetEventType(), e.GetScriptType());
         return false;
     }
-    if (e.action.type <= 0 || (e.action.type >= SMART_ACTION_END && e.action.type <= SMART_ACTION_project) || e.action.type >= SMART_ACTION_END_project)
+    if (e.action.type <= 0 ||
+        (e.action.type >= SMART_ACTION_END && e.action.type <= SMART_ACTION_project &&
+            e.action.type != SMART_ACTION_LEGACY_SET_SPEED) || e.action.type >= SMART_ACTION_END_project)
     {
         TC_LOG_ERROR("sql.sql", "SmartAIMgr: EntryOrGuid %d using event(%u) has invalid action type (%u), skipped.", e.entryOrGuid, e.event_id, e.GetActionType());
         return false;
@@ -1144,6 +1247,16 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
             }
             break;
         }
+        case SMART_ACTION_LEGACY_SET_SPEED:
+        {
+            if (e.action.legacySetSpeed.moveType >= MAX_MOVE_TYPE || !e.action.legacySetSpeed.tenths)
+            {
+                TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u has invalid legacy speed type %u or rate %u, skipped.",
+                    e.entryOrGuid, e.GetScriptType(), e.event_id, e.action.legacySetSpeed.moveType, e.action.legacySetSpeed.tenths);
+                return false;
+            }
+            break;
+        }
         case SMART_ACTION_START_CLOSEST_WAYPOINT:
         case SMART_ACTION_FOLLOW:
         case SMART_ACTION_SET_ORIENTATION:
@@ -1234,98 +1347,71 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
     return true;
 }
 
-// tc version
-// bool SmartAIMgr::IsTextValid(SmartScriptHolder const& e, uint32 id)
-// {
-//     if (e.GetScriptType() != SMART_SCRIPT_TYPE_CREATURE)
-//         return true;
-
-//     uint32 entry = 0;
-
-//     if (e.GetEventType() == SMART_EVENT_TEXT_OVER)
-//     {
-//         entry = e.event.textOver.creatureEntry;
-//     }
-//     else
-//     {
-//         switch (e.GetTargetType())
-//         {
-//             case SMART_TARGET_CREATURE_DISTANCE:
-//             case SMART_TARGET_CREATURE_RANGE:
-//             case SMART_TARGET_CLOSEST_CREATURE:
-//                 return true; // ignore
-//             default:
-//                 if (e.entryOrGuid < 0)
-//                 {
-//                     ObjectGuid::LowType guid = ObjectGuid::LowType(-e.entryOrGuid);
-//                     CreatureData const* data = sObjectMgr->GetCreatureData(guid);
-//                     if (!data)
-//                     {
-//                         TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Creature guid %d, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), guid);
-//                         return false;
-//                     }
-//                     else
-//                         entry = data->id;
-//                 }
-//                 else
-//                     entry = uint32(e.entryOrGuid);
-//                 break;
-//         }
-//     }
-
-//     if (!entry || !sCreatureTextMgr->TextExist(entry, uint8(id)))
-//     {
-//         TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Text id %d, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), id);
-//         return false;
-//     }
-
-//     return true;
-// }
-
-// #963 (AC parity, AC SmartScriptMgr.cpp:2117-2162 = the TC version kept commented out above): a talk aimed at another
-// creature (creature range / distance / closest targets) is not validated against the script owner's texts, and a
-// TEXT_OVER event uses its own creature entry. The MoP version always checked the owner's entry, so ~30 rows that make
-// another creature talk (Obsidion -> Dorius, Uther's Tomb trigger -> 17233, Machine -> Brann ...) were dropped at load.
-bool SmartAIMgr::IsTextValid(SmartScriptHolder const& e, uint32 id)
+bool SmartAIMgr::IsTextValid(SmartScriptHolder const& e, uint32 id) 
 {
     if (e.GetScriptType() != SMART_SCRIPT_TYPE_CREATURE)
         return true;
 
-    uint32 entry = 0;
-
-    if (e.GetEventType() == SMART_EVENT_TEXT_OVER)
-    {
-        entry = e.event.textOver.creatureEntry;
-    }
-    else
+    // TALK normally makes its selected creature speak; useTalkTarget keeps
+    // the owner speaking to that creature. SIMPLE_TALK also selects a speaker.
+    bool ownerSpeaks = e.GetActionType() == SMART_ACTION_TALK && e.action.talk.useTalkTarget;
+    uint32 targetEntry = 0;
+    if (!ownerSpeaks)
     {
         switch (e.GetTargetType())
         {
-            case SMART_TARGET_CREATURE_DISTANCE:
             case SMART_TARGET_CREATURE_RANGE:
-            case SMART_TARGET_CLOSEST_CREATURE:
-                return true; // ignore
-            default:
-                if (e.entryOrGuid < 0)
-                {
-                    uint32 const guid = uint32(-e.entryOrGuid);
-                    CreatureData const* data = sObjectMgr->GetCreatureData(guid);
-                    if (!data)
-                    {
-                        TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Creature guid %u, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), guid);
-                        return false;
-                    }
-                    entry = data->id;
-                }
-                else
-                    entry = uint32(e.entryOrGuid);
+                targetEntry = e.target.unitRange.creature;
                 break;
+            case SMART_TARGET_CREATURE_DISTANCE:
+                targetEntry = e.target.unitDistance.creature;
+                break;
+            case SMART_TARGET_CLOSEST_CREATURE:
+                targetEntry = e.target.closest.entry;
+                break;
+            case SMART_TARGET_CREATURE_GUID:
+                if (CreatureData const* target = sObjectMgr->GetCreatureData(e.target.unitGUID.dbGuid))
+                    targetEntry = target->id;
+                else
+                    targetEntry = e.target.unitGUID.entry;
+                break;
+            case SMART_TARGET_NONE:
+            case SMART_TARGET_SELF:
+            case SMART_TARGET_PLAYER_RANGE:
+            case SMART_TARGET_PLAYER_DISTANCE:
+            case SMART_TARGET_CLOSEST_PLAYER:
+            case SMART_TARGET_INVOKER_PARTY:
+            case SMART_TARGET_LOOT_RECIPIENTS:
+                ownerSpeaks = true;
+                break;
+            default:
+                // Stored/invoker/threat speakers can only be checked at
+                // runtime. TALK validates the actual creature before sending.
+                return true;
+        }
+        if (!ownerSpeaks && !targetEntry)
+            return true; // An unrestricted creature selector is dynamic too.
+    }
+
+    uint32 entry = targetEntry;
+    if (ownerSpeaks)
+    {
+        if (e.entryOrGuid >= 0)
+            entry = uint32(e.entryOrGuid);
+        else if (CreatureData const* data = sObjectMgr->GetCreatureData(uint32(-e.entryOrGuid)))
+            entry = data->id;
+        else
+        {
+            TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Creature guid %u, skipped.",
+                e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), uint32(-e.entryOrGuid));
+            return false;
         }
     }
 
-    if (!entry || !sCreatureTextMgr->TextExist(entry, uint8(id)))
+    if (id > 255 || !entry || !sCreatureTextMgr->TextExist(entry, uint8(id)))
     {
-        TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u using non-existent Text id %d, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), id);
+        TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u requests missing text group %u from speaker %u, skipped.",
+            e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), id, entry);
         return false;
     }
 

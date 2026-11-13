@@ -267,7 +267,7 @@ public:
     Strategy* GetStrategy(std::string const name, BotState type);
     bool ContainsStrategy(StrategyType type);
 
-    void SetMaster(Player* newMaster) { master = newMaster; }
+    void SetMaster(Player* newMaster);
 
     bool CanMove();
 
@@ -343,6 +343,7 @@ protected:
     std::set<uint32> _lowPriorityQuest;
     ChatHelper chatHelper;
     std::list<BotChatCommand> chatCommands;
+    bool processingChatCommand = false;
     PacketHandlingHelper botOutgoingPacketHandlers;
     PacketHandlingHelper masterIncomingPacketHandlers;
     PacketHandlingHelper masterOutgoingPacketHandlers;

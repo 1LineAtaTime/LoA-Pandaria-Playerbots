@@ -1,0 +1,674 @@
+{
+  "local_pin": "5ae1a5d0eeb385324f55c51538bcf386f3f20011",
+  "upstream_pins": {
+    "skyfire": "6f000f1878c547f04680cd7c269388a245132ff2",
+    "loa": "68f80984313dc15a6144d4e91c325632810a488d"
+  },
+  "files": 10738,
+  "counts": [
+    {
+      "upstream": "loa",
+      "area": "sql/archive/auth",
+      "source_status": "exact_file_present",
+      "count": 14
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/base/auth.sql",
+      "source_status": "different_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/base/characters.sql",
+      "source_status": "different_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_25_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_26_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_26_01_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_26_02_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_27_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_27_01_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_28_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_28_01_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_29_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_06_29_01_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_18_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_19_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_19_01_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_20_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_20_01_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_21_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_22_00_world.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/2024_07_22_xx_world_update_tables.sql",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/Merged to World DB 30_12_2023",
+      "source_status": "exact_file_present",
+      "count": 93
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/battlepay",
+      "source_status": "exact_file_present",
+      "count": 6
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/characters_maintenance",
+      "source_status": "exact_file_present",
+      "count": 4
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/localization",
+      "source_status": "exact_file_present",
+      "count": 6
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/old",
+      "source_status": "exact_file_present",
+      "count": 183
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/test",
+      "source_status": "exact_file_present",
+      "count": 8
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/old/wip",
+      "source_status": "exact_file_present",
+      "count": 5
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/updates/characters",
+      "source_status": "exact_file_present",
+      "count": 6
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/updates/master",
+      "source_status": "exact_file_present",
+      "count": 11
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/updates/world",
+      "source_status": "different_at_same_path",
+      "count": 2
+    },
+    {
+      "upstream": "loa",
+      "area": "sql/updates/world",
+      "source_status": "exact_file_present",
+      "count": 640
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/authserver",
+      "source_status": "different_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/authserver",
+      "source_status": "exact_file_present",
+      "count": 9
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/database",
+      "source_status": "different_at_same_path",
+      "count": 9
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/database",
+      "source_status": "exact_file_present",
+      "count": 35
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/game",
+      "source_status": "different_at_same_path",
+      "count": 69
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/game",
+      "source_status": "exact_file_present",
+      "count": 519
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/scripts",
+      "source_status": "different_at_same_path",
+      "count": 53
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/scripts",
+      "source_status": "exact_file_present",
+      "count": 1020
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/shared",
+      "source_status": "exact_file_present",
+      "count": 38
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/worldserver",
+      "source_status": "different_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "loa",
+      "area": "src/server/worldserver",
+      "source_status": "exact_file_present",
+      "count": 9
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/base/auth_database.sql",
+      "source_status": "absent_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/base/characters_database.sql",
+      "source_status": "absent_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/base/stored_procs.sql",
+      "source_status": "absent_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/create/create_mysql.sql",
+      "source_status": "absent_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/create/drop_mysql.sql",
+      "source_status": "absent_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/2.4.3",
+      "source_status": "absent_at_same_path",
+      "count": 180
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/3.0.9",
+      "source_status": "absent_at_same_path",
+      "count": 269
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/3.1.3",
+      "source_status": "absent_at_same_path",
+      "count": 410
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/3.2.2a",
+      "source_status": "absent_at_same_path",
+      "count": 163
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/3.3.2",
+      "source_status": "absent_at_same_path",
+      "count": 125
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/3.3.3a",
+      "source_status": "absent_at_same_path",
+      "count": 174
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/3.3.5a",
+      "source_status": "absent_at_same_path",
+      "count": 3100
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/4.2.2",
+      "source_status": "absent_at_same_path",
+      "count": 32
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/4.3.4",
+      "source_status": "absent_at_same_path",
+      "count": 625
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/auth",
+      "source_status": "absent_at_same_path",
+      "count": 17
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/characters",
+      "source_status": "absent_at_same_path",
+      "count": 28
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_Release_20.2_to_20.3",
+      "source_status": "absent_at_same_path",
+      "count": 36
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_Release_20.3_to_21.0",
+      "source_status": "absent_at_same_path",
+      "count": 40
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_10_to_11",
+      "source_status": "absent_at_same_path",
+      "count": 21
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_11_to_12",
+      "source_status": "absent_at_same_path",
+      "count": 49
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_12_to_13",
+      "source_status": "absent_at_same_path",
+      "count": 14
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_13_to_14",
+      "source_status": "absent_at_same_path",
+      "count": 20
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_14_to_15",
+      "source_status": "absent_at_same_path",
+      "count": 11
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_15_to_16",
+      "source_status": "absent_at_same_path",
+      "count": 4
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_16_to_17",
+      "source_status": "absent_at_same_path",
+      "count": 30
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_17_to_18",
+      "source_status": "absent_at_same_path",
+      "count": 16
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_18_to_19.5",
+      "source_status": "absent_at_same_path",
+      "count": 50
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_19.5_to_20.2",
+      "source_status": "absent_at_same_path",
+      "count": 69
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_1_to_2",
+      "source_status": "absent_at_same_path",
+      "count": 41
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_21.0_to_22.6",
+      "source_status": "absent_at_same_path",
+      "count": 48
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_22.5_to_23.00",
+      "source_status": "absent_at_same_path",
+      "count": 51
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_22.5_to_23.00",
+      "source_status": "exact_file_present",
+      "count": 2
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.00_to_23.01",
+      "source_status": "absent_at_same_path",
+      "count": 71
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.01_to_23.02",
+      "source_status": "absent_at_same_path",
+      "count": 93
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.01_to_23.02",
+      "source_status": "exact_file_present",
+      "count": 2
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.02_to_23.03",
+      "source_status": "absent_at_same_path",
+      "count": 17
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.02_to_23.03",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.03_to_23.04",
+      "source_status": "absent_at_same_path",
+      "count": 37
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.03_to_23.04",
+      "source_status": "exact_file_present",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_23.04_to_24.00",
+      "source_status": "absent_at_same_path",
+      "count": 1
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_24.000_to_24.001",
+      "source_status": "absent_at_same_path",
+      "count": 35
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_24.001_to_25.000",
+      "source_status": "absent_at_same_path",
+      "count": 60
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_25.000_to_26.001",
+      "source_status": "absent_at_same_path",
+      "count": 296
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_26.001_to_27.001",
+      "source_status": "absent_at_same_path",
+      "count": 102
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_2_to_3",
+      "source_status": "absent_at_same_path",
+      "count": 56
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_3_to_4",
+      "source_status": "absent_at_same_path",
+      "count": 28
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_4_to_5",
+      "source_status": "absent_at_same_path",
+      "count": 7
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_5_to_6",
+      "source_status": "absent_at_same_path",
+      "count": 3
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_6_to_7",
+      "source_status": "absent_at_same_path",
+      "count": 4
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_7_to_8",
+      "source_status": "absent_at_same_path",
+      "count": 13
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_8_to_9",
+      "source_status": "absent_at_same_path",
+      "count": 18
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/SFDB_release_9_to_10",
+      "source_status": "absent_at_same_path",
+      "count": 14
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/old/5.4.8/world/update_masters",
+      "source_status": "absent_at_same_path",
+      "count": 27
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/updates/auth",
+      "source_status": "absent_at_same_path",
+      "count": 16
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/updates/characters",
+      "source_status": "absent_at_same_path",
+      "count": 2
+    },
+    {
+      "upstream": "skyfire",
+      "area": "sql/updates/world",
+      "source_status": "absent_at_same_path",
+      "count": 10
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/authserver",
+      "source_status": "absent_at_same_path",
+      "count": 18
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/authserver",
+      "source_status": "different_at_same_path",
+      "count": 5
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/collision",
+      "source_status": "absent_at_same_path",
+      "count": 29
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/game",
+      "source_status": "absent_at_same_path",
+      "count": 125
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/game",
+      "source_status": "different_at_same_path",
+      "count": 393
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/scripts",
+      "source_status": "absent_at_same_path",
+      "count": 46
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/scripts",
+      "source_status": "different_at_same_path",
+      "count": 646
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/shared",
+      "source_status": "absent_at_same_path",
+      "count": 132
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/shared",
+      "source_status": "different_at_same_path",
+      "count": 21
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/worldserver",
+      "source_status": "absent_at_same_path",
+      "count": 13
+    },
+    {
+      "upstream": "skyfire",
+      "area": "src/server/worldserver",
+      "source_status": "different_at_same_path",
+      "count": 5
+    }
+  ],
+  "release26_statements": 3478,
+  "release26_exact_statement_presence": 89,
+  "release26_remaining_requires_reconciliation": 3389,
+  "scope": "All SQL and src/server C++/headers at both pins, including every archived SQL directory. Content-presence lower bound only; not a list of safe migrations or certified missing features. Older SQL can be absorbed by a base dump, adapted, superseded or incompatible. No database access or mutation. Native file differences include intentional custom behavior."
+}

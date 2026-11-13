@@ -1517,8 +1517,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
     }
     //BattlePay
     uint64 GetDonateTokens() const;
-    void DestroyDonateTokenCount(uint64 count);
-    void AddDonateTokenCount(uint64 count);
+    bool DestroyDonateTokenCount(uint64 count);
+    bool AddDonateTokenCount(uint64 count, uint32 sourceItemGuid);
     bool HasItemCount(uint32 item, uint32 count = 1, bool inBankAlso = false) const;
     bool HasItemFitToSpellRequirements(SpellInfo const* spellInfo, Item const* ignoreItem = NULL) const;
     bool CanNoReagentCast(SpellInfo const* spellInfo) const;

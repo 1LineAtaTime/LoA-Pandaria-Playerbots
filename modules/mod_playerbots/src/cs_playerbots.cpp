@@ -14,6 +14,7 @@
  */
 
 #include "BotScenario.h"
+#include "PlayersbotsAddon.h"
 #include "Chat.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
@@ -25,6 +26,9 @@
 #include "PlayerbotAIConfig.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
+#include "Group.h"
+#include "LFGMgr.h"
+#include "Config.h"
 
 #include <sstream>
 
@@ -57,12 +61,42 @@ public:
         static std::vector<ChatCommand> commandTable =
         {
             { "playerbots", playerbotsCommandTable, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::Yes },
+            { "bot", &HandlePlayersbotsAddon, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::No },
             { "npcbot", &HandlePlayerbotCommand, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::Yes },
+            { "partyloot", &HandlePartyLoot, RBAC_PERM_COMMAND_PLAYERBOTS_BOT, Trinity::ChatCommands::Console::No },
             { "pmon",   &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
             { "botscenario", &HandleBotScenarioCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
             { "botprobe", &HandleBotProbeCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
         };
         return commandTable;
+    }
+
+    static bool HandlePartyLoot(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        Group* group = player->GetGroup();
+        if (!sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.LeaderLootControl", true) || !sLFGMgr->IsSoloHumanLeader(group, player))
+        {
+            handler->SendSysMessage("Only the real-player leader of a companion-only party can change this loot setting.");
+            return true;
+        }
+        std::string choice = args ? args : "";
+        LootMethod method;
+        if (choice == "free") method = FREE_FOR_ALL;
+        else if (choice == "roundrobin") method = ROUND_ROBIN;
+        else if (choice == "group") method = GROUP_LOOT;
+        else if (choice == "need") method = NEED_BEFORE_GREED;
+        else if (choice == "master") method = MASTER_LOOT;
+        else
+        {
+            handler->SendSysMessage("Usage: .partyloot free|roundrobin|group|need|master. Companions pass on items.");
+            return true;
+        }
+        group->SetLootMethod(method);
+        group->SetMasterLooterGuid(method == MASTER_LOOT ? player->GetGUID() : ObjectGuid::Empty);
+        group->SendUpdate();
+        handler->SendSysMessage("Party loot method changed. Companions pass on items.");
+        return true;
     }
 
     static bool HandlePlayerbotCommand(ChatHandler* handler, char const* args)

@@ -1281,26 +1281,26 @@ class spell_unseen_strike_aura : public SpellScriptLoader
     public:
         spell_unseen_strike_aura() : SpellScriptLoader("spell_unseen_strike") { }
 
-        class spell_unseen_strike_auraAuraScript : public AuraScript
+        class spell_unseen_strike_SpellScript : public SpellScript
         {
-            PrepareAuraScript(spell_unseen_strike_auraAuraScript);
+            PrepareSpellScript(spell_unseen_strike_SpellScript);
 
-            void Apply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void HandleDummy(SpellEffIndex)
             {
                 if (Unit* caster = GetCaster())
-                    if (Unit* target = GetTarget())
-                        caster->AddAura(SPELL_UNSEEN_STRIKE_TR, target);
+                    if (Unit* target = GetHitUnit())
+                        caster->CastSpell(target, SPELL_UNSEEN_STRIKE_TR, true);
             }
 
             void Register() override
             {
-                OnEffectApply += AuraEffectApplyFn(spell_unseen_strike_auraAuraScript::Apply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                OnEffectHitTarget += SpellEffectFn(spell_unseen_strike_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
             }
         };
 
-        AuraScript* GetAuraScript() const override
+        SpellScript* GetSpellScript() const override
         {
-            return new spell_unseen_strike_auraAuraScript();
+            return new spell_unseen_strike_SpellScript();
         }
 };
 

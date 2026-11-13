@@ -1,0 +1,502 @@
+id,name,comparison,behavior
+1,"PLAYER, Human",client_asset_present,not_evaluated
+2,"PLAYER, Orc",client_asset_present,not_evaluated
+3,"PLAYER, Dwarf",client_asset_present,not_evaluated
+4,"PLAYER, Night Elf",client_asset_present,not_evaluated
+5,"PLAYER, Undead",client_asset_present,not_evaluated
+6,"PLAYER, Tauren ",client_asset_present,not_evaluated
+7,Creature,client_asset_present,not_evaluated
+8,"PLAYER, Gnome",client_asset_present,not_evaluated
+9,"PLAYER, Troll",client_asset_present,not_evaluated
+14,Monster,client_asset_present,not_evaluated
+15,Defias Brotherhood,client_asset_present,not_evaluated
+16,Gnoll - Riverpaw,client_asset_present,not_evaluated
+17,Gnoll - Redridge,client_asset_present,not_evaluated
+18,Gnoll - Shadowhide,client_asset_present,not_evaluated
+19,Murloc,client_asset_present,not_evaluated
+20,"Undead, Scourge",client_asset_present,not_evaluated
+21,Booty Bay,client_asset_present,not_evaluated
+22,Beast - Spider,client_asset_present,not_evaluated
+23,Beast - Boar,client_asset_present,not_evaluated
+24,Worgen,client_asset_present,not_evaluated
+25,Kobold,client_asset_present,not_evaluated
+26,"Troll, Bloodscalp",client_asset_present,not_evaluated
+27,"Troll, Skullsplitter",client_asset_present,not_evaluated
+28,Prey,client_asset_present,not_evaluated
+29,Beast - Wolf,client_asset_present,not_evaluated
+30,Defias Brotherhood Traitor,client_asset_present,not_evaluated
+31,Friendly,client_asset_present,not_evaluated
+32,Trogg,client_asset_present,not_evaluated
+33,"Troll, Frostmane",client_asset_present,not_evaluated
+34,"Orc, Blackrock",client_asset_present,not_evaluated
+35,Villian,client_asset_present,not_evaluated
+36,Victim,client_asset_present,not_evaluated
+37,Beast - Bear,client_asset_present,not_evaluated
+38,Ogre,client_asset_present,not_evaluated
+39,Kurzen's Mercenaries,client_asset_present,not_evaluated
+40,Escortee,client_asset_present,not_evaluated
+41,Venture Company,client_asset_present,not_evaluated
+42,Beast - Raptor,client_asset_present,not_evaluated
+43,Basilisk,client_asset_present,not_evaluated
+44,"Dragonflight, Green",client_asset_present,not_evaluated
+45,Lost Ones,client_asset_present,not_evaluated
+46, Blacksmithing - Armorsmithing,client_asset_present,not_evaluated
+47,Ironforge,client_asset_present,not_evaluated
+48,Dark Iron Dwarves,client_asset_present,not_evaluated
+49,"Human, Night Watch",client_asset_present,not_evaluated
+50,"Dragonflight, Red",client_asset_present,not_evaluated
+51,Gnoll - Mosshide,client_asset_present,not_evaluated
+52,"Orc, Fel Dragonmaw",client_asset_present,not_evaluated
+53,Gnome - Leper,client_asset_present,not_evaluated
+54,Gnomeregan,client_asset_present,not_evaluated
+55,Leopard,client_asset_present,not_evaluated
+56,Scarlet Crusade,client_asset_present,not_evaluated
+57,Gnoll - Rothide,client_asset_present,not_evaluated
+58,Beast - Gorilla,client_asset_present,not_evaluated
+59,Thorium Brotherhood,client_asset_present,not_evaluated
+60,Naga,client_asset_present,not_evaluated
+61,Dalaran,client_asset_present,not_evaluated
+62,Forlorn Spirit,client_asset_present,not_evaluated
+63,Darkhowl,client_asset_present,not_evaluated
+64,Grell,client_asset_present,not_evaluated
+65,Furbolg,client_asset_present,not_evaluated
+66,Horde Generic,client_asset_present,not_evaluated
+67,Horde,client_asset_present,not_evaluated
+68,Undercity,client_asset_present,not_evaluated
+69,Darnassus,client_asset_present,not_evaluated
+70,Syndicate,client_asset_present,not_evaluated
+71,Hillsbrad Militia,client_asset_present,not_evaluated
+72,Stormwind,client_asset_present,not_evaluated
+73,Demon,client_asset_present,not_evaluated
+74,Elemental,client_asset_present,not_evaluated
+75,Spirit,client_asset_present,not_evaluated
+76,Orgrimmar,client_asset_present,not_evaluated
+77,Treasure,client_asset_present,not_evaluated
+78,Gnoll - Mudsnout,client_asset_present,not_evaluated
+79,"HIllsbrad, Southshore Mayor",client_asset_present,not_evaluated
+80,"Dragonflight, Black",client_asset_present,not_evaluated
+81,Thunder Bluff,client_asset_present,not_evaluated
+82,"Troll, Witherbark",client_asset_present,not_evaluated
+83, Leatherworking - Elemental,client_asset_present,not_evaluated
+84,"Quilboar, Razormane",client_asset_present,not_evaluated
+85,"Quilboar, Bristleback",client_asset_present,not_evaluated
+86, Leatherworking - Dragonscale,client_asset_present,not_evaluated
+87,Bloodsail Buccaneers,client_asset_present,not_evaluated
+88,Blackfathom,client_asset_present,not_evaluated
+89,Makrura,client_asset_present,not_evaluated
+90,"Centaur, Kolkar",client_asset_present,not_evaluated
+91,"Centaur, Galak",client_asset_present,not_evaluated
+92,Gelkis Clan Centaur,client_asset_present,not_evaluated
+93,Magram Clan Centaur,client_asset_present,not_evaluated
+94,Maraudine,client_asset_present,not_evaluated
+108,Theramore,client_asset_present,not_evaluated
+109,"Quilboar, Razorfen",client_asset_present,not_evaluated
+110,"Quilboar, Razormane 2",client_asset_present,not_evaluated
+111,"Quilboar, Deathshead",client_asset_present,not_evaluated
+128,Enemy,client_asset_present,not_evaluated
+148,Ambient,client_asset_present,not_evaluated
+168,Nethergarde Caravan,client_asset_present,not_evaluated
+169,Steamwheedle Cartel,client_asset_present,not_evaluated
+189,Alliance Generic,client_asset_present,not_evaluated
+209,Nethergarde,client_asset_present,not_evaluated
+229,Wailing Caverns,client_asset_present,not_evaluated
+249,Silithid,client_asset_present,not_evaluated
+269,Silvermoon Remnant,client_asset_present,not_evaluated
+270,Zandalar Tribe,client_asset_present,not_evaluated
+289, Blacksmithing - Weaponsmithing,client_asset_present,not_evaluated
+309,Scorpid,client_asset_present,not_evaluated
+310,Beast - Bat,client_asset_present,not_evaluated
+311,Titan,client_asset_present,not_evaluated
+329,Taskmaster Fizzule,client_asset_present,not_evaluated
+349,Ravenholdt,client_asset_present,not_evaluated
+369,Gadgetzan,client_asset_present,not_evaluated
+389,Gnomeregan Bug,client_asset_present,not_evaluated
+409,Harpy,client_asset_present,not_evaluated
+429,Burning Blade,client_asset_present,not_evaluated
+449,Shadowsilk Poacher,client_asset_present,not_evaluated
+450,Searing Spider,client_asset_present,not_evaluated
+469,Alliance,client_asset_present,not_evaluated
+470,Ratchet,client_asset_present,not_evaluated
+471,"DEPRECATED Wildhammer Clan, DEPRECATED",client_asset_present,not_evaluated
+489,"Goblin, Dark Iron Bar Patron",client_asset_present,not_evaluated
+509,The League of Arathor,client_asset_present,not_evaluated
+510,The Defilers,client_asset_present,not_evaluated
+511,Giant,client_asset_present,not_evaluated
+529,Argent Dawn,client_asset_present,not_evaluated
+530,Darkspear Trolls,client_asset_present,not_evaluated
+531,"Dragonflight, Bronze",client_asset_present,not_evaluated
+532,"Dragonflight, Blue",client_asset_present,not_evaluated
+549, Leatherworking - Tribal,client_asset_present,not_evaluated
+550, Engineering - Goblin,client_asset_present,not_evaluated
+551, Engineering - Gnome,client_asset_present,not_evaluated
+569, Blacksmithing - Hammersmithing,client_asset_present,not_evaluated
+570, Blacksmithing - Axesmithing,client_asset_present,not_evaluated
+571, Blacksmithing - Swordsmithing,client_asset_present,not_evaluated
+572,"Troll, Vilebranch",client_asset_present,not_evaluated
+573,Southsea Freebooters,client_asset_present,not_evaluated
+574,Caer Darrow,client_asset_present,not_evaluated
+575,"Furbolg, Uncorrupted",client_asset_present,not_evaluated
+576,Timbermaw Hold,client_asset_present,not_evaluated
+577,Everlook,client_asset_present,not_evaluated
+589,Wintersaber Trainers,client_asset_present,not_evaluated
+609,Cenarion Circle,client_asset_present,not_evaluated
+629,Shatterspear Trolls,client_asset_present,not_evaluated
+630,Ravasaur Trainers,client_asset_present,not_evaluated
+649,Majordomo Executus,client_asset_present,not_evaluated
+669,Beast - Carrion Bird,client_asset_present,not_evaluated
+670,Beast - Cat,client_asset_present,not_evaluated
+671,Beast - Crab,client_asset_present,not_evaluated
+672,Beast - Crocilisk,client_asset_present,not_evaluated
+673,Beast - Hyena,client_asset_present,not_evaluated
+674,Beast - Owl,client_asset_present,not_evaluated
+675,Beast - Scorpid,client_asset_present,not_evaluated
+676,Beast - Tallstrider,client_asset_present,not_evaluated
+677,Beast - Turtle,client_asset_present,not_evaluated
+678,Beast - Wind Serpent,client_asset_present,not_evaluated
+679,Training Dummy,client_asset_present,not_evaluated
+689,"Dragonflight, Black - Bait",client_asset_present,not_evaluated
+709,Battleground Neutral,client_asset_present,not_evaluated
+729,Frostwolf Clan,client_asset_present,not_evaluated
+730,Stormpike Guard,client_asset_present,not_evaluated
+749,Hydraxian Waterlords,client_asset_present,not_evaluated
+750,Sulfuron Firelords,client_asset_present,not_evaluated
+769,Gizlock's Dummy,client_asset_present,not_evaluated
+770,Gizlock's Charm,client_asset_present,not_evaluated
+771,Gizlock,client_asset_present,not_evaluated
+789,Moro'gai,client_asset_present,not_evaluated
+790,Spirit Guide - Alliance,client_asset_present,not_evaluated
+809,Shen'dralar,client_asset_present,not_evaluated
+829,Ogre (Captain Kromcrush),client_asset_present,not_evaluated
+849,Spirit Guide - Horde,client_asset_present,not_evaluated
+869,Jaedenar,client_asset_present,not_evaluated
+889,Warsong Outriders,client_asset_present,not_evaluated
+890,Silverwing Sentinels,client_asset_present,not_evaluated
+891,Alliance Forces,client_asset_present,not_evaluated
+892,Horde Forces,client_asset_present,not_evaluated
+893,Revantusk Trolls,client_asset_present,not_evaluated
+909,Darkmoon Faire,client_asset_present,not_evaluated
+910,Brood of Nozdormu,client_asset_present,not_evaluated
+911,Silvermoon City,client_asset_present,not_evaluated
+912,Might of Kalimdor,client_asset_present,not_evaluated
+914,"PLAYER, Blood Elf",client_asset_present,not_evaluated
+915,Armies of C'Thun,client_asset_present,not_evaluated
+916,Silithid Attackers,client_asset_present,not_evaluated
+917,The Ironforge Brigade,client_asset_present,not_evaluated
+918,RC Enemies,client_asset_present,not_evaluated
+919,RC Objects,client_asset_present,not_evaluated
+920,Red,client_asset_present,not_evaluated
+921,Blue,client_asset_present,not_evaluated
+922,Tranquillien,client_asset_present,not_evaluated
+923,Farstriders,client_asset_present,not_evaluated
+924,DEPRECATED,client_asset_present,not_evaluated
+925,Sunstriders,client_asset_present,not_evaluated
+926,Magister's Guild,client_asset_present,not_evaluated
+927,"PLAYER, Draenei",client_asset_present,not_evaluated
+928,Scourge Invaders,client_asset_present,not_evaluated
+929,Bloodmaul Clan,client_asset_present,not_evaluated
+930,Exodar,client_asset_present,not_evaluated
+931,Test Faction (not a real faction),client_asset_present,not_evaluated
+932,The Aldor,client_asset_present,not_evaluated
+933,The Consortium,client_asset_present,not_evaluated
+934,The Scryers,client_asset_present,not_evaluated
+935,The Sha'tar,client_asset_present,not_evaluated
+936,Shattrath City,client_asset_present,not_evaluated
+937,"Troll, Forest",client_asset_present,not_evaluated
+938,The Omenai,client_asset_present,not_evaluated
+939,DEPRECATED,client_asset_present,not_evaluated
+940,The Sons of Lothar,client_asset_present,not_evaluated
+941,The Mag'har,client_asset_present,not_evaluated
+942,Cenarion Expedition,client_asset_present,not_evaluated
+943,Fel Orc,client_asset_present,not_evaluated
+944,Fel Orc Ghost,client_asset_present,not_evaluated
+945,Sons of Lothar Ghosts,client_asset_present,not_evaluated
+946,Honor Hold,client_asset_present,not_evaluated
+947,Thrallmar,client_asset_present,not_evaluated
+948,Test Faction 2,client_asset_present,not_evaluated
+949,Test Faction 1,client_asset_present,not_evaluated
+950,ToWoW - Flag,client_asset_present,not_evaluated
+951,ToWoW - Flag Trigger Alliance (DND),client_asset_present,not_evaluated
+952,Test Faction 3,client_asset_present,not_evaluated
+953,Test Faction 4,client_asset_present,not_evaluated
+954,ToWoW - Flag Trigger Horde (DND),client_asset_present,not_evaluated
+955,Broken,client_asset_present,not_evaluated
+956,Ethereum,client_asset_present,not_evaluated
+957,Earth Elemental,client_asset_present,not_evaluated
+958,Fighting Robots,client_asset_present,not_evaluated
+959,Actor Good,client_asset_present,not_evaluated
+960,Actor Evil,client_asset_present,not_evaluated
+961,Stillpine Furbolg,client_asset_present,not_evaluated
+962,Crazed Owlkin,client_asset_present,not_evaluated
+963,Chess Alliance,client_asset_present,not_evaluated
+964,Chess Horde,client_asset_present,not_evaluated
+965,Monster Spar,client_asset_present,not_evaluated
+966,Monster Spar Buddy,client_asset_present,not_evaluated
+967,The Violet Eye,client_asset_present,not_evaluated
+968,Sunhawks,client_asset_present,not_evaluated
+969,Hand of Argus,client_asset_present,not_evaluated
+970,Sporeggar,client_asset_present,not_evaluated
+971,Fungal Giant,client_asset_present,not_evaluated
+972,Spore Bat,client_asset_present,not_evaluated
+973,"Monster, Predator",client_asset_present,not_evaluated
+974,"Monster, Prey",client_asset_present,not_evaluated
+975,Void Anomaly,client_asset_present,not_evaluated
+976,Hyjal Defenders,client_asset_present,not_evaluated
+977,Hyjal Invaders,client_asset_present,not_evaluated
+978,Kurenai,client_asset_present,not_evaluated
+979,"Earthen Ring, Old World",client_asset_present,not_evaluated
+980,The Burning Crusade,client_asset_present,not_evaluated
+981,Arakkoa,client_asset_present,not_evaluated
+982,Zangarmarsh Banner (Alliance),client_asset_present,not_evaluated
+983,Zangarmarsh Banner (Horde),client_asset_present,not_evaluated
+984,Zangarmarsh Banner (Neutral),client_asset_present,not_evaluated
+985,Caverns of Time - Thrall,client_asset_present,not_evaluated
+986,Caverns of Time - Durnholde,client_asset_present,not_evaluated
+987,Caverns of Time - Southshore Guards,client_asset_present,not_evaluated
+988,Shadow Council Covert,client_asset_present,not_evaluated
+989,Keepers of Time,client_asset_present,not_evaluated
+990,The Scale of the Sands,client_asset_present,not_evaluated
+991,"Dark Portal Defender, Alliance",client_asset_present,not_evaluated
+992,"Dark Portal Defender, Horde",client_asset_present,not_evaluated
+993,"Dark Portal Attacker, Legion",client_asset_present,not_evaluated
+994,Inciter Trigger,client_asset_present,not_evaluated
+995,Inciter Trigger 2,client_asset_present,not_evaluated
+996,Inciter Trigger 3,client_asset_present,not_evaluated
+997,Inciter Trigger 4,client_asset_present,not_evaluated
+998,Inciter Trigger 5,client_asset_present,not_evaluated
+999,Mana Creature,client_asset_present,not_evaluated
+1000,Khadgar's Servant,client_asset_present,not_evaluated
+1001,Bladespire Clan,client_asset_present,not_evaluated
+1002,Ethereum Sparbuddy,client_asset_present,not_evaluated
+1003,Protectorate,client_asset_present,not_evaluated
+1004,Arcane Annihilator (DNR),client_asset_present,not_evaluated
+1005,"Friendly, Hidden",client_asset_present,not_evaluated
+1006,Kirin'Var - Dathric,client_asset_present,not_evaluated
+1007,Kirin'Var - Belmara,client_asset_present,not_evaluated
+1008,Kirin'Var - Luminrath,client_asset_present,not_evaluated
+1009,Kirin'Var - Cohlien,client_asset_present,not_evaluated
+1010,Servant of Illidan,client_asset_present,not_evaluated
+1011,Lower City,client_asset_present,not_evaluated
+1012,Ashtongue Deathsworn,client_asset_present,not_evaluated
+1013,Spirits of Shadowmoon 1,client_asset_present,not_evaluated
+1014,Spirits of Shadowmoon 2,client_asset_present,not_evaluated
+1015,Netherwing,client_asset_present,not_evaluated
+1016,Wyrmcult,client_asset_present,not_evaluated
+1017,Treant,client_asset_present,not_evaluated
+1018,Leotheras Demon I,client_asset_present,not_evaluated
+1019,Leotheras Demon II,client_asset_present,not_evaluated
+1020,Leotheras Demon III,client_asset_present,not_evaluated
+1021,Leotheras Demon IV,client_asset_present,not_evaluated
+1022,Leotheras Demon V,client_asset_present,not_evaluated
+1023,Azaloth,client_asset_present,not_evaluated
+1024,Rock Flayer,client_asset_present,not_evaluated
+1025,Flayer Hunter,client_asset_present,not_evaluated
+1026,Shadowmoon Shade,client_asset_present,not_evaluated
+1027,Legion Communicator,client_asset_present,not_evaluated
+1028,Ravenswood Ancients,client_asset_present,not_evaluated
+1029,"Chess, Friendly to All Chess",client_asset_present,not_evaluated
+1030,Black Temple Gates - Illidari,client_asset_present,not_evaluated
+1031,Sha'tari Skyguard,client_asset_present,not_evaluated
+1032,Area 52,client_asset_present,not_evaluated
+1033,Maiev,client_asset_present,not_evaluated
+1034,Skettis Shadowy Arakkoa,client_asset_present,not_evaluated
+1035,Skettis Arakkoa,client_asset_present,not_evaluated
+1036,Dragonmaw Enemy,client_asset_present,not_evaluated
+1037,Alliance Vanguard,client_asset_present,not_evaluated
+1038,Ogri'la,client_asset_present,not_evaluated
+1039,Ravager,client_asset_present,not_evaluated
+1040,REUSE,client_asset_present,not_evaluated
+1041,Frenzy,client_asset_present,not_evaluated
+1042,Skyguard Enemy,client_asset_present,not_evaluated
+1043,"Skunk, Petunia",client_asset_present,not_evaluated
+1044,Theramore Deserter,client_asset_present,not_evaluated
+1045,Vrykul,client_asset_present,not_evaluated
+1046,Northsea Pirates,client_asset_present,not_evaluated
+1047,Tuskarr,client_asset_present,not_evaluated
+1048,UNUSED,client_asset_present,not_evaluated
+1049,"Troll, Amani",client_asset_present,not_evaluated
+1050,Valiance Expedition,client_asset_present,not_evaluated
+1051,UNUSED,client_asset_present,not_evaluated
+1052,Horde Expedition,client_asset_present,not_evaluated
+1053,Westguard,client_asset_present,not_evaluated
+1054,Spotted Gryphon,client_asset_present,not_evaluated
+1055,Tamed Plaguehound,client_asset_present,not_evaluated
+1056,Vrykul (Ancient Spirit 1),client_asset_present,not_evaluated
+1057,Vrykul (Ancient Siprit 2),client_asset_present,not_evaluated
+1058,Vrykul (Ancient Siprit 3),client_asset_present,not_evaluated
+1059,CTF - Flag - Alliance,client_asset_present,not_evaluated
+1060,Test,client_asset_present,not_evaluated
+1061,vrykul,client_asset_present,not_evaluated
+1062,Vrykul Gladiator,client_asset_present,not_evaluated
+1063,Valgarde Combatant,client_asset_present,not_evaluated
+1064,The Taunka,client_asset_present,not_evaluated
+1065,"Monster, Zone Force Reaction 1",client_asset_present,not_evaluated
+1066,"Monster, Zone Force Reaction 2",client_asset_present,not_evaluated
+1067,The Hand of Vengeance,client_asset_present,not_evaluated
+1068,Explorers' League,client_asset_present,not_evaluated
+1069,Ram Racing Powerup DND,client_asset_present,not_evaluated
+1070,Ram Racing Trap DND,client_asset_present,not_evaluated
+1071,Craig's Squirrels,client_asset_present,not_evaluated
+1072,REUSE,client_asset_present,not_evaluated
+1073,The Kalu'ak,client_asset_present,not_evaluated
+1074,Holiday - Water Barrel,client_asset_present,not_evaluated
+1075,Holiday - Generic,client_asset_present,not_evaluated
+1076,Iron Dwarves,client_asset_present,not_evaluated
+1077,Shattered Sun Offensive,client_asset_present,not_evaluated
+1078,Fighting Vanity Pet,client_asset_present,not_evaluated
+1079,"Murloc, Winterfin",client_asset_present,not_evaluated
+1080,"Friendly, Force Reaction 1",client_asset_present,not_evaluated
+1081,"Object, Force Reaction",client_asset_present,not_evaluated
+1082,REUSE,client_asset_present,not_evaluated
+1083,REUSE,client_asset_present,not_evaluated
+1084,"Vrykul, Sea",client_asset_present,not_evaluated
+1085,Warsong Offensive,client_asset_present,not_evaluated
+1086,Poacher,client_asset_present,not_evaluated
+1087,Holiday Monster,client_asset_present,not_evaluated
+1088,"Furbolg, Redfang",client_asset_present,not_evaluated
+1089,"Furbolg, Frostpaw",client_asset_present,not_evaluated
+1090,Kirin Tor,client_asset_present,not_evaluated
+1091,The Wyrmrest Accord,client_asset_present,not_evaluated
+1092,Azjol-Nerub,client_asset_present,not_evaluated
+1093,REUSE,client_asset_present,not_evaluated
+1094,The Silver Covenant,client_asset_present,not_evaluated
+1095,Grizzly Hills Trapper,client_asset_present,not_evaluated
+1096,REUSE,client_asset_present,not_evaluated
+1097,Wrath of the Lich King,client_asset_present,not_evaluated
+1098,Knights of the Ebon Blade,client_asset_present,not_evaluated
+1099,Wrathgate Scourge,client_asset_present,not_evaluated
+1100,Wrathgate Alliance,client_asset_present,not_evaluated
+1101,Wrathgate Horde,client_asset_present,not_evaluated
+1102,CTF - Flag - Horde,client_asset_present,not_evaluated
+1103,CTF - Flag - Neutral,client_asset_present,not_evaluated
+1104,Frenzyheart Tribe,client_asset_present,not_evaluated
+1105,The Oracles,client_asset_present,not_evaluated
+1106,Argent Crusade,client_asset_present,not_evaluated
+1107,"Troll, Drakkari",client_asset_present,not_evaluated
+1108,CoT Arthas,client_asset_present,not_evaluated
+1109,CoT Stratholme Citizen,client_asset_present,not_evaluated
+1110,CoT Scourge,client_asset_present,not_evaluated
+1111,Freya,client_asset_present,not_evaluated
+1112,Mount - Taxi - Alliance,client_asset_present,not_evaluated
+1113,Mount - Taxi - Horde,client_asset_present,not_evaluated
+1114,Mount - Taxi - Neutral,client_asset_present,not_evaluated
+1115,"Elemental, Water",client_asset_present,not_evaluated
+1116,"Elemental, Air",client_asset_present,not_evaluated
+1117,Sholazar Basin,client_asset_present,not_evaluated
+1118,Classic,client_asset_present,not_evaluated
+1119,The Sons of Hodir,client_asset_present,not_evaluated
+1120,Iron Giants,client_asset_present,not_evaluated
+1121,Frost Vrykul,client_asset_present,not_evaluated
+1122,Earthen,client_asset_present,not_evaluated
+1123,Monster Referee,client_asset_present,not_evaluated
+1124,The Sunreavers,client_asset_present,not_evaluated
+1125,Hyldsmeet,client_asset_present,not_evaluated
+1126,The Frostborn,client_asset_present,not_evaluated
+1127,Orgrimmar (Alex Test),client_asset_present,not_evaluated
+1128,Twilight's Hammer,client_asset_present,not_evaluated
+1129,"Furbolg, Blackwood",client_asset_present,not_evaluated
+1130,"Stag, Darkshore",client_asset_present,not_evaluated
+1131,"Bear, Darkshore",client_asset_present,not_evaluated
+1132,"Moonstalker, Darkshore",client_asset_present,not_evaluated
+1133,Bilgewater Cartel,client_asset_present,not_evaluated
+1134,Gilneas,client_asset_present,not_evaluated
+1135,The Earthen Ring,client_asset_present,not_evaluated
+1136,Tranquillien Conversion,client_asset_present,not_evaluated
+1137,Wintersaber Conversion,client_asset_present,not_evaluated
+1138,Cataclysm - New Neutral Reputation,client_asset_present,not_evaluated
+1142,Magram Remnant,client_asset_present,not_evaluated
+1143,Sons of Gelkis,client_asset_present,not_evaluated
+1144,REUSE,client_asset_present,not_evaluated
+1145,Hates Everything,client_asset_present,not_evaluated
+1152,"PLAYER, Goblin",client_asset_present,not_evaluated
+1153,"PLAYER, Worgen",client_asset_present,not_evaluated
+1154,Silver Covenant Conversion,client_asset_present,not_evaluated
+1155,Sunreavers Conversion,client_asset_present,not_evaluated
+1156,The Ashen Verdict,client_asset_present,not_evaluated
+1157,Pygmy,client_asset_present,not_evaluated
+1158,Guardians of Hyjal,client_asset_present,not_evaluated
+1159,CTF - Flag - Alliance 2,client_asset_present,not_evaluated
+1160,CTF - Flag - Horde 2,client_asset_present,not_evaluated
+1161,Grimtotem,client_asset_present,not_evaluated
+1162,Cataclysm,client_asset_present,not_evaluated
+1163,New test rep for Alex,client_asset_present,not_evaluated
+1168,Guild,client_asset_present,not_evaluated
+1169,Guild,client_asset_present,not_evaluated
+1171,Therazane,client_asset_present,not_evaluated
+1172,Dragonmaw Clan,client_asset_present,not_evaluated
+1173,Ramkahen,client_asset_present,not_evaluated
+1174,Wildhammer Clan,client_asset_present,not_evaluated
+1177,Baradin's Wardens,client_asset_present,not_evaluated
+1178,Hellscream's Reach,client_asset_present,not_evaluated
+1179,Slime,client_asset_present,not_evaluated
+1181,"Friendly, New",client_asset_present,not_evaluated
+1189,K3,client_asset_present,not_evaluated
+1204,Avengers of Hyjal,client_asset_present,not_evaluated
+1216,Shang Xi's Academy,client_asset_present,not_evaluated
+1228,Forest Hozen,client_asset_present,not_evaluated
+1233,CoT Well of Eternity - Illidan,client_asset_present,not_evaluated
+1234,CoT Well of Eternity - High Elves,client_asset_present,not_evaluated
+1235,CoT Well of Eternity - Illidan (Stealth),client_asset_present,not_evaluated
+1237,CoT Well of Eternity - Demons,client_asset_present,not_evaluated
+1240,CoT Well of Eternity - Demon Balls,client_asset_present,not_evaluated
+1241,CoT Well of Eternity - Hunter Stalkers,client_asset_present,not_evaluated
+1242,Pearlfin Jinyu,client_asset_present,not_evaluated
+1243,Hozen,client_asset_present,not_evaluated
+1245,Mists of Pandaria,client_asset_present,not_evaluated
+1249,"PLAYER, Expansion 4 Neutral",client_asset_present,not_evaluated
+1252,Sha,client_asset_present,not_evaluated
+1253,Guardians of the East Temple,client_asset_present,not_evaluated
+1265,Shen'dralar,client_asset_present,not_evaluated
+1268,Mogu,client_asset_present,not_evaluated
+1269,Golden Lotus,client_asset_present,not_evaluated
+1270,Shado-Pan,client_asset_present,not_evaluated
+1271,Order of the Cloud Serpent,client_asset_present,not_evaluated
+1272,The Tillers,client_asset_present,not_evaluated
+1273,Jogu the Drunk,client_asset_present,not_evaluated
+1275,Ella,client_asset_present,not_evaluated
+1276,Old Hillpaw,client_asset_present,not_evaluated
+1277,Chee Chee,client_asset_present,not_evaluated
+1278,Sho,client_asset_present,not_evaluated
+1279,Haohan Mudclaw,client_asset_present,not_evaluated
+1280,Tina Mudclaw,client_asset_present,not_evaluated
+1281,Gina Mudclaw,client_asset_present,not_evaluated
+1282,Fish Fellreed,client_asset_present,not_evaluated
+1283,Farmer Fung,client_asset_present,not_evaluated
+1286,Guardians of the Red Crane,client_asset_present,not_evaluated
+1302,The Anglers,client_asset_present,not_evaluated
+1336,The Mantid Swarm,client_asset_present,not_evaluated
+1337,The Klaxxi,client_asset_present,not_evaluated
+1338,Gurthan Mogu,client_asset_present,not_evaluated
+1339,Harthak Mogu,client_asset_present,not_evaluated
+1340,Korgesh Mogu,client_asset_present,not_evaluated
+1341,The August Celestials,client_asset_present,not_evaluated
+1345,The Lorewalkers,client_asset_present,not_evaluated
+1351,The Brewmasters,client_asset_present,not_evaluated
+1352,Huojin Pandaren,client_asset_present,not_evaluated
+1353,Tushui Pandaren,client_asset_present,not_evaluated
+1357,Nomi,client_asset_present,not_evaluated
+1358,Nat Pagle,client_asset_present,not_evaluated
+1359,The Black Prince,client_asset_present,not_evaluated
+1364,"Friendly, Force Reaction 2",client_asset_present,not_evaluated
+1366,"Friendly, Force Reaction 3",client_asset_present,not_evaluated
+1367,"Friendly, Force Reaction 4",client_asset_present,not_evaluated
+1368,"Friendly, Force Reaction 5",client_asset_present,not_evaluated
+1369,"Friendly, Force Reaction 6",client_asset_present,not_evaluated
+1370,"Friendly, Force Reaction 7",client_asset_present,not_evaluated
+1371,Paw'don Village,client_asset_present,not_evaluated
+1372,Honeydew Village,client_asset_present,not_evaluated
+1374,Brawl'gar Arena,client_asset_present,not_evaluated
+1375,Dominance Offensive,client_asset_present,not_evaluated
+1376,Operation: Shieldwall,client_asset_present,not_evaluated
+1387,Kirin Tor Offensive,client_asset_present,not_evaluated
+1388,Sunreaver Onslaught,client_asset_present,not_evaluated
+1416,Akama's Trust,client_asset_present,not_evaluated
+1419,Bizmo's Brawlpub,client_asset_present,not_evaluated
+1433,"Monster, Enforced Neutral For Force Reaction",client_asset_present,not_evaluated
+1435,Shado-Pan Assault,client_asset_present,not_evaluated
+1440,Darkspear Rebellion,client_asset_present,not_evaluated
+1443,Kor'kron,client_asset_present,not_evaluated
+1447,Darkspear Trolls,client_asset_present,not_evaluated
+1457,Blades of Eternity,client_asset_present,not_evaluated
+1491,The Timewalkers,client_asset_present,not_evaluated
+1492,Emperor Shaohao,client_asset_present,not_evaluated
+1500,Red Phantom,client_asset_present,not_evaluated

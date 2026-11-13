@@ -913,11 +913,10 @@ void AccountAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pr
             if (!criteria)
             {
                 // we will remove not existed criteria for all characters
-                TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `account_achievement_progress`.", id);
-
-                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
-                stmt->setUInt16(0, uint16(id));
-                CharacterDatabase.Execute(stmt);
+                // This is account data. The old cleanup statement deletes from
+                // character_achievement_progress, which is a different scope.
+                // Preserve unknown data for an explicit content migration.
+                TC_LOG_ERROR("achievement", "Non-existing account achievement criteria %u ignored while loading; database data preserved.", id);
                 continue;
             }
 

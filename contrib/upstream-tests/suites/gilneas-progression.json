@@ -1,0 +1,820 @@
+{
+  "name": "gilneas-progression-20261105",
+  "checks": [
+    {
+      "id": "gilneas-native-34511",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=34511;",
+      "expected_rows": [
+        [
+          "npc_forsaken_invader"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-36211",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=36211;",
+      "expected_rows": [
+        [
+          "npc_duskhaven_watchman"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-36294",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=36294;",
+      "expected_rows": [
+        [
+          "npc_koroth_the_hillbreaker"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-36440",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=36440;",
+      "expected_rows": [
+        [
+          "npc_drowning_watchman"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-37067",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=37067;",
+      "expected_rows": [
+        [
+          "npc_crash_survivor"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-38765",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=38765;",
+      "expected_rows": [
+        [
+          "npc_stout_mountain_horse"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-34913",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=34913;",
+      "expected_rows": [
+        [
+          "npc_prince_liam_greymane_phase2"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-38553",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=38553;",
+      "expected_rows": [
+        [
+          "npc_krennan_aranas"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-38218",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=38218;",
+      "expected_rows": [
+        [
+          "npc_prince_liam_greymane_gilneas"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-38469",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=38469;",
+      "expected_rows": [
+        [
+          "npc_lady_sylvanas_gilneas"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-43747",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=43747;",
+      "expected_rows": [
+        [
+          "npc_hippogryph_endgame"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-43751",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=43751;",
+      "expected_rows": [
+        [
+          "npc_hippogryph"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-43749",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=43749;",
+      "expected_rows": [
+        [
+          "npc_tobias_mistmantle_endgame"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-43566",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=43566;",
+      "expected_rows": [
+        [
+          "npc_lorna_crowley_endgame"
+        ]
+      ]
+    },
+    {
+      "id": "gilneas-native-43713",
+      "query": "SELECT ScriptName FROM creature_template WHERE entry=43713;",
+      "expected_rows": [
+        [
+          "npc_wyvern_endgame"
+        ]
+      ]
+    },
+    {
+      "id": "koroth-banner",
+      "query": "SELECT ScriptName FROM gameobject_template WHERE entry=201594;",
+      "expected_rows": [
+        [
+          "go_koroth_banner"
+        ]
+      ]
+    },
+    {
+      "id": "catapult-friendly",
+      "query": "SELECT faction,unit_flags FROM creature_template WHERE entry=36283;",
+      "expected_rows": [
+        [
+          35,
+          16384
+        ]
+      ]
+    },
+    {
+      "id": "catapult-accessory",
+      "query": "SELECT accessory_entry,seat_id,minion,summontype,summontimer FROM vehicle_template_accessory WHERE entry=36283;",
+      "expected_rows": [
+        [
+          36292,
+          0,
+          1,
+          6,
+          30000
+        ]
+      ]
+    },
+    {
+      "id": "catapult-launch",
+      "query": "SELECT COUNT(*) FROM spell_script_names WHERE spell_id=68659 AND ScriptName='spell_ioc_launch';",
+      "expected_rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "horse-route",
+      "query": "SELECT COUNT(*),MIN(pointid),MAX(pointid),SUM(orientation IS NULL) FROM waypoints WHERE entry=387650;",
+      "expected_rows": [
+        [
+          76,
+          1,
+          76,
+          76
+        ]
+      ]
+    },
+    {
+      "id": "nullable-orientations",
+      "query": "SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='waypoints' AND COLUMN_NAME='orientation';",
+      "expected_rows": [
+        [
+          "YES"
+        ]
+      ]
+    },
+    {
+      "id": "hewell-gossip",
+      "query": "SELECT OptionNpcFlag FROM gossip_menu_option WHERE MenuID=11079 AND OptionID=0;",
+      "expected_rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "hewell-capability",
+      "query": "SELECT (npcflag & 1) <> 0,AIName FROM creature_template WHERE entry=38764;",
+      "expected_rows": [
+        [
+          1,
+          "SmartAI"
+        ]
+      ]
+    },
+    {
+      "id": "no-horse-old-sai",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=38765 AND source_type=0;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "no-accept-ride-teleport",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=37876 AND source_type=0 AND id=0 AND event_type=19 AND event_param1=24677;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ambush-debounce",
+      "query": "SELECT event_param3,event_param4 FROM smart_scripts WHERE entryorguid=-219500 AND source_type=0 AND id=0;",
+      "expected_rows": [
+        [
+          5000,
+          5000
+        ]
+      ]
+    },
+    {
+      "id": "ambush-anti-trap",
+      "query": "SELECT COUNT(*) FROM conditions WHERE SourceTypeOrReferenceId=22 AND SourceEntry=-219500 AND SourceGroup=1 AND ConditionTypeOrReference=1 AND ConditionValue1=70794 AND NegativeCondition=1;",
+      "expected_rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "tobias-spawn-phase",
+      "query": "SELECT link,action_type,action_param1 FROM smart_scripts WHERE entryorguid=38507 AND source_type=0 AND id IN (19,20,21) ORDER BY id;",
+      "expected_rows": [
+        [
+          20,
+          8,
+          0
+        ],
+        [
+          21,
+          18,
+          768
+        ],
+        [
+          0,
+          44,
+          2097152
+        ]
+      ]
+    },
+    {
+      "id": "lorna-post-immunity",
+      "query": "SELECT COUNT(*) FROM creature WHERE guid IN (220832,220885,221855) AND unit_flags=33280;",
+      "expected_rows": [
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "hunt-event-credit",
+      "query": "SELECT (SpecialFlags & 2) <> 0 FROM quest_template_addon WHERE ID=24902;",
+      "expected_rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "camera-phase",
+      "query": "SELECT phaseMask FROM gameobject WHERE guid=166866 AND id=197337;",
+      "expected_rows": [
+        [
+          4097
+        ]
+      ]
+    },
+    {
+      "id": "camera-spell-target",
+      "query": "SELECT ConditionTypeOrReference,ConditionValue1,ConditionValue2 FROM conditions WHERE SourceTypeOrReferenceId=13 AND SourceGroup=2 AND SourceEntry=69296;",
+      "expected_rows": [
+        [
+          31,
+          5,
+          197337
+        ]
+      ]
+    },
+    {
+      "id": "ship-template",
+      "query": "SELECT type,displayId,name FROM gameobject_template WHERE entry=800100;",
+      "expected_rows": [
+        [
+          5,
+          8253,
+          "Orc Gunship"
+        ]
+      ]
+    },
+    {
+      "id": "ship-and-explosives",
+      "query": "SELECT COUNT(*) FROM gameobject WHERE guid BETWEEN 4100001 AND 4100004 AND map=654 AND phaseMask=4194304;",
+      "expected_rows": [
+        [
+          4
+        ]
+      ]
+    },
+    {
+      "id": "gunship-ropes",
+      "query": "SELECT COUNT(*) FROM gameobject WHERE guid IN (166908,166909) AND id=204428 AND phaseMask=4194304;",
+      "expected_rows": [
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "id": "korm-deck",
+      "query": "SELECT (phaseMask=4194304 AND MovementType=0 AND ABS(position_x+1436.3203)<0.01 AND ABS(position_y-3229.6905)<0.01 AND ABS(position_z-105.4304)<0.01) FROM creature WHERE guid=223342 AND id=43567;",
+      "expected_rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "all-deck-crew-present",
+      "query": "SELECT COUNT(*) FROM creature WHERE map=654 AND guid IN (223311,223312,223313,223314,223315,223316,223317,223318,223319,223320,223321,223322,223323,223324,223325,223326,223327,223328,223329,223330,223331,223332,223334,223333,223337,223338,223339,223340,223307,223308,223335,223336,223309,223310,220393,220394,220395,220396,220397,220398,220399,220400,220401,220402,220418,220604,222952,223170,223303,223304,223305,223306) AND phaseMask=4194304 AND MovementType=0 AND wander_distance=0;",
+      "expected_rows": [
+        [
+          52
+        ]
+      ]
+    },
+    {
+      "id": "text-37953-1-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=37953 AND groupid=1 AND id=0;",
+      "expected_rows": [
+        [
+          37953,
+          37672
+        ]
+      ]
+    },
+    {
+      "id": "text-37953-2-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=37953 AND groupid=2 AND id=0;",
+      "expected_rows": [
+        [
+          37953,
+          37674
+        ]
+      ]
+    },
+    {
+      "id": "text-37067-0-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=37067 AND groupid=0 AND id=0;",
+      "expected_rows": [
+        [
+          37067,
+          36909
+        ]
+      ]
+    },
+    {
+      "id": "text-37067-0-1",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=37067 AND groupid=0 AND id=1;",
+      "expected_rows": [
+        [
+          37067,
+          36910
+        ]
+      ]
+    },
+    {
+      "id": "text-37067-0-2",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=37067 AND groupid=0 AND id=2;",
+      "expected_rows": [
+        [
+          37067,
+          36911
+        ]
+      ]
+    },
+    {
+      "id": "text-37067-0-3",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=37067 AND groupid=0 AND id=3;",
+      "expected_rows": [
+        [
+          37067,
+          36912
+        ]
+      ]
+    },
+    {
+      "id": "text-38218-12-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=38218 AND groupid=12 AND id=0;",
+      "expected_rows": [
+        [
+          38218,
+          38369
+        ]
+      ]
+    },
+    {
+      "id": "text-38218-13-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=38218 AND groupid=13 AND id=0;",
+      "expected_rows": [
+        [
+          38218,
+          38371
+        ]
+      ]
+    },
+    {
+      "id": "text-38218-14-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=38218 AND groupid=14 AND id=0;",
+      "expected_rows": [
+        [
+          38218,
+          38372
+        ]
+      ]
+    },
+    {
+      "id": "text-38469-2-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=38469 AND groupid=2 AND id=0;",
+      "expected_rows": [
+        [
+          38469,
+          38370
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-0-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=0 AND id=0;",
+      "expected_rows": [
+        [
+          43749,
+          43815
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-0-1",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=0 AND id=1;",
+      "expected_rows": [
+        [
+          43749,
+          43816
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-0-2",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=0 AND id=2;",
+      "expected_rows": [
+        [
+          43749,
+          43837
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-0-3",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=0 AND id=3;",
+      "expected_rows": [
+        [
+          43749,
+          43838
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-0-4",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=0 AND id=4;",
+      "expected_rows": [
+        [
+          43749,
+          43839
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-0-5",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=0 AND id=5;",
+      "expected_rows": [
+        [
+          43749,
+          43840
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-1-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=1 AND id=0;",
+      "expected_rows": [
+        [
+          43749,
+          43814
+        ]
+      ]
+    },
+    {
+      "id": "text-43749-2-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43749 AND groupid=2 AND id=0;",
+      "expected_rows": [
+        [
+          43749,
+          43813
+        ]
+      ]
+    },
+    {
+      "id": "text-43566-7-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43566 AND groupid=7 AND id=0;",
+      "expected_rows": [
+        [
+          43566,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "text-43767-0-0",
+      "query": "SELECT CreatureID,BroadcastTextId FROM creature_text WHERE entry=43767 AND groupid=0 AND id=0;",
+      "expected_rows": [
+        [
+          43767,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "text-identities",
+      "query": "SELECT COUNT(*) FROM creature_text WHERE entry<>CreatureID AND (entry IN (37953,43749,38469,38218,37067,43566,43767) OR CreatureID IN (37953,43749,38469,38218,37067,43566,43767));",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-37953-1-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=37953 AND groupid=1 AND id=0;",
+      "expected_rows": [
+        [
+          "ccd7a37523b2e1814a78b451bbdd6202549e274252696f22f5da7091572685d7"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-37953-2-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=37953 AND groupid=2 AND id=0;",
+      "expected_rows": [
+        [
+          "4795189020858ec18e28ac851ab332ba5ccc3f793bdc580458c8adf382d81a65"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-37067-0-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=37067 AND groupid=0 AND id=0;",
+      "expected_rows": [
+        [
+          "8b0cb26e9c7ccdece9784c288264b57080f04f5eea1be3f9d0fa99dae1105b4e"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-37067-0-1",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=37067 AND groupid=0 AND id=1;",
+      "expected_rows": [
+        [
+          "e8aa445e6128d8940ffe60c08254ced43f03a8ab451e7240ba2af89ef5e99d1c"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-37067-0-2",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=37067 AND groupid=0 AND id=2;",
+      "expected_rows": [
+        [
+          "b2c16cd042e528521f018423e117c009068ca66baf8e1db2538c9bc7985ce664"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-37067-0-3",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=37067 AND groupid=0 AND id=3;",
+      "expected_rows": [
+        [
+          "f9b00508d2bb8c5bd3b92d5409008cd5d4d2665b2525f4fffabf71e165bf9b44"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-38218-12-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=38218 AND groupid=12 AND id=0;",
+      "expected_rows": [
+        [
+          "f1f2f19bad709be141403d900c803fc3549710fa045778e15d53c94175b6be9a"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-38218-13-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=38218 AND groupid=13 AND id=0;",
+      "expected_rows": [
+        [
+          "b9b3c49b981a633eb50daba33501c8cf4ec4133056cee88f2503b6fc471f9977"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-38218-14-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=38218 AND groupid=14 AND id=0;",
+      "expected_rows": [
+        [
+          "905fd05f64db99e8166b532b9c23a5c908092ab9d34a116effb3a2b8a0ef55c1"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-38469-2-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=38469 AND groupid=2 AND id=0;",
+      "expected_rows": [
+        [
+          "e0e7a82a27e925a09fc44ff9f7f35615862ff20723792eb3942b95191e8fd611"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-0-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=0 AND id=0;",
+      "expected_rows": [
+        [
+          "fe0ef22f66ca9d032018961ab51eace8c3fd22d4e1097637eb17b5a12422485c"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-0-1",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=0 AND id=1;",
+      "expected_rows": [
+        [
+          "47b2aea2f9e758251ca63f04ac385cb2bda061167d10d75225ae806555557e44"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-0-2",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=0 AND id=2;",
+      "expected_rows": [
+        [
+          "11313860dc9ae9f6b0a46a4a8126434db7dadff905c659e652250f5521c61c92"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-0-3",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=0 AND id=3;",
+      "expected_rows": [
+        [
+          "70e311ff55eb2a51d3cf5ea49f4a0340171dd4aeb5e5484827f14d5a47c39185"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-0-4",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=0 AND id=4;",
+      "expected_rows": [
+        [
+          "0d7668d4133bf139c84cf117c7c0cbc8bc01c7380c7f7b57f1d29384758e5eaf"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-0-5",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=0 AND id=5;",
+      "expected_rows": [
+        [
+          "380516946e76bef4cd2a12c829e62440b802779fb129212ef3c156218070e18f"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-1-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=1 AND id=0;",
+      "expected_rows": [
+        [
+          "df440e7c462d1a2dcc03a50a5d13e86fe9af1f3f141b45f82ce2324845cff13b"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43749-2-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43749 AND groupid=2 AND id=0;",
+      "expected_rows": [
+        [
+          "4ea5455abb77666546d5f934c4f0154571b353e3faa0b6a65282ca310f33b4ea"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43566-7-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43566 AND groupid=7 AND id=0;",
+      "expected_rows": [
+        [
+          "2ae1cd406b3c6f6c79d1234bc3ffe996aac095be886252fd71d9e4b0e27cc55e"
+        ]
+      ]
+    },
+    {
+      "id": "authored-text-43767-0-0",
+      "query": "SELECT SHA2(Text,256) FROM creature_text WHERE entry=43767 AND groupid=0 AND id=0;",
+      "expected_rows": [
+        [
+          "330b06e213fcd32f84b78b611ce8e4e323188fdec7b892977dba76e6315cd949"
+        ]
+      ]
+    },
+    {
+      "id": "defer-incomplete-crowley-bridge",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=35231 AND source_type=0 AND id=8;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "defer-crowley-condition",
+      "query": "SELECT COUNT(*) FROM conditions WHERE SourceTypeOrReferenceId=22 AND SourceGroup=9 AND SourceEntry=35231 AND ConditionTypeOrReference=31 AND ConditionValue1=4;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "survivor-native-only",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=37067 AND source_type=0;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "lorna-handoff-backend",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=37783;",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "lorna-authored-handoff",
+      "query": "SELECT action_type,action_param1,target_type,target_param1 FROM smart_scripts WHERE entryorguid=37783 AND source_type=0 AND id=0;",
+      "expected_rows": [
+        [
+          1,
+          1,
+          19,
+          38553
+        ]
+      ]
+    },
+    {
+      "id": "krennan-existing-group",
+      "query": "SELECT COUNT(*) FROM creature_text WHERE CreatureID=38553 AND GroupID=1;",
+      "expected_rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "backend-coherence",
+      "query": "SELECT COUNT(*) FROM smart_scripts s JOIN creature_template t ON t.entry=s.entryorguid WHERE s.source_type=0 AND t.entry IN (35231,37067,37783) AND t.AIName NOT IN ('SmartAI','SmartVehicleAI');",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    }
+  ]
+}

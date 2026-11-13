@@ -1,12 +1,12 @@
-﻿{
+{
   "configurations": [
     {
-      "name": "x64-Release",
-      "generator": "Visual Studio 16 2019 Win64",
+      "name": "x64-RelWithDebInfo",
+      "generator": "Visual Studio 17 2022",
       "configurationType": "RelWithDebInfo",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "-A x64 -DSERVERS=ON -DAUTH_SERVER=ON -DPLAYERBOTS=ON -DUSE_MODULES=ON -DSCRIPTS=ON -DELUNA=ON -DTOOLS=ON",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],

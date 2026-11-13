@@ -87,7 +87,12 @@ SuggestWhatToDoAction::SuggestWhatToDoAction(PlayerbotAI* botAI, std::string con
 // AC SuggestWhatToDoAction.cpp:47-55
 bool SuggestWhatToDoAction::isUseful()
 {
-    if (!sRandomPlayerbotMgr->IsRandomBot(bot) || bot->GetGroup() || bot->GetInstanceId() || bot->GetBattleground())
+    Player* master = botAI->GetMaster();
+    bool companionFlavor = getName() == "suggest what to do" && master && bot->GetGroup() &&
+        bot->GetGroup() == master->GetGroup() && bot->GetMap()->IsDungeon() &&
+        (!GET_PLAYERBOT_AI(master) || GET_PLAYERBOT_AI(master)->IsRealPlayer()) &&
+        sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.PartyFlavor", true);
+    if (!companionFlavor && (!sRandomPlayerbotMgr->IsRandomBot(bot) || bot->GetGroup() || bot->GetInstanceId() || bot->GetBattleground()))
         return false;
 
     time_t lastSaid = GetLastSaid(bot);
@@ -97,9 +102,14 @@ bool SuggestWhatToDoAction::isUseful()
 // AC SuggestWhatToDoAction.cpp:57-67
 bool SuggestWhatToDoAction::Execute(Event /*event*/)
 {
-    uint32 index = rand() % suggestions.size();
-    auto fnct_ptr = suggestions[index];
-    fnct_ptr();
+    if (bot->GetGroup())
+        something(); // Only the shared, rate-limited party flavor path is eligible.
+    else
+    {
+        uint32 index = rand() % suggestions.size();
+        auto fnct_ptr = suggestions[index];
+        fnct_ptr();
+    }
 
     SetLastSaid(bot, time(nullptr) + urand(1, 60));
 

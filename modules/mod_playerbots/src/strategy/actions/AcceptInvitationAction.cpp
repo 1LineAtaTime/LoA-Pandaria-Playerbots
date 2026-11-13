@@ -1,3 +1,4 @@
+#include "Config.h"
 #include "AcceptInvitationAction.h"
 
 #include "Event.h"
@@ -56,6 +57,7 @@ bool AcceptInvitationAction::Execute(Event event)
     botAI->ChangeStrategy("+follow,-lfg,-bg", BOT_STATE_NON_COMBAT);
     botAI->Reset();
 
+    if (!sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.SilentGreetings", true))
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
         "hello", "Hello", {}));
 

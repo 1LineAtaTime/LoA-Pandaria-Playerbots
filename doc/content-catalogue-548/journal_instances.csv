@@ -1,0 +1,84 @@
+id,name,map_id,comparison,behavior
+63,Deadmines,36,client_journal_entry,not_evaluated
+64,Shadowfang Keep,33,client_journal_entry,not_evaluated
+65,Throne of the Tides,643,client_journal_entry,not_evaluated
+66,Blackrock Caverns,645,client_journal_entry,not_evaluated
+67,The Stonecore,725,client_journal_entry,not_evaluated
+68,The Vortex Pinnacle,657,client_journal_entry,not_evaluated
+69,Lost City of the Tol'vir,755,client_journal_entry,not_evaluated
+70,Halls of Origination,644,client_journal_entry,not_evaluated
+71,Grim Batol,670,client_journal_entry,not_evaluated
+72,The Bastion of Twilight,671,client_journal_entry,not_evaluated
+73,Blackwing Descent,669,client_journal_entry,not_evaluated
+74,Throne of the Four Winds,754,client_journal_entry,not_evaluated
+75,Baradin Hold,757,client_journal_entry,not_evaluated
+76,Zul'Gurub,859,client_journal_entry,not_evaluated
+77,Zul'Aman,568,client_journal_entry,not_evaluated
+78,Firelands,720,client_journal_entry,not_evaluated
+184,End Time,938,client_journal_entry,not_evaluated
+185,Well of Eternity,939,client_journal_entry,not_evaluated
+186,Hour of Twilight,940,client_journal_entry,not_evaluated
+187,Dragon Soul,967,client_journal_entry,not_evaluated
+226,Ragefire Chasm,389,client_journal_entry,not_evaluated
+227,Blackfathom Deeps,48,client_journal_entry,not_evaluated
+228,Blackrock Depths,230,client_journal_entry,not_evaluated
+229,Blackrock Spire,229,client_journal_entry,not_evaluated
+230,Dire Maul,429,client_journal_entry,not_evaluated
+231,Gnomeregan,90,client_journal_entry,not_evaluated
+232,Maraudon,349,client_journal_entry,not_evaluated
+233,Razorfen Downs,129,client_journal_entry,not_evaluated
+234,Razorfen Kraul,47,client_journal_entry,not_evaluated
+235,Scarlet Monastery - OLD,189,client_journal_entry,not_evaluated
+236,Stratholme,329,client_journal_entry,not_evaluated
+237,The Temple of Atal'hakkar,109,client_journal_entry,not_evaluated
+238,The Stockade,34,client_journal_entry,not_evaluated
+239,Uldaman,70,client_journal_entry,not_evaluated
+240,Wailing Caverns,43,client_journal_entry,not_evaluated
+241,Zul'Farrak,209,client_journal_entry,not_evaluated
+246,Scholomance,1007,client_journal_entry,not_evaluated
+247,Auchenai Crypts,558,client_journal_entry,not_evaluated
+248,Hellfire Ramparts,543,client_journal_entry,not_evaluated
+249,Magisters' Terrace,585,client_journal_entry,not_evaluated
+250,Mana-Tombs,557,client_journal_entry,not_evaluated
+251,Old Hillsbrad Foothills,560,client_journal_entry,not_evaluated
+252,Sethekk Halls,556,client_journal_entry,not_evaluated
+253,Shadow Labyrinth,555,client_journal_entry,not_evaluated
+254,The Arcatraz,552,client_journal_entry,not_evaluated
+255,The Black Morass,269,client_journal_entry,not_evaluated
+256,The Blood Furnace,542,client_journal_entry,not_evaluated
+257,The Botanica,553,client_journal_entry,not_evaluated
+258,The Mechanar,554,client_journal_entry,not_evaluated
+259,The Shattered Halls,540,client_journal_entry,not_evaluated
+260,The Slave Pens,547,client_journal_entry,not_evaluated
+261,The Steamvault,545,client_journal_entry,not_evaluated
+262,The Underbog,546,client_journal_entry,not_evaluated
+271,Ahn'kahet: The Old Kingdom,619,client_journal_entry,not_evaluated
+272,Azjol-Nerub,601,client_journal_entry,not_evaluated
+273,Drak'Tharon Keep,600,client_journal_entry,not_evaluated
+274,Gundrak,604,client_journal_entry,not_evaluated
+275,Halls of Lightning,602,client_journal_entry,not_evaluated
+276,Halls of Reflection,668,client_journal_entry,not_evaluated
+277,Halls of Stone,599,client_journal_entry,not_evaluated
+278,Pit of Saron,658,client_journal_entry,not_evaluated
+279,The Culling of Stratholme,595,client_journal_entry,not_evaluated
+280,The Forge of Souls,632,client_journal_entry,not_evaluated
+281,The Nexus,576,client_journal_entry,not_evaluated
+282,The Oculus,578,client_journal_entry,not_evaluated
+283,The Violet Hold,608,client_journal_entry,not_evaluated
+284,Trial of the Champion,650,client_journal_entry,not_evaluated
+285,Utgarde Keep,574,client_journal_entry,not_evaluated
+286,Utgarde Pinnacle,575,client_journal_entry,not_evaluated
+302,Stormstout Brewery,961,client_journal_entry,not_evaluated
+303,Gate of the Setting Sun,962,client_journal_entry,not_evaluated
+311,Scarlet Halls,1001,client_journal_entry,not_evaluated
+312,Shado-Pan Monastery,959,client_journal_entry,not_evaluated
+313,Temple of the Jade Serpent,960,client_journal_entry,not_evaluated
+316,Scarlet Monastery,1004,client_journal_entry,not_evaluated
+317,Mogu'shan Vaults,1008,client_journal_entry,not_evaluated
+320,Terrace of Endless Spring,996,client_journal_entry,not_evaluated
+321,Mogu'shan Palace,994,client_journal_entry,not_evaluated
+322,Pandaria,996,client_journal_entry,not_evaluated
+324,Siege of Niuzao Temple,1011,client_journal_entry,not_evaluated
+330,Heart of Fear,1009,client_journal_entry,not_evaluated
+362,Throne of Thunder,1098,client_journal_entry,not_evaluated
+369,Siege of Orgrimmar,1136,client_journal_entry,not_evaluated

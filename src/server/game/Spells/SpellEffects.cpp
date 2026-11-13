@@ -1104,6 +1104,16 @@ void Spell::EffectTriggerRitualOfSummoning(SpellEffIndex effIndex)
     m_caster->CastSpell((Unit*)NULL, spellInfo, false);
 }
 
+// Keep spell provenance in the file log when the spline validator rejects an
+// explicit speed. Current movement-generator type alone cannot identify the
+// spell that launched a jump/knockback before its generator is switched.
+static void TraceSpellMovementSpeed(uint32 spellId, uint32 effectIndex, Unit* mover, float horizontal, float vertical)
+{
+    if (!std::isfinite(horizontal) || horizontal <= 0.0f)
+        TC_LOG_INFO("movement.spline", "[SPELL_MOVEMENT_INPUT] spell=%u effect=%u mover=%u entry=%u horizontal=%.9g vertical=%.9g",
+            spellId, effectIndex, mover->GetGUID().GetCounter(), mover->GetEntry(), horizontal, vertical);
+}
+
 void Spell::EffectJump(SpellEffIndex effIndex)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_LAUNCH_TARGET)
@@ -1120,6 +1130,7 @@ void Spell::EffectJump(SpellEffIndex effIndex)
 
     float speedXY, speedZ;
     CalculateJumpSpeeds(effIndex, m_caster->GetExactDist2d(x, y), speedXY, speedZ);
+    TraceSpellMovementSpeed(m_spellInfo->Id, uint32(effIndex), m_caster, speedXY, speedZ);
     m_caster->GetMotionMaster()->MoveJump(x, y, z, speedXY, speedZ);
 }
 
@@ -1140,6 +1151,7 @@ void Spell::EffectJumpDest(SpellEffIndex effIndex)
 
     float speedXY, speedZ;
     CalculateJumpSpeeds(effIndex, m_caster->GetExactDist2d(x, y), speedXY, speedZ);
+    TraceSpellMovementSpeed(m_spellInfo->Id, uint32(effIndex), m_caster, speedXY, speedZ);
     m_caster->GetMotionMaster()->MoveJump(x, y, z, speedXY, speedZ);
 
     if (m_spellInfo->HasPvpKnockbackDiminishing())
@@ -2742,6 +2754,11 @@ void Spell::EffectLearnSpell(SpellEffIndex effIndex)
     Player* player = unitTarget->ToPlayer();
 
     uint32 spellToLearn = (m_spellInfo->Id == 483 || m_spellInfo->Id == 55884) ? damage : m_spellInfo->Effects[effIndex].TriggerSpell;
+    // Generic learning wrappers (483/55884) receive the learned spell as
+    // base points. Zero is an absent payload, never a spellbook entry.
+    if (!spellToLearn)
+        return;
+
     player->LearnSpell(spellToLearn, false);
 
     TC_LOG_DEBUG("spells", "Spell: Player %u has learned spell %u from NpcGUID=%u", player->GetGUID().GetCounter(), spellToLearn, m_caster->GetGUID().GetCounter());
@@ -5599,6 +5616,7 @@ void Spell::EffectKnockBack(SpellEffIndex effIndex)
             m_caster->GetPosition(x, y);
     }
 
+    TraceSpellMovementSpeed(m_spellInfo->Id, uint32(effIndex), unitTarget, speedxy, speedz);
     unitTarget->KnockbackFrom(x, y, speedxy, speedz);
 
     if (m_spellInfo->HasPvpKnockbackDiminishing())
@@ -5725,6 +5743,7 @@ void Spell::EffectPullTowards(SpellEffIndex effIndex)
     else //if (m_spellInfo->Effects[i].Effect == SPELL_EFFECT_PULL_TOWARDS)
         pos.Relocate(m_caster);
 
+    TraceSpellMovementSpeed(m_spellInfo->Id, uint32(effIndex), unitTarget, speedXY, speedZ);
     unitTarget->GetMotionMaster()->MoveJump(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), speedXY, speedZ);
 }
 
@@ -6001,7 +6020,11 @@ void Spell::EffectTransmitted(SpellEffIndex effIndex)
 
     pGameObj->SetRespawnTime(duration > 0 ? duration/IN_MILLISECONDS : 0);
 
-    pGameObj->SetOwnerGUID(m_caster->GetGUID());
+    // Non-lifetime-bound summons still need their creator reference detached
+    // when the caster leaves the world. Strongly owned objects above are
+    // already registered through AddGameObject and keep their existing policy.
+    if (!pGameObj->GetOwnerGUID())
+        m_caster->AddCreatedGameObject(pGameObj);
 
     //pGameObj->SetUInt32Value(GAMEOBJECT_FIELD_LEVEL, m_caster->GetLevel());
     pGameObj->SetSpellId(m_spellInfo->Id);
@@ -6028,7 +6051,7 @@ void Spell::EffectTransmitted(SpellEffIndex effIndex)
             linkedGO->SetRespawnTime(duration > 0 ? duration/IN_MILLISECONDS : 0);
             //linkedGO->SetUInt32Value(GAMEOBJECT_FIELD_LEVEL, m_caster->GetLevel());
             linkedGO->SetSpellId(m_spellInfo->Id);
-            linkedGO->SetOwnerGUID(m_caster->GetGUID());
+            m_caster->AddCreatedGameObject(linkedGO);
 
             ExecuteLogEffectSummonObject(effIndex, linkedGO);
 

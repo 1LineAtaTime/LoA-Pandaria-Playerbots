@@ -555,9 +555,9 @@ class instance_gate_of_the_setting_sun : public InstanceMapScript
                     case NPC_WEAK_SPOT:
                         return raigonWeakGuid;
                     case DATA_RANDOM_BOMBARDER:
-                        return Trinity::Containers::SelectRandomContainerElement(bombarderGuids);
+                        return bombarderGuids.empty() ? ObjectGuid::Empty : Trinity::Containers::SelectRandomContainerElement(bombarderGuids);
                     case DATA_RANDOM_BOMB_STALKER:
-                        return Trinity::Containers::SelectRandomContainerElement(bombStalkerGuids);
+                        return bombStalkerGuids.empty() ? ObjectGuid::Empty : Trinity::Containers::SelectRandomContainerElement(bombStalkerGuids);
                     case DATA_CORNER_A:
                         return explosionTarget1GUID;
                     case DATA_CORNER_B:

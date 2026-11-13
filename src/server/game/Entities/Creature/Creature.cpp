@@ -1,3 +1,4 @@
+#include "CreatureDetectionPolicy.h"
 /*
 * This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
@@ -16,6 +17,7 @@
 */
 
 #include "Creature.h"
+#include "CreatureCombatPolicy.h"
 #include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
@@ -986,6 +988,11 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, 
     if (data && data->phaseGroup)
     {
         std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(data->phaseGroup);
+        if (!phasesInGroup)
+        {
+            TC_LOG_ERROR("sql.sql", "Creature::Create(): spawn %u entry %u references missing phase group %u.", guidlow, Entry, data->phaseGroup);
+            return false;
+        }
         for (uint32 phaseId : *phasesInGroup)
             SetPhased(phaseId, false, true);
     }
@@ -1446,23 +1453,23 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo, bool keepLevel)
     SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
     SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
 
-    // #175: damage uses the same expansion column as health (it read the template's classic column, so level
-    // 80-90 battleground NPCs hit for ~1/240 of AC's damage and ~0 at level 90)
+    // Upstream SF27 combat data authors melee ranges and AP per template.
+    // Retain the fork's expansion-aware BG/AutoBalance curve and ranged behavior.
     float basedamage = stats->BaseDamage[expansion];
-    float mindmg = basedamage;
-    float maxdmg = basedamage * 1.5f;
+    if (!std::isfinite(basedamage) || basedamage <= 0.0f)
+        basedamage = stats->BaseDamage[EXPANSION_CLASSIC];
+    auto const melee = CreatureCombatPolicy::Select(GetMap()->IsBattleground() || scaledExpansion >= 0,
+        basedamage, stats->AttackPower, cinfo->mindmg, cinfo->maxdmg, cinfo->attackpower);
+    auto const ranged = CreatureCombatPolicy::Select(true, basedamage, stats->RangedAttackPower, 0, 0, 0);
 
-    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, mindmg);
-    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxdmg);
-
-    SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, mindmg);
-    SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, maxdmg);
-
-    SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, mindmg);
-    SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, maxdmg);
-
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, stats->AttackPower);
-    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, stats->RangedAttackPower);
+    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, melee.minimum);
+    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, melee.maximum);
+    SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, melee.minimum);
+    SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, melee.maximum);
+    SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, ranged.minimum);
+    SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, ranged.maximum);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, float(melee.attackPower));
+    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, float(ranged.attackPower));
 }
 
 float Creature::_GetHealthMod(int32 Rank)
@@ -1601,12 +1608,16 @@ bool Creature::LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap)
     else
         guid = map->GenerateLowGuid<HighGuid::Unit>();
 
+    float x = data->posX, y = data->posY, z = data->posZ, orientation = data->orientation;
+    if (Transport* transport = GetTransport())
+        transport->CalculatePassengerPosition(x, y, z, &orientation);
+
     uint16 team = 0;
-    if (!Create(guid, map, data->phaseMask, data->id, 0, team, data->posX, data->posY, data->posZ, data->orientation, data))
+    if (!Create(guid, map, data->phaseMask, data->id, 0, team, x, y, z, orientation, data))
         return false;
 
     //We should set first home position, because then AI calls home movement
-    SetHomePosition(data->posX, data->posY, data->posZ, data->orientation);
+    SetHomePosition(x, y, z, orientation);
 
     m_wanderDistance = data->wander_distance;
 
@@ -1621,14 +1632,14 @@ bool Creature::LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap)
     if (m_respawnTime)                          // respawn on Update
     {
         m_deathState = DEAD;
-        if (CanFly())
+        if (CanFly() && !GetTransport())
         {
             // #169 AC parity (AC Creature.cpp:1762-1763): search the vmap too, and only drop the dead flyer to a
             // valid height. With vmap=false a flyer below the terrain (e.g. the Twilight Buzzards in the cavern
             // under Mount Hyjal) got INVALID_HEIGHT and was relocated to Z = -200000.
-            float tz = map->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ, true, MAX_FALL_DISTANCE);
-            if (data->posZ - tz > 0.1f && Trinity::IsValidMapCoord(tz))
-                Relocate(data->posX, data->posY, tz);
+            float tz = map->GetHeight(GetPhaseMask(), x, y, z, true, MAX_FALL_DISTANCE);
+            if (z - tz > 0.1f && Trinity::IsValidMapCoord(tz))
+                Relocate(x, y, tz);
         }
     }
 
@@ -1815,36 +1826,14 @@ float Creature::GetAttackDistance(Unit const* player) const
     if (aggroRate == 0)
         return 0.0f;
 
-    uint32 playerlevel   = player->GetLevelForTarget(this);
-    uint32 creaturelevel = GetLevelForTarget(player);
-
-    int32 leveldif       = int32(playerlevel) - int32(creaturelevel);
-
-    // "The maximum Aggro Radius has a cap of 25 levels under. Example: A level 30 char has the same Aggro Radius of a level 5 char on a level 60 mob."
-    if (leveldif < - 25)
-        leveldif = -25;
-
-    // "The aggro radius of a mob having the same level as the player is roughly 20 yards"
-    float RetDistance = 20;
-
-    // "Aggro Radius varies with level difference at a rate of roughly 1 yard/level"
-    // radius grow if playlevel < creaturelevel
-    RetDistance -= (float)leveldif;
-
-    if (creaturelevel+5 <= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-    {
-        // detect range auras
-        RetDistance += GetTotalAuraModifier(SPELL_AURA_MOD_DETECT_RANGE);
-
-        // detected range auras
-        RetDistance += player->GetTotalAuraModifier(SPELL_AURA_MOD_DETECTED_RANGE);
-    }
-
-    // "Minimum Aggro Radius for a mob seems to be combat range (5 yards)"
-    if (RetDistance < 5)
-        RetDistance = 5;
-
-    return (RetDistance*aggroRate);
+    int32 playerLevel = int32(player->GetLevelForTarget(this));
+    int32 creatureLevel = int32(GetLevelForTarget(player));
+    float auraAdjustment = 0.0f;
+    if (creatureLevel + 5 <= int32(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL)))
+        auraAdjustment = GetTotalAuraModifier(SPELL_AURA_MOD_DETECT_RANGE) + player->GetTotalAuraModifier(SPELL_AURA_MOD_DETECTED_RANGE);
+    return CreatureDetectionPolicy::AttackDistance(GetCreatureTemplate()->DetectionRange,
+        creatureLevel, playerLevel, int32(sDBCManager.GetMaxLevelForExpansion(GetCreatureTemplate()->expansion)),
+        auraAdjustment, aggroRate);
 }
 
 void Creature::setDeathState(DeathState s)

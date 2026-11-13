@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "provenance": "Reviewed pre-automation baseline; never automatically refresh this allowlist.",
+  "source_report_sha256": "eef0d94b0e6f1da71259ec2c7520d000b01bc07055b0d4ba47fabb4e36cc2ce3",
+  "audits": [
+    {
+      "id": "objective_quest",
+      "rows": []
+    },
+    {
+      "id": "objective_creature",
+      "rows": [
+        [
+          "8149",
+          "284684",
+          "108639"
+        ],
+        [
+          "8150",
+          "284686",
+          "108644"
+        ]
+      ]
+    },
+    {
+      "id": "objective_item",
+      "rows": [
+        [
+          "29048",
+          "251633",
+          "68676"
+        ],
+        [
+          "29466",
+          "254733",
+          "71961"
+        ],
+        [
+          "29056",
+          "256401",
+          "68680"
+        ],
+        [
+          "29046",
+          "256709",
+          "68674"
+        ],
+        [
+          "10794",
+          "273866",
+          "113135"
+        ],
+        [
+          "29554",
+          "261256",
+          "73366"
+        ],
+        [
+          "32475",
+          "269899",
+          "93660"
+        ]
+      ]
+    },
+    {
+      "id": "objective_gameobject",
+      "rows": [
+        [
+          "30759",
+          "272423",
+          "223458"
+        ]
+      ]
+    },
+    {
+      "id": "quest_start_target",
+      "rows": []
+    },
+    {
+      "id": "quest_end_target",
+      "rows": []
+    },
+    {
+      "id": "waypoint_ownership",
+      "rows": []
+    },
+    {
+      "id": "waypoint_path",
+      "rows": []
+    },
+    {
+      "id": "active_smartai_ownership",
+      "rows": []
+    },
+    {
+      "id": "shop_item_reference",
+      "rows": []
+    }
+  ],
+  "addon_aura_findings": [
+    {
+      "table": "creature_template_addon",
+      "id": 36805,
+      "issue": "missing_spell_definition",
+      "spell": 58284
+    }
+  ]
+}

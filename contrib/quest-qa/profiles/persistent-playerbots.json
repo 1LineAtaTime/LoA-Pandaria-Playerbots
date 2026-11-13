@@ -1,0 +1,53 @@
+{
+  "scope": "Existing isolated QA runtime only; never apply to the played realm",
+  "worldserver": {
+    "PlayerBots.PlayerbotAmount": 0,
+    "PlayerBots.DuelingAmount": 0,
+    "PlayerBots.CityAmount": 0,
+    "PlayerBots.ZoneAmount": 0,
+    "PlayerBots.OldOpenWorldBots": 0,
+    "Rate.XP.Kill": 1,
+    "Rate.XP.Quest": 1,
+    "Rate.XP.Explore": 1,
+    "Rate.Health": 1,
+    "Rate.Mana": 1,
+    "Rate.Drop.Item.Uncommon": 1,
+    "Rate.Drop.Item.Rare": 1,
+    "Rate.Drop.Item.Epic": 1,
+    "Rate.Drop.Item.Legendary": 1,
+    "Rate.Drop.Item.Artifact": 1,
+    "Rate.Drop.Money": 1,
+    "AiPlayerbot.RpgTownErrandFlightMinDistance": 800,
+    "AiPlayerbot.RpgTownErrandMaxBotsPerNpc": 3
+  },
+  "playerbots": {
+    "AiPlayerbot.Enabled": 1,
+    "AiPlayerbot.SelfBotLevel": 2,
+    "AiPlayerbot.Companion.MinLevel": 1,
+    "AiPlayerbot.Companion.GoldOnlyLoot": 0,
+    "AiPlayerbot.FreeFood": 0,
+    "AiPlayerbot.AutoTrainSpells": "no",
+    "AiPlayerbot.CityLife.Enable": 0,
+    "AiPlayerbot.RandomBotAutologin": 0,
+    "AiPlayerbot.RandomBotAccountCount": 0,
+    "AiPlayerbot.MinRandomBots": 0,
+    "AiPlayerbot.MaxRandomBots": 0,
+    "AiPlayerbot.AddClassAccountPoolSize": 0,
+    "AiPlayerbot.RandomBotLoginAtStartup": 0,
+    "AiPlayerbot.RpgStatusProbWeight.WanderRandom": 0,
+    "AiPlayerbot.RpgStatusProbWeight.WanderNpc": 0,
+    "AiPlayerbot.RpgStatusProbWeight.GoGrind": 0,
+    "AiPlayerbot.RpgStatusProbWeight.GoCamp": 0,
+    "AiPlayerbot.RpgStatusProbWeight.DoQuest": 100,
+    "AiPlayerbot.RpgStatusProbWeight.TravelFlight": 0,
+    "AiPlayerbot.RpgStatusProbWeight.Rest": 5,
+    "AiPlayerbot.RpgStatusProbWeight.OutdoorPvp": 0,
+    "AiPlayerbot.RpgStatusProbWeight.DuelSpot": 0
+  },
+  "notes": [
+    "RandomBotAccountCount=0 means automatic sizing, not zero accounts. Set min/max/addclass sizes to zero too.",
+    "Only designated persistent bodies receive .npcbot self; SelfBotLevel=2 does not automatically control every login.",
+    "Do not run deterministic reset on persistent-adventure characters.",
+    "No accelerated movement, injected objectives, artificial XP, equipment generation or quest reward grants."
+  ]
+}

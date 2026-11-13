@@ -1546,6 +1546,8 @@ class spell_alysrazor_cosmetic_egg_xplosion : public SpellScriptLoader
 
             void HandleExplosion(SpellEffIndex effIndex)
             {
+                if (!GetHitUnit())
+                    return;
                 PreventHitDefaultEffect(effIndex);
                 GetHitUnit()->SetDisplayId(MODEL_INVISIBLE_STALKER);
                 if (Creature* creature = GetHitCreature())
@@ -1591,6 +1593,8 @@ class spell_alysrazor_turn_monstrosity : public SpellScriptLoader
 
             void KnockBarrage(SpellEffIndex effIndex)
             {
+                if (!GetHitUnit())
+                    return;
                 PreventHitDefaultEffect(effIndex);
                 GetHitUnit()->GetMotionMaster()->MoveIdle();
                 if (TempSummon* summ = GetHitUnit()->ToTempSummon())
@@ -1924,13 +1928,13 @@ void AddSC_firelands()
     new spell_firelands_molten_lord_summon_lava_jets();
 
     // alysrazor event
-    /*new npc_harbinger_of_flame();
+    new npc_harbinger_of_flame();
     new npc_blazing_monstrosity();
     new npc_molten_barrage();
     new npc_egg_pile();
     new spell_alysrazor_cosmetic_egg_xplosion();
     new spell_alysrazor_turn_monstrosity();
-    new spell_alysrazor_aggro_closest();*/
+    new spell_alysrazor_aggro_closest();
 
     new npc_firelands_dull_focus();
     new npc_firelands_circle_of_thorns_portal();

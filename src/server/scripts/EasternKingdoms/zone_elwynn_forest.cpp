@@ -298,12 +298,13 @@ struct npc_blackrock_battle_worg : public ScriptedAI
     {
         if (tSeek <= diff)
         {
-            if ((me->IsAlive()) && (!me->IsInCombat() && (me->GetDistance2d(me->GetHomePosition().GetPositionX(), me->GetHomePosition().GetPositionY()) <= 1.0f)))
-                if (Creature* enemy = me->FindNearestCreature(ElwynnForest::NPC_STORMWIND_INFANTRY, 1.0f, true))
+            // SF b53c84a8: paired spawns stand several yards apart; retry even if no target is found.
+            tSeek = urand(1 * TimeConstants::IN_MILLISECONDS, 2 * TimeConstants::IN_MILLISECONDS);
+            if (me->IsAlive() && !me->IsInCombat())
+                if (Creature* enemy = me->FindNearestCreature(ElwynnForest::NPC_STORMWIND_INFANTRY, 8.0f, true))
                 {
                     me->SetFaction(ElwynnForest::WORG_FIGHTING_FACTION);
                     me->AI()->AttackStart(enemy);
-                    tSeek = urand(1 * TimeConstants::IN_MILLISECONDS, 2 * TimeConstants::IN_MILLISECONDS);
                 }
         }
         else

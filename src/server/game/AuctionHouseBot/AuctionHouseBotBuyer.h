@@ -88,8 +88,8 @@ private:
     // ahInfo can be nullptr
     bool RollBuyChance(BuyerItemInfo const* ahInfo, Item const* item, AuctionEntry const* auction, uint32 bidPrice);
     bool RollBidChance(BuyerItemInfo const* ahInfo, Item const* item, AuctionEntry const* auction, uint32 bidPrice);
-    void PlaceBidToEntry(AuctionEntry* auction, uint32 bidPrice);
-    void BuyEntry(AuctionEntry* auction, AuctionHouseObject* auctionHouse);
+    void PlaceBidToEntry(AuctionEntry* auction, uint32 bidPrice, AuctionHouseType houseType);
+    void BuyEntry(AuctionEntry* auction, AuctionHouseObject* auctionHouse, AuctionHouseType houseType);
     void PrepareListOfEntry(BuyerConfiguration& config);
     uint32 GetItemInformation(BuyerConfiguration& config);
     uint32 GetVendorPrice(uint32 quality);

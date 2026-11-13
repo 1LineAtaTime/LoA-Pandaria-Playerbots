@@ -31,6 +31,7 @@
  *    CanTakeQuest/CanAddQuest/AddQuest/CompleteQuest/GetSrcSpell, all present in 5.4.8.
  */
 
+#include "Config.h"
 #include "AcceptQuestAction.h"
 
 #include "ChatHelper.h"
@@ -123,7 +124,8 @@ bool AcceptAllQuestsAction::ProcessQuest(Quest const* quest, Object* questGiver)
         return false;
 
     std::string const text_quest = ChatHelper::FormatQuest(quest);
-    bot->PlayDistanceSound(620);
+    if (sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.RoutineMessages", false))
+        bot->PlayDistanceSound(620);
 
     if (botAI->HasStrategy("debug quest", BotState::BOT_STATE_NON_COMBAT) ||
         botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
@@ -228,7 +230,8 @@ bool AcceptQuestShareAction::Execute(Event event)
         // 5.4.8: SetDivider takes the guid explicitly - see the file header.
         bot->SetDivider(ObjectGuid::Empty);
         // PlayerbotTextMgr not ported on this fork; this is AC's own enUS fallback text.
-        botAI->TellError("I have this quest");
+        if (sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.RoutineMessages", false))
+            botAI->TellError("I have this quest");
         return false;
     }
 
@@ -237,7 +240,8 @@ bool AcceptQuestShareAction::Execute(Event event)
         // can't take quest
         bot->SetDivider(ObjectGuid::Empty);
         // PlayerbotTextMgr not ported on this fork; this is AC's own enUS fallback text.
-        botAI->TellError("I can't take this quest");
+        if (sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.RoutineMessages", false))
+            botAI->TellError("I can't take this quest");
 
         return false;
     }
@@ -266,7 +270,8 @@ bool AcceptQuestShareAction::Execute(Event event)
         }
 
         // PlayerbotTextMgr not ported on this fork; this is AC's own enUS fallback text.
-        botAI->TellMaster("Quest accepted");
+        if (sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.RoutineMessages", false))
+            botAI->TellMaster("Quest accepted");
         return true;
     }
 

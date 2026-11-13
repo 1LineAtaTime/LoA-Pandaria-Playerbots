@@ -1,4 +1,5 @@
 #include "ChatCommand.h"
+#include "VisibleCommandMatches.h"
 #include "Chat.h"
 #include "ScriptMgr.h"
 #include "DatabaseEnv.h"
@@ -238,21 +239,8 @@ namespace ChatCommands
 
     std::vector<ChatCommandNode const*> ChatCommandNode::FindVisibleMatches(CommandMap const& map, std::string_view token, ChatHandler const& who)
     {
-        std::vector<ChatCommandNode const*> matches;
-        if (token.empty())
-            return matches;
-
-        ChatCommandNode const* exact = FindExact(map, token);
-        if (exact && IsNodeVisible(*exact, who))
-            matches.push_back(exact);
-        else
-        {
-            for (auto const& pair : map)
-                if (StringStartsWithI(pair.first, token) && IsNodeVisible(pair.second, who))
-                    matches.push_back(&pair.second);
-        }
-
-        return matches;
+        return VisibleCommandMatches(map, token,
+            [&who](ChatCommandNode const& node) { return IsNodeVisible(node, who); }, StringStartsWithI);
     }
 
     bool ChatCommandNode::ExecuteNode(ChatCommandNode const& node, ChatHandler& who, std::string_view args, std::string_view fullCommand)

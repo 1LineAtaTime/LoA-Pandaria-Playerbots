@@ -1,4 +1,4 @@
-﻿# Fichier source temporaire généré
+# Fichier source temporaire généré
 set(MODULES_LOADER_TEMP "${CMAKE_BINARY_DIR}/ModulesLoader.cpp")
 set(MODULES_LOADER_FINAL "${CMAKE_SOURCE_DIR}/modules/ModulesLoader.cpp")
 set(MODULES_LOADER_TEMPLATE "${CMAKE_SOURCE_DIR}/modules/ModulesLoader.cpp.in.cmake")
@@ -124,3 +124,10 @@ target_link_libraries(modules
 )
 
 add_dependencies(modules revision.h)
+
+# Apply the same core PCH setting used by the server targets. The header was
+# selected above but never attached, making every Playerbots source parse the
+# complete game headers again on each compilation.
+if(USE_COREPCH)
+    target_precompile_headers(modules PRIVATE ${PRIVATE_PCH_HEADER})
+endif()

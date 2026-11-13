@@ -934,7 +934,7 @@ std::unique_ptr<ActivePoolData> PoolMgr::InitPoolsForMap(Map* map)
     return spawnedPoolData;
 }
 
-PoolTemplateData const* PoolMgr::GetPoolTemplate(uint16 pool_id) const
+PoolTemplateData const* PoolMgr::GetPoolTemplate(uint32 pool_id) const
 {
     return Trinity::Containers::MapGetValuePtr(mPoolTemplate, pool_id);
 }

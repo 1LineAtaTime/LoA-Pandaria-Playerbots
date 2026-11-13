@@ -9,6 +9,7 @@
  */
 
 #include "LootAction.h"
+#include "CompanionLoot.h"
 
 #include "BroadcastHelper.h"
 #include "Config.h"
@@ -452,6 +453,8 @@ bool StoreLootAction::Execute(Event /*event*/)
         uint32 const maxSlot = loot->GetMaxSlotInLootFor(bot);
         for (uint32 slot = 0; slot < maxSlot; ++slot)
         {
+            if (IsGoldOnlyCompanion(bot))
+                break; // Money is handled above; item and currency-token slots belong to players.
             QuestItem* qitem = nullptr;
             QuestItem* ffaitem = nullptr;
             QuestItem* conditem = nullptr;
@@ -563,6 +566,7 @@ bool StoreLootAction::Execute(Event /*event*/)
 
 bool StoreLootAction::IsLootAllowed(uint32 itemid, PlayerbotAI* botAI)
 {
+    if (IsGoldOnlyCompanion(botAI->GetBot())) return false;
     AiObjectContext* context = botAI->GetAiObjectContext();
     LootStrategy* lootStrategy = context->GetValue<LootStrategy*>("loot strategy")->Get();
 

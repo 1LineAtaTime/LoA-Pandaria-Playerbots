@@ -1,0 +1,377 @@
+{
+  "backup_sha256": "4ce11299a7c35ea57068e4e9e7b40309d2cd0a2024c207ff1daf0802702809e8",
+  "templates": [
+    {
+      "entry": 4542,
+      "name": "High Inquisitor Fairbanks",
+      "unavailable_native_script": "boss_high_inquisitor_fairbanks",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 7357,
+      "name": "Mordresh Fire Eye",
+      "unavailable_native_script": "boss_mordresh_fire_eye",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 8567,
+      "name": "Glutton",
+      "unavailable_native_script": "boss_glutton",
+      "existing_smartai_rows": 1,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 10399,
+      "name": "Thuzadin Acolyte",
+      "unavailable_native_script": "npc_thuzadin_acolyte",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 19991,
+      "name": "Bloodmaul Brute",
+      "unavailable_native_script": "npc_bloodmaul_brute",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 23575,
+      "name": "Mindless Abomination",
+      "unavailable_native_script": "npc_mindless_abomination",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 39947,
+      "name": "Grimtotem Pillager",
+      "unavailable_native_script": "npc_westreach_fighting",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 39951,
+      "name": "Summit Defender",
+      "unavailable_native_script": "npc_westreach_fighting",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 53472,
+      "name": "Thyrinar",
+      "unavailable_native_script": "npc_thyrinar",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 57802,
+      "name": "Lord Hiram Creed",
+      "unavailable_native_script": "npc_lord_hiram_creed",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 59969,
+      "name": "Musaan the Blazecaster",
+      "unavailable_native_script": "npc_akonu_embercaller",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 60030,
+      "name": "Harala the Firespeaker",
+      "unavailable_native_script": "npc_harala_firespeaker",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 60032,
+      "name": "Akonu the Embercaller",
+      "unavailable_native_script": "npc_akonu_embercaller",
+      "existing_smartai_rows": 1,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 60188,
+      "name": "The Ook of Dook",
+      "unavailable_native_script": "npc_ook_of_dook",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 60769,
+      "name": "General Sho Lien",
+      "unavailable_native_script": "npc_general_sho_lien",
+      "existing_smartai_rows": 1,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 60826,
+      "name": "Imperial Guard",
+      "unavailable_native_script": "npc_imperial_guard",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 61069,
+      "name": "Shai Hu",
+      "unavailable_native_script": "npc_hai_shu",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 61070,
+      "name": "Explosive Hatred",
+      "unavailable_native_script": "npc_exlosive_hatred",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 61376,
+      "name": "Kri'thik Boneslicer",
+      "unavailable_native_script": "npc_krithik_boneslicer",
+      "existing_smartai_rows": 1,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 62296,
+      "name": "Zouchin Defender",
+      "unavailable_native_script": "npc_zouchin_village_zouchin_defender",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 62307,
+      "name": "Dread Shadow",
+      "unavailable_native_script": "npc_dread_shadow",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 62680,
+      "name": "Kor'thik Bloodletter",
+      "unavailable_native_script": "npc_korthik_bloodletter",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 62755,
+      "name": "Kor'thik Resonator",
+      "unavailable_native_script": "npc_korthik_resonator",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 62814,
+      "name": "Vor'thik Fear-Shaper",
+      "unavailable_native_script": "npc_vorthik_fear_shaper",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 62863,
+      "name": "Qi'tar the Deathcaller",
+      "unavailable_native_script": "npc_quitar_the_deathcaller",
+      "existing_smartai_rows": 1,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 63102,
+      "name": "Adjunct Okzyk",
+      "unavailable_native_script": "npc_adjunct_okzyk",
+      "existing_smartai_rows": 2,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 63103,
+      "name": "Adjunct G'kkal",
+      "unavailable_native_script": "npc_adjunct_gkall",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 63104,
+      "name": "Adjunct Pivvika",
+      "unavailable_native_script": "npc_adjunct_pivvika",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 63206,
+      "name": "Ik'thik Harvester",
+      "unavailable_native_script": "npc_ikthik_harvester",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 63369,
+      "name": "Rockshell Snapclaw",
+      "unavailable_native_script": "npc_rockshell_snapclaw",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 64008,
+      "name": "Muckscale Shaman",
+      "unavailable_native_script": "npc_muckscale_shaman",
+      "existing_smartai_rows": 4,
+      "status": "fallback_not_native_parity"
+    },
+    {
+      "entry": 64485,
+      "name": "Kovok",
+      "unavailable_native_script": "npc_kovok_feeding",
+      "existing_smartai_rows": 3,
+      "status": "fallback_not_native_parity"
+    }
+  ],
+  "valid_smartvehicle_templates_unchanged": 28,
+  "data_tests": [
+    {
+      "suite": "loa-ai-fallback-batch-20261108",
+      "passed": 33,
+      "total": 33,
+      "gameplay_tested": false
+    },
+    {
+      "suite": "starting-training-20261105",
+      "passed": 306,
+      "total": 306,
+      "gameplay_tested": false
+    },
+    {
+      "suite": "gilneas-progression-20261105",
+      "passed": 85,
+      "total": 85,
+      "gameplay_tested": false
+    },
+    {
+      "suite": "existing-native-ports-20261105",
+      "passed": 17,
+      "total": 17,
+      "gameplay_tested": false
+    }
+  ],
+  "framework_tests_passed": 12,
+  "idempotent_second_application": true,
+  "diagnostics": {
+    "before": 1306,
+    "after": 1222,
+    "resolved": [
+      "[sql.sql] ScriptName 'boss_glutton' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'boss_high_inquisitor_fairbanks' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'boss_mordresh_fire_eye' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_adjunct_gkall' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_adjunct_okzyk' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_adjunct_pivvika' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_akonu_embercaller' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_bloodmaul_brute' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_dread_shadow' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_exlosive_hatred' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_general_sho_lien' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_hai_shu' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_harala_firespeaker' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_ikthik_harvester' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_imperial_guard' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_korthik_bloodletter' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_korthik_resonator' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_kovok_feeding' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_krithik_boneslicer' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_lord_hiram_creed' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_mindless_abomination' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_muckscale_shaman' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_ook_of_dook' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_quitar_the_deathcaller' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_rockshell_snapclaw' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_thuzadin_acolyte' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_thyrinar' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_vorthik_fear_shaper' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_westreach_fighting' exists in database, but no core script found!",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 10399 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 19991 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 23575 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 39947 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 39951 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 4542 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 53472 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 57802 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 59969 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60030 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60032 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60188 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60769 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60826 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 61069 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 61070 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 61376 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62296 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62307 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62680 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62755 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62814 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62863 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63102 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63103 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63104 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63206 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63369 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 64008 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 64485 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 7357 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 8567 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] Table `command` have not existed command 'guard delete', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard global', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard handle', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard player', skip.",
+      "[sql.sql] Table `command` have not existed command 'isengard daily', skip.",
+      "[sql.sql] Table `command` have not existed command 'itemlog', skip.",
+      "[sql.sql] Table `command` have not existed command 'npc set spawndist', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken add', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken reload', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken remove', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_creature', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_creature_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_gameobject', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_gossip_menu_option', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_item', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_npc_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_page_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_points_of_interest', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_quest', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate restoreviewpoint', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate setviewpoint', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate', skip."
+    ],
+    "new": []
+  },
+  "audit_after": {
+    "counts": {
+      "blocked": 0,
+      "failed": 3,
+      "passed": 7,
+      "untested": 0
+    },
+    "complete": true,
+    "ready": false
+  },
+  "fallbacks_are_full_native_implementations": false,
+  "gameplay": {
+    "counts": {
+      "blocked": 0,
+      "failed": 0,
+      "passed": 15,
+      "untested": 8
+    },
+    "complete": false,
+    "ready": false
+  },
+  "cleanup_verified": true,
+  "regression_comparison": {
+    "regressions": [],
+    "regression_free": true,
+    "baseline_is_retail_truth": false
+  },
+  "remaining_native_inventory": "doc/remaining-native-script-bindings-2026-11-08.json"
+}

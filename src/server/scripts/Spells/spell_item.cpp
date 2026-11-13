@@ -4509,70 +4509,40 @@ class spell_item_loot_a_rang : public SpellScript
     }
 };
 
+// Teach Language50243: MoP GPL implementation adapted from WoWCircle5.4.7
+// 577c19c5 spell_item.cpp; retain its34% proc and faction-specific binary aura.
+class spell_item_teach_language : public SpellScript
+{
+    PrepareSpellScript(spell_item_teach_language);
+
+    bool Validate(SpellInfo const*) override
+    {
+        return sSpellMgr->GetSpellInfo(50242) && sSpellMgr->GetSpellInfo(50246);
+    }
+    bool Load() override { return GetCaster()->ToPlayer() != nullptr; }
+    void HandleDummy(SpellEffIndex)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (roll_chance_i(34))
+            player->CastSpell(player, player->GetTeam() == ALLIANCE ? 50242 : 50246, true);
+    }
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_item_teach_language::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+void AddSC_skyfire27_item();
+
 void AddSC_item_spell_scripts()
 {
     // 23074 Arcanite Dragonling
-    new spell_item_trigger_spell("spell_item_arcanite_dragonling", SPELL_ARCANITE_DRAGONLING);
     // 23133 Gnomish Battle Chicken
-    new spell_item_trigger_spell("spell_item_gnomish_battle_chicken", SPELL_BATTLE_CHICKEN);
     // 23076 Mechanical Dragonling
-    new spell_item_trigger_spell("spell_item_mechanical_dragonling", SPELL_MECHANICAL_DRAGONLING);
     // 23075 Mithril Mechanical Dragonling
-    new spell_item_trigger_spell("spell_item_mithril_mechanical_dragonling", SPELL_MITHRIL_MECHANICAL_DRAGONLING);
 
-    new spell_item_aegis_of_preservation();
-    new spell_item_arcane_shroud();
-    new spell_item_blessing_of_ancient_kings();
-    new spell_item_defibrillate("spell_item_goblin_jumper_cables", 67, SPELL_GOBLIN_JUMPER_CABLES_FAIL);
-    new spell_item_defibrillate("spell_item_goblin_jumper_cables_xl", 50, SPELL_GOBLIN_JUMPER_CABLES_XL_FAIL);
-    new spell_item_defibrillate("spell_item_gnomish_army_knife", 33);
-    new spell_item_desperate_defense();
-    new spell_item_deviate_fish();
-    new spell_item_flask_of_the_north();
-    new spell_item_gnomish_death_ray();
-    new spell_item_make_a_wish();
-    new spell_item_mingos_fortune_generator();
-    new spell_item_necrotic_touch();
-    new spell_item_net_o_matic();
-    new spell_item_noggenfogger_elixir();
-    new spell_item_piccolo_of_the_flaming_fire();
-    new spell_item_savory_deviate_delight();
-    new spell_item_scroll_of_recall();
-    new spell_item_unsated_craving();
-    new spell_item_shadows_fate();
-    new spell_item_shadowmourne();
-    new spell_item_shadowmourne_soul_fragment();
-    new spell_item_six_demon_bag();
-    new spell_item_the_eye_of_diminution();
-    new spell_item_underbelly_elixir();
-    new spell_item_red_rider_air_rifle();
 
-    new spell_item_create_heart_candy();
-    new spell_item_book_of_glyph_mastery();
-    new spell_item_gift_of_the_harvester();
-    new spell_item_map_of_the_geyser_fields();
-    new spell_item_vanquished_clutches();
 
-    new spell_item_ashbringer();
-    new spell_magic_eater_food();
-    new spell_item_shimmering_vessel();
-    new spell_item_purify_helboar_meat();
-    new spell_item_crystal_prison_dummy_dnd();
-    new spell_item_reindeer_transformation();
-    new spell_item_nigh_invulnerability();
-    new spell_item_poultryizer();
-    new spell_item_socrethars_stone();
-    new spell_item_demon_broiled_surprise();
-    new spell_item_complete_raptor_capture();
-    new spell_item_impale_leviroth();
-    new spell_item_brewfest_mount_transformation();
-    new spell_item_nitro_boots();
-    new spell_item_rocket_boots();
-    new spell_item_pygmy_oil();
-    new spell_item_unusual_compass();
-    new spell_item_chicken_cover();
-    new spell_item_muisek_vessel();
-    new spell_item_greatmothers_soulcatcher();
     new spell_item_flameseers_staff_flamebreaker();
     new spell_script<spell_item_wormhole_pandaria>("spell_item_wormhole_pandaria");
     new spell_script<spell_item_flippable_table>("spell_item_flippable_table");
@@ -4636,4 +4606,5 @@ void AddSC_item_spell_scripts()
     new spell_script<spell_item_echoes_of_light>("spell_item_echoes_of_light");
     new aura_script<spell_item_fate_rune_of_unsurpassed_vigor>("spell_item_fate_rune_of_unsurpassed_vigor");
     new spell_script<spell_item_loot_a_rang>("spell_item_loot_a_rang");
+    AddSC_skyfire27_item();
 }

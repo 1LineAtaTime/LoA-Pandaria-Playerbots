@@ -1,0 +1,25 @@
+{
+  "tag": "sf_db_27",
+  "release_url": "https://github.com/ProjectSkyfire/SkyFire_548/releases/tag/sf_db_27",
+  "name": "SFDB_full_548_27.001_2026_011_03_Release.zip",
+  "url": "https://github.com/ProjectSkyfire/SkyFire_548/releases/download/sf_db_27/SFDB_full_548_27.001_2026_011_03_Release.zip",
+  "sha256": "7b2d59d25bac679b5f4e7a0e95c48ac08b4bdd4077fb4496b6cb3837f87b824f",
+  "bytes": 22813610,
+  "tag_target": "f7a9880b9452e4db900dc9ff783b7b6be3aeeb86",
+  "database_imported": false,
+  "database_members": [
+    {
+      "name": "SFDB_full_548_27.001_2026_011_03_Release.sql",
+      "bytes": 126356763
+    }
+  ],
+  "source_commit": "f7a9880b9452e4db900dc9ff783b7b6be3aeeb86",
+  "source_url": "https://codeload.github.com/ProjectSkyfire/SkyFire_548/zip/f7a9880b9452e4db900dc9ff783b7b6be3aeeb86",
+  "source_archive": "SkyFire_548-f7a9880-source.zip",
+  "source_sha256": "528b1d7ee4548858d2eaf96f6148cd95935c8503fc93b1f0c620b33ed4fcc691",
+  "previous_existing_database_copy": "out/skyfire27-reference/SFDB_full_548_27.001_2026_011_03_Release.zip",
+  "source_merged": false,
+  "preserved_current_runtime": true,
+  "release_body_declares_target": "d3ce4e58ea929b45bfeb3b0332b0933b419ab810",
+  "declared_target_note": "Release body target could not be resolved locally or fetched; source pinned to verified actual sf_db_27 tag target instead."
+}

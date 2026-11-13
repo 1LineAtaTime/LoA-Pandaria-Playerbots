@@ -62,7 +62,9 @@ class npc_pet_pri_lightwell : public CreatureScript
         }
 };
 
+void AddSC_sf27_pet_priest();
 void AddSC_priest_pet_scripts()
 {
-    new npc_pet_pri_lightwell();
+
+    AddSC_sf27_pet_priest();
 }

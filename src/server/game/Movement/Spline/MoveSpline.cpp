@@ -19,6 +19,9 @@
 #include <sstream>
 #include "Log.h"
 #include "Creature.h"
+#include "MovementInputPolicy.h"
+#include "VerticalKnockbackPolicy.h"
+#include "MotionMaster.h"
 
 namespace Movement{
 
@@ -115,6 +118,25 @@ struct CommonInitializer
     }
 };
 
+// Only an explicitly vertical-only, two-point, noncyclic ballistic arc may have
+// zero translational speed. Ordinary zero-speed paths remain invalid.
+static int32 VerticalArcDuration(MoveSplineInitArgs const& args)
+{
+    int32 duration = VerticalKnockbackPolicy::Duration(args.parabolic_amplitude, Movement::gravity);
+    bool vertical = args.path.size() == 2 && args.path[0].x == args.path[1].x && args.path[0].y == args.path[1].y &&
+        std::isfinite(args.path[0].x) && std::isfinite(args.path[0].y) &&
+        std::isfinite(args.path[0].z) && std::isfinite(args.path[1].z);
+    bool parabolic = args.flags.parabolic && !args.flags.cyclic && !args.flags.falling &&
+        !args.flags.animation && !args.flags.isSmooth();
+    return VerticalKnockbackPolicy::AllowsZeroVelocity(args.velocity, args.time_perc, vertical, parabolic, duration) ? duration : 0;
+}
+
+struct VerticalArcInitializer
+{
+    int32 duration;
+    int32 operator()(Spline<int32>&, int32) { return duration; }
+};
+
 void MoveSpline::init_spline(const MoveSplineInitArgs& args)
 {
     const SplineBase::EvaluationMode modes[2] = {SplineBase::ModeLinear, SplineBase::ModeCatmullrom};
@@ -136,6 +158,11 @@ void MoveSpline::init_spline(const MoveSplineInitArgs& args)
         FallInitializer init(spline.getPoint(spline.first()).z);
         spline.initLengths(init);
     }
+    else if (int32 duration = VerticalArcDuration(args))
+    {
+        VerticalArcInitializer init{duration};
+        spline.initLengths(init);
+    }
     else
     {
         CommonInitializer init(args.velocity);
@@ -148,6 +175,10 @@ void MoveSpline::init_spline(const MoveSplineInitArgs& args)
     // as on AC, which logs nothing for it; this line was ~200/h at 1000 bots (dismount falls, flying creature deaths).
     if (spline.length() < minimal_duration)
     {
+        TC_LOG_ERROR("movement.spline", "MoveSpline::init_spline: zero duration; id %u falling %u cyclic %u velocity %.6f points %u start (%.3f,%.3f,%.3f) end (%.3f,%.3f,%.3f)",
+            args.splineId, uint32(args.flags.falling), uint32(args.flags.cyclic), args.velocity, uint32(args.path.size()),
+            args.path.front().x, args.path.front().y, args.path.front().z,
+            args.path.back().x, args.path.back().y, args.path.back().z);
         spline.set_length(spline.last(), spline.isCyclic() ? 1000 : 1);
     }
     point_Idx = spline.first();
@@ -203,13 +234,24 @@ bool MoveSplineInitArgs::Validate(Unit* unit) const
     if (!(exp))\
     {\
         if (unit)\
-            TC_LOG_ERROR("misc", "MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUID().GetCounter() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
+            TC_LOG_ERROR("movement.spline", "MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUID().GetCounter() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
         else\
-            TC_LOG_ERROR("misc", "MoveSplineInitArgs::Validate: expression '%s' failed for cyclic spline continuation", #exp);\
+            TC_LOG_ERROR("movement.spline", "MoveSplineInitArgs::Validate: expression '%s' failed for cyclic spline continuation", #exp);\
         return false;\
     }
     CHECK(path.size() > 1);
-    CHECK(velocity > 0.00000023841858f);
+    bool verticalArc = VerticalArcDuration(*this) > 0;
+    if (unit && !MovementInputPolicy::IsUsableVelocity(velocity) && !verticalArc)
+    {
+        TC_LOG_ERROR("movement.spline", "Invalid spline velocity %.9g for GUID %u Entry %u: source %s explicit %u generator %u run %.9g walk %.9g swim %.9g flight %.9g movementFlags %u rooted/stunned %u slowAura %.9g",
+            velocity, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUID().GetCounter() : unit->ToCreature()->GetDBTableGUIDLow(),
+            unit->GetEntry(), velocitySource, uint32(HasVelocity), uint32(unit->GetMotionMaster()->GetCurrentMovementGeneratorType()),
+            unit->GetSpeed(MOVE_RUN), unit->GetSpeed(MOVE_WALK), unit->GetSpeed(MOVE_SWIM), unit->GetSpeed(MOVE_FLIGHT),
+            uint32(unit->GetUnitMovementFlags()), uint32(unit->HasUnitState(UNIT_STATE_ROOT | UNIT_STATE_STUNNED)),
+            unit->GetTotalAuraEffectValue(SPELL_AURA_MOD_DECREASE_SPEED));
+        return false;
+    }
+    CHECK(MovementInputPolicy::IsUsableVelocity(velocity) || verticalArc);
     CHECK(time_perc >= 0.f && time_perc <= 1.f);
     //CHECK(_checkPathBounds());
     return true;

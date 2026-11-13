@@ -1,0 +1,60 @@
+id,name,comparison,behavior
+1,Currency Token Test Token 4,client_asset_present,not_evaluated
+2,Currency Token Test Token 2,client_asset_present,not_evaluated
+4,Currency Token Test Token 5,client_asset_present,not_evaluated
+22,Birmingham Test Item 3,client_asset_present,not_evaluated
+42,Badge of Justice,client_asset_present,not_evaluated
+61,Dalaran Jewelcrafter's Token,client_asset_present,not_evaluated
+81,Epicurean's Award,client_asset_present,not_evaluated
+101,Emblem of Heroism,client_asset_present,not_evaluated
+102,Emblem of Valor,client_asset_present,not_evaluated
+103,Arena Points,client_asset_present,not_evaluated
+104,Honor Points DEPRECATED,client_asset_present,not_evaluated
+121,Alterac Valley Mark of Honor,client_asset_present,not_evaluated
+122,Arathi Basin Mark of Honor,client_asset_present,not_evaluated
+123,Eye of the Storm Mark of Honor,client_asset_present,not_evaluated
+124,Strand of the Ancients Mark of Honor,client_asset_present,not_evaluated
+125,Warsong Gulch Mark of Honor,client_asset_present,not_evaluated
+126,Wintergrasp Mark of Honor,client_asset_present,not_evaluated
+141,zzzOLDDaily Quest Faction Token,client_asset_present,not_evaluated
+161,Stone Keeper's Shard,client_asset_present,not_evaluated
+181,Honor Points DEPRECATED2,client_asset_present,not_evaluated
+201,Venture Coin,client_asset_present,not_evaluated
+221,Emblem of Conquest,client_asset_present,not_evaluated
+241,Champion's Seal,client_asset_present,not_evaluated
+301,Emblem of Triumph,client_asset_present,not_evaluated
+321,Isle of Conquest Mark of Honor,client_asset_present,not_evaluated
+341,Emblem of Frost,client_asset_present,not_evaluated
+361,Illustrious Jewelcrafter's Token,client_asset_present,not_evaluated
+384,Dwarf Archaeology Fragment,client_asset_present,not_evaluated
+385,Troll Archaeology Fragment,client_asset_present,not_evaluated
+390,Conquest Points,client_asset_present,not_evaluated
+391,Tol Barad Commendation,client_asset_present,not_evaluated
+392,Honor Points,client_asset_present,not_evaluated
+393,Fossil Archaeology Fragment,client_asset_present,not_evaluated
+394,Night Elf Archaeology Fragment,client_asset_present,not_evaluated
+395,Justice Points,client_asset_present,not_evaluated
+396,Valor Points,client_asset_present,not_evaluated
+397,Orc Archaeology Fragment,client_asset_present,not_evaluated
+398,Draenei Archaeology Fragment,client_asset_present,not_evaluated
+399,Vrykul Archaeology Fragment,client_asset_present,not_evaluated
+400,Nerubian Archaeology Fragment,client_asset_present,not_evaluated
+401,Tol'vir Archaeology Fragment,client_asset_present,not_evaluated
+402,Ironpaw Token,client_asset_present,not_evaluated
+416,Mark of the World Tree,client_asset_present,not_evaluated
+483,Conquest Arena Meta,client_asset_present,not_evaluated
+484,Conquest Rated BG Meta,client_asset_present,not_evaluated
+515,Darkmoon Prize Ticket,client_asset_present,not_evaluated
+614,Mote of Darkness,client_asset_present,not_evaluated
+615,Essence of Corrupted Deathwing,client_asset_present,not_evaluated
+676,Pandaren Archaeology Fragment,client_asset_present,not_evaluated
+677,Mogu Archaeology Fragment,client_asset_present,not_evaluated
+692,Conquest Random BG Meta,client_asset_present,not_evaluated
+697,Elder Charm of Good Fortune,client_asset_present,not_evaluated
+698,Zen Jewelcrafter's Token,client_asset_present,not_evaluated
+738,Lesser Charm of Good Fortune,client_asset_present,not_evaluated
+752,Mogu Rune of Fate,client_asset_present,not_evaluated
+754,Mantid Archaeology Fragment,client_asset_present,not_evaluated
+776,Warforged Seal,client_asset_present,not_evaluated
+777,Timeless Coin,client_asset_present,not_evaluated
+789,Bloody Coin,client_asset_present,not_evaluated

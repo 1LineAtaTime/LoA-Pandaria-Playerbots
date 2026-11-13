@@ -1,0 +1,117 @@
+{
+  "native_source": "068fac87ab2f146c1c831b78d5a3ea2678ec8409",
+  "previous_native_source": "b7a409b377d96e7ccc101d2b07d14420b1fbfc4b",
+  "auth_native_source": "b7a409b377d96e7ccc101d2b07d14420b1fbfc4b",
+  "generated_utc": "2026-11-08T21:08:44.494096+00:00",
+  "native_tests_passed": 22,
+  "python_tests_passed": 51,
+  "final_live_cases_passed": 20,
+  "final_cleanup_accounts": 20,
+  "earlier_live_cases_passed": 20,
+  "world_pid": 46584,
+  "auth_pid": 44944,
+  "sql_migrations": [],
+  "configuration_hashes_unchanged": {
+    "worldserver.conf": true,
+    "authserver.conf": true,
+    "playerbots.conf": true
+  },
+  "artifacts": [
+    {
+      "name": "worldserver.exe",
+      "bytes": 72806912,
+      "sha256": "7f7fed37537e8c9f6f54f296e03b7ecb1f1163321852e7ab764b67dbfaea6992"
+    },
+    {
+      "name": "worldserver.pdb",
+      "bytes": 704712704,
+      "sha256": "3072f51e821ecc65292477d937c3d457e1c07a0a27d7f5e9094106ccdff78400"
+    },
+    {
+      "name": "authserver.exe",
+      "bytes": 3310080,
+      "sha256": "b3b9b291c3490231752b41725aa9c8ec11ceede9b4c1fd15eca6153925de11bf"
+    },
+    {
+      "name": "authserver.pdb",
+      "bytes": 50696192,
+      "sha256": "707a331565d59c7807cc6c935aedcdd7ae35c0ec5071f0f376dcd4cb7caca95c"
+    }
+  ],
+  "gameplay_suites": {
+    "final-starter-qa": {
+      "report": "out/quest-repairs-20261108/final-starter-qa/qa-report.json",
+      "sha256": "eef0d94b0e6f1da71259ec2c7520d000b01bc07055b0d4ba47fabb4e36cc2ce3",
+      "gameplay": {
+        "blocked": 0,
+        "failed": 0,
+        "passed": 15,
+        "untested": 8
+      },
+      "data": {
+        "blocked": 0,
+        "failed": 3,
+        "passed": 7,
+        "untested": 0
+      },
+      "cleanup_verified": true
+    },
+    "final-invalid-requests": {
+      "report": "out/quest-repairs-20261108/final-invalid-requests/qa-report.json",
+      "sha256": "8f55a92d6cc04b94fc16e5cf428459129f4fff9ff009ef2cf7436aac40d9c9b0",
+      "gameplay": {
+        "blocked": 0,
+        "failed": 0,
+        "passed": 3,
+        "untested": 0
+      },
+      "data": {
+        "blocked": 0,
+        "failed": 3,
+        "passed": 7,
+        "untested": 0
+      },
+      "cleanup_verified": true
+    },
+    "final-gossip-qa": {
+      "report": "out/quest-repairs-20261108/final-gossip-qa/qa-report.json",
+      "sha256": "4c96d02614cd774f3d00b4873e99fd976c58741630fa92b9d6339debc1384555",
+      "gameplay": {
+        "blocked": 0,
+        "failed": 0,
+        "passed": 2,
+        "untested": 0
+      },
+      "data": {
+        "blocked": 0,
+        "failed": 3,
+        "passed": 7,
+        "untested": 0
+      },
+      "cleanup_verified": true
+    }
+  },
+  "spell_zero_diagnostics": {
+    "before": 2,
+    "after": 0,
+    "final_log_sha256": "a505118dfe4c64ade75d850bbcea10b7cd354d7b209561c46884c4bbda630b62"
+  },
+  "dependency_comparison": {
+    "regression_free": true,
+    "new_findings": [],
+    "absent_previous_findings": [],
+    "removed_quest_definitions": [],
+    "added_quest_definitions": [],
+    "gameplay_certified": false,
+    "note": "Absent findings may reflect a repair, binding deletion or log change; review before declaring resolved."
+  },
+  "remaining": {
+    "quest_structural_references": 10,
+    "quest_repair_groups": 246,
+    "missing_addon_aura": "creature_template_addon36805 -> spell58284",
+    "starter_capability_gaps": 8,
+    "direct_escort_death_and_waypoint_acceptance": "untested",
+    "aura_save_deadlock": "observed1213; lock-order/contention investigation pending"
+  },
+  "all_content_fixed": false
+}

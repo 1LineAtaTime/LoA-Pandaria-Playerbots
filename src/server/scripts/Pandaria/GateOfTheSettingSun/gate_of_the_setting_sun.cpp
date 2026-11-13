@@ -459,9 +459,14 @@ class npc_krikthik_bombarder : public CreatureScript
             {
                 if (bombTimer <= diff)
                 {
-                    if (Unit* stalker = pInstance->instance->GetCreature(pInstance->GetGuidData(DATA_RANDOM_BOMB_STALKER)))
-                        if (!stalker->HasAura(SPELL_BOMB_AURA))
-                            me->CastSpell(stalker, SPELL_BOMB_CAST_VISUAL, true);
+                    // A shared creature template can be loaded without its dungeon
+                    // controller (for example with an incomplete instance binding).
+                    // Use our map for GUID lookup and never dereference a missing
+                    // controller. The world-data binding is repaired separately.
+                    if (pInstance)
+                        if (Creature* stalker = me->GetMap()->GetCreature(pInstance->GetGuidData(DATA_RANDOM_BOMB_STALKER)))
+                            if (!stalker->HasAura(SPELL_BOMB_AURA))
+                                me->CastSpell(stalker, SPELL_BOMB_CAST_VISUAL, true);
 
                     bombTimer = urand(1000, 5000);
                 }

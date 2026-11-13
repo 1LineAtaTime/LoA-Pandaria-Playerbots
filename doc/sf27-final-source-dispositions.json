@@ -1,0 +1,778 @@
+{
+  "upstream_pin": "a69eda918b5bd416078fd8d832560d0fd4fb9023",
+  "published_world_sql_inputs": 111,
+  "deployed": true,
+  "scope": "Release26-to27 published world SQL plus subsequent updates through the pin; not an assertion of whole-tree equivalence or exhaustive gameplay.",
+  "sources": [
+    {
+      "file": "2026_08_17_world_00.sql",
+      "batches": [
+        "SQL41"
+      ],
+      "disposition": "Adapted in SQL41; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_17_world_01.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_17_world_02.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_17_world_03.sql",
+      "batches": [
+        "SQL49"
+      ],
+      "disposition": "Adapted in SQL49; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_17_world_04.sql",
+      "batches": [
+        "SQL47"
+      ],
+      "disposition": "Adapted in SQL47; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_17_world_05.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_17_world_06.sql",
+      "batches": [
+        "SQL49"
+      ],
+      "disposition": "Adapted in SQL49; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_18_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "SQL42 updates the active lfg_dungeon_template; unused legacy lfg_entrances mirror is not recreated."
+    },
+    {
+      "file": "2026_08_20_world_01.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_02.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_03.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_04.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_05.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "SQL42 keyed ooze loot/model changes preserve unrelated local rows instead of broad deletion."
+    },
+    {
+      "file": "2026_08_20_world_06.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_07.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_20_world_08.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_22_world_00.sql",
+      "batches": [],
+      "disposition": "Active quest_template.AllowableRaces already uses unsigned 32-bit storage; RequiredRaces is a legacy field."
+    },
+    {
+      "file": "2026_08_22_world_01.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_24_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_24_world_01.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_24_world_02.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_24_world_03.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_25_world_00.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_25_world_01.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_25_world_02.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_25_world_03.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_26_world_00.sql",
+      "batches": [],
+      "disposition": "SQL44 and the native hunter module own the canonical Stampede/Glaive Toss bindings."
+    },
+    {
+      "file": "2026_08_26_world_01.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_26_world_02.sql",
+      "batches": [
+        "SQL42",
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL42, SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_26_world_03.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_26_world_04.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "SQL42 provides pouch loot through keyed rows; unrelated custom loot retained."
+    },
+    {
+      "file": "2026_08_26_world_05.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_26_world_06.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "SQL42 provides Timberling loot/harvesting flags; unrelated loot retained."
+    },
+    {
+      "file": "2026_08_26_world_07.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_27_world_00.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_27_world_01.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_31_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_31_world_01.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_08_31_world_02.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_01_world_00.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_01_world_01.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_01_world_02.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_02_world_00.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_02_world_01.sql",
+      "batches": [
+        "SQL42",
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL42, SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_06_world_00.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_06_world_01.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_08_world_00.sql",
+      "batches": [],
+      "disposition": "Not applicable: published help requires an email-only account-creation signature. Preserve this fork's username-compatible authentication and matching command help."
+    },
+    {
+      "file": "2026_09_10_world_00.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_14_world_00.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_01.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_02.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_03.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_04.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_05.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_06.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_07.sql",
+      "batches": [
+        "SQL40"
+      ],
+      "disposition": "Adapted in SQL40; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_08.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_09.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_10.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_11.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_21_world_12.sql",
+      "batches": [],
+      "disposition": "SQL44 owns the current canonical Drain Life binding and native implementation."
+    },
+    {
+      "file": "2026_09_23_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_01.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_02.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_03.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_04.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_05.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_06.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_07.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_09_23_world_08.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_04_world_00.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "Adapted in SQL42; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_04_world_01.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "SQL42 adds canonical riding turn-in links without deleting unrelated links."
+    },
+    {
+      "file": "2026_10_04_world_02.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_04_world_03.sql",
+      "batches": [
+        "SQL42"
+      ],
+      "disposition": "SQL42 adds canonical missing turn-in links without deleting unrelated links."
+    },
+    {
+      "file": "2026_10_07_world_00.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_07_world_01.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_22_world_00.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_22_world_01.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_24_world_00.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_24_world_01.sql",
+      "batches": [
+        "SQL42",
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL42, SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_24_world_02.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_00.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_01.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_02.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_03.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_04.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_05.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_06.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_07.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_08.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_09.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_10.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_11.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_12.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_13.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_14.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_15.sql",
+      "batches": [],
+      "disposition": "Equivalent: this core learns starter spells through DBC skill/race/class/level gates, not the absent playercreateinfo_spell table; do not recreate that table."
+    },
+    {
+      "file": "2026_10_25_world_16.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_25_world_17.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_10_29_world_00.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_05_world_00.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_00.sql",
+      "batches": [
+        "SQL44"
+      ],
+      "disposition": "Adapted in SQL44; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_01.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_02.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_03.sql",
+      "batches": [
+        "SQL45"
+      ],
+      "disposition": "Adapted in SQL45; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_04.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_05.sql",
+      "batches": [
+        "SQL46"
+      ],
+      "disposition": "Adapted in SQL46; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_06.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    },
+    {
+      "file": "2026_11_06_world_07.sql",
+      "batches": [
+        "SQL48"
+      ],
+      "disposition": "Adapted in SQL48; custom unmentioned fields/identities retained."
+    }
+  ]
+}

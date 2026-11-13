@@ -604,9 +604,14 @@ void BattlePetMgr::SendBattlePetJournal()
         if (battlePet->GetDbState() == BATTLE_PET_DB_STATE_DELETE)
             continue;
 
-        CreatureTemplate const* creatureTemplate = sObjectMgr->GetCreatureTemplate(sBattlePetSpeciesStore.LookupEntry(battlePet->GetSpecies())->NpcId);
-        if (!creatureTemplate)
+        auto const* species = sBattlePetSpeciesStore.LookupEntry(battlePet->GetSpecies());
+        CreatureTemplate const* creatureTemplate = species ? sObjectMgr->GetCreatureTemplate(species->NpcId) : nullptr;
+        CreatureModel const* model = creatureTemplate ? creatureTemplate->GetFirstValidModel() : nullptr;
+        if (!model)
+        {
+            TC_LOG_ERROR("sql.sql", "Battle pet journal: species %u has no valid creature model; entry skipped", battlePet->GetSpecies());
             continue;
+        }
 
         ObjectGuid petEntry = battlePet->GetId();
 
@@ -643,7 +648,7 @@ void BattlePetMgr::SendBattlePetJournal()
             journalData << uint16(battlePet->GetFlags());
 
         journalData << uint32(creatureTemplate->Entry);
-        journalData << uint32(creatureTemplate->GetModelByIdx(0)->CreatureDisplayID);
+        journalData << uint32(model->CreatureDisplayID);
         journalData << uint32(battlePet->GetSpeed());
         journalData.WriteString(battlePet->GetNickname());
         journalData.WriteByteSeq(petEntry[6]);
@@ -742,9 +747,14 @@ void BattlePetMgr::SendBattlePetUpdate(BattlePet* battlePet, bool notification)
 {
     ObjectGuid petEntry = battlePet->GetId();
 
-    CreatureTemplate const* creatureTemplate = sObjectMgr->GetCreatureTemplate(sBattlePetSpeciesStore.LookupEntry(battlePet->GetSpecies())->NpcId);
-    if (!creatureTemplate)
+    auto const* species = sBattlePetSpeciesStore.LookupEntry(battlePet->GetSpecies());
+    CreatureTemplate const* creatureTemplate = species ? sObjectMgr->GetCreatureTemplate(species->NpcId) : nullptr;
+    CreatureModel const* model = creatureTemplate ? creatureTemplate->GetFirstValidModel() : nullptr;
+    if (!model)
+    {
+        TC_LOG_ERROR("sql.sql", "Battle pet update: species %u has no valid creature model; entry skipped", battlePet->GetSpecies());
         return;
+    }
 
     WorldPacket data(SMSG_BATTLE_PET_UPDATE, 4 + 1 + 8 + battlePet->GetNickname().size() + 4 + 4 + 4 + 4 + 2 + 4 + 4 + 1 + 2 + 2 + 4 + 2);
     data.WriteBits(1, 19);
@@ -793,7 +803,7 @@ void BattlePetMgr::SendBattlePetUpdate(BattlePet* battlePet, bool notification)
         data << uint16(battlePet->GetFlags());
 
     data.WriteByteSeq(petEntry[5]);
-    data << uint32(creatureTemplate->GetModelByIdx(0)->CreatureDisplayID);
+    data << uint32(model->CreatureDisplayID);
     data << uint16(battlePet->GetLevel());
 
     m_owner->GetSession()->SendPacket(&data);

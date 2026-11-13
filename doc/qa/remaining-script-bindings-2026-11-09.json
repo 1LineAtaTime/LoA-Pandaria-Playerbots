@@ -1,0 +1,4293 @@
+{
+  "source_error_log_sha256": "49a69af309f29c55f373472ec08d1f77fc0951d359db26671016ca8193121059",
+  "scope": "Only missing-name errors in the supplied log; not all broken content or all historical patches",
+  "missing_name_count": 844,
+  "categories": {
+    "AreaTrigger": 6,
+    "ConfessionGlyph": 1,
+    "FastArenaCrystal": 1,
+    "achievement": 2,
+    "at": 7,
+    "boss": 36,
+    "generic": 1,
+    "gerenic": 1,
+    "go": 18,
+    "gob": 20,
+    "high": 1,
+    "item": 3,
+    "mob": 4,
+    "npc": 475,
+    "npcs": 1,
+    "nurong": 1,
+    "pyrewood": 1,
+    "sat": 2,
+    "shang": 1,
+    "spell": 259,
+    "vehicle": 2,
+    "xaril": 1
+  },
+  "definition_text_is_not_registration_proof": true,
+  "full_gameplay_certified": false,
+  "missing": [
+    {
+      "name": "AreaTrigger_amber_hibernal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "AreaTrigger_at_catacombs",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "AreaTrigger_at_catacombs_entrance",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "AreaTrigger_at_ghastly_confines",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "AreaTrigger_at_ghastly_ending",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "AreaTrigger_at_morrowchamber_one",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "ConfessionGlyph",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "FastArenaCrystal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "achievement_on_the_rocks",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "achievement_shatter_resistant",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_alizabal_intro",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_eye_of_eternity_improvised_floor",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_hor_intro_start",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_madrigosa",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_svala_intro",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_twiggy_flathead",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "at_twilight_grove",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_arcanist_doan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_arlokk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_azshir_the_sleepless",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_bloodmage_thalnos",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_boss_ras_frostwhisper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_darkmaster_gandling",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_death_knight_darkreaver",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_doctor_theolen_krastinov",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_fenstalker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_gahzranka",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_hakkar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_herod",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_houndmaster_loksey",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_illucia_barov",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_instructor_malicia",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_interrogator_vishas",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_jeklik",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_jindo",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_kirtonos_the_herald",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_koragg",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_kormok",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_lord_alexei_barov",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_lord_raadan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_lorekeeper_polkelt",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_marli",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_mr_smite",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_protectors_of_the_endless",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_scarlet_commander_mograine",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_scorn",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_the_ravenian",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_thekal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_thurg",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_trial_of_king",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_tuten_kash",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_twilight_corrupter",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "boss_vectus",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "generic_vehicleAI_toc5",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gerenic_creature",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_abandoned_mole_machine",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_atalai_statue",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_brazier_of_the_herald",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_crystalline_tear",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Kalimdor/zone_silithus.cpp",
+          "line": 1110
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_door_lever_dm",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_dungeon_archaeology_quest",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_empty_keg_cleaning_house",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_enormous_landslide",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_gong_of_bethekk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_iruxos",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_kael_orb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_loosely_turned_soil",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_mausoleum_door",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_mausoleum_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_mole_machine_console",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_movie_orb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_panther_cage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "go_rattlegore_iron_door",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_abandoned_wreckage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_amber_chunk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_ancient_amber_chunk_womb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_dakdaks_altar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_dyn_gobelin",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_goblin_escape_pod",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_grummle_package",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_improvised_rod",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_jade_mines_rubble",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_jun_lien_fishing_rack",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_kokos_altar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_restorative_body",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_restorative_heart",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_restorative_mind",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_restorative_spirit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_shrine_of_seekers_body",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_shrine_of_seekers_breath",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_shrine_of_seekers_heart",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_sonar_tower",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "gob_taktaks_altar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "high_priestess_azil_gravity_well_script",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "item_brewfest_ChugAndChuck",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "item_brewfest_ram_reins",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "item_isengard_bonus_reward",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "mob_lurking_tiger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "mob_pandriarch_bramblestaff",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "mob_pandriarch_goldendraft",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "mob_pandriarch_windfur",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_adjunct_zetuk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_afd_royale_controller",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_afd_royale_ring",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_alliance_horde_trainee",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_amber_beam_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_amber_chunk_mistblade",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_amber_lost_in_the_woods",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_an_windfur",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_an_windfur_follow",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_anachronos_quest_trigger",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Kalimdor/zone_silithus.cpp",
+          "line": 949
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_anachronos_the_ancient",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Kalimdor/zone_silithus.cpp",
+          "line": 508
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ancestral_wolf",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Outland/zone_hellfire_peninsula.cpp",
+          "line": 143
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ancient_guardian",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_andorhal_tower",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_april_fools_admin_menu",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_aran_blizzard",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_arcanic_oubliette",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_arenamaster",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_arugal_voidwalker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_attacking_hozen",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_bambo",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_barrow_bush",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_bartleby",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_batrider",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_battlesworn_paratrooper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_belnistrasz",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_blasting_barrel",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_blaze",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_bluesaddle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_bold_karasshi",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_boot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_brann_bronzebeard_keystone",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_brewfest_apple_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_brewfest_ram_master",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_brewfest_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_brewgarden_defender",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_broggok_poison_cloud",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_brother_yakshoe_dooker_dome",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_burning_blade_raider_34594",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_burning_cupboard",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_cairne_bloodhoof",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_calvin_montague",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_candy_cane",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_captain_doren",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_captain_doren_thunder_hold",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_captain_ripflesh",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_captain_soggy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_captain_soggy_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_captured_yak",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_caravan_moving",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_cart_controller",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_cart_tender",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_cave_in_stalker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chains_of_woe",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chauve_souris_capture",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_cheer_yimo_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_broken_dreams",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_evie_grave",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_evie_grave_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_great_minds_drink_alike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_resolution",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_stormstout_brewgarden",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_stormstout_cleaning_house",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_stormstout_morrowchamber",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_stormstout_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_chen_stormstout_votfw",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_clintar_spirit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_commander_belmont_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_commander_eligor_dawnbringer",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_commander_lorna_crowley",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_crazed_colossus",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_creature_generator_akama",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_crystal_spike_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dark_blaze",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dark_iron_guzzler",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_darkhatcher_skulker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_deckhand_conversation",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_demon_fire",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dmongs_torch",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dog_soggys_gamble",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dragon_launcher",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dread_lurker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_dual_spec",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_eastern_smoke_trail",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_eddy_cleaning_house",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_eddy_water_bubbles",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_elder_hou_revelations",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_elder_sage_wind_yi",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_elder_shiao",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ellie_honeypaw",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ellie_honeypaw_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_explosion_volcano",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_fieldwatcher_mao",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_fizzy_yellow_spirit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_flame_crash",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_flanking_mogul",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_flarecore_golem",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_forsaken_catapult",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_forsaken_vanguard",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_friend_gob",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gai_lan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gao_ran_cannoneer",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gatrul_garrosh_ar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gatrul_gatruls_fall",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_general_nazgrim_jadeforest_ship",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_general_nazgrim_thunder_hold",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_general_nazim_Ship",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_generic_harpoon_cannon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gi_oh",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gilnean_militia",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gilneas_liberation_front",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gizmo",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gnoll_decoy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gorai_cleansing_mere",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gorai_the_ritual",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gorrok_hostile_natives",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_great_bear_spirit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_grookin_whomper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_grummle_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_gunship_fire_bunny",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_han_stormstout",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_han_stormstout_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_harpoon_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_harpoon_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_harrison_jones",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_hawkmaster_nurong_farwatch",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_head_caravan_kodo_34577",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_healing_ward",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_hemet_parental_mastery",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_hidden_master_summons",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_high_elder_cloudfall",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_high_elder_cloudfall_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_hiveling_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_homunculus",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_hozen_gutripper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_hozen_mudflinger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_idol_room_spawner",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_image_archmage_xylem",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_imp_in_a_ball",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_init_balloon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_initial_chief_rikkitu",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_initial_zinjun",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_injured_gao_ran_blackguard",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_instructor_xann",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_invis_legion_teleporter",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_isengard_daily_quests",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_iyyokuk_the_lucid",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_iyyokuk_the_lucid_klaxxivess",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_jahesh_of_osul",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ji_firepaw_cinematic",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_jiao_leviathan_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_jikun_teleport",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_jilu_cart",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_jin_warmkeg",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_jinyu_attacker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kai_lin_honeydew_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kanati_greycloud",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kao_zouchin_village",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_karoz_the_locust_klaxxivess",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kaztik_end_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kaztik_flying_away",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kaztik_klaxxivess",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kaztik_the_manipulator_questgiver",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kaztik_the_manipulator_reunited",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_keg_bomb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kilruk_amber_is_life",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kilruk_angel_of_death",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kilrum_wind_reaver_dread_clutch",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kilrum_wind_reaver_flight",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kilrum_wind_reaver_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_king_genn_greymane_c2",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_king_jokkum_vehicle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kiryn_friend_of_my_enemy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kiryn_grookyn_hill",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kiryn_hostile_natives",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kiryn_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kiryn_on_the_right_track",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kiryn_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_klaxxi_va_lk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_korkron_dubs_thunder_hold",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_korkron_elite_thunder_hold",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_koro_mistwalker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_koro_unsafe_passage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_korthik_battlesinger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_korven_klaxxivess",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_korven_the_prime_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kota_kon_gossip",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kota_kon_phased",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_kota_kon_vehicle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_krennan_aranas_c2",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_krikthik_deep_scout",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_krikthik_glider",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lady_fung",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lady_katrana_prestor",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lao_chin_bridge_escort",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lao_chin_bridge_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lao_chin_dusklight_bridge",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lao_chin_iron_belly_winters_blossom",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lao_wall",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lava_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_leveladjusments",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_leviathan_weak_point",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_li_li",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_li_li_day_off",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lianne_gobelin",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lifelike_jade_statue",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lili_cleaning_house",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lili_great_minds_drink_alike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lili_voftw",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lo_wanderbrew",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_loon_mai",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lord_darius_crowley_gilneas",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lorewalker_cho_29822",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lorewalker_cho_zouchin_village",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lorna_crowley_duskhaven",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lorna_crowley_vehicle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lucky_eightcoins",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_lya_ten_songs_brewgarden",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_malik_klaxxivess",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_malik_klaxxivess_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mandokir_ohgan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mantid_bunny_amber_womb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mariam_spellwalker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_marksman_lann",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_marksmann_lann_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_angler_ju_lien",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_angler_ju_lien_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_cheng_female_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_cheng_female_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_cheng_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_cheng_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_cheng_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_hight_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_hight_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_hsu_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_hsu_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_kistane_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_kistane_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_shang_xi_grave",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_shang_xi_grave_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_tsang_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_tsang_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_woo_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_woo_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_yoon_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_master_yoon_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mature_flame_hound",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mayor_honeydew",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_merchant_shi",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mh_aronus",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mindless_skeleton",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mishi_seal_is_broken",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mishi_summoner",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mist_hopper_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mistblade_ripper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_misthopper_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mok_mok",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mok_mok_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_motherseed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mountain_yak",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mountaineer_pebblebitty",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mudmug_cleaning_house",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mudmug_great_minds_drink_alike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mudmug_water_hunt",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_muskpaw_jr",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_myranda_the_hag",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_mysterious_voice",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nakkrakas",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_naladu",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nasty_weed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nazgrim_summoned_doren",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nephew_burrbery",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nephew_burrbery_phased",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nether_vapor",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_northwest_smoke_trail",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_norvakess_battlefront",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nurong_cannon_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nurong_cannon_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nurong_endevent",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nurong_fighting_voress",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_nurong_summoned_shado_pan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ogo_the_elder",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ogo_the_younger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_omega_stance",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_oracle_hissir",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_orbiss",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_orbiss_mists_opportunity",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_orbiss_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ordo_raider",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_oscillating_frequency_scanner_master_bunny",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pandaren_prisoner",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_paragon_chat_controller",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pathstalker_unsafe_passage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pei_zhi",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pei_zhi_bridge_earth_and_sky",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pet_guy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_phaseswift",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pool_of_corruption",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_premium",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_premium_class_trainer",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_premium_professions",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_premium_vendor",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pri_divine_star",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_profession_skills",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_pulsing_pumpkin",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_qiraj_war_spawn",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Kalimdor/zone_silithus.cpp",
+          "line": 836
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_quintessence_of_despair",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ragged_john",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rampaging_worgen",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_reckful_tribute",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rell_garrosh_ar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rell_lost_in_the_woods",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rell_pearlfin_village",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_riding_bat",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rikkal_the_dissector_questgiver",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rikkitun_chanter",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rikktal_the_dissector_wakens",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_riko_friend_of_my_enemy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_riko_grookyn_hill",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_riko_hostile_natives",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_riko_on_the_right_track",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rivett_boom_bait",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rivett_boom_goes_doonamite",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rivett_cluchpop_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rivett_clutchpop_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_rocco_whipshank_34578",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_runeforging",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ruthers",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sage_liao_zouchin_province",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sapmaster_vu",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sapmaster_vu_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scared_pandaren_cub",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scarlet_trainee",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scourge_hulk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_jai_gan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_jai_gan_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_long",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_long_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_wei_chen",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_wei_chen_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_ying",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_scout_ying_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_searing_gaze",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_seething_hatred_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sergeant_cleese",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sergeant_gorrok_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sergeant_gorrok_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sha_of_hatred",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sha_portal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shade_of_jindo",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shado_master_chong",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shado_pan_caravan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shadowfang_prisoner",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shao_the_defiant",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shin_whispercloud",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ship_explosion_1",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ship_explosion_2",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shokia_grookyn_hill",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shokia_hostile_natives",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shokia_initial",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shokia_on_the_right_track",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shokia_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shomi",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shomi_enemies_at_our_door",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shomi_zouchin_village",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_shomi_zouchin_village_escort",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_silken_farm_exploration_credit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ska_shooting_device",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_skeer_the_bloodseeker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sky_admiral_rogers",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sliver",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_socks",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_solo_queue",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_southern_smoke_trail",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_spawn_of_marli",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_spectator",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_spike_trap",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_spring_drifter",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_steam_bunny",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sully_fire_from_the_sky",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sully_pearlfin_village",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_chen_brewgarden",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_chen_horrid_march",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_gyrocopter_strongarm",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_gyrocopter_strongarm_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_lya_ten_songs",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_rikkitu_chief",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_swamer",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_tai_ho_shado_pan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_summoned_zinjun",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_suna_camp_osul",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_suspicious_rock",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_swift_mountain_horse",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_sya_zhong",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tai_ho_shado_pan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taiho_incursion",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_battlefront",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_battlefront_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_bridge_transition",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_gao_end_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_gao_ran",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_spyglass",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_spyglass_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taoshi_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_fighting_sha",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_gao_end_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_joining_the_hunt",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_pawdon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_summoned_doren",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_bridge_end_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_gao_ran",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_longying",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_rensai",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_sikvess_questgiver",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_sikvess_start",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_taran_zhu_thunder_hold",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_thalnos_fallen_crusader",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_thalnos_spirits",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_the_masters_flame",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_the_scourge_cauldron",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_thieving_plainshawk",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_thunder_hold_munitions",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tian_instructor",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tiny_weed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_toothrow_skulker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_torturer_leCraft",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_totem_of_harmony",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_totem_of_kindness",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_totem_of_serenity",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_totem_of_tranquility",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tracy_proudwell",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_trainee_stifled_pride",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_training_bag",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tribunal_of_ages",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_trollbane",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tushui_monk_guard",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_tvs_black_prince",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ugly_weed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_vigilant_watchman",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_vilebranch_speaker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_voljin_zulaman",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_voress_summoned",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_water_village_exploration_credit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_waterbite_creeper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_waterfall_exploration_credit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_western_smoke_trail",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_whisperclouds_balloon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_whisperclouds_baloon_up",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_whitefeather_crane",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_widow_greenpaw_hostile_natives",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_widow_greenpaw_jade_witch",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_wild_plains_yak",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_wisp_invis",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_worgen_rebel",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_worgen_warrior",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_xiao_tu",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_xiao_tu_hatreds_vice",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_xiao_voftw",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_ya_firebough",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_yalia_sagewhisper",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_yalia_sagewhisper_totem_event",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_yauj_brood",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_yi_mo_lonbow_despair",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_young_alliance_soldier",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zandalari_prisoner",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zanthik_impaler",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zealot_lorkhan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zealot_zath",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zouchin_village_amani_behemoth",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zouchin_village_amani_berserker",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zouchin_village_zouchin_defender",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zouchin_villager_conversation",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zulaman_hostage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npc_zulian_prowler",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "npcs_dithers_and_arbington",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "nurong_to_shao_pan",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "pyrewood_ambush",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "sat_drain_barell",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "sat_drain_barrel",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "shang_xi_air_balloon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_ahn_kahet_swarm",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_angel_of_death",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anhuur_activate_beacons",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anhuur_disable_beacon_beams",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anhuur_divine_reckoning",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anhuur_shield_of_light",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anraphet_alpha_beams",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anraphet_omega_stance_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_anshal_nurture_summon_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_assembly_rune_of_summoning",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_bag_aura",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_banging_the_gong",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_bank_67495",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_bank_67496",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_bank_67497",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_bank_67498",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_bank_67499",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_barrel_periodic",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_blood_queen_essence_of_the_blood_queen",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_boot_gob",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_brewfest_speed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_broggok_poison_cloud",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_carbonation_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_crackling_jade_lightning",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_crossfaction_bg_set_faction_a",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_crossfaction_bg_set_faction_h",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_crystal_spike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_cultist_dark_martyrdom",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_cultist_dark_martyrdrom",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_curse_of_the_worgen_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_devourer_of_souls_mirrored_soul",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_devourer_of_souls_mirrored_soul_proc",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_devourer_of_souls_mirrored_soul_target_selector",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dk_improved_blood_presence",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dk_unholy_presence",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_enrage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_glyph_of_one_with_nature",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_glyph_of_starfire_proc",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_insect_swarm",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_mark_of_the_wild_stats",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_natures_cure",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_one_with_nature",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_rip",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_soul_of_the_forest_eclipse",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_typhoon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_ursols_vortex",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_ursols_vortex_snare",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_dru_wild_charge_feral",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_earthrager_ptah_explosion",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_earthrager_ptah_flame_bolt",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_elder_nadox_guardian",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_enduring_elixir_of_wisdom",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_ex_49375",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_ex_absorb_aura",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Examples/example_spell.cpp",
+          "line": 363
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_fixate",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_flying_kick",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_focus_light_bar",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_frost_tomb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_garajal_lifes_thread_periodic",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_garajal_spiritual_innervation_special",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gathered_storms_trigger_cast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_dark_iron_dwarf_spawn",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_dark_iron_knockback_test",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_demon_hunters_aspect",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_eject_all_passengers",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_eject_passenger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_gm_freeze",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_ribbon_pole_dancer_check",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_singing_sunflower",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gen_throw_shield",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_genancient_knowledge",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_general_vezax_mark_of_the_faceless",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_general_vezax_mark_of_the_faceless_leech",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_general_vezax_saronite_vapors",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_glyph_of_deaths_embrace",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_gordunni_trap",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_grobbulus_mutating_injection",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_grobbulus_poison_cloud",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hor_evasion",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hor_start_halls_of_reflection_quest_ae",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hozen_snack",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hun_blink_strike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hun_rapid_fire",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hun_readiness",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_hun_viper_attack_speed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_below_zero",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_burning_pitch_selector",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_cannon_blast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_check_for_players",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_gunship_fall_teleport",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_on_gunship_deck",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_overheat",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_periodic_trigger_with_power_cost",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_rocket_artillery_explosion",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_rocket_pack",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_rocket_pack_useable",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_teleport_players_on_victory",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_igb_teleport_to_enemy_ship",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_ingvar_summon_banshee",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_ingvar_woe_strike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_item_bad_juju",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_item_stay_of_execution",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Spells/spell_item.cpp",
+          "line": 2472
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_jade_forest_chos_firework",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_jokkum_scriptcast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_kobai_possessed_by_rage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_koegler_fireball_valley",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_kormok_summon_bone_mages",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_kormok_summon_bone_minions",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_leap_smash",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_light_of_blades",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_load_into_catapult",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_loken_pulsing_shockwave",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_lord_victor_nefarius_shadow_infusion",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_arcane_brilliance_stats",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_cone_of_cold",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_dalaran_brilliance",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_frost_bomb_cooldown_reduction",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_glyph_of_fire_blast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_ice_barrier",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_ice_ward",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_ignite_dot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_invocation",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mage_replenish_mana",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mandokir_devastating_slam_damage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_marwyn_shared_suffering",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mastery_icicles",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mh_ragnaros",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_bomb_bot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_clear_fires",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_despawn_assault_bots",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_fire_search",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_flame_suppressant",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_magnetic_core",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_napalm_shell",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_p3wx2_laser_barrage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_plasma_blast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_proximity_explosion",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_proximity_mines",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_proximity_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_rapid_burst",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_rocket_strike",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_rocket_strike_damage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_rocket_strike_target_select",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_self_repair",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_spinning_up",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_assault_bot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_assault_bot_target",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_fire_bot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_fire_bot_target",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_flames_spread",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_frost_bomb_target",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_junk_bot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_summon_junk_bot_target",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mimiron_weld",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mindless_abomination_explosion_fx_master",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mogu_tears",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_monk_glyph_of_mana_tea",
+      "definition_text": [
+        {
+          "file": "src/server/scripts/Spells/spell_monk_sf27.cpp",
+          "line": 2401
+        }
+      ],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_monk_mana_tea_stacks",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_monk_teachings_of_the_monastery",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_mount_caravan_kodo_cue_part2_65669",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_occuthar_eyes_of_occuthar_vehicle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_occuthar_focused_fire",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_occuthar_occuthars_destruction",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_oscillating_field",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_blessing_of_kings",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_blessing_of_might",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_cleanse",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_consecration_area",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_glyph_of_holy_light",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_glyph_of_the_luminous_charger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_holy_shock_damage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_holy_shock_heal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_lights_hammer_heal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_seal_of_truth",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pal_unbreakable_spirit",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pandaria_enchants",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_paralyze_pinnacle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_perfection_action",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pool_of_feed_dmg_aura",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pri_divine_hymn",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pri_hymn_of_hope",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pri_leap_of_faith_effect_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pri_mana_burn",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pri_power_word_fortitude_stats",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_pri_reflective_shield_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_prince_taldaram_conjure_flame_sphere",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_prince_taldaram_flame_sphere_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_promo_loot",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_putricide_ooze_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_quest29523_summon_living_air",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_razelikh_teleport_group",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_reanimate_imperial_guard",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_reversal_eff",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_rimefang_icy_blast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_rogue_rapture",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_romoogg_call_for_help",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_romoogg_chains_of_woe_tele",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_romoogg_quake",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_rotface_slime_spray",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_round_up_horse",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sha_earthbind_totem",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sha_healing_rain_heal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sha_item_t10_elemental_2p_bonus",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sha_solar_beam",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sha_spirit_bite",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sha_spirit_wolf_leap",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_shadow_pan_flare",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_shadow_portal",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_shadow_portal_rooms",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_shadowfang_keep_haunting_spirits",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_shango_tracks",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_shredder_delivery",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sindragosa_frost_breath",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sindragosa_ice_tomb_dummy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_sonic_divebomb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_soo_shockwave_circle",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_spiced_punch",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_spirit_targeting",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_spring_drifter_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_summon_hozen",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_supply_barrage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_talon_king_ikiss_blink",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_terrastra_grounded",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_thalnos_evict_soul_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_thalnos_spirit_gale",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_thalnos_spirit_visual",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_tharon_ja_clear_gift_of_tharon_ja",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_the_lich_king_dark_hunger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_threatening_gaze",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_trollgore_consume",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_trollgore_corpse_explode",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_tyrannus_rimefang_icy_blast",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_uk_second_wind_proc",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_ulduar_proximity_mines",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_veranus_summon",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_war_heroic_throw",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_bane_of_doom",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_demon_soul",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_glyph_of_nightmares",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_glyph_of_shadowflame",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_harvest_life",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_rain_of_fire_damage",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_shadow_ward",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_soul_link_dummy",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_soulburn_health_funnel",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warl_soulburn_remove",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_bloodbath_bleed",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_glyph_of_gag_order",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_glyph_of_incite",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_glyph_of_sunder_armor",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_impaling_throws",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_second_wind_trigger",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_shields_visual",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_shouts",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_slam",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_warr_weaponmaster",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_water_auras",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_water_bubble_knockback",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "spell_windsoul_totem_aura",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "vehicle_burning_blade_mount_34593",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "vehicle_hotseat_34582",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    },
+    {
+      "name": "xaril_the_poisoned_mind_womb",
+      "definition_text": [],
+      "status": "REQUIRES_SEMANTIC_RECONCILIATION"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# Local disposable test process only. Replace both paths before starting mysqld.
+# This file is not read by an installed Windows service.
+[mysqld]
+basedir="C:/path/to/mysql-5.5.62-winx64"
+datadir="C:/path/to/mysql-5.5.62-winx64/data"
+bind-address=127.0.0.1
+port=33555
+skip-name-resolve
+innodb_file_format=Barracuda
+innodb_file_per_table=1
+innodb_large_prefix=1
+character-set-server=utf8mb4
+collation-server=utf8mb4_bin

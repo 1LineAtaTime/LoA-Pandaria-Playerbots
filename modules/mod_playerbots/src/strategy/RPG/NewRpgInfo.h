@@ -42,6 +42,9 @@ struct NewRpgInfo
     {
         ObjectGuid npcOrGo{};
         uint32 lastReach{0};
+        ObjectGuid previousNpc{};
+        uint32 selectedAt{0};
+        uint32 pauseMs{8000};
     };
     // RPG_WANDER_RANDOM
     struct WanderRandom

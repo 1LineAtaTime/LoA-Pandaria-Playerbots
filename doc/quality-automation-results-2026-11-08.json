@@ -1,0 +1,69 @@
+{
+  "automation_source": "f2688160ce",
+  "native_runtime_unchanged": "068fac87ab2f146c1c831b78d5a3ea2678ec8409",
+  "pipeline_status": "failed",
+  "regression_free": false,
+  "content_ready": false,
+  "python_tests_passed": 92,
+  "native_tests_passed": 22,
+  "live_suites": {
+    "starter": {
+      "counts": {
+        "blocked": 0,
+        "failed": 0,
+        "passed": 15,
+        "untested": 8
+      },
+      "sha256": "c88e0b500f69427ba8fc9b605cea4b5b0636435cd6b4e98f8abf4b9082af11ac",
+      "cleanup_verified": true
+    },
+    "invalid_requests": {
+      "counts": {
+        "blocked": 0,
+        "failed": 0,
+        "passed": 3,
+        "untested": 0
+      },
+      "sha256": "cac58537a337176ae34e717461427fd689f53225bc1004b81b73bc51431f2456",
+      "cleanup_verified": true
+    },
+    "gossip": {
+      "counts": {
+        "blocked": 0,
+        "failed": 0,
+        "passed": 2,
+        "untested": 0
+      },
+      "sha256": "b6687f5f7b7db07dc0fe80a92ea885016b5bfeaae0346cdf96c55d9ac3c5670b",
+      "cleanup_verified": true
+    },
+    "workflows": {
+      "counts": {
+        "blocked": 0,
+        "failed": 1,
+        "passed": 2,
+        "untested": 0
+      },
+      "sha256": "e26673b33db03244b912c2d60dbe05aaec5c5f878b08b014a30918009af1b00f",
+      "cleanup_verified": true
+    }
+  },
+  "temporary_accounts_cleaned": 23,
+  "checkpoint_artifacts": 20,
+  "scoped_backups": [
+    {
+      "table": "quest_template",
+      "rows": 2
+    },
+    {
+      "table": "quest_template_addon",
+      "rows": 2
+    }
+  ],
+  "rollback_fixture_verified": true,
+  "account_recovery_fixture_verified": true,
+  "new_diagnostic_signatures": 0,
+  "unresolved": "Human combat workflow earned five of six required credits within its 180-second budget; no clean full-run signoff.",
+  "full_run_seconds": 452.582582,
+  "run_report_sha256": "f3b418261b22706b45ebee9de05370f613f4ab071cb06267c7e3f4e129e5f309"
+}

@@ -74,7 +74,11 @@ typedef std::unordered_map<uint32, EquipmentInfoContainerInternal> EquipmentInfo
 // from `creature` table
 struct CreatureData
 {
-    CreatureData() : dbData(true) { }
+    CreatureData() : spawnId(0), id(0), mapId(0), phaseMask(1), phaseid(0), phaseGroup(0),
+        displayid(0), equipmentId(0), posX(0), posY(0), posZ(0), orientation(0),
+        spawntimesecs(0), spawntimesecs_max(0), wander_distance(0), currentwaypoint(0),
+        curhealth(0), curmana(0), movementType(0), spawnMask(1), npcflag(0), npcflag2(0),
+        unit_flags(0), unit_flags2(0), dynamicflags(0), ScriptId(0), WalkMode(0), dbData(true) { }
     ObjectGuid::LowType spawnId;
     uint32 id;                                              // entry in creature_template
     uint16 mapId;

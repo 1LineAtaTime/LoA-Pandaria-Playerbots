@@ -655,6 +655,8 @@ public:
         ticket->SaveToDB(trans);
 
         sTicketMgr->UpdateLastChange();
+        // Published localized completion acknowledgement; ID2030 is supplied by SQL45.
+        handler->PSendSysMessage(2030, ticketId);
         return true;
     }
 

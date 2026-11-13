@@ -12,6 +12,8 @@ set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   Pet/pet_generic.cpp
   Pet/pet_priest.cpp
+  Pet/pet_mage_sf27.cpp
+  Pet/pet_priest_sf27.cpp
 )
 
 message("  -> Prepared: Pet")

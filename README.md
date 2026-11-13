@@ -1,3 +1,9 @@
+## Windows test environment
+
+Use **Start-Server.cmd** for one auth/world pair, and **Run-QA.cmd** for tests and
+saved reports on that same pair. No observer or extra client is required.
+See [the current workflow](doc/qa/unattended-gameplay-qa.md).
+
 **Mists of Pandaria 5.4.8 (build 18414) with playerbots**
 
 A Mists of Pandaria 5.4.8 server core with a full playerbots module: a world populated by

@@ -1,0 +1,4 @@
+[
+  {"database": "World", "table": "quest_template", "key": "ID", "ids": [24959, 25152]},
+  {"database": "World", "table": "quest_template_addon", "key": "ID", "ids": [24959, 25152]}
+]

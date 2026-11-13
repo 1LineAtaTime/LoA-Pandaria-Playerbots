@@ -1,0 +1,4 @@
+add_executable(battlepay_accounting_tests battlepay_accounting_tests.cpp)
+target_compile_features(battlepay_accounting_tests PRIVATE cxx_std_17)
+target_include_directories(battlepay_accounting_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/server/game/BattlePay")
+add_test(NAME battlepay_accounting_tests COMMAND battlepay_accounting_tests)

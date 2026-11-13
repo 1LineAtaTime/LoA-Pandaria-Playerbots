@@ -128,8 +128,10 @@ class at_barrow_den_door : public AreaTriggerScript
         }
 };
 
+void AddSC_sf27_teldrassil();
 void AddSC_teldrassil()
 {
     new npc_mist();
     new at_barrow_den_door();
+    AddSC_sf27_teldrassil();
 }

@@ -1,0 +1,23 @@
+{
+  "module": "mastery",
+  "local_baseline": "9c32347f1",
+  "upstream": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "source_sha256": "53389b1f47b121da5ac3ae71a3f35d99fcdc99f3785926e8a325584c00eaefc6",
+  "upstream_names": [
+    "spell_mastery_blood_shield",
+    "spell_mastery_combo_breaker",
+    "spell_mastery_elemental_overload",
+    "spell_mastery_hand_of_light",
+    "spell_mastery_ignite",
+    "spell_mastery_shield_discipline",
+    "spell_mastery_unshackled_fury"
+  ],
+  "unregistered_legacy_classes_omitted": [],
+  "local_overridden": [],
+  "local_only_retained": [],
+  "api_adaptations": [
+    "Skyfire namespace to Trinity",
+    "override keyword",
+    "float aura amount callbacks"
+  ]
+}

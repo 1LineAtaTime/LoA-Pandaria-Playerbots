@@ -1,0 +1,94 @@
+{
+  "date": "2026-11-09",
+  "worldserver_sha256": "695731e6b9a4f3fa3a91b861440a6dbd5223fb0b3cb0411dd634ba977c6b8748",
+  "pdb_sha256": "5d75a52c5ea36b246c858af0db460dbd38b032c0ced1a34d708d5c44697049a7",
+  "native_tests": 24,
+  "headless_framework_tests": 32,
+  "controlled_cage_classes": [
+    1,
+    3,
+    4,
+    5,
+    8,
+    9,
+    11
+  ],
+  "catalogue_quests": 122,
+  "mask_allowed_quest_class_pairs": 728,
+  "full_worgen_gameplay_certified": false,
+  "cases": {
+    "collections": {
+      "passed": true,
+      "binary_sha256": "695731e6b9a4f3fa3a91b861440a6dbd5223fb0b3cb0411dd634ba977c6b8748",
+      "profile": "normal-security-client"
+    },
+    "cynthia": {
+      "passed": true,
+      "binary_sha256": "695731e6b9a4f3fa3a91b861440a6dbd5223fb0b3cb0411dd634ba977c6b8748",
+      "profile": "controlled-prerequisite-fixture"
+    },
+    "breath": {
+      "passed": true,
+      "binary_sha256": "695731e6b9a4f3fa3a91b861440a6dbd5223fb0b3cb0411dd634ba977c6b8748",
+      "profile": "controlled-prerequisite-fixture"
+    },
+    "progression_gate": {
+      "passed": true,
+      "binary_sha256": "695731e6b9a4f3fa3a91b861440a6dbd5223fb0b3cb0411dd634ba977c6b8748",
+      "profile": "controlled-prerequisite-fixture"
+    },
+    "manor": {
+      "passed": true,
+      "binary_sha256": "87499cc45cfa56185b4a63bc68427d3e49bdf02174b2084e9ad0ed516eba636a",
+      "profile": "controlled-prerequisite-fixture"
+    }
+  },
+  "user_acceptance": {
+    "cage_on_land": true,
+    "shift_p_no_disconnect": true,
+    "manor_ride_progresses": true,
+    "duplicate_gate_visual": "open cosmetic followup"
+  },
+  "remaining": [
+    "Complete natural Worgen quest-chain/class gameplay QA",
+    "Duplicate manor gate visual",
+    "Trace guarded NULL_OPCODE sends at later Gilneas progression",
+    "Existing unrelated startup SQL/content errors remain",
+    "Reproduce ExampleCharacter-specific food/drink failure; controlled real item uses pass"
+  ],
+  "natural_introduction": {
+    "quest": 14078,
+    "classes": [
+      1,
+      3,
+      4,
+      5,
+      8,
+      9,
+      11
+    ],
+    "passed": 7,
+    "failed": 0,
+    "batch": "20261109-230717-a00174",
+    "profile": "normal level1, no fixture rewards/credits/gear"
+  },
+  "consumables": {
+    "controlled_worgen_classes": [
+      4,
+      8
+    ],
+    "apple_food_applied": true,
+    "health_increased": true,
+    "spring_water_drink_applied": true,
+    "cast_or_inventory_errors": 0,
+    "estelle_reported_failure_reproduced": false
+  },
+  "two_forms": {
+    "learned_after_quest": 24593,
+    "quest_name": "Neither Human Nor Beast",
+    "reward_spell": 72829,
+    "nested_learn_spell": 72857,
+    "learned_spell": 68996,
+    "estelle_not_yet_rewarded": true
+  }
+}

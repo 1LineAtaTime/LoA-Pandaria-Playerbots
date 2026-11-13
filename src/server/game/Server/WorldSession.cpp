@@ -154,6 +154,7 @@ WorldSession::WorldSession(uint32 id, std::string const& accountName, std::share
 /// WorldSession destructor
 WorldSession::~WorldSession()
 {
+    sBattlePayMgr->RemoveSession(this);
     ///- unload player if not unloaded
     if (_player)
         LogoutPlayer (true);
@@ -1353,6 +1354,8 @@ public:
     {
         GLOBAL_ACCOUNT_DATA = 0,
         TUTORIALS,
+        ACCOUNT_ACHIEVEMENTS,
+        ACCOUNT_ACHIEVEMENT_PROGRESS,
 
         MAX_QUERIES
     };
@@ -1370,6 +1373,13 @@ public:
         stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_TUTORIALS);
         stmt->setUInt32(0, accountId);
         ok = SetPreparedQuery(TUTORIALS, stmt) && ok;
+
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_ACHIEVEMENT);
+        stmt->setUInt32(0, accountId);
+        ok = SetPreparedQuery(ACCOUNT_ACHIEVEMENTS, stmt) && ok;
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_ACHIEVEMENT_PROGRESS);
+        stmt->setUInt32(0, accountId);
+        ok = SetPreparedQuery(ACCOUNT_ACHIEVEMENT_PROGRESS, stmt) && ok;
 
         return ok;
     }
@@ -1394,6 +1404,11 @@ void WorldSession::InitializeSessionCallback(CharacterDatabaseQueryHolder const&
 {
     LoadAccountData(realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::GLOBAL_ACCOUNT_DATA), GLOBAL_CACHE_MASK);
     LoadTutorialsData(realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::TUTORIALS));
+    // Restore account completion state before character login can evaluate pet
+    // and mount criteria. Otherwise every session can send the same reward mail.
+    GetAchievementMgr().LoadFromDB(
+        realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::ACCOUNT_ACHIEVEMENTS),
+        realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::ACCOUNT_ACHIEVEMENT_PROGRESS));
 
     if (!m_inQueue)
         SendAuthResponse(AUTH_OK, false);
@@ -1434,7 +1449,9 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
         case POLICY_LOG:
             return true;
         case POLICY_KICK:
-            TC_LOG_INFO("network", "AntiDOS: Player kicked!");
+            TC_LOG_WARN("network", "AntiDOS: kicking %s for opcode %s: %u requests exceeded limit %u in one second",
+                Session->GetPlayerInfo().c_str(), GetOpcodeNameForLogging(static_cast<OpcodeClient>(p.GetOpcode())).c_str(),
+                packetCounter.amountCounter, maxPacketCounterAllowed);
             Session->KickPlayerOP("WorldSession::DosProtection::EvaluateOpcode AntiDOS");
             return false;
         case POLICY_BAN:
@@ -1641,9 +1658,19 @@ uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) co
         break;
     }
 
-    case CMSG_REQUEST_HOTFIX:                       // not profiled
+    // The18414 collections UI requests its entire creature catalogue on first
+    // open. A captured Shift+P sent326 distinct queries in one burst; the default
+    //200 limit kicked the client after exactly200 replies. Keep the allowance
+    // bounded and specific to this read-only lookup, not purchases or mutations.
+    case CMSG_CREATURE_QUERY:
     {
-        maxPacketCounterAllowed = 1;
+        maxPacketCounterAllowed = 2048;
+        break;
+    }
+
+    case CMSG_REQUEST_HOTFIX:                       // clients request many hotfix rows while entering the world
+    {
+        maxPacketCounterAllowed = 100;
         break;
     }
     default:

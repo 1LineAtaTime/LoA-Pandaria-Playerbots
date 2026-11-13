@@ -1163,7 +1163,7 @@ bool WorldSocket::HandlePing(WorldPackets::Auth::Ping& ping)
 
         if (_worldSession)
         {
-            _worldSession->SetLatency(ping.Latency);
+            _worldSession->SetLatency(std::min(ping.Latency, uint32(0xFFFFFF))); // characters.latency is MEDIUMINT UNSIGNED
         }
         else
         {

@@ -6,6 +6,7 @@
  * into the Legends of Azeroth Pandaria fork.
  */
 
+#include "Config.h"
 #include "NewRpgAction.h"
 
 #include "BotScenario.h"
@@ -354,6 +355,21 @@ bool NewRpgStatusUpdateAction::Execute(Event /*event*/)
     switch (status)
     {
         case RPG_IDLE:
+            if (bot->GetZoneId() == 4395 && bot->GetPositionZ() > 630.0f && !bot->GetGroup() &&
+                !botAI->HasActivePlayerMaster() && sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true) &&
+                sPlayerbotAIConfig->enabled && sRandomPlayerbotMgr->GetValue(bot, "city_visit_until") > uint32(time(nullptr)))
+            {
+                info.ChangeToWanderNpc();
+                return true; // Keep this finite city visit in the service/short-walk loop.
+            }
+            if (!bot->GetGroup() && !botAI->HasActivePlayerMaster() &&
+                sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true))
+                if (AreaTableEntry const* area = sAreaTableStore.LookupEntry(bot->GetZoneId()))
+                    if ((area->Flags & AREA_FLAG_CAPITAL) && urand(0, 99) < 65)
+                    {
+                        info.ChangeToWanderNpc();
+                        return true;
+                    }
             return RandomChangeStatus({RPG_GO_CAMP, RPG_GO_GRIND, RPG_WANDER_RANDOM, RPG_WANDER_NPC, RPG_DO_QUEST,
                                        RPG_TRAVEL_FLIGHT, RPG_REST, RPG_OUTDOOR_PVP, RPG_DUEL_SPOT});
 
@@ -807,7 +823,11 @@ bool NewRpgWanderRandomAction::Execute(Event /*event*/)
 
 bool NewRpgWanderNpcAction::Execute(Event /*event*/)
 {
-    if (SearchQuestGiverAndAcceptOrReward())
+    AreaTableEntry const* zone = sAreaTableStore.LookupEntry(bot->GetZoneId());
+    bool const cityVisit = zone && (zone->Flags & AREA_FLAG_CAPITAL) && !bot->GetGroup() &&
+        !botAI->HasActivePlayerMaster() && !BotScenario::IsStatusLocked(bot) &&
+        sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true);
+    if (!cityVisit && SearchQuestGiverAndAcceptOrReward())
         return true;
 
     NewRpgInfo& info = botAI->GetRpgInfo();
@@ -824,11 +844,16 @@ bool NewRpgWanderNpcAction::Execute(Event /*event*/)
         {
             // No npc can be found, switch to IDLE
             BotScenario::LogTarget(bot, "none", nullptr, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
-            info.ChangeToIdle();
+            if (cityVisit) info.ChangeToWanderRandom();
+            else info.ChangeToIdle();
             return true;
         }
 
         data.npcOrGo = npcOrGo;
+        data.selectedAt = cityVisit ? getMSTime() : 0;
+        uint32 lo = uint32(std::max(1, std::min(120, sConfigMgr->GetIntDefault("AiPlayerbot.CityLife.PauseMinSeconds", 8))));
+        uint32 hi = uint32(std::max(int(lo), std::min(120, sConfigMgr->GetIntDefault("AiPlayerbot.CityLife.PauseMaxSeconds", 25))));
+        data.pauseMs = cityVisit ? urand(lo, hi) * IN_MILLISECONDS : npcStayTime;
         data.lastReach = 0;
         if (WorldObject* s = ObjectAccessor::GetWorldObject(*bot, npcOrGo))
             BotScenario::LogTarget(bot, "npc", s, s->GetPositionX(), s->GetPositionY(), s->GetPositionZ());
@@ -837,6 +862,13 @@ bool NewRpgWanderNpcAction::Execute(Event /*event*/)
 
     bool const debugBot = !sPlayerbotAIConfig->debugBotNames.empty() && sPlayerbotAIConfig->debugBotNames.count(bot->GetName());
 
+    if (data.selectedAt && GetMSTimeDiffToNow(data.selectedAt) > 90000)
+    {
+        data.previousNpc = data.npcOrGo;
+        data.npcOrGo = ObjectGuid::Empty;
+        data.lastReach = 0;
+        return true;
+    }
     WorldObject* object = ObjectAccessor::GetWorldObject(*bot, data.npcOrGo);
     bool const within = object && IsWithinInteractionDist(object);
 
@@ -860,7 +892,7 @@ bool NewRpgWanderNpcAction::Execute(Event /*event*/)
         if (!data.lastReach)
         {
             data.lastReach = getMSTime();
-            if (bot->CanInteractWithQuestGiver(object))
+            if (!cityVisit && bot->CanInteractWithQuestGiver(object))
                 InteractWithNpcOrGameObjectForQuest(data.npcOrGo);
 
             // #945 (BEYOND AC) + AC test-staging PR #2949: sell / buy / repair at a vendor or repairer, profession
@@ -902,10 +934,11 @@ bool NewRpgWanderNpcAction::Execute(Event /*event*/)
             return true;
         }
 
-        if (GetMSTimeDiffToNow(data.lastReach) < npcStayTime)
+        if (GetMSTimeDiffToNow(data.lastReach) < data.pauseMs)
             return false;
 
-        // has stayed at this npc for more than `npcStayTime`, select the next target
+        data.previousNpc = data.npcOrGo;
+        // Select another stop after a varied pause.
         data.npcOrGo = ObjectGuid::Empty;
         data.lastReach = 0;
     }
@@ -1069,6 +1102,40 @@ bool NewRpgDoQuestAction::DoIncompleteQuest(NewRpgInfo::DoQuest& data)
 bool NewRpgDoQuestAction::DoCompletedQuest(NewRpgInfo::DoQuest& data)
 {
     uint32 const questId = data.questId;
+
+    Quest const* quest = data.quest ? data.quest : sObjectMgr->GetQuestTemplate(questId);
+    if (!quest)
+        return false;
+
+    uint32 const choice = quest->GetRewChoiceItemsCount() ? quest->RewardChoiceItemId[BestRewardIndex(quest)] : 0;
+    if (bot->CanRewardQuest(quest, false) && !bot->CanRewardQuest(quest, choice, false))
+    {
+        // Objectives are satisfied but the reward cannot fit. Retain this quest
+        // and use the existing normal vendor action before returning to hand in.
+        // Do not discard items, grant bags or bypass the reward storage check.
+        if (!AI_VALUE(bool, "can sell"))
+            return false;
+
+        Creature* vendor = nullptr;
+        for (ObjectGuid guid : AI_VALUE(GuidVector, "possible new rpg targets"))
+        {
+            Creature* candidate = ObjectAccessor::GetCreatureOrPetOrVehicle(*bot, guid);
+            if (!candidate || !candidate->IsAlive() || !candidate->HasNpcFlag(UNIT_NPC_FLAG_VENDOR) ||
+                candidate->IsHostileTo(bot) || !bot->CanSeeOrDetect(candidate))
+                continue;
+            if (!vendor || bot->GetExactDist(candidate) < bot->GetExactDist(vendor))
+                vendor = candidate;
+        }
+        if (!vendor)
+            return false;
+
+        bool const inRange = bot->GetNPCIfCanInteractWith(vendor->GetGUID(), UNIT_NPC_FLAG_VENDOR) != nullptr;
+        if (inRange)
+            TC_LOG_DEBUG("playerbots", "[QUEST_VENDOR] %s quest=%u vendor=%u action=sell",
+                bot->GetName().c_str(), questId, vendor->GetEntry());
+        return inRange ? botAI->DoSpecificAction("sell", Event("sell", "vendor"), true)
+                       : MoveWorldObjectTo(vendor->GetGUID());
+    }
 
     if (data.objectiveIdx != -1)
     {

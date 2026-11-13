@@ -1,0 +1,1337 @@
+{
+  "name": "SF27 quest text, chains, loot and travel",
+  "checks": [
+    {
+      "id": "services-0000",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(26391)) AND (`PrevQuestID`<=>(-26389))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0001",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE (`ID`<=>(25027)) AND (BINARY `CompletionText`<=>BINARY ('I can see why the Horde hates these little nuisances. Have you taken on Three-Tooth yet?'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0002",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25027)) AND (BINARY `RewardText`<=>BINARY ('...Torn limb from limb!? Well, I\\'d almost feel bad but the burning hatred gets in the way. She got what she deserved.$B$B<Corporal Teegan takes the Bramblestaff and snaps it over his knee.>$B$BProblem solved.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0003",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE (`ID`<=>(25000)) AND (BINARY `CompletionText`<=>BINARY ('What is it, $c? This here camp ain\\'t fit for sight-seein\\'.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0004",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25000)) AND (BINARY `RewardText`<=>BINARY ('Hey, you\\'re tougher than you look. These terrortooth hides reflect arrows and turn axe-blades - they don\\'t go down easy, but their hides are worth their weight in silver in these light-forsaken Barrens. Nice work.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0005",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25034)) AND (BINARY `RewardText`<=>BINARY ('Ah, $n! I\\'ve been talking you up to the General here. Thank you again for saving my life.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0006",
+      "query": "SELECT COUNT(*) FROM `lfg_dungeon_template` WHERE (`dungeonId`<=>(163)) AND (ABS((`position_x`+0.0)-(820.743))<=0.000001*GREATEST(1,ABS(820.743))) AND (ABS((`position_y`+0.0)-(607.812))<=0.000001*GREATEST(1,ABS(607.812))) AND (ABS((`position_z`+0.0)-(13.6389))<=0.000001*GREATEST(1,ABS(13.6389))) AND (ABS((`orientation`+0.0)-(0))<=0.000001*GREATEST(1,ABS(0))) AND (`requiredItemLevel`<=>(0))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0007",
+      "query": "SELECT COUNT(*) FROM `lfg_dungeon_template` WHERE (`dungeonId`<=>(164)) AND (ABS((`position_x`+0.0)-(1124.64))<=0.000001*GREATEST(1,ABS(1124.64))) AND (ABS((`position_y`+0.0)-(512.467))<=0.000001*GREATEST(1,ABS(512.467))) AND (ABS((`position_z`+0.0)-(0.989549))<=0.000001*GREATEST(1,ABS(0.989549))) AND (ABS((`orientation`+0.0)-(1.5708))<=0.000001*GREATEST(1,ABS(1.5708))) AND (`requiredItemLevel`<=>(0))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0008",
+      "query": "SELECT COUNT(*) FROM `lfg_dungeon_template` WHERE (`dungeonId`<=>(285)) AND (ABS((`position_x`+0.0)-(1124.64))<=0.000001*GREATEST(1,ABS(1124.64))) AND (ABS((`position_y`+0.0)-(512.467))<=0.000001*GREATEST(1,ABS(512.467))) AND (ABS((`position_z`+0.0)-(0.989549))<=0.000001*GREATEST(1,ABS(0.989549))) AND (ABS((`orientation`+0.0)-(1.5708))<=0.000001*GREATEST(1,ABS(1.5708))) AND (`requiredItemLevel`<=>(0))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0009",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25022)) AND (BINARY `RewardText`<=>BINARY ('Good work. Gaines passed through here not long ago on his way to Northwatch and a warm bath.$B$BThe mission wasn\\'t a total loss, though. We\\'ve learned a good deal about these quilboar and their leadership structure.$B$BNow we can handle things ... MY way.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0010",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(13636)) AND (BINARY `RewardText`<=>BINARY ('Orders! Let\\'s see what we have here... hah! He wants me to deal with the infestation of rat men. We\\'re already in the middle of that, so no real deviation there.$B$BCare to lend a hand?'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0011",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(28565)) AND (BINARY `RewardText`<=>BINARY ('We haven\\'t gotten much in the way of reinforcements lately. We can use every pair of hands we can get.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0012",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25395)) AND (BINARY `RewardText`<=>BINARY ('Thank the Makers! It\\'s downright pristine. Those orcs couldn\\'t figure out the tap-lock, it seems...and couldn\\'t hack through the mastercraft work of Ironforge\\'s keg-crafters with their crude weapons!'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0013",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE (`ID`<=>(25395)) AND (BINARY `CompletionText`<=>BINARY ('Do you have it? Is the poor thing intact?'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0014",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25211)) AND (BINARY `RewardText`<=>BINARY ('That\\'ll show \\'em!  Nice work!'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0015",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(25770)) AND (BINARY `RewardText`<=>BINARY ('Hah! Nice to see those addlebrained mountaineers knew to hand the ale off to a real man to get the job done.$B$BWelcome to my survey. If you\\'re of the mind to help Ironforge by takin\\' over the intended jobs of some useless, lazy sods that call themselves dwarves, you\\'re in the right place!'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0016",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE (`ID`<=>(25770)) AND (BINARY `CompletionText`<=>BINARY ('Aye? What\\'ve you got for me there?'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0017",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41145)) AND (`item`<=>(55234)) AND (ABS((`ChanceOrQuestChance`+0.0)-(-10))<=0.000001*GREATEST(1,ABS(-10))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0018",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41145)) AND (`item`<=>(62771)) AND (ABS((`ChanceOrQuestChance`+0.0)-(35))<=0.000001*GREATEST(1,ABS(35))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0019",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41145)) AND (`item`<=>(3673)) AND (ABS((`ChanceOrQuestChance`+0.0)-(35))<=0.000001*GREATEST(1,ABS(35))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0020",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41145)) AND (`item`<=>(3670)) AND (ABS((`ChanceOrQuestChance`+0.0)-(16))<=0.000001*GREATEST(1,ABS(16))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0021",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41145)) AND (`item`<=>(3674)) AND (ABS((`ChanceOrQuestChance`+0.0)-(14))<=0.000001*GREATEST(1,ABS(14))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0022",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41147)) AND (`item`<=>(62771)) AND (ABS((`ChanceOrQuestChance`+0.0)-(42))<=0.000001*GREATEST(1,ABS(42))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0023",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41147)) AND (`item`<=>(3673)) AND (ABS((`ChanceOrQuestChance`+0.0)-(32))<=0.000001*GREATEST(1,ABS(32))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0024",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41147)) AND (`item`<=>(3670)) AND (ABS((`ChanceOrQuestChance`+0.0)-(16))<=0.000001*GREATEST(1,ABS(16))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0025",
+      "query": "SELECT COUNT(*) FROM `creature_loot_template` WHERE (`entry`<=>(41147)) AND (`item`<=>(3674)) AND (ABS((`ChanceOrQuestChance`+0.0)-(9))<=0.000001*GREATEST(1,ABS(9))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0026",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(26980)) AND (BINARY `RewardText`<=>BINARY ('Stoutfist sent you, eh? He\\'s a good captain, runs his men well. Just wish he\\'d stop starin\\' at my midriff.$B$BDon\\'t let me catch you doin\\' it either. We\\'ve work to take care of here!'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0027",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(24807)) AND (`AllowableRaces`<=>(2|16|32|128|256|512|33554432))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0028",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(24633)) AND (`AllowableRaces`<=>(2|16|32|128|256|512|33554432))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0029",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(24604)) AND (`AllowableRaces`<=>(2|16|32|128|256|512|33554432))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0030",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(25084)) AND (`AllowableRaces`<=>(1|4|8|64|1024|2097152|16777216))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0031",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(13527)) AND (BINARY `RewardText`<=>BINARY ('This definitely looks like the stuff they were eating. Let me take a closer peek...'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0032",
+      "query": "SELECT COUNT(*) FROM `item_loot_template` WHERE (`entry`<=>(57540)) AND (`item`<=>(57541)) AND (ABS((`ChanceOrQuestChance`+0.0)-(100))<=0.000001*GREATEST(1,ABS(100))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0033",
+      "query": "SELECT COUNT(*) FROM `item_loot_template` WHERE (`entry`<=>(57540)) AND (`item`<=>(57542)) AND (ABS((`ChanceOrQuestChance`+0.0)-(100))<=0.000001*GREATEST(1,ABS(100))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0034",
+      "query": "SELECT COUNT(*) FROM `item_loot_template` WHERE (`entry`<=>(57540)) AND (`item`<=>(57543)) AND (ABS((`ChanceOrQuestChance`+0.0)-(100))<=0.000001*GREATEST(1,ABS(100))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0035",
+      "query": "SELECT COUNT(*) FROM `item_loot_template` WHERE (`entry`<=>(57540)) AND (`item`<=>(57544)) AND (ABS((`ChanceOrQuestChance`+0.0)-(100))<=0.000001*GREATEST(1,ABS(100))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0036",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2022)) AND (`item`<=>(765)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.1034))<=0.000001*GREATEST(1,ABS(2.1034))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0037",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2022)) AND (`item`<=>(785)) AND (ABS((`ChanceOrQuestChance`+0.0)-(25.8413))<=0.000001*GREATEST(1,ABS(25.8413))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0038",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2022)) AND (`item`<=>(2447)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.2636))<=0.000001*GREATEST(1,ABS(2.2636))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0039",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2022)) AND (`item`<=>(2449)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.0833))<=0.000001*GREATEST(1,ABS(2.0833))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0040",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2022)) AND (`item`<=>(23987)) AND (ABS((`ChanceOrQuestChance`+0.0)-(25.0601))<=0.000001*GREATEST(1,ABS(25.0601))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0041",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2022)) AND (`item`<=>(67357)) AND (ABS((`ChanceOrQuestChance`+0.0)-(64.1123))<=0.000001*GREATEST(1,ABS(64.1123))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0042",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2025)) AND (`item`<=>(765)) AND (ABS((`ChanceOrQuestChance`+0.0)-(3.6415))<=0.000001*GREATEST(1,ABS(3.6415))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0043",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2025)) AND (`item`<=>(785)) AND (ABS((`ChanceOrQuestChance`+0.0)-(25.2101))<=0.000001*GREATEST(1,ABS(25.2101))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0044",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2025)) AND (`item`<=>(2447)) AND (ABS((`ChanceOrQuestChance`+0.0)-(1.9608))<=0.000001*GREATEST(1,ABS(1.9608))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0045",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2025)) AND (`item`<=>(2449)) AND (ABS((`ChanceOrQuestChance`+0.0)-(3.3613))<=0.000001*GREATEST(1,ABS(3.3613))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0046",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2025)) AND (`item`<=>(23987)) AND (ABS((`ChanceOrQuestChance`+0.0)-(24.93))<=0.000001*GREATEST(1,ABS(24.93))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0047",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2025)) AND (`item`<=>(67357)) AND (ABS((`ChanceOrQuestChance`+0.0)-(65.3185))<=0.000001*GREATEST(1,ABS(65.3185))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0048",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2027)) AND (`item`<=>(765)) AND (ABS((`ChanceOrQuestChance`+0.0)-(3.7262))<=0.000001*GREATEST(1,ABS(3.7262))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0049",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2027)) AND (`item`<=>(785)) AND (ABS((`ChanceOrQuestChance`+0.0)-(23.3969))<=0.000001*GREATEST(1,ABS(23.3969))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0050",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2027)) AND (`item`<=>(2447)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.9463))<=0.000001*GREATEST(1,ABS(2.9463))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0051",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2027)) AND (`item`<=>(2449)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.0797))<=0.000001*GREATEST(1,ABS(2.0797))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0052",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2027)) AND (`item`<=>(23987)) AND (ABS((`ChanceOrQuestChance`+0.0)-(27.383))<=0.000001*GREATEST(1,ABS(27.383))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0053",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2027)) AND (`item`<=>(67357)) AND (ABS((`ChanceOrQuestChance`+0.0)-(60.0907))<=0.000001*GREATEST(1,ABS(60.0907))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0054",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2029)) AND (`item`<=>(765)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.1195))<=0.000001*GREATEST(1,ABS(2.1195))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0055",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2029)) AND (`item`<=>(785)) AND (ABS((`ChanceOrQuestChance`+0.0)-(32.7553))<=0.000001*GREATEST(1,ABS(32.7553))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0056",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2029)) AND (`item`<=>(2447)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.569))<=0.000001*GREATEST(1,ABS(2.569))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0057",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2029)) AND (`item`<=>(2449)) AND (ABS((`ChanceOrQuestChance`+0.0)-(1.8626))<=0.000001*GREATEST(1,ABS(1.8626))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0058",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2029)) AND (`item`<=>(23987)) AND (ABS((`ChanceOrQuestChance`+0.0)-(24.6628))<=0.000001*GREATEST(1,ABS(24.6628))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0059",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2029)) AND (`item`<=>(67357)) AND (ABS((`ChanceOrQuestChance`+0.0)-(64.7761))<=0.000001*GREATEST(1,ABS(64.7761))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0060",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(765)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.2876))<=0.000001*GREATEST(1,ABS(2.2876))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0061",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(785)) AND (ABS((`ChanceOrQuestChance`+0.0)-(25.3268))<=0.000001*GREATEST(1,ABS(25.3268))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0062",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(2447)) AND (ABS((`ChanceOrQuestChance`+0.0)-(1.5523))<=0.000001*GREATEST(1,ABS(1.5523))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0063",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(2449)) AND (ABS((`ChanceOrQuestChance`+0.0)-(1.5523))<=0.000001*GREATEST(1,ABS(1.5523))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0064",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(2450)) AND (ABS((`ChanceOrQuestChance`+0.0)-(12.2549))<=0.000001*GREATEST(1,ABS(12.2549))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0065",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(2452)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.451))<=0.000001*GREATEST(1,ABS(2.451))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0066",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(23331)) AND (ABS((`ChanceOrQuestChance`+0.0)-(43.4641))<=0.000001*GREATEST(1,ABS(43.4641))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0067",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(23987)) AND (ABS((`ChanceOrQuestChance`+0.0)-(13.8889))<=0.000001*GREATEST(1,ABS(13.8889))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0068",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(54630)) AND (ABS((`ChanceOrQuestChance`+0.0)-(2.9423))<=0.000001*GREATEST(1,ABS(2.9423))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0069",
+      "query": "SELECT COUNT(*) FROM `skinning_loot_template` WHERE (`entry`<=>(2030)) AND (`item`<=>(67357)) AND (ABS((`ChanceOrQuestChance`+0.0)-(31.1581))<=0.000001*GREATEST(1,ABS(31.1581))) AND ((`lootmode`+0)<=>(1)) AND (`groupid`<=>(0)) AND (`mincountOrRef`<=>(1)) AND (`maxcount`<=>(1))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0070",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28769)) AND (`NextQuestID`<=>(3104))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0071",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28769)) AND (`RewardNextQuest`<=>(3104))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0072",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28770)) AND (`NextQuestID`<=>(3101))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0073",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28770)) AND (`RewardNextQuest`<=>(3101))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0074",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28771)) AND (`NextQuestID`<=>(3103))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0075",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28771)) AND (`RewardNextQuest`<=>(3103))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0076",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28772)) AND (`NextQuestID`<=>(3102))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0077",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28772)) AND (`RewardNextQuest`<=>(3102))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0078",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28773)) AND (`NextQuestID`<=>(3105))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0079",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28773)) AND (`RewardNextQuest`<=>(3105))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0080",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28774)) AND (`NextQuestID`<=>(3100))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0081",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28774)) AND (`RewardNextQuest`<=>(3100))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0082",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(28759)) AND (`NextQuestID`<=>(26910))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0083",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(28759)) AND (`RewardNextQuest`<=>(26910))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0084",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(31140)) AND (`NextQuestID`<=>(31141))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0085",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(31140)) AND (`RewardNextQuest`<=>(31141))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0086",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(3100)) AND (`RewardNextQuest`<=>(26913))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0087",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(3101)) AND (`RewardNextQuest`<=>(26918))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0088",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(3102)) AND (`RewardNextQuest`<=>(26915))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0089",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(3103)) AND (`RewardNextQuest`<=>(26919))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0090",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(3104)) AND (`RewardNextQuest`<=>(26916))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0091",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(3105)) AND (`NextQuestID`<=>(26914))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0092",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(3105)) AND (`RewardNextQuest`<=>(26914))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0093",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26910)) AND (`RewardNextQuest`<=>(26917))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0094",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(26910)) AND (`AllowableClasses`<=>(4))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0095",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(31141)) AND (`RewardNextQuest`<=>(31142))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0096",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26913)) AND (`RewardNextQuest`<=>(28789))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0097",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26918)) AND (`RewardNextQuest`<=>(28785))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0098",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26915)) AND (`RewardNextQuest`<=>(28787))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0099",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26919)) AND (`RewardNextQuest`<=>(28786))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0100",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26916)) AND (`RewardNextQuest`<=>(28784))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0101",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26914)) AND (`RewardNextQuest`<=>(28788))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0102",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26917)) AND (`RewardNextQuest`<=>(28780))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0103",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(31142)) AND (`RewardNextQuest`<=>(31143))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0104",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(13567)) AND (BINARY `QuestDescription`<=>BINARY ('I am the caretaker for my kind, leading not through force, but through wisdom and swift action. Wisdom is what carries us into the deeper forest when danger beckons and swiftness is what leaves our enemies basking in our absence.$B$BIn this wisdom, I see through to your true intentions, and I know that you are deserving of my blessing, the blessing of my swiftness. It can be yours, but know that the other spirits will not welcome you once you proceed - consider this carefully before accepting my boon.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0105",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(13567)) AND (BINARY `RewardText`<=>BINARY ('I am the caretaker for my kind, leading not through force, but through wisdom and swift action. Wisdom is what carries us into the deeper forest when danger beckons and swiftness is what leaves our enemies basking in our absence.$B$BIn this wisdom, I see through to your true intentions, and I know that you are deserving of my blessing, the blessing of my swiftness. It can be yours, but know that the other spirits will not welcome you once you proceed - consider this carefully before accepting my boon.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0106",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(13568)) AND (BINARY `QuestDescription`<=>BINARY ('I share these forests willingly, accepting night elf kind into my home, and on occasion calling them friend. Though they have been tainted greatly in recent memory, I can see in you the same strength, honor, and spirit that first endeared them to me. If you place value in the ferocity necessary to overcome all odds, then I am willing to call you my champion. Know now that if you side with my kind, the other spirits will not accept you, so consider your choice carefully.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0107",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(13568)) AND (BINARY `RewardText`<=>BINARY ('I share these forests willingly, accepting night elf kind into my home, and on occasion calling them friend. Though they have been tainted greatly in recent memory, I can see in you the same strength, honor, and spirit that first endeared them to me. If you place value in the ferocity necessary to overcome all odds, then I am willing to call you my champion. Know now that if you side with my kind, the other spirits will not accept you, so consider your choice carefully.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0108",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(13597)) AND (BINARY `QuestDescription`<=>BINARY ('For countless ages I have walked these forests and lived in these mountains. Through snow and fire, I have watched civilizations crumble and nature press on. Now, the very earth turns against us, and it becomes very apparent that we must fight if our legacy is to continue. Your heart is true, and I would choose you as our champion. If you value the thick hide and resilience of my kind, then accept my boon. Know that the other spirits will not accept you once this choice is made, so choose wisely.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0109",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(13597)) AND (BINARY `RewardText`<=>BINARY ('For countless ages I have walked these forests and lived in these mountains. Through snow and fire, I have watched civilizations crumble and nature press on. Now, the very earth turns against us, and it becomes very apparent that we must fight if our legacy is to continue. Your heart is true, and I would choose you as our champion. If you value the thick hide and resilience of my kind, then accept my boon. Know that the other spirits will not accept you once this choice is made, so choose wisely.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0110",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(26684)) AND (BINARY `RewardText`<=>BINARY ('Most superb! This will work perfectly. Many thanks!'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0111",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(26785)) AND (`PrevQuestID`<=>(26674))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0112",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(26408)) AND (`PrevQuestID`<=>(13897))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0113",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(26683)) AND (BINARY `RewardText`<=>BINARY ('Why yes, I used to own a looking glass.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0114",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE (`ID`<=>(26667)) AND (BINARY `RewardText`<=>BINARY ('By the Light... you actually went and got it?$B$BI''m shocked. I suppose I owe you thanks for returning it to the archives.'))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0115",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(13896)) AND (`PrevQuestID`<=>(13948))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0116",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(13895)) AND (`PrevQuestID`<=>(13893))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0117",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE (`ID`<=>(13898)) AND (`PrevQuestID`<=>(13953))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0118",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(4772)) AND (`quest`<=>(14083))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0119",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(7954)) AND (`quest`<=>(14084))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0120",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(35086)) AND (`quest`<=>(14146))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0121",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(37106)) AND (`quest`<=>(24502))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0122",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(44084)) AND (`quest`<=>(26810))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0123",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(44799)) AND (`quest`<=>(27040))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0124",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(46071)) AND (`quest`<=>(27768))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0125",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(18481)) AND (`quest`<=>(29674))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0126",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(18481)) AND (`quest`<=>(29675))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0127",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(55438)) AND (`quest`<=>(29745))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0128",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(56327)) AND (`quest`<=>(29924))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0129",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(58710)) AND (`quest`<=>(30478))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0130",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(29611)) AND (`quest`<=>(30987))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0131",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(39605)) AND (`quest`<=>(31012))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0132",
+      "query": "SELECT COUNT(*) FROM `creature_questender` WHERE (`id`<=>(16802)) AND (`quest`<=>(32329))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0133",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(206335)) AND (`quest`<=>(27693))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0134",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(206336)) AND (`quest`<=>(27709))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0135",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(206335)) AND (`quest`<=>(27885))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0136",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(206336)) AND (`quest`<=>(27886))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0137",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(209845)) AND (`quest`<=>(29888))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0138",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(213767)) AND (`quest`<=>(31314))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0139",
+      "query": "SELECT COUNT(*) FROM `gameobject_questender` WHERE (`id`<=>(215844)) AND (`quest`<=>(31779))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0140",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26856)) AND (`AllowableRaces`<=>(33555378))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0141",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26858)) AND (`AllowableRaces`<=>(33555378))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0142",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(26862)) AND (`AllowableRaces`<=>(33555378))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0143",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(30982)) AND (`AllowableRaces`<=>(33555378))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "services-0144",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE (`ID`<=>(30984)) AND (`AllowableRaces`<=>(33555378))",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "dragonmaw-retain-populated-owner-41072",
+      "query": "SELECT COUNT(*) FROM creature_template ct WHERE entry=41072 AND lootid=41072 AND EXISTS (SELECT 1 FROM creature_loot_template l WHERE l.entry=ct.lootid)",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "dragonmaw-retain-populated-owner-41080",
+      "query": "SELECT COUNT(*) FROM creature_template ct WHERE entry=41080 AND lootid=41080 AND EXISTS (SELECT 1 FROM creature_loot_template l WHERE l.entry=ct.lootid)",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "dragonmaw-retain-populated-owner-42107",
+      "query": "SELECT COUNT(*) FROM creature_template ct WHERE entry=42107 AND lootid=42107 AND EXISTS (SELECT 1 FROM creature_loot_template l WHERE l.entry=ct.lootid)",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    }
+  ]
+}

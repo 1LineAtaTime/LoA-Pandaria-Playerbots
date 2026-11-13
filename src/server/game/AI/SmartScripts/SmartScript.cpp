@@ -171,7 +171,11 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             mLastTextID = e.action.talk.textGroupID;
             mTextTimer = e.action.talk.duration;
             mUseTextTimer = true;
-            sCreatureTextMgr->SendChat(talker, uint8(e.action.talk.textGroupID), talkTarget);
+            if (!sCreatureTextMgr->TextExist(talker->GetEntry(), uint8(e.action.talk.textGroupID)))
+                TC_LOG_ERROR("sql.sql", "SmartScript: Entry %d SourceType %u Event %u Action TALK TargetType %u requests missing creature_text Entry %u Group %u (GUID %u Map %u).",
+                    e.entryOrGuid, e.GetScriptType(), e.event_id, uint32(e.target.type), talker->GetEntry(), uint32(e.action.talk.textGroupID), talker->GetGUID().GetCounter(), talker->GetMapId());
+            else
+                sCreatureTextMgr->SendChat(talker, uint8(e.action.talk.textGroupID), talkTarget);
             TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TALK: talker: %s (GuidLow: %u), textGuid: %u",
                 talker->GetName().c_str(), talker->GetGUID().GetCounter(), talkTarget ? talkTarget->GetGUID().GetCounter() : 0);
             break;
@@ -1327,6 +1331,19 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 break;
 
             CAST_AI(SmartAI, me->AI())->SetFly(e.action.setFly.fly);
+            break;
+        }
+        case SMART_ACTION_LEGACY_SET_SPEED:
+        {
+            // Original action 154 stores a multiplier in tenths, not yards/sec.
+            ObjectList* targets = GetTargets(e, unit);
+            if (!targets)
+                break;
+            for (WorldObject* target : *targets)
+                if (Unit* moved = target->ToUnit())
+                    moved->SetSpeed(UnitMoveType(e.action.legacySetSpeed.moveType),
+                        float(e.action.legacySetSpeed.tenths) * 0.1f, true);
+            delete targets;
             break;
         }
         case SMART_ACTION_SET_RUN:

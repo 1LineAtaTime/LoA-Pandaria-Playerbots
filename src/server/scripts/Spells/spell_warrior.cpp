@@ -561,42 +561,32 @@ class spell_warr_bloodthirst : public SpellScriptLoader
         }
 };
 
+// SkyFire release26 MoP aura implementation; source pinned in the services report.
 class spell_warr_last_stand : public SpellScriptLoader
 {
-    public:
-        spell_warr_last_stand() : SpellScriptLoader("spell_warr_last_stand") { }
+public:
+    spell_warr_last_stand() : SpellScriptLoader("spell_warr_last_stand") { }
 
-        class spell_warr_last_stand_SpellScript : public SpellScript
+    class spell_warr_last_stand_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_warr_last_stand_AuraScript);
+
+        void CalculateAmount(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
         {
-            PrepareSpellScript(spell_warr_last_stand_SpellScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) override
-            {
-                if (!sSpellMgr->GetSpellInfo(WARRIOR_SPELL_LAST_STAND_TRIGGERED))
-                    return false;
-                return true;
-            }
-
-            void HandleDummy(SpellEffIndex /*effIndex*/)
-            {
-                if (Unit* caster = GetCaster())
-                {
-                    int32 healthModSpellBasePoints0 = int32(caster->CountPctFromMaxHealth(30));
-                    caster->CastCustomSpell(caster, WARRIOR_SPELL_LAST_STAND_TRIGGERED, &healthModSpellBasePoints0, NULL, NULL, true, NULL);
-                }
-            }
-
-            void Register() override
-            {
-                // add dummy effect spell handler to Last Stand
-                OnEffectHit += SpellEffectFn(spell_warr_last_stand_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
-            }
-        };
-
-        SpellScript* GetSpellScript() const override
-        {
-            return new spell_warr_last_stand_SpellScript();
+            if (Unit* caster = GetCaster())
+                amount = int32(caster->CountPctFromMaxHealth(amount > 0 ? amount : 30));
         }
+
+        void Register() override
+        {
+            DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_warr_last_stand_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_MOD_INCREASE_HEALTH_2);
+        }
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_warr_last_stand_AuraScript();
+    }
 };
 
 // Thunder Clap - 6343
@@ -1395,14 +1385,15 @@ class spell_warr_shattering_throw : public SpellScript
 {
     PrepareSpellScript(spell_warr_shattering_throw);
 
-    void HandleHit()
+    void HandleBeforeHit()
     {
-        GetHitUnit()->RemoveAurasWithMechanic(1 << MECHANIC_IMMUNE_SHIELD, AURA_REMOVE_BY_ENEMY_SPELL, 115760); // Glyph of Ice Block
+        if (Unit* target = GetHitUnit())
+            target->RemoveAurasWithMechanic(1 << MECHANIC_IMMUNE_SHIELD, AURA_REMOVE_BY_ENEMY_SPELL, 115760); // Glyph of Ice Block
     }
 
     void Register() override
     {
-        OnHit += SpellHitFn(spell_warr_shattering_throw::HandleHit);
+        BeforeHit += SpellHitFn(spell_warr_shattering_throw::HandleBeforeHit);
     }
 };
 
@@ -2047,74 +2038,19 @@ class spell_warr_glyph_of_blazing_trail : public SpellScript
     }
 };
 
+void AddSC_skyfire27_warrior();
+
 void AddSC_warrior_spell_scripts()
 {
-    new spell_script<spell_warr_victorious_state>("spell_warr_victorious_state");
-    new spell_warr_glyph_of_hindering_strikes();
-    new spell_warr_stampeding_shout();
-    new spell_warr_shield_block();
-    new spell_script<spell_warr_storm_bolt>("spell_warr_storm_bolt");
-    new spell_warr_staggering_shout();
-    new spell_warr_unbridled_wrath();
-    new spell_warr_berserker_rage();
-    new spell_warr_mocking_banner();
-    new spell_warr_mortal_strike();
-    new spell_warr_rallying_cry();
-    new spell_script<spell_warr_shockwave>("spell_warr_shockwave");
-    new spell_warr_bloodthirst();
-    new spell_warr_last_stand();
-    new spell_warr_thunder_clap();
-    new spell_script<spell_warr_charge>("spell_warr_charge");
-    new spell_warr_riposte();
-    new spell_warr_revenge_shield_slam();
-    new spell_warr_overpower();
-    new spell_warr_unshackled_fury();
-    new spell_warr_storm_bolt_damage();
-    new spell_warr_glyph_of_burning_anger();
-    new aura_script<spell_warr_taste_for_blood>("spell_warr_taste_for_blood");
     new aura_script<spell_warr_taste_for_blood_effect>("spell_warr_taste_for_blood_effect");
-    new spell_script<spell_warr_revenge>("spell_warr_revenge");
-    new aura_script<spell_warr_strikes_of_opportunity>("spell_warr_strikes_of_opportunity");
-    new aura_script<spell_warr_bloodbath>("spell_warr_bloodbath");
-    new aura_script<spell_warr_sudden_death>("spell_warr_sudden_death");
-    new spell_script<spell_warr_victory_rush>("spell_warr_victory_rush");
-    new spell_script<spell_warr_victory_rush_heal>("spell_warr_victory_rush_heal");
-    new spell_script<spell_warr_impending_victory>("spell_warr_impending_victory");
-    new spell_script<spell_warr_intervene>("spell_warr_intervene");
-    new aura_script<spell_warr_sword_and_board>("spell_warr_sword_and_board");
     new spell_script<spell_warr_sword_and_board_buff>("spell_warr_sword_and_board_buff");
-    new spell_script<spell_warr_dragon_roar>("spell_warr_dragon_roar");
-    new spell_script<spell_warr_heroic_leap>("spell_warr_heroic_leap");
-    new spell_script<spell_warr_heroic_leap_damage>("spell_warr_heroic_leap_damage");
     new aura_script<spell_warr_heroic_leap_landing_arua>("spell_warr_heroic_leap_landing_arua");
     new spell_script<spell_warr_enrage_raging_blow>("spell_warr_enrage_raging_blow");
-    new spell_script<spell_warr_raging_blow>("spell_warr_raging_blow");
     new aura_script<spell_warr_second_wind>("spell_warr_second_wind");
     new aura_script<spell_warr_second_wind_regen>("spell_warr_second_wind_regen");
-    new spell_script<spell_warr_shield_slam>("spell_warr_shield_slam");
-    new spell_script<spell_warr_shattering_throw>("spell_warr_shattering_throw");
-    new spell_script<spell_warr_colossus_smash>("spell_warr_colossus_smash");
-    new spell_script<spell_warr_glyph_of_die_by_the_sword>("spell_warr_glyph_of_die_by_the_sword");
-    new spell_script<spell_warr_heroic_strike_one_hand>("spell_warr_heroic_strike_one_hand");
-    new aura_script<spell_warr_meat_cleaver>("spell_warr_meat_cleaver");
-    new spell_script<spell_warr_intimidating_shout>("spell_warr_intimidating_shout");
-    new aura_script<spell_warr_glyph_of_rude_interruption>("spell_warr_glyph_of_rude_interruption");
     new aura_script<spell_warr_deep_wounds_proc_driver>("spell_warr_deep_wounds_proc_driver");
-    new aura_script<spell_warr_deep_wounds>("spell_warr_deep_wounds");
-    new aura_script<spell_warr_glyph_of_bloody_healing>("spell_warr_glyph_of_bloody_healing");
-    new aura_script<spell_warr_glyph_of_bloody_healing_effect>("spell_warr_glyph_of_bloody_healing_effect");
-    new aura_script<spell_warr_shield_visual>("spell_warr_shield_visual");
     new aura_script<spell_warr_berserker_stance_passive>("spell_warr_berserker_stance_passive");
-    new aura_script<spell_warr_spell_reflection>("spell_warr_spell_reflection");
-    new aura_script<spell_warr_demoralizing_shout>("spell_warr_demoralizing_shout");
-    new aura_script<spell_warr_shield_barrier>("spell_warr_shield_barrier");
-    new aura_script<spell_warr_t16_dps_2p_bonus>("spell_warr_t16_dps_2p_bonus");
     new aura_script<spell_warr_t16_dps_4p_bonus>("spell_warr_t16_dps_4p_bonus");
-    new aura_script<spell_warr_t16_protection_2p_bonus>("spell_warr_t16_protection_2p_bonus");
-    new aura_script<spell_warr_t16_protection_4p_bonus>("spell_warr_t16_protection_4p_bonus");
-    new aura_script<spell_warr_reckless_defence>("spell_warr_reckless_defence");
-    new aura_script<spell_warr_sweeping_strikes>("spell_warr_sweeping_strikes");
-    new aura_script<spell_warr_glyph_of_hamstring>("spell_warr_glyph_of_hamstring");
-    new aura_script<spell_warr_charge_drop_fire_periodic>("spell_warr_charge_drop_fire_periodic");
     new spell_script<spell_warr_glyph_of_blazing_trail>("spell_warr_glyph_of_blazing_trail");
+    AddSC_skyfire27_warrior();
 }

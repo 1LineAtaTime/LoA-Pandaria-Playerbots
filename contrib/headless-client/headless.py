@@ -1679,6 +1679,7 @@ class WorldClient:
         CMSG_TIME_SYNC_RESP ... possible cheater' on the 4th, 5th and 6th = 3 lines per client exit. A GM
         account logs out instantly (MiscHandler.cpp:551 HandleLogoutRequestOpcode -> SMSG_LOGOUT_COMPLETE at
         once); others sit for the 20 s timer, pumped."""
+        self.last_logout_result = None
         try:
             self.send_packet(CMSG_LOGOUT_REQUEST)
             deadline = time.time() + timeout
@@ -1688,10 +1689,12 @@ class WorldClient:
                     continue
                 op, body = self.read_packet()
                 self.auto(op, body)
-                if op == SMSG_LOGOUT_RESPONSE and len(body) >= 4 and struct.unpack("<I", body[:4])[0] != 0:
-                    log("logout refused (result %d: combat/falling/duel) - the server keeps the character for its disconnect linger"
-                        % struct.unpack("<I", body[:4])[0])
-                    return False
+                if op == SMSG_LOGOUT_RESPONSE and len(body) >= 4:
+                    self.last_logout_result = struct.unpack("<I", body[:4])[0]
+                    if self.last_logout_result != 0:
+                        log("logout refused (result %d: combat/falling/duel) - the server keeps the character for its disconnect linger"
+                            % self.last_logout_result)
+                        return False
                 if op == SMSG_LOGOUT_COMPLETE:
                     log("logout complete")
                     return True
@@ -2045,6 +2048,13 @@ class WorldClient:
             entry, spawn = a.split(":", 1)
             return (int(spawn) | (int(entry) << 32) | (HIGHGUID_GAMEOBJECT << 52)) & 0xFFFFFFFFFFFFFFFF
         return int(a)
+
+    def quest_hello(self, guid):
+        """CMSG_QUESTGIVER_HELLO for quest-only NPCs (QuestHandler.cpp)."""
+        guid=int(guid);g=guid.to_bytes(8,'little');bw=BitWriter()
+        for index in (5,6,7,3,4,2,1,0):bw.bit(g[index]!=0)
+        self.send_packet(0x02DB,bw.flush()+guid_byte_seq(guid,(4,1,7,3,6,0,5,2)))
+        self.emit('quest_hello',guid=guid)
 
     def gossip_hello(self, guid):
         """CMSG_GOSSIP_HELLO (NPCHandler.cpp:447): bits [2,4,0,3,6,7,5,1], byteseq [4,7,1,0,5,3,6,2]."""
@@ -2814,7 +2824,7 @@ class WorldClient:
         log("sent CMSG_CHAR_CREATE name=%r race=%d class=%d" % (name, race, klass))
 
     def ping(self):
-        self.send_packet(CMSG_PING, struct.pack("<II", int(time.time() * 1000) & 0xFFFFFFFF, 0))
+        self.send_packet(CMSG_PING, struct.pack("<II", 0, int(time.time() * 1000) & 0xFFFFFFFF))
 
     # --- S1b (issue #172): movement -----------------------------------------
     def _move_ts(self):
@@ -5704,7 +5714,12 @@ def mv_read_create_movement(r):
     if has_vehicle:
         r.u32(); r.f32()
     if has_stat:
-        r.f32(); r.f32(); r.f32(); r.f32()
+        # Object::BuildMovementUpdate writes stationary objects in Y,Z,O,X
+        # order. Discarding these made every static quest object invisible to
+        # the QA observer even though the server had sent its create block.
+        sy, sz, orientation, sx = r.f32(), r.f32(), r.f32(), r.f32()
+        if out['pos'] is None:
+            out['pos'] = (sx, sy, sz)
     if has_anim:
         if not kit_ai:
             r.raw(2)

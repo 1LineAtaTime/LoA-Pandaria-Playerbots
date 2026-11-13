@@ -1,10 +1,11 @@
+-- Clean schema/static seed export. No account, character, mail, wallet or runtime rows.
+-- Import into the database explicitly selected by the operator.
 SET NAMES utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 0;
 
--- ----------------------------
--- Table structure for account
--- ----------------------------
 DROP TABLE IF EXISTS `account`;
+
 CREATE TABLE `account`  (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Identifier',
   `username` varchar(32) NOT NULL DEFAULT '',
@@ -61,18 +62,10 @@ CREATE TABLE `account`  (
   INDEX `idx_id`(`id` ASC) USING BTREE,
   INDEX `idx_sha`(`sha_pass_hash` ASC) USING BTREE,
   INDEX `idx_session`(`sessionkey` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account System' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account System' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of account
--- ----------------------------
-INSERT INTO `account` (`id`, `username`, `battlenet_account`, `sha_pass_hash`, `sessionkey`, `v`, `s`, `token_key`, `totp_secret`, `email`, `reg_mail`, `joindate`, `last_ip`, `failed_logins`, `locked`, `lock_country`, `last_login`, `online`, `expansion`, `mutetime`, `mutereason`, `muteby`, `locale`, `os`, `recruiter`, `project_member_id`, `rank`, `staff_id`, `vp`, `dp`, `isactive`, `activation`, `invited_by`, `inv_friend_acc`, `rewarded`, `flags`, `gmlevel`, `active_realm_id`, `online_mute_timer`, `active_mute_id`, `project_verified`, `cash`, `project_is_free`, `project_is_temp`, `project_unban_count`, `project_antierror`, `project_attached`, `project_passchange`, `project_vote_time`, `project_hwid`) 
-VALUES (1, 'TEST', '', '3D0D99423E31FCC67A6745EC89D70D700344BC76', 'A4BEAD4BBD62A0C1F5C1BA3CE857C7E587B1AFD1EBF2543F4EAFFC87EC09DE8EF51AA142D04ED259', '77733268AF0D167253BC9097A6BDDAA4E55B66EBFBC5432350DF549084F29D75', 'CC28EADCB56862623B8211A43B96F5FD1B8667464349816AE225487CC0425AB1', '', NULL, '', '', '2021-11-03 17:57:54', '25.90.193.232', 0, 0, '00', '2021-11-04 20:22:34', 0, 4, 0, '', '', 6, 'Win', 0, 0, NULL, NULL, NULL, 0, NULL, NULL, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 0, 0, '');
-
--- ----------------------------
--- Table structure for account_access
--- ----------------------------
 DROP TABLE IF EXISTS `account_access`;
+
 CREATE TABLE `account_access`  (
   `id` int UNSIGNED NOT NULL,
   `gmlevel` tinyint UNSIGNED NOT NULL,
@@ -81,15 +74,8 @@ CREATE TABLE `account_access`  (
   PRIMARY KEY (`id`, `RealmID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of account_access
--- ----------------------------
-INSERT INTO `account_access` VALUES (1, 3, -1, NULL); -- #9: RBAC defaults exist for levels 0-3 only; 100 had no permissions
-
--- ----------------------------
--- Table structure for account_banned
--- ----------------------------
 DROP TABLE IF EXISTS `account_banned`;
+
 CREATE TABLE `account_banned`  (
   `id` int UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Account id',
   `realm` int NOT NULL,
@@ -101,28 +87,16 @@ CREATE TABLE `account_banned`  (
   PRIMARY KEY (`id`, `bandate`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Ban List' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of account_banned
--- ----------------------------
-
--- ----------------------------
--- Table structure for account_boost
--- ----------------------------
 DROP TABLE IF EXISTS `account_boost`;
+
 CREATE TABLE `account_boost`  (
   `id` int NOT NULL DEFAULT 0,
   `realmid` int UNSIGNED NOT NULL DEFAULT 1,
   `counter` int UNSIGNED NOT NULL DEFAULT 0
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of account_boost
--- ----------------------------
-
--- ----------------------------
--- Table structure for account_muted
--- ----------------------------
 DROP TABLE IF EXISTS `account_muted`;
+
 CREATE TABLE `account_muted`  (
   `id` int NOT NULL,
   `realmid` int NOT NULL DEFAULT 0,
@@ -138,28 +112,16 @@ CREATE TABLE `account_muted`  (
   PRIMARY KEY (`realmid`, `id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of account_muted
--- ----------------------------
-
--- ----------------------------
--- Table structure for arena_game_id
--- ----------------------------
 DROP TABLE IF EXISTS `arena_game_id`;
+
 CREATE TABLE `arena_game_id`  (
   `game_id` int UNSIGNED NOT NULL AUTO_INCREMENT,
   `realm_id` tinyint UNSIGNED NOT NULL,
   PRIMARY KEY (`game_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of arena_game_id
--- ----------------------------
-
--- ----------------------------
--- Table structure for arena_games
--- ----------------------------
 DROP TABLE IF EXISTS `arena_games`;
+
 CREATE TABLE `arena_games`  (
   `gameid` bigint NOT NULL DEFAULT 0,
   `teamid` bigint NOT NULL DEFAULT 0,
@@ -192,14 +154,8 @@ CREATE TABLE `arena_games`  (
   INDEX `idx__season__class__type`(`season` ASC, `class` ASC, `type` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'WoWArmory Game Chart' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of arena_games
--- ----------------------------
-
--- ----------------------------
--- Table structure for arena_match_stat
--- ----------------------------
 DROP TABLE IF EXISTS `arena_match_stat`;
+
 CREATE TABLE `arena_match_stat`  (
   `realm` tinyint UNSIGNED NOT NULL,
   `teamGuid` int UNSIGNED NOT NULL,
@@ -216,14 +172,8 @@ CREATE TABLE `arena_match_stat`  (
   PRIMARY KEY (`teamGuid`, `realm`, `player`, `instanceID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of arena_match_stat
--- ----------------------------
-
--- ----------------------------
--- Table structure for arena_team
--- ----------------------------
 DROP TABLE IF EXISTS `arena_team`;
+
 CREATE TABLE `arena_team`  (
   `arenaTeamId` int UNSIGNED NOT NULL DEFAULT 0,
   `name` varchar(24) NOT NULL,
@@ -249,14 +199,8 @@ CREATE TABLE `arena_team`  (
   PRIMARY KEY (`arenaTeamId`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of arena_team
--- ----------------------------
-
--- ----------------------------
--- Table structure for arena_team_member
--- ----------------------------
 DROP TABLE IF EXISTS `arena_team_member`;
+
 CREATE TABLE `arena_team_member`  (
   `arenaTeamId` int UNSIGNED NOT NULL DEFAULT 0,
   `guid` int UNSIGNED NOT NULL DEFAULT 0,
@@ -277,14 +221,8 @@ CREATE TABLE `arena_team_member`  (
   INDEX `guid`(`guid` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of arena_team_member
--- ----------------------------
-
--- ----------------------------
--- Table structure for armory_game_chart
--- ----------------------------
 DROP TABLE IF EXISTS `armory_game_chart`;
+
 CREATE TABLE `armory_game_chart`  (
   `gameid` int NOT NULL,
   `realmid` tinyint UNSIGNED NOT NULL DEFAULT 1,
@@ -307,30 +245,18 @@ CREATE TABLE `armory_game_chart`  (
   `type` tinyint UNSIGNED NULL DEFAULT NULL
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of armory_game_chart
--- ----------------------------
-
--- ----------------------------
--- Table structure for autobroadcast
--- ----------------------------
 DROP TABLE IF EXISTS `autobroadcast`;
+
 CREATE TABLE `autobroadcast`  (
   `realmid` int NOT NULL DEFAULT -1,
   `id` tinyint UNSIGNED NOT NULL AUTO_INCREMENT,
   `weight` tinyint UNSIGNED NULL DEFAULT 1,
   `text` longtext NOT NULL,
   PRIMARY KEY (`id`, `realmid`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of autobroadcast
--- ----------------------------
-
--- ----------------------------
--- Table structure for battleground_games
--- ----------------------------
 DROP TABLE IF EXISTS `battleground_games`;
+
 CREATE TABLE `battleground_games`  (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
   `season` int UNSIGNED NOT NULL,
@@ -347,14 +273,8 @@ CREATE TABLE `battleground_games`  (
   INDEX `season`(`season` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battleground_games
--- ----------------------------
-
--- ----------------------------
--- Table structure for battleground_ladder_criteria
--- ----------------------------
 DROP TABLE IF EXISTS `battleground_ladder_criteria`;
+
 CREATE TABLE `battleground_ladder_criteria`  (
   `criteria` enum('Win','Loss','FastWin','Kills','ObjectiveCaptures','ObjectiveDefenses','DailyWins','DailyKills','SeasonKills','SeasonWinsAV','SeasonWinsWG','SeasonWinsAB','SeasonWinsEotS','SeasonWinsSotA','SeasonWinsIoC','TotalWins','TotalDraws','TotalLosses','TotalKills','TotalLeavesBeforeGame','TotalLeavesDuringGame') NOT NULL COMMENT 'Name of the column in `battleground_ladder_progress` if `type` is \'Daily\', \'Season\' or \'Statistic\'',
   `type` enum('Statistic','Season','Daily','Alterac Valley','Warsong Gulch','Arathi Basin','Eye of the Storm','Strand of the Ancients','Isle of Conquest') NOT NULL COMMENT 'If not set - affects all battlegrounds, if set - overrides global setting only for the specified battleground. Only valid for battleground-specific `type`s',
@@ -368,14 +288,8 @@ CREATE TABLE `battleground_ladder_criteria`  (
   PRIMARY KEY (`criteria`, `type`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battleground_ladder_criteria
--- ----------------------------
-
--- ----------------------------
--- Table structure for battleground_ladder_rewards
--- ----------------------------
 DROP TABLE IF EXISTS `battleground_ladder_rewards`;
+
 CREATE TABLE `battleground_ladder_rewards`  (
   `season` int UNSIGNED NOT NULL COMMENT 'Battleground season ID',
   `id` int UNSIGNED NOT NULL COMMENT 'Incrementing number identifying this reward set',
@@ -391,14 +305,8 @@ CREATE TABLE `battleground_ladder_rewards`  (
   PRIMARY KEY (`season`, `id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battleground_ladder_rewards
--- ----------------------------
-
--- ----------------------------
--- Table structure for battleground_scores
--- ----------------------------
 DROP TABLE IF EXISTS `battleground_scores`;
+
 CREATE TABLE `battleground_scores`  (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for each player that participated in the battleground',
   `game_id` int UNSIGNED NOT NULL,
@@ -435,14 +343,8 @@ CREATE TABLE `battleground_scores`  (
   CONSTRAINT `FK_battleground_scores_battleground_games` FOREIGN KEY (`game_id`) REFERENCES `battleground_games` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battleground_scores
--- ----------------------------
-
--- ----------------------------
--- Table structure for battleground_seasons
--- ----------------------------
 DROP TABLE IF EXISTS `battleground_seasons`;
+
 CREATE TABLE `battleground_seasons`  (
   `id` tinyint NOT NULL AUTO_INCREMENT,
   `begin` int UNSIGNED NOT NULL,
@@ -450,14 +352,8 @@ CREATE TABLE `battleground_seasons`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battleground_seasons
--- ----------------------------
-
--- ----------------------------
--- Table structure for battlenet_account_bans
--- ----------------------------
 DROP TABLE IF EXISTS `battlenet_account_bans`;
+
 CREATE TABLE `battlenet_account_bans`  (
   `id` int UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Account id',
   `bandate` int UNSIGNED NOT NULL DEFAULT 0,
@@ -467,14 +363,8 @@ CREATE TABLE `battlenet_account_bans`  (
   PRIMARY KEY (`id`, `bandate`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Ban List' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battlenet_account_bans
--- ----------------------------
-
--- ----------------------------
--- Table structure for battlenet_accounts
--- ----------------------------
 DROP TABLE IF EXISTS `battlenet_accounts`;
+
 CREATE TABLE `battlenet_accounts`  (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Identifier',
   `email` varchar(320) NOT NULL,
@@ -490,16 +380,10 @@ CREATE TABLE `battlenet_accounts`  (
   `project_member_id` int UNSIGNED NULL DEFAULT NULL,
   `project_is_temp` tinyint(1) NULL DEFAULT 0 COMMENT 'nighthold',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account System' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account System' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battlenet_accounts
--- ----------------------------
-
--- ----------------------------
--- Table structure for battlepay_log
--- ----------------------------
 DROP TABLE IF EXISTS `battlepay_log`;
+
 CREATE TABLE `battlepay_log`  (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
   `accountId` int UNSIGNED NOT NULL,
@@ -511,14 +395,8 @@ CREATE TABLE `battlepay_log`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of battlepay_log
--- ----------------------------
-
--- ----------------------------
--- Table structure for bonus_rates
--- ----------------------------
 DROP TABLE IF EXISTS `bonus_rates`;
+
 CREATE TABLE `bonus_rates`  (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Autoincrementable ID',
   `realmid` int NOT NULL DEFAULT -1 COMMENT 'RealmID for which the rates would be active. -1 for all realms',
@@ -532,26 +410,14 @@ CREATE TABLE `bonus_rates`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of bonus_rates
--- ----------------------------
-
--- ----------------------------
--- Table structure for boost_promotion_executed
--- ----------------------------
 DROP TABLE IF EXISTS `boost_promotion_executed`;
+
 CREATE TABLE `boost_promotion_executed`  (
   `member_id` int NOT NULL
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of boost_promotion_executed
--- ----------------------------
-
--- ----------------------------
--- Table structure for ip_banned
--- ----------------------------
 DROP TABLE IF EXISTS `ip_banned`;
+
 CREATE TABLE `ip_banned`  (
   `ip` varchar(15) NOT NULL DEFAULT '127.0.0.1',
   `bandate` int UNSIGNED NOT NULL,
@@ -561,14 +427,8 @@ CREATE TABLE `ip_banned`  (
   PRIMARY KEY (`ip`, `bandate`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Banned IPs' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of ip_banned
--- ----------------------------
-
--- ----------------------------
--- Table structure for logs
--- ----------------------------
 DROP TABLE IF EXISTS `logs`;
+
 CREATE TABLE `logs`  (
   `time` int UNSIGNED NOT NULL,
   `realm` int UNSIGNED NOT NULL,
@@ -577,14 +437,8 @@ CREATE TABLE `logs`  (
   `string` text NULL
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of logs
--- ----------------------------
-
--- ----------------------------
--- Table structure for mute_active
--- ----------------------------
 DROP TABLE IF EXISTS `mute_active`;
+
 CREATE TABLE `mute_active`  (
   `realmid` tinyint NOT NULL,
   `account` int NOT NULL,
@@ -593,14 +447,8 @@ CREATE TABLE `mute_active`  (
   PRIMARY KEY (`realmid`, `account`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of mute_active
--- ----------------------------
-
--- ----------------------------
--- Table structure for pay_history
--- ----------------------------
 DROP TABLE IF EXISTS `pay_history`;
+
 CREATE TABLE `pay_history`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `orderNo` varchar(255) NULL DEFAULT NULL,
@@ -613,14 +461,8 @@ CREATE TABLE `pay_history`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'not used, don\'t know how to make payment work.' ROW_FORMAT = COMPACT;
 
--- ----------------------------
--- Records of pay_history
--- ----------------------------
-
--- ----------------------------
--- Table structure for promocodes
--- ----------------------------
 DROP TABLE IF EXISTS `promocodes`;
+
 CREATE TABLE `promocodes`  (
   `code` varchar(50) NOT NULL COMMENT 'Latin letters, digits and dash symbol are allowed, case insensitive',
   `realmid` int NOT NULL DEFAULT -1 COMMENT 'Realm the code can be redeemed on or -1 for any realm',
@@ -639,14 +481,8 @@ CREATE TABLE `promocodes`  (
   INDEX `redeemed`(`redeemed` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'used for custom\r\ntodo: make this implement into blizzcms' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of promocodes
--- ----------------------------
-
--- ----------------------------
--- Table structure for promotion_auras
--- ----------------------------
 DROP TABLE IF EXISTS `promotion_auras`;
+
 CREATE TABLE `promotion_auras`  (
   `entry` int UNSIGNED NOT NULL,
   `start_date` int UNSIGNED NOT NULL,
@@ -656,30 +492,18 @@ CREATE TABLE `promotion_auras`  (
   PRIMARY KEY (`entry`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of promotion_auras
--- ----------------------------
-
--- ----------------------------
--- Table structure for rbac_account_groups
--- ----------------------------
 DROP TABLE IF EXISTS `rbac_account_groups`;
+
 CREATE TABLE `rbac_account_groups`  (
   `accountId` int UNSIGNED NOT NULL COMMENT 'Account id',
   `groupId` int UNSIGNED NOT NULL COMMENT 'Group id',
   `realmId` int NOT NULL DEFAULT -1 COMMENT 'Realm Id, -1 means all',
   PRIMARY KEY (`accountId`, `groupId`, `realmId`) USING BTREE,
   INDEX `fk__rbac_account_groups__rbac_groups`(`groupId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account-Group relation' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account-Group relation' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of rbac_account_groups
--- ----------------------------
-
--- ----------------------------
--- Table structure for rbac_account_permissions
--- ----------------------------
 DROP TABLE IF EXISTS `rbac_account_permissions`;
+
 CREATE TABLE `rbac_account_permissions`  (
   `accountId` int UNSIGNED NOT NULL COMMENT 'Account id',
   `permissionId` int UNSIGNED NOT NULL COMMENT 'Permission id',
@@ -687,48 +511,34 @@ CREATE TABLE `rbac_account_permissions`  (
   `realmId` int NOT NULL DEFAULT -1 COMMENT 'Realm Id, -1 means all',
   PRIMARY KEY (`accountId`, `permissionId`, `realmId`) USING BTREE,
   INDEX `fk__rbac_account_roles__rbac_permissions`(`permissionId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account-Permission relation' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Account-Permission relation' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of rbac_account_permissions
--- ----------------------------
-
--- ----------------------------
--- Table structure for rbac_default_permissions
--- ----------------------------
 DROP TABLE IF EXISTS `rbac_default_permissions`;
+
 CREATE TABLE `rbac_default_permissions`  (
   `secId` int UNSIGNED NOT NULL COMMENT 'Security Level id',
   `permissionId` int UNSIGNED NOT NULL COMMENT 'permission id',
   `realmId` int NOT NULL DEFAULT -1 COMMENT 'Realm Id, -1 means all',
   PRIMARY KEY (`secId`, `permissionId`, `realmId`) USING BTREE,
   INDEX `fk__rbac_default_permissions__rbac_permissions`(`permissionId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Default permission to assign to different account security levels' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Default permission to assign to different account security levels' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of rbac_default_permissions
--- ----------------------------
 REPLACE INTO `rbac_default_permissions` (`secId`, `permissionId`, `realmId`) VALUES
 	(3, 192, -1),
 	(2, 193, -1),
 	(1, 194, -1),
 	(0, 195, -1);
 
--- ----------------------------
--- Table structure for rbac_linked_permissions
--- ----------------------------
 DROP TABLE IF EXISTS `rbac_linked_permissions`;
+
 CREATE TABLE `rbac_linked_permissions`  (
   `id` int UNSIGNED NOT NULL COMMENT 'Permission id',
   `linkedId` int UNSIGNED NOT NULL COMMENT 'Linked Permission id',
   PRIMARY KEY (`id`, `linkedId`) USING BTREE,
   INDEX `fk__rbac_linked_permissions__rbac_permissions1`(`id`) USING BTREE,
   INDEX `fk__rbac_linked_permissions__rbac_permissions2`(`linkedId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Permission - Linked Permission relation' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Permission - Linked Permission relation' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of rbac_linked_permissions
--- ----------------------------
 REPLACE INTO `rbac_linked_permissions` (`id`, `linkedId`) VALUES
 	(192, 7),
 	(192, 21),
@@ -1430,19 +1240,14 @@ REPLACE INTO `rbac_linked_permissions` (`id`, `linkedId`) VALUES
 	(199, 534),
 	(199, 797);
 
--- ----------------------------
--- Table structure for rbac_permissions
--- ----------------------------
 DROP TABLE IF EXISTS `rbac_permissions`;
+
 CREATE TABLE `rbac_permissions`  (
   `id` int UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Permission id',
   `name` varchar(100) NOT NULL COMMENT 'Permission name',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Permission List' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Permission List' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of rbac_permissions
--- ----------------------------
 REPLACE INTO `rbac_permissions` (`id`, `name`) VALUES
 	(1,'Instant logout'),
 	(2,'Skip Queue'),
@@ -2162,18 +1967,14 @@ REPLACE INTO `rbac_permissions` (`id`, `name`) VALUES
 	(1043,'Command: .account boost add'),
 	(1044,'Command: .account boost delete');
 
--- ----------------------------
--- View structure for vw_rbac
--- ----------------------------
 DROP VIEW IF EXISTS `vw_rbac`;
+
 CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vw_rbac` AS
 select `t1`.`linkedId` AS `Permission ID`,`t1`.`id` AS `Permission Group`,ifnull(`t2`.`secId`,'linked') AS `Security Level`,`t3`.`name` AS `Permission`
 from ((`rbac_linked_permissions` `t1` left join `rbac_default_permissions` `t2` on((`t1`.`id` = `t2`.`permissionId`))) left join `rbac_permissions` `t3` on((`t1`.`linkedId` = `t3`.`id`)));
 
--- ----------------------------
--- Table structure for realm_classes
--- ----------------------------
 DROP TABLE IF EXISTS `realm_classes`;
+
 CREATE TABLE `realm_classes`  (
   `realmId` int NOT NULL,
   `class` tinyint NOT NULL COMMENT 'Class Id',
@@ -2181,25 +1982,30 @@ CREATE TABLE `realm_classes`  (
   PRIMARY KEY (`realmId`, `class`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of realm_classes
--- ----------------------------
 INSERT INTO `realm_classes` VALUES (1, 1, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 2, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 3, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 4, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 5, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 6, 2);
+
 INSERT INTO `realm_classes` VALUES (1, 7, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 8, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 9, 0);
+
 INSERT INTO `realm_classes` VALUES (1, 10, 4);
+
 INSERT INTO `realm_classes` VALUES (1, 11, 0);
 
--- ----------------------------
--- Table structure for realm_diff_stats
--- ----------------------------
 DROP TABLE IF EXISTS `realm_diff_stats`;
+
 CREATE TABLE `realm_diff_stats`  (
   `realm_id` tinyint UNSIGNED NOT NULL,
   `diff` mediumint UNSIGNED NULL DEFAULT NULL,
@@ -2209,15 +2015,10 @@ CREATE TABLE `realm_diff_stats`  (
   PRIMARY KEY (`realm_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of realm_diff_stats
--- ----------------------------
 INSERT INTO `realm_diff_stats` VALUES (1, 25, 14, 129, 1636139221);
 
--- ----------------------------
--- Table structure for realm_races
--- ----------------------------
 DROP TABLE IF EXISTS `realm_races`;
+
 CREATE TABLE `realm_races`  (
   `realmId` int NOT NULL,
   `race` tinyint NOT NULL COMMENT 'Race Id',
@@ -2225,29 +2026,38 @@ CREATE TABLE `realm_races`  (
   PRIMARY KEY (`realmId`, `race`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of realm_races
--- ----------------------------
 INSERT INTO `realm_races` VALUES (1, 1, 0);
+
 INSERT INTO `realm_races` VALUES (1, 2, 0);
+
 INSERT INTO `realm_races` VALUES (1, 3, 0);
+
 INSERT INTO `realm_races` VALUES (1, 4, 0);
+
 INSERT INTO `realm_races` VALUES (1, 5, 0);
+
 INSERT INTO `realm_races` VALUES (1, 6, 0);
+
 INSERT INTO `realm_races` VALUES (1, 7, 0);
+
 INSERT INTO `realm_races` VALUES (1, 8, 0);
+
 INSERT INTO `realm_races` VALUES (1, 9, 3);
+
 INSERT INTO `realm_races` VALUES (1, 10, 1);
+
 INSERT INTO `realm_races` VALUES (1, 11, 1);
+
 INSERT INTO `realm_races` VALUES (1, 22, 3);
+
 INSERT INTO `realm_races` VALUES (1, 24, 4);
+
 INSERT INTO `realm_races` VALUES (1, 25, 4);
+
 INSERT INTO `realm_races` VALUES (1, 26, 4);
 
--- ----------------------------
--- Table structure for realmcharacters
--- ----------------------------
 DROP TABLE IF EXISTS `realmcharacters`;
+
 CREATE TABLE `realmcharacters`  (
   `realmid` int UNSIGNED NOT NULL DEFAULT 0,
   `acctid` int UNSIGNED NOT NULL,
@@ -2256,18 +2066,8 @@ CREATE TABLE `realmcharacters`  (
   INDEX `acctid`(`acctid` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'How many characters accounts have' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of realmcharacters
--- ----------------------------
-INSERT INTO `realmcharacters` VALUES (1, 1, 4);
-INSERT INTO `realmcharacters` VALUES (1, 2, 1);
-INSERT INTO `realmcharacters` VALUES (2, 1, 0);
-INSERT INTO `realmcharacters` VALUES (2, 2, 0);
-
--- ----------------------------
--- Table structure for realmlist
--- ----------------------------
 DROP TABLE IF EXISTS `realmlist`;
+
 CREATE TABLE `realmlist` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(32) NOT NULL DEFAULT '',
@@ -2283,19 +2083,13 @@ CREATE TABLE `realmlist` (
   `gamebuild` int unsigned NOT NULL DEFAULT '12340',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT=DYNAMIC COMMENT='Realm System';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT=DYNAMIC COMMENT='Realm System';
 
--- ----------------------------
--- Records of realmlist
--- ----------------------------
 INSERT INTO `realmlist` (`id`, `name`, `address`, `port`, `localAddress`, `localSubnetMask`, `icon`, `flag`, `timezone`, `allowedSecurityLevel`, `population`, `gamebuild`) VALUES 
 (1, 'MoP', '25.81.18.30', 8085, '127.0.0.1', '255.255.255.0', 0, 0, 14, 0, 0, 18414);
 
-
--- ----------------------------
--- Table structure for build_info
--- ----------------------------
 DROP TABLE IF EXISTS `build_info`;
+
 CREATE TABLE `build_info`  (
   `build` int NOT NULL,
   `majorVersion` int NULL DEFAULT NULL,
@@ -2310,9 +2104,6 @@ CREATE TABLE `build_info`  (
   PRIMARY KEY (`build`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = DYNAMIC;
 
--- ----------------------------
--- Table structure for build_info
--- ----------------------------
 INSERT INTO `build_info` VALUES 
 (5875, 1, 12, 1, NULL, NULL, NULL, NULL, '95EDB27C7823B363CBDDAB56A392E7CB73FCCA20', '8D173CC381961EEBABF336F5E6675B101BB513E5'),
 (6005, 1, 12, 2, NULL, NULL, NULL, NULL, NULL, NULL),
@@ -2400,10 +2191,8 @@ INSERT INTO `build_info` VALUES
 (32638, 8, 2, 5, NULL, NULL, '5D07ECE7D4A867DDDE615DAD22B76D4E', NULL, NULL, NULL),
 (32722, 8, 2, 5, NULL, NULL, '1A09BE1D38A122586B4931BECCEAD4AA', NULL, NULL, NULL);
 
--- ----------------------------
--- Table structure for sql_update
--- ----------------------------
 DROP TABLE IF EXISTS `sql_update`;
+
 CREATE TABLE `sql_update`  (
   `file` varchar(50) NOT NULL,
   `realmid` tinyint NOT NULL DEFAULT -1,
@@ -2412,14 +2201,8 @@ CREATE TABLE `sql_update`  (
   PRIMARY KEY (`file`, `realmid`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of sql_update
--- ----------------------------
-
--- ----------------------------
--- Table structure for uptime
--- ----------------------------
 DROP TABLE IF EXISTS `uptime`;
+
 CREATE TABLE `uptime`  (
   `realmid` int UNSIGNED NOT NULL,
   `starttime` int UNSIGNED NOT NULL DEFAULT 0,
@@ -2429,26 +2212,8 @@ CREATE TABLE `uptime`  (
   PRIMARY KEY (`realmid`, `starttime`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'Uptime system' ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of uptime
--- ----------------------------
-INSERT INTO `uptime` VALUES (1, 1635979141, 600, 0, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1635980112, 0, 0, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636049637, 601, 0, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636050723, 1200, 0, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636057343, 4202, 0, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636067032, 603, 1, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636067868, 3000, 1, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636071143, 600, 1, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636072221, 601, 1, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636073025, 1200, 1, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636074441, 3600, 1, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-INSERT INTO `uptime` VALUES (1, 1636138018, 1203, 0, 'SkyFire 5.x.xRev: 0 Release Hash: Archive (Win64, little-endian)');
-
--- ----------------------------
--- Table structure for wow_token
--- ----------------------------
 DROP TABLE IF EXISTS `wow_token`;
+
 CREATE TABLE `wow_token`  (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
   `accountId` int UNSIGNED NOT NULL,
@@ -2457,16 +2222,10 @@ CREATE TABLE `wow_token`  (
   `coins` int UNSIGNED NOT NULL,
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT=1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of wow_token
--- ----------------------------
-
--- ----------------------------
--- Table structure for updates
--- ----------------------------
 DROP TABLE IF EXISTS `updates`;
+
 CREATE TABLE IF NOT EXISTS `updates` (
   `name` varchar(200) NOT NULL COMMENT 'filename with extension of the update.',
   `hash` char(40) DEFAULT '' COMMENT 'sha1 hash of the sql file.',
@@ -2474,11 +2233,8 @@ CREATE TABLE IF NOT EXISTS `updates` (
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'timestamp when the query was applied.',
   `speed` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'time the query takes to apply in ms.',
   PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='List of all applied updates in this database.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='List of all applied updates in this database.' ROW_FORMAT=DYNAMIC;
 
--- ----------------------------
--- Records of updates
--- ----------------------------
 INSERT INTO `updates` (`name`, `hash`, `state`, `speed`) VALUES
 ('2021_03_27_BattlePay_DP.sql', '702ef317df44edb4837cf7d39d9e9311c6977d19', 'ARCHIVED', 0),
 ('2021_03_27_BattlePay_log.sql', '59da241c9b1db34b1263a684e4a623b0ee8193dc', 'ARCHIVED', 0),
@@ -2495,19 +2251,14 @@ INSERT INTO `updates` (`name`, `hash`, `state`, `speed`) VALUES
 ('2023_12_04_auth.sql', '97736498bfe1e4b0ca1dc5efd412450646a00705', 'ARCHIVED', 0),
 ('fusion-cms.sql', '2e3dd26cd3257982cb89dd21588d3a4384e5807a', 'ARCHIVED', 0);
 
--- ----------------------------
--- Table structure for updates_include
--- ----------------------------
 DROP TABLE IF EXISTS `updates_include`;
+
 CREATE TABLE IF NOT EXISTS `updates_include` (
   `path` varchar(200) NOT NULL COMMENT 'directory to include. $ means relative to the source directory.',
   `state` enum('RELEASED','ARCHIVED') NOT NULL DEFAULT 'RELEASED' COMMENT 'defines if the directory contains released or archived updates.',
   PRIMARY KEY (`path`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='List of directories where we want to include sql updates.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='List of directories where we want to include sql updates.' ROW_FORMAT=DYNAMIC;
 
--- ----------------------------
--- Records of updates_include
--- ----------------------------
 INSERT INTO `updates_include` (`path`, `state`) VALUES
 ('$/sql/updates/master/auth', 'RELEASED'),
 ('$/sql/archive/auth', 'ARCHIVED');

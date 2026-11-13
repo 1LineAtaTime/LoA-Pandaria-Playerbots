@@ -1,0 +1,33 @@
+{
+  "starter": [
+    "quest-28766",
+    "quest-25152",
+    "create-3-3",
+    "create-4-11",
+    "quest-24959",
+    "create-6-1",
+    "create-7-8",
+    "create-8-7",
+    "create-9-4",
+    "create-10-2",
+    "create-11-5",
+    "quest-14078",
+    "quest-30039",
+    "create-1-9",
+    "create-1-6"
+  ],
+  "invalid_requests": [
+    "invalid-accept-zero",
+    "invalid-accept-unknown",
+    "invalid-accept-max-uint32"
+  ],
+  "gossip": [
+    "timeless-eye-once",
+    "timeless-eye-requires-quest"
+  ],
+  "workflows": [
+    "workflow-orc-delivery",
+    "workflow-undead-delivery",
+    "workflow-human-combat-completion"
+  ]
+}

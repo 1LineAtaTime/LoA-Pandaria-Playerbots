@@ -3100,6 +3100,15 @@ void SpellMgr::LoadSpellInfoCorrections()
             // A correction for an area/cone/dest TargetB sets MaxRadiusEntry, like TC/CPP set TargetBRadiusEntry.
             switch (spellInfo->Id)
             {
+                case 8616: // Legacy Berserker Stance quest reward (The Affray).
+                    // Its second learn effect points at retired Intercept 20252.
+                    // Keep the valid Berserker Stance reward, not a phantom spell.
+                    if (spellInfo->Effects[EFFECT_1].TriggerSpell == 20252 && !GetSpellInfo(20252))
+                    {
+                        spellInfo->Effects[EFFECT_1].Effect = 0;
+                        spellInfo->Effects[EFFECT_1].TriggerSpell = 0;
+                    }
+                    break;
                 case 42730: // Woe Strike
                     spellInfo->Effects[EFFECT_1].TriggerSpell = 42739;
                     break;
@@ -6196,9 +6205,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                     break;
                 case 106827: // Smoke blades
                     spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_DUMMY;
-                    break;
-                case 112060: // Apparitions
-                    spellInfo->Effects[0].TargetB = 0;
                     break;
                 case 106992: // Fire Arrow
                     spellInfo->Effects[EFFECT_0].ApplyAuraTickCount = 1500;

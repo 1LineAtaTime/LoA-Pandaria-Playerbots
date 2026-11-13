@@ -124,6 +124,8 @@ void AddSC_brawlers_guild();
 void AddSC_on_duel();
 void AddSC_transmog();
 void AddSC_world_map_scripts();
+void AddSC_tarecgosa_scripts();
+void AddSC_fangs_of_father_scripts();
 void AddSC_zeppelins();  // #498
 
 //eastern kingdoms
@@ -1163,6 +1165,8 @@ void AddWorldScripts()
     AddSC_on_duel();
     AddSC_transmog();
     AddSC_world_map_scripts();
+    AddSC_tarecgosa_scripts();
+    AddSC_fangs_of_father_scripts();
     AddSC_zeppelins();  // #498
 #endif
 }

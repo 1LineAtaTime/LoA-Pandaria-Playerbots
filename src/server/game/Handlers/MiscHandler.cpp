@@ -17,6 +17,7 @@
 
 #include <mutex>
 #include "AccountMgr.h"
+#include "QuestAreaTriggerPolicy.h"
 #include "RBAC.h"
 #include "AchievementMgr.h"
 #include "ArenaTeam.h"
@@ -37,6 +38,7 @@
 #include "GameObjectAI.h"
 #include "GameTime.h"
 #include "GossipDef.h"
+#include "GossipBroadcastId.h"
 #include "Group.h"
 #include "GuildMgr.h"
 #include "InstanceScript.h"
@@ -169,7 +171,7 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleGossipSelectOptionOpcode - %u not found.", guid.GetCounter());
             return;
-        }      
+        }
     }
     else
     {
@@ -201,7 +203,7 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
             }
             // if (!unit->AI()->OnGossipSelectCode(_player, menuId, gossipListId, code.c_str())) // hack, add to support ScriptAI
             // {
-            //     _player->OnGossipSelect(unit, gossipListId, menuId);  
+            //     _player->OnGossipSelect(unit, gossipListId, menuId);
             // }
         }
         else if (go)
@@ -224,7 +226,7 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
         {
             if (!sScriptMgr->OnGossipSelect(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId)) && !unit->AI()->OnGossipSelect(_player, menuId, gossipListId))
             {
-                 _player->OnGossipSelect(unit, gossipListId, menuId);   
+                 _player->OnGossipSelect(unit, gossipListId, menuId);
             }
         }
         else if (go)
@@ -657,7 +659,7 @@ void WorldSession::HandleTogglePvP(WorldPackets::Misc::TogglePvP& togglePvP)
     {
         GetPlayer()->ToggleFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP);
     }
-    
+
     GetPlayer()->UpdatePvP(GetPlayer()->HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP));
 }
 
@@ -692,7 +694,7 @@ void WorldSession::HandleRequestCemeteryList(WorldPacket& /*recvPacket*/)
     GraveYardContainer::const_iterator it;
     std::pair<GraveYardContainer::const_iterator, GraveYardContainer::const_iterator> range;
     range = sObjectMgr->GraveYardStore.equal_range(zoneId);
-        
+
     for (it = range.first; it != range.second && GraveyardIds.size() < 16; ++it) // client max
     {
         if (it->second.team == 0 || it->second.team == team)
@@ -1199,12 +1201,13 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recvData)
                 {
                     for (const auto& objective : quest->Objectives)
                     {
-                        if (objective.Type == QUEST_OBJECTIVE_AREATRIGGER)
+                        if (objective.Type == QUEST_OBJECTIVE_AREATRIGGER &&
+                            QuestAreaTriggerPolicy::Matches(objective.ObjectID, areaTriggerId) &&
+                            !player->GetQuestObjectiveCounter(objective.ID))
                         {
-                            player->m_questObjectiveStatus[objective.ID] += 1;
+                            player->m_questObjectiveStatus[objective.ID] = 1;
                             player->MarkQuestObjectiveToSave(questId, objective.ID);
                             player->SendQuestUpdateAddCreditSimple(quest, &objective);
-                            break;
                         }
                     }
 
@@ -1391,7 +1394,7 @@ void WorldSession::HandleRequestAccountData(WorldPacket& recvData)
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[2]);
     data << uint32(adata->Time); // unix time
-    
+
     SendPacket(&data);
 }
 
@@ -1441,7 +1444,7 @@ void WorldSession::HandleSetActionButtonOpcode(WorldPacket& recvData)
 void WorldSession::HandleCompleteCinematic(WorldPackets::Misc::CompleteCinematic& /*packet*/)
 {
     // If player has sight bound to visual waypoint NPC we should remove it
-    GetPlayer()->GetCinematicMgr()->EndCinematic();    
+    GetPlayer()->GetCinematicMgr()->EndCinematic();
 }
 
 void WorldSession::HandleNextCinematicCamera(WorldPackets::Misc::NextCinematicCamera& /*packet*/)
@@ -1902,8 +1905,17 @@ void WorldSession::HandleTimeSyncResp(WorldPacket& recvData)
     uint32 counter, clientTicks;
     recvData >> counter >> clientTicks;
 
+    // A delayed/duplicate response can arrive after the last request was
+    // consumed, including while changing characters on the same session.
+    // front()/pop() on an empty queue corrupt its state and can hang logout.
+    if (_player->m_timeSyncQueue.empty())
+        return;
+
     if (counter != _player->m_timeSyncQueue.front())
+    {
         TC_LOG_DEBUG("network", "Wrong time sync counter from player %s (cheater?)", _player->GetName().c_str());
+        return; // Do not consume a different pending request or contaminate clock delta.
+    }
 
     TC_LOG_DEBUG("network", "Time sync received: counter %u, client ticks %u, time since last sync %u", counter, clientTicks, clientTicks - _player->m_timeSyncClient);
 
@@ -2444,48 +2456,60 @@ void WorldSession::HandleRequestHotfix(WorldPacket& recvPacket)
 
 void WorldSession::SendBroadcastTextDb2Reply(uint32 entry, ByteBuffer& buffer)
 {
-    /*
-     *  This is a hack fix! Still uses Gossip Id's instead of Broadcast Id's.
-     *  Major database changed required at some point.
-     */
     LocaleConstant locale = GetSessionDbLocaleIndex();
     std::string Text_0;
     std::string Text_1;
-    BroadcastText const* bct = sObjectMgr->GetBroadcastText(entry);
-    if (bct)
+    BroadcastText const* bct = nullptr;
+    GossipTextOption const* legacy = nullptr;
+    uint32 textId = 0;
+    unsigned option = 0;
+    if (GossipBroadcastId::Decode(entry, textId, option))
+    {
+        if (GossipText const* text = sObjectMgr->GetGossipText(textId))
+        {
+            legacy = &text->Options[option];
+            Text_0 = legacy->Text_0;
+            Text_1 = legacy->Text_1;
+            if (locale >= 0)
+                if (NpcTextLocale const* translated = sObjectMgr->GetNpcTextLocale(textId))
+                {
+                    ObjectMgr::GetLocaleString(translated->Text_0[option], locale, Text_0);
+                    ObjectMgr::GetLocaleString(translated->Text_1[option], locale, Text_1);
+                }
+        }
+        else if (textId == 0 && option == 0)
+            Text_0 = "Greetings $n.";
+        else
+            return;
+        if (Text_0.empty())
+            Text_0 = Text_1;
+        if (Text_1.empty())
+            Text_1 = Text_0;
+    }
+    else if ((bct = sObjectMgr->GetBroadcastText(entry)))
     {
         Text_0 = bct->GetText(locale, GENDER_MALE, true);
         Text_1 = bct->GetText(locale, GENDER_FEMALE, true);
     }
     else
-    {
-        return; // return without buffer for trying load data from db2 stores
-    }
-    if (locale >= 0)
-    {
-        if (NpcTextLocale const* localeData = sObjectMgr->GetNpcTextLocale(entry))
-        {
-            ObjectMgr::GetLocaleString(localeData->Text_0[0], locale, Text_0);
-            ObjectMgr::GetLocaleString(localeData->Text_1[0], locale, Text_1);
-        }
-    }
+        return; // Allow ordinary unknown IDs to use client DB2 stores.
     buffer << uint32(entry);
-    buffer << uint32(!bct ? 0 : bct->LanguageID);
+    buffer << uint32(bct ? bct->LanguageID : legacy ? legacy->Language : 0);
     buffer << uint16(Text_0.length());
     if (Text_0.length())
-        buffer << std::string(Text_0);    
+        buffer << std::string(Text_0);
     buffer << uint16(Text_1.length());
     if (Text_1.length())
-        buffer << std::string(Text_1); 
-    buffer << uint32(!bct ? 0 : bct->EmoteId1);  
-    buffer << uint32(!bct ? 0 : bct->EmoteId2);
-    buffer << uint32(!bct ? 0 : bct->EmoteId3);
-    buffer << uint32(!bct ? 0 : bct->EmoteDelay1);
-    buffer << uint32(!bct ? 0 : bct->EmoteDelay2);
-    buffer << uint32(!bct ? 0 : bct->EmoteDelay3);
+        buffer << std::string(Text_1);
+    buffer << uint32(bct ? bct->EmoteId1 : legacy ? legacy->Emotes[0]._Emote : 0);
+    buffer << uint32(bct ? bct->EmoteId2 : legacy ? legacy->Emotes[1]._Emote : 0);
+    buffer << uint32(bct ? bct->EmoteId3 : legacy ? legacy->Emotes[2]._Emote : 0);
+    buffer << uint32(bct ? bct->EmoteDelay1 : legacy ? legacy->Emotes[0]._Delay : 0);
+    buffer << uint32(bct ? bct->EmoteDelay2 : legacy ? legacy->Emotes[1]._Delay : 0);
+    buffer << uint32(bct ? bct->EmoteDelay3 : legacy ? legacy->Emotes[2]._Delay : 0);
     buffer << uint32(!bct ? 0 : bct->SoundEntriesID); // Sound Id
     buffer << uint32(0); // UnkMoP1
-    buffer << uint32(0); // UnkMoP2    
+    buffer << uint32(0); // UnkMoP2
 }
 
 void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recvPacket)
@@ -2774,7 +2798,7 @@ void WorldSession::HandleLogStreamingError(WorldPacket& recvData)
 
     uint32 lenght = recvData.ReadBits(9);
     std::string missingData = recvData.ReadString(lenght);
-    
+
     TC_LOG_DEBUG("network", "CMSG_LOG_STREAMING_ERROR: cant't download data: %s", missingData.c_str());
 }
 

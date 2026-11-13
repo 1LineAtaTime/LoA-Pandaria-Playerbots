@@ -1,0 +1,216 @@
+[
+  {
+    "entry": 19991,
+    "name": "Bloodmaul Brute",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_bloodmaul_brute",
+    "applied": false
+  },
+  {
+    "entry": 25220,
+    "name": "Civilian Recruit",
+    "repair": "enable existing SmartAI",
+    "applied": true
+  },
+  {
+    "entry": 36585,
+    "name": "Bastia",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_pant_gob",
+    "applied": true
+  },
+  {
+    "entry": 44592,
+    "name": "Fallen Human",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_fallen_human",
+    "applied": true
+  },
+  {
+    "entry": 44593,
+    "name": "Fallen Human",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_fallen_human",
+    "applied": true
+  },
+  {
+    "entry": 44615,
+    "name": "Grand Executor Mortuus",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_grand_executor_mortuus",
+    "applied": true
+  },
+  {
+    "entry": 44821,
+    "name": "Forsaken Bat",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_forsaken_bat",
+    "applied": true
+  },
+  {
+    "entry": 44825,
+    "name": "Bat Handler Maggotbreath",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_bat_handler_maggotbreath",
+    "applied": true
+  },
+  {
+    "entry": 44882,
+    "name": "Deathstalker Rane Yorick",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_deathstalker_rane_yorick",
+    "applied": true
+  },
+  {
+    "entry": 44883,
+    "name": "Lord Darius Crowley",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_lord_darius_crowley_exsanguinate",
+    "applied": true
+  },
+  {
+    "entry": 44884,
+    "name": "Packleader Ivar Bloodfang",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_packleader_ivar_bloodfang_exsanguinate",
+    "applied": true
+  },
+  {
+    "entry": 44893,
+    "name": "Armoire",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_armoire",
+    "applied": true
+  },
+  {
+    "entry": 44914,
+    "name": "Orc Sea Pup",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_orc_sea_pup",
+    "applied": true
+  },
+  {
+    "entry": 44915,
+    "name": "Orc Crate",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_orc_crate",
+    "applied": true
+  },
+  {
+    "entry": 44916,
+    "name": "Admiral Hatchet",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_admiral_hatchet",
+    "applied": true
+  },
+  {
+    "entry": 44935,
+    "name": "Mutant Bush Chicken",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_mutant_bush_chicken",
+    "applied": true
+  },
+  {
+    "entry": 44941,
+    "name": "Webbed Victim",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_webbed_victim",
+    "applied": true
+  },
+  {
+    "entry": 44942,
+    "name": "Orc Sea Dog",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_orc_sea_dog",
+    "applied": true
+  },
+  {
+    "entry": 44951,
+    "name": "Agatha",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_agatha_fenris_isle",
+    "applied": true
+  },
+  {
+    "entry": 44958,
+    "name": "Forsaken Trooper",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_forsaken_trooper_fenris_isle",
+    "applied": true
+  },
+  {
+    "entry": 45003,
+    "name": "Fenris Keep Camera",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_fenris_keep_camera",
+    "applied": true
+  },
+  {
+    "entry": 45051,
+    "name": "Lady Sylvanas Windrunner",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_sylvanas_windrunner_lordaeron",
+    "applied": true
+  },
+  {
+    "entry": 45057,
+    "name": "Forsaken Warhorse",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_forsaken_warhorse_lordaeron",
+    "applied": true
+  },
+  {
+    "entry": 45228,
+    "name": "Master Forteski",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_master_forteski",
+    "applied": true
+  },
+  {
+    "entry": 45318,
+    "name": "Arthura",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_arthura_forward_command",
+    "applied": true
+  },
+  {
+    "entry": 45474,
+    "name": "Deathstalker Commander Belmont",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_silverpine_belmont_great_escape",
+    "applied": true
+  },
+  {
+    "entry": 46714,
+    "name": "Marshtide Sentry",
+    "repair": "enable existing SmartAI",
+    "applied": true
+  },
+  {
+    "entry": 46775,
+    "name": "Marshtide Mage",
+    "repair": "enable existing SmartAI",
+    "applied": true
+  },
+  {
+    "entry": 53472,
+    "name": "Thyrinar",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_thyrinar",
+    "applied": false
+  },
+  {
+    "entry": 57802,
+    "name": "Lord Hiram Creed",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_lord_hiram_creed",
+    "applied": false
+  },
+  {
+    "entry": 69993,
+    "name": "Young Primal Devilsaur",
+    "repair": "remove inactive SmartAI duplicate; native script retained",
+    "script": "npc_young_primal_devilsaur",
+    "applied": true
+  }
+]

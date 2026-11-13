@@ -58,7 +58,7 @@ uint32 SplineChainMovementGenerator::SendPathSpline(Unit* owner, float velocity,
         init.MoveTo(path[1], false, true);
 
     if (velocity > 0.f)
-        init.SetVelocity(velocity);
+        init.SetVelocity(velocity, __func__);
     init.SetWalk(_walk);
     return init.Launch();
 }

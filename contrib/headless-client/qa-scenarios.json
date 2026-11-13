@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "name": "loa-gameplay-regression-v1",
+  "expectation_source": "Reviewed starter IDs and XP/money expectations captured in tracked fixtures; no claims of retail-wide equivalence.",
+  "scenarios": [
+    {
+      "id": "quest-28766",
+      "race": 1,
+      "class_id": 1,
+      "mode": "accept",
+      "quest": 28766
+    },
+    {
+      "id": "quest-25152",
+      "race": 2,
+      "class_id": 4,
+      "mode": "delivery",
+      "quest": 25152,
+      "expected_reward": {
+        "xp_delta": 40,
+        "money_delta": 0
+      }
+    },
+    {
+      "id": "create-3-3",
+      "race": 3,
+      "class_id": 3,
+      "mode": "create"
+    },
+    {
+      "id": "create-4-11",
+      "race": 4,
+      "class_id": 11,
+      "mode": "create"
+    },
+    {
+      "id": "quest-24959",
+      "race": 5,
+      "class_id": 4,
+      "mode": "delivery",
+      "quest": 24959,
+      "expected_reward": {
+        "xp_delta": 10,
+        "money_delta": 4
+      }
+    },
+    {
+      "id": "create-6-1",
+      "race": 6,
+      "class_id": 1,
+      "mode": "create"
+    },
+    {
+      "id": "create-7-8",
+      "race": 7,
+      "class_id": 8,
+      "mode": "create"
+    },
+    {
+      "id": "create-8-7",
+      "race": 8,
+      "class_id": 7,
+      "mode": "create"
+    },
+    {
+      "id": "create-9-4",
+      "race": 9,
+      "class_id": 4,
+      "mode": "create"
+    },
+    {
+      "id": "create-10-2",
+      "race": 10,
+      "class_id": 2,
+      "mode": "create"
+    },
+    {
+      "id": "create-11-5",
+      "race": 11,
+      "class_id": 5,
+      "mode": "create"
+    },
+    {
+      "id": "quest-14078",
+      "race": 22,
+      "class_id": 4,
+      "mode": "delivery",
+      "quest": 14078,
+      "expected_reward": {
+        "xp_delta": 80,
+        "money_delta": 30
+      }
+    },
+    {
+      "id": "quest-30039",
+      "race": 24,
+      "class_id": 10,
+      "mode": "accept",
+      "quest": 30039
+    },
+    {
+      "id": "create-1-9",
+      "race": 1,
+      "class_id": 9,
+      "mode": "create"
+    },
+    {
+      "id": "create-1-6",
+      "race": 1,
+      "class_id": 6,
+      "mode": "creation_rejected",
+      "response": 59
+    },
+    {
+      "id": "quest-kill-objectives",
+      "mode": "kill",
+      "reason": "Existing static combat route is unreliable for roaming targets; live movement/health tracking required."
+    },
+    {
+      "id": "quest-collect-and-use",
+      "mode": "collect",
+      "reason": "Inventory, drop and item-use outcome assertions not implemented."
+    },
+    {
+      "id": "quest-escort-phase-vehicle",
+      "mode": "escort",
+      "reason": "Needs authored route, phase and scene outcome expectations."
+    },
+    {
+      "id": "spell-mechanics",
+      "mode": "spell",
+      "reason": "Needs class fixtures, target setup and damage/aura/resource assertions."
+    },
+    {
+      "id": "boss-encounters",
+      "mode": "boss",
+      "reason": "Needs encounter phase, wipe/reset and reward contracts."
+    },
+    {
+      "id": "battlepay-transactions",
+      "mode": "shop",
+      "reason": "Needs client packet decoding and delivery/DP assertions."
+    },
+    {
+      "id": "companions-and-auctions",
+      "mode": "party",
+      "reason": "Needs party travel/healing/loot and auction settlement contracts."
+    },
+    {
+      "id": "fresh-network-reconnect",
+      "mode": "network_reconnect",
+      "reason": "First QA attempt closed the world connection during fresh reauthentication. Cause unresolved; historical failures retained. Character re-entry on the existing connection is tested separately."
+    }
+  ]
+}

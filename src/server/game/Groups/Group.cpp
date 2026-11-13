@@ -25,6 +25,7 @@
 #include "ObjectMgr.h"
 #include "GroupMgr.h"
 #include "Group.h"
+#include "CompanionLoot.h"
 #include "Formulas.h"
 #include "ObjectAccessor.h"
 #include "Battleground.h"
@@ -1275,7 +1276,7 @@ void Group::GroupLoot(Loot* loot, WorldObject* pLootedObject)
                     {
                         r->totalPlayersRolling++;
 
-                        if (member->GetPassOnGroupLoot())
+                        if (member->GetPassOnGroupLoot() || IsGoldOnlyCompanion(member))
                         {
                             r->playerVote[member->GetGUID()] = PASS;
                             r->totalPass++;
@@ -1358,7 +1359,8 @@ void Group::GroupLoot(Loot* loot, WorldObject* pLootedObject)
                 if (member->CanRollForLootIn(pLootedObject))
                 {
                     r->totalPlayersRolling++;
-                    r->playerVote[member->GetGUID()] = NOT_EMITED_YET;
+                    r->playerVote[member->GetGUID()] = IsGoldOnlyCompanion(member) ? PASS : NOT_EMITED_YET;
+                    if (IsGoldOnlyCompanion(member)) ++r->totalPass;
                 }
             }
         }
@@ -1419,7 +1421,7 @@ void Group::NeedBeforeGreed(Loot* loot, WorldObject* lootedObject)
                     if (playerToRoll->CanRollForLootIn(lootedObject))
                     {
                         r->totalPlayersRolling++;
-                        if (playerToRoll->GetPassOnGroupLoot())
+                        if (playerToRoll->GetPassOnGroupLoot() || IsGoldOnlyCompanion(playerToRoll))
                         {
                             r->playerVote[playerGuid] = PASS;
                             r->totalPass++;
@@ -1497,7 +1499,8 @@ void Group::NeedBeforeGreed(Loot* loot, WorldObject* lootedObject)
                 if (playerToRoll->CanRollForLootIn(lootedObject))
                 {
                     r->totalPlayersRolling++;
-                    r->playerVote[playerToRoll->GetGUID()] = NOT_EMITED_YET;
+                    r->playerVote[playerToRoll->GetGUID()] = IsGoldOnlyCompanion(playerToRoll) ? PASS : NOT_EMITED_YET;
+                    if (IsGoldOnlyCompanion(playerToRoll)) ++r->totalPass;
                 }
             }
         }
@@ -1638,6 +1641,14 @@ void Group::CountRollVote(ObjectGuid lootGuid, ObjectGuid playerGUID, uint8 slot
     // this condition means that player joins to the party after roll begins
     if (itr == roll->playerVote.end())
         return;
+
+    // A late AI/client response must not turn a companion's automatic pass
+    // into need/greed, or count an already-recorded answer twice.
+    if (choice < MAX_ROLL_TYPE && itr->second != NOT_EMITED_YET)
+        return;
+    if (Player* voter = ObjectAccessor::FindPlayer(playerGUID))
+        if (choice < MAX_ROLL_TYPE && IsGoldOnlyCompanion(voter))
+            choice = ROLL_PASS;
 
     if (roll->getLoot())
         if (roll->getLoot()->items.empty())
@@ -2455,7 +2466,7 @@ void Group::UpdateLooterGuid(WorldObject* pLootedObject, bool ifneed)
         {
             // not update if only update if need and ok
             Player* looter = ObjectAccessor::FindPlayer(guid_itr->guid);
-            if (looter && looter->CanRollForLootIn(pLootedObject))
+            if (looter && !IsGoldOnlyCompanion(looter) && looter->CanRollForLootIn(pLootedObject))
                 return;
         }
         ++guid_itr;
@@ -2466,7 +2477,7 @@ void Group::UpdateLooterGuid(WorldObject* pLootedObject, bool ifneed)
     for (member_citerator itr = guid_itr; itr != m_memberSlots.end(); ++itr)
     {
         if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
-            if (player->CanRollForLootIn(pLootedObject))
+            if (!IsGoldOnlyCompanion(player) && player->CanRollForLootIn(pLootedObject))
             {
                 pNewLooter = player;
                 break;
@@ -2479,7 +2490,7 @@ void Group::UpdateLooterGuid(WorldObject* pLootedObject, bool ifneed)
         for (member_citerator itr = m_memberSlots.begin(); itr != guid_itr; ++itr)
         {
             if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
-                if (player->CanRollForLootIn(pLootedObject))
+                if (!IsGoldOnlyCompanion(player) && player->CanRollForLootIn(pLootedObject))
                 {
                     pNewLooter = player;
                     break;

@@ -1,4 +1,4 @@
-﻿/*
+/*
 * This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
@@ -515,7 +515,7 @@ void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed, bool gen
 {
     Movement::MoveSplineInit init(this);
     init.MoveTo(x, y, z, generatePath, forceDestination);
-    init.SetVelocity(speed);
+    init.SetVelocity(speed, __func__);
     init.Launch();
 }
 
@@ -6032,6 +6032,28 @@ void Unit::AddGameObject(GameObject* gameObj)
             // note: item based cooldowns and cooldown spell mods with charges ignored (unknown existing cases)
             ToPlayer()->GetSpellHistory()->SetCooldownOnHold(createBySpell, 0);
     }
+}
+
+void Unit::AddCreatedGameObject(GameObject* gameObj)
+{
+    if (!gameObj || gameObj->GetOwnerGUID())
+        return;
+    gameObj->SetOwnerGUID(GetGUID());
+    m_createdGameObjects.Track(gameObj);
+}
+
+void Unit::RemoveCreatedGameObjectReference(GameObject* gameObj)
+{
+    m_createdGameObjects.Forget(gameObj);
+}
+
+void Unit::ClearCreatedGameObjectReferences()
+{
+    m_createdGameObjects.DetachAll([this](GameObject* object)
+    {
+        if (object->GetOwnerGUID() == GetGUID())
+            object->SetOwnerGUID(ObjectGuid::Empty);
+    });
 }
 
 void Unit::RemoveGameObject(GameObject* gameObj, bool del)
@@ -13704,8 +13726,23 @@ void Unit::SetPower(Powers power, int32 val)
     // Why there are two auras? They seem to be identical, but SPELL_AURA_PROC_ON_POWER_AMOUNT is only for eclipse
     for (auto&& auraType : { SPELL_AURA_PROC_ON_POWER_AMOUNT, SPELL_AURA_TRIGGER_ON_POWER_LEVEL })
     {
-        for (auto&& effect : GetAuraEffectsByType(auraType))
+        // Triggered casts can remove this effect, the next effect, or the whole
+        // aura list. Snapshot identities, then resolve each still-live effect.
+        struct PowerEffectIdentity
         {
+            uint32 spell;
+            uint8 index;
+            ObjectGuid caster;
+            AuraEffect* effect;
+        };
+        std::vector<PowerEffectIdentity> effects;
+        for (AuraEffect* effect : GetAuraEffectsByType(auraType))
+            effects.push_back({effect->GetId(), uint8(effect->GetEffIndex()), effect->GetCasterGUID(), effect});
+        for (auto const& identity : effects)
+        {
+            AuraEffect* effect = GetAuraEffect(identity.spell, identity.index, identity.caster);
+            if (!effect || effect != identity.effect)
+                continue;
             if (power == effect->GetMiscValue())
             {
                 int32 newValue = val;
@@ -13938,6 +13975,7 @@ void Unit::RemoveFromWorld()
         RemoveAllFollowers();
 
         RemoveAllGameObjects();
+        ClearCreatedGameObjectReferences();
         RemoveAllDynObjects();
         RemoveAllAreasTrigger();
 
@@ -13998,6 +14036,7 @@ void Unit::CleanupBeforeRemoveFromMap(bool finalCleanup)
     // and may have some references during delete
     RemoveAllAuras();
     RemoveAllGameObjects();
+    ClearCreatedGameObjectReferences();
 
     if (finalCleanup)
         m_cleanupDone = true;
@@ -15152,6 +15191,12 @@ void Unit::SetAnimTier(AnimTier tier)
 {
     if (!IsCreature())
         return;
+
+    if (tier >= AnimTier::Max)
+    {
+        TC_LOG_ERROR("entities.unit", "Rejected invalid animation tier %u for unit %s (entry %u); using ground.", static_cast<uint8>(tier), GetGUID().ToString().c_str(), GetEntry());
+        tier = AnimTier::Ground;
+    }
 
     SetByteValue(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_ANIM_TIER, static_cast<uint8>(tier));
 }

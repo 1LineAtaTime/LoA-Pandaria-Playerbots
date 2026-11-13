@@ -57,6 +57,17 @@ static void AlmostAssert(char const* filter, Args... args)
 namespace lfg
 {
 
+static HolidayIds GetSeasonalDungeonHoliday(uint32 dungeonId)
+{
+    switch (dungeonId)
+    {
+        case 285: return HOLIDAY_HALLOWS_END;
+        case 286: return HOLIDAY_FIRE_FESTIVAL;
+        case 287: return HOLIDAY_BREWFEST;
+        case 288: return HOLIDAY_LOVE_IS_IN_THE_AIR;
+        default: return HOLIDAY_NONE;
+    }
+}
 
 LFGMgr::LFGMgr(): m_QueueTimer(0), m_ShortageCheckTimer(0), m_lfgProposalId(1),
     m_options(sWorld->getIntConfig(CONFIG_LFG_OPTIONSMASK))
@@ -253,6 +264,16 @@ void LFGMgr::LoadLFGDungeons(bool reload /* = false */)
     for (LFGDungeonContainer::iterator itr = LfgDungeonStore.begin(); itr != LfgDungeonStore.end(); ++itr)
     {
         LFGDungeonData& dungeon = itr->second;
+
+        // Retired pre-Cataclysm invasion entries remain in the client DBC.
+        // They have no supported holiday and IsSeasonActive always rejects
+        // them. Keep their metadata/locked status, but do not cache them as
+        // queue destinations or require nonexistent teleport entrances.
+        if (dungeon.seasonal && GetSeasonalDungeonHoliday(dungeon.id) == HOLIDAY_NONE)
+        {
+            TC_LOG_INFO("lfg", "Skipping unavailable legacy seasonal LFG destination %u (%s)", dungeon.id, dungeon.name.c_str());
+            continue;
+        }
 
         // No teleport coords in database, load from areatriggers
         if (dungeon.type != LFG_TYPE_RANDOM && dungeon.x == 0.0f && dungeon.y == 0.0f && dungeon.z == 0.0f &&
@@ -1517,6 +1538,17 @@ void LFGMgr::MakeNewGroup(LfgProposal const& proposal)
             ++soloJoinedPlayersCount;
     }
 
+    // Prefer the nominated real player, otherwise the first connected human.
+    // Bots must not take leadership merely because they queued as tank/leader.
+    auto human = std::find_if(players.begin(), players.end(), [this](ProposalPlayer const& p)
+    {
+        Player* player = ObjectAccessor::FindPlayer(p.guid);
+        return player && player->GetSession() && !player->GetSession()->IsBot();
+    });
+    ObjectGuid humanLeader = human == players.end() ? ObjectGuid::Empty : human->guid;
+    if (human != players.end())
+        players.splice(players.begin(), players, human);
+
     // Set the dungeon difficulty
     LFGDungeonData const* dungeon = GetLFGDungeon(proposal.dungeonId);
     ASSERT(dungeon);
@@ -1667,6 +1699,9 @@ void LFGMgr::MakeNewGroup(LfgProposal const& proposal)
         lfgGroup->SetDungeonDifficulty(Difficulty(dungeon->difficulty));
         lfgGroup->SetRaidDifficulty(Difficulty(REGULAR_DIFFICULTY));
     }
+
+    if (humanLeader && IsPlayerbotMember(lfgGroup->GetLeaderGUID()))
+        lfgGroup->ChangeLeader(humanLeader);
 
     ObjectGuid gguid = lfgGroup->GetGUID();
     SetDungeon(gguid, dungeon->Entry());
@@ -1941,6 +1976,7 @@ void LFGMgr::InitBoot(ObjectGuid gguid, ObjectGuid kicker, ObjectGuid victim, st
     boot.cancelTime = time_t(time(NULL)) + LFG_TIME_BOOT;
     boot.reason = reason;
     boot.victim = victim;
+    boot.votes.clear();
 
     LfgGuidSet const& players = GetPlayers(gguid);
 
@@ -1958,6 +1994,12 @@ void LFGMgr::InitBoot(ObjectGuid gguid, ObjectGuid kicker, ObjectGuid victim, st
     // Notify players
     for (LfgGuidSet::const_iterator it = players.begin(); it != players.end(); ++it)
         SendLfgBootProposalUpdate(*it, boot);
+
+    // The initiating leader already voted yes; do not wait for nonexistent
+    // client UI responses from server-controlled companions.
+    if (Group* group = sGroupMgr->GetGroupByGUID(gguid.GetCounter()))
+        if (group->GetLeaderGUID() == kicker && !IsPlayerbotMember(kicker))
+            UpdateBoot(kicker, true);
 }
 
 /**
@@ -1988,10 +2030,21 @@ void LFGMgr::UpdateBoot(ObjectGuid guid, bool accept)
 
     LfgPlayerBoot& boot = itBoot->second;
 
-    if (boot.votes[guid] != LFG_ANSWER_PENDING)    // Cheat check: Player can't vote twice
+    auto vote = boot.votes.find(guid);
+    if (vote == boot.votes.end())
         return;
 
-    boot.votes[guid] = LfgAnswer(accept);
+    Group* votingGroup = sGroupMgr->GetGroupByGUID(gguid.GetCounter());
+    bool humanLeader = votingGroup && votingGroup->GetLeaderGUID() == guid && !IsPlayerbotMember(guid);
+    // Permit the initiator's already-recorded vote to trigger bot responses,
+    // but never permit changing an answer or inserting an outsider's vote.
+    if (vote->second != LFG_ANSWER_PENDING && (!humanLeader || vote->second != LfgAnswer(accept)))
+        return;
+    vote->second = LfgAnswer(accept);
+    if (humanLeader && sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.FollowLeaderVotes", true))
+        for (auto& companionVote : boot.votes)
+            if (companionVote.first != boot.victim && companionVote.second == LFG_ANSWER_PENDING && IsPlayerbotMember(companionVote.first))
+                companionVote.second = LfgAnswer(accept);
 
     uint8 votesNum = 0;
     uint8 agreeNum = 0;
@@ -2014,13 +2067,13 @@ void LFGMgr::UpdateBoot(ObjectGuid guid, bool accept)
     for (LfgAnswerContainer::const_iterator itVotes = boot.votes.begin(); itVotes != boot.votes.end(); ++itVotes)
     {
         ObjectGuid pguid = itVotes->first;
-        if (pguid != boot.victim || agreeNum != sLFGMgr->GetBootVotesNeeded(gguid))
+        if (pguid != boot.victim || agreeNum < sLFGMgr->GetBootVotesNeeded(gguid))
             SendLfgBootProposalUpdate(pguid, boot);
         RestoreState(pguid, GetActiveQueueId(pguid), "Boot Finished");
     }
 
     RestoreState(gguid, GetActiveQueueId(gguid), "Boot Finished");
-    if (agreeNum == sLFGMgr->GetBootVotesNeeded(gguid))           // Vote passed - Kick player
+    if (agreeNum >= sLFGMgr->GetBootVotesNeeded(gguid))           // Vote passed - Kick player
     {
         if (Group* group = sGroupMgr->GetGroupByGUID(gguid.GetCounter()))
             Player::RemoveFromGroup(group, boot.victim, GROUP_REMOVEMETHOD_KICK_LFG);
@@ -3021,18 +3074,8 @@ void LFGMgr::SetOptions(uint32 options)
 
 bool LFGMgr::IsSeasonActive(uint32 dungeonId)
 {
-    switch (dungeonId)
-    {
-        case 285: // The Headless Horseman
-            return IsHolidayActive(HOLIDAY_HALLOWS_END);
-        case 286: // The Frost Lord Ahune
-            return IsHolidayActive(HOLIDAY_FIRE_FESTIVAL);
-        case 287: // Coren Direbrew
-            return IsHolidayActive(HOLIDAY_BREWFEST);
-        case 288: // The Crown Chemical Co.
-            return IsHolidayActive(HOLIDAY_LOVE_IS_IN_THE_AIR);
-    }
-    return false;
+    HolidayIds holiday = GetSeasonalDungeonHoliday(dungeonId);
+    return holiday != HOLIDAY_NONE && IsHolidayActive(holiday);
 }
 
 std::string LFGMgr::DumpQueueInfo(uint32 dungeonID, bool client)
@@ -3189,6 +3232,41 @@ PartyResult LFGMgr::CanBoot(ObjectGuid kguid, ObjectGuid vguid, uint32& timeLeft
          return ERR_PARTY_LFG_BOOT_NOT_ELIGIBLE_S;
 
      return ERR_PARTY_RESULT_OK;
+}
+
+bool LFGMgr::IsPlayerbotMember(ObjectGuid guid) const
+{
+    if (Player* player = ObjectAccessor::FindPlayer(guid))
+        return player->GetSession() && player->GetSession()->IsBot();
+    // Offline members have no session. Only trust explicitly provisioned bot
+    // accounts; never infer automation from a character's name or level.
+    if (!sConfigMgr->GetBoolDefault("AiPlayerbot.CuratedNames.Enable", false))
+        return false;
+    uint32 account = sObjectMgr->GetPlayerAccountIdByGUID(guid);
+    return account && bool(CharacterDatabase.PQuery("SELECT account_id FROM playerbot_roster_accounts WHERE account_id=%u", account));
+}
+
+bool LFGMgr::IsSoloHumanLeader(Group const* group, Player const* player) const
+{
+    if (!group || !player || !player->GetSession() || player->GetSession()->IsBot() || !group->IsLeader(player->GetGUID()))
+        return false;
+    for (auto const& member : group->GetMemberSlots())
+        if (member.guid != player->GetGUID() && !IsPlayerbotMember(member.guid))
+            return false;
+    return true;
+}
+
+bool LFGMgr::CanLeaderRemoveBot(Player const* player, ObjectGuid victim)
+{
+    Group const* group = player ? player->GetGroup() : nullptr;
+    if (!group || !group->isLFGGroup() || !group->IsLeader(player->GetGUID()) ||
+        !player->GetSession() || player->GetSession()->IsBot() || victim == player->GetGUID() ||
+        !group->IsMember(victim) || !IsPlayerbotMember(victim) ||
+        (ObjectAccessor::FindPlayer(victim) && !IsSoloHumanLeader(group, player)) ||
+        !sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.RemoveOfflineBots", true))
+        return false;
+    LfgState state = GetActiveState(group->GetGUID());
+    return state == LFG_STATE_DUNGEON || state == LFG_STATE_FINISHED_DUNGEON;
 }
 
 uint8 LFGMgr::GetBootVotesNeeded(ObjectGuid gguid)

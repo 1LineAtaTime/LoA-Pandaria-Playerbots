@@ -118,7 +118,9 @@ void CreatureTextMgr::LoadCreatureTexts()
         temp.emote           = Emote(fields[7].GetUInt32());
         temp.duration        = fields[8].GetUInt32();
         temp.sound           = fields[9].GetUInt32();
-        temp.soundType       = CreatureTextSoundType(fields[10].GetUInt32());
+        // SoundType is TINYINT in the supported live schema. Prepared fields
+        // contain raw bytes: GetUInt32 reads three bytes beyond that value.
+        temp.soundType       = CreatureTextSoundType(fields[10].GetUInt8());
         temp.BroadcastTextId = fields[11].GetUInt32();
         temp.TextRange       = CreatureTextRange(fields[12].GetUInt8());
 
@@ -169,7 +171,7 @@ void CreatureTextMgr::LoadCreatureTexts()
 
         if (temp.soundType > CreatureTextSoundType::Music)
         {
-            TC_LOG_ERROR("sql.sql", "CreatureTextMgr: Entry %u, Group %u, Id %u in table `creature_text` has incorrect SoundType %u.", temp.creatureId, temp.groupId, temp.id, AsUnderlyingType(temp.TextRange));
+            TC_LOG_ERROR("sql.sql", "CreatureTextMgr: Entry %u, Group %u, Id %u in table `creature_text` has incorrect SoundType %u.", temp.creatureId, temp.groupId, temp.id, AsUnderlyingType(temp.soundType));
             temp.soundType = CreatureTextSoundType::DirectSound;
         }
 
@@ -224,7 +226,7 @@ uint32 CreatureTextMgr::SendChat(Creature* source, uint8 textGroup, WorldObject 
     CreatureTextMap::const_iterator sList = mTextMap.find(source->GetEntry());
     if (sList == mTextMap.end())
     {
-        TC_LOG_ERROR("sql.sql", "CreatureTextMgr: Could not find Text for Creature(%s) Entry %u in 'creature_text' table. Ignoring.", source->GetName().c_str(), source->GetEntry());
+        TC_LOG_ERROR("sql.sql", "CreatureTextMgr: Could not find Text for Creature(%s) Entry %u Group %u GuidLow %u Map %u in 'creature_text' table. Ignoring.", source->GetName().c_str(), source->GetEntry(), uint32(textGroup), source->GetGUID().GetCounter(), source->GetMapId());
         return 0;
     }
 

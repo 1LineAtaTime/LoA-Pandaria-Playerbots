@@ -33,6 +33,7 @@
 #include "TOTP.h"
 #include "Util.h"
 #include <boost/lexical_cast.hpp>
+#include <array>
 #include <openssl/crypto.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -40,6 +41,20 @@
 #define ChunkSize 2048
 
 using boost::asio::ip::tcp;
+
+namespace
+{
+bool NormalizeSrpHex(std::string& value, size_t bytes)
+{
+    if (value.empty() || value.size() > bytes * 2 ||
+        value.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos)
+        return false;
+    // BigNumber hex strings omit high zero bytes. SRP consumes fixed-width
+    // little-endian arrays, so restore zeroes at the high (left) end only.
+    value.insert(0, bytes * 2 - value.size(), '0');
+    return true;
+}
+}
 
 enum eAuthCmd
 {
@@ -353,12 +368,14 @@ void AuthSession::SetVSFields(const std::string& rI, const std::string& login)
     uint8 mDigest[SHA_DIGEST_LENGTH];
     memset(mDigest, 0, SHA_DIGEST_LENGTH);
     if (I.GetNumBytes() <= SHA_DIGEST_LENGTH)
-        memcpy(mDigest, I.AsByteArray(), I.GetNumBytes());
+        I.GetBytes(mDigest, SHA_DIGEST_LENGTH);
 
     std::reverse(mDigest, mDigest + SHA_DIGEST_LENGTH);
 
     Trinity::Crypto::SHA1 sha;
-    sha.UpdateData(s.AsByteArray(), s.GetNumBytes());
+    std::array<uint8, s_BYTE_SIZE> saltBytes{}, verifierBytes{};
+    s.GetBytes(saltBytes.data(), saltBytes.size());
+    sha.UpdateData(saltBytes.data(), saltBytes.size());
     sha.UpdateData(mDigest, SHA_DIGEST_LENGTH);
     sha.Finalize();
 
@@ -366,8 +383,9 @@ void AuthSession::SetVSFields(const std::string& rI, const std::string& login)
     x.SetBinary(sha.GetDigest(), SHA_DIGEST_LENGTH);
     v = g.ModExp(x, N);
 
-    _accountInfo.v = std::string(v.AsHexStr());
-    _accountInfo.s = std::string(s.AsHexStr());
+    v.GetBytes(verifierBytes.data(), verifierBytes.size());
+    _accountInfo.v = ByteArrayToHexStr(verifierBytes, true);
+    _accountInfo.s = ByteArrayToHexStr(saltBytes, true);
 
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_VS);
     stmt->setString(0, _accountInfo.v);
@@ -499,9 +517,20 @@ void AuthSession::LogonChallengeCallback(PreparedQueryResult result)
         // }
     }
 
-    // multiply with 2 since bytes are stored as hexstring
-    if (_accountInfo.v.size() != s_BYTE_SIZE * 2 || _accountInfo.s.size() != s_BYTE_SIZE * 2)
+    if (!NormalizeSrpHex(_accountInfo.v, s_BYTE_SIZE) || !NormalizeSrpHex(_accountInfo.s, s_BYTE_SIZE))
+    {
+        // Legacy accounts can derive SRP fields from their SHA1 login hash.
+        // Malformed/missing credentials must fail this login, never assert the server.
+        if (_accountInfo.rI.size() != SHA_DIGEST_LENGTH * 2 ||
+            _accountInfo.rI.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos)
+        {
+            pkt << uint8(WOW_FAIL_DB_BUSY);
+            SendPacket(pkt);
+            TC_LOG_ERROR("server.authserver", "Account %u has invalid legacy SRP credential data", _accountInfo.Id);
+            return;
+        }
         SetVSFields(_accountInfo.rI, _accountInfo.Login);
+    }
 
     _srp6.emplace(
         _accountInfo.Login,

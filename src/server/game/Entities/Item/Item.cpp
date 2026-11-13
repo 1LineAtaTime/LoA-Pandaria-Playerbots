@@ -692,6 +692,8 @@ int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
     if (itemProto->RandomProperty)
     {
         uint32 randomPropId = GetItemEnchantMod(itemProto->RandomProperty, ItemRandomEnchantmentType::Property);
+        if (!randomPropId)
+            return 0; // No enchantment; a missing pool is already diagnosed by the selector.
         ItemRandomPropertiesEntry const* random_id = sItemRandomPropertiesStore.LookupEntry(randomPropId);
         if (!random_id)
         {
@@ -705,6 +707,8 @@ int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
     else
     {
         uint32 randomPropId = GetItemEnchantMod(itemProto->RandomSuffix, ItemRandomEnchantmentType::Suffix);
+        if (!randomPropId)
+            return 0;
         ItemRandomSuffixEntry const* random_id = sItemRandomSuffixStore.LookupEntry(randomPropId);
         if (!random_id)
         {

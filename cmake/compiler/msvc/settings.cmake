@@ -49,7 +49,14 @@ else()
 endif()
 
 # multithreaded compiling on VS
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+set(MSVC_PARALLEL_COMPILE_JOBS "" CACHE STRING "Compiler workers per project; empty uses MSVC default, 1 disables process fan-out")
+if(MSVC_PARALLEL_COMPILE_JOBS STREQUAL "")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+elseif(MSVC_PARALLEL_COMPILE_JOBS MATCHES "^[1-9][0-9]*$")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP${MSVC_PARALLEL_COMPILE_JOBS}")
+else()
+  message(FATAL_ERROR "MSVC_PARALLEL_COMPILE_JOBS must be empty or a positive integer")
+endif()
 
 # Define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES - eliminates the warning by changing the strcpy call to strcpy_s, which prevents buffer overruns
 add_definitions(-D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)

@@ -1,0 +1,27 @@
+id,name,comparison,behavior
+1,Human,client_asset_present,not_evaluated
+2,Orc,client_asset_present,not_evaluated
+3,Dwarf,client_asset_present,not_evaluated
+4,Night Elf,client_asset_present,not_evaluated
+5,Undead,client_asset_present,not_evaluated
+6,Tauren,client_asset_present,not_evaluated
+7,Gnome,client_asset_present,not_evaluated
+8,Troll,client_asset_present,not_evaluated
+9,Goblin,client_asset_present,not_evaluated
+10,Blood Elf,client_asset_present,not_evaluated
+11,Draenei,client_asset_present,not_evaluated
+12,Fel Orc,client_asset_present,not_evaluated
+13,Naga,client_asset_present,not_evaluated
+14,Broken,client_asset_present,not_evaluated
+15,Skeleton,client_asset_present,not_evaluated
+16,Vrykul,client_asset_present,not_evaluated
+17,Tuskarr,client_asset_present,not_evaluated
+18,Forest Troll,client_asset_present,not_evaluated
+19,Taunka,client_asset_present,not_evaluated
+20,Northrend Skeleton,client_asset_present,not_evaluated
+21,Ice Troll,client_asset_present,not_evaluated
+22,Worgen,client_asset_present,not_evaluated
+23,Gilnean,client_asset_present,not_evaluated
+24,Pandaren,client_asset_present,not_evaluated
+25,Pandaren,client_asset_present,not_evaluated
+26,Pandaren,client_asset_present,not_evaluated

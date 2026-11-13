@@ -21,6 +21,7 @@
 #include "Define.h"
 #include "SharedDefines.h"
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 class AuctionBotSeller;
@@ -231,9 +232,10 @@ public:
 
     uint32 GetItemPerCycleBoost() const { return _itemsPerCycleBoost; }
     uint32 GetItemPerCycleNormal() const { return _itemsPerCycleNormal; }
-    ObjectGuid GetRandChar() const;
-    ObjectGuid GetRandCharExclude(ObjectGuid exclude) const;
+    ObjectGuid GetRandChar(AuctionHouseType houseType) const;
+    ObjectGuid GetRandCharExclude(ObjectGuid exclude, AuctionHouseType houseType) const;
     bool IsBotChar(ObjectGuid characterID) const;
+    uint32 GetRandomActorCount() const { return _randomActorCount; }
     void Reload() { GetConfigFromFile(); }
 
     static char const* GetHouseTypeName(AuctionHouseType houseType);
@@ -242,6 +244,11 @@ private:
     std::string _AHBotIncludes;
     std::string _AHBotExcludes;
     std::vector<ObjectGuid> _AHBotCharacters;
+    std::unordered_set<uint32> _AHBotCharacterIds;
+    std::vector<ObjectGuid> _AHBotActorCharacters[MAX_AUCTION_HOUSE_TYPE];
+    mutable ObjectGuid _lastSeller[MAX_AUCTION_HOUSE_TYPE];
+    mutable ObjectGuid _lastBuyer[MAX_AUCTION_HOUSE_TYPE];
+    uint32 _randomActorCount = 0;
     uint32 _itemsPerCycleBoost;
     uint32 _itemsPerCycleNormal;
 
@@ -306,6 +313,7 @@ public:
     void PrepareStatusInfos(AuctionHouseBotStatusInfo& statusInfo);
 private:
     void InitializeAgents();
+    void ExpireRestrictedBotAuctions();
 
     AuctionBotBuyer* _buyer;
     AuctionBotSeller* _seller;

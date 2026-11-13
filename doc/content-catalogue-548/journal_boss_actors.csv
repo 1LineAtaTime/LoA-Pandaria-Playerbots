@@ -1,0 +1,508 @@
+id,name,journal_encounter_id,creature_display_id,candidate_method,creature_id_candidates,comparison,behavior
+358,Glubtok,89,37410,exact_name,42492;42755;47162;47290;49670,name_candidates_review,not_evaluated
+359,Helix Gearbreaker,90,33002,exact_name,42655;42753;47296;49674,name_candidates_review,not_evaluated
+630,Lumbering Oaf,90,33003,exact_name,40906;47297,name_candidates_review,not_evaluated
+360,Foe Reaper 5000,91,35606,exact_name,43778;49681,name_candidates_review,not_evaluated
+361,Admiral Ripsnarl,92,35739,exact_name,42778;47626,name_candidates_review,not_evaluated
+362,"""Captain"" Cookie",93,1305,exact_name,47739,name_candidates_review,not_evaluated
+365,Vanessa VanCleef,95,32806,exact_name,42371;42372;49429;49541;49671,name_candidates_review,not_evaluated
+366,Baron Ashbury,96,34610,exact_name,37735;45577;45607;45623;45880;46030;46962,name_candidates_review,not_evaluated
+367,Baron Silverlaine,97,37288,exact_name,3887,name_candidates_review,not_evaluated
+368,Commander Springvale,98,37287,exact_name,4278,name_candidates_review,not_evaluated
+369,Lord Walden,99,34612,exact_name,37733;45578;45608;45624;45879;46029;46963,name_candidates_review,not_evaluated
+370,Lord Godfrey,100,34611,exact_name,35115;35553;35906;36170;36290;36330;37875;38766;44369;45556;45576;45606;45622;45878;46002;46028;46964,name_candidates_review,not_evaluated
+371,Lady Naz'jar,101,34342,exact_name,39959;40316;40586;40640;42076;42077;42429;43468;44008;44524,name_candidates_review,not_evaluated
+372,Commander Ulthok,102,33792,exact_name,40765;51449,name_candidates_review,not_evaluated
+373,Mindbender Ghur'sha,103,32259,exact_name,40788,name_candidates_review,not_evaluated
+374,Ozumat,104,34135,exact_name,40655;42172;44139;44538;44566;48416;51276,name_candidates_review,not_evaluated
+375,Rom'ogg Bonecrusher,105,33147,exact_name,39665;51398,name_candidates_review,not_evaluated
+376,"Corla, Herald of Twilight",106,31546,exact_name,39679,name_candidates_review,not_evaluated
+377,Karsh Steelbender,107,31710,exact_name,39698;49930,name_candidates_review,not_evaluated
+378,Beauty,108,34433,exact_name,39700,name_candidates_review,not_evaluated
+379,Ascendant Lord Obsidius,109,36465,exact_name,39705,name_candidates_review,not_evaluated
+380,Corborus,110,33477,exact_name,43438,name_candidates_review,not_evaluated
+381,Slabhide,111,36476,exact_name,43214;51932,name_candidates_review,not_evaluated
+382,Ozruk,112,36475,exact_name,42188;51421,name_candidates_review,not_evaluated
+383,High Priestess Azil,113,26448,exact_name,42333;44881,name_candidates_review,not_evaluated
+384,Grand Vizier Ertan,114,35181,exact_name,43878,name_candidates_review,not_evaluated
+385,Altairus,115,34265,exact_name,43873,name_candidates_review,not_evaluated
+386,Asaad,116,35388,exact_name,43875,name_candidates_review,not_evaluated
+387,General Husam,117,34743,exact_name,44577,name_candidates_review,not_evaluated
+389,Lockmaw,118,33438,exact_name,43614,name_candidates_review,not_evaluated
+388,Augh,118,37339,exact_name,44895;45377;45378;45379;48104;49045,name_candidates_review,not_evaluated
+390,High Prophet Barim,119,34744,exact_name,43612,name_candidates_review,not_evaluated
+394,Siamat,122,35231,exact_name,44819;47285;47451;48078,name_candidates_review,not_evaluated
+424,Temple Guardian Anhuur,124,35067,exact_name,39425,name_candidates_review,not_evaluated
+425,Earthrager Ptah,125,31450,exact_name,39428,name_candidates_review,not_evaluated
+426,Anraphet,126,34580,exact_name,39788,name_candidates_review,not_evaluated
+427,Isiset,127,33465,exact_name,39587,name_candidates_review,not_evaluated
+428,Ammunae,128,32943,exact_name,39731,name_candidates_review,not_evaluated
+429,Setesh,129,33055,exact_name,39732,name_candidates_review,not_evaluated
+430,Rajh,130,33177,exact_name,39378,name_candidates_review,not_evaluated
+431,General Umbriss,131,31498,exact_name,39625,name_candidates_review,not_evaluated
+432,Forgemaster Throngus,132,33429,exact_name,40177;51437,name_candidates_review,not_evaluated
+433,Dragha Shadowburner,133,31792,reviewed_name_alias,40319,name_candidates_review,not_evaluated
+434,Valiona,133,31795,exact_name,40320;45992;46147,name_candidates_review,not_evaluated
+435,Erudax,134,33428,exact_name,40484,name_candidates_review,not_evaluated
+463,Argaloth,139,35426,exact_name,47120,name_candidates_review,not_evaluated
+464,Occu'thar,140,37876,exact_name,52363,name_candidates_review,not_evaluated
+556,Anshal,154,35233,exact_name,45870,name_candidates_review,not_evaluated
+555,Nezir,154,35232,exact_name,45871,name_candidates_review,not_evaluated
+557,Rohash,154,35234,exact_name,45872,name_candidates_review,not_evaluated
+558,Al'akir,155,35248,exact_name,46753,name_candidates_review,not_evaluated
+559,Halfus Wyrmbreaker,156,34816,exact_name,44600,name_candidates_review,not_evaluated
+561,Theralion,157,34813,exact_name,45993;51417,name_candidates_review,not_evaluated
+560,Valiona,157,34812,exact_name,40320;45992;46147,name_candidates_review,not_evaluated
+565,Feludius,158,34822,exact_name,43687,name_candidates_review,not_evaluated
+564,Ignacious,158,34821,exact_name,43686,name_candidates_review,not_evaluated
+566,Arion,158,34823,exact_name,30574;43688,name_candidates_review,not_evaluated
+562,Terrastra,158,34824,exact_name,43689,name_candidates_review,not_evaluated
+563,Elementium Monstrosity,158,34825,exact_name,43735,name_candidates_review,not_evaluated
+587,Cho'gall,167,34576,exact_name,39382;43324;43932;46137;46163;46900;46965;47257;48142;51427;51493;51494;51599,name_candidates_review,not_evaluated
+588,Sinestra,168,34335,exact_name,45213;48478,name_candidates_review,not_evaluated
+591,Magmatron,169,32685,exact_name,42178,name_candidates_review,not_evaluated
+592,Arcanotron,169,32687,exact_name,42166,name_candidates_review,not_evaluated
+589,Electron,169,32688,exact_name,42179,name_candidates_review,not_evaluated
+590,Toxitron,169,32684,exact_name,42180,name_candidates_review,not_evaluated
+593,Magmaw,170,37993,exact_name,41570,name_candidates_review,not_evaluated
+594,Atramedes,171,34547,exact_name,41442;43407,name_candidates_review,not_evaluated
+595,Chimaeron,172,33308,exact_name,43296,name_candidates_review,not_evaluated
+596,Maloriak,173,33186,exact_name,41378;43404,name_candidates_review,not_evaluated
+600,Nefarian,174,32716,exact_name,11583;41376;49427;51452,name_candidates_review,not_evaluated
+599,Onyxia,174,32569,exact_name,10184;41270,name_candidates_review,not_evaluated
+601,High Priest Venoxis,175,37788,exact_name,14507;43323;52155;52191;52301,name_candidates_review,not_evaluated
+602,Bloodlord Mandokir,176,37816,exact_name,11382;42790;42799;42842;42941;43989;52151;52411,name_candidates_review,not_evaluated
+603,Gri'lek,177,8390,exact_name,15082;52258,name_candidates_review,not_evaluated
+604,Hazza'rah,178,37832,exact_name,15083;52271,name_candidates_review,not_evaluated
+605,Renataki,179,37830,exact_name,15084;52269,name_candidates_review,not_evaluated
+606,Wushoolay,180,37831,exact_name,15085;52286,name_candidates_review,not_evaluated
+607,High Priestess Kilnara,181,37805,exact_name,52059;52390,name_candidates_review,not_evaluated
+616,Zanzil,184,37813,exact_name,52053;52864,name_candidates_review,not_evaluated
+617,Jin'do the Godbreaker,185,37789,exact_name,52148;52150,name_candidates_review,not_evaluated
+618,Akil'zon,186,21630,exact_name,23574;28516;29021,name_candidates_review,not_evaluated
+619,Nalorakk,187,21631,exact_name,23576;28514;29024,name_candidates_review,not_evaluated
+620,Jan'alai,188,21633,exact_name,23578;28515;29023,name_candidates_review,not_evaluated
+621,Halazzi,189,21632,exact_name,23577;24144;28517;29022,name_candidates_review,not_evaluated
+622,Hex Lord Malacrass,190,22332,exact_name,24239;24363,name_candidates_review,not_evaluated
+623,Daakara,191,38118,exact_name,23863,name_candidates_review,not_evaluated
+624,Beth'tilac,192,38227,exact_name,52498;52675;54089,name_candidates_review,not_evaluated
+625,Lord Rhyolith,193,38414,exact_name,52558;53258;53772;54093;54192;54199,name_candidates_review,not_evaluated
+626,Alysrazor,194,38446,exact_name,52530;53682;53683;53785;54097;54382,name_candidates_review,not_evaluated
+627,Shannox,195,38448,exact_name,53691;54105,name_candidates_review,not_evaluated
+770,Baleroc,196,38621,exact_name,53494;54085,name_candidates_review,not_evaluated
+628,Majordomo Staghelm,197,37953,exact_name,52571;54015;54101,name_candidates_review,not_evaluated
+629,Ragnaros,198,37875,exact_name,11502;38806;40688;40793;41634;52409;52592;53920;54081;54258,name_candidates_review,not_evaluated
+817,Echo of Tyrande,283,39617,exact_name,54544,name_candidates_review,not_evaluated
+903,Echo of Jaina,285,38802,exact_name,54445;54641,name_candidates_review,not_evaluated
+827,Murozond,289,38931,exact_name,54432,name_candidates_review,not_evaluated
+895,Peroth'arn,290,39182,exact_name,55085,name_candidates_review,not_evaluated
+865,Queen Azshara,291,39391,exact_name,34416;54853,name_candidates_review,not_evaluated
+913,Mannoroth,292,38996,exact_name,18075;54969;56190,name_candidates_review,not_evaluated
+914,Captain Varo'then,292,39127,exact_name,55419;57118,name_candidates_review,not_evaluated
+881,Morchok,311,39094,exact_name,55265;58226,name_candidates_review,not_evaluated
+856,Hagara the Stormbinder,317,39318,exact_name,55689;57926,name_candidates_review,not_evaluated
+855,Deathwing,318,35268,exact_name,39867;42307;44319;44320;44744;46471;46484;46502;46957;48005;48572;49420;49533;49820;50369;51355;52869;52951;53879;55971;56173;56584;57962,name_candidates_review,not_evaluated
+862,Arcurion,322,35978,exact_name,54590,name_candidates_review,not_evaluated
+864,Echo of Sylvanas,323,38655,exact_name,54123,name_candidates_review,not_evaluated
+867,Warlord Zon'ozz,324,39138,exact_name,55308,name_candidates_review,not_evaluated
+876,Yor'sahj the Unsleeping,325,39101,exact_name,55312,name_candidates_review,not_evaluated
+875,Ultraxion,331,39099,exact_name,55293;55294;56259,name_candidates_review,not_evaluated
+877,Warmaster Blackhorn,332,39399,exact_name,56427,name_candidates_review,not_evaluated
+905,Deathwing,333,40087,exact_name,39867;42307;44319;44320;44744;46471;46484;46502;46957;48005;48572;49420;49533;49820;50369;51355;52869;52951;53879;55971;56173;56584;57962,name_candidates_review,not_evaluated
+1434,Sha of Doubt,335,45980,exact_name,56439;64245,name_candidates_review,not_evaluated
+896,Alizabal,339,21252,exact_name,55869,name_candidates_review,not_evaluated
+900,Echo of Baine,340,38791,exact_name,54431,name_candidates_review,not_evaluated
+899,Archbishop Benedictus,341,38991,exact_name,1284;41682;54938;54953,name_candidates_review,not_evaluated
+904,Asira Dawnslayer,342,38995,exact_name,54968,name_candidates_review,not_evaluated
+941,Ghamoo-Ra,368,37143,exact_name,4887,name_candidates_review,not_evaluated
+942,High Interrogator Gerstahn,369,8761,exact_name,9018,name_candidates_review,not_evaluated
+943,Lord Roccor,370,5781,exact_name,9025,name_candidates_review,not_evaluated
+944,Houndmaster Grebmar,371,9212,exact_name,9319,name_candidates_review,not_evaluated
+1234,High Justice Grimstone,372,9329,exact_name,10096,name_candidates_review,not_evaluated
+945,Pyromancer Loregrain,373,8762,exact_name,9024,name_candidates_review,not_evaluated
+946,Lord Incendius,374,1204,exact_name,9017,name_candidates_review,not_evaluated
+947,Warder Stilgiss,375,9089,exact_name,9041,name_candidates_review,not_evaluated
+948,Fineous Darkvire,376,8704,exact_name,9056,name_candidates_review,not_evaluated
+949,Bael'Gar,377,12162,exact_name,9016,name_candidates_review,not_evaluated
+950,General Angerforge,378,8756,exact_name,9033,name_candidates_review,not_evaluated
+951,Golem Lord Argelmach,379,8759,exact_name,8983,name_candidates_review,not_evaluated
+952,Hurley Blackbreath,380,8658,exact_name,9537,name_candidates_review,not_evaluated
+953,Phalanx,381,8177,exact_name,9502,name_candidates_review,not_evaluated
+954,Ribbly Screwspigot,382,8667,exact_name,9543,name_candidates_review,not_evaluated
+955,Plugger Spazzring,383,8652,exact_name,9499,name_candidates_review,not_evaluated
+956,Ambassador Flamelash,384,8329,exact_name,9156,name_candidates_review,not_evaluated
+1059,Doom'rel,385,8687,exact_name,9039,name_candidates_review,not_evaluated
+957,Magmus,386,12162,exact_name,9938,name_candidates_review,not_evaluated
+958,Emperor Dagran Thaurissan,387,8807,exact_name,9019,name_candidates_review,not_evaluated
+959,Highlord Omokk,388,11565,exact_name,9196,name_candidates_review,not_evaluated
+960,Shadow Hunter Vosh'gajin,389,9732,exact_name,9236,name_candidates_review,not_evaluated
+961,War Master Voone,390,28281,exact_name,9237,name_candidates_review,not_evaluated
+962,Mother Smolderweb,391,9929,exact_name,10596,name_candidates_review,not_evaluated
+963,Urok Doomhowl,392,11583,exact_name,10584,name_candidates_review,not_evaluated
+964,Quartermaster Zigris,393,9738,exact_name,9736,name_candidates_review,not_evaluated
+965,Halycon,394,9567,exact_name,10220,name_candidates_review,not_evaluated
+966,Gizrul the Slavener,395,9564,exact_name,10268,name_candidates_review,not_evaluated
+967,Overlord Wyrmthalak,396,8711,exact_name,9568,name_candidates_review,not_evaluated
+968,Pyroguard Emberseer,397,2172,exact_name,9816,name_candidates_review,not_evaluated
+969,Solakar Flamewreath,398,9581,exact_name,10264,name_candidates_review,not_evaluated
+970,Warchief Rend Blackhand,399,9778,exact_name,10429;51419,name_candidates_review,not_evaluated
+1235,Gyth,399,9806,exact_name,10339;51420;55829,name_candidates_review,not_evaluated
+971,The Beast,400,10193,exact_name,10430;51442,name_candidates_review,not_evaluated
+972,General Drakkisath,401,10115,exact_name,10363;51446,name_candidates_review,not_evaluated
+973,Zevrim Thornhoof,402,11335,exact_name,11490,name_candidates_review,not_evaluated
+974,Hydrospawn,403,5489,exact_name,13280,name_candidates_review,not_evaluated
+975,Lethtendris,404,21012,exact_name,14327,name_candidates_review,not_evaluated
+976,Alzzin the Wildshaper,405,14416,exact_name,11492,name_candidates_review,not_evaluated
+977,Tendris Warpwood,406,14383,exact_name,11489,name_candidates_review,not_evaluated
+978,Illyanna Ravenoak,407,11270,exact_name,11488,name_candidates_review,not_evaluated
+979,Magister Kalendris,408,14384,exact_name,11487,name_candidates_review,not_evaluated
+980,Immol'thar,409,14173,exact_name,11496,name_candidates_review,not_evaluated
+981,Prince Tortheldrin,410,11256,exact_name,11486,name_candidates_review,not_evaluated
+982,Guard Mol'dar,411,11561,exact_name,14326,name_candidates_review,not_evaluated
+983,Stomper Kreeg,412,11545,exact_name,14322,name_candidates_review,not_evaluated
+984,Guard Fengus,413,11561,exact_name,14321,name_candidates_review,not_evaluated
+985,Guard Slip'kik,414,11561,exact_name,14323,name_candidates_review,not_evaluated
+986,Captain Kromcrush,415,11564,exact_name,14325,name_candidates_review,not_evaluated
+987,Cho'Rush the Observer,416,11537,exact_name,14324,name_candidates_review,not_evaluated
+988,King Gordok,417,11583,exact_name,11501,name_candidates_review,not_evaluated
+989,Crowd Pummeler 9-60,418,36560,exact_name,6229,name_candidates_review,not_evaluated
+990,Grubbis,419,6533,exact_name,7361,name_candidates_review,not_evaluated
+1236,Viscous Fallout,420,36529,exact_name,7079,name_candidates_review,not_evaluated
+991,Electrocutioner 6000,421,36558,exact_name,6235,name_candidates_review,not_evaluated
+992,Mekgineer Thermaplugg,422,36563,exact_name,7800,name_candidates_review,not_evaluated
+993,Noxxion,423,11172,exact_name,13282,name_candidates_review,not_evaluated
+994,Razorlash,424,12389,exact_name,12258,name_candidates_review,not_evaluated
+995,Tinkerer Gizlock,425,7125,exact_name,13601,name_candidates_review,not_evaluated
+996,Gelihast,426,1773,exact_name,6243,name_candidates_review,not_evaluated
+997,Lord Vyletongue,427,12334,exact_name,12236,name_candidates_review,not_evaluated
+998,Celebras the Cursed,428,12350,exact_name,12225,name_candidates_review,not_evaluated
+999,Landslide,429,12293,exact_name,12203,name_candidates_review,not_evaluated
+1000,Rotgrip,430,13589,exact_name,13596,name_candidates_review,not_evaluated
+1001,Princess Theradras,431,12292,exact_name,12201,name_candidates_review,not_evaluated
+1237,Tuten'kash,432,7845,exact_name,7355,name_candidates_review,not_evaluated
+1002,Mordresh Fire Eye,433,8055,exact_name,7357,name_candidates_review,not_evaluated
+1003,Glutton,434,25730,exact_name,8567,name_candidates_review,not_evaluated
+1004,Amnennar the Coldbringer,435,32610,exact_name,7358,name_candidates_review,not_evaluated
+1020,Lady Sarevess,436,4979,exact_name,4831,name_candidates_review,not_evaluated
+1005,Twilight Lord Kelris,437,4939,exact_name,4832,name_candidates_review,not_evaluated
+1006,Death Speaker Jargba,438,4644,exact_name,4428,name_candidates_review,not_evaluated
+1007,Aggem Thorncurse,439,6097,exact_name,4424,name_candidates_review,not_evaluated
+1008,Overlord Ramtusk,440,4652,exact_name,4420,name_candidates_review,not_evaluated
+1238,Razorfen Spearhide,440,6078,exact_name,4438,name_candidates_review,not_evaluated
+1009,Agathelos the Raging,441,2450,exact_name,4422,name_candidates_review,not_evaluated
+1010,Charlga Razorflank,442,31042,exact_name,4421,name_candidates_review,not_evaluated
+1011,Hearthsinger Forresten,443,10482,exact_name,10558;30551,name_candidates_review,not_evaluated
+1012,Aku'mai,444,2837,exact_name,4829,name_candidates_review,not_evaluated
+1013,Timmy the Cruel,445,571,exact_name,10808,name_candidates_review,not_evaluated
+1014,Willey Hopebreaker,446,34480,exact_name,10997,name_candidates_review,not_evaluated
+1239,Risen Rifleman,446,34481,exact_name,11054,name_candidates_review,not_evaluated
+1015,Old Serra'kis,447,1816,exact_name,4830,name_candidates_review,not_evaluated
+1016,Instructor Galford,448,34498,exact_name,10811,name_candidates_review,not_evaluated
+1017,Balnazzar,449,34424,exact_name,10813,name_candidates_review,not_evaluated
+1018,The Unforgiven,450,10771,exact_name,10516,name_candidates_review,not_evaluated
+1019,Baroness Anastari,451,10698,exact_name,10436;45956,name_candidates_review,not_evaluated
+1021,Nerub'enkan,452,9793,exact_name,10437,name_candidates_review,not_evaluated
+1022,Maleki the Pallid,453,10546,exact_name,10438,name_candidates_review,not_evaluated
+1023,Magistrate Barthilas,454,10433,exact_name,10435;30994,name_candidates_review,not_evaluated
+1024,Ramstein the Gorger,455,12818,exact_name,10439,name_candidates_review,not_evaluated
+1025,Lord Aurius Rivendare,456,34837,exact_name,45412,name_candidates_review,not_evaluated
+1026,Avatar of Hakkar,457,8053,exact_name,8443,name_candidates_review,not_evaluated
+1027,Jammal'an the Prophet,458,6708,exact_name,5710;46656,name_candidates_review,not_evaluated
+1028,Dreamscythe,459,7553,exact_name,5721,name_candidates_review,not_evaluated
+1347,Weaver,459,6375,exact_name,5720,name_candidates_review,not_evaluated
+1348,Morphaz,459,7975,exact_name,5719,name_candidates_review,not_evaluated
+1346,Hazzas,459,9584,exact_name,5722,name_candidates_review,not_evaluated
+1032,Shade of Eranikus,463,7806,exact_name,5709,name_candidates_review,not_evaluated
+1033,Hogger,464,501,exact_name,448;46254;46500,name_candidates_review,not_evaluated
+1034,Lord Overheat,465,1204,exact_name,46264,name_candidates_review,not_evaluated
+1035,Randolph Moloch,466,35068,exact_name,46383,name_candidates_review,not_evaluated
+1036,Revelosh,467,5945,exact_name,6910,name_candidates_review,not_evaluated
+1039,Baelog,468,5710,exact_name,6906;46853;46856,name_candidates_review,not_evaluated
+1037,"Eric ""The Swift""",468,5708,exact_name,6907;46852;46855,name_candidates_review,not_evaluated
+1038,Olaf,468,5709,exact_name,6908;46854;46857,name_candidates_review,not_evaluated
+1040,Ironaya,469,6089,exact_name,7228,name_candidates_review,not_evaluated
+1041,Ancient Stone Keeper,470,10798,exact_name,7206,name_candidates_review,not_evaluated
+1042,Galgann Firehammer,471,6059,exact_name,7291,name_candidates_review,not_evaluated
+1043,Grimlok,472,11165,exact_name,4854,name_candidates_review,not_evaluated
+1044,Archaedas,473,5988,exact_name,2748,name_candidates_review,not_evaluated
+1045,Lady Anacondra,474,4313,exact_name,3671,name_candidates_review,not_evaluated
+1046,Lord Cobrahn,475,4213,exact_name,3669,name_candidates_review,not_evaluated
+1047,Lord Pythas,476,4214,exact_name,3670,name_candidates_review,not_evaluated
+1048,Kresh,477,5126,exact_name,3653,name_candidates_review,not_evaluated
+1049,Skum,478,4203,exact_name,3674,name_candidates_review,not_evaluated
+1050,Lord Serpentis,479,4215,exact_name,3673,name_candidates_review,not_evaluated
+1051,Verdan the Everliving,480,4256,exact_name,5775,name_candidates_review,not_evaluated
+1052,Mutanus the Devourer,481,4088,exact_name,3654,name_candidates_review,not_evaluated
+1053,Hydromancer Velratha,482,6685,exact_name,7795,name_candidates_review,not_evaluated
+1054,Gahz'rilla,483,7271,exact_name,7273,name_candidates_review,not_evaluated
+1055,Antu'sul,484,7353,exact_name,8127,name_candidates_review,not_evaluated
+1056,Theka the Martyr,485,6696,exact_name,7272,name_candidates_review,not_evaluated
+1057,Witch Doctor Zum'rah,486,6434,exact_name,7271,name_candidates_review,not_evaluated
+1058,Nekrum Gutchewer,487,6690,exact_name,7796,name_candidates_review,not_evaluated
+1240,Shadowpriest Sezz'ziz,487,6441,exact_name,7275,name_candidates_review,not_evaluated
+1061,Chief Ukorz Sandscalp,489,6439,exact_name,7267,name_candidates_review,not_evaluated
+1098,Shirrak the Dead Watcher,523,18916,exact_name,18371,name_candidates_review,not_evaluated
+1099,Exarch Maladaar,524,17715,exact_name,18373,name_candidates_review,not_evaluated
+1104,Watchkeeper Gargolmar,527,18236,exact_name,17306,name_candidates_review,not_evaluated
+1105,Omor the Unscarred,528,18237,exact_name,17308,name_candidates_review,not_evaluated
+1106,Vazruden the Herald,529,18944,exact_name,17307,name_candidates_review,not_evaluated
+1107,Selin Fireheart,530,22642,exact_name,24723,name_candidates_review,not_evaluated
+1108,Vexallus,531,22731,exact_name,24744,name_candidates_review,not_evaluated
+1109,Priestess Delrissa,532,22596,exact_name,24560,name_candidates_review,not_evaluated
+1110,Kael'thas Sunstrider,533,22906,exact_name,19622;23054;24664,name_candidates_review,not_evaluated
+1111,Pandemonius,534,19338,exact_name,18341,name_candidates_review,not_evaluated
+1112,Tavarok,535,19332,exact_name,18343,name_candidates_review,not_evaluated
+1113,Yor,536,14173,exact_name,10237;22930,name_candidates_review,not_evaluated
+1114,Nexus-Prince Shaffar,537,19780,exact_name,18344,name_candidates_review,not_evaluated
+1115,Lieutenant Drake,538,17386,exact_name,17848,name_candidates_review,not_evaluated
+1116,Captain Skarloc,539,17387,exact_name,17862,name_candidates_review,not_evaluated
+1117,Epoch Hunter,540,19135,exact_name,18096,name_candidates_review,not_evaluated
+1118,Darkweaver Syth,541,20599,exact_name,18472,name_candidates_review,not_evaluated
+1119,Anzu,542,21492,exact_name,23035,name_candidates_review,not_evaluated
+1120,Talon King Ikiss,543,18636,exact_name,18473,name_candidates_review,not_evaluated
+1121,Ambassador Hellmaw,544,18821,exact_name,18731,name_candidates_review,not_evaluated
+1122,Blackheart the Inciter,545,18058,exact_name,18667;19300;19301;19302;19303;19304,name_candidates_review,not_evaluated
+1123,Grandmaster Vorpil,546,18535,exact_name,18732,name_candidates_review,not_evaluated
+1124,Murmur,547,18839,exact_name,18708,name_candidates_review,not_evaluated
+1125,Zereketh the Unbound,548,19882,exact_name,20870,name_candidates_review,not_evaluated
+1126,Dalliah the Doomsayer,549,19888,exact_name,20885,name_candidates_review,not_evaluated
+1127,Wrath-Scryer Soccothrates,550,19977,exact_name,20886,name_candidates_review,not_evaluated
+1128,Harbinger Skyriss,551,19943,exact_name,20912;21466;21467,name_candidates_review,not_evaluated
+1129,Chrono Lord Deja,552,20513,exact_name,17879,name_candidates_review,not_evaluated
+1130,Temporus,553,19066,exact_name,17880,name_candidates_review,not_evaluated
+1131,Aeonus,554,20510,exact_name,17881,name_candidates_review,not_evaluated
+1132,The Maker,555,18369,exact_name,17381,name_candidates_review,not_evaluated
+1133,Broggok,556,19372,exact_name,17380,name_candidates_review,not_evaluated
+1134,Keli'dan the Breaker,557,17153,exact_name,17377,name_candidates_review,not_evaluated
+1135,Commander Sarannis,558,18929,exact_name,17976,name_candidates_review,not_evaluated
+1136,High Botanist Freywinn,559,19045,exact_name,17975,name_candidates_review,not_evaluated
+1137,Thorngrin the Tender,560,14416,exact_name,17978,name_candidates_review,not_evaluated
+1138,Laj,561,13109,exact_name,17980,name_candidates_review,not_evaluated
+1139,Warp Splinter,562,19438,exact_name,17977,name_candidates_review,not_evaluated
+1140,Mechano-Lord Capacitus,563,19162,exact_name,19219,name_candidates_review,not_evaluated
+1141,Nethermancer Sepethrea,564,19166,exact_name,19221,name_candidates_review,not_evaluated
+1142,Pathaleon the Calculator,565,20033,exact_name,19220,name_candidates_review,not_evaluated
+1143,Grand Warlock Nethekurse,566,16628,exact_name,16807,name_candidates_review,not_evaluated
+1145,Warbringer O'mrogg,568,18031,exact_name,16809,name_candidates_review,not_evaluated
+1146,Warchief Kargath Bladefist,569,19799,exact_name,16808,name_candidates_review,not_evaluated
+1147,Mennu the Betrayer,570,17728,exact_name,17941,name_candidates_review,not_evaluated
+1148,Rokmar the Crackler,571,17729,exact_name,17991,name_candidates_review,not_evaluated
+1149,Quagmirran,572,18224,exact_name,17942,name_candidates_review,not_evaluated
+1150,Hydromancer Thespia,573,11268,exact_name,17797,name_candidates_review,not_evaluated
+1151,Mekgineer Steamrigger,574,18638,exact_name,17796,name_candidates_review,not_evaluated
+1152,Warlord Kalithresh,575,20235,exact_name,17798,name_candidates_review,not_evaluated
+1153,Hungarfen,576,17228,exact_name,17770,name_candidates_review,not_evaluated
+1154,Ghaz'an,577,17528,exact_name,18105,name_candidates_review,not_evaluated
+1155,Swamplord Musel'ek,578,18570,exact_name,17826,name_candidates_review,not_evaluated
+1156,The Black Stalker,579,18194,exact_name,17882,name_candidates_review,not_evaluated
+1157,Elder Nadox,580,27407,exact_name,29309,name_candidates_review,not_evaluated
+1158,Prince Taldaram,581,27406,exact_name,29308;37973,name_candidates_review,not_evaluated
+1159,Jedoga Shadowseeker,582,26777,exact_name,29310,name_candidates_review,not_evaluated
+1160,Amanitar,583,28133,exact_name,30258,name_candidates_review,not_evaluated
+1337,Herald Volazj,584,27408,exact_name,29311,name_candidates_review,not_evaluated
+1161,Krik'thir the Gatewatcher,585,27394,exact_name,28684,name_candidates_review,not_evaluated
+1162,Hadronox,586,26776,exact_name,28921,name_candidates_review,not_evaluated
+1338,Anub'arak,587,27856,exact_name,29120;34564;34660,name_candidates_review,not_evaluated
+1163,Trollgore,588,26352,exact_name,26630,name_candidates_review,not_evaluated
+1164,Novos the Summoner,589,26292,exact_name,26631,name_candidates_review,not_evaluated
+1165,King Dred,590,5240,exact_name,27483,name_candidates_review,not_evaluated
+1498,The Prophet Tharon'ja,591,27072,exact_name,26632;27696,name_candidates_review,not_evaluated
+1167,Slad'ran,592,27422,exact_name,29304,name_candidates_review,not_evaluated
+1168,Drakkari Colossus,593,26589,exact_name,29307,name_candidates_review,not_evaluated
+1169,Moorabi,594,27059,exact_name,29305,name_candidates_review,not_evaluated
+1170,Eck the Ferocious,595,26644,exact_name,29932,name_candidates_review,not_evaluated
+1171,Gal'darah,596,27061,exact_name,29306,name_candidates_review,not_evaluated
+1172,General Bjarngrim,597,27301,exact_name,28586,name_candidates_review,not_evaluated
+1173,Volkhan,598,27071,exact_name,28587,name_candidates_review,not_evaluated
+1174,Ionar,599,27484,exact_name,28546,name_candidates_review,not_evaluated
+1175,Loken,600,27485,exact_name,24847;28923;30396,name_candidates_review,not_evaluated
+1176,Falric,601,30972,exact_name,38112,name_candidates_review,not_evaluated
+1177,Marwyn,602,30973,exact_name,38113,name_candidates_review,not_evaluated
+1178,The Lich King,603,30721,exact_name,16980;24248;24446;25462;28498;28765;29110;29183;29394;30443;31013;31083;31301;32184;32443;33441;35459;35877;36597;36954;37181;37226;37857;38153,name_candidates_review,not_evaluated
+1179,Krystallus,604,20909,exact_name,27977,name_candidates_review,not_evaluated
+1180,Maiden of Grief,605,26657,exact_name,27975,name_candidates_review,not_evaluated
+1342,Brann Bronzebeard,606,26353,exact_name,28070;29579;30107;30382;30405;31810;33235;33579;34044;34064;34119;39908;49204;49248;49351;49468;49469;49470;49471;49472;49941;51174;64922;67682;67950,name_candidates_review,not_evaluated
+1181,Sjonnir The Ironshaper,607,27483,exact_name,27978,name_candidates_review,not_evaluated
+1182,Forgemaster Garfrost,608,30843,exact_name,36494,name_candidates_review,not_evaluated
+1184,Krick,609,30331,exact_name,36477,name_candidates_review,not_evaluated
+1183,Ick,609,30347,exact_name,36476,name_candidates_review,not_evaluated
+1185,Scourgelord Tyrannus,610,30277,exact_name,36658;36794,name_candidates_review,not_evaluated
+1186,Meathook,611,26579,exact_name,26529,name_candidates_review,not_evaluated
+1187,Salramm the Fleshcrafter,612,26581,exact_name,26530,name_candidates_review,not_evaluated
+1188,Chrono-Lord Epoch,613,26580,exact_name,26532,name_candidates_review,not_evaluated
+1189,Mal'Ganis,614,26582,exact_name,26533,name_candidates_review,not_evaluated
+1190,Bronjahm,615,30226,exact_name,36497,name_candidates_review,not_evaluated
+1191,Devourer of Souls,616,30148,exact_name,36502;36503;36504,name_candidates_review,not_evaluated
+1193,Commander Stoutbeard,617,24366,exact_name,26796,name_candidates_review,not_evaluated
+1194,Grand Magus Telestra,618,24066,exact_name,26731;26832;26928;26929;26930,name_candidates_review,not_evaluated
+1195,Anomalus,619,26259,exact_name,26763,name_candidates_review,not_evaluated
+1196,Ormorok the Tree-Shaper,620,26298,exact_name,26794,name_candidates_review,not_evaluated
+1197,Keristrasza,621,24307,exact_name,26206;26237;26723;34310,name_candidates_review,not_evaluated
+1198,Drakos the Interrogator,622,27032,exact_name,27654,name_candidates_review,not_evaluated
+1199,Varos Cloudstrider,623,27033,exact_name,27447,name_candidates_review,not_evaluated
+1200,Mage-Lord Urom,624,25010,exact_name,27655,name_candidates_review,not_evaluated
+1201,Ley-Guardian Eregos,625,27034,exact_name,27656,name_candidates_review,not_evaluated
+1202,Erekem,626,27488,exact_name,29315,name_candidates_review,not_evaluated
+1203,Moragg,627,20590,exact_name,29316,name_candidates_review,not_evaluated
+1204,Ichoron,628,27487,exact_name,29313,name_candidates_review,not_evaluated
+1205,Xevozz,629,27486,exact_name,29266,name_candidates_review,not_evaluated
+1206,Lavanthor,630,10193,exact_name,29312,name_candidates_review,not_evaluated
+1207,Zuramat the Obliterator,631,27855,exact_name,29314,name_candidates_review,not_evaluated
+1208,Cyanigosa,632,27508,exact_name,31134,name_candidates_review,not_evaluated
+1214,Mokra the Skullcrusher,634,28587,exact_name,33361;35572,name_candidates_review,not_evaluated
+1216,Eressea Dawnsinger,634,28637,exact_name,33379;35569,name_candidates_review,not_evaluated
+1217,Runok Wildmane,634,28597,exact_name,33403;35571,name_candidates_review,not_evaluated
+1215,Zul'tore,634,28588,exact_name,33372;35570,name_candidates_review,not_evaluated
+1218,Deathstalker Visceri,634,28589,exact_name,33373;35617,name_candidates_review,not_evaluated
+1219,Eadric the Pure,635,29616,exact_name,33759;35119,name_candidates_review,not_evaluated
+1220,Argent Confessor Paletress,636,29490,exact_name,34102;34928;52240,name_candidates_review,not_evaluated
+1221,The Black Knight,637,29837,exact_name,33546;33785;35444;35451;35547;35557,name_candidates_review,not_evaluated
+1222,Prince Keleseth,638,25338,exact_name,23953;24041;27618;28356;28911;29108;37972,name_candidates_review,not_evaluated
+1223,Skarvald the Constructor,639,24605,exact_name,24200;27390,name_candidates_review,not_evaluated
+1224,Dalronn the Controller,639,26349,exact_name,24201;27389,name_candidates_review,not_evaluated
+1225,Ingvar the Plunderer,640,21953,exact_name,23954;23980,name_candidates_review,not_evaluated
+1226,Svala Sorrowgrave,641,26096,exact_name,26668,name_candidates_review,not_evaluated
+1227,Gortok Palehoof,642,27419,exact_name,26687,name_candidates_review,not_evaluated
+1228,Ferocious Rhino,642,26284,exact_name,26686,name_candidates_review,not_evaluated
+1230,Frenzied Worgen,642,26327,exact_name,26683;26829,name_candidates_review,not_evaluated
+1229,Massive Jormungar,642,24564,exact_name,26685,name_candidates_review,not_evaluated
+1231,Ravenous Furbolg,642,23999,exact_name,26684,name_candidates_review,not_evaluated
+1232,Skadi the Ruthless,643,27418,exact_name,26693,name_candidates_review,not_evaluated
+1233,King Ymiron,644,28019,exact_name,24321;26861;29393,name_candidates_review,not_evaluated
+1252,Raigonn,649,39519,exact_name,56877;56897;61177,name_candidates_review,not_evaluated
+1253,Armsmaster Harlan,654,40293,exact_name,58632,name_candidates_review,not_evaluated
+1422,Saboteur Kip'tilak,655,43122,exact_name,56906,name_candidates_review,not_evaluated
+1404,Flameweaver Koegler,656,40597,exact_name,59150,name_candidates_review,not_evaluated
+1255,Master Snowdrift,657,41902,exact_name,56541;56713;56870;60005;60006;60007;63009;64387;67229;73002,name_candidates_review,not_evaluated
+1257,Liu Flameheart,658,39487,exact_name,56732;56785,name_candidates_review,not_evaluated
+1258,Instructor Chillheart,659,40301,exact_name,58633,name_candidates_review,not_evaluated
+1326,Houndmaster Braun,660,42264,exact_name,59303,name_candidates_review,not_evaluated
+1265,Jandice Barov,663,40639,exact_name,10503;59184;59217;59220,name_candidates_review,not_evaluated
+1433,Lorewalker Stonestep,664,39506,exact_name,56786;56843,name_candidates_review,not_evaluated
+1269,Rattlegore,665,31092,exact_name,11622;44318;59153,name_candidates_review,not_evaluated
+1270,Lilian Voss,666,40256,exact_name,38895;38910;38999;39036;39038;58722;59200;64837;64839;66166,name_candidates_review,not_evaluated
+1489,Lilian's Soul,666,43908,exact_name,58791,name_candidates_review,not_evaluated
+1430,Ook-Ook,668,39498,exact_name,56637;57628;57963,name_candidates_review,not_evaluated
+1273,Hoptallus,669,40339,exact_name,56717,name_candidates_review,not_evaluated
+1431,Yan-Zhu the Uncasked,670,42969,exact_name,59479,name_candidates_review,not_evaluated
+1275,Brother Korloff,671,41154,exact_name,59223,name_candidates_review,not_evaluated
+1432,Wise Mari,672,41125,exact_name,56448;56787;71932,name_candidates_review,not_evaluated
+1402,Gu Cloudstrike,673,39489,exact_name,56747,name_candidates_review,not_evaluated
+1403,Azure Serpent,673,39492,exact_name,56754,name_candidates_review,not_evaluated
+1277,High Inquisitor Whitemane,674,2043,exact_name,3977,name_candidates_review,not_evaluated
+1276,Commander Durand,674,41220,exact_name,60040;60106,name_candidates_review,not_evaluated
+1428,Striker Ga'dok,675,43275,exact_name,56589,name_candidates_review,not_evaluated
+1429,Commander Ri'mok,676,43286,exact_name,56636,name_candidates_review,not_evaluated
+1295,Jan-xi,677,41391,exact_name,60400,name_candidates_review,not_evaluated
+1294,Qin-xi,677,41392,exact_name,60399,name_candidates_review,not_evaluated
+1476,Amethyst Guardian,679,41892,exact_name,60047,name_candidates_review,not_evaluated
+1478,Cobalt Guardian,679,41893,exact_name,60051,name_candidates_review,not_evaluated
+1479,Jade Guardian,679,41894,exact_name,55236;60043;60296;65224,name_candidates_review,not_evaluated
+1477,Jasper Guardian,679,42644,exact_name,59915,name_candidates_review,not_evaluated
+1296,Gara'jal the Spiritbinder,682,41256,exact_name,60143;60257;60842;60855;61140;69135;70056,name_candidates_review,not_evaluated
+1482,Protector Kaolan,683,41503,exact_name,60583,name_candidates_review,not_evaluated
+1481,Elder Regail,683,41502,exact_name,60585,name_candidates_review,not_evaluated
+1480,Elder Asani,683,41504,exact_name,60586,name_candidates_review,not_evaluated
+1393,Darkmaster Gandling,684,40322,exact_name,1853;44323;58875;59080,name_candidates_review,not_evaluated
+1488,Sha of Violence,685,43283,exact_name,56719,name_candidates_review,not_evaluated
+1305,Taran Zhu,686,41121,exact_name,56884;60688;60871;61066;62273;62274;62275;62410;62412;62736;62803;64236;64536;65885;66296;66582;66583;66644;66657;66665;67003;67012;69501;69717;69803;70160;71065;71083;71931;72779;73214;73593,name_candidates_review,not_evaluated
+1309,Meng the Demented,687,41813,exact_name,60708;61429,name_candidates_review,not_evaluated
+1308,Qiang the Merciless,687,41812,exact_name,60709;61423,name_candidates_review,not_evaluated
+1310,Subetai the Swift,687,41565,exact_name,60710;61427,name_candidates_review,not_evaluated
+1425,Zian of the Endless Shadow,687,41566,exact_name,60701;61421,name_candidates_review,not_evaluated
+1312,Thalnos the Soulrender,688,27705,exact_name,59789,name_candidates_review,not_evaluated
+1313,Feng the Accursed,689,41192,exact_name,60009;60016;60018;60019;60020,name_candidates_review,not_evaluated
+1315,Gekkan,690,41920,exact_name,61243,name_candidates_review,not_evaluated
+1316,Sha of Anger,691,41448,exact_name,60491;61523,name_candidates_review,not_evaluated
+1516,General Pa'valak,692,43120,exact_name,61485,name_candidates_review,not_evaluated
+1439,Vizier Jin'bak,693,43197,exact_name,61567,name_candidates_review,not_evaluated
+1343,Adarogg,694,38759,exact_name,61408,name_candidates_review,not_evaluated
+1321,Dark Shaman Koranthal,695,42101,exact_name,61412,name_candidates_review,not_evaluated
+1344,Slagmaw,696,38391,exact_name,61463,name_candidates_review,not_evaluated
+1345,Lava Guard Gordoth,697,42100,exact_name,61528,name_candidates_review,not_evaluated
+1435,Xin the Weaponmaster,698,41987,exact_name,61398;61884,name_candidates_review,not_evaluated
+1334,Kuai the Brute,708,42058,exact_name,61442,name_candidates_review,not_evaluated
+1335,Ming the Cunning,708,42059,exact_name,61444,name_candidates_review,not_evaluated
+1336,Haiyan the Unstoppable,708,42060,exact_name,61445,name_candidates_review,not_evaluated
+1519,Sha of Fear,709,45065,exact_name,60999;63942,name_candidates_review,not_evaluated
+1405,Garalon,713,42368,exact_name,62164;63191;63435;63667;66746,name_candidates_review,not_evaluated
+1386,Galleon,725,42439,exact_name,62346,name_candidates_review,not_evaluated
+1385,Chief Salyis,725,42468,exact_name,62352,name_candidates_review,not_evaluated
+1383,Elegon,726,41399,exact_name,60410,name_candidates_review,not_evaluated
+1475,Wing Leader Ner'onok,727,43151,exact_name,62205,name_candidates_review,not_evaluated
+1394,Blood Guard Porung,728,17725,exact_name,20923;20992,name_candidates_review,not_evaluated
+1412,Lei Shi,729,42811,exact_name,62983;63099;65219,name_candidates_review,not_evaluated
+1400,Amber-Shaper Un'sok,737,43126,exact_name,62511;63666,name_candidates_review,not_evaluated
+1401,Amber Monstrosity,737,44140,exact_name,62711,name_candidates_review,not_evaluated
+1407,Commander Vo'jak,738,42169,exact_name,61634,name_candidates_review,not_evaluated
+1485,Wind Lord Mel'jarak,741,42645,exact_name,62397;63665;65501,name_candidates_review,not_evaluated
+1444,Tsulong,742,42532,exact_name,62442;62533;63025;63026,name_candidates_review,not_evaluated
+1465,Tsulong,742,42533,exact_name,62442;62533;63025;63026,name_candidates_review,not_evaluated
+1417,Grand Empress Shek'zeer,743,42730,exact_name,62837,name_candidates_review,not_evaluated
+1517,Blade Lord Ta'yak,744,43141,exact_name,62543;63664,name_candidates_review,not_evaluated
+1421,Imperial Vizier Zor'lok,745,42807,exact_name,62980;63554;63662;65201;65539;66791,name_candidates_review,not_evaluated
+1423,Obsidian Sentinel,748,5285,exact_name,7023,name_candidates_review,not_evaluated
+1424,Commander Malor,749,34463,exact_name,11032,name_candidates_review,not_evaluated
+1540,Nalak,814,47227,exact_name,69099;69562,name_candidates_review,not_evaluated
+1561,Kazra'jin,816,47229,exact_name,69134,name_candidates_review,not_evaluated
+1558,Sul the Sandcrawler,816,47505,exact_name,69078,name_candidates_review,not_evaluated
+1559,Frost King Malakk,816,47506,exact_name,69131,name_candidates_review,not_evaluated
+1582,High Priestess Mar'li,816,47730,exact_name,14510;69132,name_candidates_review,not_evaluated
+1544,Iron Qon,817,46627,exact_name,68078,name_candidates_review,not_evaluated
+1545,Ro'shak,817,46628,exact_name,68079,name_candidates_review,not_evaluated
+1546,Quet'zal,817,46629,exact_name,68080,name_candidates_review,not_evaluated
+1547,Dam'ren,817,46630,exact_name,68081,name_candidates_review,not_evaluated
+1548,Durumu,818,47189,reviewed_name_alias,67853;68036;69392,name_candidates_review,not_evaluated
+1562,Horridon,819,47325,exact_name,68476,name_candidates_review,not_evaluated
+1551,Primordius,820,47009,exact_name,69017,name_candidates_review,not_evaluated
+1595,Flaming Head,821,47414,exact_name,69086;70212;70229,name_candidates_review,not_evaluated
+1594,Venomous Head,821,47416,exact_name,70247;70251,name_candidates_review,not_evaluated
+1596,Frozen Head,821,47415,exact_name,70235;70250,name_candidates_review,not_evaluated
+1563,Dark Animus,824,47527,exact_name,69427,name_candidates_review,not_evaluated
+1564,Tortos,825,46559,exact_name,67977,name_candidates_review,not_evaluated
+1566,Oondasta,826,47257,exact_name,69161,name_candidates_review,not_evaluated
+1567,Jin'rokh the Breaker,827,47552,exact_name,14902;52728;69465,name_candidates_review,not_evaluated
+1573,Ji-Kun,828,46675,exact_name,69712,name_candidates_review,not_evaluated
+1569,Lu'lin,829,46975,exact_name,68905,name_candidates_review,not_evaluated
+1581,Suen,829,46974,exact_name,68904,name_candidates_review,not_evaluated
+1580,Ra-den,831,47739,exact_name,69473;69888,name_candidates_review,not_evaluated
+1572,Lei Shen,832,46770,exact_name,68397;69654;70437,name_candidates_review,not_evaluated
+1574,Commander Kolurg,833,24352,exact_name,26798,name_candidates_review,not_evaluated
+1575,Marshal Jacob Alerius,834,28560,exact_name,33225;34705,name_candidates_review,not_evaluated
+1577,Ambrose Boltspark,834,28586,exact_name,33335;34702,name_candidates_review,not_evaluated
+1579,Jaelyne Evensong,834,28735,exact_name,33592;34657,name_candidates_review,not_evaluated
+1578,Lana Stouthammer,834,28564,exact_name,33312;34703,name_candidates_review,not_evaluated
+1576,Colosos,834,28736,exact_name,33593;34701,name_candidates_review,not_evaluated
+1602,Malkorok,846,49070,exact_name,67844;71177;71454,name_candidates_review,not_evaluated
+1606,Rook Stonetoe,849,48918,exact_name,58466;58868;58911;59333;66057;71475;71996,name_candidates_review,not_evaluated
+1605,He Softfoot,849,48917,exact_name,58470;58502;59342;64401;64647;64884;64886;64888;66059;71479,name_candidates_review,not_evaluated
+1607,Sun Tenderheart,849,48919,exact_name,58468;59334;59337;66160;71480;72000,name_candidates_review,not_evaluated
+1608,General Nazgrim,850,48995,exact_name,54870;54885;55054;55087;55135;55137;55140;55172;56339;56407;56490;56593;57108;59442;60149;61682;64360;64380;65999;66190;66643;66646;66656;66682;66694;66899;66961;67939;68997;71178;71515;71697;71762;73939,name_candidates_review,not_evaluated
+1610,Thok the Bloodthirsty,851,51144,exact_name,71529,name_candidates_review,not_evaluated
+1609,Kor'kron Jailer,851,49082,exact_name,71658;73195,name_candidates_review,not_evaluated
+1611,Immerseus,852,49056,exact_name,71543;72436,name_candidates_review,not_evaluated
+1648,Skeer the Bloodseeker,853,48674,exact_name,63071;63359;66777;71152;71220,name_candidates_review,not_evaluated
+1649,Hisek the Swarmkeeper,853,48675,exact_name,63785;64569;64645;64672;64705;65454;66780;71153;71219,name_candidates_review,not_evaluated
+1650,Ka'roz the Locust,853,48676,exact_name,64210;64497;65303;66781;71154;71218,name_candidates_review,not_evaluated
+1651,Korven the Prime,853,48677,exact_name,62180;62232;63198;66774;71155;71217,name_candidates_review,not_evaluated
+1652,Kaz'tik the Manipulator,853,48678,exact_name,62540;63758;63876;64013;64344;64445;64490;66779;71156;71216,name_candidates_review,not_evaluated
+1653,Xaril the Poisoned Mind,853,48679,exact_name,62151;63606;63781;66773;71157;71215,name_candidates_review,not_evaluated
+1654,Rik'kal the Dissector,853,48680,exact_name,63072;65253;66778;67091;71158;71214,name_candidates_review,not_evaluated
+1655,Iyyokuk the Lucid,853,48681,exact_name,62773;65305;66782;71160;71213,name_candidates_review,not_evaluated
+1656,Kil'ruk the Wind-Reaver,853,48682,exact_name,62152;62202;62357;62413;62538;62588;62976;63737;65371;65618;65619;66775;66800;71161;71212,name_candidates_review,not_evaluated
+1614,Earthbreaker Haromm,856,49176,exact_name,71859;72619,name_candidates_review,not_evaluated
+1615,Wavebinder Kardris,856,49177,exact_name,71858;72620,name_candidates_review,not_evaluated
+1618,Chi-Ji,857,49237,exact_name,59653;59719;60597;61927;65898;66474;67139;67761;71169;71314;71952;73127,name_candidates_review,not_evaluated
+1619,Yu'lon,858,49234,exact_name,56762;56779;57286;59901;65904;67132;70989;71270;71955;73128,name_candidates_review,not_evaluated
+1620,Niuzao,859,49235,exact_name,61093;61930;63913;65895;71144;71316;71954;73130,name_candidates_review,not_evaluated
+1621,Xuen,860,49236,exact_name,60968;61597;63334;63508;64528;65902;71107;71136;71820;71953;73126;73967,name_candidates_review,not_evaluated
+1623,Ordos,861,49285,exact_name,72057,name_candidates_review,not_evaluated
+1624,Iron Juggernaut,864,49844,exact_name,71466;72616,name_candidates_review,not_evaluated
+2830,Siegecrafter Blackfuse,865,51657,exact_name,71504;72694,name_candidates_review,not_evaluated
+1625,Norushen,866,48860,exact_name,71246;71965;71967,name_candidates_review,not_evaluated
+2827,Amalgam of Corruption,866,49360,exact_name,72276,name_candidates_review,not_evaluated
+1626,Sha of Pride,867,49098,exact_name,71734,name_candidates_review,not_evaluated
+1627,Galakras,868,49337,exact_name,72249;72957;73345,name_candidates_review,not_evaluated
+1628,Garrosh Hellscream,869,49585,exact_name,25237;34995;35372;39372;39605;42124;42277;42282;43943;44629;45046;45530;54888;62087;62092;64629;67580;67840;67867;68088;68223;68336;68429;68496;68882;68920;68941;68955;68975;71865;72349;73081;73103;73462;73620,name_candidates_review,not_evaluated
+2831,Secured Stockpile of Pandaren Spoils,870,51173,exact_name,71889,name_candidates_review,not_evaluated
+2835,Galakras,881,49337,exact_name,72249;72957;73345,name_candidates_review,not_evaluated

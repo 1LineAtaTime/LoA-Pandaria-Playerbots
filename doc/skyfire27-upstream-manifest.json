@@ -1,0 +1,31 @@
+{
+  "upstream": "https://github.com/ProjectSkyfire/SkyFire_548",
+  "source_revision": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "database_release": "sf_db_27",
+  "database_tag_revision": "f7a9880b9452e4db900dc9ff783b7b6be3aeeb86",
+  "release_source_revision": "d3ce4e58ea929b45bfeb3b0332b0933b419ab810",
+  "local_start": "e6c73af7d",
+  "shared_git_ancestor": false,
+  "integration_method": "matched component adaptations; no unrelated-history merge and no replacement of personal/custom database",
+  "world_update_files": 109,
+  "combat_source_files": 3,
+  "service_source_files": 7,
+  "native_sources": [
+    "src/server/game/Entities/Creature/Creature.cpp",
+    "src/server/game/Globals/ObjectMgr.cpp"
+  ],
+  "preserved_policies": [
+    "LoA battleground and AutoBalance expansion-aware scaling",
+    "LoA ranged curve and runtime/event damage multipliers",
+    "BattlePay/shop/DP/account/character records",
+    "playerbots and auction house custom behavior",
+    "navigation parents/tiles and existing crash guard"
+  ],
+  "pending": [
+    "authored per-template damage multiplier/rank policy reconciliation",
+    "9 differently named NPC identities",
+    "remaining inventoried quest/spell/dungeon components and newer updates",
+    "runtime gameplay and sustained load acceptance",
+    "clean sanitized Windows/Linux distributable"
+  ]
+}

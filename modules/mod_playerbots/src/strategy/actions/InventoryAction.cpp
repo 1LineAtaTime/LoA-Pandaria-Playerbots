@@ -12,6 +12,16 @@
 
 namespace
 {
+// Usage is an inventory classification, not an equip/use permission. In
+// particular, unwanted recipes and wrong-class equipment must still be counted
+// by "can sell". Keep the usability filter for the other item selectors.
+class InventoryUsageVisitor : public FindItemUsageVisitor
+{
+public:
+    using FindItemUsageVisitor::FindItemUsageVisitor;
+    bool Visit(Item* item) override { return FindItemVisitor::Visit(item); }
+};
+
 // AC InventoryAction.cpp:119-138 (compare_items / compare_items_by_level): class desc, subclass asc, quality asc, ilvl desc.
 bool compare_items(ItemTemplate const* proto1, ItemTemplate const* proto2)
 {
@@ -198,7 +208,7 @@ std::vector<Item*> InventoryAction::Find(std::string const qualifier, uint32 mas
         std::string const usage = qualifier.substr(6, qualifier.find(' ', 6) - 6);
         if (!usage.empty() && usage.size() <= 9 && usage.find_first_not_of("0123456789") == std::string::npos)
         {
-            FindItemUsageVisitor visitor(bot, ItemUsage(std::stoi(usage)));
+            InventoryUsageVisitor visitor(bot, ItemUsage(std::stoi(usage)));
             IterateItems(&visitor);
             found = visitor.GetResult();
         }

@@ -1,0 +1,1750 @@
+{
+  "source_sha256": "ab00066b89ab79649e2cd475781f4aecbd394c5520b3a9584fdcf45ae429f28a",
+  "backup_sha256": "968b32c38697d1e4863ad4f520657001062dad11befab63c494597fd38691a4b",
+  "restored": [
+    {
+      "table": "item_template",
+      "entry": 68604,
+      "source_fields": 140,
+      "restored_fields": 140
+    },
+    {
+      "table": "item_template",
+      "entry": 72108,
+      "source_fields": 140,
+      "restored_fields": 140
+    },
+    {
+      "table": "gameobject_template",
+      "entry": 212375,
+      "source_fields": 50,
+      "restored_fields": 50
+    }
+  ],
+  "template_backup_sha256": "e5ff290e2f73e36f2c9d5c45fcd62ccc81c318e6c039a5d00eae9da0a281b40e",
+  "sql": "sql/updates/world/2026_11_08_03_world_loa_qa_references.sql",
+  "sql_sha256": "5ccf5ca48ecb25e683b798a409675aca865dc5bef48df6e408fc54b055fa287c",
+  "idempotent_second_application": true,
+  "data_tests": [
+    {
+      "suite": "loa-qa-reference-repairs-20261108",
+      "timestamp_utc": "2026-11-08T16:46:29.029474+00:00",
+      "coverage": "world-data assertions only",
+      "gameplay_tested": false,
+      "passed": 5,
+      "total": 5,
+      "results": [
+        {
+          "id": "missing_quest_items_restored",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "68604"
+            ],
+            [
+              "72108"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "68604"
+            ],
+            [
+              "72108"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "missing_quest_gameobject_restored",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "212375"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "212375"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "orphan_addons_removed",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "stationary_paths_cleared",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "522984",
+              "0"
+            ],
+            [
+              "914942",
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "522984",
+              "0"
+            ],
+            [
+              "914942",
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "native_less_reference_ai_restored",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "35077",
+              "SmartAI",
+              ""
+            ],
+            [
+              "37143",
+              "SmartAI",
+              ""
+            ]
+          ],
+          "expected_rows": [
+            [
+              "35077",
+              "SmartAI",
+              ""
+            ],
+            [
+              "37143",
+              "SmartAI",
+              ""
+            ]
+          ],
+          "error": ""
+        }
+      ]
+    },
+    {
+      "suite": "gilneas-progression-20261105",
+      "timestamp_utc": "2026-11-08T16:46:32.916356+00:00",
+      "coverage": "world-data assertions only",
+      "gameplay_tested": false,
+      "passed": 85,
+      "total": 85,
+      "results": [
+        {
+          "id": "gilneas-native-34511",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_forsaken_invader"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_forsaken_invader"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-36211",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_duskhaven_watchman"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_duskhaven_watchman"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-36294",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_koroth_the_hillbreaker"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_koroth_the_hillbreaker"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-36440",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_drowning_watchman"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_drowning_watchman"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-37067",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_crash_survivor"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_crash_survivor"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-38765",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_stout_mountain_horse"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_stout_mountain_horse"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-34913",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_prince_liam_greymane_phase2"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_prince_liam_greymane_phase2"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-38553",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_krennan_aranas"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_krennan_aranas"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-38218",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_prince_liam_greymane_gilneas"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_prince_liam_greymane_gilneas"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-38469",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_lady_sylvanas_gilneas"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_lady_sylvanas_gilneas"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-43747",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_hippogryph_endgame"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_hippogryph_endgame"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-43751",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_hippogryph"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_hippogryph"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-43749",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_tobias_mistmantle_endgame"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_tobias_mistmantle_endgame"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-43566",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_lorna_crowley_endgame"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_lorna_crowley_endgame"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gilneas-native-43713",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "npc_wyvern_endgame"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "npc_wyvern_endgame"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "koroth-banner",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "go_koroth_banner"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "go_koroth_banner"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "catapult-friendly",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "35",
+              "16384"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "35",
+              "16384"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "catapult-accessory",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "36292",
+              "0",
+              "1",
+              "6",
+              "30000"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "36292",
+              "0",
+              "1",
+              "6",
+              "30000"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "catapult-launch",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "horse-route",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "76",
+              "1",
+              "76",
+              "76"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "76",
+              "1",
+              "76",
+              "76"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "nullable-orientations",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "YES"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "YES"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "hewell-gossip",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "hewell-capability",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1",
+              "SmartAI"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1",
+              "SmartAI"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "no-horse-old-sai",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "no-accept-ride-teleport",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "ambush-debounce",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "5000",
+              "5000"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "5000",
+              "5000"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "ambush-anti-trap",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "tobias-spawn-phase",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "20",
+              "8",
+              "0"
+            ],
+            [
+              "21",
+              "18",
+              "768"
+            ],
+            [
+              "0",
+              "44",
+              "2097152"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "20",
+              "8",
+              "0"
+            ],
+            [
+              "21",
+              "18",
+              "768"
+            ],
+            [
+              "0",
+              "44",
+              "2097152"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "lorna-post-immunity",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "3"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "3"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "hunt-event-credit",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "camera-phase",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "4097"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "4097"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "camera-spell-target",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "31",
+              "5",
+              "197337"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "31",
+              "5",
+              "197337"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "ship-template",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "5",
+              "8253",
+              "Orc Gunship"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "5",
+              "8253",
+              "Orc Gunship"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "ship-and-explosives",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "4"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "4"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "gunship-ropes",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "2"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "2"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "korm-deck",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "all-deck-crew-present",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "52"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "52"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-37953-1-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "37953",
+              "37672"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "37953",
+              "37672"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-37953-2-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "37953",
+              "37674"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "37953",
+              "37674"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-37067-0-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "37067",
+              "36909"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "37067",
+              "36909"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-37067-0-1",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "37067",
+              "36910"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "37067",
+              "36910"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-37067-0-2",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "37067",
+              "36911"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "37067",
+              "36911"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-37067-0-3",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "37067",
+              "36912"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "37067",
+              "36912"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-38218-12-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "38218",
+              "38369"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "38218",
+              "38369"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-38218-13-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "38218",
+              "38371"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "38218",
+              "38371"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-38218-14-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "38218",
+              "38372"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "38218",
+              "38372"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-38469-2-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "38469",
+              "38370"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "38469",
+              "38370"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-0-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43815"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43815"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-0-1",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43816"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43816"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-0-2",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43837"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43837"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-0-3",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43838"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43838"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-0-4",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43839"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43839"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-0-5",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43840"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43840"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-1-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43814"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43814"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43749-2-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43749",
+              "43813"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43749",
+              "43813"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43566-7-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43566",
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43566",
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-43767-0-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "43767",
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "43767",
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "text-identities",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-37953-1-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "ccd7a37523b2e1814a78b451bbdd6202549e274252696f22f5da7091572685d7"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "ccd7a37523b2e1814a78b451bbdd6202549e274252696f22f5da7091572685d7"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-37953-2-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "4795189020858ec18e28ac851ab332ba5ccc3f793bdc580458c8adf382d81a65"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "4795189020858ec18e28ac851ab332ba5ccc3f793bdc580458c8adf382d81a65"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-37067-0-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "8b0cb26e9c7ccdece9784c288264b57080f04f5eea1be3f9d0fa99dae1105b4e"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "8b0cb26e9c7ccdece9784c288264b57080f04f5eea1be3f9d0fa99dae1105b4e"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-37067-0-1",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "e8aa445e6128d8940ffe60c08254ced43f03a8ab451e7240ba2af89ef5e99d1c"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "e8aa445e6128d8940ffe60c08254ced43f03a8ab451e7240ba2af89ef5e99d1c"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-37067-0-2",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "b2c16cd042e528521f018423e117c009068ca66baf8e1db2538c9bc7985ce664"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "b2c16cd042e528521f018423e117c009068ca66baf8e1db2538c9bc7985ce664"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-37067-0-3",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "f9b00508d2bb8c5bd3b92d5409008cd5d4d2665b2525f4fffabf71e165bf9b44"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "f9b00508d2bb8c5bd3b92d5409008cd5d4d2665b2525f4fffabf71e165bf9b44"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-38218-12-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "f1f2f19bad709be141403d900c803fc3549710fa045778e15d53c94175b6be9a"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "f1f2f19bad709be141403d900c803fc3549710fa045778e15d53c94175b6be9a"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-38218-13-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "b9b3c49b981a633eb50daba33501c8cf4ec4133056cee88f2503b6fc471f9977"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "b9b3c49b981a633eb50daba33501c8cf4ec4133056cee88f2503b6fc471f9977"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-38218-14-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "905fd05f64db99e8166b532b9c23a5c908092ab9d34a116effb3a2b8a0ef55c1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "905fd05f64db99e8166b532b9c23a5c908092ab9d34a116effb3a2b8a0ef55c1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-38469-2-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "e0e7a82a27e925a09fc44ff9f7f35615862ff20723792eb3942b95191e8fd611"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "e0e7a82a27e925a09fc44ff9f7f35615862ff20723792eb3942b95191e8fd611"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-0-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "fe0ef22f66ca9d032018961ab51eace8c3fd22d4e1097637eb17b5a12422485c"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "fe0ef22f66ca9d032018961ab51eace8c3fd22d4e1097637eb17b5a12422485c"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-0-1",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "47b2aea2f9e758251ca63f04ac385cb2bda061167d10d75225ae806555557e44"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "47b2aea2f9e758251ca63f04ac385cb2bda061167d10d75225ae806555557e44"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-0-2",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "11313860dc9ae9f6b0a46a4a8126434db7dadff905c659e652250f5521c61c92"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "11313860dc9ae9f6b0a46a4a8126434db7dadff905c659e652250f5521c61c92"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-0-3",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "70e311ff55eb2a51d3cf5ea49f4a0340171dd4aeb5e5484827f14d5a47c39185"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "70e311ff55eb2a51d3cf5ea49f4a0340171dd4aeb5e5484827f14d5a47c39185"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-0-4",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0d7668d4133bf139c84cf117c7c0cbc8bc01c7380c7f7b57f1d29384758e5eaf"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0d7668d4133bf139c84cf117c7c0cbc8bc01c7380c7f7b57f1d29384758e5eaf"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-0-5",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "380516946e76bef4cd2a12c829e62440b802779fb129212ef3c156218070e18f"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "380516946e76bef4cd2a12c829e62440b802779fb129212ef3c156218070e18f"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-1-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "df440e7c462d1a2dcc03a50a5d13e86fe9af1f3f141b45f82ce2324845cff13b"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "df440e7c462d1a2dcc03a50a5d13e86fe9af1f3f141b45f82ce2324845cff13b"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43749-2-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "4ea5455abb77666546d5f934c4f0154571b353e3faa0b6a65282ca310f33b4ea"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "4ea5455abb77666546d5f934c4f0154571b353e3faa0b6a65282ca310f33b4ea"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43566-7-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "2ae1cd406b3c6f6c79d1234bc3ffe996aac095be886252fd71d9e4b0e27cc55e"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "2ae1cd406b3c6f6c79d1234bc3ffe996aac095be886252fd71d9e4b0e27cc55e"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "authored-text-43767-0-0",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "330b06e213fcd32f84b78b611ce8e4e323188fdec7b892977dba76e6315cd949"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "330b06e213fcd32f84b78b611ce8e4e323188fdec7b892977dba76e6315cd949"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "defer-incomplete-crowley-bridge",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "defer-crowley-condition",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "survivor-native-only",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "lorna-handoff-backend",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "SmartAI",
+              ""
+            ]
+          ],
+          "expected_rows": [
+            [
+              "SmartAI",
+              ""
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "lorna-authored-handoff",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1",
+              "1",
+              "19",
+              "38553"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1",
+              "1",
+              "19",
+              "38553"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "krennan-existing-group",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "1"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "1"
+            ]
+          ],
+          "error": ""
+        },
+        {
+          "id": "backend-coherence",
+          "status": "passed",
+          "actual_rows": [
+            [
+              "0"
+            ]
+          ],
+          "expected_rows": [
+            [
+              "0"
+            ]
+          ],
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "audit_before": {
+    "counts": {
+      "blocked": 0,
+      "failed": 6,
+      "passed": 4,
+      "untested": 0
+    },
+    "complete": true,
+    "ready": false
+  },
+  "audit_after": {
+    "counts": {
+      "blocked": 0,
+      "failed": 4,
+      "passed": 6,
+      "untested": 0
+    },
+    "complete": true,
+    "ready": false
+  },
+  "remaining_findings": [
+    {
+      "id": "objective_creature",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "8149",
+          "284684",
+          "108639"
+        ],
+        [
+          "8150",
+          "284686",
+          "108644"
+        ]
+      ]
+    },
+    {
+      "id": "objective_item",
+      "status": "failed",
+      "violation_count": 7,
+      "sample": [
+        [
+          "29048",
+          "251633",
+          "68676"
+        ],
+        [
+          "29466",
+          "254733",
+          "71961"
+        ],
+        [
+          "29056",
+          "256401",
+          "68680"
+        ],
+        [
+          "29046",
+          "256709",
+          "68674"
+        ],
+        [
+          "10794",
+          "273866",
+          "113135"
+        ],
+        [
+          "29554",
+          "261256",
+          "73366"
+        ],
+        [
+          "32475",
+          "269899",
+          "93660"
+        ]
+      ]
+    },
+    {
+      "id": "objective_gameobject",
+      "status": "failed",
+      "violation_count": 1,
+      "sample": [
+        [
+          "30759",
+          "272423",
+          "223458"
+        ]
+      ]
+    },
+    {
+      "id": "active_smartai_ownership",
+      "status": "failed",
+      "violation_count": 60,
+      "sample": [
+        [
+          "4542"
+        ],
+        [
+          "7357"
+        ],
+        [
+          "8567"
+        ],
+        [
+          "10399"
+        ],
+        [
+          "19991"
+        ],
+        [
+          "23575"
+        ],
+        [
+          "29625"
+        ],
+        [
+          "29679"
+        ],
+        [
+          "32851"
+        ],
+        [
+          "35486"
+        ],
+        [
+          "37179"
+        ],
+        [
+          "37213"
+        ],
+        [
+          "39710"
+        ],
+        [
+          "39833"
+        ],
+        [
+          "39947"
+        ],
+        [
+          "39951"
+        ],
+        [
+          "40223"
+        ],
+        [
+          "40650"
+        ],
+        [
+          "40719"
+        ],
+        [
+          "43241"
+        ]
+      ]
+    }
+  ],
+  "all_content_validated": false,
+  "gameplay": {
+    "counts": {
+      "blocked": 0,
+      "failed": 0,
+      "passed": 15,
+      "untested": 8
+    },
+    "complete": false,
+    "ready": false
+  },
+  "cleanup_verified": true,
+  "regression_comparison": {
+    "regressions": [],
+    "regression_free": true,
+    "baseline_is_retail_truth": false
+  },
+  "diagnostics": {
+    "before": 1319,
+    "after": 1283,
+    "resolved": [
+      "[sql.sql] Creature (GUID: 564238) does not exist but has a record in `creature_addon`",
+      "[sql.sql] Creature (GUID: 564239) does not exist but has a record in `creature_addon`",
+      "[sql.sql] Creature (GUID: 564240) does not exist but has a record in `creature_addon`",
+      "[sql.sql] Creature GUID Full: 0xf130b208000df412 Type: Creature Entry: 45576  Low: 914450 has wrong spell 0 defined in `auras` field.",
+      "[sql.sql] Quest 28940 objective 252842 has non existing item entry 68604, quest can't be done.",
+      "[sql.sql] Quest 29534 objective 255255 has non existing item entry 72108, quest can't be done.",
+      "[sql.sql] Quest 30974 objective 268034 has non existing gameobject entry 212375, quest can't be done.",
+      "[sql.sql] SQL(p): INSERT INTO corpse (corpseGuid, guid, posX, posY, posZ, orientation, mapId, displayId, itemCache, bytes1, bytes2, flags, dynFlags, time, corpseType, instanceId, phaseMask) VALUES (543, 217, -1052.0676, 1605.7725, 60.400467, 5.213538, 1, 55, '16793854 33564285 50336136 0 83899751 100689354 117468931 134232477 151020999 167798210 184563810 184578058 0 0 268458504 285233034 0 0 0 ', 50332672, 34276368, 4, 0, 1794154441, 2, 0, 1)",
+      "[sql.sql] SQL(p): UPDATE characters SET name='Zera',race=2,class=7,gender=1,level=84,xp=186818,money=38813074,playerBytes=151847172,playerBytes2=16777216,playerFlags=17039362,map=0,instance_id=0,instance_mode_mask=49,position_x=-3329.5913,position_y=-5466.705,position_z=44.22242,orientation=5.4327745,trans_x=0,trans_y=0,trans_z=0,trans_o=0,transguid=0,taximask='0 4 96 0 0 0 0 0 0 0 2 0 4 0 0 128 0 0 0 0 0 0 0 0 0 0 16 0 0 0 0 0 0 0 0 0 0 0 32 0 0 0 0 0 0 0 0 128 0 0 2 0 0 0 0 0 0 8 0 0 0 0 0 0 0 0 128 1 0 0 0 0 0 0 0 0 0 0 65 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',cinematic=2,totaltime=20314,leveltime=20312,rest_bonus=38116.793,logout_time=1794156417,is_logout_resting=0,resettalents_cost=0,resettalents_time=0,talentTree='263 0 ',extra_flags=12,stable_slots=0,at_login=0,zone=4922,death_expire_time=0,taxi_path='',taxi_path_point=0,totalKills=0,todayKills=0,yesterdayKills=0,chosenTitle=0,watchedFaction=4294967295,drunk=0,health=97550,power1=16000,power2=0,power3=0,power4=0,power5=0,latency=0,speccount=1,activespec=0,exploredZones='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 536870912 0 0 2 0 0 0 0 0 1280 0 0 0 0 0 0 0 17301504 8914240 65536 0 2147483647 4 4 536870912 12288 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',equipmentCache='56514 0 56095 0 55997 0 0 0 56504 0 56501 0 55861 0 56493 0 65790 0 56497 0 55863 0 55994 0 55854 0 56102 0 66991 0 55875 18546688 52493 327680 0 0 0 0 51809 0 51809 0 51809 0 51809 0 ',knownTitles='0 0 0 0 0 0 0 0 ',actionBars=0,grantableLevels=0,online=0,lootspec=0 WHERE guid=7",
+      "[sql.sql] ScriptName 'npc_heart_of_arkkoroc' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_lord_darius_crowley_c1' exists in database, but no core script found!",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 35077 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 37143 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] Table `command` have not existed command 'guard delete', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard global', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard handle', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard player', skip.",
+      "[sql.sql] Table `command` have not existed command 'isengard daily', skip.",
+      "[sql.sql] Table `command` have not existed command 'itemlog', skip.",
+      "[sql.sql] Table `command` have not existed command 'npc set spawndist', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken add', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken reload', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken remove', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_creature', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_creature_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_gameobject', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_gossip_menu_option', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_item', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_npc_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_page_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_points_of_interest', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_quest', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate restoreviewpoint', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate setviewpoint', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate', skip."
+    ],
+    "new": []
+  }
+}

@@ -85,10 +85,27 @@ int main(int argc, char** argv)
     // Command line parsing to get the configuration file name
     auto configFile = fs::absolute(_TRINITY_REALM_CONFIG);
     std::string configService;
-    auto vm = GetConsoleArguments(argc, argv, configFile, configService);
+    variables_map vm;
+    try
+    {
+        vm = GetConsoleArguments(argc, argv, configFile, configService);
+    }
+    catch (std::exception const& error)
+    {
+        std::cerr << error.what() << "\n";
+        return 1;
+    }
     // exit if help or version is enabled
     if (vm.count("help") || vm.count("version"))
         return 0;
+
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+    // Prevent a selected Command Prompt window from pausing authentication.
+    HANDLE consoleInput = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD consoleMode = 0;
+    if (GetConsoleMode(consoleInput, &consoleMode))
+        SetConsoleMode(consoleInput, (consoleMode | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE);
+#endif
 
     std::string configError;
     if (!sConfigMgr->LoadInitial(configFile.generic_string(),
@@ -103,6 +120,7 @@ int main(int argc, char** argv)
 
     sLog->RegisterAppender<AppenderDB>();
     sLog->Initialize(nullptr);
+    TC_LOG_INFO("server.authserver.lifecycle", "Authserver loading: connecting to the authentication database and loading realms...");
 
     Trinity::Banner::Show("authserver",
         [](char const* text)
@@ -152,8 +170,16 @@ int main(int argc, char** argv)
 
     if (sRealmList->GetRealms().empty())
     {
-        TC_LOG_ERROR("server.authserver", "No valid realms specified.");
-        return 1;
+        // World shutdown temporarily marks a realm unavailable. The filtered
+        // list can therefore be empty when auth starts before world; the realm
+        // refresh timer already picks it up once world finishes initialization.
+        QueryResult configuredRealms = LoginDatabase.Query("SELECT COUNT(*) FROM realmlist");
+        if (!configuredRealms || (*configuredRealms)[0].GetUInt32() == 0)
+        {
+            TC_LOG_ERROR("server.authserver", "No realms configured in realmlist.");
+            return 1;
+        }
+        TC_LOG_INFO("server.authserver.lifecycle", "Configured realms are unavailable; waiting for worldserver and periodic realm refresh.");
     }
 
     // Launch the listening network socket
@@ -211,6 +237,8 @@ int main(int argc, char** argv)
 #endif
 
     // Start the io service worker loop
+    TC_LOG_INFO("server.authserver.lifecycle", "Authserver ready for authentication on %s:%u (%u realms).",
+        bind_ip.c_str(), uint32(port), uint32(sRealmList->GetRealms().size()));
     ioContext->run();
 
     banExpiryCheckTimer->cancel();
@@ -334,11 +362,14 @@ void ServiceStatusWatcher(std::weak_ptr<Trinity::Asio::DeadlineTimer> serviceSta
 
 variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService)
 {
+    // Parse the complete argument as text. Stream conversion to fs::path can
+    // reject unquoted whitespace after the shell has removed argument quotes.
+    std::string configPath;
     options_description all("Allowed options");
     all.add_options()
         ("help,h", "print usage message")
         ("version,v", "print version build info")
-        ("config,c", value<fs::path>(&configFile)->default_value(fs::absolute(_TRINITY_REALM_CONFIG)),
+        ("config,c", value<std::string>(&configPath)->default_value(configFile.string()),
                      "use <arg> as configuration file")
         ;
 #if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
@@ -352,15 +383,9 @@ variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, s
     (void)configService;
 #endif
     variables_map variablesMap;
-    try
-    {
-        store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), variablesMap);
-        notify(variablesMap);
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-    }
+    store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), variablesMap);
+    notify(variablesMap);
+    configFile = fs::absolute(fs::path(configPath));
 
     if (variablesMap.count("help"))
         std::cout << all << "\n";

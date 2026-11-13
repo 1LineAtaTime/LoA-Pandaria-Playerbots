@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <optional>
 #include "Common.h"
 #include "DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -1113,6 +1114,12 @@ void Spell::SelectImplicitNearbyTargets(SpellEffIndex effIndex, SpellImplicitTar
     }
 
     CallScriptObjectTargetSelectHandlers(target, effIndex);
+
+    // A selection hook may intentionally reject the nearby candidate. Checking
+    // only before the hook leaves ToUnit/ToGameObject/destination dereferences
+    // unsafe (SkyFire issue1408, Rune of Fire outside the totem search range).
+    if (!target)
+        return;
 
     switch (targetType.GetObjectType())
     {
@@ -3495,6 +3502,8 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
         m_needComboPoints = false;
 
     SpellCastResult result = CheckCast(true);
+    if (m_spellInfo->Id == 72051 || m_spellInfo->Id == 72013)
+        TC_LOG_DEBUG("network", "Artillery CheckCast spell=%u result=%u", m_spellInfo->Id, uint32(result));
     // target is checked in too many locations and with different results to handle each of them
     // handle just the general SPELL_FAILED_BAD_TARGETS result which is the default result for most DBC target checks
     if (_triggeredCastFlags & TRIGGERED_IGNORE_TARGET_CHECK && result == SPELL_FAILED_BAD_TARGETS)
@@ -4421,108 +4430,88 @@ void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 cas
     if (result == SPELL_CAST_OK)
         return;
 
-    WorldPacket data(opcode, (4+1+1));
-    if (opcode == SMSG_CAST_FAILED)
-    {
-        data << uint32(spellInfo->Id);
-        data << uint32(result);                                  // problem
-    }
-    else
-    {
-        data << uint32(result);                                  // problem
-        data << uint32(spellInfo->Id);
-    }
-    data << uint8(cast_count);
-
-    size_t pos = data.bitwpos();
-    data.WriteBit(1);
-    data.WriteBit(1);
-    data.FlushBits();
-
-    size_t dataPos = data.wpos();
+    // arg1 is the value the client formats into the error text (focus, area, item...), arg2 the secondary one
+    std::optional<uint32> arg1;
+    std::optional<uint32> arg2;
     switch (result)
     {
         case SPELL_FAILED_NOT_READY:
-            data << uint32(0);                              // unknown (value 1 update cooldowns on client flag)
+            arg1 = 0;                                       // unknown (value 1 update cooldowns on client flag)
             break;
         case SPELL_FAILED_REQUIRES_SPELL_FOCUS:
-            data << uint32(spellInfo->RequiresSpellFocus);  // SpellFocusObject.dbc id
+            arg1 = spellInfo->RequiresSpellFocus;           // SpellFocusObject.dbc id
             break;
-        case SPELL_FAILED_REQUIRES_AREA:                    // AreaTable.dbc id
+        case SPELL_FAILED_REQUIRES_AREA:   // AreaTable.dbc id
             // hardcode areas limitation case
             switch (spellInfo->Id)
             {
                 case 41617:                                 // Cenarion Mana Salve
                 case 41619:                                 // Cenarion Healing Salve
-                    data << uint32(3905);
+                    arg1 = 3905;
                     break;
                 case 41618:                                 // Bottled Nethergon Energy
                 case 41620:                                 // Bottled Nethergon Vapor
-                    data << uint32(3842);
+                    arg1 = 3842;
                     break;
                 case 45373:                                 // Bloodberry Elixir
-                    data << uint32(4075);
+                    arg1 = 4075;
                     break;
                 default:                                    // default case (don't must be)
-                    data << uint32(0);
+                    arg1 = 0;
                     break;
             }
             break;
         case SPELL_FAILED_TOTEMS:
             if (spellInfo->Totem[0])
-                data << uint32(spellInfo->Totem[0]);
+                arg1 = spellInfo->Totem[0];
             if (spellInfo->Totem[1])
-                data << uint32(spellInfo->Totem[1]);
+                arg2 = spellInfo->Totem[1];
             break;
         case SPELL_FAILED_TOTEM_CATEGORY:
             if (spellInfo->TotemCategory[0])
-                data << uint32(spellInfo->TotemCategory[0]);
+                arg1 = spellInfo->TotemCategory[0];
             if (spellInfo->TotemCategory[1])
-                data << uint32(spellInfo->TotemCategory[1]);
+                arg2 = spellInfo->TotemCategory[1];
             break;
         case SPELL_FAILED_EQUIPPED_ITEM_CLASS:
         case SPELL_FAILED_EQUIPPED_ITEM_CLASS_MAINHAND:
         case SPELL_FAILED_EQUIPPED_ITEM_CLASS_OFFHAND:
-            data << uint32(spellInfo->EquippedItemSubClassMask);
-            data << uint32(spellInfo->EquippedItemClass);
+            arg1 = spellInfo->EquippedItemClass;
+            arg2 = spellInfo->EquippedItemSubClassMask;
             break;
         case SPELL_FAILED_TOO_MANY_OF_ITEM:
         {
-             uint32 item = 0;
-             for (int8 eff = 0; eff < MAX_SPELL_EFFECTS; eff++)
-                 if (spellInfo->Effects[eff].ItemType)
-                     item = spellInfo->Effects[eff].ItemType;
-             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item);
-             if (proto && proto->ItemLimitCategory)
-                 data << uint32(proto->ItemLimitCategory);
-             break;
+            uint32 item = 0;
+            for (int8 eff = 0; eff < MAX_SPELL_EFFECTS; eff++)
+                if (spellInfo->Effects[eff].ItemType)
+                    item = spellInfo->Effects[eff].ItemType;
+            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item);
+            if (proto && proto->ItemLimitCategory)
+                arg1 = proto->ItemLimitCategory;
+            break;
         }
         case SPELL_FAILED_PREVENTED_BY_MECHANIC:
-            // SpellMechanic.dbc id
-            if (caster->HasAuraType(SPELL_AURA_MOD_POSSESS) || caster->HasAuraType(SPELL_AURA_MOD_CHARM) || caster->HasAuraType(SPELL_AURA_AOE_CHARM))
-                data << MECHANIC_CHARM;
-            else
-                data << MECHANIC_POLYMORPH;
+            arg1 = spellInfo->GetAllEffectsMechanicMask();  // SpellMechanic.dbc id
             break;
         case SPELL_FAILED_NEED_EXOTIC_AMMO:
-            data << uint32(spellInfo->EquippedItemSubClassMask); // seems correct...
+            arg1 = spellInfo->EquippedItemSubClassMask;     // seems correct...
             break;
         case SPELL_FAILED_NEED_MORE_ITEMS:
-            data << uint32(0);                              // Item id
-            data << uint32(0);                              // Item count?
+            arg1 = 0;                                       // Item id
+            arg2 = 0;                                       // Item count?
             break;
         case SPELL_FAILED_MIN_SKILL:
-            data << uint32(0);                              // SkillLine.dbc id
-            data << uint32(0);                              // required skill value
+            arg1 = 0;                                       // SkillLine.dbc id
+            arg2 = 0;                                       // required skill value
             break;
         case SPELL_FAILED_FISHING_TOO_LOW:
-            data << uint32(0);                              // required fishing skill
+            arg1 = 0;                                       // required fishing skill
             break;
         case SPELL_FAILED_CUSTOM_ERROR:
-            data << uint32(customError);
+            arg1 = customError;
             break;
         case SPELL_FAILED_SILENCED:
-            data << uint32(0);                              // Unknown
+            arg1 = 0;                                       // Unknown
             break;
         case SPELL_FAILED_REAGENTS:
         {
@@ -4532,7 +4521,7 @@ void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 cas
                 if (spellInfo->Reagent[i] <= 0)
                     continue;
 
-                uint32 itemid    = spellInfo->Reagent[i];
+                uint32 itemid = spellInfo->Reagent[i];
                 uint32 itemcount = spellInfo->ReagentCount[i];
 
                 if (!caster->HasItemCount(itemid, itemcount))
@@ -4542,7 +4531,7 @@ void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 cas
                 }
             }
 
-            data << uint32(missingItem);  // first missing item
+            arg1 = missingItem;                             // first missing item
             break;
         }
         // TODO: SPELL_FAILED_NOT_STANDING
@@ -4550,15 +4539,20 @@ void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 cas
             break;
     }
 
-    if (int32 diff = data.wpos() - dataPos)
-    {
-        if (result == SPELL_FAILED_REQUIRES_SPELL_FOCUS || result == SPELL_FAILED_CUSTOM_ERROR || result == SPELL_FAILED_REAGENTS || result == SPELL_FAILED_PREVENTED_BY_MECHANIC)
-            data.PutBits(pos + 1, 0, 1);  // 1 and 0
-        else if ((diff / 4) == 1)
-            data.PutBits(pos, 0, 1); // 0 and 1
-        else
-            data.PutBits(pos, 0, 2); // 1 and 1
-    }
+    // Both opcodes share one layout; the client reads the arg2 bit and value before arg1's
+    WorldPacket data(opcode, 4 + 4 + 1 + 1 + 4 + 4);
+    data << uint32(spellInfo->Id);
+    data << uint32(result);
+    data << uint8(cast_count);
+    data.WriteBit(!arg2);
+    data.WriteBit(!arg1);
+    data.FlushBits();
+
+    if (arg2)
+        data << uint32(*arg2);
+    if (arg1)
+        data << uint32(*arg1);
+
     caster->GetSession()->SendPacket(&data);
 }
 

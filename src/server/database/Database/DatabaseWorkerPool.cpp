@@ -40,8 +40,8 @@
 #include <boost/stacktrace.hpp>
 #endif
 
-#define MIN_MYSQL_SERVER_VERSION 50700u
-#define MIN_MYSQL_SERVER_VERSION_STRING "5.7"
+#define MIN_MYSQL_SERVER_VERSION 50503u
+#define MIN_MYSQL_SERVER_VERSION_STRING "5.5.3"
 #define MIN_MYSQL_CLIENT_VERSION 50700u
 #define MIN_MYSQL_CLIENT_VERSION_STRING "5.7"
 
@@ -106,7 +106,7 @@ DatabaseWorkerPool<T>::DatabaseWorkerPool()
 {
     WPFatal(mysql_thread_safe(), "Used MySQL library isn't thread-safe.");
 
-#if defined(LIBMARIADB) && MARIADB_PACKAGE_VERSION_ID >= 30200
+#if defined(LIBMARIADB) && defined(MARIADB_PACKAGE_VERSION_ID)
     WPFatal(mysql_get_client_version() >= MIN_MARIADB_CLIENT_VERSION, "TrinityCore does not support MariaDB versions below " MIN_MARIADB_CLIENT_VERSION_STRING " (found %s id %lu, need id >= %u), please update your MariaDB client library", mysql_get_client_info(), mysql_get_client_version(), MIN_MARIADB_CLIENT_VERSION);
     WPFatal(mysql_get_client_version() == MARIADB_PACKAGE_VERSION_ID, "Used MariaDB library version (%s id %lu) does not match the version id used to compile TrinityCore (id %u). Search on forum for TCE00011.", mysql_get_client_info(), mysql_get_client_version(), MARIADB_PACKAGE_VERSION_ID);
 #else
@@ -244,6 +244,18 @@ QueryResult DatabaseWorkerPool<T>::Query(char const* sql, T* connection /*= null
 }
 
 template <class T>
+bool DatabaseWorkerPool<T>::DirectExecuteChecked(PreparedStatement<T>* stmt, uint64* affectedRows /*= nullptr*/)
+{
+    std::unique_ptr<PreparedStatement<T>> statement(stmt);
+    T* connection = GetFreeConnection();
+    bool const success = connection->Execute(statement.get(), false);
+    if (affectedRows)
+        *affectedRows = success ? connection->GetAffectedRows() : 0;
+    connection->Unlock();
+    return success;
+}
+
+template <class T>
 PreparedQueryResult DatabaseWorkerPool<T>::Query(PreparedStatement<T>* stmt)
 {
     T* connection = GetFreeConnection();
@@ -369,7 +381,8 @@ void DatabaseWorkerPool<T>::DirectCommitTransaction(SQLTransaction<T>& transacti
         uint8 loopBreaker = 5;
         for (uint8 i = 0; i < loopBreaker; ++i)
         {
-            if (!connection->ExecuteTransaction(transaction))
+            errorCode = connection->ExecuteTransaction(transaction);
+            if (errorCode != ER_LOCK_DEADLOCK)
                 break;
         }
     }
@@ -441,18 +454,12 @@ uint32 DatabaseWorkerPool<T>::OpenConnections(InternalIndex type, uint8 numConne
             _connections[type].clear();
             return error;
         }
-#ifndef LIBMARIADB
-        else if (connection->GetServerVersion() < MIN_MYSQL_SERVER_VERSION)
-#else
-        else if (connection->GetServerVersion() < MIN_MARIADB_SERVER_VERSION)
-#endif
+        else if (connection->GetServerVersion() < (connection->IsMariaDB() ? MIN_MARIADB_SERVER_VERSION : MIN_MYSQL_SERVER_VERSION))
         {
-#ifndef LIBMARIADB
-            TC_LOG_ERROR("sql.driver", "TrinityCore does not support MySQL versions below " MIN_MYSQL_SERVER_VERSION_STRING " (found id %u, need id >= %u), please update your MySQL server", connection->GetServerVersion(), MIN_MYSQL_SERVER_VERSION);
-#else
-            TC_LOG_ERROR("sql.driver", "TrinityCore does not support MariaDB versions below " MIN_MARIADB_SERVER_VERSION_STRING " (found id %u, need id >= %u), please update your MySQL server", connection->GetServerVersion(), MIN_MARIADB_SERVER_VERSION);
-#endif
-
+            TC_LOG_ERROR("sql.driver", "Unsupported %s server version (found id %u, need >= %s). Client-library and server versions are checked independently.",
+                connection->IsMariaDB() ? "MariaDB" : "MySQL", connection->GetServerVersion(),
+                connection->IsMariaDB() ? MIN_MARIADB_SERVER_VERSION_STRING : MIN_MYSQL_SERVER_VERSION_STRING);
+            _connections[type].clear();
             return 1;
         }
         else

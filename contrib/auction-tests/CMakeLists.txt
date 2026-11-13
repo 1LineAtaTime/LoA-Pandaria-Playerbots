@@ -1,0 +1,4 @@
+add_executable(auction_item_filter_tests auction_item_filter_tests.cpp)
+target_compile_features(auction_item_filter_tests PRIVATE cxx_std_17)
+target_include_directories(auction_item_filter_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/server/game/AuctionHouseBot")
+add_test(NAME auction_item_filter_tests COMMAND auction_item_filter_tests)

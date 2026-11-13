@@ -1,0 +1,51 @@
+id,name,comparison,behavior
+15,Unga Ingoo,client_asset_present,not_evaluated
+39,Crypt of Forgotten Kings,client_asset_present,not_evaluated
+40,Greenstone Village,client_asset_present,not_evaluated
+44,Temple of the Jade Serpent,client_asset_present,not_evaluated
+45,Stormstout Brewery,client_asset_present,not_evaluated
+46,Shadow-Pan Monastery,client_asset_present,not_evaluated
+48,Gate of the Setting Sun,client_asset_present,not_evaluated
+49,Siege of Niuzao Temple,client_asset_present,not_evaluated
+50,Mogu'shan Palace,client_asset_present,not_evaluated
+51,Scholomance,client_asset_present,not_evaluated
+52,Scarlet Halls,client_asset_present,not_evaluated
+53,Scarlet Monastery,client_asset_present,not_evaluated
+58,Arena of Annihilation,client_asset_present,not_evaluated
+63,Brewmoon Festival,client_asset_present,not_evaluated
+65,A Brewing Storm,client_asset_present,not_evaluated
+68,Temple of Kotmogu,client_asset_present,not_evaluated
+70,Theramore's Fall,client_asset_present,not_evaluated
+71,Theramore's Fall,client_asset_present,not_evaluated
+72,Theramore's Fall,client_asset_present,not_evaluated
+179,Dagger in the Dark,client_asset_present,not_evaluated
+180,Diamond Island,client_asset_present,not_evaluated
+181,Assault on Zan'vess,client_asset_present,not_evaluated
+182,Battle on the High Seas,client_asset_present,not_evaluated
+183,A Little Patience,client_asset_present,not_evaluated
+184,Lion's Landing,client_asset_present,not_evaluated
+187,Domination Point,client_asset_present,not_evaluated
+200,Pursuing the Black Harvest,client_asset_present,not_evaluated
+201,Domination Point,client_asset_present,not_evaluated
+203,Assault on Zan'vess,client_asset_present,not_evaluated
+204,Tear Down This Wall!,client_asset_present,not_evaluated
+205,Stormsea Landing,client_asset_present,not_evaluated
+206,Assault on Zeb'tula,client_asset_present,not_evaluated
+207,To the Skies!,client_asset_present,not_evaluated
+208,The Fall of Shan Bu,client_asset_present,not_evaluated
+209,Tear Down This Wall!,client_asset_present,not_evaluated
+210,Blood in the Snow,client_asset_present,not_evaluated
+211,The Thunder Forge,client_asset_present,not_evaluated
+212,Assault on Shaol'mara,client_asset_present,not_evaluated
+215,Troves of the Thunder King,client_asset_present,not_evaluated
+216,Dark Heart of Pandaria,client_asset_present,not_evaluated
+219,The Secrets of Ragefire,client_asset_present,not_evaluated
+237,Proving Grounds: Select a Trial,client_asset_present,not_evaluated
+239,Battle on the High Seas,client_asset_present,not_evaluated
+247,Scenario Template,client_asset_present,not_evaluated
+248,Proving Grounds,client_asset_present,not_evaluated
+254,Prototype Scenario,client_asset_present,not_evaluated
+256,Death of the Ox,client_asset_present,not_evaluated
+257,Celestial Tournament,client_asset_present,not_evaluated
+269,Finding the Secret Ingredient,client_asset_present,not_evaluated
+278,Noodle Time,client_asset_present,not_evaluated

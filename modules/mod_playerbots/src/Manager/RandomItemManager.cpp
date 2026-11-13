@@ -104,6 +104,11 @@ void RandomItemManager::Init()
             if (uint32 itemId = quest->RewardChoiceItemId[j])
             {
                 ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                if (!proto)
+                {
+                    TC_LOG_ERROR("playerbots", "Quest %u references missing reward item %u; excluding it from bot equipment cache", questId, itemId);
+                    continue;
+                }
                 if (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR)
                     continue;
                 int requiredLevel = std::max((int)proto->RequiredLevel, quest->GetQuestLevel());
@@ -115,6 +120,11 @@ void RandomItemManager::Init()
             if (uint32 itemId = quest->RewardItemId[j])
             {
                 ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                if (!proto)
+                {
+                    TC_LOG_ERROR("playerbots", "Quest %u references missing reward item %u; excluding it from bot equipment cache", questId, itemId);
+                    continue;
+                }
                 if (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR)
                     continue;
                 int requiredLevel = std::max((int)proto->RequiredLevel, quest->GetQuestLevel());

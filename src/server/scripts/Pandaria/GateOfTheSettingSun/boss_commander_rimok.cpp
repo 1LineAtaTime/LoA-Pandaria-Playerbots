@@ -343,17 +343,6 @@ class npc_add_generator : public CreatureScript
         }
 };
 
-class PlayerTargetSelector
-{
-    public:
-        PlayerTargetSelector() { }
-
-        bool operator()(WorldObject* object)
-        {
-            return object && object->ToPlayer();
-        }
-};
-
 class spell_rimok_saboteur_bombard : public SpellScriptLoader
 {
     public:
@@ -412,7 +401,7 @@ class spell_rimok_saboteur_bombard_trigger : public SpellScriptLoader
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if (PlayerTargetSelector());
+                targets.remove_if([](WorldObject* target) { return target && target->ToPlayer(); });
             }
 
             void Register() override

@@ -1,0 +1,3357 @@
+{
+  "upstream": "8a26cd41fece10e18335ebc078f6ff7e99412c2d",
+  "files": [
+    {
+      "path": "sql/updates/world/2026_10_11_00_world.sql",
+      "sha256": "851ff1942d080b2eefeadb8530fe50b01617fed8e7a0e51675e9496727dac65e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_26_02_world.sql",
+      "sha256": "f0c69a22529b3596414a23c5de1221a3b952b2116ffdb2ae909775ee38225e68",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_961_spell_script_bindings.sql",
+      "sha256": "12338e3bed59a686f2014fe263e30903a47839ccf0240662f15061ab317fc492",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_962_bad_crab_spawns.sql",
+      "sha256": "e52c8ce3c448847740f4a98a21d6ccd98fc2cb4551edb3e1a1e06975e167ba94",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_962_misc_runtime_errors.sql",
+      "sha256": "368a37bde3f99d7b0da4eb0cf66d0c8be1d6fc5383088e5e33044fbee225f390",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963_achievement_rows.sql",
+      "sha256": "ea80de651ba16f42c5f65e3dc80ad3616f810a198510894256eef86f91d09572",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963_conditions_dead_rows.sql",
+      "sha256": "74723634d4b8c55901e551c0d7126be0e9ca7e0cec4731dc4fdfbd078f8cdd73",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963_conditions_implicit_targets.sql",
+      "sha256": "5c2ccd9e738378a92216c98a12e1c1a5d5dc4c1edfc60ddc5982a62110e320c3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963_quest_objective_poi_flags.sql",
+      "sha256": "75ae62782132e7e067764bef887ad8c04ad9fdf2411eaa576d238d92f3551276",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963_scriptname_zero_one.sql",
+      "sha256": "150dc96796820f67d9c4386adfc731c58f2ee5b9731cd1c96c8af08ae64a8e38",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963_waypoint_script_talk_orphans.sql",
+      "sha256": "4877e47f85c737c0cbe3501a995cfa801ef9fe49761f77353575dcfce71b3ad3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963b_creature_text.sql",
+      "sha256": "b760cf73f78534188c683f2730d016e04f1d505745975e46cd6eda2cf735bfc2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963b_misc.sql",
+      "sha256": "e67c94fc09cfc519f6062a18d0b8715a6bfc6a0fc39a33a77ef0354b7c536a0a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963b_smartai_talk_targets.sql",
+      "sha256": "3bfa8cdfe065385fb93ab053737d14f9045c7d6cd6e418277dcf38adb814f46c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963b_waypoint_paths.sql",
+      "sha256": "1ed4723293eb84f6ea6bf7f166f03606a9ce78c2801e2650dd8b2d5a64f8b6ab",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963d_fleeing_dreghood_warrior.sql",
+      "sha256": "301f25161652c0525d38ce3f2f88664e9197ffdbe7aaa6bb4a1f02f06eb7e8ad",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963d_howling_gale.sql",
+      "sha256": "cd884bf144eaefe41778c8724b828b18ad3f75cffb12f120ba237a0df4fbe6b6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963e_garwal_movement.sql",
+      "sha256": "48a57b18e4fff7f2f534d5a9e0bdec225c0a6d91d769d0a3ec6c556710e7545f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963f_talk_callers.sql",
+      "sha256": "64c5e44c6b3d43beb0911d101384f840ef0141f6c783d99a0017fa2b2cefeead",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963g_smartai_link_flags.sql",
+      "sha256": "d505821d3f855cdd80e3667e0b1a3206e50d3df20ef5eb7cec1ef50b678bbd77",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963h_item_random_fields.sql",
+      "sha256": "b14c451b0787f8b4979657f84e6f8316aa75b83b9b5adac433d26752b0c55899",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963i_dreghood_chain_waypoints.sql",
+      "sha256": "c0573df28a99d381d3294a76cbc2f443038555d079627274aed7231381139973",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963j_wintergarde_villager_talk.sql",
+      "sha256": "8a1ca9a43ac82babfb152e147f8ae248c6a0fc3259dacd631dd5063806681799",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963k_dreghood_chain_order.sql",
+      "sha256": "fbf225c666e50948d7e875f0dec35c650dad33e35ed9b03532110fe977832425",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963l_item_enchant_types.sql",
+      "sha256": "975bc1611300959d5d88046b9650777d8abf666b501a132a4b72c4f1903ac2a5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963m_patrol_spawns_without_path.sql",
+      "sha256": "f321257c2a7427068efe99f1a7a21f23f0407415f3ed957764245129897d8655",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963n_smartai_load_rejects.sql",
+      "sha256": "9781e635fc5585423a1f590973a123b66d40fcc783c0b7f545fb99365abca705",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963o_ruul_snowhoof_escort.sql",
+      "sha256": "b28a6da251a051282c7850707bc102ec0cc4af11ed123f694ee2c166e3334729",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963p_foreman_dampwick.sql",
+      "sha256": "b1213b548ad3e7e12d0ac67aa396e10b29993b6edbed3a2c026bea8f4023893b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_963q_item_enchant_463.sql",
+      "sha256": "d426834a85df9e8efbe3e38d4f569f3b23ea17d0a893123d99f75f0752a172cb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_965_db_errors.sql",
+      "sha256": "8e5751f8d4b5cb8fcd77543582d4bcf96436391678b7789ccf4e0e5af552d7d7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_969_store_item_level.sql",
+      "sha256": "272ff7c0300750312cc8c56c15f804d9e68311f108694bebd5ad6d2287f1387b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_977_gilneas_while_youre_at_it.sql",
+      "sha256": "36e18d5f1b8fc758959ec62dc32b8d3917ecf238b7fa678c5a2d7d3c3028dd63",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_28_982_quest_chain_traps.sql",
+      "sha256": "f1cb93d4dd81ed09726efcf07d2611bbfa0176c2a55ed7a5558fdf3e9e8f241f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1001_angershade_gharsul_passive.sql",
+      "sha256": "ce3c4c343428e6adf5c888348d83df761fc067ba2021fc055276d5c563aae43c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1001b_mirveda_ac_smartai.sql",
+      "sha256": "1255d20d07898763d83aabf34ab77b3ee4b6ba793993213bf66e7500d1f4ad49",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1003_missing_triggered_spells.sql",
+      "sha256": "8c6fe1f82cf4c5c66dfb2c363f468855cc7a7dc7a868ea006c0b984bdce09965",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1005_kezan_447_phase.sql",
+      "sha256": "4443bbd133b8b5c8fe3781566cd85f5e945ad4f5167abb0830060270c2b365bb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1007_duplicate_accessory_riders.sql",
+      "sha256": "b4c3902c58e3219cd642e50f4debc24581afaa3cb5eca1cb6e0c8d71658af1f6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1007b_loose_riders.sql",
+      "sha256": "07957fe1519bfd7b827ba84f41401fb17fb5d1c7623575ab6ddfd385679f6003",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1011_civilian_recruit_ac.sql",
+      "sha256": "55575e2d628506279ba8931865e23f8685a126c5125d9ff9da958c2d9b5f7fdd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_1023_lost_isles_boots_spellclick.sql",
+      "sha256": "81f54a780bc47ff1e131faabe768fd414458a6d8781001ff9f60b9f4425c1140",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_963r_aysa_link.sql",
+      "sha256": "78349e1f965be79ae37e5de59b44259b9c72b623dd0f1b57f24cb60c844ec40b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_963s_dampwick_text_over.sql",
+      "sha256": "0da1ee6a370f5d3c18f394fab5da517f4f7e2d2e46f24e4509c7a37072b428ee",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_963t_missing_creature_texts.sql",
+      "sha256": "d1fdc846d99fbc049a0a3963c2e01387bad75322c44a6f885f68ffce2ded15d1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_963u_dead_talk_rows.sql",
+      "sha256": "c2f862e21a91cf38721dfa2016eb05bf6bb87c36c9bf533d343dddbd19766ad3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_963v_invalid_smartai_links.sql",
+      "sha256": "d01c781ffc964270cee0ef48c56092eec7df0e3d6a8fffae631fbbff63bbd7c9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_963w_missing_waypoint_paths.sql",
+      "sha256": "5796fd15895fcca6eba247d0ce091d6b1a348e138c4a5081b785c36ccb5d1f8d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_01_xp_level_28.sql",
+      "sha256": "c531a6fa8a7e05bd3284eb9822a87b935c9a2267354cef27108be0598967fc90",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_02_boahn_once.sql",
+      "sha256": "32db514ea07484d478c227c0af26cb0704f59c6affda592da25936e47baca0e3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_10_upstream_446_koKR_01.sql",
+      "sha256": "f4688bff60edbe399d8e8ac0c4ae6eb62da7319ac9897f6877e6e6c4722ec2e0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_11_upstream_446_koKR_02.sql",
+      "sha256": "cc8581d35b4c030d286f0a13b76aded24490fe747e1c1e056ba97465cae25a40",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_12_upstream_446_koKR_04.sql",
+      "sha256": "ab77e35d848e2e69e7c14cb005ff6e4665478aeea7afa27396d0a16add642cdc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_13_upstream_446_koKR_05.sql",
+      "sha256": "111edc09c541dd0625113a38111750632be8f3abd040d673d900fe83e09b4536",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_14_upstream_446_koKR_06.sql",
+      "sha256": "e6c99cc8fe10214c46cb578cf5bce25fa0c2c52ee72c1d48c47283afed86d0cd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_15_upstream_446_koKR_07.sql",
+      "sha256": "1611c33aa4e0e90f83fb30ade083462d4e7b27205dab532b850cbd505e58c840",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_16_upstream_446_koKR_08.sql",
+      "sha256": "80a17c34b1c729f864dd1053d394bf6a80b60b2c62eeeb1726876bcbfbe66bfa",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_17_upstream_446_koKR_09.sql",
+      "sha256": "529ed0c429b7fa2471a7cb7af7ac5e4b294509b2d41dd5a4bd3a85c2f7ba6026",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_18_upstream_446_koKR_10.sql",
+      "sha256": "b378835075d2bbffd59205cfecfcfed9b7687bfa1ff6e969ca62570cf62fd4b9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_19_upstream_446_koKR_11.sql",
+      "sha256": "00875322b51c28c760778a05e2e09ea85925f6b9f6c08e6de0587a6492a93223",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_20_upstream_446_koKR_12.sql",
+      "sha256": "19091a5f0ece9e0751d30d87e6398aae11140a08d2e30b68c99872c18f1fae05",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_21_upstream_446_koKR_13.sql",
+      "sha256": "e6a0fc0bd9ec1e1c5508672c646b5a57c52a6b8ea93d7fc6fa5da7c53be224f3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_22_upstream_446_koKR_14.sql",
+      "sha256": "efb34f27de4713a7a56ffa383e8a4ca81fc0f49ba299de7dbb0526d9acf9246b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_978_23_gameobject_ground_z.sql",
+      "sha256": "5a581adeeff8ff4cf8b626e6481d8b1069e1e4f51dd1f3da5be0b20cb419b6ef",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_01_ti_recruitment_darnell.sql",
+      "sha256": "d44c2114f5b300639249ced3d26e0c97decc1b012a22a0ab3517513bea30c11d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_02_startzone_training_dummies.sql",
+      "sha256": "317df21fda2deb1dfc95a40d7c527b30888b390848b4d291f3062501b6903c58",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_03_ti_mohawk_camp_z.sql",
+      "sha256": "5c6dff05754db19fcf3356fed10c46ec0763136b98dda05dd44fc3eb4c30f57c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_04_ti_turnin_scripts_cata_ids.sql",
+      "sha256": "f470cb6f1eb7d0012ca7ceb56a40a9b1cabea78d76c364350b37ed6942c85d6d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_05_ti_speak_with_sevren.sql",
+      "sha256": "3b7c6ccdb7b418482125b90b09a731c06df2d2b37b7eaa9bf2aea482c392d46c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_06_respawn_quest_targets.sql",
+      "sha256": "b35b093ed80cdd8b77c63689e3ee34235cc7a69daf48ef8f3e581ad0e65aff51",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_07_sp_sanders_noose.sql",
+      "sha256": "c869c011494f2630d4d0875e9ad21cbeee6915b06dfd67784e725aa12fc9e9f7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_08_ti_lilian_voss.sql",
+      "sha256": "33193a8c7dfe9831fdcc9870735fd20d5beeba271782915f009d99a0f12f3f4e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_09_target_dummies_stationary.sql",
+      "sha256": "4793043c6ff0e5e3bffe53af223481629b2b2a7c33c3077e3291e2c2eb62578c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_10_sp_quest_gating.sql",
+      "sha256": "b56348cf3d9ff5b90d5eac44bc1ec7cc6da6a212f3c81a7ec22c855315b46d4f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_11_sp_warchief_cometh.sql",
+      "sha256": "b713a90cd2b78afab9f320f80c425844594e2b3efa9f6bf331d4963c010686fa",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_12_sp_iterating_upon_success.sql",
+      "sha256": "5489cafe36f122fee035cd7696d1ceac45a89a1160afb732df6036b729b135cd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_13_sp_waiting_to_exsanguinate.sql",
+      "sha256": "33f8f600fbcbbe38464b8ba86ae8e65d61e54cf00a8d7a8f13616db9012a91a8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_14_sp_rear_guard_quests.sql",
+      "sha256": "58b219fc3422d1a0142da83f1c98976caf721a15b60a0ef541b69795fc71d83a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_15_sp_rise_forsaken_no_escape.sql",
+      "sha256": "80e3ea996b473dc5ff8835b680eaf42591505b49bb0d6d50f4eb6858cb5193b7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_16_sp_lordaeron.sql",
+      "sha256": "2a3eddc6a608472524e9924db572f7c52fbd9767d56438c759ea3293fb5b8cbc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_17_sp_nowhere_to_run.sql",
+      "sha256": "ac2ed67307d174d56ef9f9eed5dbacae62296260464693e04fb25147b992c4c0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_18_sp_wagons.sql",
+      "sha256": "3fe93aeecb7dd50c74b8fd3d01bd8a5f2016e9a43d922a3022c0cacf20722d28",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_19_sp_skitterweb_matriarch.sql",
+      "sha256": "b283ee43dbc1e96c547384865657c92ba82567dda3f727ca879cd50845489446",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_20_sp_battered_chest_z.sql",
+      "sha256": "ec677d0a8e89f2971da0ef5a654941786f7bc4cdc605cfa0b861dc9a323dcc9c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_21_sp_no_player_damage_req.sql",
+      "sha256": "4125db0742969602c7c19a23575179221074138b0adc795e27af207be46fa28b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_22_sp_excising_the_taint.sql",
+      "sha256": "c881cb8ff8c0dcc67577a37871decfa65c1671334b80748a4f64c9285be4c213",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_23_sp_torok_hatchet_sepulcher.sql",
+      "sha256": "a7e94b225114a7561db8668ab89a051deb95cc468e1bb902daef08f661d54671",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_24_sp_horde_cannons.sql",
+      "sha256": "de98144d9ced95e5e54a0ca01f5146227e38324700aba0573e4eddab936951da",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_25_sp_hillsbrad_worgen_swim.sql",
+      "sha256": "75b85e4966c858a4d5c1fe8854cdd87d116185813568715869ad47a39808e1f4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_26_sp_chain_after_sepulcher.sql",
+      "sha256": "b9a89c6e0de96aa7e8f5578b215c995e7a62a0e6ecacc4d03411e6870ae3a6ca",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_27_sp_forsaken_front_phases.sql",
+      "sha256": "1fd773ab6af72879b2e22c049e1645404cb31651e151520cc069cea5b000aa52",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_28_sp_ashbury_actor.sql",
+      "sha256": "623d2980fd911c07e5d60667c72464edca684913ae36b1e496c86972e6371d43",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_29_sp_ambermill_phases.sql",
+      "sha256": "d1ba4894419b6ce28327d2be3d316ad7ad2263a352870e2fd22def343d50f8ca",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_30_sp_ataeric_shield.sql",
+      "sha256": "c6413c13b4d12f6be68e5d27ef7dc8f9ba5de77bf71f558e656b3dbc05e11c18",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_31_sp_dimensional_barrier.sql",
+      "sha256": "b6217539af7428df672b82216c95b8eecc50b933b217c3c63e82a1db85b0c194",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_32_sp_dalaran_crater_portals.sql",
+      "sha256": "9ac5e8daddc519762253725e103d4244fd3a3416d9ed800253fe5f350e73dfce",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_33_sp_battlefront_phases.sql",
+      "sha256": "dedc4c1b5d4d54f9217596ad35281359bbb6bb88092dd112cc2473e2d3ce6169",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_34_sp_wolf_in_bears_clothing.sql",
+      "sha256": "2b9bf8caf3f7044343ee700a39be0cb09b67ecdda6217785903f7dee4d32b83c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_35_sp_of_no_consequence.sql",
+      "sha256": "9d07248f5830fb987d6f104feca10f3af7786e8b06e7df18a0d2514147cc5a60",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_36_sp_pyrewood_fallen_vanguards.sql",
+      "sha256": "8996644c9537efda44c26c0948e175f367a6f90344be375f19b9edd4333cd75c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_37_sp_great_escape.sql",
+      "sha256": "65a6cf39b90fa2bfb01ee9419a7458b1f0e9f9c754336a988c0131e61fcfff81",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_38_sp_rise_godfrey.sql",
+      "sha256": "930ec3cb0b9b56a464fdd2a613137dab27a7b6455a460a8552b754c608933961",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_39_sp_pyrewood_quest_givers.sql",
+      "sha256": "4d9f988cbe5aac81e58cba3a7f6c73193e052394768322045026a0115961a1f8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_40_sp_cities_in_dust.sql",
+      "sha256": "6e14983cf8720ee83f13cf14869c4d82158c5311699cfe68016405933f24e34b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_41_sp_pyrewoods_fall.sql",
+      "sha256": "ec2d81825d2da38da827de4f55758374a56f97c7398c511dd6d3416d3402e26f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_42_sp_sylvanas_gossip_11823.sql",
+      "sha256": "abae9795c8d5fbdb5847713277129a56342b304c6c3ef773162160945146a795",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_43_sp_to_forward_command.sql",
+      "sha256": "6be83423d655193fbe7acfff605a5677a282a870f868ecd32dfdc0caae320a3c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_44_rg_korok_the_colossus.sql",
+      "sha256": "3d845a9430e05baab713080aed1eb159cf915da5584f7eff05fd4dc6d46682e1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_45_rg_dreadwatch_area_trigger.sql",
+      "sha256": "743dbb8e391e5ea575adee96f7c8c755f5b0f932398027388dca6e9b0c467fb3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_46_rg_forward_command_phases.sql",
+      "sha256": "2b49add8d860d0b985ab441b46ca57a048ea1504d7032c9e8fc766f3aa2a8716",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_47_rg_quest_invisible_forsaken.sql",
+      "sha256": "b921f60f991e0bc2e11437396a86ce7e1b1ac15fbcb6062eadc8ffcd42305fe9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_48_rg_on_whose_orders.sql",
+      "sha256": "1ef38e7170bf5c5a06e85c90e660209aba4216557519413fb125ea18969472c1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_49_rg_what_tomorrow_brings.sql",
+      "sha256": "dc3cf77a65199b2affb42d1c4ba67566cc1e5b244eb6cadda768ef94b6c21975",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_50_rg_resistance_is_futile.sql",
+      "sha256": "eddbfebc3f680707b4288df8c47ef541005b63bc4330d05c1cbc16020a790849",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_51_rg_great_escape_start.sql",
+      "sha256": "331144635a226f7cbf356e21d4e5c3fce73e23f8f10f0a122322ee4d57143a50",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_52_rg_duplicate_spawns.sql",
+      "sha256": "19cf4daef178c8d528a8e1fee3f932536350a330a3774cdbd134f82b1bf1062e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_53_rg_vanguards_not_immune.sql",
+      "sha256": "dc469e806ac62fad3949b35e468221a548665f214522b61989b271314297f75d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_54_rg_fallen_forsaken.sql",
+      "sha256": "e4db3d2c1a3fd55a28f9c7916cc5c1e7dfbd5331f30b0d3b72736eba3e4ab114",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_55_rg_catapults.sql",
+      "sha256": "a00e94523a3d8095f894fe9cbc163461f96521ed3f330e132438a59a0fa39a26",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_56_rg_vanguard_phase_edge.sql",
+      "sha256": "b7a09dd82fc787165b03a3349070e19aaa68ce96e703e0233c9b21a906bae9d3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_57_rg_abominations_feign_death.sql",
+      "sha256": "d5f130e2fc72199270ab7a411de79262e5429ea10736941babdffeb53c593787",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_58_rg_on_whose_orders_fcd.sql",
+      "sha256": "8a3c76a95dac9d0839adb56d2ada0d77f6fdf66f261ca6a129b670cbc1d76f07",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_59_rg_area_trigger_quests.sql",
+      "sha256": "69179c2c4a03b9a95d3bd77641ce975d15a48bed54cfcf4508253b4207143bb6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_60_rg_keg_delivery.sql",
+      "sha256": "16dfb57d5f1fe22104cf6ce0592903ad7882f4fd0469987bab54bb1190ab5366",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_61_sp_godfrey_arthura_quest_invis.sql",
+      "sha256": "fa0d6b9f0ca2f3bb32bccdc7ddd50d9bce79e4b949a83187486d7aa8198f4b1d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_62_sp_agatha_arthura_hover.sql",
+      "sha256": "f5c2a9e84c05f04387925af2c17defb7a53e273fc49c5771ea30918e973ec340",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_63_sp_risen_trio_quest_invis.sql",
+      "sha256": "dca201c9abca661ab1fafca47555d2cf364bf982e6dde9ea071fa586365bd776",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_64_sp_dalaran_crater_portal_invis.sql",
+      "sha256": "c4479111e67f424a1fda83285ff660106e31c44bd02ef4ce346b159b47d88c24",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_65_sp_quest_invis_detections.sql",
+      "sha256": "1dc2f8e7a77453a911362e708616ae2997d55965c398fb5d7f91c87e624c8da9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_66_sp_quest_invis_groups.sql",
+      "sha256": "f29155f2048abfbdc0911b373564f7001f57a7d911553bd9e0db997b5b78f259",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_67_wi_training_target_script.sql",
+      "sha256": "a31c1fd7e71c824141a80cb34e6e67b3dec3d40e45f62e4ec5cea524913be4e9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_68_hb_quest_links_givers.sql",
+      "sha256": "863d69f24c998dbfe75b11adf2615ee9956bbce91df4e7dc05effb72c473d772",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_69_hb_azurelode_sludge_fields.sql",
+      "sha256": "716329674fda76342c1a236520da91b433b1d133530fa1200a68c9905db7c165",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_70_hb_southshore_purgation_alterac.sql",
+      "sha256": "b8306b4d9703c1a3e212e1ba987725083ad1f811157bfbca6bcd8a21acab3b5a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_71_hb_tarren_mill_ravenholdt_brazie.sql",
+      "sha256": "325c531604ac684b7e7e7e4a7870f0c1ca132b5aa517b077a38e48423f7eb94d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_72_hb_sludge_stormpike_scenes.sql",
+      "sha256": "1e6c8b584cde0525f989d3a40d9575002ae818e4080aa0afd07a57e7845a1e2a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_73_hb_kasha_orkus_purgation.sql",
+      "sha256": "91eb4c7fb5add135d52779af47b3a0951e62a29bf82f82e218ad27c8d3fc36b5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_74_hb_brazie_plants_vs_ghouls.sql",
+      "sha256": "dfe27327a6dbb86542804c4310f805ba45bcc18f51555d50a4ffe51f18a1133b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_75_sp_hb_ti_auto_complete_flags.sql",
+      "sha256": "6766452428b2b1cde2cd3e629343f7af3b372e8070d1511f80dac7628517b8d7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_76_ti_earthroot_z.sql",
+      "sha256": "55e35b84bd17e23ccde412171c339a539dec0b94144137d7d68320f5960b36c8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_77_sp_ambermill_daschla.sql",
+      "sha256": "dcbd11271506c9ae0c2d63e5bd9a39de4e959b4357f446bb7895679a972493d7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_78_sp_trio_step_aside.sql",
+      "sha256": "207175e91a683119d22ecbac803a2379bcc0b9ea618aa7f409ca86b726f57e2a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_79_sp_cities_in_dust_song.sql",
+      "sha256": "5abe09d988b3b2038853e9ac630010e62dab4875ecc4fcfa6e5c6c048a40d5ec",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_80_hb_welcome_to_the_machine.sql",
+      "sha256": "96a39bf08aea08f0a6a4b9f9e62cd64a1a0da674766a8a567950741197db411d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_81_wi_levels_1_3_stats.sql",
+      "sha256": "e56175ab1033676bc56179524acc79d2f293fc4b66479cb980cba41cbebc337e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_82_hb_welcome_to_the_machine_scenes.sql",
+      "sha256": "12bfc89d21815fb8ec43bf463399421843b0f778d28ab989c44994a7e148be4a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_83_wi_levels_4_11_stats.sql",
+      "sha256": "47aab8f4f254a6e015c6086b2536025e1bd28b6cc7fd0179c1fe65e86ba58a83",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_84_hb_machine_steed_phase.sql",
+      "sha256": "a66418e88db4aaa11eed1920306a1a5fcea0868a9bda49460925ac42c2a24bf8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986_85_hb_machine_summon_ride.sql",
+      "sha256": "c8da2bf6f3150237efddb54742e7897a03bd10f1448699c35d8315ef261591d1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986b_01_stonard_kodo_loose_riders.sql",
+      "sha256": "e5f5dce1c6a1234466b782885561774454c77663f54d15ce22cf67bfbd25b947",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_986b_02_greater_roc_354560_path.sql",
+      "sha256": "8924e42c40e6bdc55a3988ca6f23948926bf564a0f96c95a07ac640b61d7d6c2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_001_tirisfal_glades.sql",
+      "sha256": "7254ad396e4f7ad34217975a7309587a40eebc05cc01f20be51fdac89231a7f4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_002_silverpine_forest.sql",
+      "sha256": "6aaa2b93f79c61bb93f29f44be9348848843ccf627366febbe1201f1f200aba8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_003_elwynn_forest_and_northshire.sql",
+      "sha256": "7f3807b94bffdc03cca31449d1497d588c9a72aa46197e5dd8fbf7d5ee746303",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_004_dun_morogh_coldridge_valley_and_new_tinkertown.sql",
+      "sha256": "3adf1595cf0c07941d328ddc7336dc65441a7f881f9b630deb23338941104d7a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_005_teldrassil_and_shadowglen.sql",
+      "sha256": "28070f5f40b838e77bd39ab2246b124a80d0658b1a34a1ede9276722d65f0b61",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_006_gilneas_and_gilneas_city.sql",
+      "sha256": "a3e1e86e5488ff3b2b2dc59fcd2c40fdb79867ff34ae6925c1e02a724a93484e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_007_durotar_valley_of_trials_and_echo_isles.sql",
+      "sha256": "6e917519eee4fe2dca7351d87eba29daea21a0e80b24d3784871941e72bc8463",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_008_mulgore_and_camp_narache.sql",
+      "sha256": "3b35e4373fdd943857ec526cd0e97de8e693e7c27510b1dc6507561dc1290fc4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_009_eversong_woods_and_sunstrider_isle.sql",
+      "sha256": "4d7216905afe10fd55e593059b18f42212548c2fa8ef51184aef86cf9d2c3403",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_010_kezan.sql",
+      "sha256": "8343270155e2f8487d37555b84ee236d1107e4245a4f98ccc9375633cfa6a8f0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_011_the_lost_isles.sql",
+      "sha256": "85c1c3803669b7084f18993e08231e248ae3b35812f379d12c07313ff699006c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_012_the_wandering_isle.sql",
+      "sha256": "cfb70e5bc1c75c0d33e618084d3c37b1f66c79c04c1ffbd9953a6ec7ccee3cab",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_013_westfall.sql",
+      "sha256": "a905969e5b3e2415cf99cd409390da157cb8c0ff3086fda408d8e663e7834e3c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_014_loch_modan.sql",
+      "sha256": "67521f8779d3c845637cc701a045d78be224d62e6bf459825dccae36cbe1ec19",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_015_darkshore.sql",
+      "sha256": "507acfd45250d35eb61e4477d929b5e2a160ef5602cb7d06ca7a8d844fd46129",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_016_bloodmyst_isle.sql",
+      "sha256": "0debe60e57befc95f8db29b33c2c35720923569ff1d590a8cd8b3f260931af10",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_017_ruins_of_gilneas.sql",
+      "sha256": "763ad193ad528095cdce294045457782e4ad34ae5b1573d4a6f90206cb31607e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_018_northern_barrens.sql",
+      "sha256": "9eaebc58b4fe93157ab59379ab44a86262e146e23d7e2925285175271ff95ddc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_019_azshara.sql",
+      "sha256": "f884e079af798eab933895c3a95b1880d35067efa1981d5524afda9194a13dc7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_020_ghostlands.sql",
+      "sha256": "1cccee796ab8b0f8f3c99cb5a8e7a8d412cf61b39044b2353ec2c580b35c6044",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_021_redridge_mountains.sql",
+      "sha256": "606cf80d4718d22a84347cc12e974394de990372fb981187887a26ed1c06adba",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_022_shadowfang_keep.sql",
+      "sha256": "896a59d6564a6445b677f2e7074209a48a7f64c8eb14f473407664141aae7357",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_023_blackfathom_deeps.sql",
+      "sha256": "b896d45336ae818343501e85c85ac6b37cba9a3cd0ddd894f1cb86db8868a95a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_024_duskwood.sql",
+      "sha256": "5e57602a8f91024af74a9f938c67bca6c449a427814bf02c0b20dc430d9e7830",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_025_wetlands.sql",
+      "sha256": "9cee5188975bda714d5a6f42021359fa123dd67accc332dca5d36d82090b18f4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_026_ashenvale.sql",
+      "sha256": "de91587e5b01b7f9f07aafa0e9caf93682856ffb9c7ae0efae61196f4ce57d80",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_027_hillsbrad_foothills.sql",
+      "sha256": "04055354875148fd08f402fed1a52490ce09eac57cbe637e6eb19fbd90ed675c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_028_arathi_highlands.sql",
+      "sha256": "b9503f346855324488c0bd6a9f5d946c552de8920233b5aeaeb4a41712833ace",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_029_northern_stranglethorn.sql",
+      "sha256": "62d66eb5cfbf0e3fe8a41ba66944ba13932902e3fe87779d32d3978dbb2c4c00",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_030_stonetalon_mountains.sql",
+      "sha256": "015e15261ee4735e06e93cf4d457b78487c15a44109ef7d6761f6ed35a55b6dd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_031_gnomeregan.sql",
+      "sha256": "52a282457fc5a9f30ee5e2747bf33cecdab2da54af22744fb9ee6939cbcaeb2c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_032_scarlet_monastery.sql",
+      "sha256": "6bfd4f6db796384c089b48fe543d31c3cd4fa99ccaba5b1f5c809513c9c10fd7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_033_the_cape_of_stranglethorn.sql",
+      "sha256": "c0bef738863150783345793b1c21f9cc5a9ce864e63cb5de80a0068464b2b0d5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_034_southern_barrens.sql",
+      "sha256": "a1599ada22953004dfcf6c6b60f350411824c12901457c5cc23b5cdc090b18b8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_035_desolace.sql",
+      "sha256": "a1cc132ff23e57a6a9be9f50307b755aa0b1a9eeb09cef5f3ee8d59efe0b12fe",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_036_the_hinterlands.sql",
+      "sha256": "871914e5787fd47b49299c60ebf1ecf8312121edcb32a13f4a0472a9616e57b5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_037_dustwallow_marsh.sql",
+      "sha256": "485cc7256975297d5e0ee7495e24c7452d2dc2efffd6a01c341ece0f3356e07d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_038_western_plaguelands.sql",
+      "sha256": "74b20ed599c69d0978f15073370c2a0d50a0b7b165535e95e7aa11f600e29e5b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_039_feralas.sql",
+      "sha256": "fb95906b30d3e33f54e98469431f81922f2c204f6c879d2c5a39ffd9a45ffe65",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_040_eastern_plaguelands.sql",
+      "sha256": "b30640466ce39e16b312f403757210e1cb4a3ab403903f6dafaa786d9145033e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_041_thousand_needles.sql",
+      "sha256": "8895213a430abfe9b02abb10fab41751e5f013d25257758aa2cf6c6e6f530c84",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_042_badlands.sql",
+      "sha256": "9c6531b22cf9644da4790dfe74741ecf0ca1a73d9b39555f89ac826709b68e01",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_043_tanaris.sql",
+      "sha256": "94743991a93fa64a23694e8af35a395a150ea71b972cafd1be61f66f0b94e9f3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_044_felwood.sql",
+      "sha256": "695e49970f220d9e314cc7fb5ae4e0e6ac07c9760552c69b7266101adc11fb89",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_045_searing_gorge.sql",
+      "sha256": "984be19510ae1f972d499844c2e1c453e7b656e1924fa3a50dd3849788254e7c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_046_burning_steppes.sql",
+      "sha256": "6306e4587eb6cb9aaaade7e7d273fac5665b5358349306026bbb5b684bd173bf",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_047_un_goro_crater.sql",
+      "sha256": "bf1bcd85284ef2d7ff45514e724bea3a1fa294dc13039b2d62b19a3e1af3d708",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_048_winterspring.sql",
+      "sha256": "ee2e3a7835a028e9951f0e83318d117a79df22e5149baf7008d6691b39a54902",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_049_swamp_of_sorrows.sql",
+      "sha256": "8d339bd4bc0fea5532bf51c6b86b088259e78978a34c8c7e094b10b8be7ba51c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_050_blasted_lands.sql",
+      "sha256": "21d18098b1fa5d143cffe3adf62cf5f98d098262b621f3957525c9894d01a3a5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_051_silithus.sql",
+      "sha256": "ccca75663db09d7adb0c47e4eef17036f5f095244954aeffa8561d36de67be21",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_052_deadwind_pass.sql",
+      "sha256": "b214c7f5726de3be62c4e7c30a7ad5870c128b294bf4d650987b2668174aaf8d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_053_plaguelands.sql",
+      "sha256": "90791499dfbabbef14b536b3e92bbfaa4a2e1756845e5b6a79c7cb92637a1fa5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_054_moonglade.sql",
+      "sha256": "7bd01bcae9258764df0debff22b2b3a92f340c8b6d490bde3010271c130a2be5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_055_razorfen_kraul.sql",
+      "sha256": "5500ea268f96bcd01857e7181f962c98ccfd82062278475823b8dcd28fdb5566",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_056_maraudon.sql",
+      "sha256": "129ed8d39fd98ecd129855d04a423770bd14bbdaffba0841acc75055b6dfcbd1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_057_dire_maul.sql",
+      "sha256": "f16c2d5948c4229be4a8ad0b5ca3430bdaf80183fad711f16fb062440b51ef01",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_058_scholomance.sql",
+      "sha256": "06dbe9fe97fe6d505bb837096d2d5074d5c09341571e1a52d9cd887f225a1834",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_059_razorfen_downs.sql",
+      "sha256": "2b7214ad5c0330bbacd01edeb8eec81aeae644c0ead15760fc4ffbb57feba06a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_060_stratholme.sql",
+      "sha256": "9e1c03bfeada5fe75f2787909d278d4ea87705ce18d8854e8c62d6d7ff91b7b7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_061_zul_farrak.sql",
+      "sha256": "87888bf63ef13274e3a016d7b7839ff6320ebf5f727ae90546aa827523961dba",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_062_blackrock_depths.sql",
+      "sha256": "74edc3e0b8a9cb13ab9958a9cff9ab8a62d5d4c43915617b70df4903c18c4eb9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_063_the_temple_of_atal_hakkar.sql",
+      "sha256": "0d1f3ada9a6196266957cf90d33491ebabdedf525451b50c5e32d01f8ce75de2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_064_blackrock_spire.sql",
+      "sha256": "f991ddf9d9d4690682cec18e09abac40f37019c247d77f70f42512181d51ff9f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_065_hellfire_peninsula.sql",
+      "sha256": "4a2b8993bf0c0c2fc595d81cf2bbb49054a84765e32bc6d7dba002de05596a7a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_066_zangarmarsh.sql",
+      "sha256": "1828f72b63f322f2cfcf40235e72c6e9fd1869bbcca89e71296523e58ceeaf62",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_067_terokkar_forest.sql",
+      "sha256": "02abcad164d0b9145ee25a57a1b6010e258706d918a13c244207b0d5dbc56a1c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_068_nagrand.sql",
+      "sha256": "6bcb21edcbb78b371366da77331fe564e4796c253a41e2eedb0addf1f29a52a7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_069_blade_s_edge_mountains.sql",
+      "sha256": "e30ec6bc69d7dfb4706f7e6748389c1f3d2996a663981c20574506df43c98883",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_070_netherstorm.sql",
+      "sha256": "f4209561a406645679f10f5117e7ccc282e18d9f4a2f5e03a4d9814c897ce972",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_071_shadowmoon_valley.sql",
+      "sha256": "38762ab9648db1917d36ec7c768ce7a8bf697c8e718c45f1706a9043ae57df0a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_072_isle_of_quel_danas.sql",
+      "sha256": "dffcf3c452cde549c3ca5dff6189ae6b773fde14ec9666d02a1f95d377ce6eaf",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_073_the_slave_pens.sql",
+      "sha256": "ea31f9c007ea009f98fe70a985d6db4e50e7c088eef595c02701d093277bcea0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_074_auchenai_crypts.sql",
+      "sha256": "8eff78dbffd56bf5f3d0f17f7fdee4645965da7f8842747caecbb97a72916fbb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_075_old_hillsbrad_foothills.sql",
+      "sha256": "b394cec141f9e164a8d65bc98516e40fc7400607e7faa220fc374aaec9aa212b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_076_the_steamvault.sql",
+      "sha256": "acb0b247d3a6391359cd393e2af209bdcf95b1f460b9b205208e760db60c75f3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_077_the_botanica.sql",
+      "sha256": "820eeac63842a4aa9dd3d759c29b26bc50c32c9b02483b1ab236a3fbd508d9f6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_078_the_arcatraz.sql",
+      "sha256": "8b79243e8bf7da0483c64093647f3eb36d520a1b51350f7ed531494f5d91456b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_079_shadow_labyrinth.sql",
+      "sha256": "1502d8c5dbe5d7885a6a6902aec497b9be4c69d93f79a2a70323820e5b464b33",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_080_the_shattered_halls.sql",
+      "sha256": "c1b08bada7e0249037f381ca2e5b2d3f1f1fff68e5f7da75c7af8d9eb097696d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_081_borean_tundra.sql",
+      "sha256": "dd4d33ad454893df52cdd430461decedb01d4a9c1caa2c596f81bd9549cd559d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_082_howling_fjord.sql",
+      "sha256": "f2a583cdf8f08a8af16a17c026166579dd6ad9119d88a62d4f2bf1cdd92b919f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_083_dragonblight.sql",
+      "sha256": "49027511f3dd1ba7dbaa446516f7960f5e96c352af62eb4108e6138f81ea4898",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_084_grizzly_hills.sql",
+      "sha256": "450bd4c19cd2112dd4c2f4feba4932187a16c1b99ea936298be4bc219e07641a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_085_zul_drak.sql",
+      "sha256": "cb7a3345523221968a2362058cd62cc1c1bb7ec319d1552e391326a54562c5d7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_086_sholazar_basin.sql",
+      "sha256": "ac3604f7cbba606b9b3fab3f137a6def262082d79e915bcffd1b7899f4a948a7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_087_the_storm_peaks.sql",
+      "sha256": "3c2eec7151841728daae2028c8716c8c67d34ddf429c35b0672f036b6f6c825d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_088_icecrown.sql",
+      "sha256": "cfdc14adc4a020fe80f0ec0fe45d7dbef55e4beaa830bc5bfe0cc9ad15dcd1fc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_089_wintergrasp.sql",
+      "sha256": "f0436b6c499dcebdeb5782f0a505047fe0e815d851877ad3f5b46102f73a6fbf",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_090_the_nexus.sql",
+      "sha256": "3b855ea0dc35c5f380c1d5ee0b0069122d4ee9d4a90d50f8fccac07984d39a5e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_091_drak_tharon_keep.sql",
+      "sha256": "2e608b40e6437e52f70dc444a2a994c3799d9b6c28ea7fc50f4225e233253be3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_092_mount_hyjal.sql",
+      "sha256": "d0560386c32e6717c5f25cbb490cea023863832091c454e19fc5020b2af5730d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_093_vashj_ir.sql",
+      "sha256": "4fb551ede45d6f6ade61d8cb0b960988c62b25808a82649fd1e9ef728566e4bf",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_094_kelp_thar_forest.sql",
+      "sha256": "a08de554ca891b3d71e1119c68369c007d2a3a31b1cde800b258596ac74a76b7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_095_shimmering_expanse.sql",
+      "sha256": "687eab4b647a2cd4251e54076408ffb7e6d4492e8c4c389e4d8f22bfd3a149de",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_096_abyssal_depths.sql",
+      "sha256": "93c9170f02d31c124b67f64ac606e747523e4f02d26ecefbf01189c11565b0a9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_097_deepholm.sql",
+      "sha256": "fc146a836b50cba600137f999ab834bdd3d1e294b3968309005eda5d323eb7a0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_098_uldum.sql",
+      "sha256": "9c569677e958b4352995ef794bb8dfdcbe272c9ef4fba392565233c4c281cb5b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_099_twilight_highlands.sql",
+      "sha256": "5a2f434f12a8b59f8075ec79a6097062f88e186e601c1b1ac8dc653a04b6ac83",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_100_tol_barad_peninsula.sql",
+      "sha256": "db97409dddf46138af60b10f4cc8f725a1b9b5a389c9dcfdd91c808b000bb054",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_101_molten_front.sql",
+      "sha256": "dc29ce775890f74ef1dead1a842460dfa17b0798209991cf7d57662a8ae7e781",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_102_blackrock_caverns.sql",
+      "sha256": "7d2d11cff3f93204ac69ab6ca2341d6d4358b2c41341b6e29ad18742e4fe682a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_103_throne_of_the_tides.sql",
+      "sha256": "c9f798693fd759b491a680144bfed04154f7a6fe00c364ad09fe1368d48bfa48",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_104_halls_of_origination.sql",
+      "sha256": "50f76eeeacf5ca22cff96bb9b4e830a5a962497962180793582e402b33c33e8a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_105_lost_city_of_the_tol_vir.sql",
+      "sha256": "b532af31da9b3d2857f8362db1a4e88efb73ccf0e7ef08a66f32240a5aa0cdfc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_106_zul_gurub.sql",
+      "sha256": "8bc09412e0f27e50c5f3c06c6b76e26e1be8521fa8a0b6f51b816ff47251ec67",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_107_hour_of_twilight.sql",
+      "sha256": "fded178d8071d3a5b83e5e6b5ff79b3270b1e043e5b258e18ee13956826ca39b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_108_the_jade_forest.sql",
+      "sha256": "5d54eaffc64ae4c7e454f73561b69516d63dd6d0919de5d1a65f53222a3364be",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_109_valley_of_the_four_winds.sql",
+      "sha256": "f40ba6c6a7f764b63bc68edef9bb9320161df86a96a3a611706e848cc1520f31",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_110_krasarang_wilds.sql",
+      "sha256": "f2d3eaeb12e2b62d70a90f166beff83887ed8e737c3430af99aa0d73af87e845",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_111_kun_lai_summit.sql",
+      "sha256": "a7d11db8726a2c9096f14284ed33ad7bf840b191008fb0940123cd5d4c75f50e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_112_townlong_steppes.sql",
+      "sha256": "48112429bbaf1af30867db01714033ec6e8a03176612c0a7db96dc683bc51a94",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_113_dread_wastes.sql",
+      "sha256": "101b339cd2986a32c5149ac15ad1b22a2233967d067627ae5a3916d178a0e5dc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_114_vale_of_eternal_blossoms.sql",
+      "sha256": "1f6e7ab026651e5168266a6606633bfcfa5cdb35b0095d7e7db26d4a875b8f5c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_115_the_veiled_stair.sql",
+      "sha256": "47666c77b30075ab0239d07a1c2696fee97b82a5ee95263c2bbf588bb3209b99",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_116_mogu_shan_palace.sql",
+      "sha256": "c55db1ec341da5da6f974860ae98b47c948ba9640927a4aac90f223dc1cfdcb8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_117_isle_of_thunder.sql",
+      "sha256": "1654745151368e500f5c1d9e78ec6755708d7e7c98b119e673aac04ccd32628e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_118_timeless_isle.sql",
+      "sha256": "0b0de97728be27d11663f2c19e900ed3c8971bf01fe19660e5da914dcbcc5fd6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_987_abilities_999_talk_target_rerun.sql",
+      "sha256": "7ac4c11cf8a6979ad57bd9f6203ad0a24b68351ceb70aa989ab3a46419fa2d93",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_001_tirisfal_glades.sql",
+      "sha256": "be7eab3b5270f4b5072f93b49359c36e4f70a77ee4c35472047b880fa99d81af",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_002_silverpine_forest.sql",
+      "sha256": "27a1c2b5875ef8d24d0a6aa0737731c1cf39c32aa34e99efc310deb866cc8b36",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_003_elwynn_forest_and_northshire.sql",
+      "sha256": "14df2bad02aa8916e5f86b1ad59173f1874affc55826a264278ee138acf2ac23",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_004_dun_morogh_coldridge_valley_and_new_tinkertown.sql",
+      "sha256": "a336adabb1d3a5be78e556dc1349e8e7e4d63a10f97370fd505252657b18730d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_005_teldrassil_and_shadowglen.sql",
+      "sha256": "c309cf9d3284b3ed1af1e957acf4eeaacfffd935b2d61e6d98bc6857ef6b55df",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_006_azuremyst_isle_and_ammen_vale.sql",
+      "sha256": "6553c15d30441493f6c9c8604e4f3146ffbdb62cd19481de05b1e1f79e04b6bc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_007_gilneas_and_gilneas_city.sql",
+      "sha256": "1dff2aa446dcc74fe973c3f8df1afcfe2a9dd2114b9594ef522fa245ae9e4cec",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_008_durotar_valley_of_trials_and_echo_isles.sql",
+      "sha256": "d18bea9c1288fec2bf9f861c4a5e70162a7946cb1c6126eac0ec814b76974849",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_009_mulgore_and_camp_narache.sql",
+      "sha256": "c8032137c21d49cb18955e4d22e33bb7d43d71c0e5cb2484ed706fbddb195607",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_010_eversong_woods_and_sunstrider_isle.sql",
+      "sha256": "1e511714ab1db10f24da968a65de40c8ca8c0f358b71401390f77950155c8d2b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_011_the_lost_isles.sql",
+      "sha256": "c666cedda76862445b17f12012d26f38772c66542ac441b8bf945090d61b5a97",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_012_westfall.sql",
+      "sha256": "d8bb42d171833c579adf3cc92763886cb0dd3564e9b885faa50ead30303b0504",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_013_loch_modan.sql",
+      "sha256": "162e45817b8c20a1feb97fe05b9983bff636e2e421dbe3d68f7a18b8b79cf714",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_014_darkshore.sql",
+      "sha256": "39de22cb97b95b684a4139e2e9e49c9b7b5d1b4506d61f7f899bd3fe53fb5126",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_015_northern_barrens.sql",
+      "sha256": "94f1da9e526a681ddede6bc824c740f188df26e03eae4d5061c99cdbbdbf2841",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_016_azshara.sql",
+      "sha256": "0a004baf0c8751a47827b82c1f2d84a215a35669d391a7c5ec200c165f0fc764",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_017_ghostlands.sql",
+      "sha256": "72e06938949c17db4a89531c90853937e46beced8837976dc69e9c5756553808",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_018_redridge_mountains.sql",
+      "sha256": "7acf6586b7b7fb360d60cac621a1a1ebc10b746df63d0ef9a177dfafd176800d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_019_shadowfang_keep.sql",
+      "sha256": "360ef7e591f709989be2c78cd4c70115dd405af741941cb5f3a01407130c421a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_020_blackfathom_deeps.sql",
+      "sha256": "934b837fabd5858879ad72617a6146f9bd0789cc125957c5e6791ee50d1c77c3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_021_duskwood.sql",
+      "sha256": "5c988085f0f408deaf5e2fd93781610322f37b35dcc9dca53b5795e8bc6e9069",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_022_wetlands.sql",
+      "sha256": "b01f8e6e103ff239324969c7a69b34a21ebd12b6f2ec7cc9c41859e6c4aa9816",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_023_ashenvale.sql",
+      "sha256": "36d7a67c70820ab878f6a99bc5290a75d28a984a5df74fc02ec3c8deb0b5841c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_024_hillsbrad_foothills.sql",
+      "sha256": "806470924e87260c6875f3b8674fe86d62e5d61253c1a35ca94d45c01d4d0677",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_025_arathi_highlands.sql",
+      "sha256": "554c346cc8e20fe95d4b5df9e800c06f1afed4a49341ef3b0249aa84fd5f3dcf",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_026_northern_stranglethorn.sql",
+      "sha256": "b9d0a109548b2d9952c5f1df8472c035be0790a78ce3d967bf2f4cc617e8d088",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_027_stonetalon_mountains.sql",
+      "sha256": "6dc47353c57ef4c608829da47ec192c9d9a6f8c3621229ec62844a9540a2a521",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_028_gnomeregan.sql",
+      "sha256": "4ff11979a10334cbc9439c8ab36c1c32e21abce7ddd4cf39dac9d23b9009a7f1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_029_the_cape_of_stranglethorn.sql",
+      "sha256": "cd2ee9e2b663b3d8a1d8fd155d9206aa284738417e6eb31338d9e537694cec1c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_030_southern_barrens.sql",
+      "sha256": "519e216e90a7c768c023a631688691d3edefa48be190dda475ae3f1d4cdb6211",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_031_desolace.sql",
+      "sha256": "499b60fb145c4051eb1036bf3f1d7ba03894cebc69d33f2035f91a97e6c7a974",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_032_the_hinterlands.sql",
+      "sha256": "1e0a158207afcbd33c75296f948f83ae125daeb28fe9961da2098250ce2bd319",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_033_dustwallow_marsh.sql",
+      "sha256": "d26e2f5cbded65d2222428efb443a06120bbf82455c0a1e671ae3aa0af0065ca",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_034_western_plaguelands.sql",
+      "sha256": "37706f06ee3f99edd38adf099bdec183439c8341aaa8cc176aab94bf25b8775f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_035_feralas.sql",
+      "sha256": "87c1710cac246fcdc066f57083656344320e76dbd9880cace5f8b51966b3275c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_036_eastern_plaguelands.sql",
+      "sha256": "3a8ee1b37f9bc15497f44843972e9bbd975d9fd602adae04bb9b46573bc723e0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_037_thousand_needles.sql",
+      "sha256": "d6fe1f1c18cf603c0583cc8ea1dd8a89f1473b731d1f36876541b91b611f8d43",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_038_badlands.sql",
+      "sha256": "ffc3e5f272f17acd2c28ccab1c5fe972194028a2d4cbe6cef3c36d667770206c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_039_tanaris.sql",
+      "sha256": "55b97ea89a55ffddcf25915c9766d3a2e003918c00db3c02f2ce4f5e2da2a410",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_040_felwood.sql",
+      "sha256": "2f121e3aba0dbdac8a3ecdaef2add7b4c9064d558f26fad5bf17a4806190689d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_041_searing_gorge.sql",
+      "sha256": "7d759de66c658f0cef3754f6206edc29223c9c2d64b0e6bd8fba4bc06f2656eb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_042_burning_steppes.sql",
+      "sha256": "1fdb93e2d5da0d93cfe7075c8ef13704ab967dd0dfbb561489d25b0297ced218",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_043_un_goro_crater.sql",
+      "sha256": "fa3e4fa0d3a2b1eab48b2be70a15fbdcc5c9a29bbcfe8f8afcbccb1b5d2c1a74",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_044_swamp_of_sorrows.sql",
+      "sha256": "dbc33a3fb42960dda3a39e1442c41b92c19ac587f46f0f344a6337d28bee4abd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_045_blasted_lands.sql",
+      "sha256": "d96509405f64488a152190763a5e9cef2e6c71951284a4045916daa06ddf95ce",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_046_silithus.sql",
+      "sha256": "87a73162f7d66f6aea37667416f3c75dd31b8310193801e96ccb3e9a48a412d7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_047_deadwind_pass.sql",
+      "sha256": "6454a70b56b02335175be796dd6aa7e44f30770714b74ad57551740979fa26aa",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_048_razorfen_kraul.sql",
+      "sha256": "d13f649260bf7f8fdfe5da66e9086a486fa3bc8d8c12d6e28bf9fee5b7a489e1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_049_maraudon.sql",
+      "sha256": "ca913eb78f69e06f63527ae221444f835dad4613b650a2489ae009b9a62f0a91",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_050_uldaman.sql",
+      "sha256": "1505352776bc47280252405631626f100aee235422f1f25d419056c20b0cdcc7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_051_dire_maul.sql",
+      "sha256": "900a545a34bdea8496b4e69a81725a2c5a9b9b89316fd6f2ad693ee80cc7c2b6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_052_razorfen_downs.sql",
+      "sha256": "4d39deaab0d9c5a5c1b01835b5772f4d0c846ded1b4f50293e88a76c0186a397",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_053_stratholme.sql",
+      "sha256": "4f2cd64978bec8a75a1b8fd9aa86792a50005d4fa6c9d2df634cc75fbf0ef20b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_054_zul_farrak.sql",
+      "sha256": "98fee8bb47e3896a454b2e9bdf9318db2cf2d77117c25db054cb08989ef7cfbe",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_055_blackrock_depths.sql",
+      "sha256": "1977b778212ac87d39e96e81e15d9b63cd3451b31b2dae46aca33f9230f1bfed",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_056_the_temple_of_atal_hakkar.sql",
+      "sha256": "6772fbb480f6d85fe5d5bf9e6bda3b72e91e494984639a7fa7ae25cdfcfe46a7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_057_hellfire_peninsula.sql",
+      "sha256": "4d8fe4177ac09961e0b1f40e1ae4611234d6b17f52c49d9efe7a59b6769de377",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_058_zangarmarsh.sql",
+      "sha256": "711883d358b49b719907902fdaf8372645d2ecb349fb74133518db0490f6ce97",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_059_terokkar_forest.sql",
+      "sha256": "e59e99644634e291e2e14708e43dfc6954c42d21456e151e2894960cb31cc24b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_060_nagrand.sql",
+      "sha256": "043f2398b4299cbcc10f3bf3e5d11350c6b7f01f716e71a08e6ec755bb6abd5c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_061_blade_s_edge_mountains.sql",
+      "sha256": "37e46de56394c524c5384f3997ed423dfd016590f8b56db3f9ea67dadc66f5c5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_062_netherstorm.sql",
+      "sha256": "c0e6ce60a3c83250913ed2d75649f4c9becef570873942a101916d7738ebaade",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_063_shadowmoon_valley.sql",
+      "sha256": "aeef311f58f1f79a5f6e3d5e916fa849e57073324d8fe5b8ea38fa350f8c4cfb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_064_isle_of_quel_danas.sql",
+      "sha256": "b0d8ef6b00ce3f305088c8d9ec079a97d299a3dbf1f5f75d364330011f37cf77",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_065_hellfire_ramparts.sql",
+      "sha256": "398131146461fd08f3a58a96514dda8804e57311ce90ab4f2516258b4829207d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_066_the_blood_furnace.sql",
+      "sha256": "e9346e4e63f237fef2df996e7d46d63f97c3784b5e108ec85b5f6ffe357b7324",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_067_auchenai_crypts.sql",
+      "sha256": "b9fc04c702e391eaf707ebd2e03ee0c7bcfea16c70baf351a4d0035f327ab00b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_068_old_hillsbrad_foothills.sql",
+      "sha256": "1e8d53a6a24e75fcfb2a1f1431a7aae6bb9ed8dcf3a739a0dca9e99ffe4f0701",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_069_sethekk_halls.sql",
+      "sha256": "5b401af6b006c3d932efdd70be1f5dc758262d1bb7c0511f5ad9fd503f690463",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_070_the_steamvault.sql",
+      "sha256": "f7c91c6c273a0e2043da0f72cbf1768c6c02de0f54b56939887510f9bb934d4b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_071_the_mechanar.sql",
+      "sha256": "9a7687710a0c77b5efa24512bd1decd705ef0e6d671510f6cbfffe57b8bf1812",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_072_the_botanica.sql",
+      "sha256": "b002c1a4e9cf3359240b5e4c1a3d283b36b73c0acffef9126886577976ca716d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_073_the_arcatraz.sql",
+      "sha256": "9f9c6e72549be5003be02e369478a48af601113333f983a1a2cfef00c04f5dfe",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_074_shadow_labyrinth.sql",
+      "sha256": "58f9a6dc3fad28ecfa405463ab98b0ce66e4245e8049f3e0536cd51038039f3a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_075_the_shattered_halls.sql",
+      "sha256": "8a998f1bfd9596dd64e10d4f3a1474c12eccf5d9b55593df44e7f1ff70d2f387",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_076_magisters_terrace.sql",
+      "sha256": "0169d39d520c856c61cce569af4d1fea584c927ce516f9747fb4070e3ff44b1a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_077_borean_tundra.sql",
+      "sha256": "c377edc5dda676aa807e4a158593a6a53e0952c66ffc077e65110a547173f1d3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_078_howling_fjord.sql",
+      "sha256": "d8e65e3fa82e0e93b08464029c8951395f124fd38f33818c83d3c1badc38c5b2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_079_dragonblight.sql",
+      "sha256": "48bfddd19dac3071ef2bbb91168d4831262b9f49598042270dba2c7d600db121",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_080_grizzly_hills.sql",
+      "sha256": "6cdfef14208fc8ae6be1959f4525a70cdb928ba85998a68fa0bb80190d764569",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_081_zul_drak.sql",
+      "sha256": "460ce38b4f6cb165a50646431c2a2f270ece14b88e9b89e670b5505a4a89607f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_082_sholazar_basin.sql",
+      "sha256": "06bea17ef410ccc6c8c72fdc87d06ea3f1dc141d8369d4c5d42c6f62ec87b20e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_083_the_storm_peaks.sql",
+      "sha256": "41ef6ee715bf60be8bfbb9061058317c705dee0210cfa56bd3c83ca4d745c882",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_084_icecrown.sql",
+      "sha256": "2b242d14b49bda032a73ce7cf2756b2c907361b4779acf34eee9de1b97299ffe",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_085_the_nexus.sql",
+      "sha256": "6036986ca41dba60d4c1f54ddd505e9587b180b211bc867c40a42b18c466cb02",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_086_ahn_kahet.sql",
+      "sha256": "52da3470f683bd8f3fdf442b4d6088c7e0543e918203e1611fe9db3e26eca3c2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_087_drak_tharon_keep.sql",
+      "sha256": "093471ff87a7b53a9f099509e48d1d516a6fe68983cc13ce2d6472c637d198bb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_088_gundrak.sql",
+      "sha256": "befe1f9cc7a0531efcacb07097dd42befe2104a244797fe74627ad2318d8ee5a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_089_halls_of_stone.sql",
+      "sha256": "736298033227b1cfdf366ed3c6b033d7a8c4524e4449e04f4298807715183550",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_090_the_oculus.sql",
+      "sha256": "c5884602f02f08e6beda4272c7581bc5a1b9b811637d9ec82c44929ee1a1d24b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_091_mount_hyjal.sql",
+      "sha256": "6c092c7894eae3b003ea85890241c8f945955d1e65c3f595742ceb07eda6300d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_092_abyssal_depths.sql",
+      "sha256": "248b43dbfd4653f2614f5dfabff0588936a714a4d103f7ef7e92dc25d9db7007",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_093_uldum.sql",
+      "sha256": "9ec4fb5c6d95faa3326e0b066b4b319c2519269ca3065af53ef2ced1b9c3bb1f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_094_tol_barad_peninsula.sql",
+      "sha256": "1e221583892c1dd0a42fbd7c2a9c104bf3f68c522fa6bb0f3592aedf5c14d3f1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_095_throne_of_the_tides.sql",
+      "sha256": "00c5138879f5e30c054ca17422d3fe69e2c3db736e332956780c988cffb39293",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_096_halls_of_origination.sql",
+      "sha256": "f4faf59ab01f43803d0b0d7d4f19ef5518b50dc33f96b4cf042dfde1518f6dd4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_097_zul_gurub.sql",
+      "sha256": "3296f31b9d5e5c27c42c9e8ccc832ba3b61ed0cd817bf53dc439f8c9b54fbe09",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_988_abilities_999_talk_target_rerun.sql",
+      "sha256": "f72baf401a45898428a732de79c835a705437284cfdf46bbc5db64619fbd99a7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_01_deadmines_encounters.sql",
+      "sha256": "15aae5c0bf1f31981510db02be5f280c48006e3de7d6b9880decf0b4b39539d6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_02_deadmines_helix_crew.sql",
+      "sha256": "fce178da7035287fbf2c8420ade638699a39155e8f8967702f6f2db63ea9a189",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_03_wailing_caverns_naralex.sql",
+      "sha256": "8c5ceb54a2fd88450059859f169e9cb67e6f78b8abe684c1d66dd8c18cff6856",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_04_deadmines_abilities.sql",
+      "sha256": "06f5d8ed6ec522bf5655468a25e86a4152c0bd5d20738b57e03fcbf67ea3e8b0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_05_ragefire_chasm_mop_layout.sql",
+      "sha256": "231b6dda4b53eeca69aa3231bb424fa5105c2c1ef9dec5d8c91b461554a96d5a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_06_ragefire_chasm_fixes.sql",
+      "sha256": "8647b134f6f9976f8f5f53262c5d651ec8f8a5f67a8b7c6a5d310f2e5ebe3c72",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_07_dungeon_normal_gold.sql",
+      "sha256": "95d6b3efd07c9e1c8d33a112465eb3ee04503753386b647c07e25458aed358f7",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_989_08_ragefire_chasm_encounters.sql",
+      "sha256": "4c939b75be4e14b177d72d2466d8589be10c0e4dd2a3785a2be2b1e7aaa30d57",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_01_spell_area_69303_autocast.sql",
+      "sha256": "598c6e627ba5fdb36fc686f2aaa733deca4bf3f418fda6b22509ff3ab2f72704",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_02_spell_area_67854_end_status.sql",
+      "sha256": "589b8b69eccaa9c2a4c67ce2751ffcde1a5a48082bda06198383b5ed81a5232d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_03_raptor_egg_phase.sql",
+      "sha256": "4e36924ff602fd545d2dc28f220df1d02369a19a7df0f1b423306837c6403939",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_04_biggest_egg_phase.sql",
+      "sha256": "aed14658dfefe43de3a93ea3cc6bb9b85f1f50c61a260a4b3cbf23396e87f3ac",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_05_kajacola_zero_one_phase.sql",
+      "sha256": "91c85cf0b53142906bb2d96f874861679f270698adda5ec5f24102ce77d6ba27",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_06_oomlot_shaman_phase.sql",
+      "sha256": "0203a2baa4af19d4c2a7e0d02df738f9f26f4706bc92afa6dfea8362175aa99b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993g_07_oomlot_shaman_spawnmask.sql",
+      "sha256": "0186f58810152bdd9670b5dfa7263654444244f37dfcf1543b6d36f9999a730a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_993p_01_balance_pole_tushui_monks.sql",
+      "sha256": "0716292dfd9d0dd8f729862881c99a15d1d4aea2194867b556f1a2ae974f9791",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_995_gizmo_see_near_death.sql",
+      "sha256": "e99af277e1d6112905bf505f27cc5dcfb4d99bb20a08814d0e9a9a1532ff74bc",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_997_gilneas_crowley_restart_prison_event.sql",
+      "sha256": "24ba2a1fb7e55febb15fe216ec3ec20fad4c60991277d04c89a42c32e2d035e3",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_29_999_gilneas_pillory_genn_see_invis.sql",
+      "sha256": "dba037442512b4a13fc87f76606981cf8cc0cfa03f9dac8a5db438992af537cd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1018_boot_dberrors.sql",
+      "sha256": "a4d78881c6472aa32093f9fc6168a78e5c7c8be4f8e9b6bd82fffe71391809e2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1019_glaive_thrower_vehicle_faction.sql",
+      "sha256": "7798f6ba7460a930a9f41701884b8d0f339df99f2980badb68de597aedad4e5f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1020_vehicle_path_on_passenger_boarded.sql",
+      "sha256": "929e1f1fdbb5c12064fbb42ba552830f21cf3e27b873b6466d3e9d0fbe7159fa",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1024_gilneas_endgame_gunship_ropes.sql",
+      "sha256": "6b8345e2cc62c344e66b2e528607ea279e435d83c18e7420a67d273211a2a4ef",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1026_gallywix_final_confrontation_health.sql",
+      "sha256": "9448a724e790765c009841c45e103fc5f9fdcd65ef0b695273057b2efc0d7466",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1030_health_mod_exp_column.sql",
+      "sha256": "827aef79e7cbcfce9a43077c8621f4147b4eff74a6c632c3647eebe2906e5e29",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1033_tirisfal_abilities_scarlet_zealot_sriskulk.sql",
+      "sha256": "7daaa8a94d1f332987a183a7cd468e63033bb08ba71ce574d6f91874ca6c2d03",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1044_classlevelstats_exp4.sql",
+      "sha256": "7726c230ca0bf06be89cdf8b885a806968d09e3c3a770492b0837b8609d69ca0",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1046_open_world_damage_modifier.sql",
+      "sha256": "0c2ad0ff9806c71c078c4c883cd20dc50beee89c6dfe8bcb59a3a790479e3788",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1053_stormwind_harbor_vashjir_ship.sql",
+      "sha256": "5a56001ede5b427a68a8e7a8550830db1d244870cf39f7cdf295290b84fd6bf4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1056_00_transports_phase_columns.sql",
+      "sha256": "dfb0eba083ecdbbc5667830dfbd6d9ed138446b890ee716787f3e67804c14821",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1056_01_vashjir_mercenary_ships_phased.sql",
+      "sha256": "9219dfe048d4fc0eb47c658a952ad8d5539be4625482e2310844e162623c45f8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1056_02_call_of_duty_ship_scene.sql",
+      "sha256": "00c84083e871d276e421aaffe82ca0a4f2fd60ad9bcf727c91fb3923c1c64ac8",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1059_bootzooka_volcanoth_condition.sql",
+      "sha256": "0cc04014cd2c6a69a7087a02e1584a38cf242704abfba51974996cb8d3f61bd9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_30_1060_call_of_duty_quest_credit.sql",
+      "sha256": "3f9bf178809d37244384484fa36b98998c0f095ba913641ce1bda68717583718",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_10_31_1063_farmstead_slave_texts.sql",
+      "sha256": "0b5dc92ef79a42cef12c4e0a1c1c9520104f96a12ae9467a3ca1b2a7e833128b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_01_00_world.sql",
+      "sha256": "9adf8334f7b971fe26ebcb541755d628e296f6dc75be07bd3724fdae5a724a44",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_01_00_world_brewmaster_blanche_and_karlov_chain.sql",
+      "sha256": "5191198028e93369f7d10b4f3365312112c400ae19e163b3abc5e67a8bf84ff4",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_02_00_world.sql",
+      "sha256": "fedb80ba996277d5a5d4a77e396c65b5b8bb98bf98c06b6935fbaa4453a68da9",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_00_world.sql",
+      "sha256": "1126b68e6fceb0e435fda912362ad393f9754fff6ffef174341dd0dbe05ac531",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_01_world.sql",
+      "sha256": "497c07342ae85c9524b3112b7eb76ec887613d3bf00131e0e102dabf5b44f3fa",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_10_world.sql",
+      "sha256": "5adaa41d7419041da85a13590f96e5eb43238bc673d12ea4a661eb2549149c8b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_12_world.sql",
+      "sha256": "9d180b96a395d9ad2e7dcf8f51a2169329c71a6c0783b52f8111f2930672402f",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_14_world.sql",
+      "sha256": "a08704964bbff599f9ace4a59a2ac820a34940512e52a0b05cd6bc086851edaa",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_20_world.sql",
+      "sha256": "f7d4c00a41a95710124302d11fe337996dc08c988a43ef8b8a42e8b76ccb34a6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_30_world.sql",
+      "sha256": "a3850e054164d97cab7dd5fbfed04c47a03e544f3f99459b819676816f5cd2f6",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_40_world.sql",
+      "sha256": "05392b320e09409d82a0b3722ca7231752b8108da1b28ef7ecbc8743b3805d27",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_42_world.sql",
+      "sha256": "0dba0f0bfd1e48c3c406397a0a00ebf8aae300ef8f3fff0ab87676c4a483a6eb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_44_world.sql",
+      "sha256": "35441080249d6c5bda67f980701c93cbf3f2d0295a3052468298bc3d0e4dff4e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_03_50_world.sql",
+      "sha256": "c5e0d0d9a0c1e9cdc6c3acbbffa2a0b9c4dc8d52d1644f52172e0c55996c0f0b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_10_world.sql",
+      "sha256": "ef9cb067904b448c3ac62b81326fbf008df3db494cf9b92676b63a632b3d63b2",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_24_world.sql",
+      "sha256": "22ebc87ceb8b9daee36ebfd378ecf66258e2e183cd10286163dd672654b47cc5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_30_world.sql",
+      "sha256": "770db970875c8a7c45900a3109caa27205dc63f40d14023b0433dbfa90e3ae11",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_32_world.sql",
+      "sha256": "87660b48bc4c4f7f0db1ededc961e9606e015fababd0b87b241c202ee328a4de",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_34_world.sql",
+      "sha256": "4a23e456463b76db7a4028a26f3e0e318a22c91a50ce66a447d0f7734320ee72",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_36_world.sql",
+      "sha256": "752d407a80f953b129041967df2645553a55a77c0534f4661d7c577e9ab8fd8d",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_38_world.sql",
+      "sha256": "6d05a02ceadb95152492aa9e949bb4cba2d5c1505ed399f08c368e0c3395fddd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_50_world.sql",
+      "sha256": "9f7b4064d35280e46701ba2fcc2c361c4a9c8924bf18d23757f817d4e1aa97ad",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_70_world.sql",
+      "sha256": "a2c4f57f0fc6ef580a5ea1110bf755be029742bc3ff31fbac4db75bc5d5279e5",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_72_world.sql",
+      "sha256": "5305a213653e4dcca4f6503944f53302c66bfa2bd6b7bd0820fd749a15c0f61c",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_80_world.sql",
+      "sha256": "96dab4bd1e8685539f54401004176ab33bb031dee6c200486fece6788bccacfb",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_90_world.sql",
+      "sha256": "caca89b5b963ed0ea8d8291e3ab8afbfcf292dcc0525df8a277ab0952164e4a1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_04_96_world.sql",
+      "sha256": "79127ef717057ed472471b5298d28b8a376ce003813a422d46853cc077a0b659",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_00_world.sql",
+      "sha256": "888c9bb0a2de48f2725a66dc89412521a480848e72a4946efc4ad4d3a901ffcd",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_02_world.sql",
+      "sha256": "ad12b41312df77191f50b27b3584d5f55dce44649235283d0a28eed364a0f5a1",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_04_world.sql",
+      "sha256": "9afc655fc25bc554fc0d10316fe076a4910b125e5e4e57a3456b82a644223e3e",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_06_world.sql",
+      "sha256": "c9f0760e0a624d5a3267d7ace07fa639db887b8e19e023b2fb97b0ffec54fc17",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_10_world.sql",
+      "sha256": "fd08325f2c4fea256cd0110c5b5be0bd3e89e67d9502a604af517f55af1fe6ca",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_20_world.sql",
+      "sha256": "2108552b64a7a461dec044c9bda79b000ac67a9b9ca5e747863ee22a1683c29b",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_05_30_world.sql",
+      "sha256": "3733591b27d0fdc6342eb5f4cf96dbf73c0d46e166a28bf1b2228e9f058d810a",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_06_00_world.sql",
+      "sha256": "4e913ec21ab3823ad4b3a8e8b8b05557b1992592297ec1868db7031787353e73",
+      "schema": "mop_loa_world",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/characters/2026_10_29_986_01_ti_darnell_saved_aura.sql",
+      "sha256": "fd8bdc8615270c896809af6f093832ee91b408c9499aac5d696af12e0ff1de25",
+      "schema": "mop_loa_characters",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/characters/2026_10_29_986_02_ti_lilian_saved_aura.sql",
+      "sha256": "f5c9e3351369a8341a64a424354210085b910e30699aaab4bf58ce61fffb54a5",
+      "schema": "mop_loa_characters",
+      "status": "applied"
+    }
+  ],
+  "complete": true,
+  "playerbots_files": [
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_24_00.sql",
+      "sha256": "ba693d898391dfcc0a034f5f70dc94ba20e49601ba285f1553d9c7ce8c4ae7fa",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_27_00.sql",
+      "sha256": "11e1ba260c120ee1eea4642128dbb79a863c6413bb0e99e58f3e3e763b6ff62e",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_27_01.sql",
+      "sha256": "3d2efb6086605e4aa71035b7e08439357ad1e3632c122499b429472de1800b99",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_27_02.sql",
+      "sha256": "32bf6459709d4a6f4a23f1197f915f482d74bd6f65e93132e607fdfce3ba2456",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_28_00.sql",
+      "sha256": "a269df95d23a537ad4ce75861c82671d7ff051136383173d52ece812451b7cb1",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_28_02.sql",
+      "sha256": "ac3d032d81bce86e03121bdfc75aa4da6bdd52a53823f9098828b2a982b5edaf",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_28_03.sql",
+      "sha256": "a3a854a7449d6d8b9fde0fd97f7cb97f54d31230e6ccf7ab4c77fd284479df96",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_28_04.sql",
+      "sha256": "4c479ee64907fbe8844c59151b3d4d48c5258bf3222b807d0b423cb54ed3123b",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_28_05.sql",
+      "sha256": "cef51797856f08b0a0c477a94672ec947608b85720ab89ef517005bbeb112e53",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/updates/db_playerbots/2026_10_28_06.sql",
+      "sha256": "98d823ac1754e113a00ae9504ffc16bc1c24f3d8ff2b1c4a5fded756f83003f0",
+      "status": "applied"
+    },
+    {
+      "path": "modules/mod_playerbots/data/sql/playerbots/base/playerbots_item_store.sql",
+      "sha256": "dbb2c45f24f526923cb806e94c4b13fe416de06c8ee4a21a36daa4bbc076ca3b",
+      "status": "applied",
+      "reason": "Empty item store populated from split upstream base file"
+    }
+  ],
+  "compatibility_files": [
+    "sql/updates/world/2026_11_07_53_world_loa_beta_schema.sql",
+    "sql/updates/world/2026_11_07_54_world_loa_legacy_aliases.sql",
+    "sql/updates/world/2026_11_07_55_world_loa_locale_preservation.sql"
+  ],
+  "tests": {
+    "native": {
+      "passed": 22,
+      "total": 22
+    },
+    "world_data": [
+      {
+        "suite": "starting-training-20261105",
+        "passed": 306,
+        "total": 306,
+        "gameplay_tested": false
+      },
+      {
+        "suite": "gilneas-progression-20261105",
+        "passed": 85,
+        "total": 85,
+        "gameplay_tested": false
+      },
+      {
+        "suite": "existing-native-ports-20261105",
+        "passed": 17,
+        "total": 17,
+        "gameplay_tested": false
+      }
+    ],
+    "gameplay": {
+      "combat_enabled": false,
+      "scope": "Creation/login across 14 race/class combinations and Death Knight prerequisite rejection; five starter accepts; three delivery turn-ins with XP. No kill/collect/instance/store coverage claimed.",
+      "results": [
+        {
+          "name": "Qzbdvrxa",
+          "account": "QZBDVRXA",
+          "race": 1,
+          "class_id": 1,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_acceptance_only"
+          ],
+          "map": 0,
+          "guid": 883,
+          "actors": [
+            {
+              "relation": "queststarter",
+              "entry": 197,
+              "spawn": 177879,
+              "position": [
+                -8913.07,
+                -137.406,
+                80.9012
+              ]
+            }
+          ],
+          "quest": 28766
+        },
+        {
+          "name": "Qzbdvrxb",
+          "account": "QZBDVRXB",
+          "race": 2,
+          "class_id": 4,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_accepted_and_rewarded",
+            "xp_reward"
+          ],
+          "map": 1,
+          "guid": 885,
+          "actors": [
+            {
+              "relation": "queststarter",
+              "entry": 10176,
+              "spawn": 251534,
+              "position": [
+                -615.424,
+                -4251.79,
+                39.0393
+              ]
+            },
+            {
+              "relation": "questender",
+              "entry": 3143,
+              "spawn": 251535,
+              "position": [
+                -597.736,
+                -4248.25,
+                39.0393
+              ]
+            }
+          ],
+          "quest": 25152,
+          "reward_before": [
+            "1",
+            "0",
+            "0"
+          ],
+          "reward_after": [
+            "1",
+            "40",
+            "0"
+          ]
+        },
+        {
+          "name": "Qzbdvrxc",
+          "account": "QZBDVRXC",
+          "race": 3,
+          "class_id": 3,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 0,
+          "guid": 884
+        },
+        {
+          "name": "Qzbdvrxd",
+          "account": "QZBDVRXD",
+          "race": 4,
+          "class_id": 11,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 1,
+          "guid": 886
+        },
+        {
+          "name": "Qzbdvrxe",
+          "account": "QZBDVRXE",
+          "race": 5,
+          "class_id": 4,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_accepted_and_rewarded",
+            "xp_reward"
+          ],
+          "map": 0,
+          "guid": 887,
+          "actors": [
+            {
+              "relation": "queststarter",
+              "entry": 49044,
+              "spawn": 192768,
+              "position": [
+                1700.2,
+                1703.36,
+                137.198
+              ]
+            },
+            {
+              "relation": "questender",
+              "entry": 1568,
+              "spawn": 192767,
+              "position": [
+                1689.71,
+                1674.79,
+                135.675
+              ]
+            }
+          ],
+          "quest": 24959,
+          "reward_before": [
+            "1",
+            "0",
+            "0"
+          ],
+          "reward_after": [
+            "1",
+            "10",
+            "4"
+          ]
+        },
+        {
+          "name": "Qzbdvrxf",
+          "account": "QZBDVRXF",
+          "race": 6,
+          "class_id": 1,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 1,
+          "guid": 888
+        },
+        {
+          "name": "Qzbdvrxg",
+          "account": "QZBDVRXG",
+          "race": 7,
+          "class_id": 8,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 0,
+          "guid": 889
+        },
+        {
+          "name": "Qzbdvrxh",
+          "account": "QZBDVRXH",
+          "race": 8,
+          "class_id": 7,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 1,
+          "guid": 890
+        },
+        {
+          "name": "Qzbdvrxi",
+          "account": "QZBDVRXI",
+          "race": 9,
+          "class_id": 4,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 648,
+          "guid": 891
+        },
+        {
+          "name": "Qzbdvrxj",
+          "account": "QZBDVRXJ",
+          "race": 10,
+          "class_id": 2,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 530,
+          "guid": 892
+        },
+        {
+          "name": "Qzbdvrxk",
+          "account": "QZBDVRXK",
+          "race": 11,
+          "class_id": 5,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 530,
+          "guid": 893
+        },
+        {
+          "name": "Qzbdvrxl",
+          "account": "QZBDVRXL",
+          "race": 22,
+          "class_id": 4,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_accepted_and_rewarded",
+            "xp_reward"
+          ],
+          "map": 654,
+          "guid": 894,
+          "actors": [
+            {
+              "relation": "queststarter",
+              "entry": 34850,
+              "spawn": 219983,
+              "position": [
+                -1447.98,
+                1407.35,
+                35.6392
+              ]
+            },
+            {
+              "relation": "questender",
+              "entry": 34863,
+              "spawn": 219590,
+              "position": [
+                -1405.49,
+                1447.42,
+                35.6393
+              ]
+            }
+          ],
+          "quest": 14078,
+          "reward_before": [
+            "1",
+            "0",
+            "0"
+          ],
+          "reward_after": [
+            "1",
+            "80",
+            "30"
+          ]
+        },
+        {
+          "name": "Qzbdvrxm",
+          "account": "QZBDVRXM",
+          "race": 24,
+          "class_id": 10,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_acceptance_only"
+          ],
+          "map": 860,
+          "guid": 895,
+          "actors": [
+            {
+              "relation": "queststarter",
+              "entry": 53566,
+              "spawn": 563433,
+              "position": [
+                1462.0,
+                3465.59,
+                181.581
+              ]
+            }
+          ],
+          "quest": 30039
+        },
+        {
+          "name": "Qzbdvrxn",
+          "account": "QZBDVRXN",
+          "race": 1,
+          "class_id": 9,
+          "status": "passed",
+          "checks": [
+            "create_immediate_enum_login"
+          ],
+          "map": 0,
+          "guid": 896
+        },
+        {
+          "name": "Qzbdvrxo",
+          "account": "QZBDVRXO",
+          "race": 1,
+          "class_id": 6,
+          "status": "passed",
+          "checks": [
+            "death_knight_level_requirement_enforced"
+          ]
+        }
+      ],
+      "cleanup": [
+        {
+          "account": "QZBDVRXA",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXB",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXC",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXD",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXE",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXF",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXG",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXH",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXI",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXJ",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXK",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXL",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXM",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXN",
+          "account_absent": true,
+          "character_absent": true
+        },
+        {
+          "account": "QZBDVRXO",
+          "account_absent": true,
+          "character_absent": true
+        }
+      ]
+    }
+  },
+  "post_merge_repairs": [
+    {
+      "path": "sql/updates/world/2026_11_08_00_world_loa_missing_dialogue.sql",
+      "sha256": "0e9c43f7b55d2d8f2203f41d0a391ada9bb212f195d18b894403962642394695",
+      "status": "applied"
+    },
+    {
+      "path": "sql/updates/world/2026_11_08_01_world_loa_script_dialogue.sql",
+      "sha256": "b5423dde6314c4a0211d2753510f8c3c359ddaa7cfeb487f96b05ce81386aab4",
+      "status": "applied"
+    }
+  ],
+  "runtime_sample": {
+    "online_characters": 193,
+    "auctions": 5727,
+    "auction_owners": 814,
+    "battlepay_products": 615,
+    "disposable_accounts_remaining": 0
+  },
+  "runtime_sample_is_transaction_validation": false,
+  "diagnostics": {
+    "previous_unique_sql": 1346,
+    "current_unique_sql": 1325,
+    "resolved": [
+      "[sql.sql] ObjectEntryGuid condition has non existing creature template entry (27754), skipped",
+      "[sql.sql] ObjectEntryGuid condition has non existing creature template entry (31317), skipped",
+      "[sql.sql] ObjectEntryGuid condition has non existing creature template entry (33906), skipped",
+      "[sql.sql] ObjectEntryGuid condition has non existing creature template entry (33909), skipped",
+      "[sql.sql] ObjectEntryGuid condition has non existing creature template entry (40684), skipped",
+      "[sql.sql] ScriptName 'achievement_im_on_a_boat' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'at_well_of_eternity_skip_illidan_intro' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_arthura_escape' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_ashbury_cid' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_belmont_initial' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_crowley_cid' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_godfrey_cid' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_godfrey_event_npcs' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_ivar_bloodfang_cid' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_silverpine_cid_cromush' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_silverpine_cid_summoned' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_sylvanas_cid_summoned' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_sylvanas_cities_in_dust' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_sylvanas_godfrey_initial' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_sylvanas_godfrey_summoned' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'npc_walden_cid' exists in database, but no core script found!",
+      "[sql.sql] ScriptName 'sat_icy_shadows' exists in database, but no core script found!",
+      "[sql.sql] SmartAIMgr: Entry -121192 SourceType 0 Event 0 Action 1 requests missing text group 0 from speaker 23690, skipped.",
+      "[sql.sql] SmartAIMgr: Entry -84635 SourceType 0 Event 4 Action 1 requests missing text group 1 from speaker 23685, skipped.",
+      "[sql.sql] SmartAIMgr: Entry -84709 SourceType 0 Event 4 Action 1 requests missing text group 1 from speaker 24510, skipped.",
+      "[sql.sql] SmartAIMgr: Entry -84714 SourceType 0 Event 0 Action 1 requests missing text group 1 from speaker 23696, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 15526 SourceType 0 Event 2 Action 1 requests missing text group 0 from speaker 15526, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 18938 SourceType 0 Event 2 Action 1 requests missing text group 0 from speaker 18938, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 19354 SourceType 0 Event 4 Action 1 requests missing text group 1 from speaker 19354, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 23669 SourceType 0 Event 3 Action 1 requests missing text group 0 from speaker 23669, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 25730 SourceType 0 Event 10 Action 1 requests missing text group 3 from speaker 25730, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 25730 SourceType 0 Event 11 Action 1 requests missing text group 4 from speaker 25730, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 25730 SourceType 0 Event 15 Action 1 requests missing text group 5 from speaker 25730, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 25730 SourceType 0 Event 16 Action 1 requests missing text group 6 from speaker 25730, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 25730 SourceType 0 Event 23 Action 1 requests missing text group 7 from speaker 25730, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 25730 SourceType 0 Event 9 Action 1 requests missing text group 2 from speaker 25730, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 27857 SourceType 0 Event 15 Action 1 requests missing text group 0 from speaker 32820, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 27857 SourceType 0 Event 16 Action 1 requests missing text group 0 from speaker 32820, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 27857 SourceType 0 Event 17 Action 1 requests missing text group 0 from speaker 32820, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 27857 SourceType 0 Event 18 Action 1 requests missing text group 0 from speaker 32820, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 30284 SourceType 0 Event 5 Action 1 requests missing text group 0 from speaker 30284, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 30474 SourceType 0 Event 8 Action 1 requests missing text group 2 from speaker 30474, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 3304100 SourceType 9 Event 0 Action 41 uses min/max params wrong (50/0), skipped.",
+      "[sql.sql] SmartAIMgr: Entry 43336 SourceType 0 Event 8 Action 1 requests missing text group 0 from speaker 51409, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 44954 SourceType 0 Event 2 Action 1 requests missing text group 0 from speaker 44954, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 4522801 SourceType 9 Event 8 Action 15 SpecialFlags for Quest entry 27195 does not include FLAGS_EXPLORATION_OR_EVENT(2), skipped.",
+      "[sql.sql] SmartAIMgr: Entry 46134 SourceType 0 Event 20 Action 1 requests missing text group 0 from speaker 46134, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 46402 SourceType 0 Event 20 Action 1 requests missing text group 0 from speaker 46402, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 46425 SourceType 0 Event 11 Action 1 requests missing text group 3 from speaker 46425, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 46425 SourceType 0 Event 8 Action 1 requests missing text group 2 from speaker 46425, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 48012 SourceType 0 Event 20 Action 1 requests missing text group 0 from speaker 48012, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 54924 SourceType 0 Event 5 Action 1 requests missing text group 1 from speaker 54924, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 54944 SourceType 0 Event 5 Action 1 requests missing text group 1 from speaker 54944, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 55488 SourceType 0 Event 0 Action 1 requests missing text group 0 from speaker 55488, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 57760 SourceType 0 Event 9 Action 1 requests missing text group 0 from speaker 57760, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 66844 SourceType 0 Event 16 Action 1 requests missing text group 0 from speaker 66255, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 69267 SourceType 0 Event 1 Action 1 requests missing text group 0 from speaker 69267, skipped.",
+      "[sql.sql] SmartAIMgr: Entry 69305 SourceType 0 Event 1 Action 1 requests missing text group 0 from speaker 69305, skipped.",
+      "[sql.sql] SmartAIMgr: Not handled target_type(50), Entry 47488 SourceType 0 Event 5 Action 41, skipped.",
+      "[sql.sql] SmartScript: Entry 1538 has events but no events added to list because of instance flags.",
+      "[sql.sql] SmartScript: Entry 27359 SourceType 0 Event 5 Action TALK TargetType 12 requests missing creature_text Entry 27160 Group 0 (GUID 113166 Map 571).",
+      "[sql.sql] SmartScript: Entry 27359 SourceType 0 Event 5 Action TALK TargetType 12 requests missing creature_text Entry 27318 Group 0 (GUID 120666 Map 571).",
+      "[sql.sql] SourceEntry 35431 in `condition` table, does not exist in `creature_template`, ignoring.",
+      "[sql.sql] SourceEntry 35433 in `condition` table, does not exist in `creature_template`, ignoring.",
+      "[sql.sql] SourceType 1, SourceEntry 4294966519 in `condition` table, does not exist in `item_template`, ignoring.",
+      "[sql.sql] SourceType 1, SourceEntry 4294966558 in `condition` table, does not exist in `item_template`, ignoring.",
+      "[sql.sql] Spell (Id: 49986, effIndex: 0) listed in `spell_target_position` does not have target TARGET_DEST_DB (17).",
+      "[sql.sql] Spell (Id: 65042, effIndex: 0) listed in `spell_target_position` does not have target TARGET_DEST_DB (17).",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 11789 Type: 28) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 12752 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 12976 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 12993 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 6803 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7315 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7318 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7319 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7320 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7361 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7363 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7579 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7583 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7587 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7590 Type: 28) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7593 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `achievement_criteria_data` (Entry: 7598 Type: 0) has data for non-supported data type (12), ignored.",
+      "[sql.sql] Table `command` have not existed command 'guard delete', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard global', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard handle', skip.",
+      "[sql.sql] Table `command` have not existed command 'guard player', skip.",
+      "[sql.sql] Table `command` have not existed command 'isengard daily', skip.",
+      "[sql.sql] Table `command` have not existed command 'itemlog', skip.",
+      "[sql.sql] Table `command` have not existed command 'npc set spawndist', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken add', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken reload', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken remove', skip.",
+      "[sql.sql] Table `command` have not existed command 'quest broken', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_creature', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_creature_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_gameobject', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_gossip_menu_option', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_item', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_npc_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_page_text', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_points_of_interest', skip.",
+      "[sql.sql] Table `command` have not existed command 'reload locales_quest', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate restoreviewpoint', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate setviewpoint', skip.",
+      "[sql.sql] Table `command` have not existed command 'spectate', skip.",
+      "[sql.sql] Table `vehicle_template_accessory`: creature template entry 54499 has no data in npc_spellclick_spells",
+      "[sql.sql] WaypointMovementGenerator::LoadPath: creature Infested Bear (Entry: 47204 GUID: 175727 DB GUID: 175727) doesn't have waypoint path id: 0"
+    ],
+    "new": [
+      "[sql.sql] Creature (GUID: 564238) does not exist but has a record in `creature_addon`",
+      "[sql.sql] Creature (GUID: 564239) does not exist but has a record in `creature_addon`",
+      "[sql.sql] Creature (GUID: 564240) does not exist but has a record in `creature_addon`",
+      "[sql.sql] ObjectEntryGuid condition has non existing creature guid (306012), skipped",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 10399 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 19991 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 23575 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 25220 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 35077 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 39947 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 39951 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44592 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44593 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44615 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44821 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44825 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44882 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44883 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44884 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44893 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44914 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44915 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44916 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44935 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44941 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44942 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44951 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 44958 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 45003 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 45051 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 45057 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 45228 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 45318 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 4542 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 45474 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 46714 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 46775 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 53472 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 57802 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 59969 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60030 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60032 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60188 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60769 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 60826 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 61069 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 61070 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 61376 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62296 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62307 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62680 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62755 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62814 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 62863 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63102 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63103 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63104 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63206 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 63369 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 64008 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 64485 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 7357 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature entry 8567 has SmartAI scripts, but its AIName is not 'SmartAI'",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307216) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307217) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307218) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307220) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307222) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307223) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307225) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307226) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307231) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307232) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307234) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307235) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307237) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307239) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307241) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307243) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307247) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307249) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307250) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307253) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307257) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307260) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307263) does not exist, skipped loading.",
+      "[sql.sql] SmartAIMgr::LoadSmartAIFromDB: Creature guid (307264) does not exist, skipped loading.",
+      "[sql.sql] There is no waypoint which links to the waypoint script 486",
+      "[sql.sql] There is no waypoint which links to the waypoint script 502"
+    ]
+  },
+  "all_content_fixed": false
+}

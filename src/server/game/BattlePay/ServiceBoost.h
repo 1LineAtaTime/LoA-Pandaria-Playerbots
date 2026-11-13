@@ -95,7 +95,7 @@ class CharacterBooster
         ObjectGuid::LowType GetGuidLow() const { return m_charBoostInfo.charGuid.GetCounter(); }
         void HandleCharacterBoost();
         bool IsBoosting(ObjectGuid::LowType lowGuid) const { return m_boosting && (m_charBoostInfo.charGuid.GetCounter() == lowGuid); }
-        void SetBoostedCharInfo(ObjectGuid guid, uint32 action, uint32 specialization, bool allianceFaction);
+        bool SetBoostedCharInfo(ObjectGuid guid, uint32 action, uint32 specialization, bool allianceFaction);
         void Update(uint32 diff);
         void SendCharBoostPacket(PreparedItemsMap items) const;
 
@@ -103,7 +103,9 @@ class CharacterBooster
         void _GetCharBoostItems(PreparedItemsMap& itemsToMail, PreparedItemsMap& itemsToEquip) const;
         std::string _EquipItems(CharacterDatabaseTransaction trans, PreparedItemsMap itemsToEquip) const;
         void _GetBoostedCharacterData(uint8& raceId, uint8& classId, uint8& level) const;
-        void _HandleCharacterBoost() const;
+        bool _HandleCharacterBoost();
+        bool HasRecoverySchema() const;
+        void RecoverBoost();
         void _LearnSpells(CharacterDatabaseTransaction trans) const;
         void _PrepareInventory(CharacterDatabaseTransaction trans) const;
         uint32 _PrepareMail(CharacterDatabaseTransaction trans, std::string const subject, std::string const body) const;
@@ -120,6 +122,10 @@ class CharacterBooster
         uint32 m_timer;
         bool m_boosting;
         bool m_sendPacket;
+        bool m_completed = false;
+        uint64 m_useId = 0;
+        uint32 m_recoveryTimer = 0;
+        mutable bool m_buildFailed = false;
 };
 
 #endif

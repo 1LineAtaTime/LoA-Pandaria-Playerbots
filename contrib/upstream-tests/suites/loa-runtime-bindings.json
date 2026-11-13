@@ -1,0 +1,70 @@
+{
+  "name": "loa-runtime-bindings-20261108",
+  "checks": [
+    {
+      "id": "opening_liam_binding",
+      "query": "SELECT entry,ScriptName FROM creature_template WHERE entry=34850",
+      "expected_rows": [
+        [
+          "34850",
+          "npc_prince_liam_greymane"
+        ]
+      ]
+    },
+    {
+      "id": "later_liam_binding",
+      "query": "SELECT entry,ScriptName FROM creature_template WHERE entry=36451",
+      "expected_rows": [
+        [
+          "36451",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "opening_liam_dialogue",
+      "query": "SELECT GroupID,COUNT(*) FROM creature_text WHERE CreatureID=34850 AND GroupID IN (0,1,2) GROUP BY GroupID",
+      "expected_rows": [
+        [
+          "0",
+          "1"
+        ],
+        [
+          "1",
+          "1"
+        ],
+        [
+          "2",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "unbound_smartai_restored",
+      "query": "SELECT entry,AIName FROM creature_template WHERE entry IN (25220,46714,46775) ORDER BY entry",
+      "expected_rows": [
+        [
+          "25220",
+          "SmartAI"
+        ],
+        [
+          "46714",
+          "SmartAI"
+        ],
+        [
+          "46775",
+          "SmartAI"
+        ]
+      ]
+    },
+    {
+      "id": "opening_liam_native_owns_speech",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=34850 AND source_type=0",
+      "expected_rows": [
+        [
+          "0"
+        ]
+      ]
+    }
+  ]
+}

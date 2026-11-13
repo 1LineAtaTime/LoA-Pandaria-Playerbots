@@ -1,0 +1,41 @@
+{
+  "module": "pet",
+  "local_baseline": "9c32347f1",
+  "upstream": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "source_sha256": "8816c2e877e12b92dd07acb67087d68e62bb9880b596f670ffd49fe3842b5788",
+  "upstream_names": [
+    "spell_gen_pet_calculate"
+  ],
+  "unregistered_legacy_classes_omitted": [
+    "spell_warl_pet_scaling_01",
+    "spell_warl_pet_scaling_02",
+    "spell_warl_pet_scaling_03",
+    "spell_warl_pet_scaling_04",
+    "spell_warl_pet_scaling_05",
+    "spell_warl_pet_passive",
+    "spell_warl_pet_passive_damage_done",
+    "spell_sha_pet_scaling_04",
+    "spell_hun_pet_scaling_01",
+    "spell_hun_pet_scaling_02",
+    "spell_hun_pet_scaling_03",
+    "spell_hun_pet_scaling_04",
+    "spell_hun_pet_passive_crit",
+    "spell_hun_pet_passive_damage_done",
+    "spell_dk_pet_scaling_01",
+    "spell_dk_pet_scaling_02",
+    "spell_dk_pet_scaling_03",
+    "spell_dk_rune_weapon_scaling_02"
+  ],
+  "local_overridden": [
+    "spell_gen_pet_calculate"
+  ],
+  "local_only_retained": [],
+  "api_adaptations": [
+    "Skyfire namespace to Trinity",
+    "override keyword",
+    "float aura amount callbacks"
+  ],
+  "local_original_registrations": [
+    "spell_gen_pet_calculate"
+  ]
+}

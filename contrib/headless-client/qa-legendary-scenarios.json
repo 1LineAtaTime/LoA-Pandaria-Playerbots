@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "loa-legendary-gossip-v1",
+  "expectation_source": "Timeless Eye item 69238, quest 29193; only gossip/item behavior tested. Offline level/location/active quest are declared test fixtures.",
+  "scenarios": [
+    {
+      "id": "timeless-eye-once",
+      "mode": "gossip_item",
+      "race": 1,
+      "class_id": 8,
+      "quest": 29193,
+      "npc": 15192,
+      "item": 69238,
+      "expected_count": 1,
+      "seed_quest": true,
+      "fixture_level": 85,
+      "option_text": "Take the Timeless Eye"
+    },
+    {
+      "id": "timeless-eye-requires-quest",
+      "mode": "gossip_item",
+      "race": 1,
+      "class_id": 8,
+      "quest": 29193,
+      "npc": 15192,
+      "item": 69238,
+      "expected_count": 0,
+      "seed_quest": false,
+      "fixture_level": 85,
+      "option_text": "Take the Timeless Eye"
+    }
+  ]
+}

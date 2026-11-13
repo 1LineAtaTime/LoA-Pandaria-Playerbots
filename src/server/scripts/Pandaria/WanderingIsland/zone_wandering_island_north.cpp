@@ -20,6 +20,9 @@
 #include "ScriptedEscortAI.h"
 #include "SpellScript.h"
 #include "Object.h"
+#include "ObjectAccessor.h"
+#include "Player.h"
+#include "JaominDuelPolicy.h"
 
 class npc_master_shang_xi : public CreatureScript
 {
@@ -174,136 +177,211 @@ private:
     TaskScheduler _scheduler;
 };
 
+// Adapted from SkyFire's Jaomin encounter and follow-up movement fixes. The
+// quest uses proximity dialogue, not a gossip menu. Keep one owner for the
+// encounter and its spell-summoned hawk; never run the old SmartAI in parallel.
 class boss_jaomin_ro : public CreatureScript
 {
-    public:
-        boss_jaomin_ro() : CreatureScript("boss_jaomin_ro") { }
+public:
+    boss_jaomin_ro() : CreatureScript("boss_jaomin_ro") { }
 
-        struct boss_jaomin_roAI : public ScriptedAI
+    struct boss_jaomin_roAI : public ScriptedAI
+    {
+        boss_jaomin_roAI(Creature* creature) : ScriptedAI(creature), summons(creature) { }
+
+        enum Events
         {
-            boss_jaomin_roAI(Creature* creature) : ScriptedAI(creature) { }
-
-            enum eEvents
-            {
-                EVENT_JAOMIN_JUMP   = 1,
-                EVENT_HIT_CIRCLE    = 2,
-                EVENT_FALCON        = 3,
-                EVENT_RESET         = 4,
-                EVENT_CHECK_AREA    = 5,
-            };
-
-            EventMap events;
-            bool isInFalcon;
-
-            void JustEngagedWith(Unit* /*who*/) override
-            {
-                events.ScheduleEvent(EVENT_JAOMIN_JUMP, 1000);
-                events.ScheduleEvent(EVENT_HIT_CIRCLE, 2000);
-                events.ScheduleEvent(EVENT_CHECK_AREA, 2500);
-            }
-
-            void Reset() override
-            {
-                isInFalcon = false;
-                me->SetDisplayId(39755);
-                me->SetFaction(2357); //mechant!
-            }
-
-            void MoveInLineOfSight(Unit*  who) override
-            {
-                Player * const player = who->ToPlayer();
-                if (!player)
-                    return;
-
-                if (player->GetQuestStatus(29409) != QUEST_STATUS_INCOMPLETE)
-                    return;
-
-                if (who->GetDistance(me) < 15.f)
-                {
-                    if (me->GetStandState() != UNIT_STAND_STATE_STAND)
-                    {
-                        Talk(0);
-                        me->SetStandState(UNIT_STAND_STATE_STAND);
-                    }
-                }
-            }
-
-            void DamageTaken(Unit* /*attacker*/, uint32& damage) override
-            {
-                if (me->HealthBelowPctDamaged(30, damage) && !isInFalcon)
-                {
-                    isInFalcon = true;
-                    me->SetDisplayId(39796); //faucon
-                    events.ScheduleEvent(EVENT_FALCON, 1000);
-                    events.CancelEvent(EVENT_JAOMIN_JUMP);
-                    events.CancelEvent(EVENT_HIT_CIRCLE);
-                }
-
-                if (me->HealthBelowPctDamaged(5, damage))
-                {
-                    me->SetDisplayId(39755);
-
-                    std::list<Player*> playerList;
-                    GetPlayerListInGrid(playerList, me, 10.0f);
-                    for (auto&& player: playerList)
-                        player->KilledMonsterCredit(me->GetEntry(), ObjectGuid::Empty);
-
-                    Talk(1);
-                    EnterEvadeMode();
-                    me->SetFaction(35);
-                    me->SetFullHealth();
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
-                    events.Reset();
-                    events.ScheduleEvent(EVENT_RESET, 5000);
-                    damage = 0;
-                }
-
-                if (damage > me->GetHealth())
-                    damage = 0;
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                events.Update(diff);
-
-                while (uint32 eventId = events.ExecuteEvent())
-                {
-                    switch (eventId)
-                    {
-                        case EVENT_JAOMIN_JUMP: // on monte
-                            if (me->GetVictim())
-                                me->CastSpell(me->GetVictim(), 108938, true);
-                            events.ScheduleEvent(EVENT_JAOMIN_JUMP, 30000);
-                            break;
-                        case EVENT_HIT_CIRCLE: // baffe
-                            if (me->GetVictim())
-                                me->CastSpell(me->GetVictim(), 119301, true);
-                            events.ScheduleEvent(EVENT_HIT_CIRCLE, 3000);
-                            break;
-                        case EVENT_FALCON: // attaque du faucon
-                            if (me->GetVictim())
-                                me->CastSpell(me->GetVictim(), 108935, true);
-                            events.ScheduleEvent(EVENT_FALCON, 4000);
-                            break;
-                        case EVENT_RESET: // remechant
-                            Reset();
-                            break;
-                        case EVENT_CHECK_AREA:
-                            if (me->GetAreaId() != 5843) // Grotte Paisible
-                                Reset();
-                            break;
-                    }
-                }
-
-                if (UpdateVictim())
-                    DoMeleeAttackIfReady();
-            }
+            EVENT_JUMP_UP = 1, EVENT_JUMP_LAND, EVENT_HAWK, EVENT_HAWK_CHARGE,
+            EVENT_HAWK_EXIT, EVENT_HAWK_STOP, EVENT_RESET
         };
+        EventMap events;
+        SummonList summons;
+        std::set<ObjectGuid> participants;
+        ObjectGuid hawkGuid;
+        bool introduced = false;
+        bool defeated = false;
 
-        CreatureAI* GetAI(Creature* creature) const override
+        void Reset() override
         {
-            return new boss_jaomin_roAI(creature);
+            events.Reset();
+            me->ExitVehicle();
+            summons.DespawnAll();
+            hawkGuid.Clear();
+            participants.clear();
+            introduced = defeated = false;
+            me->RemoveAurasDueToSpell(108971);
+            me->RemoveAurasDueToSpell(123930);
+            me->SetDisplayId(39755);
+            me->SetFaction(2357); // Sparring rival; faction2104 is friendly to players.
+            me->SetReactState(REACT_DEFENSIVE);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            me->SetStandState(UNIT_STAND_STATE_SIT);
         }
+
+        static bool IsChallenger(Player* player)
+        {
+            return player && player->IsAlive() && player->GetQuestStatus(29409) == QUEST_STATUS_INCOMPLETE;
+        }
+
+        void MoveInLineOfSight(Unit* who) override
+        {
+            Player* player = who ? who->ToPlayer() : nullptr;
+            if (!introduced && !defeated && IsChallenger(player) && me->IsWithinDistInMap(player, 15.f))
+            {
+                introduced = true;
+                me->SetStandState(UNIT_STAND_STATE_STAND);
+                Talk(0, player);
+            }
+        }
+
+        void JustEngagedWith(Unit* who) override
+        {
+            Player* player = who ? who->GetCharmerOrOwnerPlayerOrPlayerItself() : nullptr;
+            if (defeated || !IsChallenger(player))
+            {
+                EnterEvadeMode();
+                return;
+            }
+            participants.insert(player->GetGUID());
+            introduced = true;
+            me->SetStandState(UNIT_STAND_STATE_STAND);
+            events.Reset();
+            events.ScheduleEvent(EVENT_JUMP_UP, 2000);
+        }
+
+        void DamageTaken(Unit* attacker, uint32& damage) override
+        {
+            Player* player = attacker ? attacker->GetCharmerOrOwnerPlayerOrPlayerItself() : nullptr;
+            if (defeated || !IsChallenger(player))
+            {
+                damage = 0;
+                return;
+            }
+            participants.insert(player->GetGUID());
+            if (!JaominDuelPolicy::IsDefeatingHit(me->GetHealth(), me->GetMaxHealth(), damage))
+                return;
+
+            // Complete before applying the threshold/lethal hit. This guard is
+            // set first so periodic damage and pet hits cannot award twice.
+            defeated = true;
+            damage = 0;
+            events.Reset();
+            for (ObjectGuid const& guid : participants)
+                if (Player* participant = ObjectAccessor::GetPlayer(*me, guid))
+                    if (IsChallenger(participant) && me->IsWithinDistInMap(participant, 40.f))
+                        participant->RewardPlayerAndGroupAtEvent(54611, me);
+
+            me->ExitVehicle();
+            summons.DespawnAll();
+            hawkGuid.Clear();
+            me->InterruptNonMeleeSpells(true);
+            me->RemoveAurasDueToSpell(108971);
+            me->RemoveAurasDueToSpell(123930);
+            me->CombatStop(true);
+            me->GetThreatManager().ClearAllThreat();
+            me->SetFaction(35);
+            me->SetReactState(REACT_PASSIVE);
+            me->SetFullHealth();
+            me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+            Talk(1, player);
+            events.ScheduleEvent(EVENT_RESET, 5000);
+        }
+
+        void JustSummoned(Creature* summon) override
+        {
+            summons.Summon(summon);
+            if (summon->GetEntry() != 57750)
+                return;
+            hawkGuid = summon->GetGUID();
+            summon->SetDisplayId(39796);
+            summon->SetReactState(REACT_PASSIVE);
+            summon->SetCanFly(true);
+            summon->SetDisableGravity(true);
+            summon->DespawnOrUnsummon(6000);
+            me->EnterVehicle(summon, 0);
+        }
+
+        void SummonedCreatureDespawn(Creature* summon) override
+        {
+            summons.Despawn(summon);
+            if (hawkGuid == summon->GetGUID())
+                hawkGuid.Clear();
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            // Process the post-victory reset even though combat has stopped.
+            if (!defeated && !UpdateVictim())
+                return;
+            events.Update(diff);
+            while (uint32 event = events.ExecuteEvent())
+            {
+                switch (event)
+                {
+                    case EVENT_RESET:
+                        EnterEvadeMode();
+                        return;
+                    case EVENT_JUMP_UP:
+                        // Casting108938 and adding a second scripted jump caused
+                        // an upstream lag spike. Launch exactly one ascent here.
+                        me->GetMotionMaster()->MoveJump(me->GetPositionX(), me->GetPositionY(),
+                            me->GetPositionZ() + 10.f, 20.f, 20.f);
+                        events.ScheduleEvent(EVENT_JUMP_LAND, 2500);
+                        break;
+                    case EVENT_JUMP_LAND:
+                        if (Unit* victim = me->GetVictim())
+                        {
+                            me->GetMotionMaster()->MoveJump(victim->GetPositionX(), victim->GetPositionY(),
+                                victim->GetPositionZ(), 20.f, 20.f);
+                            me->CastSpell(me, 108937, true); // Native area damage and knockback.
+                        }
+                        events.ScheduleEvent(EVENT_HAWK, 10000);
+                        break;
+                    case EVENT_HAWK:
+                        me->CastSpell(me, 108955, true); // The spell summons the hawk; do not duplicate it.
+                        events.ScheduleEvent(EVENT_HAWK_CHARGE, 1000);
+                        break;
+                    case EVENT_HAWK_CHARGE:
+                        if (Creature* hawk = ObjectAccessor::GetCreature(*me, hawkGuid))
+                            if (Unit* victim = me->GetVictim())
+                                if (hawk->GetExactDist(victim) > 0.1f)
+                                    hawk->GetMotionMaster()->MoveCharge(victim->GetPositionX(), victim->GetPositionY(), victim->GetPositionZ());
+                        events.ScheduleEvent(EVENT_HAWK_EXIT, 1000);
+                        break;
+                    case EVENT_HAWK_EXIT:
+                        me->ExitVehicle();
+                        summons.DespawnAll();
+                        hawkGuid.Clear();
+                        me->CastSpell(me, 108971, true);
+                        events.ScheduleEvent(EVENT_HAWK_STOP, 2000);
+                        break;
+                    case EVENT_HAWK_STOP:
+                        me->RemoveAurasDueToSpell(108971);
+                        events.ScheduleEvent(EVENT_JUMP_UP, 10000);
+                        break;
+                }
+            }
+            if (!defeated && hawkGuid.IsEmpty())
+                DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override { return new boss_jaomin_roAI(creature); }
+};
+
+// Vehicle movement is owned by Jaomin. The legacy SmartAI also moved this
+// summon135 units upward and notified an incompatible SmartAI state machine.
+class npc_jaomin_ro_hawk : public CreatureScript
+{
+public:
+    npc_jaomin_ro_hawk() : CreatureScript("npc_jaomin_ro_hawk") { }
+    struct HawkAI : public ScriptedAI
+    {
+        HawkAI(Creature* creature) : ScriptedAI(creature) { }
+        void Reset() override { me->SetReactState(REACT_PASSIVE); }
+        void UpdateAI(uint32) override { }
+    };
+    CreatureAI* GetAI(Creature* creature) const override { return new HawkAI(creature); }
 };
 
 class npc_attacker_dimwind : public CreatureScript
@@ -1116,6 +1194,7 @@ void AddSC_wandering_island_north()
     new npc_master_shang_xi();
     RegisterCreatureAI(npc_training_target);
     new boss_jaomin_ro();
+    new npc_jaomin_ro_hawk();
     new npc_attacker_dimwind();
     new npc_min_dimwind();
     new npc_aysa_lake_escort();

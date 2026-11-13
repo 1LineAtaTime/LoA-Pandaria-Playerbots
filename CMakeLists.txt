@@ -94,3 +94,13 @@ if (USE_MODULES)
 	# add core modules
 	add_subdirectory(modules)
 endif()
+
+option(BUILD_DATABASE_TESTS "Build isolated database version/connector tests" OFF)
+if(BUILD_DATABASE_TESTS)
+  enable_testing()
+  add_subdirectory(contrib/database-tests)
+  add_subdirectory(contrib/battlepay-tests)
+  add_subdirectory(contrib/auction-tests)
+  add_subdirectory(contrib/companion-tests)
+  add_subdirectory(contrib/server-cli-tests)
+endif()

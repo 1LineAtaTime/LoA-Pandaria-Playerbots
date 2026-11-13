@@ -1,0 +1,2760 @@
+{
+  "name": "starting-training-20261105",
+  "coverage": "Data contracts only, not quest playthroughs",
+  "checks": [
+    {
+      "id": "training-2383-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=2383;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-2383-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=2383;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3087-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3087;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3087-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3087;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3088-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3088;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3088-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3088;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3089-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3089;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3089-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3089;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3090-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3090;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3090-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3090;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3091-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3091;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-3091-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3091;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3091-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3091;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3092-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3092;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-3092-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3092;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3092-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3092;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3093-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3093;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-3093-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3093;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3093-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3093;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3094-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3094;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-3094-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3094;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3094-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3094;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3100-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3100;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3100-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3100;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3101-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3101;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3101-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3101;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3102-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3102;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3102-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3102;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3103-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3103;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3103-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3103;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3104-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3104;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3104-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3104;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3105-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3105;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3105-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3105;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3106-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3106;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3106-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3106;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3107-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3107;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3107-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3107;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3108-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3108;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3108-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3108;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3109-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3109;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3109-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3109;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3110-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3110;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3110-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3110;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3115-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3115;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3115-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3115;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3116-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3116;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-3116-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3116;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3116-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3116;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3117-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3117;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-3117-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3117;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3117-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3117;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3118-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3118;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-3118-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3118;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3118-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3118;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3119-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3119;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-3119-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3119;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3119-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3119;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3120-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=3120;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-3120-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=3120;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3120-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=3120;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8328-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=8328;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8328-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=8328;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8329-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=8329;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8329-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=8329;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8563-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=8563;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8563-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=8563;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8564-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=8564;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-8564-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=8564;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-9392-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=9392;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-9392-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=9392;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-9393-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=9393;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-9393-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=9393;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-9676-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=9676;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-9676-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=9676;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10068-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=10068;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10068-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=10068;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10069-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=10069;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10069-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=10069;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10070-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=10070;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10070-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=10070;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10071-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=10071;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10071-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=10071;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10072-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=10072;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10072-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=10072;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10073-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=10073;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-10073-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=10073;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24494-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24494;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24494-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24494;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24496-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24496;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24496-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24496;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24526-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24526;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24526-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24526;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24527-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24527;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24527-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24527;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24528-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24528;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24528-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24528;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24530-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24530;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24530-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24530;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24531-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24531;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24531-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24531;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24532-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24532;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24532-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24532;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24533-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=24533;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-24533-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=24533;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25138-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25138;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25138-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25138;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25139-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25139;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25139-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25139;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25141-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25141;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25141-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25141;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25143-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25143;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25143-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25143;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25145-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25145;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25145-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25145;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25147-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25147;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25147-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25147;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25149-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=25149;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-25149-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=25149;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26197-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26197;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26197-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26197;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26197-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26197;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26198-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26198;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26198-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26198;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26198-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26198;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26199-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26199;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26199-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26199;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26199-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26199;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26200-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26200;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26200-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26200;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26200-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26200;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26201-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26201;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26201-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26201;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26201-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26201;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26202-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26202;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26202-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26202;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26202-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26202;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26203-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26203;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26203-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26203;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26203-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26203;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26204-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26204;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26204-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26204;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26204-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26204;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26206-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26206;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26206-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26206;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26206-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26206;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26207-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26207;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-26207-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26207;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26207-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26207;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26841-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26841;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26841-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26841;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26841-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26841;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26904-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26904;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26904-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26904;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26910-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26910;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26910-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26910;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26913-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26913;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26913-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26913;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26914-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26914;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26914-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26914;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26915-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26915;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26915-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26915;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26916-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26916;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26916-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26916;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26917-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26917;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26917-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26917;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26918-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26918;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26918-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26918;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26919-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26919;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26919-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26919;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26940-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26940;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26940-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26940;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26940-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26940;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26945-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26945;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26945-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26945;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26945-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26945;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26946-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26946;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26946-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26946;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26946-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26946;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26947-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26947;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26947-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26947;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26947-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26947;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26948-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26948;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26948-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26948;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26948-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26948;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26949-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=26949;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26949-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26949;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26949-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26949;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26958-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26958;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26958-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26958;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26963-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26963;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26963-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26963;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26966-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26966;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26966-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26966;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26968-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26968;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26968-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26968;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26969-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26969;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26969-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26969;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26970-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=26970;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-26970-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=26970;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27014-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27014;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27014-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27014;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27014-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27014;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27015-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27015;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27015-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27015;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27015-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27015;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27020-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27020;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27020-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27020;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27020-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27020;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27021-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27021;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27021-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27021;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27021-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27021;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27023-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27023;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27023-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27023;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27023-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27023;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27027-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27027;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27027-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27027;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27027-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27027;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27066-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27066;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27066-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27066;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27066-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27066;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27067-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=27067;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-27067-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27067;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27067-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27067;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27091-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=27091;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27091-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=27091;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31135-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31135;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-31135-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31135;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31135-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31135;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31138-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31138;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-31138-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31138;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31138-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31138;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31141-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31141;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31141-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31141;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31142-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31142;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31142-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31142;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31150-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31150;",
+      "expected_rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "id": "training-31150-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31150;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31150-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31150;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31151-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31151;",
+      "expected_rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "id": "training-31151-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31151;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31151-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31151;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31156-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31156;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31156-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31156;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31157-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31157;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31157-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31157;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31165-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31165;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-31165-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31165;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31165-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31165;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31166-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31166;",
+      "expected_rows": [
+        [
+          "32"
+        ]
+      ]
+    },
+    {
+      "id": "training-31166-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31166;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31166-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31166;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31168-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31168;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-31168-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31168;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31168-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31168;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31169-AllowableRaces",
+      "query": "SELECT `AllowableRaces` FROM `quest_template` WHERE `ID`=31169;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-31169-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31169;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31169-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31169;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31170-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31170;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31170-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31170;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31171-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31171;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31171-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31171;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31173-MinLevel",
+      "query": "SELECT `MinLevel` FROM `quest_template` WHERE `ID`=31173;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-31173-QuestLevel",
+      "query": "SELECT `QuestLevel` FROM `quest_template` WHERE `ID`=31173;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-3091-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3091;",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "training-3092-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3092;",
+      "expected_rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "id": "training-3093-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3093;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-3094-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3094;",
+      "expected_rows": [
+        [
+          "1024"
+        ]
+      ]
+    },
+    {
+      "id": "training-3116-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3116;",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "training-3117-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3117;",
+      "expected_rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "id": "training-3118-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3118;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-3119-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3119;",
+      "expected_rows": [
+        [
+          "16"
+        ]
+      ]
+    },
+    {
+      "id": "training-3120-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=3120;",
+      "expected_rows": [
+        [
+          "1024"
+        ]
+      ]
+    },
+    {
+      "id": "training-26197-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26197;",
+      "expected_rows": [
+        [
+          "128"
+        ]
+      ]
+    },
+    {
+      "id": "training-26198-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26198;",
+      "expected_rows": [
+        [
+          "128"
+        ]
+      ]
+    },
+    {
+      "id": "training-26199-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26199;",
+      "expected_rows": [
+        [
+          "16"
+        ]
+      ]
+    },
+    {
+      "id": "training-26200-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26200;",
+      "expected_rows": [
+        [
+          "16"
+        ]
+      ]
+    },
+    {
+      "id": "training-26201-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26201;",
+      "expected_rows": [
+        [
+          "256"
+        ]
+      ]
+    },
+    {
+      "id": "training-26202-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26202;",
+      "expected_rows": [
+        [
+          "256"
+        ]
+      ]
+    },
+    {
+      "id": "training-26203-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26203;",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "training-26204-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26204;",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "training-26206-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26206;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26207-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26207;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26841-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26841;",
+      "expected_rows": [
+        [
+          "128"
+        ]
+      ]
+    },
+    {
+      "id": "training-26940-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26940;",
+      "expected_rows": [
+        [
+          "128"
+        ]
+      ]
+    },
+    {
+      "id": "training-26945-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26945;",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "training-26946-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26946;",
+      "expected_rows": [
+        [
+          "8"
+        ]
+      ]
+    },
+    {
+      "id": "training-26947-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26947;",
+      "expected_rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "id": "training-26948-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26948;",
+      "expected_rows": [
+        [
+          "1024"
+        ]
+      ]
+    },
+    {
+      "id": "training-26949-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=26949;",
+      "expected_rows": [
+        [
+          "16"
+        ]
+      ]
+    },
+    {
+      "id": "training-27014-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27014;",
+      "expected_rows": [
+        [
+          "16"
+        ]
+      ]
+    },
+    {
+      "id": "training-27015-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27015;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27020-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27020;",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "training-27021-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27021;",
+      "expected_rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "id": "training-27023-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27023;",
+      "expected_rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "training-27027-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27027;",
+      "expected_rows": [
+        [
+          "64"
+        ]
+      ]
+    },
+    {
+      "id": "training-27066-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27066;",
+      "expected_rows": [
+        [
+          "16"
+        ]
+      ]
+    },
+    {
+      "id": "training-27067-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=27067;",
+      "expected_rows": [
+        [
+          "1024"
+        ]
+      ]
+    },
+    {
+      "id": "training-31135-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31135;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31138-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31138;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31150-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31150;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31151-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31151;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31165-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31165;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31166-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31166;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31168-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31168;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    },
+    {
+      "id": "training-31169-AllowableClasses",
+      "query": "SELECT `AllowableClasses` FROM `quest_template_addon` WHERE `ID`=31169;",
+      "expected_rows": [
+        [
+          "512"
+        ]
+      ]
+    }
+  ]
+}

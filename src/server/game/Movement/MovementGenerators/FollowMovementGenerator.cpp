@@ -20,6 +20,7 @@
 #include "CreatureAI.h"
 #include "MoveSpline.h"
 #include "MoveSplineInit.h"
+#include "MovementInputPolicy.h"
 #include "Optional.h"
 #include "PathGenerator.h"
 #include "Pet.h"
@@ -58,13 +59,8 @@ static bool PositionOkay(Unit* owner, Unit* target, float range, Optional<ChaseA
 // target's CURRENT speed, not the speed type it happens to be standing in.
 static float GetTargetSpeedInMotion(Unit* target)
 {
-    if (!target->movespline->Finalized())
-        return target->movespline->Velocity();
-
-    // ADAPTED: AC reads target->m_movementInfo.GetSpeedType(). This tree's MovementInfo has no speed-type
-    // accessor (Entities/Object/MovementInfo.h exposes only zspeed/sinAngle/cosAngle/xyspeed), so derive the
-    // walk/run split the same way the launch path below does via SetWalk(target->IsWalking()).
-    return target->GetSpeed(target->IsWalking() ? MOVE_WALK : MOVE_RUN);
+    return MovementInputPolicy::SelectFollowVelocity(!target->movespline->Finalized(),
+        target->movespline->Velocity(), target->GetSpeed(target->IsWalking() ? MOVE_WALK : MOVE_RUN));
 }
 
 // issue #221 / AC parity (TargetedMovementGenerator.cpp:498-523, applied at :747-749): pets and guardians
@@ -83,6 +79,8 @@ static Optional<float> GetFollowVelocity(Unit* owner, Unit* target, float destX,
     if (isPetLike || (owner->IsCreature() && target->IsCreature()))
     {
         speed = GetTargetSpeedInMotion(target);
+        if (!MovementInputPolicy::IsUsableVelocity(*speed))
+            return {}; // Let the ordinary movement-speed selection handle it.
 
         if (playerPet)
         {
@@ -281,7 +279,7 @@ bool FollowMovementGenerator::Update(Unit* owner, uint32 diff)
             init.SetWalk(target->IsWalking());
             if (followingMaster)
                 if (Optional<float> velocity = GetFollowVelocity(owner, target, x, y, followingMaster))
-                    init.SetVelocity(*velocity);
+                    init.SetVelocity(*velocity, __func__);
             init.SetFacing(target->GetOrientation());
             init.Launch();
         }

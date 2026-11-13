@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "name": "loa-reusable-workflows-v2",
+  "expectation_source": "Reviewed existing starter delivery contracts. Each workflow uses normal packets, observed actor visibility, persisted rewards and character re-entry. Combat verifies six server kill credits and persisted quest completion; reward turn-in is outside that combat contract.",
+  "scenarios": [
+    {
+      "id": "workflow-orc-delivery",
+      "mode": "workflow",
+      "race": 2,
+      "class_id": 4,
+      "quest": 25152,
+      "steps": [
+        {
+          "op": "approach",
+          "entry": 10176
+        },
+        {
+          "op": "gossip"
+        },
+        {
+          "op": "accept"
+        },
+        {
+          "op": "approach",
+          "entry": 3143
+        },
+        {
+          "op": "gossip"
+        },
+        {
+          "op": "turn_in"
+        }
+      ],
+      "expected_reward": {
+        "xp_delta": 40,
+        "money_delta": 0
+      },
+      "postconditions": {
+        "quest_state": "rewarded"
+      }
+    },
+    {
+      "id": "workflow-undead-delivery",
+      "mode": "workflow",
+      "race": 5,
+      "class_id": 4,
+      "quest": 24959,
+      "steps": [
+        {
+          "op": "approach",
+          "entry": 49044
+        },
+        {
+          "op": "gossip"
+        },
+        {
+          "op": "accept"
+        },
+        {
+          "op": "approach",
+          "entry": 1568
+        },
+        {
+          "op": "gossip"
+        },
+        {
+          "op": "turn_in"
+        }
+      ],
+      "expected_reward": {
+        "xp_delta": 10,
+        "money_delta": 4
+      },
+      "postconditions": {
+        "quest_state": "rewarded"
+      }
+    },
+    {
+      "id": "workflow-human-combat-completion",
+      "mode": "workflow",
+      "race": 1,
+      "class_id": 1,
+      "quest": 28766,
+      "steps": [
+        {
+          "op": "approach",
+          "entry": 197
+        },
+        {
+          "op": "gossip"
+        },
+        {
+          "op": "accept"
+        },
+        {
+          "op": "kill",
+          "entry": 49871,
+          "count": 6,
+          "timeout": 600
+        }
+      ],
+      "postconditions": {
+        "quest_state": "complete"
+      }
+    }
+  ]
+}

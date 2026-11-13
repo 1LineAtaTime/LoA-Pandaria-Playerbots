@@ -670,7 +670,44 @@ namespace
 			}
 		}
 
-		dtVlerp(closest, pmin, pmax, tmin);
+		// Some navmesh detail meshes have no boundary edges marked (or no
+		// detail triangles). In that case pmin/pmax were never assigned, and
+		// dtVlerp would dereference null pointers. Use the base polygon's
+		// perimeter as a fallback so the returned point stays on the mesh.
+		if (!pmin || !pmax)
+		{
+			const int nv = poly->vertCount;
+			if (nv >= 2 && nv <= DT_VERTS_PER_POLYGON)
+			{
+				for (int i = 0, j = nv - 1; i < nv; j = i++)
+				{
+					// Do not trust an invalid polygon vertex index.
+					if (poly->verts[j] >= tile->header->vertCount ||
+						poly->verts[i] >= tile->header->vertCount)
+						continue;
+
+					const float* v0 = &tile->verts[poly->verts[j] * 3];
+					const float* v1 = &tile->verts[poly->verts[i] * 3];
+					if (!dtVisfinite(v0) || !dtVisfinite(v1))
+						continue;
+
+					float t;
+					const float d = dtDistancePtSegSqr2D(pos, v0, v1, t);
+					if (d < dmin)
+					{
+						dmin = d;
+						tmin = t;
+						pmin = v0;
+						pmax = v1;
+					}
+				}
+			}
+		}
+
+		if (pmin && pmax)
+			dtVlerp(closest, pmin, pmax, tmin);
+		else
+			dtVcopy(closest, pos); // No usable polygon edge. Never dereference null.
 	}
 }
 

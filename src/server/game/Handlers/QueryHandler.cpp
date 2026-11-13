@@ -16,6 +16,7 @@
 */
 
 #include "Common.h"
+#include <cmath>
 #include "Language.h"
 #include "DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -28,6 +29,7 @@
 #include "Player.h"
 #include "UpdateMask.h"
 #include "NPCHandler.h"
+#include "GossipBroadcastId.h"
 #include "Pet.h"
 #include "MapManager.h"
 #include "Config.h"
@@ -544,38 +546,39 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     data << textID;
     data << uint32(64);                                 // size (8 * 4) * 2
 
-    // hackfix
-    if (!pGossip)
-    {
-        data << float(0);
-        for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-            data << float(0);
-
-        data << uint32(1);
-                            
-        for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-            data << uint32(0); 
-    }
-    else
-    {
-        data << float(pGossip->Options[0].Probability);
-        for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-            data << float(0);
-
-        //data << textID;    // should be a broadcast id   
-        if (pGossip->Options[0].BroadcastTextID > 0)
+    // WNPC holds eight probabilities followed by eight BroadcastText IDs.
+    // Sending broadcast 1 for legacy text replaces authored NPC dialogue with
+    // "Help help! I'm being repressed!". Serve legacy strings through distinct
+    // DB_REPLY hotfix records instead; retain all authored alternatives.
+    float probabilities[MAX_GOSSIP_TEXT_OPTIONS] = {};
+    uint32 broadcasts[MAX_GOSSIP_TEXT_OPTIONS] = {};
+    bool hasWeight = false;
+    unsigned first = MAX_GOSSIP_TEXT_OPTIONS;
+    if (pGossip)
+        for (unsigned i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; ++i)
         {
-            data << pGossip->Options[0].BroadcastTextID;
+            auto const& option = pGossip->Options[i];
+            if (!option.BroadcastTextID && option.Text_0.empty() && option.Text_1.empty())
+                continue;
+            broadcasts[i] = option.BroadcastTextID ? option.BroadcastTextID : GossipBroadcastId::Encode(textID, i);
+            if (!broadcasts[i])
+                continue;
+            if (first == MAX_GOSSIP_TEXT_OPTIONS)
+                first = i;
+            probabilities[i] = std::isfinite(option.Probability) && option.Probability > 0 ? option.Probability : 0;
+            hasWeight |= probabilities[i] > 0;
         }
-        else
-        {
-            data << uint32(1);
-        }
-                            
-        for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-            data << uint32(0); 
-
+    if (first == MAX_GOSSIP_TEXT_OPTIONS)
+    {
+        first = 0;
+        broadcasts[0] = GossipBroadcastId::Encode(0, 0); // neutral missing-text greeting
     }
+    if (!hasWeight)
+        probabilities[first] = 1.0f;
+    for (float probability : probabilities)
+        data << probability;
+    for (uint32 broadcast : broadcasts)
+        data << broadcast;
 
     data.WriteBit(1);                                   // has data
     data.FlushBits();

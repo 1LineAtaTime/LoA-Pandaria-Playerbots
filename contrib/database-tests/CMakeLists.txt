@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.16)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  project(PandariaDatabaseTests LANGUAGES CXX)
+endif()
+
+if(TARGET database)
+  add_executable(mmap_load_probe mmap_load_probe.cpp)
+  target_link_libraries(mmap_load_probe PRIVATE common)
+  add_executable(database_transaction_probe database_transaction_probe.cpp)
+  target_link_libraries(database_transaction_probe PRIVATE database common mysql)
+  add_executable(field_width_tests field_width_tests.cpp)
+  target_link_libraries(field_width_tests PRIVATE database common mysql)
+  add_test(NAME field_width_tests COMMAND field_width_tests)
+endif()
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+enable_testing()
+
+add_executable(database_version_tests database_version_tests.cpp)
+target_include_directories(database_version_tests PRIVATE ../../src/server/database/Database)
+add_test(NAME database_version_tests COMMAND database_version_tests)
+
+# Optional real-server probe, using exactly the connector selected by the user.
+if(MYSQL_INCLUDE_DIR AND MYSQL_LIBRARY)
+  add_executable(database_connector_probe database_connector_probe.cpp)
+  target_include_directories(database_connector_probe PRIVATE "${MYSQL_INCLUDE_DIR}" ../../src/server/database/Database)
+  target_link_libraries(database_connector_probe PRIVATE "${MYSQL_LIBRARY}")
+endif()

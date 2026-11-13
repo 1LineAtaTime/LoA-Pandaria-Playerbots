@@ -83,6 +83,8 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
     bool hasUnkMovementField = false;
     uint32 unkMovementLoopCounter = 0;
     Unit* caster = mover;
+    if (spellId == 72051 || spellId == 72013)
+        TC_LOG_DEBUG("network", "Artillery request spell=%u casterEntry=%u known=%u possessing=%u", spellId, caster->GetEntry(), uint32(caster->GetTypeId() == TYPEID_UNIT && caster->ToCreature()->HasSpell(spellId)), uint32(_player->isPossessing()));
 
     recvPacket >> slot >> bagIndex;
 
@@ -1126,8 +1128,9 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         && _player->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL)->m_spellInfo == spellInfo)
         return;
 
-    // can't use our own spells when we're in possession of another unit,
-    if (_player->isPossessing())
+    // Block the player's own spells while possessing another unit. The verified
+    // controlled creature/vehicle must still be allowed to cast its own spells.
+    if (caster == _player && _player->isPossessing())
         return;
 
     // auto-selection buff level base at target level (in spellInfo)

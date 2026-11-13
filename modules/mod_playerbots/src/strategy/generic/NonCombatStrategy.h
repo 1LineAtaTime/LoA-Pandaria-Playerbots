@@ -47,6 +47,7 @@ public:
     uint32 GetType() const override { return STRATEGY_TYPE_DPS; }
     NextAction** getDefaultActions() override;  // #527: AC "drink" 4.2 / "food" 4.1
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
 };
 
 /// AC MoveRandomStrategy: used only when new rpg is disabled.

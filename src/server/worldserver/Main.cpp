@@ -93,6 +93,37 @@ int m_ServiceStatus = -1;
 
 RealmNameMap realmNameStore;
 
+namespace
+{
+    // A process-local PID file cannot protect a character DB shared by two hosts.
+    // Keep this dedicated session alive: a pooled connection may reconnect or be
+    // borrowed by unrelated work and must not own the worldserver lease.
+    std::unique_ptr<CharacterDatabaseConnection> characterDatabaseLease;
+    std::unique_ptr<MySQLConnectionInfo> characterDatabaseLeaseInfo;
+
+    bool CheckCharacterDatabaseLease(char const* query)
+    {
+        if (!characterDatabaseLease)
+            return false;
+        std::unique_ptr<ResultSet> result(characterDatabaseLease->Query(query));
+        return result && result->NextRow() && result->Fetch()[0].GetUInt8() == 1;
+    }
+
+    bool AcquireCharacterDatabaseLease()
+    {
+        characterDatabaseLeaseInfo.reset(new MySQLConnectionInfo(*CharacterDatabase.GetConnectionInfo()));
+        characterDatabaseLease.reset(new CharacterDatabaseConnection(*characterDatabaseLeaseInfo, CONNECTION_SYNCH));
+        if (characterDatabaseLease->Open() != 0 || !CheckCharacterDatabaseLease(
+            "SELECT GET_LOCK(CONCAT('loa-world:', SHA1(DATABASE())), 0)"))
+        {
+            TC_LOG_ERROR("server.worldserver", "Cannot acquire exclusive character database lease. Another worldserver may be running against the same database; refusing startup before changing realm or player online state.");
+            return false;
+        }
+        return true;
+    }
+}
+
+
 class FreezeDetector
 {
 public:
@@ -137,12 +168,28 @@ extern int main(int argc, char** argv)
     auto configFile = fs::absolute(_TRINITY_CORE_CONFIG);
     std::string configService;
 
-    auto vm = GetConsoleArguments(argc, argv, configFile, configService);
+    variables_map vm;
+    try
+    {
+        vm = GetConsoleArguments(argc, argv, configFile, configService);
+    }
+    catch (std::exception const& error)
+    {
+        std::cerr << error.what() << "\n";
+        return 1;
+    }
     // exit if help or version is enabled
     if (vm.count("help") || vm.count("version"))
         return 0;
 
 #ifdef _WIN32
+    // A mouse selection in Command Prompt's QuickEdit mode pauses the process.
+    // Keep the other console input flags so the server CLI still works.
+    HANDLE consoleInput = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD consoleMode = 0;
+    if (GetConsoleMode(consoleInput, &consoleMode))
+        SetConsoleMode(consoleInput, (consoleMode | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE);
+
     // #912: AC worldserver Main.cpp - raise the Windows timer resolution to the device minimum (1 ms) for the process lifetime.
     // Without it a 1 ms MinWorldUpdateTime sleep lasts the default ~15.6 ms tick, so MoP's world loop never ran under ~15 ms
     // while AC's did (#650: MoP diffs sat at 15-16 ms, AC's at 4-12 ms); the two loops now share the same floor.
@@ -262,7 +309,10 @@ extern int main(int argc, char** argv)
 
     // Start the databases
     if (!StartDB())
+    {
+        StopDB();
         return 1;
+    }
 
     std::shared_ptr<void> dbHandle(nullptr, [](void*) { StopDB(); });
 
@@ -474,6 +524,7 @@ void WorldUpdateLoop()
 #ifdef PLAYERBOTS    
     PlayerbotsDatabase.WarnAboutSyncQueries(true);
 #endif
+    uint32 lastLeaseCheck = getMSTime();
     sWorld->OnStartup();
 
     ///- While we have not World::m_stopEvent, update the world
@@ -491,6 +542,19 @@ void WorldUpdateLoop()
             // sleep until enough time passes that we can update all timers
             std::this_thread::sleep_for(Milliseconds(sleepTime));
             continue;
+        }
+
+        if (getMSTimeDiff(lastLeaseCheck, realCurrTime) >= 5000)
+        {
+            lastLeaseCheck = realCurrTime;
+            // A reconnected session no longer owns the lock: fail closed rather
+            // than continue allocating IDs concurrently with a replacement world.
+            if (!CheckCharacterDatabaseLease("SELECT IS_USED_LOCK(CONCAT('loa-world:', SHA1(DATABASE()))) = CONNECTION_ID()"))
+            {
+                TC_LOG_ERROR("server.worldserver", "Character database lease lost; stopping worldserver to prevent concurrent writers.");
+                World::StopNow(ERROR_EXIT_CODE);
+                break;
+            }
         }
 
         sWorld->Update(diff);
@@ -662,6 +726,9 @@ bool StartDB()
         return false;
     }
 
+    if (!AcquireCharacterDatabaseLease())
+        return false;
+
     // Load realm names into a store
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST);
     PreparedQueryResult result = LoginDatabase.Query(stmt);
@@ -698,6 +765,8 @@ void StopDB()
     PlayerbotsDatabase.Close();
 #endif
 
+    characterDatabaseLease.reset();
+    characterDatabaseLeaseInfo.reset();
     MySQL::Library_End();
 }
 
@@ -716,6 +785,8 @@ void ClearOnlineAccounts()
 
 variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService)
 {
+    // Preserve whitespace in the shell's single --config argument.
+    std::string configPath;
     // Silences warning about configService not be used if the OS is not Windows
     (void)configService;
 
@@ -723,7 +794,7 @@ variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, s
     all.add_options()
         ("help,h", "print usage message")
         ("version,v", "print version build info")
-        ("config,c", value<fs::path>(&configFile)->default_value(fs::absolute(_TRINITY_CORE_CONFIG)),
+        ("config,c", value<std::string>(&configPath)->default_value(configFile.string()),
                      "use <arg> as configuration file")
         ("update-databases-only,u", "updates databases only")
         ;
@@ -736,14 +807,9 @@ variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, s
     all.add(win);
 #endif
     variables_map vm;
-    try
-    {
-        store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), vm);
-        notify(vm);
-    }
-    catch (std::exception& e) {
-        std::cerr << e.what() << "\n";
-    }
+    store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), vm);
+    notify(vm);
+    configFile = fs::absolute(fs::path(configPath));
 
     if (vm.count("help")) {
         std::cout << all << "\n";

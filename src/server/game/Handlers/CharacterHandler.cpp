@@ -16,6 +16,8 @@
 */
 
 #include "AccountMgr.h"
+#include "CharacterCreationPolicy.h"
+#include "CharacterCache.h"
 #include "ArenaTeam.h"
 #include "Battleground.h"
 #include "BattlePayMgr.h"
@@ -38,6 +40,7 @@
 #include "Pet.h"
 #include "PlayerDump.h"
 #include "Player.h"
+#include "CuratedPlayerNames.h"
 #include "Realm.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
@@ -576,7 +579,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             }
         }
 
-        bool allowTwoSideAccounts = !sWorld->IsPvPRealm() || HasPermission(rbac::RBAC_PERM_TWO_SIDE_CHARACTER_CREATION);
+        bool allowTwoSideAccounts = CharacterCreationPolicy::AllowsBothFactions(sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ACCOUNTS), sWorld->IsPvPRealm(), HasPermission(rbac::RBAC_PERM_TWO_SIDE_CHARACTER_CREATION));
         uint32 skipCinematics = sWorld->getIntConfig(CONFIG_SKIP_CINEMATICS);
 
 
@@ -586,7 +589,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             bool haveSameRace = false;
             uint32 heroicReqLevel = sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_MIN_LEVEL_FOR_HEROIC_CHARACTER);
             bool hasHeroicReqLevel = (heroicReqLevel == 0);
-            bool allowTwoSideAccounts = !sWorld->IsPvPRealm() || HasPermission(rbac::RBAC_PERM_TWO_SIDE_CHARACTER_CREATION);
+            bool allowTwoSideAccounts = CharacterCreationPolicy::AllowsBothFactions(sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ACCOUNTS), sWorld->IsPvPRealm(), HasPermission(rbac::RBAC_PERM_TWO_SIDE_CHARACTER_CREATION));
             uint32 skipCinematics = sWorld->getIntConfig(CONFIG_SKIP_CINEMATICS);
             bool checkHeroicReqs = createInfo->Class == CLASS_DEATH_KNIGHT && !HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_DEATH_KNIGHT);
 
@@ -705,6 +708,8 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             {
                 // Player not create (race/class/etc problem?)
                 newChar.CleanupsBeforeDelete();
+                CuratedPlayerNames::Release(createInfo->Name, newChar.GetGUID().GetCounter(), GetAccountId());
+                SetPlayer(nullptr); // The rejected stack Player is about to be destroyed.
 
                 WorldPacket data(SMSG_CHAR_CREATE, 1);
                 data << uint8(CHAR_CREATE_ERROR);
@@ -721,6 +726,24 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
             // Player created, save it now
             newChar.SaveToDB(true);
+
+            // The initial worker transaction reports SQL failures in the log.
+            // Verify this exact new GUID belongs to us before publishing success,
+            // realm counts, scripts or name caches after a failed transaction.
+            CharacterDatabasePreparedStatement* savedStmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_BY_GUID);
+            savedStmt->setUInt32(0, newChar.GetGUID().GetCounter());
+            PreparedQueryResult savedCharacter = CharacterDatabase.Query(savedStmt);
+            if (!savedCharacter || (*savedCharacter)[0].GetUInt32() != GetAccountId())
+            {
+                TC_LOG_ERROR("entities.player.character", "Character creation was not committed for account %u, GUID %u", GetAccountId(), newChar.GetGUID().GetCounter());
+                newChar.CleanupsBeforeDelete();
+                SetPlayer(nullptr);
+                WorldPacket data(SMSG_CHAR_CREATE, 1);
+                data << uint8(CHAR_CREATE_ERROR);
+                SendPacket(&data);
+                delete createInfo;
+                return;
+            }
 
             createInfo->CharCount += 1;
 
@@ -747,6 +770,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             TC_LOG_INFO("entities.player.character", "Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), createInfo->Name.c_str(), newChar.GetGUID().GetCounter());
             sScriptMgr->OnPlayerCreate(&newChar);
             sWorld->AddCharacterNameData(newChar.GetGUID(), newChar.GetName(), newChar.GetGender(), newChar.GetRace(), newChar.GetClass(), newChar.GetLevel());
+            sCharacterCache->AddCharacterCacheEntry(newChar.GetGUID(), GetAccountId(), newChar.GetName(), newChar.GetGender(), newChar.GetRace(), newChar.GetClass(), newChar.GetLevel());
 
             newChar.CleanupsBeforeDelete();
             delete createInfo;
@@ -1469,6 +1493,12 @@ void WorldSession::HandleChangePlayerNameOpcodeCallBack(PreparedQueryResult resu
 
     ObjectGuid guid(HighGuid::Player, guidLow);
 
+    if (!CuratedPlayerNames::Claim(newName, guidLow, GetAccountId()))
+    {
+        SendRenameResult(CHAR_CREATE_NAME_IN_USE);
+        return;
+    }
+
     AtLoginFlags usedAtLoginFlags = AT_LOGIN_RENAME;
 
     CharacterDatabase.EscapeString(oldName);
@@ -1826,6 +1856,14 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
 
         if (oldName != newName)
             usedAtLoginFlags = AtLoginFlags(usedAtLoginFlags | AT_LOGIN_RENAME);
+    }
+
+    if (!CuratedPlayerNames::Claim(newName, guid.GetCounter(), GetAccountId()))
+    {
+        WorldPacket failure(SMSG_CHAR_CUSTOMIZE, 1);
+        failure << uint8(CHAR_CREATE_NAME_IN_USE);
+        SendPacket(&failure);
+        return;
     }
 
     CharacterDatabase.EscapeString(newName);
@@ -2304,6 +2342,14 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
 
     if (oldName != newName)
         usedAtLoginFlags = AtLoginFlags(usedAtLoginFlags | AT_LOGIN_RENAME);
+
+    if (!CuratedPlayerNames::Claim(newName, guid.GetCounter(), GetAccountId()))
+    {
+        WorldPacket failure(SMSG_CHAR_FACTION_CHANGE_RESULT, 1);
+        failure << uint8(CHAR_CREATE_NAME_IN_USE);
+        SendPacket(&failure);
+        return;
+    }
 
     CharacterDatabase.EscapeString(newName);
     CharacterDatabase.EscapeString(oldName);

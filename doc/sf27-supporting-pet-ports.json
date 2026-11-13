@@ -1,0 +1,12 @@
+[
+  {
+    "module": "mage",
+    "pin": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+    "sha256": "af5f35eae6779c7b9a7cdce30fdf47dad725bd899ba55dad099c2bd4fd83c009"
+  },
+  {
+    "module": "priest",
+    "pin": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+    "sha256": "05faf1982dd7af21c0f18a8f61bac5da13b570cf11f1cce311541fe37efbde92"
+  }
+]

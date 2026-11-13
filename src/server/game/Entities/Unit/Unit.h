@@ -24,6 +24,7 @@
 #include "FunctionProcessor.h"
 #include "MotionMaster.h"
 #include "Object.h"
+#include "CreatorObjectRefs.h"
 #include "SpellAuraDefines.h"
 #include "SpellDefines.h"
 #include "ThreatManager.h"
@@ -2245,6 +2246,9 @@ public:
 
     GameObject* GetGameObject(uint32 spellId) const;
     void AddGameObject(GameObject* gameObj);
+    void AddCreatedGameObject(GameObject* gameObj);
+    void RemoveCreatedGameObjectReference(GameObject* gameObj);
+    void ClearCreatedGameObjectReferences();
     void RemoveGameObject(GameObject* gameObj, bool del);
     void RemoveGameObject(uint32 spellid, bool del);
     void RemoveAllGameObjects();
@@ -2639,6 +2643,7 @@ protected:
 
     typedef std::list<GameObject*> GameObjectList;
     GameObjectList m_gameObj;
+    CreatorObjectRefs<GameObject> m_createdGameObjects;
     bool m_isSorted;
     uint32 m_transform;
 

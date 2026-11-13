@@ -1,0 +1,172 @@
+id,name,comparison,behavior
+43,Swords,client_asset_present,not_evaluated
+44,Axes,client_asset_present,not_evaluated
+45,Bows,client_asset_present,not_evaluated
+46,Guns,client_asset_present,not_evaluated
+54,Maces,client_asset_present,not_evaluated
+55,Two-Handed Swords,client_asset_present,not_evaluated
+95,Defense,client_asset_present,not_evaluated
+98,Language: Common,client_asset_present,not_evaluated
+101,Dwarven Racial,client_asset_present,not_evaluated
+109,Language: Orcish,client_asset_present,not_evaluated
+111,Language: Dwarven,client_asset_present,not_evaluated
+113,Language: Darnassian,client_asset_present,not_evaluated
+115,Language: Taurahe,client_asset_present,not_evaluated
+118,Dual Wield,client_asset_present,not_evaluated
+124,Tauren Racial,client_asset_present,not_evaluated
+125,Orc Racial,client_asset_present,not_evaluated
+126,Night Elf Racial,client_asset_present,not_evaluated
+129,First Aid,client_asset_present,not_evaluated
+136,Staves,client_asset_present,not_evaluated
+137,Language: Thalassian,client_asset_present,not_evaluated
+138,Language: Draconic,client_asset_present,not_evaluated
+139,Language: Demon Tongue,client_asset_present,not_evaluated
+140,Language: Titan,client_asset_present,not_evaluated
+141,Language: Old Tongue,client_asset_present,not_evaluated
+142,Survival,client_asset_present,not_evaluated
+148,Horse Riding,client_asset_present,not_evaluated
+149,Wolf Riding,client_asset_present,not_evaluated
+150,Tiger Riding,client_asset_present,not_evaluated
+152,Ram Riding,client_asset_present,not_evaluated
+155,Swimming,client_asset_present,not_evaluated
+160,Two-Handed Maces,client_asset_present,not_evaluated
+162,Unarmed,client_asset_present,not_evaluated
+164,Blacksmithing,client_asset_present,not_evaluated
+165,Leatherworking,client_asset_present,not_evaluated
+171,Alchemy,client_asset_present,not_evaluated
+172,Two-Handed Axes,client_asset_present,not_evaluated
+173,Daggers,client_asset_present,not_evaluated
+182,Herbalism,client_asset_present,not_evaluated
+183,GENERIC (DND),client_asset_present,not_evaluated
+185,Cooking,client_asset_present,not_evaluated
+186,Mining,client_asset_present,not_evaluated
+188,Pet - Imp,client_asset_present,not_evaluated
+189,Pet - Felhunter,client_asset_present,not_evaluated
+197,Tailoring,client_asset_present,not_evaluated
+202,Engineering,client_asset_present,not_evaluated
+203,Pet - Spider,client_asset_present,not_evaluated
+204,Pet - Voidwalker,client_asset_present,not_evaluated
+205,Pet - Succubus,client_asset_present,not_evaluated
+206,Pet - Infernal,client_asset_present,not_evaluated
+207,Pet - Doomguard,client_asset_present,not_evaluated
+208,Pet - Wolf,client_asset_present,not_evaluated
+209,Pet - Cat,client_asset_present,not_evaluated
+210,Pet - Bear,client_asset_present,not_evaluated
+211,Pet - Boar,client_asset_present,not_evaluated
+212,Pet - Crocolisk,client_asset_present,not_evaluated
+213,Pet - Carrion Bird,client_asset_present,not_evaluated
+214,Pet - Crab,client_asset_present,not_evaluated
+215,Pet - Gorilla,client_asset_present,not_evaluated
+217,Pet - Raptor,client_asset_present,not_evaluated
+218,Pet - Tallstrider,client_asset_present,not_evaluated
+220,Racial - Undead,client_asset_present,not_evaluated
+226,Crossbows,client_asset_present,not_evaluated
+228,Wands,client_asset_present,not_evaluated
+229,Polearms,client_asset_present,not_evaluated
+236,Pet - Scorpid,client_asset_present,not_evaluated
+251,Pet - Turtle,client_asset_present,not_evaluated
+270,Pet - Generic Hunter,client_asset_present,not_evaluated
+293,Plate Mail,client_asset_present,not_evaluated
+313,Language: Gnomish,client_asset_present,not_evaluated
+315,Language: Troll,client_asset_present,not_evaluated
+333,Enchanting,client_asset_present,not_evaluated
+356,Fishing,client_asset_present,not_evaluated
+393,Skinning,client_asset_present,not_evaluated
+413,Mail,client_asset_present,not_evaluated
+414,Leather,client_asset_present,not_evaluated
+415,Cloth,client_asset_present,not_evaluated
+433,Shield,client_asset_present,not_evaluated
+473,Fist Weapons,client_asset_present,not_evaluated
+533,Raptor Riding,client_asset_present,not_evaluated
+553,Mechanostrider Piloting,client_asset_present,not_evaluated
+554,Undead Horsemanship,client_asset_present,not_evaluated
+653,Pet - Bat,client_asset_present,not_evaluated
+654,Pet - Hyena,client_asset_present,not_evaluated
+655,Pet - Bird of Prey,client_asset_present,not_evaluated
+656,Pet - Wind Serpent,client_asset_present,not_evaluated
+673,Language: Forsaken,client_asset_present,not_evaluated
+713,Kodo Riding,client_asset_present,not_evaluated
+733,Racial - Troll,client_asset_present,not_evaluated
+753,Racial - Gnome,client_asset_present,not_evaluated
+754,Racial - Human,client_asset_present,not_evaluated
+755,Jewelcrafting,client_asset_present,not_evaluated
+756,Blood Elf Racial,client_asset_present,not_evaluated
+758,Pet - Event - Remote Control,client_asset_present,not_evaluated
+759,Language: Draenei,client_asset_present,not_evaluated
+760,Draenei Racial,client_asset_present,not_evaluated
+761,Pet - Felguard,client_asset_present,not_evaluated
+762,Riding,client_asset_present,not_evaluated
+763,Pet - Dragonhawk,client_asset_present,not_evaluated
+764,Pet - Nether Ray,client_asset_present,not_evaluated
+765,Pet - Sporebat,client_asset_present,not_evaluated
+766,Pet - Warp Stalker,client_asset_present,not_evaluated
+767,Pet - Ravager,client_asset_present,not_evaluated
+768,Pet - Serpent,client_asset_present,not_evaluated
+769,Internal,client_asset_present,not_evaluated
+773,Inscription,client_asset_present,not_evaluated
+775,Pet - Moth,client_asset_present,not_evaluated
+777,Mounts,client_asset_present,not_evaluated
+778,Companions,client_asset_present,not_evaluated
+780,Pet - Exotic Chimaera,client_asset_present,not_evaluated
+781,Pet - Exotic Devlisaur,client_asset_present,not_evaluated
+782,Pet - Ghoul,client_asset_present,not_evaluated
+783,Pet - Exotic Silithid,client_asset_present,not_evaluated
+784,Pet - Exotic Worm,client_asset_present,not_evaluated
+785,Pet- Wasp,client_asset_present,not_evaluated
+786,Pet - Exotic Rhino,client_asset_present,not_evaluated
+787,Pet - Exotic Core Hound,client_asset_present,not_evaluated
+788,Pet - Exotic Spirit Beast,client_asset_present,not_evaluated
+789,Racial - Worgen,client_asset_present,not_evaluated
+790,Racial - Goblin,client_asset_present,not_evaluated
+791,Language: Gilnean,client_asset_present,not_evaluated
+792,Language: Goblin,client_asset_present,not_evaluated
+794,Archaeology,client_asset_present,not_evaluated
+795,Hunter,client_asset_present,not_evaluated
+796,Death Knight,client_asset_present,not_evaluated
+798,Druid,client_asset_present,not_evaluated
+800,Paladin,client_asset_present,not_evaluated
+804,Priest,client_asset_present,not_evaluated
+805,Pet - Water Elemental,client_asset_present,not_evaluated
+808,Pet - Fox,client_asset_present,not_evaluated
+810,All - Glyphs,client_asset_present,not_evaluated
+811,Pet - Dog,client_asset_present,not_evaluated
+815,Monkey,client_asset_present,not_evaluated
+817,Shale Spider,client_asset_present,not_evaluated
+818,Beetle,client_asset_present,not_evaluated
+821,All - Guild Perks,client_asset_present,not_evaluated
+824,Hydra,client_asset_present,not_evaluated
+829,Monk,client_asset_present,not_evaluated
+840,Warrior,client_asset_present,not_evaluated
+849,Warlock,client_asset_present,not_evaluated
+899,Pandaren Racial,client_asset_present,not_evaluated
+904,Mage,client_asset_present,not_evaluated
+905,Language: Pandaren Neutral,client_asset_present,not_evaluated
+906,Language: Pandaren Alliance,client_asset_present,not_evaluated
+907,Language: Pandaren Horde,client_asset_present,not_evaluated
+921,Rogue,client_asset_present,not_evaluated
+924,Shaman,client_asset_present,not_evaluated
+927,Fel Imp,client_asset_present,not_evaluated
+928,Voidlord,client_asset_present,not_evaluated
+929,Shivarra,client_asset_present,not_evaluated
+930,Observer,client_asset_present,not_evaluated
+931,Wrathguard,client_asset_present,not_evaluated
+934,All - Specializations,client_asset_present,not_evaluated
+960,Runeforging,client_asset_present,not_evaluated
+962,Pet - Primal Fire Elemental,client_asset_present,not_evaluated
+963,Pet - Primal Earth Elemental,client_asset_present,not_evaluated
+975,Way of the Grill,client_asset_present,not_evaluated
+976,Way of the Wok,client_asset_present,not_evaluated
+977,Way of the Pot,client_asset_present,not_evaluated
+978,Way of the Steamer,client_asset_present,not_evaluated
+979,Way of the Oven,client_asset_present,not_evaluated
+980,Way of the Brew,client_asset_present,not_evaluated
+981,Apprentice Cooking,client_asset_present,not_evaluated
+982,Journeyman Cookbook,client_asset_present,not_evaluated
+983,Porcupine,client_asset_present,not_evaluated
+984,Crane,client_asset_present,not_evaluated
+985,Water Strider,client_asset_present,not_evaluated
+986,Quilen,client_asset_present,not_evaluated
+987,Goat,client_asset_present,not_evaluated
+988,Basilisk,client_asset_present,not_evaluated
+999,NO PLAYERS,client_asset_present,not_evaluated
+1305,Direhorn,client_asset_present,not_evaluated

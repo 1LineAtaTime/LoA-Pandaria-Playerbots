@@ -41,8 +41,13 @@
 
 uint32 WorldSession::AdjustClientMovementTime(uint32 time) const
 {
+    // Movement may arrive before the first sync reply (and server-controlled
+    // bots have no client clock). A measured zero offset is also legitimate.
+    if (_timeSyncClockDeltaQueue->empty())
+        return GameTime::GetGameTimeMS();
+
     int64 movementTime = int64(time) + _timeSyncClockDelta;
-    if (_timeSyncClockDelta == 0 || movementTime < 0 || movementTime > SI64LIT(0xFFFFFFFF))
+    if (movementTime < 0 || movementTime > SI64LIT(0xFFFFFFFF))
     {
         TC_LOG_WARN("misc", "The computed movement time using clockDelta is erronous. Using fallback instead");
         return GameTime::GetGameTimeMS();

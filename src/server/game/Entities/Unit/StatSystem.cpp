@@ -1,3 +1,4 @@
+#include "AuthoredCreatureDamage.h"
 /*
 * This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *

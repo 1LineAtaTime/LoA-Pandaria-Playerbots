@@ -1,0 +1,146 @@
+{
+  "achievements.csv": {
+    "bytes": 254683,
+    "sha256_lf": "d5a38f011f7a393e33ac11d8408eef526785f99965b79bd9a36989634f26a515"
+  },
+  "achievement_criteria.csv": {
+    "bytes": 630960,
+    "sha256_lf": "fcd109e8ae341a4cba4fbf32503fac35e2100410a34193fa8cc5384c4d1b415d"
+  },
+  "areas.csv": {
+    "bytes": 225311,
+    "sha256_lf": "fdd4c79a1c93a6352e3f6a36bf95fa103c6ee1f196777be8efbeed34b8377d4e"
+  },
+  "battlegrounds_arenas.csv": {
+    "bytes": 1402,
+    "sha256_lf": "cd22e3dc3d7271a7321efdd84cdbcc1e2c8f10f5b7caf3f67457b8819ddc4068"
+  },
+  "battle_pet_species.csv": {
+    "bytes": 58765,
+    "sha256_lf": "29e90f20a08393290f65a46fe858407f2f9ab49457aa23962aadafe558b53304"
+  },
+  "boss_candidates.csv": {
+    "bytes": 168080,
+    "sha256_lf": "8464d77e6ec42208849e77ca015782ce5baeb6dec0e46cab45ba8acb2224981f"
+  },
+  "classes.csv": {
+    "bytes": 520,
+    "sha256_lf": "c94ede9fd247927aaf64df4553f07cd3fb7700fe5fff95b7e88429b1597d3130"
+  },
+  "creatures.csv": {
+    "bytes": 7415542,
+    "sha256_lf": "89580e614161de3e834a222205bdb4433f6f4fd37c6881f4d8ed1211d6075323"
+  },
+  "currencies.csv": {
+    "bytes": 3699,
+    "sha256_lf": "a9789016c35bfe8d141a02524965cb3439a48e6b125365baf5b7464b5df3ddb9"
+  },
+  "dungeon_encounters.csv": {
+    "bytes": 59732,
+    "sha256_lf": "c9cbeee98e0584d1de858e5324f6ce557be014d8c6211d040bba5972eb7d7f9c"
+  },
+  "factions.csv": {
+    "bytes": 28014,
+    "sha256_lf": "91da7432b39131338feea07ee3ea413527e1926b5fce5c74e07b91569f9a170e"
+  },
+  "gameobjects.csv": {
+    "bytes": 4002002,
+    "sha256_lf": "a84d52f02a2c2e3ff09e1ca5c0afc2a3f7048a8e3ab58f1652fb38379ae7b60a"
+  },
+  "items.csv": {
+    "bytes": 10368561,
+    "sha256_lf": "6bddcec3f89c826c600146316d0a67ae58c21ebacb44f8019a9ca9cdc6486953"
+  },
+  "item_sparse_coverage.csv": {
+    "bytes": 3673741,
+    "sha256_lf": "655b1a42bbaa7854a075fe5cccd676f5d38fea67b15b09c6f5afeffb8191ae1f"
+  },
+  "journal_boss_actors.csv": {
+    "bytes": 46177,
+    "sha256_lf": "86b44cc8592f4e163b8bcd6013f61f3b25752880674230d94f073ea1f99827f0"
+  },
+  "journal_encounters.csv": {
+    "bytes": 33824,
+    "sha256_lf": "921f12270cf099d9e3dd902f989e3289079f27a0ec060baf666bab2ca96fd8ae"
+  },
+  "journal_instances.csv": {
+    "bytes": 4943,
+    "sha256_lf": "7a4299559d5b6fc5f1f991cfda6251f29eee669309458faf43448e72f663f7e3"
+  },
+  "lfg_activities.csv": {
+    "bytes": 19436,
+    "sha256_lf": "47e21aa044ab3c9c4195d4deedb99239d3cac08398b4ffbbcb6b5719f0072dff"
+  },
+  "maps.csv": {
+    "bytes": 17715,
+    "sha256_lf": "1c4308b7ea2444ed457162d9e65846ad683888d12dce18423a5e84ab6041c2d0"
+  },
+  "mount_item_links.csv": {
+    "bytes": 40605,
+    "sha256_lf": "8488bb9861baf783dac35cb6e1a9daa9e7634af28ec3da7107808f5872329d8b"
+  },
+  "profession_recipe_candidates.csv": {
+    "bytes": 533657,
+    "sha256_lf": "8d6101f9160768a021c956923e23e3e0a07ecc8119e044ef7bc702a09f3b1c57"
+  },
+  "quests.csv": {
+    "bytes": 2176633,
+    "sha256_lf": "14863707bbb7b1201891b586ac6327ab6cf8fdc5e903372439eb7450a1ebbfd8"
+  },
+  "races.csv": {
+    "bytes": 1222,
+    "sha256_lf": "831ff0abbb6b931a41cc296925291759672c1be8166fc796a111e2afc5b81f0e"
+  },
+  "reference_integrity_findings.csv": {
+    "bytes": 1053,
+    "sha256_lf": "6e7be7caa1945f071e5053e2341b7181fb713e1c488cbc5de69c8f528e56e417"
+  },
+  "research_branches.csv": {
+    "bytes": 613,
+    "sha256_lf": "6e8507516b7fe1d153519f507924a6fd89c5ce460eb38e3aabbee1e4aba88d44"
+  },
+  "research_projects.csv": {
+    "bytes": 10990,
+    "sha256_lf": "857b78eb5f79df3a545c8d2cbd1b33ae9aa2ced99f4c914789c4176a162de851"
+  },
+  "scenarios.csv": {
+    "bytes": 2942,
+    "sha256_lf": "10a688e54ed711f61c05b6699156a9166948deee66fc14d36cbf91bfe1b1867f"
+  },
+  "scenario_steps.csv": {
+    "bytes": 10665,
+    "sha256_lf": "cd5798810fa58ed3e7ead7f36280e2200d010144ab28410130c7bfbbea2dc022"
+  },
+  "skill_ability_links.csv": {
+    "bytes": 644155,
+    "sha256_lf": "16a0c6645d0ab59d690b96252830f22635ca091adcf87974c7b641e743cb09ea"
+  },
+  "skill_lines.csv": {
+    "bytes": 9011,
+    "sha256_lf": "96e85c4fe3f214912594531fe09c0240561ae7bdafbf378f7644a956e71c090a"
+  },
+  "specializations.csv": {
+    "bytes": 1799,
+    "sha256_lf": "59cc88c084c8bbf7921305468b61d6aa6b0f7a0415ced3374d5cb6bdbe830418"
+  },
+  "spells.csv": {
+    "bytes": 5991176,
+    "sha256_lf": "4107ae5d46219ad7ceeaeccab34467793af72d16d7222060500159b5f3ad53e4"
+  },
+  "talents.csv": {
+    "bytes": 11006,
+    "sha256_lf": "1b814bc39f38e015c17a85366a3eec5a2dc236b645f07a7c545ca5f4bd803e9e"
+  },
+  "taxi_nodes.csv": {
+    "bytes": 47204,
+    "sha256_lf": "c267caa14d21041006cdfbef6aaf80ae4485ce06fc0a4c9cf0696fe9a6bce36e"
+  },
+  "taxi_paths.csv": {
+    "bytes": 134345,
+    "sha256_lf": "56c02b16370c003323ec900228644e9951b32782b247c2750eeb5770db632599"
+  },
+  "world_systems.csv": {
+    "bytes": 1780,
+    "sha256_lf": "178db11efb5f90e1d6bec2387220c052d8e9f4c1a40373cbe74df47947a895e6"
+  }
+}

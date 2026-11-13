@@ -35,6 +35,8 @@
 #include "ScriptSystem.h"
 #include "MoveSpline.h"
 #include "MoveSplineInit.h"
+#include "MovementInputPolicy.h"
+#include "VerticalKnockbackPolicy.h"
 #include "PathGenerator.h"
 #include "ObjectAccessor.h"
 #include <cassert>
@@ -745,7 +747,7 @@ void MotionMaster::MoveLand(uint32 id, Position const& pos, float speed)
     init.MoveTo(x, y, z, false);
     init.SetAnimation(_owner->IsHovering() ? AnimTier::Hover : AnimTier::Ground);
     if (speed > 0)
-        init.SetVelocity(speed);
+        init.SetVelocity(speed, __func__);
     init.Launch();
 }
 
@@ -761,7 +763,7 @@ void MotionMaster::MoveTakeoff(uint32 id, Position const& pos, float speed)
     init.SetAnimation(AnimTier::Fly);
     init.Launch();
     if (speed > 0)
-        init.SetVelocity(speed);
+        init.SetVelocity(speed, __func__);
     Mutate(new EffectMovementGenerator(id), MOTION_SLOT_ACTIVE);
 }
 
@@ -771,11 +773,44 @@ void MotionMaster::MoveKnockbackFrom(float srcX, float srcY, float speedXY, floa
     if (_owner->GetTypeId() == TYPEID_PLAYER)
         return;
 
-    // #972 AC parity (MotionMaster.cpp:626, as MoveKnockbackFromForPlayer below): a knock-up with no horizontal
-    // speed (SPELL_EFFECT_KNOCK_BACK with MiscValue 0, e.g. Torn Earth 55715 on the Iron Sentinel 29984) has no
-    // spline to launch - distance 0 at velocity 0 fails MoveSplineInitArgs::Validate.
-    if (speedXY <= 0.1f)
+    // Torn Earth55715 and other pure knock-ups have zero horizontal speed.
+    // Anchor the actual current position, then time a vertical parabolic arc
+    // from its physical height; do not invent horizontal movement or velocity.
+    if (speedXY == 0.f && std::isfinite(speedZ) && speedZ > 0.f)
+    {
+        _owner->StopMoving();
+        float startZ = _owner->GetPositionZMinusOffset();
+        float landingZ = _owner->GetPositionZ();
+        if (!_owner->GetTransGUID())
+            _owner->UpdateAllowedPositionZ(_owner->GetPositionX(), _owner->GetPositionY(), landingZ);
+        landingZ -= _owner->GetHoverOffset();
+        auto plan = VerticalKnockbackPolicy::MakePlan(speedZ, startZ, landingZ, Movement::gravity);
+        if (!plan.duration)
+        {
+            TC_LOG_ERROR("movement.spline", "Invalid vertical knockback for GUID %u Entry %u: speedZ %.6f startZ %.6f landingZ %.6f",
+                _owner->GetGUID().GetCounter(), _owner->GetEntry(), speedZ, startZ, landingZ);
+            return;
+        }
+        Movement::MoveSplineInit init(_owner);
+        if (_owner->GetTransGUID())
+        {
+            init.DisableTransportPathTransformations();
+            init.MoveTo(_owner->GetTransOffsetX(), _owner->GetTransOffsetY(), _owner->GetTransOffsetZ(), false);
+        }
+        else
+            init.MoveTo(_owner->GetPositionX(), _owner->GetPositionY(), landingZ, false);
+        init.SetParabolic(plan.amplitude, 0.f);
+        init.SetOrientationFixed(true);
+        init.SetVelocity(0.f, __func__);
+        int32 duration = init.Launch();
+        if (duration > 0)
+        {
+            Mutate(new EffectMovementGenerator(0), MOTION_SLOT_CONTROLLED);
+            TC_LOG_INFO("movement.spline", "[VERTICAL_KNOCKBACK] mover=%u entry=%u duration=%u height=%.6f",
+                _owner->GetGUID().GetCounter(), _owner->GetEntry(), uint32(duration), plan.amplitude);
+        }
         return;
+    }
 
     float x, y, z;
     float moveTimeHalf = speedZ / Movement::gravity;
@@ -788,7 +823,7 @@ void MotionMaster::MoveKnockbackFrom(float srcX, float srcY, float speedXY, floa
     init.MoveTo(x, y, z);
     init.SetParabolic(max_height, 0);
     init.SetOrientationFixed(true);
-    init.SetVelocity(speedXY);
+    init.SetVelocity(speedXY, __func__);
     init.Launch();
     Mutate(new EffectMovementGenerator(0), MOTION_SLOT_CONTROLLED);
 }
@@ -823,7 +858,7 @@ void MotionMaster::MoveJump(float x, float y, float z, float speedXY, float spee
     Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z, false);
     init.SetParabolic(max_height, 0);
-    init.SetVelocity(speedXY);
+    init.SetVelocity(speedXY, __func__);
     init.Launch();
     Mutate(new EffectMovementGenerator(id), MOTION_SLOT_CONTROLLED);
 }
@@ -839,7 +874,7 @@ void MotionMaster::CustomJump(float x, float y, float z, float speedXY, float sp
     Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z, false, true);
     init.SetParabolic(max_height, 0);
-    init.SetVelocity(speedXY);
+    init.SetVelocity(speedXY, __func__);
     init.Launch();
     Mutate(new EffectMovementGenerator(id), MOTION_SLOT_CONTROLLED);
 }
@@ -895,7 +930,7 @@ void MotionMaster::MoveCirclePath(float x, float y, float z, float radius, bool 
     Movement::MoveSplineInit init(_owner);
     init.SetCyclic();
     if (velocityOrDuration)
-        init.SetVelocity(velocityOrDuration);
+        init.SetVelocity(velocityOrDuration, __func__);
     init.MovebyPath(points);
 
     init.Launch();
@@ -915,17 +950,22 @@ void MotionMaster::MoveFall(uint32 id /*=0*/)
         return;
     }
 
-    // Abort too if the ground is very near
-    if (fabs(_owner->GetPositionZ() - tz) < 0.1f)
+    // A floor above the unit is not a fall. fabs() admitted upward falls whose
+    // negative drop produced a zero-duration falling spline.
+    if (!MovementInputPolicy::CanFallTo(_owner->GetPositionZMinusOffset(), tz))
         return;
 
-    if (_owner->GetTypeId() == TYPEID_PLAYER)
-        _owner->SetFall(true);
+    bool const addedFallFlag = _owner->GetTypeId() == TYPEID_PLAYER && _owner->SetFall(true);
 
     Movement::MoveSplineInit init(_owner);
     init.MoveTo(_owner->GetPositionX(), _owner->GetPositionY(), tz, false);
     init.SetFall();
-    init.Launch();
+    if (init.Launch() <= 0)
+    {
+        if (addedFallFlag)
+            _owner->SetFall(false);
+        return;
+    }
     Mutate(new EffectMovementGenerator(id), MOTION_SLOT_CONTROLLED);
 }
 
@@ -957,7 +997,7 @@ void MotionMaster::MoveCharge(PathGenerator const& path)
     // Charge movement is not started when using EVENT_CHARGE_PREPATH
     Movement::MoveSplineInit init(_owner);
     init.MovebyPath(path.GetPath());
-    init.SetVelocity(SPEED_CHARGE);
+    init.SetVelocity(SPEED_CHARGE, __func__);
     init.Launch();
 }
 
@@ -1099,7 +1139,7 @@ void MotionMaster::MoveSplinePath(const Position* path, uint32 count, bool fly, 
     if (cyclic)
         init.SetCyclic();
     if (speed)
-        init.SetVelocity(speed);
+        init.SetVelocity(speed, __func__);
     if (uncompressed)
         init.SetUncompressed();
     init.Launch();
@@ -1129,7 +1169,7 @@ void MotionMaster::MoveKnockbackFromForPlayer(float srcX, float srcY, float spee
     init.MoveTo(dest.GetPositionX(), dest.GetPositionY(), dest.GetPositionZ());
     init.SetParabolic(max_height, 0);
     init.SetOrientationFixed(true);
-    init.SetVelocity(speedXY);
+    init.SetVelocity(speedXY, __func__);
     init.Launch();
     Mutate(new EffectMovementGenerator(0), MOTION_SLOT_CONTROLLED);
 }

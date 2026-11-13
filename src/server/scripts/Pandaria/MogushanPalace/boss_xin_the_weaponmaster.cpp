@@ -1064,7 +1064,13 @@ class spell_dart : public SpellScriptLoader
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_dart_SpellScript::SelectTarget, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                uint32 target = sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].TargetA.GetTarget();
+                if (target == TARGET_UNIT_CONE_ENEMY_104)
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_dart_SpellScript::SelectTarget, EFFECT_0, TARGET_UNIT_CONE_ENEMY_104);
+                else if (sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].TargetB.GetTarget() == TARGET_UNIT_SRC_AREA_ENEMY)
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_dart_SpellScript::SelectTarget, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                else
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_dart_SpellScript::SelectTarget, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 

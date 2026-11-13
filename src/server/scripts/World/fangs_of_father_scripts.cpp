@@ -286,5 +286,5 @@ void AddSC_fangs_of_father_scripts()
     new item_charging_decorder_ring();
     new npc_mostrasz_56314();
     new npc_wrathion_57777();
-    new npc_lord_hiram_creed();
+    // Keep the active SmartAI combat fallback until native encounter parity is tested.
 }

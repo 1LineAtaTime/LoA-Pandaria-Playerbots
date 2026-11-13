@@ -1,0 +1,12 @@
+id,name,comparison,behavior
+1,Warrior,client_asset_present,not_evaluated
+2,Paladin,client_asset_present,not_evaluated
+3,Hunter,client_asset_present,not_evaluated
+4,Rogue,client_asset_present,not_evaluated
+5,Priest,client_asset_present,not_evaluated
+6,Death Knight,client_asset_present,not_evaluated
+7,Shaman,client_asset_present,not_evaluated
+8,Mage,client_asset_present,not_evaluated
+9,Warlock,client_asset_present,not_evaluated
+10,Monk,client_asset_present,not_evaluated
+11,Druid,client_asset_present,not_evaluated

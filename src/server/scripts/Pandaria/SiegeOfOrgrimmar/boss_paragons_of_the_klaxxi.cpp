@@ -4731,7 +4731,12 @@ class spell_paragon_explosive_ring_visual : public SpellScript
 
     void Register() override
     {
-        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_paragon_explosive_ring_visual::SelectDest, EFFECT_0, Targets(sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].TargetA.GetTarget()));
+        // Most variants are corrected to caster destinations in SpellMgr;
+        // 144194 retains the DBC destination target. Bind the effective target.
+        if (sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_0].TargetA.GetTarget() == TARGET_DEST_CASTER)
+            OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_paragon_explosive_ring_visual::SelectDest, EFFECT_0, TARGET_DEST_CASTER);
+        else
+            OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_paragon_explosive_ring_visual::SelectDest, EFFECT_0, TARGET_UNK_125);
     }
 };
 

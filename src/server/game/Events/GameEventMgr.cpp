@@ -16,6 +16,7 @@
 */
 
 #include "GameEventMgr.h"
+#include "GameEventSchedule.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
@@ -45,6 +46,10 @@ bool GameEventMgr::CheckOneGameEvent(uint16 entry) const
         case GAMEEVENT_NORMAL:
         {
             time_t currenttime = time(NULL);
+            if (mGameEvent[entry].holiday_id == HOLIDAY_DARKMOON_FAIRE_TEROKKAR)
+                return sScriptMgr->CanGameEventStart(mGameEvent[entry],
+                    mGameEvent[entry].start <= currenttime && currenttime < mGameEvent[entry].end
+                    && GameEventSchedule::IsMonthlyFirstWeekdayActive(currenttime, 0, mGameEvent[entry].length));
             // Get the event information
             return sScriptMgr->CanGameEventStart(mGameEvent[entry], mGameEvent[entry].start < currenttime
                 && currenttime < mGameEvent[entry].end
@@ -99,6 +104,14 @@ uint32 GameEventMgr::NextCheck(uint16 entry) const
     // never started event, we return delay before start
     if (mGameEvent[entry].start > currenttime)
         return uint32(mGameEvent[entry].start - currenttime);
+
+    if (mGameEvent[entry].holiday_id == HOLIDAY_DARKMOON_FAIRE_TEROKKAR)
+    {
+        uint32 delay = GameEventSchedule::GetSecondsUntilMonthlyFirstWeekdayTransition(currenttime, 0, mGameEvent[entry].length);
+        if (!delay)
+            return max_ge_check_delay;
+        return mGameEvent[entry].end < time_t(currenttime + delay) ? uint32(mGameEvent[entry].end - currenttime) : delay;
+    }
 
     uint32 delay;
     // in event, we return the end of it

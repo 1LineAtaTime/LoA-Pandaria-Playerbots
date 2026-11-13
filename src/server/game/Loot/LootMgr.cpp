@@ -158,11 +158,14 @@ uint32 LootStore::LoadLootTable()
 
         uint32 entry               = fields[0].GetUInt32();
         uint32 item                = abs(fields[1].GetInt32());
-        uint8 type = ((fields[1].GetInt32() > 0) ? LOOT_ITEM_TYPE_ITEM : LOOT_ITEM_TYPE_CURRENCY);
         float  chanceOrQuestChance = fields[2].GetFloat();
         uint32 lootmode            = fields[3].GetUInt32();
         uint8  group               = fields[4].GetUInt8();
         int32  mincountOrRef       = fields[5].GetInt32();
+        // Legacy reference-only rows use item=0 and a negative reference id.
+        // They are not currency rows (which encode a currency using item<0).
+        uint8 type = (fields[1].GetInt32() > 0 || (item == 0 && mincountOrRef < 0))
+            ? LOOT_ITEM_TYPE_ITEM : LOOT_ITEM_TYPE_CURRENCY;
         int32  maxcount            = fields[6].GetUInt16();
 
         if (type == LOOT_ITEM_TYPE_ITEM && maxcount > std::numeric_limits<uint8>::max())

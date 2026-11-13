@@ -1,0 +1,37 @@
+{
+  "module": "holiday",
+  "local_baseline": "9c32347f1",
+  "upstream": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "source_sha256": "a23d420f4df77515fb716251e06f6d27c34afe3682e2685a8c2d84998a043048",
+  "upstream_names": [
+    "spell_hallow_end_trick",
+    "spell_hallow_end_trick_or_treat",
+    "spell_hallow_end_tricky_treat",
+    "spell_love_is_in_the_air_romantic_picnic",
+    "spell_winter_veil_mistletoe",
+    "spell_winter_veil_px_238_winter_wondervolt"
+  ],
+  "unregistered_legacy_classes_omitted": [],
+  "local_overridden": [
+    "spell_love_is_in_the_air_romantic_picnic",
+    "spell_hallow_end_trick",
+    "spell_hallow_end_trick_or_treat",
+    "spell_hallow_end_tricky_treat",
+    "spell_winter_veil_mistletoe",
+    "spell_winter_veil_px_238_winter_wondervolt"
+  ],
+  "local_only_retained": [],
+  "api_adaptations": [
+    "Skyfire namespace to Trinity",
+    "override keyword",
+    "float aura amount callbacks"
+  ],
+  "local_original_registrations": [
+    "spell_love_is_in_the_air_romantic_picnic",
+    "spell_hallow_end_trick",
+    "spell_hallow_end_trick_or_treat",
+    "spell_hallow_end_tricky_treat",
+    "spell_winter_veil_mistletoe",
+    "spell_winter_veil_px_238_winter_wondervolt"
+  ]
+}

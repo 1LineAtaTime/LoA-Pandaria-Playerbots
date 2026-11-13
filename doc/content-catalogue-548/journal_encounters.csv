@@ -1,0 +1,431 @@
+id,name,journal_instance_id,map_id,instance_name,comparison,behavior
+89,Glubtok,63,36,Deadmines,client_journal_entry,not_evaluated
+90,Helix Gearbreaker,63,36,Deadmines,client_journal_entry,not_evaluated
+91,Foe Reaper 5000,63,36,Deadmines,client_journal_entry,not_evaluated
+92,Admiral Ripsnarl,63,36,Deadmines,client_journal_entry,not_evaluated
+93,"""Captain"" Cookie",63,36,Deadmines,client_journal_entry,not_evaluated
+95,Vanessa VanCleef,63,36,Deadmines,client_journal_entry,not_evaluated
+96,Baron Ashbury,64,33,Shadowfang Keep,client_journal_entry,not_evaluated
+97,Baron Silverlaine,64,33,Shadowfang Keep,client_journal_entry,not_evaluated
+98,Commander Springvale,64,33,Shadowfang Keep,client_journal_entry,not_evaluated
+99,Lord Walden,64,33,Shadowfang Keep,client_journal_entry,not_evaluated
+100,Lord Godfrey,64,33,Shadowfang Keep,client_journal_entry,not_evaluated
+101,Lady Naz'jar,65,643,Throne of the Tides,client_journal_entry,not_evaluated
+102,"Commander Ulthok, the Festering Prince",65,643,Throne of the Tides,client_journal_entry,not_evaluated
+103,Mindbender Ghur'sha,65,643,Throne of the Tides,client_journal_entry,not_evaluated
+104,Ozumat,65,643,Throne of the Tides,client_journal_entry,not_evaluated
+105,Rom'ogg Bonecrusher,66,645,Blackrock Caverns,client_journal_entry,not_evaluated
+106,"Corla, Herald of Twilight",66,645,Blackrock Caverns,client_journal_entry,not_evaluated
+107,Karsh Steelbender,66,645,Blackrock Caverns,client_journal_entry,not_evaluated
+108,Beauty,66,645,Blackrock Caverns,client_journal_entry,not_evaluated
+109,Ascendant Lord Obsidius,66,645,Blackrock Caverns,client_journal_entry,not_evaluated
+110,Corborus,67,725,The Stonecore,client_journal_entry,not_evaluated
+111,Slabhide,67,725,The Stonecore,client_journal_entry,not_evaluated
+112,Ozruk,67,725,The Stonecore,client_journal_entry,not_evaluated
+113,High Priestess Azil,67,725,The Stonecore,client_journal_entry,not_evaluated
+114,Grand Vizier Ertan,68,657,The Vortex Pinnacle,client_journal_entry,not_evaluated
+115,Altairus,68,657,The Vortex Pinnacle,client_journal_entry,not_evaluated
+116,"Asaad, Caliph of Zephyrs",68,657,The Vortex Pinnacle,client_journal_entry,not_evaluated
+117,General Husam,69,755,Lost City of the Tol'vir,client_journal_entry,not_evaluated
+118,Lockmaw,69,755,Lost City of the Tol'vir,client_journal_entry,not_evaluated
+119,High Prophet Barim,69,755,Lost City of the Tol'vir,client_journal_entry,not_evaluated
+122,Siamat,69,755,Lost City of the Tol'vir,client_journal_entry,not_evaluated
+124,Temple Guardian Anhuur,70,644,Halls of Origination,client_journal_entry,not_evaluated
+125,Earthrager Ptah,70,644,Halls of Origination,client_journal_entry,not_evaluated
+126,Anraphet,70,644,Halls of Origination,client_journal_entry,not_evaluated
+127,"Isiset, Construct of Magic",70,644,Halls of Origination,client_journal_entry,not_evaluated
+128,"Ammunae, Construct of Life",70,644,Halls of Origination,client_journal_entry,not_evaluated
+129,"Setesh, Construct of Destruction",70,644,Halls of Origination,client_journal_entry,not_evaluated
+130,"Rajh, Construct of Sun",70,644,Halls of Origination,client_journal_entry,not_evaluated
+131,General Umbriss,71,670,Grim Batol,client_journal_entry,not_evaluated
+132,Forgemaster Throngus,71,670,Grim Batol,client_journal_entry,not_evaluated
+133,Drahga Shadowburner,71,670,Grim Batol,client_journal_entry,not_evaluated
+134,"Erudax, the Duke of Below",71,670,Grim Batol,client_journal_entry,not_evaluated
+139,Argaloth,75,757,Baradin Hold,client_journal_entry,not_evaluated
+140,Occu'thar,75,757,Baradin Hold,client_journal_entry,not_evaluated
+154,The Conclave of Wind,74,754,Throne of the Four Winds,client_journal_entry,not_evaluated
+155,Al'Akir,74,754,Throne of the Four Winds,client_journal_entry,not_evaluated
+156,Halfus Wyrmbreaker,72,671,The Bastion of Twilight,client_journal_entry,not_evaluated
+157,Theralion and Valiona,72,671,The Bastion of Twilight,client_journal_entry,not_evaluated
+158,Ascendant Council,72,671,The Bastion of Twilight,client_journal_entry,not_evaluated
+167,Cho'gall,72,671,The Bastion of Twilight,client_journal_entry,not_evaluated
+168,Sinestra,72,671,The Bastion of Twilight,client_journal_entry,not_evaluated
+169,Omnotron Defense System,73,669,Blackwing Descent,client_journal_entry,not_evaluated
+170,Magmaw,73,669,Blackwing Descent,client_journal_entry,not_evaluated
+171,Atramedes,73,669,Blackwing Descent,client_journal_entry,not_evaluated
+172,Chimaeron,73,669,Blackwing Descent,client_journal_entry,not_evaluated
+173,Maloriak,73,669,Blackwing Descent,client_journal_entry,not_evaluated
+174,Nefarian's End,73,669,Blackwing Descent,client_journal_entry,not_evaluated
+175,High Priest Venoxis,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+176,Bloodlord Mandokir,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+177,Cache of Madness - Gri'lek,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+178,Cache of Madness - Hazza'rah,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+179,Cache of Madness - Renataki,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+180,Cache of Madness - Wushoolay,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+181,High Priestess Kilnara,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+184,Zanzil,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+185,Jin'do the Godbreaker,76,859,Zul'Gurub,client_journal_entry,not_evaluated
+186,Akil'zon,77,568,Zul'Aman,client_journal_entry,not_evaluated
+187,Nalorakk,77,568,Zul'Aman,client_journal_entry,not_evaluated
+188,Jan'alai,77,568,Zul'Aman,client_journal_entry,not_evaluated
+189,Halazzi,77,568,Zul'Aman,client_journal_entry,not_evaluated
+190,Hex Lord Malacrass,77,568,Zul'Aman,client_journal_entry,not_evaluated
+191,Daakara,77,568,Zul'Aman,client_journal_entry,not_evaluated
+192,Beth'tilac,78,720,Firelands,client_journal_entry,not_evaluated
+193,Lord Rhyolith,78,720,Firelands,client_journal_entry,not_evaluated
+194,Alysrazor,78,720,Firelands,client_journal_entry,not_evaluated
+195,Shannox,78,720,Firelands,client_journal_entry,not_evaluated
+196,"Baleroc, the Gatekeeper",78,720,Firelands,client_journal_entry,not_evaluated
+197,Majordomo Staghelm,78,720,Firelands,client_journal_entry,not_evaluated
+198,Ragnaros,78,720,Firelands,client_journal_entry,not_evaluated
+283,Echo of Tyrande,184,938,End Time,client_journal_entry,not_evaluated
+285,Echo of Jaina,184,938,End Time,client_journal_entry,not_evaluated
+289,Murozond,184,938,End Time,client_journal_entry,not_evaluated
+290,Peroth'arn,185,939,Well of Eternity,client_journal_entry,not_evaluated
+291,Queen Azshara,185,939,Well of Eternity,client_journal_entry,not_evaluated
+292,Mannoroth and Varo'then,185,939,Well of Eternity,client_journal_entry,not_evaluated
+311,Morchok,187,967,Dragon Soul,client_journal_entry,not_evaluated
+317,Hagara the Stormbinder,187,967,Dragon Soul,client_journal_entry,not_evaluated
+318,Spine of Deathwing,187,967,Dragon Soul,client_journal_entry,not_evaluated
+322,Arcurion,186,940,Hour of Twilight,client_journal_entry,not_evaluated
+323,Echo of Sylvanas,184,938,End Time,client_journal_entry,not_evaluated
+324,Warlord Zon'ozz,187,967,Dragon Soul,client_journal_entry,not_evaluated
+325,Yor'sahj the Unsleeping,187,967,Dragon Soul,client_journal_entry,not_evaluated
+331,Ultraxion,187,967,Dragon Soul,client_journal_entry,not_evaluated
+332,Warmaster Blackhorn,187,967,Dragon Soul,client_journal_entry,not_evaluated
+333,Madness of Deathwing,187,967,Dragon Soul,client_journal_entry,not_evaluated
+335,Sha of Doubt,313,960,Temple of the Jade Serpent,client_journal_entry,not_evaluated
+339,"Alizabal, Mistress of Hate",75,757,Baradin Hold,client_journal_entry,not_evaluated
+340,Echo of Baine,184,938,End Time,client_journal_entry,not_evaluated
+341,Archbishop Benedictus,186,940,Hour of Twilight,client_journal_entry,not_evaluated
+342,Asira Dawnslayer,186,940,Hour of Twilight,client_journal_entry,not_evaluated
+368,Ghamoo-Ra,227,48,Blackfathom Deeps,client_journal_entry,not_evaluated
+369,High Interrogator Gerstahn,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+370,Lord Roccor,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+371,Houndmaster Grebmar,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+372,Ring of Law,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+373,Pyromancer Loregrain,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+374,Lord Incendius,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+375,Warder Stilgiss,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+376,Fineous Darkvire,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+377,Bael'Gar,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+378,General Angerforge,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+379,Golem Lord Argelmach,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+380,Hurley Blackbreath,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+381,Phalanx,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+382,Ribbly Screwspigot,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+383,Plugger Spazzring,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+384,Ambassador Flamelash,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+385,The Seven,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+386,Magmus,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+387,Emperor Dagran Thaurissan,228,230,Blackrock Depths,client_journal_entry,not_evaluated
+388,Highlord Omokk,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+389,Shadow Hunter Vosh'gajin,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+390,War Master Voone,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+391,Mother Smolderweb,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+392,Urok Doomhowl,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+393,Quartermaster Zigris,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+394,Halycon,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+395,Gizrul the Slavener,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+396,Overlord Wyrmthalak,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+397,Pyroguard Emberseer,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+398,Solakar Flamewreath,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+399,Warchief Rend Blackhand,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+400,The Beast,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+401,General Drakkisath,229,229,Blackrock Spire,client_journal_entry,not_evaluated
+402,Zevrim Thornhoof,230,429,Dire Maul,client_journal_entry,not_evaluated
+403,Hydrospawn,230,429,Dire Maul,client_journal_entry,not_evaluated
+404,Lethtendris,230,429,Dire Maul,client_journal_entry,not_evaluated
+405,Alzzin the Wildshaper,230,429,Dire Maul,client_journal_entry,not_evaluated
+406,Tendris Warpwood,230,429,Dire Maul,client_journal_entry,not_evaluated
+407,Illyanna Ravenoak,230,429,Dire Maul,client_journal_entry,not_evaluated
+408,Magister Kalendris,230,429,Dire Maul,client_journal_entry,not_evaluated
+409,Immol'thar,230,429,Dire Maul,client_journal_entry,not_evaluated
+410,Prince Tortheldrin,230,429,Dire Maul,client_journal_entry,not_evaluated
+411,Guard Mol'dar,230,429,Dire Maul,client_journal_entry,not_evaluated
+412,Stomper Kreeg,230,429,Dire Maul,client_journal_entry,not_evaluated
+413,Guard Fengus,230,429,Dire Maul,client_journal_entry,not_evaluated
+414,Guard Slip'kik,230,429,Dire Maul,client_journal_entry,not_evaluated
+415,Captain Kromcrush,230,429,Dire Maul,client_journal_entry,not_evaluated
+416,Cho'Rush the Observer,230,429,Dire Maul,client_journal_entry,not_evaluated
+417,King Gordok,230,429,Dire Maul,client_journal_entry,not_evaluated
+418,Crowd Pummeler 9-60,231,90,Gnomeregan,client_journal_entry,not_evaluated
+419,Grubbis,231,90,Gnomeregan,client_journal_entry,not_evaluated
+420,Viscous Fallout,231,90,Gnomeregan,client_journal_entry,not_evaluated
+421,Electrocutioner 6000,231,90,Gnomeregan,client_journal_entry,not_evaluated
+422,Mekgineer Thermaplugg,231,90,Gnomeregan,client_journal_entry,not_evaluated
+423,Noxxion,232,349,Maraudon,client_journal_entry,not_evaluated
+424,Razorlash,232,349,Maraudon,client_journal_entry,not_evaluated
+425,Tinkerer Gizlock,232,349,Maraudon,client_journal_entry,not_evaluated
+426,Gelihast,227,48,Blackfathom Deeps,client_journal_entry,not_evaluated
+427,Lord Vyletongue,232,349,Maraudon,client_journal_entry,not_evaluated
+428,Celebras the Cursed,232,349,Maraudon,client_journal_entry,not_evaluated
+429,Landslide,232,349,Maraudon,client_journal_entry,not_evaluated
+430,Rotgrip,232,349,Maraudon,client_journal_entry,not_evaluated
+431,Princess Theradras,232,349,Maraudon,client_journal_entry,not_evaluated
+432,Tuten'kash,233,129,Razorfen Downs,client_journal_entry,not_evaluated
+433,Mordresh Fire Eye,233,129,Razorfen Downs,client_journal_entry,not_evaluated
+434,Glutton,233,129,Razorfen Downs,client_journal_entry,not_evaluated
+435,Amnennar the Coldbringer,233,129,Razorfen Downs,client_journal_entry,not_evaluated
+436,Lady Sarevess,227,48,Blackfathom Deeps,client_journal_entry,not_evaluated
+437,Twilight Lord Kelris,227,48,Blackfathom Deeps,client_journal_entry,not_evaluated
+438,Death Speaker Jargba,234,47,Razorfen Kraul,client_journal_entry,not_evaluated
+439,Aggem Thorncurse,234,47,Razorfen Kraul,client_journal_entry,not_evaluated
+440,Overlord Ramtusk,234,47,Razorfen Kraul,client_journal_entry,not_evaluated
+441,Agathelos the Raging,234,47,Razorfen Kraul,client_journal_entry,not_evaluated
+442,Charlga Razorflank,234,47,Razorfen Kraul,client_journal_entry,not_evaluated
+443,Hearthsinger Forresten,236,329,Stratholme,client_journal_entry,not_evaluated
+444,Aku'mai,227,48,Blackfathom Deeps,client_journal_entry,not_evaluated
+445,Timmy the Cruel,236,329,Stratholme,client_journal_entry,not_evaluated
+446,Willey Hopebreaker,236,329,Stratholme,client_journal_entry,not_evaluated
+447,Old Serra'kis,227,48,Blackfathom Deeps,client_journal_entry,not_evaluated
+448,Instructor Galford,236,329,Stratholme,client_journal_entry,not_evaluated
+449,Balnazzar,236,329,Stratholme,client_journal_entry,not_evaluated
+450,The Unforgiven,236,329,Stratholme,client_journal_entry,not_evaluated
+451,Baroness Anastari,236,329,Stratholme,client_journal_entry,not_evaluated
+452,Nerub'enkan,236,329,Stratholme,client_journal_entry,not_evaluated
+453,Maleki the Pallid,236,329,Stratholme,client_journal_entry,not_evaluated
+454,Magistrate Barthilas,236,329,Stratholme,client_journal_entry,not_evaluated
+455,Ramstein the Gorger,236,329,Stratholme,client_journal_entry,not_evaluated
+456,Lord Aurius Rivendare,236,329,Stratholme,client_journal_entry,not_evaluated
+457,Avatar of Hakkar,237,109,The Temple of Atal'hakkar,client_journal_entry,not_evaluated
+458,Jammal'an the Prophet,237,109,The Temple of Atal'hakkar,client_journal_entry,not_evaluated
+459,Wardens of the Dream,237,109,The Temple of Atal'hakkar,client_journal_entry,not_evaluated
+463,Shade of Eranikus,237,109,The Temple of Atal'hakkar,client_journal_entry,not_evaluated
+464,Hogger,238,34,The Stockade,client_journal_entry,not_evaluated
+465,Lord Overheat,238,34,The Stockade,client_journal_entry,not_evaluated
+466,Randolph Moloch,238,34,The Stockade,client_journal_entry,not_evaluated
+467,Revelosh,239,70,Uldaman,client_journal_entry,not_evaluated
+468,The Lost Dwarves,239,70,Uldaman,client_journal_entry,not_evaluated
+469,Ironaya,239,70,Uldaman,client_journal_entry,not_evaluated
+470,Ancient Stone Keeper,239,70,Uldaman,client_journal_entry,not_evaluated
+471,Galgann Firehammer,239,70,Uldaman,client_journal_entry,not_evaluated
+472,Grimlok,239,70,Uldaman,client_journal_entry,not_evaluated
+473,Archaedas,239,70,Uldaman,client_journal_entry,not_evaluated
+474,Lady Anacondra,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+475,Lord Cobrahn,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+476,Lord Pythas,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+477,Kresh,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+478,Skum,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+479,Lord Serpentis,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+480,Verdan the Everliving,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+481,Mutanus the Devourer,240,43,Wailing Caverns,client_journal_entry,not_evaluated
+482,Hydromancer Velratha,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+483,Gahz'rilla,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+484,Antu'sul,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+485,Theka the Martyr,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+486,Witch Doctor Zum'rah,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+487,Nekrum & Sezz'ziz,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+489,Chief Ukorz Sandscalp,241,209,Zul'Farrak,client_journal_entry,not_evaluated
+523,Shirrak the Dead Watcher,247,558,Auchenai Crypts,client_journal_entry,not_evaluated
+524,Exarch Maladaar,247,558,Auchenai Crypts,client_journal_entry,not_evaluated
+527,Watchkeeper Gargolmar,248,543,Hellfire Ramparts,client_journal_entry,not_evaluated
+528,Omor the Unscarred,248,543,Hellfire Ramparts,client_journal_entry,not_evaluated
+529,Vazruden the Herald,248,543,Hellfire Ramparts,client_journal_entry,not_evaluated
+530,Selin Fireheart,249,585,Magisters' Terrace,client_journal_entry,not_evaluated
+531,Vexallus,249,585,Magisters' Terrace,client_journal_entry,not_evaluated
+532,Priestess Delrissa,249,585,Magisters' Terrace,client_journal_entry,not_evaluated
+533,Kael'thas Sunstrider,249,585,Magisters' Terrace,client_journal_entry,not_evaluated
+534,Pandemonius,250,557,Mana-Tombs,client_journal_entry,not_evaluated
+535,Tavarok,250,557,Mana-Tombs,client_journal_entry,not_evaluated
+536,Yor,250,557,Mana-Tombs,client_journal_entry,not_evaluated
+537,Nexus-Prince Shaffar,250,557,Mana-Tombs,client_journal_entry,not_evaluated
+538,Lieutenant Drake,251,560,Old Hillsbrad Foothills,client_journal_entry,not_evaluated
+539,Captain Skarloc,251,560,Old Hillsbrad Foothills,client_journal_entry,not_evaluated
+540,Epoch Hunter,251,560,Old Hillsbrad Foothills,client_journal_entry,not_evaluated
+541,Darkweaver Syth,252,556,Sethekk Halls,client_journal_entry,not_evaluated
+542,Anzu,252,556,Sethekk Halls,client_journal_entry,not_evaluated
+543,Talon King Ikiss,252,556,Sethekk Halls,client_journal_entry,not_evaluated
+544,Ambassador Hellmaw,253,555,Shadow Labyrinth,client_journal_entry,not_evaluated
+545,Blackheart the Inciter,253,555,Shadow Labyrinth,client_journal_entry,not_evaluated
+546,Grandmaster Vorpil,253,555,Shadow Labyrinth,client_journal_entry,not_evaluated
+547,Murmur,253,555,Shadow Labyrinth,client_journal_entry,not_evaluated
+548,Zereketh the Unbound,254,552,The Arcatraz,client_journal_entry,not_evaluated
+549,Dalliah the Doomsayer,254,552,The Arcatraz,client_journal_entry,not_evaluated
+550,Wrath-Scryer Soccothrates,254,552,The Arcatraz,client_journal_entry,not_evaluated
+551,Harbinger Skyriss,254,552,The Arcatraz,client_journal_entry,not_evaluated
+552,Chrono Lord Deja,255,269,The Black Morass,client_journal_entry,not_evaluated
+553,Temporus,255,269,The Black Morass,client_journal_entry,not_evaluated
+554,Aeonus,255,269,The Black Morass,client_journal_entry,not_evaluated
+555,The Maker,256,542,The Blood Furnace,client_journal_entry,not_evaluated
+556,Broggok,256,542,The Blood Furnace,client_journal_entry,not_evaluated
+557,Keli'dan the Breaker,256,542,The Blood Furnace,client_journal_entry,not_evaluated
+558,Commander Sarannis,257,553,The Botanica,client_journal_entry,not_evaluated
+559,High Botanist Freywinn,257,553,The Botanica,client_journal_entry,not_evaluated
+560,Thorngrin the Tender,257,553,The Botanica,client_journal_entry,not_evaluated
+561,Laj,257,553,The Botanica,client_journal_entry,not_evaluated
+562,Warp Splinter,257,553,The Botanica,client_journal_entry,not_evaluated
+563,Mechano-Lord Capacitus,258,554,The Mechanar,client_journal_entry,not_evaluated
+564,Nethermancer Sepethrea,258,554,The Mechanar,client_journal_entry,not_evaluated
+565,Pathaleon the Calculator,258,554,The Mechanar,client_journal_entry,not_evaluated
+566,Grand Warlock Nethekurse,259,540,The Shattered Halls,client_journal_entry,not_evaluated
+568,Warbringer O'mrogg,259,540,The Shattered Halls,client_journal_entry,not_evaluated
+569,Warchief Kargath Bladefist,259,540,The Shattered Halls,client_journal_entry,not_evaluated
+570,Mennu the Betrayer,260,547,The Slave Pens,client_journal_entry,not_evaluated
+571,Rokmar the Crackler,260,547,The Slave Pens,client_journal_entry,not_evaluated
+572,Quagmirran,260,547,The Slave Pens,client_journal_entry,not_evaluated
+573,Hydromancer Thespia,261,545,The Steamvault,client_journal_entry,not_evaluated
+574,Mekgineer Steamrigger,261,545,The Steamvault,client_journal_entry,not_evaluated
+575,Warlord Kalithresh,261,545,The Steamvault,client_journal_entry,not_evaluated
+576,Hungarfen,262,546,The Underbog,client_journal_entry,not_evaluated
+577,Ghaz'an,262,546,The Underbog,client_journal_entry,not_evaluated
+578,Swamplord Musel'ek,262,546,The Underbog,client_journal_entry,not_evaluated
+579,The Black Stalker,262,546,The Underbog,client_journal_entry,not_evaluated
+580,Elder Nadox,271,619,Ahn'kahet: The Old Kingdom,client_journal_entry,not_evaluated
+581,Prince Taldaram,271,619,Ahn'kahet: The Old Kingdom,client_journal_entry,not_evaluated
+582,Jedoga Shadowseeker,271,619,Ahn'kahet: The Old Kingdom,client_journal_entry,not_evaluated
+583,Amanitar,271,619,Ahn'kahet: The Old Kingdom,client_journal_entry,not_evaluated
+584,Herald Volazj,271,619,Ahn'kahet: The Old Kingdom,client_journal_entry,not_evaluated
+585,Krik'thir the Gatewatcher,272,601,Azjol-Nerub,client_journal_entry,not_evaluated
+586,Hadronox,272,601,Azjol-Nerub,client_journal_entry,not_evaluated
+587,Anub'arak,272,601,Azjol-Nerub,client_journal_entry,not_evaluated
+588,Trollgore,273,600,Drak'Tharon Keep,client_journal_entry,not_evaluated
+589,Novos the Summoner,273,600,Drak'Tharon Keep,client_journal_entry,not_evaluated
+590,King Dred,273,600,Drak'Tharon Keep,client_journal_entry,not_evaluated
+591,The Prophet Tharon'ja,273,600,Drak'Tharon Keep,client_journal_entry,not_evaluated
+592,Slad'ran,274,604,Gundrak,client_journal_entry,not_evaluated
+593,Drakkari Colossus,274,604,Gundrak,client_journal_entry,not_evaluated
+594,Moorabi,274,604,Gundrak,client_journal_entry,not_evaluated
+595,Eck the Ferocious,274,604,Gundrak,client_journal_entry,not_evaluated
+596,Gal'darah,274,604,Gundrak,client_journal_entry,not_evaluated
+597,General Bjarngrim,275,602,Halls of Lightning,client_journal_entry,not_evaluated
+598,Volkhan,275,602,Halls of Lightning,client_journal_entry,not_evaluated
+599,Ionar,275,602,Halls of Lightning,client_journal_entry,not_evaluated
+600,Loken,275,602,Halls of Lightning,client_journal_entry,not_evaluated
+601,Falric,276,668,Halls of Reflection,client_journal_entry,not_evaluated
+602,Marwyn,276,668,Halls of Reflection,client_journal_entry,not_evaluated
+603,Escape from Arthas,276,668,Halls of Reflection,client_journal_entry,not_evaluated
+604,Krystallus,277,599,Halls of Stone,client_journal_entry,not_evaluated
+605,Maiden of Grief,277,599,Halls of Stone,client_journal_entry,not_evaluated
+606,Tribunal of Ages,277,599,Halls of Stone,client_journal_entry,not_evaluated
+607,Sjonnir the Ironshaper,277,599,Halls of Stone,client_journal_entry,not_evaluated
+608,Forgemaster Garfrost,278,658,Pit of Saron,client_journal_entry,not_evaluated
+609,Ick & Krick,278,658,Pit of Saron,client_journal_entry,not_evaluated
+610,Scourgelord Tyrannus,278,658,Pit of Saron,client_journal_entry,not_evaluated
+611,Meathook,279,595,The Culling of Stratholme,client_journal_entry,not_evaluated
+612,Salramm the Fleshcrafter,279,595,The Culling of Stratholme,client_journal_entry,not_evaluated
+613,Chrono-Lord Epoch,279,595,The Culling of Stratholme,client_journal_entry,not_evaluated
+614,Mal'Ganis,279,595,The Culling of Stratholme,client_journal_entry,not_evaluated
+615,Bronjahm,280,632,The Forge of Souls,client_journal_entry,not_evaluated
+616,Devourer of Souls,280,632,The Forge of Souls,client_journal_entry,not_evaluated
+617,Commander Stoutbeard,281,576,The Nexus,client_journal_entry,not_evaluated
+618,Grand Magus Telestra,281,576,The Nexus,client_journal_entry,not_evaluated
+619,Anomalus,281,576,The Nexus,client_journal_entry,not_evaluated
+620,Ormorok the Tree-Shaper,281,576,The Nexus,client_journal_entry,not_evaluated
+621,Keristrasza,281,576,The Nexus,client_journal_entry,not_evaluated
+622,Drakos the Interrogator,282,578,The Oculus,client_journal_entry,not_evaluated
+623,Varos Cloudstrider,282,578,The Oculus,client_journal_entry,not_evaluated
+624,Mage-Lord Urom,282,578,The Oculus,client_journal_entry,not_evaluated
+625,Ley-Guardian Eregos,282,578,The Oculus,client_journal_entry,not_evaluated
+626,Erekem,283,608,The Violet Hold,client_journal_entry,not_evaluated
+627,Moragg,283,608,The Violet Hold,client_journal_entry,not_evaluated
+628,Ichoron,283,608,The Violet Hold,client_journal_entry,not_evaluated
+629,Xevozz,283,608,The Violet Hold,client_journal_entry,not_evaluated
+630,Lavanthor,283,608,The Violet Hold,client_journal_entry,not_evaluated
+631,Zuramat the Obliterator,283,608,The Violet Hold,client_journal_entry,not_evaluated
+632,Cyanigosa,283,608,The Violet Hold,client_journal_entry,not_evaluated
+634,Grand Champions,284,650,Trial of the Champion,client_journal_entry,not_evaluated
+635,Eadric the Pure,284,650,Trial of the Champion,client_journal_entry,not_evaluated
+636,Argent Confessor Paletress,284,650,Trial of the Champion,client_journal_entry,not_evaluated
+637,The Black Knight,284,650,Trial of the Champion,client_journal_entry,not_evaluated
+638,Prince Keleseth,285,574,Utgarde Keep,client_journal_entry,not_evaluated
+639,Skarvald & Dalronn,285,574,Utgarde Keep,client_journal_entry,not_evaluated
+640,Ingvar the Plunderer,285,574,Utgarde Keep,client_journal_entry,not_evaluated
+641,Svala Sorrowgrave,286,575,Utgarde Pinnacle,client_journal_entry,not_evaluated
+642,Gortok Palehoof,286,575,Utgarde Pinnacle,client_journal_entry,not_evaluated
+643,Skadi the Ruthless,286,575,Utgarde Pinnacle,client_journal_entry,not_evaluated
+644,King Ymiron,286,575,Utgarde Pinnacle,client_journal_entry,not_evaluated
+649,Raigonn,303,962,Gate of the Setting Sun,client_journal_entry,not_evaluated
+654,Armsmaster Harlan,311,1001,Scarlet Halls,client_journal_entry,not_evaluated
+655,Saboteur Kip'tilak,303,962,Gate of the Setting Sun,client_journal_entry,not_evaluated
+656,Flameweaver Koegler,311,1001,Scarlet Halls,client_journal_entry,not_evaluated
+657,Master Snowdrift,312,959,Shado-Pan Monastery,client_journal_entry,not_evaluated
+658,Liu Flameheart,313,960,Temple of the Jade Serpent,client_journal_entry,not_evaluated
+659,Instructor Chillheart,246,1007,Scholomance,client_journal_entry,not_evaluated
+660,Houndmaster Braun,311,1001,Scarlet Halls,client_journal_entry,not_evaluated
+663,Jandice Barov,246,1007,Scholomance,client_journal_entry,not_evaluated
+664,Lorewalker Stonestep,313,960,Temple of the Jade Serpent,client_journal_entry,not_evaluated
+665,Rattlegore,246,1007,Scholomance,client_journal_entry,not_evaluated
+666,Lilian Voss,246,1007,Scholomance,client_journal_entry,not_evaluated
+668,Ook-Ook,302,961,Stormstout Brewery,client_journal_entry,not_evaluated
+669,Hoptallus,302,961,Stormstout Brewery,client_journal_entry,not_evaluated
+670,Yan-Zhu the Uncasked,302,961,Stormstout Brewery,client_journal_entry,not_evaluated
+671,Brother Korloff,316,1004,Scarlet Monastery,client_journal_entry,not_evaluated
+672,Wise Mari,313,960,Temple of the Jade Serpent,client_journal_entry,not_evaluated
+673,Gu Cloudstrike,312,959,Shado-Pan Monastery,client_journal_entry,not_evaluated
+674,High Inquisitor Whitemane,316,1004,Scarlet Monastery,client_journal_entry,not_evaluated
+675,Striker Ga'dok,303,962,Gate of the Setting Sun,client_journal_entry,not_evaluated
+676,Commander Ri'mok,303,962,Gate of the Setting Sun,client_journal_entry,not_evaluated
+677,Will of the Emperor,317,1008,Mogu'shan Vaults,client_journal_entry,not_evaluated
+679,The Stone Guard,317,1008,Mogu'shan Vaults,client_journal_entry,not_evaluated
+682,Gara'jal the Spiritbinder,317,1008,Mogu'shan Vaults,client_journal_entry,not_evaluated
+683,Protectors of the Endless,320,996,Terrace of Endless Spring,client_journal_entry,not_evaluated
+684,Darkmaster Gandling,246,1007,Scholomance,client_journal_entry,not_evaluated
+685,Sha of Violence,312,959,Shado-Pan Monastery,client_journal_entry,not_evaluated
+686,Taran Zhu,312,959,Shado-Pan Monastery,client_journal_entry,not_evaluated
+687,The Spirit Kings,317,1008,Mogu'shan Vaults,client_journal_entry,not_evaluated
+688,Thalnos the Soulrender,316,1004,Scarlet Monastery,client_journal_entry,not_evaluated
+689,Feng the Accursed,317,1008,Mogu'shan Vaults,client_journal_entry,not_evaluated
+690,Gekkan,321,994,Mogu'shan Palace,client_journal_entry,not_evaluated
+691,Sha of Anger,322,996,Pandaria,client_journal_entry,not_evaluated
+692,General Pa'valak,324,1011,Siege of Niuzao Temple,client_journal_entry,not_evaluated
+693,Vizier Jin'bak,324,1011,Siege of Niuzao Temple,client_journal_entry,not_evaluated
+694,Adarogg,226,389,Ragefire Chasm,client_journal_entry,not_evaluated
+695,Dark Shaman Koranthal,226,389,Ragefire Chasm,client_journal_entry,not_evaluated
+696,Slagmaw,226,389,Ragefire Chasm,client_journal_entry,not_evaluated
+697,Lava Guard Gordoth,226,389,Ragefire Chasm,client_journal_entry,not_evaluated
+698,Xin the Weaponmaster,321,994,Mogu'shan Palace,client_journal_entry,not_evaluated
+708,Trial of the King,321,994,Mogu'shan Palace,client_journal_entry,not_evaluated
+709,Sha of Fear,320,996,Terrace of Endless Spring,client_journal_entry,not_evaluated
+713,Garalon,330,1009,Heart of Fear,client_journal_entry,not_evaluated
+725,Salyis's Warband,322,996,Pandaria,client_journal_entry,not_evaluated
+726,Elegon,317,1008,Mogu'shan Vaults,client_journal_entry,not_evaluated
+727,Wing Leader Ner'onok,324,1011,Siege of Niuzao Temple,client_journal_entry,not_evaluated
+728,Blood Guard Porung,259,540,The Shattered Halls,client_journal_entry,not_evaluated
+729,Lei Shi,320,996,Terrace of Endless Spring,client_journal_entry,not_evaluated
+737,Amber-Shaper Un'sok,330,1009,Heart of Fear,client_journal_entry,not_evaluated
+738,Commander Vo'jak,324,1011,Siege of Niuzao Temple,client_journal_entry,not_evaluated
+741,Wind Lord Mel'jarak,330,1009,Heart of Fear,client_journal_entry,not_evaluated
+742,Tsulong,320,996,Terrace of Endless Spring,client_journal_entry,not_evaluated
+743,Grand Empress Shek'zeer,330,1009,Heart of Fear,client_journal_entry,not_evaluated
+744,Blade Lord Ta'yak,330,1009,Heart of Fear,client_journal_entry,not_evaluated
+745,Imperial Vizier Zor'lok,330,1009,Heart of Fear,client_journal_entry,not_evaluated
+748,Obsidian Sentinel,239,70,Uldaman,client_journal_entry,not_evaluated
+749,Commander Malor,236,329,Stratholme,client_journal_entry,not_evaluated
+814,"Nalak, The Storm Lord",322,996,Pandaria,client_journal_entry,not_evaluated
+816,Council of Elders,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+817,Iron Qon,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+818,Durumu the Forgotten,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+819,Horridon,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+820,Primordius,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+821,Megaera,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+824,Dark Animus,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+825,Tortos,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+826,Oondasta,322,996,Pandaria,client_journal_entry,not_evaluated
+827,Jin'rokh the Breaker,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+828,Ji-Kun,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+829,Twin Consorts,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+831,Ra-den,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+832,Lei Shen,362,1098,Throne of Thunder,client_journal_entry,not_evaluated
+833,Commander Kolurg,281,576,The Nexus,client_journal_entry,not_evaluated
+834,Grand Champions,284,650,Trial of the Champion,client_journal_entry,not_evaluated
+846,Malkorok,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+849,The Fallen Protectors,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+850,General Nazgrim,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+851,Thok the Bloodthirsty,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+852,Immerseus,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+853,Paragons of the Klaxxi,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+856,Kor'kron Dark Shaman,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+857,"Chi-Ji, The Red Crane",322,996,Pandaria,client_journal_entry,not_evaluated
+858,"Yu'lon, The Jade Serpent",322,996,Pandaria,client_journal_entry,not_evaluated
+859,"Niuzao, The Black Ox",322,996,Pandaria,client_journal_entry,not_evaluated
+860,"Xuen, The White Tiger",322,996,Pandaria,client_journal_entry,not_evaluated
+861,"Ordos, Fire-God of the Yaungol",322,996,Pandaria,client_journal_entry,not_evaluated
+864,Iron Juggernaut,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+865,Siegecrafter Blackfuse,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+866,Norushen,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+867,Sha of Pride,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+868,Galakras,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+869,Garrosh Hellscream,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+870,Spoils of Pandaria,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated
+881,Galakras,369,1136,Siege of Orgrimmar,client_journal_entry,not_evaluated

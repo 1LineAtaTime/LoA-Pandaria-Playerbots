@@ -3016,6 +3016,11 @@ class spell_hunt_deterrence : public AuraScript
 {
     PrepareAuraScript(spell_hunt_deterrence);
 
+    bool Validate(SpellInfo const* spell) override
+    {
+        return spell->HasAura(SPELL_AURA_MOD_ATTACKER_MELEE_HIT_CHANCE) || spell->HasAura(SPELL_AURA_MOD_ATTACKER_RANGED_HIT_CHANCE);
+    }
+
     void CalculateAmount(AuraEffect const*, float& amount, bool&)
     {
         // 100 and -100, if attacker has +hit, he still can hit through deterrence
@@ -3024,19 +3029,10 @@ class spell_hunt_deterrence : public AuraScript
 
     void Register() override
     {
-        // Each spell id carries only one of the two hit chance auras: bind only the one it has.
         SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
-        bool hasMelee = false, hasRanged = false;
-        for (uint8 i = 0; spell && i < 4; ++i)
-        {
-            if (spell->Effects[i].ApplyAuraName == SPELL_AURA_MOD_ATTACKER_MELEE_HIT_CHANCE)
-                hasMelee = true;
-            else if (spell->Effects[i].ApplyAuraName == SPELL_AURA_MOD_ATTACKER_RANGED_HIT_CHANCE)
-                hasRanged = true;
-        }
-        if (hasMelee)
+        if (spell->HasAura(SPELL_AURA_MOD_ATTACKER_MELEE_HIT_CHANCE))
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_hunt_deterrence::CalculateAmount, EFFECT_ALL, SPELL_AURA_MOD_ATTACKER_MELEE_HIT_CHANCE);
-        if (hasRanged)
+        if (spell->HasAura(SPELL_AURA_MOD_ATTACKER_RANGED_HIT_CHANCE))
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_hunt_deterrence::CalculateAmount, EFFECT_ALL, SPELL_AURA_MOD_ATTACKER_RANGED_HIT_CHANCE);
     }
 };
@@ -3360,30 +3356,21 @@ class spell_hunt_glyph_of_lesser_proportions : public AuraScript
     }
 };
 
+void AddSC_skyfire27_hunter();
+
 void AddSC_hunter_spell_scripts()
 {
-    new spell_hun_glyph_of_aspect_of_the_beast();
-    new spell_hun_tracking();
-    new spell_hun_dash();
     new spell_script<spell_hunt_stampede>("spell_hunt_stampede");
     new spell_script<spell_hunt_dire_beast>("spell_hunt_dire_beast");
     new aura_script<spell_hunt_dire_beast_focus_driver>("spell_hunt_dire_beast_focus_driver");
-    new spell_hun_focus_fire();
-    new spell_hun_frenzy();
     new aura_script<spell_hunt_beast_cleave_proc>("spell_hunt_beast_cleave_proc");
     new spell_script<spell_hunt_beast_cleave_damage>("spell_hunt_beast_cleave_damage");
     new spell_script<spell_hunt_binding_shot_missile>("spell_hunt_binding_shot_missile");
     new aura_script<spell_hunt_binding_shot>("spell_hunt_binding_shot");
     new aura_script<spell_hunt_binding_shot_zone>("spell_hunt_binding_shot_zone");
     new aura_script<spell_hunt_improved_serpent_sting>("spell_hunt_improved_serpent_sting");
-    new spell_hun_chimera_shot();
     new spell_script<spell_hunt_last_stand_pet>("spell_hunt_last_stand_pet");
     new spell_script<spell_hunt_masters_call>("spell_hunt_masters_call");
-    new spell_hun_scatter_shot();
-    new spell_hun_sniper_training();
-    new spell_hun_pet_carrion_feeder();
-    new spell_hun_tame_beast();
-    new spell_hun_pet_dust_cloud();
     new spell_script<spell_hunt_explosive_trap>("spell_hunt_explosive_trap");
     new spell_script<spell_hunt_ice_trap>("spell_hunt_ice_trap");
     new atrigger_script<sat_hunt_ice_trap>("sat_hunt_ice_trap");
@@ -3463,4 +3450,5 @@ void AddSC_hunter_spell_scripts()
     new aura_script<spell_hunt_t16_4p_bonus_survival>("spell_hunt_t16_4p_bonus_survival");
     new aura_script<spell_hunt_remove_brutal_kinship>("spell_hunt_remove_brutal_kinship");
     new aura_script<spell_hunt_glyph_of_lesser_proportions>("spell_hunt_glyph_of_lesser_proportions");
+    AddSC_skyfire27_hunter();
 }

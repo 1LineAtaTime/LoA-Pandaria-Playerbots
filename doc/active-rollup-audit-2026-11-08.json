@@ -1,0 +1,128 @@
+{
+  "schema": "mop_loa_world",
+  "checks": 18766,
+  "literal_matches": 18748,
+  "dispositions": [
+    {
+      "source": "release26-services-ledger-2026-11-06",
+      "index": 598,
+      "table": "spell_script_names",
+      "disposition": "Superseded by SQL44:112997 uses the fork-owned Druid Shattering Blow handler."
+    },
+    {
+      "source": "release26-services-ledger-2026-11-06",
+      "index": 726,
+      "table": "spell_proc_event",
+      "disposition": "Superseded by SQL44:93399 uses the current Shooting Stars proc chance100."
+    },
+    {
+      "source": "release26-services-ledger-2026-11-06",
+      "index": 1458,
+      "table": "reference_loot_template",
+      "disposition": "Stored floating-point precision:45.4545 is the schema representation of45.45454545."
+    },
+    {
+      "source": "sf27-interaction-data",
+      "index": 7,
+      "table": "quest_objective",
+      "disposition": "Native event-objective compatibility: ObjectID -1 is required by Player::AreaExploredOrEventHappens for scripted credit."
+    },
+    {
+      "source": "sf27-interaction-data",
+      "index": 8,
+      "table": "quest_objective",
+      "disposition": "Native event-objective compatibility: ObjectID -1 is required by Player::AreaExploredOrEventHappens for scripted credit."
+    },
+    {
+      "source": "sf27-interaction-data",
+      "index": 11,
+      "table": "gameobject_loot_template",
+      "disposition": "Unused legacy loot identifier14980: no active gameobject_template.data1 references it; do not add an unreachable loot row."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 713,
+      "table": "creature_addon",
+      "disposition": "Old spawn GUID deleted from the active game; no orphan addon is created."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 714,
+      "table": "creature_addon",
+      "disposition": "Old spawn GUID deleted from the active game; no orphan addon is created."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 715,
+      "table": "creature_addon",
+      "disposition": "Old spawn GUID deleted from the active game; no orphan addon is created."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 716,
+      "table": "creature_addon",
+      "disposition": "Old spawn GUID deleted from the active game; no orphan addon is created."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 717,
+      "table": "creature_addon",
+      "disposition": "Old spawn GUID deleted from the active game; no orphan addon is created."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 718,
+      "table": "creature_addon",
+      "disposition": "Old spawn GUID deleted from the active game; no orphan addon is created."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 3829,
+      "table": "creature_template",
+      "disposition": "Preserve Gnarlpine Shaman2009 SmartAI combat ownership instead of disabling its active scripts."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 5138,
+      "table": "game_event",
+      "disposition": "Darkmoon event75 is normalized by the current monthly calendar scheduler; do not restore a stale perpetual September date."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 8221,
+      "table": "smart_scripts",
+      "disposition": "Published quest spell-hit event remapped from id0 to id1, preserving existing Hamstring combat id0; deployed by SQL09."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 8265,
+      "table": "smart_scripts",
+      "disposition": "Published Withered Ent ambient/cleanup events remapped to ids20/21/22 with corrected link21, preserving combat id0; deployed by SQL09."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 8266,
+      "table": "smart_scripts",
+      "disposition": "Published Withered Ent ambient/cleanup events remapped to ids20/21/22 with corrected link21, preserving combat id0; deployed by SQL09."
+    },
+    {
+      "source": "sf27-remaining-content-data",
+      "index": 8267,
+      "table": "smart_scripts",
+      "disposition": "Published Withered Ent ambient/cleanup events remapped to ids20/21/22 with corrected link21, preserving combat id0; deployed by SQL09."
+    }
+  ],
+  "verification": {
+    "native_shattering_blow": 1,
+    "shooting_stars_current_proc": 1,
+    "scripted_event_objective_sentinel": 2,
+    "obsolete_spawn_guids_absent": 0,
+    "obsolete_loot_identifier_unreferenced": 0,
+    "scout_quest_event": 1,
+    "ent_link_and_cleanup": 3,
+    "gnarlpine_combat_owner": 1,
+    "scout_cages_visual_only": 3
+  },
+  "scope": "Reconciles these historical adapted data ledgers only. Not all published C++ changes, all archive SQL statements, or gameplay acceptance.",
+  "all_published_fixes_integrated": false
+}

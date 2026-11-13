@@ -2138,7 +2138,12 @@ class spell_icc_geist_alarm : public SpellScriptLoader
 
             void Register() override
             {
-                OnEffectHit += SpellEffectFn(spell_icc_geist_alarm_SpellScript::HandleEvent, EFFECT_1, SPELL_EFFECT_APPLY_AURA);
+                // The second alarm has an additional aura at effect1; its
+                // event is effect2. Preserve both native targeting auras.
+                if (sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_1].Effect == SPELL_EFFECT_SEND_EVENT)
+                    OnEffectHit += SpellEffectFn(spell_icc_geist_alarm_SpellScript::HandleEvent, EFFECT_1, SPELL_EFFECT_SEND_EVENT);
+                else
+                    OnEffectHit += SpellEffectFn(spell_icc_geist_alarm_SpellScript::HandleEvent, EFFECT_2, SPELL_EFFECT_SEND_EVENT);
             }
         };
 

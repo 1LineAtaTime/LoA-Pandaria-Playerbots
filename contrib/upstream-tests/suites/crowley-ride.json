@@ -1,0 +1,169 @@
+{
+  "name": "crowley-ride-20261105",
+  "checks": [
+    {
+      "id": "mounted-backend",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=35230;",
+      "expected_rows": [
+        [
+          "",
+          "npc_crowley_mounted"
+        ]
+      ]
+    },
+    {
+      "id": "horse-backend",
+      "query": "SELECT AIName,ScriptName,VehicleId,spell1 FROM creature_template WHERE entry=35231;",
+      "expected_rows": [
+        [
+          "",
+          "npc_crowley_horse",
+          463,
+          67063
+        ]
+      ]
+    },
+    {
+      "id": "questgiver-backend",
+      "query": "SELECT AIName,ScriptName,npcflag FROM creature_template WHERE entry=35552;",
+      "expected_rows": [
+        [
+          "",
+          "npc_lord_darius_crowley_c2",
+          3
+        ]
+      ]
+    },
+    {
+      "id": "no-nearest-horse-backend",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=35230 AND source_type=0;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "no-double-movement-owner",
+      "query": "SELECT COUNT(*) FROM smart_scripts WHERE entryorguid=35231 AND source_type=0;",
+      "expected_rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "id": "old-mounted-list-preserved",
+      "query": "SELECT action_type,action_param1 FROM smart_scripts WHERE entryorguid=3523000 AND source_type=9 AND id=0;",
+      "expected_rows": [
+        [
+          11,
+          46598
+        ]
+      ]
+    },
+    {
+      "id": "contiguous-ride-route",
+      "query": "SELECT COUNT(*),MIN(pointid),MAX(pointid) FROM waypoints WHERE entry=35231;",
+      "expected_rows": [
+        [
+          33,
+          1,
+          33
+        ]
+      ]
+    },
+    {
+      "id": "jump-destination-2",
+      "query": "SELECT ROUND(position_x,2),ROUND(position_y,2),ROUND(position_z,4) FROM waypoints WHERE entry=35231 AND pointid=2;",
+      "expected_rows": [
+        [
+          "-1712.26",
+          "1670.87",
+          "20.6324"
+        ]
+      ]
+    },
+    {
+      "id": "jump-destination-19",
+      "query": "SELECT ROUND(position_x,2),ROUND(position_y,2),ROUND(position_z,4) FROM waypoints WHERE entry=35231 AND pointid=19;",
+      "expected_rows": [
+        [
+          "-1565.22",
+          "1708.60",
+          "20.4852"
+        ]
+      ]
+    },
+    {
+      "id": "mounted-dialogue-1",
+      "query": "SELECT COUNT(*) FROM creature_text WHERE CreatureID=35230 AND GroupID=1;",
+      "expected_rows": [
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "mounted-dialogue-2",
+      "query": "SELECT COUNT(*) FROM creature_text WHERE CreatureID=35230 AND GroupID=2;",
+      "expected_rows": [
+        [
+          4
+        ]
+      ]
+    },
+    {
+      "id": "normal-combat-credit",
+      "query": "SELECT type,objectId,amount FROM quest_objective WHERE questId=14212;",
+      "expected_rows": [
+        [
+          0,
+          35582,
+          30
+        ]
+      ]
+    },
+    {
+      "id": "stalker-spellhit",
+      "query": "SELECT event_type,event_param1,action_type,action_param1 FROM smart_scripts WHERE entryorguid=35229 AND source_type=0 AND id=2;",
+      "expected_rows": [
+        [
+          8,
+          67063,
+          80,
+          3522900
+        ]
+      ]
+    },
+    {
+      "id": "normal-credit-list",
+      "query": "SELECT action_type,action_param1,target_type FROM smart_scripts WHERE entryorguid=3522900 AND source_type=9 AND id=0;",
+      "expected_rows": [
+        [
+          33,
+          35582,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "questgiver-relation",
+      "query": "SELECT quest FROM creature_queststarter WHERE id=35552 AND quest=14212;",
+      "expected_rows": [
+        [
+          14212
+        ]
+      ]
+    },
+    {
+      "id": "turn-in-relation",
+      "query": "SELECT quest FROM creature_questender WHERE id=35618 AND quest=14212;",
+      "expected_rows": [
+        [
+          14212
+        ]
+      ]
+    }
+  ]
+}

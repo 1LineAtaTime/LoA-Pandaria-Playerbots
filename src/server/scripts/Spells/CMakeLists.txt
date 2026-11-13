@@ -11,24 +11,42 @@
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   Spells/spell_shaman.cpp
+  Spells/spell_shaman_sf27.cpp
   Spells/spell_hunter.cpp
+  Spells/spell_hunter_sf27.cpp
   Spells/spell_rogue.cpp
+  Spells/spell_rogue_sf27.cpp
   Spells/spell_druid.cpp
+  Spells/spell_druid_sf27.cpp
   Spells/spell_dk.cpp
+  Spells/spell_dk_sf27.cpp
   Spells/spell_quest.cpp
+  Spells/spell_quest_sf27.cpp
   Spells/spell_warrior.cpp
+  Spells/spell_warrior_sf27.cpp
   Spells/spell_generic.cpp
+  Spells/spell_generic_sf27.cpp
   Spells/spell_warlock.cpp
+  Spells/spell_warlock_sf27.cpp
   Spells/spell_priest.cpp
+  Spells/spell_priest_sf27.cpp
   Spells/spell_mage.cpp
+  Spells/spell_mage_sf27.cpp
   Spells/spell_monk.cpp
+  Spells/spell_monk_sf27.cpp
   Spells/spell_paladin.cpp
+  Spells/spell_paladin_sf27.cpp
   Spells/spell_item.cpp
+  Spells/spell_item_sf27.cpp
   Spells/spell_holiday.cpp
+  Spells/spell_holiday_sf27.cpp
   Spells/spell_pet.cpp
+  Spells/spell_pet_sf27.cpp
   Spells/spell_common.h
   Spells/spell_common.cpp
   Spells/spell_enchantment.cpp
+  Spells/spell_mastery_sf27.cpp
+  Spells/spell_archaeology_sf27.cpp
 )
 
 message("  -> Prepared: Spells")

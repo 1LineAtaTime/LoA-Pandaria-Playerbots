@@ -1,3 +1,4 @@
+#include "Config.h"
 /*
  * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
  * and/or modify it under version 2 of the License, or (at your option), any later version.
@@ -26,6 +27,7 @@ bool LeaveGroupAction::Leave(Player* player)
     // (variants "Goodbye!" / "Bye bye!" / "See you later!" from ai_playerbot_texts). AC passes
     // PLAYERBOT_SECURITY_TALK; this fork's TellMaster has no security-level parameter (PlayerbotAI.h).
     if (botAI->GetMaster())
+        if (!sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.SilentGreetings", true))
         botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault("goodbye", "Goodbye!", {}));
 
     if (bot->GetGroup())

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "gameplay_tested": false,
+  "tables": [
+    "creature_loot_template",
+    "creature_questender",
+    "creature_template",
+    "gameobject_questender",
+    "item_loot_template",
+    "lfg_dungeon_template",
+    "npc_trainer",
+    "quest_offer_reward",
+    "quest_request_items",
+    "quest_template",
+    "quest_template_addon",
+    "skinning_loot_template"
+  ],
+  "migrations": [
+    "2026_11_06_42_world_release27_quests_loot_travel.sql"
+  ],
+  "retained_contracts": 9166,
+  "retained_conflicts": [],
+  "new_overfull_groups": [],
+  "total_contracts": 145,
+  "initial_mismatches": 77,
+  "repeat_stable": true,
+  "unrelated_rows_fields_preserved": true,
+  "changed_rows": {
+    "creature_loot_template": 9,
+    "creature_questender": 0,
+    "creature_template": 3,
+    "gameobject_questender": 0,
+    "item_loot_template": 4,
+    "lfg_dungeon_template": 2,
+    "npc_trainer": 0,
+    "quest_offer_reward": 15,
+    "quest_request_items": 2,
+    "quest_template": 3,
+    "quest_template_addon": 8,
+    "skinning_loot_template": 34
+  },
+  "fixture_removed": true
+}

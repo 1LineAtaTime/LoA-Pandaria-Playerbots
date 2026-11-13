@@ -314,9 +314,25 @@ static bool SpellHasImplicitTarget(uint32 spellId, Targets targetType)
 // 138302 - Golden Apparition
 // 139195 - Restoration of the Infinite
 // 145153 - Dream of Cenarius
+namespace
+{
+bool HasSmartHealTarget(SpellInfo const* spell, Targets target)
+{
+    for (auto const& effect : spell->Effects)
+        if (effect.IsEffect() && (effect.TargetA.GetTarget() == target || effect.TargetB.GetTarget() == target))
+            return true;
+    return false;
+}
+}
+
 class spell_common_smart_heal_one_target : public spell_smart_heal
 {
     PrepareSpellScript(spell_common_smart_heal_one_target);
+
+    bool Validate(SpellInfo const* spell) override
+    {
+        return HasSmartHealTarget(spell, TARGET_UNIT_CASTER_AREA_RAID) || HasSmartHealTarget(spell, TARGET_UNIT_DEST_AREA_ALLY);
+    }
 
     void FilterTargets(std::list<WorldObject*>& targets)
     {
@@ -325,9 +341,10 @@ class spell_common_smart_heal_one_target : public spell_smart_heal
 
     void Register() override
     {
-        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_CASTER_AREA_RAID))
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+        if (HasSmartHealTarget(spell, TARGET_UNIT_CASTER_AREA_RAID))
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_one_target::FilterTargets, EFFECT_ALL, TARGET_UNIT_CASTER_AREA_RAID);
-        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_DEST_AREA_ALLY))
+        if (HasSmartHealTarget(spell, TARGET_UNIT_DEST_AREA_ALLY))
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_one_target::FilterTargets, EFFECT_ALL, TARGET_UNIT_DEST_AREA_ALLY);
     }
 };
@@ -341,6 +358,11 @@ class spell_common_smart_heal_six_targets : public spell_smart_heal
 {
     PrepareSpellScript(spell_common_smart_heal_six_targets);
 
+    bool Validate(SpellInfo const* spell) override
+    {
+        return HasSmartHealTarget(spell, TARGET_UNIT_DEST_AREA_ALLY) || HasSmartHealTarget(spell, TARGET_UNIT_SRC_AREA_ALLY);
+    }
+
     void FilterTargets(std::list<WorldObject*>& targets)
     {
         ApplySmartHeal(targets, 6);
@@ -348,9 +370,10 @@ class spell_common_smart_heal_six_targets : public spell_smart_heal
 
     void Register() override
     {
-        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_DEST_AREA_ALLY))
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+        if (HasSmartHealTarget(spell, TARGET_UNIT_DEST_AREA_ALLY))
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_six_targets::FilterTargets, EFFECT_ALL, TARGET_UNIT_DEST_AREA_ALLY);
-        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_SRC_AREA_ALLY))
+        if (HasSmartHealTarget(spell, TARGET_UNIT_SRC_AREA_ALLY))
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_six_targets::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ALLY);
     }
 };
@@ -756,6 +779,5 @@ void AddSC_common_spells_script()
     new spell_script<spell_common_unlearn_talent>("spell_common_unlearn_talent");
     new spell_script<spell_monk_glyph_of_paralysis>("spell_monk_glyph_of_paralysis");
     new spell_script<spell_hunt_glyph_of_solace>("spell_hunt_glyph_of_solace");
-    new spell_script<spell_mage_glyph_of_polymorph>("spell_mage_glyph_of_polymorph");
     new aura_script<spell_preparation>("spell_preparation");
 }

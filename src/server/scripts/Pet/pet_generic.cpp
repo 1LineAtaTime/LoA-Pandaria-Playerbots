@@ -85,7 +85,9 @@ class npc_pet_gen_mojo : public CreatureScript
         }
 };
 
+void AddSC_sf27_pet_mage();
 void AddSC_generic_pet_scripts()
 {
     new npc_pet_gen_mojo();
+    AddSC_sf27_pet_mage();
 }

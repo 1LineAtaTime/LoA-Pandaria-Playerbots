@@ -1,0 +1,311 @@
+{
+  "name": "training-chain-links",
+  "checks": [
+    {
+      "id": "training-chain-3101-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=3101;",
+      "expected_rows": [
+        [
+          "26918"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26910-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=26910;",
+      "expected_rows": [
+        [
+          "26917"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-3102-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=3102;",
+      "expected_rows": [
+        [
+          "26915"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-3103-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=3103;",
+      "expected_rows": [
+        [
+          "26919"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-3104-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=3104;",
+      "expected_rows": [
+        [
+          "26916"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-3105-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=3105;",
+      "expected_rows": [
+        [
+          "26914"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-31141-NextQuestId",
+      "query": "SELECT `NextQuestId` FROM quest_template_addon WHERE ID=31141;",
+      "expected_rows": [
+        [
+          "31142"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-24530-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=24530;",
+      "expected_rows": [
+        [
+          "3108"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26904-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26904;",
+      "expected_rows": [
+        [
+          "3115"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-31151-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=31151;",
+      "expected_rows": [
+        [
+          "31150"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26945-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26945;",
+      "expected_rows": [
+        [
+          "3116"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26947-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26947;",
+      "expected_rows": [
+        [
+          "3117"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26946-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26946;",
+      "expected_rows": [
+        [
+          "3118"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26949-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26949;",
+      "expected_rows": [
+        [
+          "3119"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26940-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26940;",
+      "expected_rows": [
+        [
+          "26841"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-31169-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=31169;",
+      "expected_rows": [
+        [
+          "31168"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26948-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26948;",
+      "expected_rows": [
+        [
+          "3120"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-27020-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=27020;",
+      "expected_rows": [
+        [
+          "3091"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-27023-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=27023;",
+      "expected_rows": [
+        [
+          "27015"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-27021-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=27021;",
+      "expected_rows": [
+        [
+          "3092"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-27066-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=27066;",
+      "expected_rows": [
+        [
+          "27014"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-27027-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=27027;",
+      "expected_rows": [
+        [
+          "3093"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-31166-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=31166;",
+      "expected_rows": [
+        [
+          "31165"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-27067-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=27067;",
+      "expected_rows": [
+        [
+          "3094"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26204-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26204;",
+      "expected_rows": [
+        [
+          "26203"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26207-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26207;",
+      "expected_rows": [
+        [
+          "26206"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26200-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26200;",
+      "expected_rows": [
+        [
+          "26199"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26198-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26198;",
+      "expected_rows": [
+        [
+          "26197"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-26201-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=26201;",
+      "expected_rows": [
+        [
+          "26202"
+        ]
+      ]
+    },
+    {
+      "id": "training-chain-31138-PrevQuestId",
+      "query": "SELECT `PrevQuestId` FROM quest_template_addon WHERE ID=31138;",
+      "expected_rows": [
+        [
+          "31135"
+        ]
+      ]
+    },
+    {
+      "id": "preserve-tutorial-3088",
+      "query": "SELECT PrevQuestID FROM quest_template_addon WHERE ID=3088;",
+      "expected_rows": [
+        [
+          "25126"
+        ]
+      ]
+    },
+    {
+      "id": "preserve-tutorial-3108",
+      "query": "SELECT PrevQuestID FROM quest_template_addon WHERE ID=3108;",
+      "expected_rows": [
+        [
+          "24473"
+        ]
+      ]
+    },
+    {
+      "id": "preserve-tutorial-3115",
+      "query": "SELECT PrevQuestID FROM quest_template_addon WHERE ID=3115;",
+      "expected_rows": [
+        [
+          "24473"
+        ]
+      ]
+    },
+    {
+      "id": "preserve-tutorial-31168",
+      "query": "SELECT PrevQuestID FROM quest_template_addon WHERE ID=31168;",
+      "expected_rows": [
+        [
+          "28715"
+        ]
+      ]
+    }
+  ]
+}

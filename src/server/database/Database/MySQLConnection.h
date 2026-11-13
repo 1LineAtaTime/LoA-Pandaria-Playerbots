@@ -21,6 +21,7 @@
 #include "AsioHacksFwd.h"
 #include "Define.h"
 #include "DatabaseEnvFwd.h"
+#include "DatabaseServerVersion.h"
 #include <map>
 #include <memory>
 #include <mutex>
@@ -63,15 +64,16 @@ class TC_DATABASE_API MySQLConnection
         bool PrepareStatements();
 
         bool Execute(char const* sql);
-        bool Execute(PreparedStatementBase* stmt);
+        bool Execute(PreparedStatementBase* stmt, bool allowReconnectRetry = true);
+        uint64 GetAffectedRows() const { return m_affectedRows; }
         ResultSet* Query(char const* sql);
         PreparedResultSet* Query(PreparedStatementBase* stmt);
         bool _Query(char const* sql, MySQLResult** pResult, MySQLField** pFields, uint64* pRowCount, uint32* pFieldCount);
         bool _Query(PreparedStatementBase* stmt, MySQLPreparedStatement** mysqlStmt, MySQLResult** pResult, uint64* pRowCount, uint32* pFieldCount);
 
-        void BeginTransaction();
-        void RollbackTransaction();
-        void CommitTransaction();
+        bool BeginTransaction();
+        bool RollbackTransaction();
+        bool CommitTransaction();
         int ExecuteTransaction(std::shared_ptr<TransactionBase> transaction);
         size_t EscapeString(char* to, const char* from, size_t length);
         void Ping();
@@ -91,6 +93,7 @@ class TC_DATABASE_API MySQLConnection
         void Unlock();
 
         uint32 GetServerVersion() const;
+        bool IsMariaDB() const { return m_serverVersion.Product == DatabaseServer::Family::MariaDB; }
         MySQLPreparedStatement* GetPreparedStatement(uint32 index);
         void PrepareStatement(uint32 index, std::string const& sql, ConnectionFlags flags);
 
@@ -104,12 +107,18 @@ class TC_DATABASE_API MySQLConnection
 
     private:
         bool _HandleMySQLErrno(uint32 errNo, uint8 attempts = 5);
+        bool EnsureConnection();
+        void DiscardConnection();
 
         std::unique_ptr<std::thread> m_workerThread;        //!< Core worker thread.
         MySQLHandle*          m_Mysql;                      //! MySQL Handle.
         MySQLConnectionInfo&  m_connectionInfo;             //! Connection info (used for logging)
         ConnectionFlags       m_connectionFlags;            //! Connection flags (for preparing relevant statements)
         std::mutex            m_Mutex;
+        DatabaseServer::Version m_serverVersion{ DatabaseServer::Family::MySQL, 0 };
+        bool                  m_inTransaction = false;
+        uint32                m_lastError = 0;
+        uint64                m_affectedRows = 0;
 
         MySQLConnection(MySQLConnection const& right) = delete;
         MySQLConnection& operator=(MySQLConnection const& right) = delete;

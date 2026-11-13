@@ -58,6 +58,7 @@ namespace Movement
         uint32 splineId;
         float initialOrientation;
         bool HasVelocity;
+        char const* velocitySource = "selected_unit_speed";
         bool TransformForTransport;
         bool walk;                      // selects the walk speed; not a client spline flag
 

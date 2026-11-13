@@ -1957,7 +1957,10 @@ class spell_pal_divine_shield : public SpellScript
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_pal_divine_shield::CheckCast);
-        OnEffectHitTarget += SpellEffectFn(spell_pal_divine_shield::CalculateHeal, EFFECT_3, SPELL_EFFECT_HEAL_PCT);
+        // The Symbiosis copy has the immunity/Forbearance behavior, but no
+        // Paladin glyph-heal effect. Keep its cast checks and OnHit callback.
+        if (sSpellMgr->GetSpellInfo(m_scriptSpellId)->Effects[EFFECT_3].IsEffect(SPELL_EFFECT_HEAL_PCT))
+            OnEffectHitTarget += SpellEffectFn(spell_pal_divine_shield::CalculateHeal, EFFECT_3, SPELL_EFFECT_HEAL_PCT);
         OnHit += SpellHitFn(spell_pal_divine_shield::HandleHit);
     }
 };
@@ -2782,94 +2785,28 @@ public:
     }
 };
 
+void AddSC_skyfire27_paladin();
+
 void AddSC_paladin_spell_scripts()
 {
     new spell_pal_glyph_of_devotian_aura();
     new spell_pal_glyph_of_devotian_trigger_aura();
-    new spell_pal_glyph_of_divine_storm();
-    new spell_pal_hand_of_purity();
     new spell_pal_glyph_of_avenging_wrath();
-    new spell_script<spell_pal_shield_of_the_righteous>("spell_pal_shield_of_the_righteous");
-    new spell_script<spell_pal_tower_of_radiance>("spell_pal_tower_of_radiance");
-    new spell_pal_sacred_shield();
-    new spell_pal_sacred_shield_absorb();
-    new spell_pal_emancipate();
-    new spell_pal_blinding_light();
-    new spell_pal_hand_of_protection();
-    new spell_pal_ardent_defender();
-    new spell_pal_blessing_of_faith();
-    new spell_pal_holy_shock();
     new spell_pal_divine_storm();
-    new spell_pal_righteous_defense();
-    new spell_script<spell_pal_crusader_strike>("spell_pal_crusader_strike");
-    new spell_script<spell_pal_seal_of_truth_hotfix>("spell_pal_seal_of_truth_hotfix");
-    new aura_script<spell_pal_censure_hotfix>("spell_pal_censure_hotfix");
-    new spell_pal_avenging_wrath();
     new spell_pal_glyph_of_double_jeopardy_judgment();
     new spell_pal_blessing();
     new spell_pal_guardian();
-    new spell_script<spell_pal_sword_of_light_damage_bonus_holy>("spell_pal_sword_of_light_damage_bonus_holy");
-    new spell_script<spell_pal_pursuit_of_justice>("spell_pal_pursuit_of_justice");
-    new spell_script<spell_pal_judgment>("spell_pal_judgment");
-    new spell_script<spell_pal_word_of_glory>("spell_pal_word_of_glory");
-    new spell_script<spell_pal_word_of_glory_heal>("spell_pal_word_of_glory_heal");
-    new spell_script<spell_pal_harsh_word>("spell_pal_harsh_word");
-    new spell_script<spell_pal_grand_crusader>("spell_pal_grand_crusader");
-    new spell_script<spell_pal_divine_purpose>("spell_pal_divine_purpose");
-    new spell_script<spell_pal_inquisition>("spell_pal_inquisition");
-    new spell_script<spell_pal_light_of_dawn>("spell_pal_light_of_dawn");
-    new spell_script<spell_pal_execution_sentence>("spell_pal_execution_sentence");
-    new aura_script<spell_pal_execution_sentence_effect>("spell_pal_execution_sentence_effect");
-    new aura_script<spell_pal_lights_hammer>("spell_pal_lights_hammer");
-    new aura_script<spell_pal_consecration>("spell_pal_consecration");
-    new aura_script<spell_pal_ancient_healer>("spell_pal_ancient_healer");
-    new aura_script<spell_pal_daybreak_passive>("spell_pal_daybreak_passive");
-    new aura_script<spell_pal_daybreak>("spell_pal_daybreak");
-    new spell_script<spell_pal_daybreak_heal>("spell_pal_daybreak_heal");
-    new spell_script<spell_pal_eternal_flame>("spell_pal_eternal_flame");
     new aura_script<spell_pal_mastery_hand_of_light>("spell_pal_mastery_hand_of_light");
-    new spell_script<spell_pal_holy_wrath>("spell_pal_holy_wrath");
-    new spell_script<spell_pal_exorcism>("spell_pal_exorcism");
-    new spell_script<spell_pal_exorcism_glyphed>("spell_pal_exorcism_glyphed");
-    new aura_script<spell_pal_glyph_of_inquisition>("spell_pal_glyph_of_inquisition");
-    new spell_script<spell_pal_lay_on_hands>("spell_pal_lay_on_hands");
     new spell_script<spell_pal_glyph_of_hammer_of_the_righteous>("spell_pal_glyph_of_hammer_of_the_righteous");
     new aura_script<spell_pal_bastion_of_glory>("spell_pal_bastion_of_glory");
-    new spell_script<spell_pal_flash_of_light>("spell_pal_flash_of_light");
-    new spell_script<spell_pal_selfless_healer>("spell_pal_selfless_healer");
     new aura_script<spell_pal_selfless_healer_ui>("spell_pal_selfless_healer_ui");
-    new aura_script<spell_pal_glyph_of_protector_of_the_innocent>("spell_pal_glyph_of_protector_of_the_innocent");
-    new aura_script<spell_pal_mastery_illuminated_healing>("spell_pal_mastery_illuminated_healing");
-    new spell_script<spell_pal_divine_shield>("spell_pal_divine_shield");
-    new aura_script<spell_pal_beacon_of_light>("spell_pal_beacon_of_light");
     new aura_script<spell_pal_beacon_of_light_remove>("spell_pal_beacon_of_light_remove");
-    new aura_script<spell_pal_seal_of_insight>("spell_pal_seal_of_insight");
-    new aura_script<spell_pal_ancient_crusader>("spell_pal_ancient_crusader");
-    new aura_script<spell_pal_guardian_of_ancient_kings>("spell_pal_guardian_of_ancient_kings");
     new creature_script<npc_guardian_of_ancient_kings>("npc_guardian_of_ancient_kings");
-    new spell_script<spell_pal_pvp_p14_holy>("spell_pal_pvp_p14_holy");
-    new aura_script<spell_pal_seal_of_justice>("spell_pal_seal_of_justice");
-    new aura_script<spell_pal_avenging_wrath>("spell_pal_avenging_wrath");
-    new aura_script<spell_pal_sanctified_wrath>("spell_pal_sanctified_wrath");
-    new aura_script<spell_pal_glyph_of_double_jeopardy>("spell_pal_glyph_of_double_jeopardy");
     new spell_script<spell_pal_glyph_of_double_jeopardy_judgment>("spell_pal_glyph_of_double_jeopardy_judgment");
-    new spell_script<spell_pal_t15_retribution_4p_bonus>("spell_pal_t15_retribution_4p_bonus");
-    new aura_script<spell_pal_t15_protection_4p_bonus>("spell_pal_t15_protection_4p_bonus");
-    new aura_script<spell_pal_t16_protection_2p_bonus>("spell_pal_t16_protection_2p_bonus");
     new aura_script<spell_pal_t16_protection_4p_bonus>("spell_pal_t16_protection_4p_bonus");
-    new aura_script<spell_pal_seal_of_righteousness>("spell_pal_seal_of_righteousness");
-    new spell_script<spell_pal_holy_prism>("spell_pal_holy_prism");
-    new spell_script<spell_pal_holy_prism_effect>("spell_pal_holy_prism_effect");
-    new spell_script<spell_pal_art_of_war>("spell_pal_art_of_war");
-    new spell_script<spell_pal_glyph_of_mounted_king>("spell_pal_glyph_of_mounted_king");
     new spell_script<spell_pal_glyph_of_mounted_king_filter>("spell_pal_glyph_of_mounted_king_filter");
-    new aura_script<spell_pal_divine_plea>("spell_pal_divine_plea");
-    new aura_script<spell_pal_glyph_of_blessed_life>("spell_pal_glyph_of_blessed_life");
-    new aura_script<spell_pal_censure_control_fix>("spell_pal_censure_control_fix");
-    new aura_script<spell_pal_hand_of_sacrifice>("spell_pal_hand_of_sacrifice");
     new aura_script<spell_pal_glyph_of_bladed_judgement>("spell_pal_glyph_of_bladed_judgement");
-    new spell_pal_glyph_of_contemplation();
     new spell_script<spell_pal_templar_s_verdict>("spell_pal_templar_s_verdict");
-    new spell_pal_eye_for_an_eye();
     new spell_pal_healing_feedback();
+    AddSC_skyfire27_paladin();
 }

@@ -35,6 +35,7 @@
 #include "DBCStructure.h"
 #include "GameObject.h"
 #include "InstanceScript.h"
+#include "SmartScriptMgr.h"
 #include "GossipDef.h"
 #include "Group.h"
 #include "GroupMgr.h"
@@ -42,6 +43,7 @@
 #include "Map.h"
 #include "MapManager.h"       // #811: teleport fail reason (IsValidMapCoord, FindMap)
 #include "MotionMaster.h"
+#include "MoveSpline.h"
 #include "NewRpgInfo.h"
 #include "ObjectAccessor.h"
 #include "ObjectGuid.h"
@@ -5014,13 +5016,107 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
         scenario == "board" || scenario == "equip" || scenario == "randomize" || scenario == "learn" || scenario == "spawngo" || scenario == "unlearn" || scenario == "refresh" || scenario == "masterprobe" ||
         scenario == "teleport" || scenario == "bossstate" || scenario == "transportinfo" || scenario == "questadd" ||
         scenario == "pvp" || scenario == "sethp" || scenario == "setmana" || scenario == "castself" || scenario == "addaura" || scenario == "npcaura" || scenario == "npccast" || scenario == "hasspell" ||
-        scenario == "npcstate" || scenario == "threatinfo" || scenario == "talentinfo" || scenario == "spellcount" || scenario == "rpgtarget")
+        scenario == "citycensus" || scenario == "citystate" || scenario == "npcstate" || scenario == "threatinfo" || scenario == "talentinfo" || scenario == "spellcount" || scenario == "rpgtarget" || scenario == "worldevent" || scenario == "worldheight" || scenario == "combatstate")
     {
         Player* target = name.empty() ? nullptr : ObjectAccessor::FindPlayerByName(name);
         if (!target)
         {
             handler->SendSysMessage(("botscenario: no online player named '" + name + "'").c_str());
             return false;
+        }
+
+        if (scenario == "combatstate")
+        {
+            if (!target->GetSession() || !sPlayerbotAIConfig->IsInRandomAccountList(target->GetSession()->GetAccountId()) ||
+                target->IsBeingTeleported())
+            {
+                handler->SendSysMessage("botscenario: combatstate requires an online random bot with no pending teleport");
+                return false;
+            }
+            Unit* victim = target->GetVictim();
+            TC_LOG_INFO("playerbots", "[COMBAT_STATE] bot=%s guid=%u map=%u x=%.3f y=%.3f z=%.3f combat=%u health=%u victimEntry=%u",
+                target->GetName().c_str(), target->GetGUID().GetCounter(), target->GetMapId(),
+                target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), uint32(target->IsInCombat()),
+                target->GetHealth(), victim ? victim->GetEntry() : 0);
+            uint32 entry = 0;
+            if ((in >> entry) && entry)
+                if (Creature* npc = target->FindNearestCreature(entry, 60.0f, true))
+                {
+                    // A newly loaded/stopped NPC may have no initialized spline.
+                    // Duration() indexes the spline's length array and requires
+                    // Initialized(); even read-only telemetry must honor that.
+                    Movement::MoveSpline const* spline = npc->movespline;
+                    bool initialized = spline && spline->Initialized();
+                    TC_LOG_INFO("playerbots", "[NPC_MOTION_STATE] bot=%s dbguid=%u entry=%u x=%.3f y=%.3f z=%.3f initialized=%u active=%u velocity=%.6f duration=%d rise=%.6f",
+                        target->GetName().c_str(), npc->GetDBTableGUIDLow(), npc->GetEntry(),
+                        npc->GetPositionX(), npc->GetPositionY(), npc->GetPositionZMinusOffset(), uint32(initialized),
+                        uint32(initialized && !spline->Finalized()), initialized ? spline->Velocity() : 0.f,
+                        initialized ? spline->Duration() : 0,
+                        initialized ? npc->GetPositionZMinusOffset() - spline->FinalDestination().z : 0.f);
+                }
+            return true;
+        }
+
+        if (scenario == "worldheight")
+        {
+            uint32 phase = 0;
+            float x = 0.0f, y = 0.0f, z = 0.0f;
+            in >> phase >> x >> y >> z;
+            if (in.fail() || !phase || !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) ||
+                !target->GetSession() || !sPlayerbotAIConfig->IsInRandomAccountList(target->GetSession()->GetAccountId()) ||
+                target->IsBeingTeleported() || target->GetExactDist(x,y,z) > 400.0f)
+            {
+                handler->SendSysMessage("botscenario: worldheight requires a nearby random bot, valid position and nonzero phase");
+                return false;
+            }
+            Map* map = target->GetMap();
+            float normal = map->GetHeight(uint32(1),x,y,z,true,100.0f);
+            float phased = map->GetHeight(phase,x,y,z,true,100.0f);
+            TC_LOG_INFO("playerbots", "[WORLD_HEIGHT] bot=%s map=%u phase=%u normal=%.6f phased=%.6f",
+                name.c_str(),map->GetId(),phase,normal,phased);
+            handler->PSendSysMessage("botscenario: worldheight normal=%.6f phased=%.6f",normal,phased);
+            return true;
+        }
+
+        if (scenario == "worldevent")
+        {
+            uint32 eventId = 0;
+            in >> eventId;
+            auto events = sSmartScriptMgr->GetScript(int32(eventId), SMART_SCRIPT_TYPE_EVENT);
+            if (!target->GetSession() || !sPlayerbotAIConfig->IsInRandomAccountList(target->GetSession()->GetAccountId()) ||
+                target->IsBeingTeleported() || events.empty())
+            {
+                handler->SendSysMessage("botscenario: worldevent requires an online random bot, no pending teleport, and a loaded event");
+                return false;
+            }
+            std::set<uint32> entries;
+            for (auto const& event : events)
+            {
+                if (target->GetExactDist(event.target.x, event.target.y, event.target.z) > 400.0f)
+                {
+                    handler->SendSysMessage("botscenario: move the test bot within400 yards of all event positions first");
+                    return false;
+                }
+                entries.insert(event.action.summonCreature.creature);
+            }
+            auto count = [&]() -> uint32
+            {
+                uint32 total = 0;
+                for (uint32 entry : entries)
+                {
+                    std::list<Creature*> creatures;
+                    target->GetCreatureListWithEntryInGrid(creatures, entry, 600.0f);
+                    total += uint32(creatures.size());
+                }
+                return total;
+            };
+            uint32 before = count();
+            target->GetMap()->ScriptsStart(sEventScripts, eventId, target, target);
+            uint32 after = count();
+            TC_LOG_INFO("playerbots", "[WORLD_EVENT] bot=%s event=%u map=%u before=%u after=%u created=%d",
+                name.c_str(), eventId, target->GetMapId(), before, after, int32(after) - int32(before));
+            handler->PSendSysMessage("botscenario: worldevent %u created=%d", eventId, int32(after) - int32(before));
+            return true;
         }
 
         // #448: "npcpos <entry>": position of the nearest live creature of that entry (200 yd), for drivers that must follow
@@ -5347,6 +5443,27 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
             char buf[256];
             std::snprintf(buf, sizeof(buf), "botscenario: %s spellcount total=%u active=%u nonpassive=%u", name.c_str(), total, active, nonpassive);
             handler->SendSysMessage(buf);
+            return true;
+        }
+
+        // Read-only census: no scenario ownership, active forcing or movement override.
+        if (scenario == "citystate" || scenario == "citycensus")
+        {
+            std::vector<Player*> subjects = scenario == "citycensus" ? sRandomPlayerbotMgr->GetPlayerBotsSnapshot() : std::vector<Player*>{target};
+            for (Player* subject : subjects)
+            {
+                if (!subject || !subject->IsInWorld() || (scenario == "citycensus" && subject->GetZoneId() != 4395)) continue;
+                PlayerbotAI* ai = GET_PLAYERBOT_AI(subject);
+                NewRpgInfo::WanderNpc const* visit = ai ? std::get_if<NewRpgInfo::WanderNpc>(&ai->GetRpgInfo().data) : nullptr;
+                Creature* npc = visit && visit->npcOrGo ? ObjectAccessor::GetCreatureOrPetOrVehicle(*subject, visit->npcOrGo) : nullptr;
+                handler->PSendSysMessage("CITY name=%s guid=%u map=%u zone=%u area=%u x=%.2f y=%.2f z=%.2f floor=%.2f moving=%u status=%d strategy=%u group=%u master=%u combat=%u alive=%u npc=%u nx=%.2f ny=%.2f nz=%.2f",
+                    subject->GetName().c_str(), subject->GetGUID().GetCounter(), subject->GetMapId(), subject->GetZoneId(), subject->GetAreaId(),
+                    subject->GetPositionX(), subject->GetPositionY(), subject->GetPositionZ(),
+                    subject->GetMap()->GetHeight(subject->GetPhaseMask(), subject->GetPositionX(), subject->GetPositionY(), subject->GetPositionZ()+0.5f), uint32(subject->isMoving()),
+                    ai ? int(ai->GetRpgInfo().GetStatus()) : -1, uint32(ai && ai->HasStrategy("new rpg", BOT_STATE_NON_COMBAT)),
+                    uint32(subject->GetGroup()!=nullptr), uint32(ai && ai->HasActivePlayerMaster()), uint32(subject->IsInCombat()), uint32(subject->IsAlive()),
+                    npc ? npc->GetEntry() : 0, npc ? npc->GetPositionX() : 0.0f, npc ? npc->GetPositionY() : 0.0f, npc ? npc->GetPositionZ() : 0.0f);
+            }
             return true;
         }
 

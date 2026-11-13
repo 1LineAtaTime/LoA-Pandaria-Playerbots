@@ -349,6 +349,9 @@ void CreatureAI::SetGazeOn(Unit* target)
 
 void CreatureAI::JustEnteredCombat(Unit* who)
 {
+    if (!me->IsInCombat())
+        return;
+
     // #799: we only get here on an out-of-combat -> in-combat transition (CombatManager::NotifyAICombat,
     // Unit::SetInCombatState). Nothing here clears _isEngaged on death (no EngagementOver in
     // UpdateVictim/_EnterEvadeMode for dead units, unlike upstream TC), and Creature::Respawn keeps the
@@ -375,7 +378,8 @@ void CreatureAI::EngagementStart(Unit* who)
 {
     if (IsEngaged())
     {
-        TC_LOG_ERROR("scripts.ai", "CreatureAI::EngagementStart called even though creature is already engaged. Creature entry %u guid %u map %u", me->GetEntry(), me->GetDBTableGUIDLow(), me->GetMapId()); // AC logs GetDebugInfo() here (AC CreatureAI.cpp:290)
+        TC_LOG_ERROR("scripts.ai", "CreatureAI::EngagementStart: creature entry %u GUID %u map %u is already engaged",
+            me->GetEntry(), me->GetGUID().GetCounter(), me->GetMapId());
         return;
     }
 

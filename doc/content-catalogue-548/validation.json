@@ -1,0 +1,10 @@
+{
+  "parser_safety_tests_passed": 10,
+  "csv_files_checked": 36,
+  "csv_rows_including_overlaps": 414598,
+  "output_hashes_verified": true,
+  "generator_hash_verified": true,
+  "read_only_run": true,
+  "accounts_or_characters_exported": false,
+  "gameplay_acceptance_claimed": false
+}

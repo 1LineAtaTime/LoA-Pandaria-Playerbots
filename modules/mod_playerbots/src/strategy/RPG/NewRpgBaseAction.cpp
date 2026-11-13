@@ -6,6 +6,7 @@
  * into the Legends of Azeroth Pandaria fork.
  */
 
+#include "Config.h"
 #include "NewRpgBaseAction.h"
 
 #include <algorithm>
@@ -570,7 +571,13 @@ bool NewRpgBaseAction::MoveWorldObjectTo(ObjectGuid guid, float distance)
         angle = object->GetOrientation() +
                 (static_cast<float>(M_PI) * irand(-25, 25) / 100.0f);  // in front of a moving target
 
-    float rnd = rand_norm();
+    // Stable separated approach angles avoid repeatedly choosing the NPC's exact origin.
+    AreaTableEntry const* visitZone = sAreaTableStore.LookupEntry(bot->GetZoneId());
+    bool const cityVisit = visitZone && (visitZone->Flags & AREA_FLAG_CAPITAL) && !bot->GetGroup() &&
+        !BotScenario::IsStatusLocked(bot) && sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true) &&
+        botAI->GetRpgInfo().GetStatus() == RPG_WANDER_NPC && !botAI->HasActivePlayerMaster();
+    if (cityVisit) angle = std::fmod(float(bot->GetGUID().GetCounter()) * 2.39996323f, 2.0f * float(M_PI));
+    float rnd = cityVisit ? 0.65f + 0.35f * rand_norm() : rand_norm();
     x += cos(angle) * distance * rnd;
     y += sin(angle) * distance * rnd;
 
@@ -579,6 +586,7 @@ bool NewRpgBaseAction::MoveWorldObjectTo(ObjectGuid guid, float distance)
     if (!object->GetMap()->CheckCollisionAndGetValidCoords(bot, object->GetPositionX(), object->GetPositionY(),
                                                            object->GetPositionZ(), x, y, z))
     {
+        if (cityVisit) return false;
         x = object->GetPositionX();
         y = object->GetPositionY();
         z = object->GetPositionZ();
@@ -1045,6 +1053,41 @@ ObjectGuid NewRpgBaseAction::ChooseNpcOrGameObjectToInteract(bool questgiverOnly
     if (possibleTargets.empty() && possibleGameObjects.empty())
         return ObjectGuid::Empty;
 
+    // City visitors select uncrowded service NPCs, retaining quest-specific behavior.
+    AreaTableEntry const* city = sAreaTableStore.LookupEntry(bot->GetZoneId());
+    if (!questgiverOnly && city && (city->Flags & AREA_FLAG_CAPITAL) &&
+        sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true) &&
+        !botAI->HasActivePlayerMaster() && !bot->GetGroup() && !BotScenario::IsStatusLocked(bot))
+    {
+        GuidVector services;
+        auto const* visit = std::get_if<NewRpgInfo::WanderNpc>(&botAI->GetRpgInfo().data);
+        for (ObjectGuid const& guid : possibleTargets)
+        {
+            Creature* npc = ObjectAccessor::GetCreatureOrPetOrVehicle(*bot, guid);
+            if (!npc || !npc->IsAlive() || npc->IsHostileTo(bot) || (visit && visit->previousNpc == guid) ||
+                !npc->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_AUCTIONEER | UNIT_NPC_FLAG_BANKER | UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_INNKEEPER))
+                continue;
+            // Dalaran's sewer banks can be close in XY but on another floor.
+            // Prefer a currently visible service on this level, not a wall or
+            // floor between the bot and a nearby basement service.
+            if (bot->GetZoneId() == 4395 &&
+                ((npc->GetAreaId() == 4616 && bot->GetTeamId() == TEAM_ALLIANCE) ||
+                 (npc->GetAreaId() == 4740 && bot->GetTeamId() == TEAM_HORDE) ||
+                 std::fabs(npc->GetPositionZ() - bot->GetPositionZ()) > 12.0f || !bot->IsWithinLOSInMap(npc)))
+                continue;
+            unsigned visitors = 0;
+            for (Player* other : sRandomPlayerbotMgr->GetPlayerBotsSnapshot())
+            {
+                if (other == bot || other->GetMapId() != bot->GetMapId()) continue;
+                if (PlayerbotAI* ai = GET_PLAYERBOT_AI(other))
+                    if (auto const* pending = std::get_if<NewRpgInfo::WanderNpc>(&ai->GetRpgInfo().data))
+                        if (pending->npcOrGo == guid) ++visitors;
+            }
+            if (visitors < 3) services.push_back(guid);
+        }
+        // Wait or pick another activity instead of stacking at a saturated service NPC.
+        return services.empty() ? ObjectGuid::Empty : services[urand(0, services.size() - 1)];
+    }
     WorldObject* nearestObject = nullptr;
 
     // taxi-quest-stage-design.md B.3 item 3: a .botscenario quest stage started with "pick=nearest"
@@ -1367,6 +1410,20 @@ WorldPosition NewRpgBaseAction::SelectRandomGrindPos(Player* bot)
     }
     std::vector<WorldLocation> lo_prepared_locs, hi_prepared_locs;
 
+    // Friendly hubs are already faction-filtered by TravelMgr. Permit nearby capital visits across zone borders.
+    if (sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true) && !bot->GetGroup() &&
+        !BotScenario::IsStatusLocked(bot) && !BotScenario::PickNearest(bot) &&
+        urand(1, 100) <= uint32(std::max(0, std::min(100, sConfigMgr->GetIntDefault("AiPlayerbot.CityLife.CampChance", 50)))))
+    {
+        std::vector<WorldLocation> capitals;
+        for (auto const& loc : locs)
+        {
+            if (loc.GetMapId() != bot->GetMapId() || bot->GetExactDist(loc) > 2500.0f || bot->GetExactDist(loc) < 50.0f) continue;
+            AreaTableEntry const* zone = sAreaTableStore.LookupEntry(bot->GetMap()->GetZoneId(bot->GetPhaseMask(), loc.GetPositionX(), loc.GetPositionY(), loc.GetPositionZ()));
+            if (zone && (zone->Flags & AREA_FLAG_CAPITAL)) capitals.push_back(loc);
+        }
+        if (!capitals.empty()) return capitals[urand(0, capitals.size() - 1)];
+    }
     bool inCity = false;
     if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(bot->GetZoneId()))
     {

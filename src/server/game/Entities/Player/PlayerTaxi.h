@@ -79,6 +79,7 @@ public:
     uint32 NextTaxiDestination()
     {
         m_taxiDestinations.pop_front();
+        m_lastNodeIndex = 0; // Node indexes belong to one leg, not the whole route.
         return GetTaxiDestination();
     }
     bool empty() const

@@ -1,0 +1,154 @@
+[
+  {
+    "path": "modules/mod_playerbots/config/playerbots.conf.dist",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/database/Database/Implementation/LoginDatabase.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/database/Database/Implementation/WorldDatabase.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/database/Database/Transaction.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/AI/CreatureAI.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/AI/SmartScripts/SmartScriptMgr.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/AuctionHouseBot/AuctionHouseBotSeller.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/BattlePay/BattlePayMgr.cpp",
+    "decision": "retain local complete transaction implementation"
+  },
+  {
+    "path": "src/server/game/BattlePay/BattlePayMgr.h",
+    "decision": "retain local complete transaction implementation"
+  },
+  {
+    "path": "src/server/game/BattlePay/ServiceBoost.cpp",
+    "decision": "retain local complete transaction implementation"
+  },
+  {
+    "path": "src/server/game/Conditions/ConditionMgr.cpp",
+    "decision": "use upstream conflict hunk; retain other merged custom changes"
+  },
+  {
+    "path": "src/server/game/Entities/Player/Player.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Entities/Unit/StatSystem.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Globals/ObjectMgr.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Handlers/BattlePayHandler.cpp",
+    "decision": "retain local complete transaction implementation"
+  },
+  {
+    "path": "src/server/game/Maps/Map.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Movement/MotionMaster.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Movement/Spline/MoveSpline.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Server/WorldSession.cpp",
+    "decision": "use upstream conflict hunk; retain other merged custom changes"
+  },
+  {
+    "path": "src/server/scripts/Custom/wow_token.cpp",
+    "decision": "retain local complete transaction implementation"
+  },
+  {
+    "path": "src/server/scripts/EasternKingdoms/zone_gilneas.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/EasternKingdoms/zone_tirisfal_glades.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Kalimdor/CavernsOfTime/HourofTwilight/boss_archbishop_benedictus.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Pandaria/GateOfTheSettingSun/boss_commander_rimok.cpp",
+    "decision": "use upstream conflict hunk; retain other merged custom changes"
+  },
+  {
+    "path": "src/server/scripts/Pandaria/HeartOfFear/boss_zorlok.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Pandaria/SiegeOfOrgrimmar/boss_paragons_of_the_klaxxi.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Pandaria/SiegeOfOrgrimmar/boss_siegecrafter_blackfuse.cpp",
+    "decision": "use upstream conflict hunk; retain other merged custom changes"
+  },
+  {
+    "path": "src/server/scripts/Pandaria/StormstoutBrewery/stormstout_brewery.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Spells/spell_common.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Spells/spell_generic.cpp",
+    "decision": "use upstream conflict hunk; retain other merged custom changes"
+  },
+  {
+    "path": "src/server/scripts/Spells/spell_hunter.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/scripts/Spells/spell_warlock.cpp",
+    "decision": "preserve local overlapping repairs; accept nonconflicting upstream changes"
+  },
+  {
+    "path": "src/server/game/Entities/Unit/StatSystem.cpp",
+    "decision": "Use paired upstream DamageModifier/attack-time damage model; retain SF compatibility columns but do not multiply the SF authored modifier again."
+  },
+  {
+    "path": "sql/updates/world/2026_10_29_963w_missing_waypoint_paths.sql",
+    "decision": "Repair malformed multiline undo comment; waypoint payload unchanged."
+  },
+  {
+    "path": "sql/updates/world/2026_10_29_986_70_hb_southshore_purgation_alterac.sql",
+    "decision": "Replace slow correlated waypoint DELETE with equivalent indexed join on MariaDB."
+  },
+  {
+    "path": "sql/updates/world/2026_11_07_53_world_loa_beta_schema.sql",
+    "decision": "Restore normalized locale tables and missing metadata columns from original LoA reference; modern primary keys; nullable waypoint orientation."
+  },
+  {
+    "path": "sql/updates/world/2026_11_07_54_world_loa_legacy_aliases.sql",
+    "decision": "Normalize five additional primary keys and keep mixed legacy/modern SQL column writes consistent using compatibility triggers."
+  },
+  {
+    "path": "sql/updates/world/2026_11_07_55_world_loa_locale_preservation.sql",
+    "decision": "Copy legacy translations into runtime normalized tables without overwriting existing modern translations."
+  }
+]

@@ -22,6 +22,7 @@
 #include "StringFormat.h"
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <variant>
 #include <vector>
 
@@ -30,6 +31,7 @@ class MySQLConnection;
 struct TransactionData
 {
     std::variant<std::unique_ptr<PreparedStatementBase>, std::string> query;
+    std::optional<uint64> expectedAffectedRows;
 
     template<typename... Args>
     TransactionData(Args&&... args) : query(std::forward<Args>(args)...) { }
@@ -56,6 +58,9 @@ class TC_DATABASE_API TransactionBase
         virtual ~TransactionBase() { Cleanup(); }
 
         void Append(char const* sql);
+        // Roll back the entire transaction if this statement does not affect
+        // exactly the expected row count (for ownership/idempotency guards).
+        void AppendChecked(char const* sql, uint64 expectedAffectedRows);
         template<typename Format, typename... Args>
         void PAppend(Format&& sql, Args&&... args)
         {

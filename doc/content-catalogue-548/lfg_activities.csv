@@ -1,0 +1,344 @@
+id,name,comparison,behavior
+1,Wailing Caverns,client_asset_present,not_evaluated
+2,Scholomance,client_asset_present,not_evaluated
+4,Ragefire Chasm,client_asset_present,not_evaluated
+6,Deadmines,client_asset_present,not_evaluated
+8,Shadowfang Keep,client_asset_present,not_evaluated
+10,Blackfathom Deeps,client_asset_present,not_evaluated
+12,Stormwind Stockade,client_asset_present,not_evaluated
+14,Gnomeregan,client_asset_present,not_evaluated
+16,Razorfen Kraul,client_asset_present,not_evaluated
+20,Razorfen Downs,client_asset_present,not_evaluated
+22,Uldaman,client_asset_present,not_evaluated
+24,Zul'Farrak,client_asset_present,not_evaluated
+26,Maraudon - Foulspore Cavern,client_asset_present,not_evaluated
+28,Sunken Temple,client_asset_present,not_evaluated
+30,Blackrock Depths - Detention Block,client_asset_present,not_evaluated
+32,Lower Blackrock Spire,client_asset_present,not_evaluated
+34,Dire Maul - Warpwood Quarter,client_asset_present,not_evaluated
+36,Dire Maul - Capital Gardens,client_asset_present,not_evaluated
+38,Dire Maul - Gordok Commons,client_asset_present,not_evaluated
+40,Stratholme - Main Gate,client_asset_present,not_evaluated
+46,Onyxia's Lair,client_asset_present,not_evaluated
+48,Molten Core,client_asset_present,not_evaluated
+50,Blackwing Lair,client_asset_present,not_evaluated
+58,Elwynn Forest,client_asset_present,not_evaluated
+60,Westfall,client_asset_present,not_evaluated
+62,Duskwood,client_asset_present,not_evaluated
+64,Dun Morogh,client_asset_present,not_evaluated
+66,Loch Modan,client_asset_present,not_evaluated
+68,Wetlands,client_asset_present,not_evaluated
+70,Stranglethorn Vale,client_asset_present,not_evaluated
+72,Blasted Lands,client_asset_present,not_evaluated
+74,Swamp of Sorrows,client_asset_present,not_evaluated
+76,Redridge Mountains,client_asset_present,not_evaluated
+78,Burning Steppes,client_asset_present,not_evaluated
+80,Searing Gorge,client_asset_present,not_evaluated
+82,Badlands,client_asset_present,not_evaluated
+84,Arathi Highlands,client_asset_present,not_evaluated
+86,Hillsbrad Foothills,client_asset_present,not_evaluated
+88,Hinterlands,client_asset_present,not_evaluated
+90,Western Plaguelands,client_asset_present,not_evaluated
+92,Eastern Plaguelands,client_asset_present,not_evaluated
+94,Tirisfal Glades,client_asset_present,not_evaluated
+96,Silverpine Forest,client_asset_present,not_evaluated
+98,Alterac Mountains,client_asset_present,not_evaluated
+100,Durotar,client_asset_present,not_evaluated
+102,Mulgore,client_asset_present,not_evaluated
+104,The Barrens,client_asset_present,not_evaluated
+106,Stonetalon Mountains,client_asset_present,not_evaluated
+108,Thousand Needles,client_asset_present,not_evaluated
+110,Desolace,client_asset_present,not_evaluated
+112,Feralas,client_asset_present,not_evaluated
+114,Dustwallow Marsh,client_asset_present,not_evaluated
+116,Tanaris,client_asset_present,not_evaluated
+118,Un'Goro Crater,client_asset_present,not_evaluated
+120,Silithus,client_asset_present,not_evaluated
+122,Teldrassil,client_asset_present,not_evaluated
+124,Darkshore,client_asset_present,not_evaluated
+126,Ashenvale,client_asset_present,not_evaluated
+128,Felwood,client_asset_present,not_evaluated
+130,Azshara,client_asset_present,not_evaluated
+132,Winterspring,client_asset_present,not_evaluated
+136,Hellfire Ramparts,client_asset_present,not_evaluated
+137,Blood Furnace,client_asset_present,not_evaluated
+138,Shattered Halls,client_asset_present,not_evaluated
+140,Slave Pens,client_asset_present,not_evaluated
+146,Underbog,client_asset_present,not_evaluated
+147,The Steamvault,client_asset_present,not_evaluated
+148,Mana-Tombs,client_asset_present,not_evaluated
+149,Auchenai Crypts,client_asset_present,not_evaluated
+150,Sethekk Halls,client_asset_present,not_evaluated
+151,Shadow Labyrinth,client_asset_present,not_evaluated
+152,Hellfire Peninsula,client_asset_present,not_evaluated
+153,Zangarmarsh,client_asset_present,not_evaluated
+154,Terokkar Forest,client_asset_present,not_evaluated
+155,Nagrand,client_asset_present,not_evaluated
+156,Shadowmoon Valley,client_asset_present,not_evaluated
+157,Blade's Edge Mountains,client_asset_present,not_evaluated
+158,Netherstorm,client_asset_present,not_evaluated
+159,Naxxramas,client_asset_present,not_evaluated
+160,Ahn'Qiraj Ruins,client_asset_present,not_evaluated
+161,Ahn'Qiraj Temple,client_asset_present,not_evaluated
+163,Scarlet Halls,client_asset_present,not_evaluated
+164,Scarlet Monastery,client_asset_present,not_evaluated
+166,Eversong Woods,client_asset_present,not_evaluated
+167,Azuremyst Isle,client_asset_present,not_evaluated
+168,Ghostlands,client_asset_present,not_evaluated
+169,Bloodmyst Isle,client_asset_present,not_evaluated
+170,The Escape From Durnholde,client_asset_present,not_evaluated
+171,Opening of the Dark Portal,client_asset_present,not_evaluated
+172,The Mechanar,client_asset_present,not_evaluated
+173,The Botanica,client_asset_present,not_evaluated
+174,The Arcatraz,client_asset_present,not_evaluated
+175,Karazhan,client_asset_present,not_evaluated
+176,Magtheridon's Lair,client_asset_present,not_evaluated
+177,Gruul's Lair,client_asset_present,not_evaluated
+178,Auchenai Crypts,client_asset_present,not_evaluated
+179,Mana-Tombs,client_asset_present,not_evaluated
+180,Sethekk Halls,client_asset_present,not_evaluated
+181,Shadow Labyrinth,client_asset_present,not_evaluated
+182,Opening of the Dark Portal,client_asset_present,not_evaluated
+183,The Escape From Durnholde,client_asset_present,not_evaluated
+184,Slave Pens,client_asset_present,not_evaluated
+185,The Steamvault,client_asset_present,not_evaluated
+186,Underbog,client_asset_present,not_evaluated
+187,Blood Furnace,client_asset_present,not_evaluated
+188,Hellfire Ramparts,client_asset_present,not_evaluated
+189,Shattered Halls,client_asset_present,not_evaluated
+190,The Arcatraz,client_asset_present,not_evaluated
+191,The Botanica,client_asset_present,not_evaluated
+192,The Mechanar,client_asset_present,not_evaluated
+193,Tempest Keep,client_asset_present,not_evaluated
+194,Serpentshrine Cavern,client_asset_present,not_evaluated
+195,Hyjal Past,client_asset_present,not_evaluated
+196,Black Temple,client_asset_present,not_evaluated
+198,Magisters' Terrace,client_asset_present,not_evaluated
+199,The Sunwell,client_asset_present,not_evaluated
+200,Isle of Quel'Danas,client_asset_present,not_evaluated
+201,Magisters' Terrace,client_asset_present,not_evaluated
+202,Utgarde Keep,client_asset_present,not_evaluated
+203,Utgarde Pinnacle,client_asset_present,not_evaluated
+204,Azjol-Nerub,client_asset_present,not_evaluated
+205,Utgarde Pinnacle,client_asset_present,not_evaluated
+206,The Oculus,client_asset_present,not_evaluated
+207,Halls of Lightning,client_asset_present,not_evaluated
+208,Halls of Stone,client_asset_present,not_evaluated
+209,The Culling of Stratholme,client_asset_present,not_evaluated
+210,The Culling of Stratholme,client_asset_present,not_evaluated
+211,The Oculus,client_asset_present,not_evaluated
+212,Halls of Lightning,client_asset_present,not_evaluated
+213,Halls of Stone,client_asset_present,not_evaluated
+214,Drak'Tharon Keep,client_asset_present,not_evaluated
+215,Drak'Tharon Keep,client_asset_present,not_evaluated
+216,Gundrak,client_asset_present,not_evaluated
+217,Gundrak,client_asset_present,not_evaluated
+218,Ahn'kahet: The Old Kingdom,client_asset_present,not_evaluated
+219,Ahn'kahet: The Old Kingdom,client_asset_present,not_evaluated
+220,Violet Hold,client_asset_present,not_evaluated
+221,Violet Hold,client_asset_present,not_evaluated
+223,The Eye of Eternity,client_asset_present,not_evaluated
+224,The Obsidian Sanctum,client_asset_present,not_evaluated
+225,The Nexus,client_asset_present,not_evaluated
+226,The Nexus,client_asset_present,not_evaluated
+227,Naxxramas,client_asset_present,not_evaluated
+228,Borean Tundra,client_asset_present,not_evaluated
+229,Howling Fjord,client_asset_present,not_evaluated
+230,Grizzly Hills,client_asset_present,not_evaluated
+231,Dragonblight,client_asset_present,not_evaluated
+232,Wintergrasp,client_asset_present,not_evaluated
+233,Zul'Drak,client_asset_present,not_evaluated
+234,Sholazar Basin,client_asset_present,not_evaluated
+235,The Storm Peaks,client_asset_present,not_evaluated
+236,Icecrown,client_asset_present,not_evaluated
+237,The Eye of Eternity,client_asset_present,not_evaluated
+238,The Obsidian Sanctum,client_asset_present,not_evaluated
+239,Vault of Archavon,client_asset_present,not_evaluated
+240,Vault of Archavon,client_asset_present,not_evaluated
+241,Azjol-Nerub,client_asset_present,not_evaluated
+242,Utgarde Keep,client_asset_present,not_evaluated
+243,Ulduar,client_asset_present,not_evaluated
+244,Ulduar,client_asset_present,not_evaluated
+245,Trial of the Champion,client_asset_present,not_evaluated
+246,Trial of the Crusader,client_asset_present,not_evaluated
+247,Trial of the Grand Crusader,client_asset_present,not_evaluated
+248,Trial of the Crusader,client_asset_present,not_evaluated
+249,Trial of the Champion,client_asset_present,not_evaluated
+250,Trial of the Grand Crusader,client_asset_present,not_evaluated
+251,The Forge of Souls,client_asset_present,not_evaluated
+252,The Forge of Souls,client_asset_present,not_evaluated
+253,Pit of Saron,client_asset_present,not_evaluated
+254,Pit of Saron,client_asset_present,not_evaluated
+255,Halls of Reflection,client_asset_present,not_evaluated
+256,Halls of Reflection,client_asset_present,not_evaluated
+257,Onyxia's Lair,client_asset_present,not_evaluated
+258,Random Classic Dungeon,client_asset_present,not_evaluated
+259,Random Burning Crusade Dungeon,client_asset_present,not_evaluated
+260,Random Burning Crusade Heroic,client_asset_present,not_evaluated
+261,Random Lich King Dungeon,client_asset_present,not_evaluated
+262,Random Lich King Heroic,client_asset_present,not_evaluated
+272,Maraudon - The Wicked Grotto,client_asset_present,not_evaluated
+273,Maraudon - Earth Song Falls,client_asset_present,not_evaluated
+274,Stratholme - Service Entrance,client_asset_present,not_evaluated
+276,Blackrock Depths - Upper City,client_asset_present,not_evaluated
+279,Icecrown Citadel,client_asset_present,not_evaluated
+280,Icecrown Citadel,client_asset_present,not_evaluated
+285,The Headless Horseman,client_asset_present,not_evaluated
+286,The Frost Lord Ahune,client_asset_present,not_evaluated
+287,Coren Direbrew,client_asset_present,not_evaluated
+288,The Crown Chemical Co.,client_asset_present,not_evaluated
+293,Ruby Sanctum,client_asset_present,not_evaluated
+294,Ruby Sanctum,client_asset_present,not_evaluated
+296,Grand Ambassador Flamelash,client_asset_present,not_evaluated
+297,Crown Princess Theradras,client_asset_present,not_evaluated
+298,Kai'ju Gahz'rilla,client_asset_present,not_evaluated
+299,Prince Sarsarun,client_asset_present,not_evaluated
+300,Random Cataclysm Dungeon,client_asset_present,not_evaluated
+301,Random Cataclysm Heroic,client_asset_present,not_evaluated
+302,Throne of the Tides,client_asset_present,not_evaluated
+303,Blackrock Caverns,client_asset_present,not_evaluated
+304,Grim Batol,client_asset_present,not_evaluated
+305,Halls of Origination,client_asset_present,not_evaluated
+306,Kai'ju Gahz'rilla,client_asset_present,not_evaluated
+307,The Stonecore,client_asset_present,not_evaluated
+308,Grand Ambassador Flamelash,client_asset_present,not_evaluated
+309,Crown Princess Theradras,client_asset_present,not_evaluated
+310,Prince Sarsarun,client_asset_present,not_evaluated
+311,The Vortex Pinnacle,client_asset_present,not_evaluated
+312,Lost City of the Tol'vir,client_asset_present,not_evaluated
+313,Blackwing Descent,client_asset_present,not_evaluated
+314,Blackwing Descent,client_asset_present,not_evaluated
+315,The Bastion of Twilight,client_asset_present,not_evaluated
+316,The Bastion of Twilight,client_asset_present,not_evaluated
+317,Throne of the Four Winds,client_asset_present,not_evaluated
+318,Throne of the Four Winds,client_asset_present,not_evaluated
+319,The Vortex Pinnacle,client_asset_present,not_evaluated
+320,The Stonecore,client_asset_present,not_evaluated
+321,Halls of Origination,client_asset_present,not_evaluated
+322,Grim Batol,client_asset_present,not_evaluated
+323,Blackrock Caverns,client_asset_present,not_evaluated
+324,Throne of the Tides,client_asset_present,not_evaluated
+325,Lost City of the Tol'vir,client_asset_present,not_evaluated
+326,Deadmines,client_asset_present,not_evaluated
+327,Shadowfang Keep,client_asset_present,not_evaluated
+328,Baradin Hold,client_asset_present,not_evaluated
+329,Baradin Hold,client_asset_present,not_evaluated
+330,Upper Blackrock Spire,client_asset_present,not_evaluated
+334,Zul'Gurub,client_asset_present,not_evaluated
+340,Zul'Aman,client_asset_present,not_evaluated
+358,10v10 Rated Battleground,client_asset_present,not_evaluated
+361,Firelands,client_asset_present,not_evaluated
+362,Firelands,client_asset_present,not_evaluated
+416,The Siege of Wyrmrest Temple,client_asset_present,not_evaluated
+417,Fall of Deathwing,client_asset_present,not_evaluated
+434,Random Hour of Twilight Heroic,client_asset_present,not_evaluated
+435,End Time,client_asset_present,not_evaluated
+437,Well of Eternity,client_asset_present,not_evaluated
+439,Hour of Twilight,client_asset_present,not_evaluated
+447,Dragon Soul,client_asset_present,not_evaluated
+448,Dragon Soul,client_asset_present,not_evaluated
+462,Random Mists of Pandaria Heroic,client_asset_present,not_evaluated
+463,Random Mists of Pandaria Dungeon,client_asset_present,not_evaluated
+464,Temple of the Jade Serpent,client_asset_present,not_evaluated
+465,Stormstout Brewery,client_asset_present,not_evaluated
+466,Shado-Pan Monastery,client_asset_present,not_evaluated
+467,Mogu'shan Palace,client_asset_present,not_evaluated
+468,Temple of the Jade Serpent,client_asset_present,not_evaluated
+469,Stormstout Brewery,client_asset_present,not_evaluated
+470,Shado-Pan Monastery,client_asset_present,not_evaluated
+471,Gate of the Setting Sun,client_asset_present,not_evaluated
+472,Scholomance,client_asset_present,not_evaluated
+473,Scarlet Halls,client_asset_present,not_evaluated
+474,Scarlet Monastery,client_asset_present,not_evaluated
+492,Greenstone Village,client_asset_present,not_evaluated
+493,Random Mists of Pandaria Scenario,client_asset_present,not_evaluated
+499,Unga Ingoo,client_asset_present,not_evaluated
+504,Crypt of Forgotten Kings,client_asset_present,not_evaluated
+511,Arena of Annihilation,client_asset_present,not_evaluated
+517,A Brewing Storm,client_asset_present,not_evaluated
+519,Mogu'shan Palace,client_asset_present,not_evaluated
+526,Terrace of Endless Spring,client_asset_present,not_evaluated
+527,Guardians of Mogu'shan,client_asset_present,not_evaluated
+528,The Vault of Mysteries,client_asset_present,not_evaluated
+529,The Dread Approach,client_asset_present,not_evaluated
+530,Nightmare of Shek'zeer,client_asset_present,not_evaluated
+531,Mogu'shan Vaults,client_asset_present,not_evaluated
+532,Mogu'shan Vaults,client_asset_present,not_evaluated
+533,Heart of Fear,client_asset_present,not_evaluated
+534,Heart of Fear,client_asset_present,not_evaluated
+535,Terrace of Endless Spring,client_asset_present,not_evaluated
+536,Terrace of Endless Spring,client_asset_present,not_evaluated
+537,Assault on Zan'vess,client_asset_present,not_evaluated
+539,Brewmoon Festival,client_asset_present,not_evaluated
+540,Temple of Kotmogu,client_asset_present,not_evaluated
+541,Test Scenario PS,client_asset_present,not_evaluated
+542,Theramore's Fall,client_asset_present,not_evaluated
+543,Theramore's Fall,client_asset_present,not_evaluated
+554,Siege of Niuzao Temple,client_asset_present,not_evaluated
+566,Theramore's Fall,client_asset_present,not_evaluated
+567,Theramore's Fall,client_asset_present,not_evaluated
+586,Dagger in the Dark,client_asset_present,not_evaluated
+588,Battle on the High Seas,client_asset_present,not_evaluated
+589,A Little Patience,client_asset_present,not_evaluated
+590,Lion's Landing,client_asset_present,not_evaluated
+593,Assault on Zan'vess,client_asset_present,not_evaluated
+594,Pursuing the Black Harvest,client_asset_present,not_evaluated
+595,Domination Point,client_asset_present,not_evaluated
+602,Tear Down This Wall!,client_asset_present,not_evaluated
+603,Stormsea Landing,client_asset_present,not_evaluated
+604,Assault on Zeb'tula,client_asset_present,not_evaluated
+606,To the Skies!,client_asset_present,not_evaluated
+607,The Fall of Shan Bu,client_asset_present,not_evaluated
+608,Tear Down This Wall!,client_asset_present,not_evaluated
+610,Last Stand of the Zandalari,client_asset_present,not_evaluated
+611,Forgotten Depths,client_asset_present,not_evaluated
+612,Halls of Flesh-Shaping,client_asset_present,not_evaluated
+613,Pinnacle of Storms,client_asset_present,not_evaluated
+615,The Thunder Forge,client_asset_present,not_evaluated
+616,Dagger in the Dark,client_asset_present,not_evaluated
+617,Assault on Shaol'mara,client_asset_present,not_evaluated
+618,To the Skies!,client_asset_present,not_evaluated
+619,A Little Patience,client_asset_present,not_evaluated
+620,Troves of the Thunder King,client_asset_present,not_evaluated
+621,The Fall of Shan Bu,client_asset_present,not_evaluated
+624,Dark Heart of Pandaria,client_asset_present,not_evaluated
+625,The Secrets of Ragefire,client_asset_present,not_evaluated
+630,Siege of Niuzao Temple,client_asset_present,not_evaluated
+631,Gate of the Setting Sun,client_asset_present,not_evaluated
+633,Throne of Thunder,client_asset_present,not_evaluated
+634,Throne of Thunder,client_asset_present,not_evaluated
+637,Blood in the Snow,client_asset_present,not_evaluated
+639,A Brewing Storm,client_asset_present,not_evaluated
+640,Proving Grounds: White Tiger Temple,client_asset_present,not_evaluated
+641,Random Mists of Pandaria Heroic Scenario,client_asset_present,not_evaluated
+645,Greenstone Village,client_asset_present,not_evaluated
+646,Blood in the Snow,client_asset_present,not_evaluated
+647,Dark Heart of Pandaria,client_asset_present,not_evaluated
+648,Crypt of Forgotten Kings,client_asset_present,not_evaluated
+649,The Secrets of Ragefire,client_asset_present,not_evaluated
+652,Battle on the High Seas,client_asset_present,not_evaluated
+654,Battle on the High Seas,client_asset_present,not_evaluated
+655,Battle on the High Seas,client_asset_present,not_evaluated
+658,Proving Grounds,client_asset_present,not_evaluated
+697,Prototype Scenario,client_asset_present,not_evaluated
+699,Crafty Test,client_asset_present,not_evaluated
+701,Celestial Tournament,client_asset_present,not_evaluated
+714,Siege of Orgrimmar,client_asset_present,not_evaluated
+715,Siege of Orgrimmar,client_asset_present,not_evaluated
+716,Vale of Eternal Sorrows,client_asset_present,not_evaluated
+717,Gates of Retribution,client_asset_present,not_evaluated
+724,The Underhold,client_asset_present,not_evaluated
+725,Downfall,client_asset_present,not_evaluated
+726,Vale of Eternal Sorrows,client_asset_present,not_evaluated
+728,Gates of Retribution,client_asset_present,not_evaluated
+729,The Underhold,client_asset_present,not_evaluated
+730,Downfall,client_asset_present,not_evaluated
+745,Finding the Secret Ingredient,client_asset_present,not_evaluated
+749,Noodle Time,client_asset_present,not_evaluated
+766,Siege of Orgrimmar,client_asset_present,not_evaluated
+767,Ordos,client_asset_present,not_evaluated
+768,Celestials,client_asset_present,not_evaluated
+771,Vale of Eternal Sorrows,client_asset_present,not_evaluated
+772,Gates of Retribution,client_asset_present,not_evaluated
+773,The Underhold,client_asset_present,not_evaluated
+774,Downfall,client_asset_present,not_evaluated

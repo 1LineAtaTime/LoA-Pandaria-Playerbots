@@ -1,0 +1,334 @@
+{
+  "name": "loa-ai-fallback-batch-20261108",
+  "checks": [
+    {
+      "id": "ai-4542",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=4542",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-7357",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=7357",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-8567",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=8567",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-10399",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=10399",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-19991",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=19991",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-23575",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=23575",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-39947",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=39947",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-39951",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=39951",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-53472",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=53472",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-57802",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=57802",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-59969",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=59969",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-60030",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=60030",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-60032",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=60032",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-60188",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=60188",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-60769",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=60769",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-60826",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=60826",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-61069",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=61069",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-61070",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=61070",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-61376",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=61376",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-62296",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=62296",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-62307",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=62307",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-62680",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=62680",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-62755",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=62755",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-62814",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=62814",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-62863",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=62863",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-63102",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=63102",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-63103",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=63103",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-63104",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=63104",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-63206",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=63206",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-63369",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=63369",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-64008",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=64008",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "ai-64485",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=64485",
+      "expected_rows": [
+        [
+          "SmartAI",
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "smart_vehicles_preserved",
+      "query": "SELECT COUNT(*) FROM creature_template c JOIN (SELECT DISTINCT entryorguid FROM smart_scripts WHERE source_type=0) s ON s.entryorguid=c.entry WHERE c.AIName='SmartVehicleAI'",
+      "expected_rows": [
+        [
+          "28"
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "check": "placed_creature_missing_template",
+    "distinct_ids": 0,
+    "references": 0
+  },
+  {
+    "check": "placed_gameobject_missing_template",
+    "distinct_ids": 0,
+    "references": 0
+  },
+  {
+    "check": "item_objective_missing_template",
+    "distinct_ids": 7,
+    "references": 7
+  },
+  {
+    "check": "creature_objective_missing_template",
+    "distinct_ids": 2,
+    "references": 2
+  },
+  {
+    "check": "gameobject_objective_missing_template",
+    "distinct_ids": 1,
+    "references": 1
+  }
+]

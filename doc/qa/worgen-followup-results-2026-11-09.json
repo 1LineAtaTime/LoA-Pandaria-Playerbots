@@ -1,0 +1,107 @@
+{
+  "scope": "Controlled protocol gameplay, checkpointed prerequisites and level12; not a natural chain playthrough",
+  "state": "PASS",
+  "classes": [
+    {
+      "class_id": 1,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    },
+    {
+      "class_id": 3,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    },
+    {
+      "class_id": 4,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    },
+    {
+      "class_id": 5,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    },
+    {
+      "class_id": 8,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    },
+    {
+      "class_id": 9,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    },
+    {
+      "class_id": 11,
+      "quest": 24593,
+      "state": "PASS",
+      "wells": [
+        201950,
+        201951,
+        201952
+      ],
+      "two_forms_saved": true,
+      "cast_verified": true,
+      "reconnect_spellbook_verified": true,
+      "binary_sha256": "76c20f85e3cb05f4139a6b3bd7acfbaa08c1dd66f2f18c254b1679df42653d97"
+    }
+  ],
+  "headless_framework_tests": 33,
+  "native_tests": 24,
+  "full_worgen_gameplay_certified": false
+}

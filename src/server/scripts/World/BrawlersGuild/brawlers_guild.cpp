@@ -4875,7 +4875,7 @@ class spell_brawlers_guild_illusionist : public SpellScript
     }
 };
 
-// Rain Dance 124860
+// Rain Dance missile124864, triggered by periodic producer124860.
 class spell_brawlers_guild_rain_dance : public SpellScript
 {
     PrepareSpellScript(spell_brawlers_guild_rain_dance);

@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "purpose": "Normal-power acceptance of bounded lifecycle contracts, not whole-game certification",
+  "oracle": "Reviewed local fixtures: QuestXP18414, authored base rewards, configured money1x and questXP1x. No retail-wide accuracy claim.",
+  "contracts": [
+    {
+      "id": "orc-introduction",
+      "quest": 25152,
+      "name": "Your Place In The World",
+      "race": 2,
+      "classes": "nonheroic",
+      "faction": "Horde",
+      "giver": 10176,
+      "ender": 3143,
+      "xp": 40,
+      "money": 0,
+      "reputation": {
+        "76": 75
+      },
+      "items": {},
+      "followup": 25126
+    },
+    {
+      "id": "undead-introduction",
+      "quest": 24959,
+      "name": "Fresh out of the Grave",
+      "race": 5,
+      "classes": "nonheroic",
+      "faction": "Horde",
+      "giver": 49044,
+      "ender": 1568,
+      "xp": 10,
+      "money": 2,
+      "reputation": {
+        "68": 10
+      },
+      "items": {},
+      "followup": 28608,
+      "unverified_reward_cast": 91768
+    },
+    {
+      "id": "worgen-introduction",
+      "quest": 14078,
+      "name": "Lockdown!",
+      "race": 22,
+      "classes": "nonheroic",
+      "faction": "Alliance",
+      "giver": 34850,
+      "ender": 34863,
+      "xp": 80,
+      "money": 15,
+      "reputation": {
+        "1134": 250
+      },
+      "items": {},
+      "followup": 14091
+    },
+    {
+      "id": "pandaren-introduction",
+      "quest": 30039,
+      "name": "Much to Learn",
+      "race": 24,
+      "classes": [
+        10
+      ],
+      "faction": "Neutral",
+      "giver": 53566,
+      "ender": 53566,
+      "xp": 10,
+      "money": 2,
+      "reputation": {
+        "1216": 10
+      },
+      "items": {},
+      "followup": 30027
+    },
+    {
+      "id": "human-wolf-combat",
+      "quest": 28766,
+      "name": "Beating Them Back!",
+      "race": 1,
+      "classes": [
+        1
+      ],
+      "faction": "Alliance",
+      "giver": 197,
+      "ender": 197,
+      "kill": {
+        "entry": 49871,
+        "count": 6,
+        "timeout": 360,
+        "spells": [
+          78,
+          34428
+        ]
+      },
+      "xp": 500,
+      "money": 50,
+      "reputation": {
+        "72": 275
+      },
+      "items": {
+        "57255": 1
+      },
+      "followup": 28774,
+      "oracle_note": "250 authored Stormwind reputation plus Human Diplomacy10%; no guild perk or GM bonuses",
+      "return_distance": 400
+    }
+  ]
+}

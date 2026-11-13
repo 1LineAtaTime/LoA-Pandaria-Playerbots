@@ -1,0 +1,39 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "vs2022-x64",
+      "displayName": "Visual Studio 2022 x64 (Playerbots and extraction tools)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "SERVERS": "ON",
+        "AUTH_SERVER": "ON",
+        "PLAYERBOTS": "ON",
+        "USE_MODULES": "ON",
+        "SCRIPTS": "ON",
+        "ELUNA": "ON",
+        "TOOLS": "ON",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vs2022-x64-relwithdebinfo",
+      "configurePreset": "vs2022-x64",
+      "configuration": "RelWithDebInfo"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "vs2022-x64-relwithdebinfo",
+      "configurePreset": "vs2022-x64",
+      "configuration": "RelWithDebInfo",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

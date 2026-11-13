@@ -1,0 +1,2264 @@
+[
+  {
+    "table": "quest_offer_reward",
+    "id": 433,
+    "field": "RewardText",
+    "sql_value": "'What a relief! I\\'m glad to see that you were able to save so many miners, $n. I will make sure that their families are notified immediately.$B$BThe Senate will know of your role in winning back the mines.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 10068,
+    "field": "RewardText",
+    "sql_value": "''"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 10069,
+    "field": "RewardText",
+    "sql_value": "''"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 10070,
+    "field": "RewardText",
+    "sql_value": "'You have done well, $n. You should be proud of your progress.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 10071,
+    "field": "RewardText",
+    "sql_value": "''"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 10072,
+    "field": "RewardText",
+    "sql_value": "''"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 10073,
+    "field": "RewardText",
+    "sql_value": "''"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 13635,
+    "field": "RewardText",
+    "sql_value": "'The South Gate status report? Excellent. I\\'ve been awaiting news from them for a while.$B$BWith the increasing number of troggs in the hills on all sides, I fear the outposts will be the first to feel any aggressive action.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24526,
+    "field": "RewardText",
+    "sql_value": "'There we go! One spell down, many many more to go. Come back to me after you\\'ve had some experience casting this spell, and I\\'ll show you some more tricks.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24527,
+    "field": "RewardText",
+    "sql_value": "'This has been but one of many footfalls on the long path of the $c. Come back to me after you\\'ve had some experience in the field, and i will help guide you on your next step.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24528,
+    "field": "RewardText",
+    "sql_value": "'There, ya did it. The Light favors quick learners like you.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24530,
+    "field": "RewardText",
+    "sql_value": "'Now that ye\\'ve got a new $c trick under yer belt, go out there an\\' track some beasts!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24532,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve got the hang of it.  Go get some practice out there... maybe take out a few of those troggs or trolls.  Or rabbits, I don\\'t care.$B$BReturn after you\\'ve gotten some practice, and I\\'ll show you another trick of the trade.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24640,
+    "field": "RewardText",
+    "sql_value": "'Good work, mon! Dis stuff come easy to ya.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24760,
+    "field": "RewardText",
+    "sql_value": "'Good work, mon! Dis stuff come easy to ya.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24766,
+    "field": "RewardText",
+    "sql_value": "'Good work, mon! Dis stuff come easy to ya.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24772,
+    "field": "RewardText",
+    "sql_value": "'Good work, mon! Dis stuff come easy to ya.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24784,
+    "field": "RewardText",
+    "sql_value": "'Good work, mon! Dis stuff come easy to ya.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24921,
+    "field": "RewardText",
+    "sql_value": "'Hm? What unit are you with, $c?\\r\\n\\r\\nNo matter, we need all hands. My fleet is in tatters and they\\'ve broke into the hold.\\r\\nYou armed? That\\'s good enough for me.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24934,
+    "field": "RewardText",
+    "sql_value": "'You make a hell of a marine, $n.$B$BWe\\'ll mop up the others. But it looks like the Horde fleet is disengaging - maybe to land more troops ashore?$B$BAdmiral Aubrey will know what to do. Talk to me when you\\'re ready to fly back!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24938,
+    "field": "RewardText",
+    "sql_value": "'Aubrey sent you? Good! I take it you know your way around a cannon?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24941,
+    "field": "RewardText",
+    "sql_value": "'The Horde is massing at the base of the hill. Breathlessly, you stuff the debris you collected into the muzzle of the cannon, step back, cover one ear, and tug on the igniter cord...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24943,
+    "field": "RewardText",
+    "sql_value": "'Great work! We\\'ve knocked them on their heels, maybe long enough to shore up our defenses.$B$BProvided we find a way to take out their artillery...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24944,
+    "field": "RewardText",
+    "sql_value": "'A steady stream of the walking wounded have come up the hill to see me, $n. I trust that was your work? Well done!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 24948,
+    "field": "RewardText",
+    "sql_value": "'Good! Without heavy equipment, the Horde will have to pull back to regroup. We\\'ve bought ourselves some time to re-secure the fortress. Well done!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25002,
+    "field": "RewardText",
+    "sql_value": "'My supplies! Well, that showed some real initiative, $c. Those rap-saws or whatever they\\'re called have torn lesser men to ribbons. Thank you!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25008,
+    "field": "RewardText",
+    "sql_value": "'Ooooo-oooh aye! The best Hecklefangs are the dead ones.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25015,
+    "field": "RewardText",
+    "sql_value": "'<Corporal Teegan nods as you deliver your report, then grasps the Bramblestaff with both hands.>$B$BSo, this is what the quilboar are using against us? Do you think they used these to create this jungle?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25028,
+    "field": "RewardText",
+    "sql_value": "'Ah, samples from different parts of the overgrowth? These will be immensely helpful, yes. Thank you, $c.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25036,
+    "field": "RewardText",
+    "sql_value": "'So, Paxton says there\\'s no jungle in the Barrens? What do you call THIS!?$B$BI\\'ve got a pile of supplies to move to the interior and my camp has been overrun by a forest that - I swear - grows by the hour!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25138,
+    "field": "RewardText",
+    "sql_value": "'Ahh, where to start... introductions! I\\'m Acrypha - the one who sent you that parchment - I\\'ve spent the last several years in an Undercity library, my head in a book. I learned everything I could about the arcane, and now I\\'ve returned home to share it with grunts like yourself.$B$BShall we begin?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25197,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve ventured all the way here from Honor\\'s Stand? Excellent, we could use your experience here.$B$BThey may have breached the walls, but Northwatch isn\\'t going down without a fight.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25235,
+    "field": "RewardText",
+    "sql_value": "'I saw you drop a few of them from here. Nice work.$B$BHere\\'s your reward, on behalf of the Night Watch.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 25978,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve done it! The mountaineers are returning to camp and our medics will have their hands full. We are all in your debt, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26078,
+    "field": "RewardText",
+    "sql_value": "'Well done! My men are working hard on getting our flying machines and steam tanks back into the fight.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26112,
+    "field": "RewardText",
+    "sql_value": "'And just what is this?$B$B<Moira takes the report and the color drains from her face as she reads.>$B$BThis is impossible!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26131,
+    "field": "RewardText",
+    "sql_value": "'You don\\'t know how glad I am to see fresh faces from Ironforge. Perhaps sending Mountaineer Barleybrew wasn\\'t a waste after all.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26145,
+    "field": "RewardText",
+    "sql_value": "'I am quite impressed, $n. You have done the Dwarven race a great favor by defending our lands. King Magni Bronzebeard himself would be proud!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26146,
+    "field": "RewardText",
+    "sql_value": "'Well done, $n! You demonstrated uncanny courage on the battlefield. Our war against the Troggs will be won with efforts such as yours. You have served King Magni well.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26147,
+    "field": "RewardText",
+    "sql_value": "'I knew the second I laid eyes on you, $n, that you would make Ironforge proud. You have served our people well. I salute you, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26148,
+    "field": "RewardText",
+    "sql_value": "'Most excellent, $n! You have brought hope to Loch Modan. With Grawmug dead, we stand a better chance of seeing the Troggs eliminated from the land.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26176,
+    "field": "RewardText",
+    "sql_value": "'Glad to hear you\\'ve been clearing out the troggs. Let\\'s have a look at this report, and...$B$B...Is that a beer stain?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26197,
+    "field": "RewardText",
+    "sql_value": "'$n, isn\\'t it? It\\'s a pleasure to finally meet you. While you were getting cleaned up, Nevin\\'s team told me about your escape from Gnomeregan.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26198,
+    "field": "RewardText",
+    "sql_value": "'You picked that one up quickly. I can\\'t wait to show you some of my other favorite tricks.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26199,
+    "field": "RewardText",
+    "sql_value": "'It\\'s good to meet you, $n. I\\'m sure your time in Gnomeregan afforded you ample opportunity to practice your arts. Things are somewhat safer here, but your talents will never go to waste.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26200,
+    "field": "RewardText",
+    "sql_value": "'Good work, $n. You have a natural talent for our arts.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26201,
+    "field": "RewardText",
+    "sql_value": "'As you continue to gain power, return to me and I will teach you new spells and techniques.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26203,
+    "field": "RewardText",
+    "sql_value": "'For a $r who has spent so much time inside Gnomeregan, you look positively fit and healthy, $n. That\\'s good. Before we can complete what Operation: Gnomeregan began, we\\'re going to need more warriors like you.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26204,
+    "field": "RewardText",
+    "sql_value": "'Good work! Keep practicing your charge and you\\'ll have an instant advantage at the start of battle.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26206,
+    "field": "RewardText",
+    "sql_value": "'It\\'s good to meet you, $n. Nevin tells me that you managed to survive the dangers in Gnomeregan by using your wits. That\\'s exactly what we need up here. Clever minds and quick blades.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26207,
+    "field": "RewardText",
+    "sql_value": "'I\\'m not surprised to see you\\'re such a quick study. I look forward to showing you more of our tricks of the trade.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26208,
+    "field": "RewardText",
+    "sql_value": "'Even now, only the S.A.F.E. teams dare to venture far into the city to search for survivors. Meanwhile, Thermaplugg has sent one of his followers, Crushcog, to distract us and buy time for him to dig in.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26222,
+    "field": "RewardText",
+    "sql_value": "'These are fantastic! Let\\'s see what we can put together. Would you be interested in testing out the prototype once I\\'m done?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26284,
+    "field": "RewardText",
+    "sql_value": "'You have me own thanks and th\\' thanks of th\\' men you rescued. I\\'ve already had th\\' boys start setting up the gear down inside the cave. It should be ready to go soon.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26285,
+    "field": "RewardText",
+    "sql_value": "'Well, now, that\\'s more like it. We may get around to blowin\\' up somethin\\' after all.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26316,
+    "field": "RewardText",
+    "sql_value": "'It won\\'t be tough to collapse th\\' tunnel, but I\\'m goin\\' to need my team an\\' my equipment \\'afore I can get to th\\' task.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26329,
+    "field": "RewardText",
+    "sql_value": "'<The high tinker reads Jessup\\'s report.>$B$BSplendid news! With the troggs taken care of, we should be able to turn our attention to Crushcog\\'s troublemaking.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26331,
+    "field": "RewardText",
+    "sql_value": "'That should set back Crushcog\\'s plans a bit, but we can\\'t rest until he is defeated and Chill Breeze Valley is secure.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26333,
+    "field": "RewardText",
+    "sql_value": "'Mekkatorque will be pleased to hear that you\\'ve ruined Crushcog\\'s plans to use our old weapons for his followers. Without the mechano-tanks under his command, he\\'ll be weak and vulnerable.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26339,
+    "field": "RewardText",
+    "sql_value": "'Ah, yes, Kelsey told me to expect you. There\\'s still much to do before we can take on Crushcog.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26343,
+    "field": "RewardText",
+    "sql_value": "'These skins should do. Their quality isn\\'t too important, given that they\\'ll make up the inside layer of the boots, but it\\'s still important that they\\'re comfortable.\\r\\n\\r\\nIf they\\'re a bit too rigid, I\\'ll use some tiger blood to soften it up. Tricks o\\' the trade, you know?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26373,
+    "field": "RewardText",
+    "sql_value": "'If Gnomeregan Covert Operations is recommending you, then you must have made quite an impression. Your help will be most welcome here, as we\\'ve a wealth of enemies and few enough mountaineers to face them.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26378,
+    "field": "RewardText",
+    "sql_value": "'Murder, rookie. That\\'S what you\\'re looking at on the ground in front of us.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26433,
+    "field": "RewardText",
+    "sql_value": "'<The goblin downs the water in one gulp.>\\r\\n\\r\\nAhh... do you know how hard it is to get fresh water in Stranglethorn? It\\'s no wonder that the nagas guard their shrine so ferociously!\\r\\n\\r\\nOh, right... your artifact, and clarity.\\r\\nClarity...\\r\\n\\r\\nI\\'ve got it!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26434,
+    "field": "RewardText",
+    "sql_value": "'<Flem feels the hides and smiles to himself.>$B$BExcellent work, $n!  These reagents will serve perfectly.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26435,
+    "field": "RewardText",
+    "sql_value": "'Fascinating!\\r\\n\\r\\nI\\'ll need some time to study this. Why don\\'t you have a look around Booty Bay and come back later?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26450,
+    "field": "RewardText",
+    "sql_value": "'Nice work, $n. Now I\\'ve just got to decide what to do with all of these...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26487,
+    "field": "RewardText",
+    "sql_value": "'Hey hey! Not bad. not bad at all! You may have a future in resource acquisition. Or hotel managment.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26493,
+    "field": "RewardText",
+    "sql_value": "'Great! These look... disgusting. But probably pretty valuable. Let\\'s get to splitting these up. Some for me, some for Jasper, some for Chabal...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26494,
+    "field": "RewardText",
+    "sql_value": "'I\\'ll file these away for now. Maybe we can experiment later.\\r\\n\\r\\n<Jasper looks over at you.>\\r\\n\\r\\nYeah, you\\'ll do.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26495,
+    "field": "RewardText",
+    "sql_value": "'<The troll looks into the package.>\\r\\n\\r\\nYou have my thanks.\\r\\n\\r\\nI have been waiting for you to approach me, $r. I have identified you as the most promising $r here in this strange town. I have a task for you, if you would be willing to take it.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26503,
+    "field": "RewardText",
+    "sql_value": "'I knew it! Looks like Yowler is behind this uprising - which is incredible, because we keep killing gnolls named Yowler. I don\\'t know how many sons the original Yowler had, but it\\'s got to be close to a hundred.$B$BWell, looks like we got ourselves another Yowler to kill.$B$BMagistrate Solomon must be notified.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26504,
+    "field": "RewardText",
+    "sql_value": "'A job well done deserves a reward, wouldn\\'t you say?\\r\\n\\r\\nDon\\'t spend this all in one place, $c. Better to spread it around, if you catch my drift.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26505,
+    "field": "RewardText",
+    "sql_value": "'<Magistrate Solomon puts on his monocle.>$B$BOh, you\\'re not Conacher. What have you got there?$B$B<Magistrate Solomon takes Parker\\'s report from you.>$B$BOh for pity\\'s sake. Yowler? AGAIN?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26506,
+    "field": "RewardText",
+    "sql_value": "'PERFECT! I\\'ll put these in the pot right away. Dinner should be ready in a few hours.$B$BThank you, darling!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26508,
+    "field": "RewardText",
+    "sql_value": "'Thank you for finding my necklace mister $c... you are very kind!  My kitty thanks you too - isn\\'t that right Effsee?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26510,
+    "field": "RewardText",
+    "sql_value": "'Excellent! Let me make a few adjustments here and we should be good to go.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26511,
+    "field": "RewardText",
+    "sql_value": "'That ought to teach those murlocs a lesson. Hopefully the next time they decide to raid our town they\\'ll think twice.$B$BWe both know that won\\'t happen.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26512,
+    "field": "RewardText",
+    "sql_value": "'<The gnomecorder crackles and pops.>$B$BCan you hear me, $n? Is this thing on? Ah, yes, I see you there now.$B$BLet\\'s get to work!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26513,
+    "field": "RewardText",
+    "sql_value": "'Thank you, citizen. Without you, we would have starved or worse, been forced to go out and get food for ourselves.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26514,
+    "field": "RewardText",
+    "sql_value": "'<The gnomecorder crackles and pops.>$B$BGood work, $n. I\\'ve just been handed some important information. It would appear that our most hated enemy, the Blackrock orcs, have wised up...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26533,
+    "field": "RewardText",
+    "sql_value": "'<Jasper carefully analyzes the strange compound.>\\r\\n\\r\\nThis mixture is... I don\\'t understand it.\\r\\nPerhaps we need to run some clinical trials.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26535,
+    "field": "RewardText",
+    "sql_value": "'This is fascinating! Just think of all the applications!$B$BJust so we\\'re clear, I\\'m not thinking about using this to make an army of slaves or anything like that.  No, no... I\\'m much more interested in the ogre explosions!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26544,
+    "field": "RewardText",
+    "sql_value": "'<The gnomecorder buzzes and whirs.>$B$BJust put the missive in the little compartment and I\\'ll read it. I am fluent in orcish.$B$B<You hear a distraught yell in the background.>$B$BIt looks like these orcs are here under the direct command of Yowler. That means Yowler must have the orc invasion plan.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26545,
+    "field": "RewardText",
+    "sql_value": "'<Magistrate Solomon takes the plans from you and begins reading.>$B$BShadowhide army!? Damn those orcs to hell! These invasion plans speak of a massive build up of orcish and gnoll forces in the east. Looks like Gath\\'Ilzogg, the Blackrock general, is preparing to march his armies across Lakeshire and attack Stormwind directly!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26566,
+    "field": "RewardText",
+    "sql_value": "'So the high tinker himself has heard of my little project? Splendid! I\\'ve almost finished my latest prototype, but maybe you can help me chase down those last few parts.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26570,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve probably bought us another day, maybe two. Nice work, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26592,
+    "field": "RewardText",
+    "sql_value": "'<Flem weighs the gems in his hands and nods in approval.>\\r\\n\\r\\nYes, these will do. Now to perform the analysis...\\r\\n\\r\\n<The goblin clacks the gems together for a while, then looks up at you.>\\r\\n\\r\\nOh, you\\'re still here? You don\\'t think I\\'m a fraud or something, do you?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26618,
+    "field": "RewardText",
+    "sql_value": "'Don\\'t go thinking that was too easy. Far greater dangers lurk deeper in the woods.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26620,
+    "field": "RewardText",
+    "sql_value": "'Mmm-mmm! The skirtsteak\\'s the best part. It\\'s not an efficient way to cook, though.$B$BHere, have this recipe. It\\'s a little different, but flank meat\\'s easier to come by when you really need a meal.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26623,
+    "field": "RewardText",
+    "sql_value": "'Ah yes, a nice lump you have there! Let me just get this seasoned with my secret spices (no looking!) and get them to skittering on a skillet for a while...$B$BAnd, although Dusky Crab Cakes are my specialty and I won\\'t give out the recipe, here\\'s the recipe for a dish that\\'s almost as good.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26627,
+    "field": "RewardText",
+    "sql_value": "'Ah, welcome, stranger. I\\'d offer you something, but there\\'s not much here...$B$BCould I beg you to run some errands for a poor old hermit?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26645,
+    "field": "RewardText",
+    "sql_value": "'Splendid, $n. For your service to the people of Darkshire you shall be rewarded.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26652,
+    "field": "RewardText",
+    "sql_value": "'What is this? A comb? It\\'s lovely! And it glides through my hair as if it weren\\'t the stiff, stringy horror that it is.$B$BOh, if only I had a mirror...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26653,
+    "field": "RewardText",
+    "sql_value": "'Ah, ghost hair thread is what you need, is it? I\\'m afraid I have none in stock, but I can make some for you...if you can supply the ghost hair.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26654,
+    "field": "RewardText",
+    "sql_value": "'I can make a spool of ghost hair thread with this, and have a few strands to spare. Here are some coins for those extra strands.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26655,
+    "field": "RewardText",
+    "sql_value": "'Delightful! This will do splendidly...$B$BHere, good $n, take this as payment for your honorable deed.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26660,
+    "field": "RewardText",
+    "sql_value": "'You need some Zombie Juice, do you? Hmm...that\\'s some strong stuff - I don\\'t usually get requests for it.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26661,
+    "field": "RewardText",
+    "sql_value": "'Good, you got the rot blossoms.$B$BI\\'ll whip up the zombie juice... it\\'s strong stuff, I warn you.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26676,
+    "field": "RewardText",
+    "sql_value": "'A thousand thanks, $n. You warm an old man\\'s heart with your foolish-...I mean...with your kindness!$B$BHere you are, friend. Take this as a token of my gratitude.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26686,
+    "field": "RewardText",
+    "sql_value": "'The people of Darkshire thank you, $n. You have proven yourself to be a great ally of The Night Watch.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26688,
+    "field": "RewardText",
+    "sql_value": "'Impressive, $n. It would seem that you are capable enough to handle yourself. Perhaps a more suitable challenge could be found for one of your abilities.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26689,
+    "field": "RewardText",
+    "sql_value": "'You performed well against the Shadow Weavers, $n. But even now, years after their first arrival, there seem to be so many to replace the ones we kill.$B$BI will put my faith in Master Carevin. No doubt he will get to the bottom of the problem.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26690,
+    "field": "RewardText",
+    "sql_value": "'$n, to be honest with you, I did not believe that you would get this far, but you are clearly a $c to be reckoned with. In fact, if you wish to formally join Master Carevin\\'s struggle, I will gladly write for you a letter of recommendation.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26691,
+    "field": "RewardText",
+    "sql_value": "'Excuse me for my cold reception, $n, but as I\\'m sure you can tell, I am an extremely busy man. I see that you have impressed Calor--and I assure you, that is no small feat--and that he has given his recommendation.$B$BThere are unsavory types afoot, $n, and we can use the help of all who have proven themselves. We battle against demons, the undead, and those who would provide them aid. Be vigilant, be wary, and trust none who would not give aid to our cause.$B$BGlory under the Light.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26707,
+    "field": "RewardText",
+    "sql_value": "'I thank you, $c... and I\\'m sure the worgen that may be returned to sanity with the potion this will make would thank you too.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26717,
+    "field": "RewardText",
+    "sql_value": "'Sounds like a close call! But he ran off without harming you further...$B$BHe might be still fighting it. Master Harris must know!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26719,
+    "field": "RewardText",
+    "sql_value": "'Welcome to our humble camp. I wouldn\\'t call it pleasant, but it\\'s at least somewhat private.$B$BBeg your pardon? A worgen at the farm?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26728,
+    "field": "RewardText",
+    "sql_value": "'You are the help that we requested?$B$B<Althea sighs.>$B$BI suppose you will have to do.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26808,
+    "field": "RewardText",
+    "sql_value": "'<The troll looks into the package.>\\r\\n\\r\\nYou have my thanks. You may tell your young dwarven friend that I am not sad. I am waiting. For you.\\r\\n\\r\\nI have identified you as the most promising dwarf here in this strange town. I have a task for you, if you would be willing to take it.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26815,
+    "field": "RewardText",
+    "sql_value": "'<Dask carefully analyzes the strange compound.>\\r\\n\\r\\nThis mixture is... PERFECT! Let\\'s see what it does to your potentially-titan artifact here!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26816,
+    "field": "RewardText",
+    "sql_value": "'This is fascinating! Just think of all the applications!$B$BThanks again, $n. Remember, if you ever need anything mixed for you... and I mean ANYTHING... you can always ask The Flask.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26818,
+    "field": "RewardText",
+    "sql_value": "'<Linzi feels the hides and smiles to herself.>$B$BThese are so nice and cushy!  I think my customers are going to LOVE them!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26819,
+    "field": "RewardText",
+    "sql_value": "'Hooray! It\\'s been days and days since we last had Akiris reeds!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26820,
+    "field": "RewardText",
+    "sql_value": "'These statues are beautiful...\\r\\n\\r\\nWow, I had no idea the naga were so talented. Thanks. $n!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26854,
+    "field": "RewardText",
+    "sql_value": "'Here is the corpse of a dwarf -- mauled, frozen, and picked clean by mountain scavengers. Clutched in its hand is a book containing the roughly scribbled notes of Mori Hildelve. And around its frame, still in superior condition, is a Brigadier\\'s Vest.$B$BThis grisly scene must have been where the Siege Engine pilot met his end.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26855,
+    "field": "RewardText",
+    "sql_value": "'This is grim news, for Hildelve was a good friend. And I wish I could have been there with you when you found the beast, Mangeclaw!$B$BThank you, $n. Your deed will be remembered by the pilots of the Ironforge Siege Brigade.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26913,
+    "field": "RewardText",
+    "sql_value": "'You\\'re a quick learner, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26915,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve caught on quickly, $n, and a quick mind will serve you well.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26917,
+    "field": "RewardText",
+    "sql_value": "'I knew you would master Steady Shot quickly. I\\'m looking forward to showing you other techniques as you get more experienced in the ways of the Hunter.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26918,
+    "field": "RewardText",
+    "sql_value": "'You\\'re a quick learner, $n. Return to me as you grow stronger and I\\'ll teach you more about using the Light to vanquish your enemies and strengthen your allies.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26919,
+    "field": "RewardText",
+    "sql_value": "'You\\'re a quick learner, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26940,
+    "field": "RewardText",
+    "sql_value": "'I knew you would master this lesson quickly. You are a credit to the highborn and to all our kin. Remember, as you grow in power, return to me and I will instruct you further.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26945,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve proven a capable student. When it is time to resume your training, return to me and I will show you other techniques.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26946,
+    "field": "RewardText",
+    "sql_value": "'You\\'ve learned quickly. If you are as sharp as you semm to be, you may prove to be one of my best students yet.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26947,
+    "field": "RewardText",
+    "sql_value": "'You are a quick study in our ways.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26948,
+    "field": "RewardText",
+    "sql_value": "'You have mastered the basics of the druidic ways quickly, $n. I have no doubt that your skills will often come in hand. Return to me when you need further training.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 26969,
+    "field": "RewardText",
+    "sql_value": "'It is a pleasure to teach such a capable student. As long as you continue the traditions faithfully, the shamanic arts will never be lost to our people again.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 27014,
+    "field": "RewardText",
+    "sql_value": "'You have arrived at last. During your training in Camp Narache, I will guide you in the ways of the $c. You have much to learn and I look forward to counting you among my students.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 27020,
+    "field": "RewardText",
+    "sql_value": "'You have done well, $n. Return to me when you are in need of further training.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 27021,
+    "field": "RewardText",
+    "sql_value": "'You have done well, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 27027,
+    "field": "RewardText",
+    "sql_value": "'Well done, $n. I see you will have no trouble mastering our more advanced arts as you gain experience. Return to me when you need further training.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 27067,
+    "field": "RewardText",
+    "sql_value": "'You have a knack for the druidic arts, $n. Wherever you go, your skills will be in demand. Return to me when you are ready for more training.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28551,
+    "field": "RewardText",
+    "sql_value": "'We\\'re facing heavy resistance from the Horde, $c. Any reinforcements are welcome.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28554,
+    "field": "RewardText",
+    "sql_value": "'If we can get things straightened out here, we have a chance to strike at the Alliance while most of their forces are busy in the Barrens.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28562,
+    "field": "RewardText",
+    "sql_value": "'Murder, rookie. That\\'S what you\\'re looking at on the ground in front of us.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28563,
+    "field": "RewardText",
+    "sql_value": "'Heard Westfall was in some deep doody.$B$B<Parker doesn\\'t even turn to face you.>$B$BWell, we got our own set of problems here. See them gnolls out there? Looks like they\\'re actin\\' up again. I don\\'t like it. Don\\'t like it one bit.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28564,
+    "field": "RewardText",
+    "sql_value": "'You are the help that we requested?$B$B<Althea sighs.>$B$BI suppose you will have to do.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28567,
+    "field": "RewardText",
+    "sql_value": "'Have our leaders finally heard my pleas? We\\'re down to just a handful of pilots and mountaineers to defend Loch Modan.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 28868,
+    "field": "RewardText",
+    "sql_value": "'Well done, $n. That\\'ll teach them not to mess with us in our home!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29580,
+    "field": "RewardText",
+    "sql_value": "'There are no hunters among us, but we\\'ll fight to protect our loved ones.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29581,
+    "field": "RewardText",
+    "sql_value": "'Ah... dreamleaf! So you want to see the Golden Dream, do you?$B$BCome to think of it, I haven\\'t seen the Dream in years - not since I was a cub spending long hours playing in the pools. Long before I took up the culinary arts.$B$BLooks like you brought enough dreamleaf for two cups of tea... so why not?$B$BHere\\'s to better days!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29585,
+    "field": "RewardText",
+    "sql_value": "'A survivor came in moments ago and said the flames are beginning to die down.$B$BWe owe our very way of life to you, stranger. I cannot possibly reward you adequately, but please take this.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29670,
+    "field": "RewardText",
+    "sql_value": "'This is extremely unsettling. If mogu are banding together like this all over the continent, it could become a major threat to Pandaria.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29873,
+    "field": "RewardText",
+    "sql_value": "'This place... it... it so SAD!\\r\\n\\r\\nKen-Ken never seen a place so sad.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29916,
+    "field": "RewardText",
+    "sql_value": "'They... they\\'re not stopping, but at least we fought back. Right?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 29917,
+    "field": "RewardText",
+    "sql_value": "'I know I should be the one fighting them off. Maybe I\\'m not cut out for shepherding after all.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30028,
+    "field": "RewardText",
+    "sql_value": "'Why thank you very much stranger. This has not been a good day, but you certainly have helped us make it better.\\r\\n\\r\\nPlease, take this, you\\'ve earned it.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30064,
+    "field": "RewardText",
+    "sql_value": "'Thank you! What a relief it is to see these texts are safe.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30072,
+    "field": "RewardText",
+    "sql_value": "'Superb specimens. I will see to it they find their way to the right place. Please enjoy this free sample.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30081,
+    "field": "RewardText",
+    "sql_value": "'Pandaren got a case of the spooky-dooks!\\r\\n\\r\\nDooks get scared sometimes, don\\'t wanna come out. Poor, fluffy mopey-dopes must be ready to explode by now!\\r\\n\\r\\nThis just the thing to bring \\'em out. That make pandaren happy for sure!\\r\\n\\r\\nJust like ol\\' gramma used to say: can\\'t THROW if can\\'t GO!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30130,
+    "field": "RewardText",
+    "sql_value": "'Thank you hero. Kor is a brave warrior but he lacks compassion at times. Life must come before death, or there will be none of us left when the fighting is done.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30137,
+    "field": "RewardText",
+    "sql_value": "'Oh, wonderful!\\r\\n\\r\\nThese eggs look...well...they look a little on the small side. Are you sure you couldn\\'t find any better ones?\\r\\n\\r\\nOh well, I suppose with the current situation, we can\\'t be so picky.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30159,
+    "field": "RewardText",
+    "sql_value": "'Will those nasty Slitherscale saurok never give up?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30267,
+    "field": "RewardText",
+    "sql_value": "'Finally, someone who understands me.\\r\\nFishing is what it\\'s all about, right?\\r\\n\\r\\nMaybe I should leave New Cifera... just pack up my things and join the Anglers, down in the south. Of course, I couldn\\'t leave my family behind...\\r\\n\\r\\nBut still... a pandaren can dream, right?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30351,
+    "field": "RewardText",
+    "sql_value": "'That\\'s it! You pick, I punch!'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 30628,
+    "field": "RewardText",
+    "sql_value": "'Peering inside, you find...'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31135,
+    "field": "RewardText",
+    "sql_value": "'Why, you look great! I\\'ve heard bad things about what happens down there.$B$BWell, are you ready to start your training in the ways of the $c?'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31137,
+    "field": "RewardText",
+    "sql_value": "'It\\'s good to meet you, $n. You\\'ve probably heard others speaking of Operation: Gnomeregan. Let me tell you a bit about what happened and why we left the dwarven city of Ironforge.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31138,
+    "field": "RewardText",
+    "sql_value": "'You picked that one up quickly. I can\\'t wait to show you some of my other favorite tricks.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31156,
+    "field": "RewardText",
+    "sql_value": "'We will honor our respective peoples by learning from each other. You will become a great $c. If I have anything to say about it. And I will learn the ways of your people.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31157,
+    "field": "RewardText",
+    "sql_value": "'Good, good. Your first challenge surpassed. We will learn much from each other. I can see.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31162,
+    "field": "RewardText",
+    "sql_value": "'Good work, mon! Dis stuff come easy to ya.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31165,
+    "field": "RewardText",
+    "sql_value": "'I am honored that Chief Hawkwind would allow me to train you and grant you your rite of passage. While I am a master in the ways of the $n, I am but a child in the ways of your people.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31166,
+    "field": "RewardText",
+    "sql_value": "'You have done well, $n.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31170,
+    "field": "RewardText",
+    "sql_value": "'Ah, welcome. I have been teaching your people the ways of the $c, and they seem to be well suited for it. Perhaps you too will take to it as quickly as they.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31171,
+    "field": "RewardText",
+    "sql_value": "'I think, you\\'ve mastered the basics of the Tiger Palm technique, $n. Perhaps you will impress me, after all.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31286,
+    "field": "RewardText",
+    "sql_value": "'Ah, our merchandise. Madam Goya will be pleased. You have the gratitude of her ladyship.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 31287,
+    "field": "RewardText",
+    "sql_value": "'The deed is done and a debt must be paid. Here is your reward. You have our gratitude.'"
+  },
+  {
+    "table": "quest_offer_reward",
+    "id": 32035,
+    "field": "RewardText",
+    "sql_value": "'Greetings, $c. Welcome to the Silken Fields.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 384,
+    "field": "CompletionText",
+    "sql_value": "'I\\'m going to need those crag boar ribs and a mug of Rhapsody Malt, $n.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 24941,
+    "field": "CompletionText",
+    "sql_value": "'Paxton has already loaded a charge into the cannon. All it needs is the ammunition you improvised.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 24948,
+    "field": "CompletionText",
+    "sql_value": "'Burn it all, $c. Burn it to cinders!'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 25002,
+    "field": "CompletionText",
+    "sql_value": "'What? My supply caravan was sacked by those cold-blooded scissor-paw things?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 25015,
+    "field": "CompletionText",
+    "sql_value": "'I should mention, you\\'re probably going to need a machete to hack through this mess.$B$BThis jungle came out of nowhere!'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 25028,
+    "field": "CompletionText",
+    "sql_value": "'I am very busy, $c. This uncontrolled growth threatens to engulf the continent. Do you have any news?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26078,
+    "field": "CompletionText",
+    "sql_value": "'We need to hurry and get those bombers airborne!'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26112,
+    "field": "CompletionText",
+    "sql_value": "'What is the meaning of this intrusion?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26145,
+    "field": "CompletionText",
+    "sql_value": "'Do you have eight trogg stone teeth to show me? If not, there is still work to be done, $n.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26146,
+    "field": "CompletionText",
+    "sql_value": "'Loch Modan is under siege, $n! We need every able-bodied member of the Alliance to aid our cause. Have you killed those troggs yet?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26148,
+    "field": "CompletionText",
+    "sql_value": "'Your mission is not complete until Grawmug has been brought to death. Khaz Modan is counting on you, $n.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26176,
+    "field": "CompletionText",
+    "sql_value": "'What can I do for you?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26222,
+    "field": "CompletionText",
+    "sql_value": "'Did you get those parts?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26285,
+    "field": "CompletionText",
+    "sql_value": "'Well, did you recover me missing supplies?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26329,
+    "field": "CompletionText",
+    "sql_value": "'Welcome back, $n.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26433,
+    "field": "CompletionText",
+    "sql_value": "'<Flem\\'s ears perk up as you approach.>\\r\\n\\r\\nThe holy Water of Clarity? Is it here!?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26434,
+    "field": "CompletionText",
+    "sql_value": "'Make sure the reagents are extra-cushy, $n.  A scratchy reagent simply won\\'t do.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26435,
+    "field": "CompletionText",
+    "sql_value": "'Yes, $r? I\\'m quite busy'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26450,
+    "field": "CompletionText",
+    "sql_value": "'Let\\'s see \\'em!'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26487,
+    "field": "CompletionText",
+    "sql_value": "'Let\\'s see... we\\'re going to need some shotguns for our nature hikes, rowboats for the oil righ day trip, and...\\r\\n\\r\\nOh, you\\'re back already?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26493,
+    "field": "CompletionText",
+    "sql_value": "'I hope you used the extraction procedure we discussed.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26494,
+    "field": "CompletionText",
+    "sql_value": "'Hey, is that the stuff? From the magazine?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26495,
+    "field": "CompletionText",
+    "sql_value": "'Care to explain yourself, $c?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26503,
+    "field": "CompletionText",
+    "sql_value": "'Did you find the gnoll plans?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26505,
+    "field": "CompletionText",
+    "sql_value": "'Where did I put my monocle?! Conacher is that you?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26506,
+    "field": "CompletionText",
+    "sql_value": "'Have you gotten my ingredients?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26508,
+    "field": "CompletionText",
+    "sql_value": "'Hi. I miss my necklace. My daddy got it for me. Daddy says that there are monsters in the lake. Did you beat up any monsters?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26510,
+    "field": "CompletionText",
+    "sql_value": "'Have you recovered the gnomecorder?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26513,
+    "field": "CompletionText",
+    "sql_value": "'Did you recover the supplies?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26514,
+    "field": "CompletionText",
+    "sql_value": "'Did you recover those collars?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26533,
+    "field": "CompletionText",
+    "sql_value": "'Excellent... you\\'re not a zombie yet.\\r\\nThat\\'s good.\\r\\n\\r\\nOh, umm... nothing. It\\'s just that... that was a potential risk. Did i forget to warn you?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26535,
+    "field": "CompletionText",
+    "sql_value": "'Did he use shimmerweed? I\\'m guessing he used shimmerweed$B$BNo wait... amberseeds!  It\\'s gotta be amberseeds.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26544,
+    "field": "CompletionText",
+    "sql_value": "'What have you found out?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26545,
+    "field": "CompletionText",
+    "sql_value": "'Do you have the Blackrock invasion plans?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26592,
+    "field": "CompletionText",
+    "sql_value": "'<Flem\\'s eyes sparkle.>\\r\\n\\r\\nAre those gems I see?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26661,
+    "field": "CompletionText",
+    "sql_value": "'Hi, $n. Do you have those rot blossoms for me yet?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26815,
+    "field": "CompletionText",
+    "sql_value": "'Excellent... you\\'re not a zombie yet.\\r\\nThat\\'s good.\\r\\n\\r\\nOh, umm... nothing.  It\\'s just that... that was a potential risk.  Did I forget to warn you?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 26855,
+    "field": "CompletionText",
+    "sql_value": "'Hello, $n. Do you have word of my friend Hildelve?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 29580,
+    "field": "CompletionText",
+    "sql_value": "'Were there any tools left?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 29581,
+    "field": "CompletionText",
+    "sql_value": "'Yes, did you need something?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30028,
+    "field": "CompletionText",
+    "sql_value": "'Between birds and sprites we are never going to meet our quota to the Stormstout Brewery.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30064,
+    "field": "CompletionText",
+    "sql_value": "'How are the sutras? Are they damaged?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30072,
+    "field": "CompletionText",
+    "sql_value": "'Have you found all of the items? Did you pay close attention to our process?'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30081,
+    "field": "CompletionText",
+    "sql_value": "'Cant\\'t believe Ken-Ken did not think of this sooner. It\\'s the ONE thing that can ruin his day...'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30130,
+    "field": "CompletionText",
+    "sql_value": "'I\\'ve been punched, stabbed, thrown off of a cliff, hit in the face by someone\\'s mace, hit in the face by own mace, and fell off the elevator at Thunder Bluff on more than one occasion.\\r\\n\\r\\nNone of that pain sounds even half as bad as what Leza is going through. I hope this tea helps...'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30137,
+    "field": "CompletionText",
+    "sql_value": "'The saurok keep the stolen serpent eggs in their camp.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30267,
+    "field": "CompletionText",
+    "sql_value": "'I refuse to not fish. Fishing\\'s who I am!'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 30351,
+    "field": "CompletionText",
+    "sql_value": "'I have never seen the mogu this numerous before. They have always been a nuisance but never this bad.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 31156,
+    "field": "CompletionText",
+    "sql_value": "'Ahh, you have come.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 31165,
+    "field": "CompletionText",
+    "sql_value": "'Ah, I am pleased to meet you.'"
+  },
+  {
+    "table": "quest_request_items",
+    "id": 31286,
+    "field": "CompletionText",
+    "sql_value": "'Saurok are seldom this bold.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 8328,
+    "field": "RewardNextQuest",
+    "sql_value": "10068"
+  },
+  {
+    "table": "quest_template",
+    "id": 8329,
+    "field": "RewardNextQuest",
+    "sql_value": "27091"
+  },
+  {
+    "table": "quest_template",
+    "id": 8563,
+    "field": "RewardNextQuest",
+    "sql_value": "10073"
+  },
+  {
+    "table": "quest_template",
+    "id": 8564,
+    "field": "RewardNextQuest",
+    "sql_value": "10072"
+  },
+  {
+    "table": "quest_template",
+    "id": 9392,
+    "field": "RewardNextQuest",
+    "sql_value": "10071"
+  },
+  {
+    "table": "quest_template",
+    "id": 9393,
+    "field": "RewardNextQuest",
+    "sql_value": "10070"
+  },
+  {
+    "table": "quest_template",
+    "id": 9676,
+    "field": "RewardNextQuest",
+    "sql_value": "10069"
+  },
+  {
+    "table": "quest_template",
+    "id": 10068,
+    "field": "QuestDescription",
+    "sql_value": "'As you begin to grow in power, your connection to the arcane will develop, granting you access to new spells.$B$BGo, develop your power, and then demonstrate what you learn for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10069,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Seal of Command. Cast Seal of Command on yourself, then locate a Training Dummy outside the Sunspire and hit it.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10069,
+    "field": "QuestDescription",
+    "sql_value": "'It is time for your first lesson in the ways of the Light, $n. As you fight more battles, it will bring you closer to the light, and you\\'ll start to uncover new abilities. Go, get more experience, and learn a new ability. Return and demonstrate it for me, and we\\'ll continue your training.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10070,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot. Locate a Training Dummy outside the Sunspire and practice using Steady Shot 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10070,
+    "field": "QuestDescription",
+    "sql_value": "'And now, it is time for your first lesson.$B$BAs you become more skilled, you will begin to discover new techniques.$B$BGo out, get some more experience, and learn your first new ability. Once you do, go find a training dummy and practice your new skill.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10071,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Eviscerate, then locate a Training Dummy outside the Sunspire and practice using Eviscerate 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10071,
+    "field": "QuestDescription",
+    "sql_value": "'As you grow in power, you\\'ll start to figure out the tricks of the trade.$B$BOne of the first things you\\'ll probably figure out is how to Eviscerate your enemy after landing some initial attacks. Get some experience, learn how to do it, and then find one of the training dummies outside and give it a try.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10072,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain. Practice casting it 5 times on nearby training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10072,
+    "field": "LogTitle",
+    "sql_value": "'Learning the Word'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10072,
+    "field": "QuestDescription",
+    "sql_value": "'As you grow in skill, so will the array of powers that you can call upon.$B$BI\\'d like you to go, continue to become more experienced, and discover a new spell. Once you do, come back and demonstrate it for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10073,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Corruption. Locate a Training Dummy outside the Sunspire and practice casting Corruption 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10073,
+    "field": "LogTitle",
+    "sql_value": "'Corruption'"
+  },
+  {
+    "table": "quest_template",
+    "id": 10073,
+    "field": "QuestDescription",
+    "sql_value": "'By now, you\\'ve heard the rumors about our kind, the warlocks. Pay them no mind; they are uttered by those jealous of our fearsome powers.$B$BAs you become more experienced, you will uncover mysteries of controlling fel energies. Go, continue your journey until you uncover a new technique. I want you to practice using this new spell on the training dummies outside the Sunspire.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24473,
+    "field": "RewardNextQuest",
+    "sql_value": "24474"
+  },
+  {
+    "table": "quest_template",
+    "id": 24526,
+    "field": "LogTitle",
+    "sql_value": "'Filling Up the Spellbook'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24526,
+    "field": "QuestDescription",
+    "sql_value": "'Excellent! Let\\'s get started.$B$BAs you grow in power, your connection to the arcane arts will deepen, and you\\'ll gain access to new spells and abilities. Go, get some more experience, and you\\'ll see what I mean. Come back when you learn something new and demonstrate it on the training dummies here.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24527,
+    "field": "LogDescription",
+    "sql_value": "'Reach Level 3 to learn Primal Strike, and then use Primal Strike 2 times on a Training Dummy near the entrance of Anvilmar.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24527,
+    "field": "QuestDescription",
+    "sql_value": "'Excellent! Let us begin.$B$BAs you grow along your journey, you will unlocked the ancient secrets of shamans. Primal Strike is the first such skill. The primal spirits, when called upon, will strengthen your arm to deliver a mighty blow.$B$BHelpful, isn\\'t it?'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24528,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Seal of Command. Use Seal of Command on yourself, and then hit one of the Training Dummies at the entrance to Anvilmar.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24528,
+    "field": "QuestDescription",
+    "sql_value": "'Are ye ready to start? Wonderful! We\\'re glad to have ye.$B$BAs ye get stronger, it brings ye closer to the light, and ye learn new techniques. Go ahead and get some more experience, and show me what ye learn.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24530,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot, then use Steady Shot 5 times on the Training Dummies outside the entrance to Anvilmar.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24530,
+    "field": "QuestDescription",
+    "sql_value": "'The life of a hunter is steeped in tradition, ye know. Trackin\\' mighty beasts through rugged terrain. Drinkin\\'. Travelin\\' the land, yer gun at yer side. Drinkin\\'. Survivin\\' on wits and courage and cunning, followed by a good stiff drink.$B$BBut before we get to the good stuff, though, ye\\'ll need to learn how to do the beginner stuff. Go and get some more experience, and ye\\'ll figure out how to do more things. Then ye\\' drink.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24531,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge, then use Charge on one of the Training Dummies outside the entrance to Anvilmar.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24531,
+    "field": "QuestDescription",
+    "sql_value": "'Lesson one. Aside from your sword and shield, what\\'s the most important tool you have in your arsenal?$B$B<Thran awaits your response.>$B$BOh never mind, I\\'ll answer it for you. It\\'s experience. As you get more experience, you\\'ll discover new techniques, which means you can be much more effective than you imagined. Go, get some experience, and learn something new. Then come back and demonstrate.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24532,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Eviscerate, then use Eviscerate 3 times on the Training Dummies near the entrance to Anvilmar.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24532,
+    "field": "QuestDescription",
+    "sql_value": "'When you get to be more experienced, you\\'ll start to find you can take advantage of new abilities. One of the things that you\\'ll learn is the ability to use combat maneuvers to weaken an opponent, and then hit them with a devastating technique. Go and get some experience, figure out how to do it, and then try it out on some of the dummies here.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24533,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain, then cast it 5 times on training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24533,
+    "field": "QuestDescription",
+    "sql_value": "'Now, if ya DO want to become somethin\\' special, ye\\'ll need to talk to me. A priest is nothin\\' without his spells. And how do you learn new spells? Ya go and get more experience. So go out, get stronger, and then come show me what ya learn.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24640,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Practice using Charge against a Tiki Target.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24640,
+    "field": "QuestDescription",
+    "sql_value": "'As ya get bettah\\' at fightin\\', you\\'ll start to find new tings that ya nevah knew you could do.$B$BWanna see? Go, train up some, and learn someting new.$B$B\\'Den come back and ya can show me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24760,
+    "field": "LogDescription",
+    "sql_value": "'Reach Level 3 to learn Primal Strike, and then use Primal Strike 3 times against a Tiki Target.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24760,
+    "field": "QuestDescription",
+    "sql_value": "'As ya grow in powah, you begin ta discovah the voices of da ancestahs speakin\\' to ya, teachin\\' you dere secrets. Tha first of \\'dese is to focus tha power of da elements into yer weapon. It allows ya to unleash a quick, vicious attack on your enemies. Dis should be easy enough for ya to make a lot of use of it.$B$BTry it out. Let me know when ya tink you have it down.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24766,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Moonfire. Practice using it on a Tiki target in the Darkspear Training Grounds.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24766,
+    "field": "QuestDescription",
+    "sql_value": "'As ya grow in powah, ya ability to call on nature gets strongah, too. Ya wanna see? Go get some experience and show me what ya\\' learn.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24772,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Eviscerate, then use Eviscerate 3 times against a Tiki Target.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24772,
+    "field": "QuestDescription",
+    "sql_value": "'As ya fight ya enemies, ya will learn new tricks you use ta be even bettah\\'. There\\'s one ya should be learnin\\' soon to let ya see dere weaknesses and set up for devastating combo attacks. After ya\\'ve struck a few blows to weaken ya foe, finish dem off with a vicious evisceration attack. When ya learn it, try it out. Let me know when ya tink you have it down.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24778,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot. Use Steady Shot 5 times on a Tiki Target.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24778,
+    "field": "QuestDescription",
+    "sql_value": "'As ya\\' start to get da hang of tings, ya gonna figure out how ta do new tricks.$B$BOne of da\\' first ya gonna learn is to keep a steady hand between shots, or else ya gonna find yaself exhausted and not really managin\\' to kill much.$B$BGo get some more experience \\'till ya figure it out, \\'den come back and try it out. Let me know when ya tink you have it down.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24784,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain. Use it 5 times on 5 Tiki training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 24784,
+    "field": "QuestDescription",
+    "sql_value": "'As ya get more skill out there in tha\\' world, you\\'ll start to discovah\\' new powahs.$B$BWhy dontcha go out an\\' go get yaself stronger, and come back when ya learn sometin\\' new. You can show me what ya learn.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25139,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot. Locate a Training Dummy and practice using Steady Shot 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25139,
+    "field": "QuestDescription",
+    "sql_value": "'You already know how to fire an arcane shot. Good. But doing so depletes your focus. To gain your focus back you will need to switch to a second type of ranged attack. Go out and get some more experience. As you do, you\\'ll learn some new abilities. The first of these will help you get your focus back.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25141,
+    "field": "LogDescription",
+    "sql_value": "'Reach Level 3 to Learn Eviscerate, then locate a Training Dummy and practice using Eviscerate 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25141,
+    "field": "QuestDescription",
+    "sql_value": "'Let\\'s start with the basics, shall we? I\\'m the only rogue trainer in town, so you\\'re going to have to learn it from me.$B$BGo get some more experience, figure out how to eviscerate your foes, and then show me on the training dummies here. I\\'ll evaluate your form.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25143,
+    "field": "LogDescription",
+    "sql_value": "'Learn Primal Strike by reaching Level 3, then look for a training dummy near Shikrik and practice using Primal Strike 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25143,
+    "field": "QuestDescription",
+    "sql_value": "'As you grow in power by gaining levels, you will discover the power to use new abilities. The first you will discover on your journey is Primal Strike. Use it to deliver a strike with your weapon, infused with the power of the elements.$B$BIt is time to learn and master your new skill. Practice using it on the training dummies outside the Den.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25145,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Corruption. Locate a Training Dummy and practice casting Corruption 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25145,
+    "field": "LogTitle",
+    "sql_value": "'Corruption'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25145,
+    "field": "QuestDescription",
+    "sql_value": "'It is my duty to train you, and I intend to do just that.$B$BAs you become more powerful, you will begin to hear the fel voices revealing new spells to you. Go, get more experience, learn a new spell, and then practice your new spell against one of the training dummies around here.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25147,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Locate a Training Dummy and practice using Charge.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 25147,
+    "field": "QuestDescription",
+    "sql_value": "'I\\'ve been instructed to prepare you for battle. Though, from the look of you, it looks like you\\'ve already spent a little time out in the field. Good.$B$BAs you continue your journey, you\\'ll discover that you can begin to use new techniques$B$BGo, get some more experience, and teach yourself how to Charge, then show me what you\\'ve learned.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26146,
+    "field": "QuestDescription",
+    "sql_value": "'We need to protect the Loch, $n! With so many of the King\\'s soldiers fighting valiantly on remote battlefields, we\\'ve become overwhelmed on the home front. Troggs are tunneling up from every crevice! The trogg infestation poses the largest threat to Ironforge.$B$BWe need you, brave adventurer, to venture forth and lay waste to the trogg threat. Slay twelve Stonesplinter troggs and venture back.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26198,
+    "field": "LogTitle",
+    "sql_value": "'The Arts of a Mage'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26200,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain. Use it 5 times on training dummies in New Tinkertown.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26200,
+    "field": "QuestDescription",
+    "sql_value": "'You know, as you go out into this crazy world and get more powerful, you\\'ll also start to discover new powers that you didn\\'t know before.$B$BWhy don\\'t you go out, get some more experience, and then come back and show me what you\\'ve learned!'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26201,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Corruption, then cast it on a Training Dummy in New Tinkertown 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26201,
+    "field": "QuestDescription",
+    "sql_value": "'I\\'m not at all surprised that a warlock like you fought your way out of Gnomeregan. Few people, even among the gnomes, truly understand the nature of the power we wield. As you become more powerful, you\\'re going to start hearing the fel voices revealing their secrets to you, teaching you new spells. I want you to go get some more experience. Once you learn something new, show me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26204,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Locate a Training Dummy in New Tinkertown and use Charge on it.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26204,
+    "field": "QuestDescription",
+    "sql_value": "'Learning is the best way to improve. As you learn more, you\\'ll start to discover you can do things you never realized!$B$BGo, get some more experience, and learn a new technique. Then, come back and demonstrate it on a training dummy.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26207,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Eviscerate, then find a training dummy in New Tinkertown and practice using Eviscerate 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26207,
+    "field": "QuestDescription",
+    "sql_value": "'As you learn more and become a better rogue, you\\'ll start to learn new abilities.$B$BOne of the most potent ones is to chain together moves in a combination, exploiting your enemy\\'s weakness and opening up the opportunity to use stronger maneuvers. Go, get some more experience and figure out how to do it. Once you can, come back here and try it out.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26854,
+    "field": "QuestDescription",
+    "sql_value": "'My friend and fellow Siege Engine pilot, Mori Hildelve, is lost in the hills. We were looking for a rare ore that\\'s needed for a high-grade blastpowder, and during our search he drove his engine up a steep hill and busted it!$B$BStill convinced that ore was in these mountains, Hildelve charged me to guard our engines while he continued on foot.$B$BIt\\'s been days, and I\\'ve heard some beastly growls north of Helm\\'s Bed Lake, west of the tunnel. Mori\\'s tough as nails, but I\\'m worried.$B$BPlease, $n. Find him.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26904,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Corruption, then cast it 5 times on a Training Dummy near the entrance to Anvilmar.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26904,
+    "field": "LogTitle",
+    "sql_value": "'Corruption'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26904,
+    "field": "QuestDescription",
+    "sql_value": "'Few people, especially among our allies, truly understand the nature of the power we wield. They shun us for pursuing knowledge that they are too weak to use properly.$B$BAs you become more powerful, you will begin to discover new spells, further magnifying your power. Go, get more experience, then return once you\\'ve learned a new spell. We\\'ll see if you have it in you to truly master the dark arts.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26913,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge, then practice using Charge on a Training Dummy south of the entrance to Northshire Abbey.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26913,
+    "field": "QuestDescription",
+    "sql_value": "'Now that you\\'ve had the chance to test your abilities in battle, it\\'s time to explain one more reason why training is so important.$B$BAs you get more experience, you\\'ll be able to do new techniques you never thought of. Go, get some experience, learn a new skill, and demonstrate it on one of the training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26914,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn the Corruption ability, then practice casting Corruption 5 times on a Training Dummy south of the entrance to Northshire Abbey.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26914,
+    "field": "LogTitle",
+    "sql_value": "'Corruption'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26914,
+    "field": "QuestDescription",
+    "sql_value": "'We must take care in how we speak around the abbey and its environs, but don\\'t let that deter you from the path of power.$B$BAs you become more powerful, you will begin to hear the fel voices, granting you their power in the dark arts. Go, get more experience and learn a new spell. Once you have, practice it on the training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26915,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Eviscerate, then find a Training Dummy south of the entrance to Northshire Abbey and practice Eviscerate 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26915,
+    "field": "QuestDescription",
+    "sql_value": "'By now, you know the basics of combat as $c, but I want to teach you a new skill. As rogues, we are renowned for our ability to execute chains of combat techniques, often saving the most powerful strikes for the end.$B$BAs you get more experience, you\\'ll learn new things - and this is one of the ones you\\'ll learn first. Once you have, I want you to go try it on one of the training dummies south of the entrance to the abbey.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26916,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Frost Nova, then practice casting it 2 times on a Training Dummy south of the entrance to Northshire Abbey.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26916,
+    "field": "QuestDescription",
+    "sql_value": "'As a mage, you will learn a variety of spells as your understanding grows. All you need to do is get some more experience, and the secrets of the arcane will reveal themselves to you. You\\'ll see. Go develop your powers, and show me what you learn.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26917,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot, then find a Training Dummy south of the entrance to Northshire Abbey and practice using Steady Shot 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26917,
+    "field": "QuestDescription",
+    "sql_value": "'I\\'ve heard about your help in clearing out some of the orcs. You\\'ve shown that you can handle yourself in combat.$B$BAs you get more experience in combat, you\\'ll start learning how to do new things. I want you to go, get some more experience, then try the new abilities you learn on one of the training dummies south of the entrance to the abbey.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26918,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Seal of Command. Cast Seal of Command on yourself and then hit a Training Dummy south of the entrance to Northshire Abbey.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26918,
+    "field": "QuestDescription",
+    "sql_value": "'As you continue in your journey as a $c, you\\'ll become closer to the light, learning new abilities. Go, get more experience, and learn a new ability. Demonstrate it for me, and we will continue your training.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26940,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Frost Nova. Look for a Training Dummy near, and practice using it twice.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26940,
+    "field": "LogTitle",
+    "sql_value": "'Frost Nova'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26940,
+    "field": "QuestDescription",
+    "sql_value": "'We are the heirs to a legacy of arcane magic and your path will not be an easy one. Many still hold us responsible for the actions of our forebears, but our talents are needed.$B$BThough you must be cautious, it is important to develop your powers, as that will deepen your connection to the arcane and grant you access to new spells. Go - get more experience with your spells, and demonstrate what you learn for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26945,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Look for a Training Dummy and practice using Charge.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26945,
+    "field": "QuestDescription",
+    "sql_value": "'As you overcome the challenges before you, you\\'ll begin to learn new techniques.$B$BGo, get more experience, and learn a new skill. Then demonstrate it for me on one of the training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26946,
+    "field": "LogDescription",
+    "sql_value": "'Reach Level 3 and Learn Eviscerate. Look for a Training Dummy southeast of Aldrassil and practice using Eviscerate 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26946,
+    "field": "QuestDescription",
+    "sql_value": "'I\\'m certain that by now, you\\'ve mastered using Sinister Strike against your enemies. But, as you learn more and advance as a rogue, you\\'ll start to figure out new techniques. One you should figure out soon is called Eviscerate. It can be a strong way to end a combination of attacks.$B$BI want you to get some more experience, figure it out, then try it on a training dummy near the southeastern edge of Aldrassil.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26947,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot. Look for a Training Dummy southeast of Aldrassil, and practice using Steady Shot 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26947,
+    "field": "QuestDescription",
+    "sql_value": "'When most people think of the kaldorei, they conjure visions of druids and sentinels, but the way of the hunter is just as ancient and just as venerable.$B$BI\\'ve been observing you, and you\\'ve had quite a bit of experience handling that bow. As you gain more, you\\'ll start to learn some new abilities.$B$BI want you to go out, get some more experience, and figure out how to do something new. Then go use it on a training dummy near the southeastern edge of Aldrassil.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26948,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Moonfire. Use it on a training dummy in Aldrassil.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26948,
+    "field": "LogTitle",
+    "sql_value": "'Moonfire'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26948,
+    "field": "QuestDescription",
+    "sql_value": "'Druids play an important role in our society, but all too often we are seen as passive dreamers in a world that is changing around us.$B$BThe truth is, though, we must actively practice and go out onto the world to develop our connection to nature. So go, get some more experience. You will begin to feel your connection deepen, learning new skills. Demonstrate the first you learn for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26949,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain, then use it 5 times on training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26949,
+    "field": "LogTitle",
+    "sql_value": "'Learning the Word'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26949,
+    "field": "QuestDescription",
+    "sql_value": "'As you venture out into the world and develop your skills, you will begin to learn new abilities that you never knew you had within you. I\\'d like you to go out, get some more experience, and then show me the first new ability you learn.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26958,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Find a Training Dummy on the northwest side of the Crash Site and practice using Charge.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26958,
+    "field": "QuestDescription",
+    "sql_value": "'Let\\'s start your training right away. As you get more experience in combat, you\\'ll start to develop new techniques.$B$BGo, get some more experience, learn something new, and demonstrate it on the dummies to the northwest.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26963,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot. Find a Training Dummy on the northwest side of the Crash Site and practice using Steady Shot 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26963,
+    "field": "QuestDescription",
+    "sql_value": "'Let\\'s start your training right away. It\\'s going to be a struggle to survive here, and you\\'ll play an important role in making sure our people are safe and well-supplied.$B$BAs you become more experiened, you\\'ll begin to discover new abilities. Go ahead and go out, learn something new, and try it out. Return to me when you think you\\'ve mastered it.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26966,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Seal of Command. Apply Seal of Command, find a Training Dummy on the northwest side of the Crash Site and hit it with an attack.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26966,
+    "field": "QuestDescription",
+    "sql_value": "'As a paladin, you\\'re no stranger to the Light that touches all of us. But you also have the unique power to call upon the Light to help you in battle.$B$BAs you gain more experience, you\\'ll grow even closer to the Light and be able to call upon new powers in battle. Go, grow in experience until you have learned a new power, and then demonstrate it for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26968,
+    "field": "QuestDescription",
+    "sql_value": "'In your future as a mage, you\\'ll want to master a wide variety of spells. To do so, you need to deepen your connection by the arcane by growing in power. Go, get more experience as a mage, and demonstrate what you learn for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26969,
+    "field": "LogDescription",
+    "sql_value": "'Learn Primal Strike by reaching Level 3, and then find a Training Dummy on the northwest side of the Crash Site and practice using Primal Strike 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26969,
+    "field": "QuestDescription",
+    "sql_value": "'Your walk with the elemental powers will take you to many places. As you grow in power, you will begin to learn new abilities. Let us start your journey with a simple, but useful, lesson. Learn the secret of Primal Strike, and then practice your new skill using the training dummies to the northwest of the Crash Site. Return to me when you are finished.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26970,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain, then use it 5 times on target dummies near the crash site.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26970,
+    "field": "LogTitle",
+    "sql_value": "'Learning the Word'"
+  },
+  {
+    "table": "quest_template",
+    "id": 26970,
+    "field": "QuestDescription",
+    "sql_value": "'As a priest, one of your most important duties is to use the Light\\'s power to aid the wounded. Another is to use your power offensively, to protect them. As you grow more experienced, you will begin to uncover new abilities that you can use in your charge. Go, gain more experience, and then demonstrate the abilities you have learned to me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27020,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Locate a Training Dummy in Camp Narache and practice using Charge.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27020,
+    "field": "QuestDescription",
+    "sql_value": "'You have done well. As you continue along your path, you will grow, learning new techniques that you couldn\\'t have imagined before. Your first lesson is the power of experience. Go, learn a new ability, and demonstrate it for me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27021,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Steady Shot. Locate a Training Dummy in Camp Narache and practice using Steady Shot 5 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27021,
+    "field": "QuestDescription",
+    "sql_value": "'It is time for your first lesson, $n. You have a long way to go to master the ways of the hunter, but as you complete more of your journey, you begin to take new steps on that path.$B$BGo, get more experience, and figure out a new ability. Then, use it on the training dummies here.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27023,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Seal of Command. Locate a Training Dummy in Camp Narache, cast Seal of Command on yourself and hit the dummy.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27023,
+    "field": "QuestDescription",
+    "sql_value": "'It is always a pleasure to meet a fellow Sunwalker. We are not as numerous as some of the more ancient orders, but our ways are no less powerful and our members no less respected.$B$BAs you continue on your journey, you will grow closer to the light and gain abilities you couldn\\'t have imagined. Go, get more experience, and return when you\\'ve learned a new ability. Demonstrate it to me.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27027,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Primal Strike, and then locate a Training Dummy in Camp Narache and practice using Primal Strike 3 times.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27027,
+    "field": "QuestDescription",
+    "sql_value": "'I know you\\'ve been busy helping the braves protect Camp Narache from the bristlebacks. We\\'re going to need all the hammers and all the luck we can get. As your skills increase, so does your connection to the elements. This gives you access to new abilities. The first of these that we learn is Primal Strike. It should help you fell your enemies faster. Learn it, and then try it out.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27066,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Shadow Word: Pain. Practice using it 5 times on Training Dummies in Camp Narache.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27066,
+    "field": "LogTitle",
+    "sql_value": "'Learning the Word'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27066,
+    "field": "QuestDescription",
+    "sql_value": "'As you become more skilled, your skills will expand, and you will gain access to many new powers. Go - get some experience out there, and come back to me when you\\'ve learned something new. You can demonstrate on the training dummies nearby.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27067,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Moonfire. Practice using it on a Training Dummy in Camp Narache.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27067,
+    "field": "LogTitle",
+    "sql_value": "'Moonfire'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27067,
+    "field": "QuestDescription",
+    "sql_value": "'As you develop your skills, druid, you will begin to feel your connection to the Earthmother deepening. You will begin to understand new secrets of nature, and learn to cast new spells. Go now, get more experience, and return to me when you\\'ve learned a new spell. Demonstrate what you\\'ve learned.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27091,
+    "field": "LogDescription",
+    "sql_value": "'Reach level 3 to learn Charge. Locate a Training Dummy outside the Sunspire and practice using Charge.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 27091,
+    "field": "QuestDescription",
+    "sql_value": "'Good. You are off to a bright start. This road will be long, and as you become more accomplished, you will begin to discover that you can do things you could never have imagined before.$B$BGo, get more experience, and learn a new technique. Once you have, demonstrate it on one of the training dummies.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 30159,
+    "field": "AreaDescription",
+    "sql_value": "'Well done, $n. As soon as Suchi told me she sent you to recover the stolen eggs, I knew you would accomplish the task.\\r\\n\\r\\nOur instructors will make sure to return these eggs to a safer place.'"
+  },
+  {
+    "table": "quest_template",
+    "id": 31170,
+    "field": "RewardNextQuest",
+    "sql_value": "31171"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 218,
+    "field": "PrevQuestID",
+    "sql_value": "24489"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 313,
+    "field": "PrevQuestID",
+    "sql_value": "25724"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 315,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 384,
+    "field": "RequiredSkillID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 384,
+    "field": "RequiredSkillPoints",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 412,
+    "field": "PrevQuestID",
+    "sql_value": "313"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 415,
+    "field": "NextQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 24473,
+    "field": "PrevQuestID",
+    "sql_value": "24470"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 24487,
+    "field": "PrevQuestID",
+    "sql_value": "24486"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 24493,
+    "field": "PrevQuestID",
+    "sql_value": "24491"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 24938,
+    "field": "PrevQuestID",
+    "sql_value": "24934"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 24943,
+    "field": "PrevQuestID",
+    "sql_value": "24941"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 24944,
+    "field": "PrevQuestID",
+    "sql_value": "24941"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25015,
+    "field": "PrevQuestID",
+    "sql_value": "25036"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25028,
+    "field": "PrevQuestID",
+    "sql_value": "25015"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25034,
+    "field": "PrevQuestID",
+    "sql_value": "25027"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25667,
+    "field": "PrevQuestID",
+    "sql_value": "25724"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25668,
+    "field": "PrevQuestID",
+    "sql_value": "25724"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25792,
+    "field": "PrevQuestID",
+    "sql_value": "313"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 25838,
+    "field": "PrevQuestID",
+    "sql_value": "25792"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 26958,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 26963,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 26966,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 26968,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 26969,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  },
+  {
+    "table": "quest_template_addon",
+    "id": 26970,
+    "field": "PrevQuestID",
+    "sql_value": "0"
+  }
+]

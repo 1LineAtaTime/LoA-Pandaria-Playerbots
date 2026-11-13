@@ -324,9 +324,9 @@ void AuctionBotBuyer::BuyAndBidItems(BuyerConfiguration& config)
         // Otherwise bid if roll for bid was successful
         if ((auction->buyout && successBid && bidPrice >= auction->buyout) ||
             (successBuy && (!successBid || urand(1, 5) == 1)))
-            BuyEntry(auction, auctionHouse); // buyout
+            BuyEntry(auction, auctionHouse, config.GetHouseType()); // buyout
         else if (successBid)
-            PlaceBidToEntry(auction, bidPrice); // bid
+            PlaceBidToEntry(auction, bidPrice, config.GetHouseType()); // bid
 
         itr->second.LastChecked = GameTime::GetGameTime();
         --cycles;
@@ -384,9 +384,13 @@ uint32 AuctionBotBuyer::GetChanceMultiplier(uint32 quality)
 }
 
 // Buys the auction and does necessary actions to complete the buyout
-void AuctionBotBuyer::BuyEntry(AuctionEntry* auction, AuctionHouseObject* auctionHouse)
+void AuctionBotBuyer::BuyEntry(AuctionEntry* auction, AuctionHouseObject* auctionHouse, AuctionHouseType houseType)
 {
-    TC_LOG_DEBUG("ahbot", "AHBot: Entry %u bought at %.2fg", auction->Id, float(auction->buyout) / GOLD);
+    ObjectGuid bidder = sAuctionBotConfig->GetRandCharExclude(auction->owner, houseType);
+    if (!bidder)
+        return;
+
+    TC_LOG_INFO("ahbot", "Auction bot character %u bought auction %u at %.2fg", bidder.GetCounter(), auction->Id, float(auction->buyout) / GOLD);
 
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
@@ -395,7 +399,7 @@ void AuctionBotBuyer::BuyEntry(AuctionEntry* auction, AuctionHouseObject* auctio
         sAuctionMgr->SendAuctionOutbiddedMail(auction, auction->buyout, nullptr, trans);
 
     // Set bot as bidder and set new bid amount
-    auction->bidder = sAuctionBotConfig->GetRandCharExclude(auction->owner);
+    auction->bidder = bidder;
     auction->bid = auction->buyout;
 
     // Mails must be under transaction control too to prevent data loss
@@ -415,9 +419,13 @@ void AuctionBotBuyer::BuyEntry(AuctionEntry* auction, AuctionHouseObject* auctio
 }
 
 // Bids on the auction and does the necessary actions for bidding
-void AuctionBotBuyer::PlaceBidToEntry(AuctionEntry* auction, uint32 bidPrice)
+void AuctionBotBuyer::PlaceBidToEntry(AuctionEntry* auction, uint32 bidPrice, AuctionHouseType houseType)
 {
-    TC_LOG_DEBUG("ahbot", "AHBot: Bid placed to entry %u, %.2fg", auction->Id, float(bidPrice) / GOLD);
+    ObjectGuid bidder = sAuctionBotConfig->GetRandCharExclude(auction->owner, houseType);
+    if (!bidder)
+        return;
+
+    TC_LOG_INFO("ahbot", "Auction bot character %u bid on auction %u at %.2fg", bidder.GetCounter(), auction->Id, float(bidPrice) / GOLD);
 
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
@@ -426,7 +434,7 @@ void AuctionBotBuyer::PlaceBidToEntry(AuctionEntry* auction, uint32 bidPrice)
         sAuctionMgr->SendAuctionOutbiddedMail(auction, bidPrice, nullptr, trans);
 
     // Set bot as bidder and set new bid amount
-    auction->bidder = sAuctionBotConfig->GetRandCharExclude(auction->owner);
+    auction->bidder = bidder;
     auction->bid = bidPrice;
 
     // Update auction to DB

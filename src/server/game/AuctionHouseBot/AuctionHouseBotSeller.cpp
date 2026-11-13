@@ -16,6 +16,7 @@
 */
 
 #include "AuctionHouseBotSeller.h"
+#include "AuctionHouseBotItemFilter.h"
 #include "AuctionHouseMgr.h"
 #include "Containers.h"
 #include "DatabaseEnv.h"
@@ -123,22 +124,23 @@ bool AuctionBotSeller::Initialize()
         if (prototype->GetQuality() >= MAX_AUCTION_QUALITY)
             continue;
 
-        // internal items: AC RandomItemMgr::IsInternalItem (RandomItemMgr.cpp:1368) - deprecated flag, test/placeholder names (Refs #1012)
+        // Never list items explicitly marked as internal or obsolete, even
+        // when their ID was put in the forced-include list.
+        if (AuctionHouseBotItemFilter::HasRestrictedMarker(prototype->Name1))
+            continue;
+
+        // RequiredLevel 100 is used by the world database to quarantine
+        // broken items. Apply the ceiling to every class, including forced
+        // includes, gems, trade goods and miscellaneous items.
+        if (int32 maxRequiredLevel = sAuctionBotConfig->GetConfig(CONFIG_AHBOT_ITEM_MAX_REQ_LEVEL))
+            if (prototype->GetRequiredLevel() > maxRequiredLevel)
+                continue;
+
         if (prototype->GetFlags() & ITEM_PROTO_FLAG_DEPRECATED)
             continue;
-        {
-            char const* name = prototype->Name1.c_str();
-            if (strstr(name, "NPC ") || strstr(name, "Monster ") || strstr(name, "Test") || strstr(name, "Deprecated ") ||
-                strstr(name, "[PH]") || strstr(name, "TEST") || strstr(name, "Unused ") || strstr(name, "zzOLD") ||
-                strstr(name, "(test)") || strstr(name, "(OLD)") || strstr(name, "QR") || strstr(name, "2200 "))
-                continue;
-        }
-
-        // random property/suffix pool missing from item_enchantment_template (45630 Invisible Axe): cannot be rolled, skip
         if (!HasItemEnchantPool(prototype->RandomProperty, ItemRandomEnchantmentType::Property) ||
             !HasItemEnchantPool(prototype->RandomSuffix, ItemRandomEnchantmentType::Suffix))
             continue;
-
         // forced exclude filter
         if (excludeItems.count(itemId))
             continue;
@@ -902,6 +904,13 @@ void AuctionBotSeller::AddNewAuctions(SellerConfiguration& config)
             continue;
         }
 
+        ObjectGuid owner = sAuctionBotConfig->GetRandChar(config.GetHouseType());
+        if (!owner)
+        {
+            TC_LOG_ERROR("ahbot", "AuctionHouseBot has no character for %s auctions.", AuctionBotConfig::GetHouseTypeName(config.GetHouseType()));
+            return;
+        }
+
         uint32 stackCount = GetStackSizeForItem(prototype, config);
 
         Item* item = Item::CreateItem(itemId, stackCount);
@@ -939,7 +948,7 @@ void AuctionBotSeller::AddNewAuctions(SellerConfiguration& config)
 
         AuctionEntry* auctionEntry = new AuctionEntry();
         auctionEntry->Id = sObjectMgr->GenerateAuctionID();
-        auctionEntry->owner = sAuctionBotConfig->GetRandChar();
+        auctionEntry->owner = owner;
         auctionEntry->itemGUIDLow = item->GetGUID().GetCounter();
         auctionEntry->itemEntry = item->GetEntry();
         auctionEntry->startbid = bidPrice;

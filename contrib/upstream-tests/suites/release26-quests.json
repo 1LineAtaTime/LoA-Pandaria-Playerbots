@@ -1,0 +1,3437 @@
+{
+  "name": "release26 active quest field contracts",
+  "checks": [
+    {
+      "id": "release26-000",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=433 AND BINARY `RewardText`=BINARY 'What a relief! I\\'m glad to see that you were able to save so many miners, $n. I will make sure that their families are notified immediately.$B$BThe Senate will know of your role in winning back the mines.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-001",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=10068 AND BINARY `RewardText`=BINARY ''",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-002",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=10069 AND BINARY `RewardText`=BINARY ''",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-003",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=10070 AND BINARY `RewardText`=BINARY 'You have done well, $n. You should be proud of your progress.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-004",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=10071 AND BINARY `RewardText`=BINARY ''",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-005",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=10072 AND BINARY `RewardText`=BINARY ''",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-006",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=10073 AND BINARY `RewardText`=BINARY ''",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-007",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=13635 AND BINARY `RewardText`=BINARY 'The South Gate status report? Excellent. I\\'ve been awaiting news from them for a while.$B$BWith the increasing number of troggs in the hills on all sides, I fear the outposts will be the first to feel any aggressive action.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-008",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24526 AND BINARY `RewardText`=BINARY 'There we go! One spell down, many many more to go. Come back to me after you\\'ve had some experience casting this spell, and I\\'ll show you some more tricks.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-009",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24527 AND BINARY `RewardText`=BINARY 'This has been but one of many footfalls on the long path of the $c. Come back to me after you\\'ve had some experience in the field, and i will help guide you on your next step.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-010",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24528 AND BINARY `RewardText`=BINARY 'There, ya did it. The Light favors quick learners like you.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-011",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24530 AND BINARY `RewardText`=BINARY 'Now that ye\\'ve got a new $c trick under yer belt, go out there an\\' track some beasts!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-012",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24532 AND BINARY `RewardText`=BINARY 'You\\'ve got the hang of it.  Go get some practice out there... maybe take out a few of those troggs or trolls.  Or rabbits, I don\\'t care.$B$BReturn after you\\'ve gotten some practice, and I\\'ll show you another trick of the trade.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-013",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24640 AND BINARY `RewardText`=BINARY 'Good work, mon! Dis stuff come easy to ya.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-014",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24760 AND BINARY `RewardText`=BINARY 'Good work, mon! Dis stuff come easy to ya.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-015",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24766 AND BINARY `RewardText`=BINARY 'Good work, mon! Dis stuff come easy to ya.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-016",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24772 AND BINARY `RewardText`=BINARY 'Good work, mon! Dis stuff come easy to ya.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-017",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24784 AND BINARY `RewardText`=BINARY 'Good work, mon! Dis stuff come easy to ya.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-018",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24921 AND BINARY `RewardText`=BINARY 'Hm? What unit are you with, $c?\\r\\n\\r\\nNo matter, we need all hands. My fleet is in tatters and they\\'ve broke into the hold.\\r\\nYou armed? That\\'s good enough for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-019",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24934 AND BINARY `RewardText`=BINARY 'You make a hell of a marine, $n.$B$BWe\\'ll mop up the others. But it looks like the Horde fleet is disengaging - maybe to land more troops ashore?$B$BAdmiral Aubrey will know what to do. Talk to me when you\\'re ready to fly back!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-020",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24938 AND BINARY `RewardText`=BINARY 'Aubrey sent you? Good! I take it you know your way around a cannon?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-021",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24941 AND BINARY `RewardText`=BINARY 'The Horde is massing at the base of the hill. Breathlessly, you stuff the debris you collected into the muzzle of the cannon, step back, cover one ear, and tug on the igniter cord...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-022",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24943 AND BINARY `RewardText`=BINARY 'Great work! We\\'ve knocked them on their heels, maybe long enough to shore up our defenses.$B$BProvided we find a way to take out their artillery...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-023",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24944 AND BINARY `RewardText`=BINARY 'A steady stream of the walking wounded have come up the hill to see me, $n. I trust that was your work? Well done!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-024",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=24948 AND BINARY `RewardText`=BINARY 'Good! Without heavy equipment, the Horde will have to pull back to regroup. We\\'ve bought ourselves some time to re-secure the fortress. Well done!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-025",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25002 AND BINARY `RewardText`=BINARY 'My supplies! Well, that showed some real initiative, $c. Those rap-saws or whatever they\\'re called have torn lesser men to ribbons. Thank you!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-026",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25008 AND BINARY `RewardText`=BINARY 'Ooooo-oooh aye! The best Hecklefangs are the dead ones.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-027",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25015 AND BINARY `RewardText`=BINARY '<Corporal Teegan nods as you deliver your report, then grasps the Bramblestaff with both hands.>$B$BSo, this is what the quilboar are using against us? Do you think they used these to create this jungle?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-028",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25028 AND BINARY `RewardText`=BINARY 'Ah, samples from different parts of the overgrowth? These will be immensely helpful, yes. Thank you, $c.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-029",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25036 AND BINARY `RewardText`=BINARY 'So, Paxton says there\\'s no jungle in the Barrens? What do you call THIS!?$B$BI\\'ve got a pile of supplies to move to the interior and my camp has been overrun by a forest that - I swear - grows by the hour!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-030",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25138 AND BINARY `RewardText`=BINARY 'Ahh, where to start... introductions! I\\'m Acrypha - the one who sent you that parchment - I\\'ve spent the last several years in an Undercity library, my head in a book. I learned everything I could about the arcane, and now I\\'ve returned home to share it with grunts like yourself.$B$BShall we begin?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-031",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25197 AND BINARY `RewardText`=BINARY 'You\\'ve ventured all the way here from Honor\\'s Stand? Excellent, we could use your experience here.$B$BThey may have breached the walls, but Northwatch isn\\'t going down without a fight.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-032",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25235 AND BINARY `RewardText`=BINARY 'I saw you drop a few of them from here. Nice work.$B$BHere\\'s your reward, on behalf of the Night Watch.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-033",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=25978 AND BINARY `RewardText`=BINARY 'You\\'ve done it! The mountaineers are returning to camp and our medics will have their hands full. We are all in your debt, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-034",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26078 AND BINARY `RewardText`=BINARY 'Well done! My men are working hard on getting our flying machines and steam tanks back into the fight.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-035",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26112 AND BINARY `RewardText`=BINARY 'And just what is this?$B$B<Moira takes the report and the color drains from her face as she reads.>$B$BThis is impossible!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-036",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26131 AND BINARY `RewardText`=BINARY 'You don\\'t know how glad I am to see fresh faces from Ironforge. Perhaps sending Mountaineer Barleybrew wasn\\'t a waste after all.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-037",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26145 AND BINARY `RewardText`=BINARY 'I am quite impressed, $n. You have done the Dwarven race a great favor by defending our lands. King Magni Bronzebeard himself would be proud!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-038",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26146 AND BINARY `RewardText`=BINARY 'Well done, $n! You demonstrated uncanny courage on the battlefield. Our war against the Troggs will be won with efforts such as yours. You have served King Magni well.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-039",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26147 AND BINARY `RewardText`=BINARY 'I knew the second I laid eyes on you, $n, that you would make Ironforge proud. You have served our people well. I salute you, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-040",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26148 AND BINARY `RewardText`=BINARY 'Most excellent, $n! You have brought hope to Loch Modan. With Grawmug dead, we stand a better chance of seeing the Troggs eliminated from the land.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-041",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26176 AND BINARY `RewardText`=BINARY 'Glad to hear you\\'ve been clearing out the troggs. Let\\'s have a look at this report, and...$B$B...Is that a beer stain?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-042",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26197 AND BINARY `RewardText`=BINARY '$n, isn\\'t it? It\\'s a pleasure to finally meet you. While you were getting cleaned up, Nevin\\'s team told me about your escape from Gnomeregan.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-043",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26198 AND BINARY `RewardText`=BINARY 'You picked that one up quickly. I can\\'t wait to show you some of my other favorite tricks.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-044",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26199 AND BINARY `RewardText`=BINARY 'It\\'s good to meet you, $n. I\\'m sure your time in Gnomeregan afforded you ample opportunity to practice your arts. Things are somewhat safer here, but your talents will never go to waste.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-045",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26200 AND BINARY `RewardText`=BINARY 'Good work, $n. You have a natural talent for our arts.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-046",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26201 AND BINARY `RewardText`=BINARY 'As you continue to gain power, return to me and I will teach you new spells and techniques.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-047",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26203 AND BINARY `RewardText`=BINARY 'For a $r who has spent so much time inside Gnomeregan, you look positively fit and healthy, $n. That\\'s good. Before we can complete what Operation: Gnomeregan began, we\\'re going to need more warriors like you.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-048",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26204 AND BINARY `RewardText`=BINARY 'Good work! Keep practicing your charge and you\\'ll have an instant advantage at the start of battle.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-049",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26206 AND BINARY `RewardText`=BINARY 'It\\'s good to meet you, $n. Nevin tells me that you managed to survive the dangers in Gnomeregan by using your wits. That\\'s exactly what we need up here. Clever minds and quick blades.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-050",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26207 AND BINARY `RewardText`=BINARY 'I\\'m not surprised to see you\\'re such a quick study. I look forward to showing you more of our tricks of the trade.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-051",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26208 AND BINARY `RewardText`=BINARY 'Even now, only the S.A.F.E. teams dare to venture far into the city to search for survivors. Meanwhile, Thermaplugg has sent one of his followers, Crushcog, to distract us and buy time for him to dig in.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-052",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26222 AND BINARY `RewardText`=BINARY 'These are fantastic! Let\\'s see what we can put together. Would you be interested in testing out the prototype once I\\'m done?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-053",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26284 AND BINARY `RewardText`=BINARY 'You have me own thanks and th\\' thanks of th\\' men you rescued. I\\'ve already had th\\' boys start setting up the gear down inside the cave. It should be ready to go soon.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-054",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26285 AND BINARY `RewardText`=BINARY 'Well, now, that\\'s more like it. We may get around to blowin\\' up somethin\\' after all.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-055",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26316 AND BINARY `RewardText`=BINARY 'It won\\'t be tough to collapse th\\' tunnel, but I\\'m goin\\' to need my team an\\' my equipment \\'afore I can get to th\\' task.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-056",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26329 AND BINARY `RewardText`=BINARY '<The high tinker reads Jessup\\'s report.>$B$BSplendid news! With the troggs taken care of, we should be able to turn our attention to Crushcog\\'s troublemaking.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-057",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26331 AND BINARY `RewardText`=BINARY 'That should set back Crushcog\\'s plans a bit, but we can\\'t rest until he is defeated and Chill Breeze Valley is secure.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-058",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26333 AND BINARY `RewardText`=BINARY 'Mekkatorque will be pleased to hear that you\\'ve ruined Crushcog\\'s plans to use our old weapons for his followers. Without the mechano-tanks under his command, he\\'ll be weak and vulnerable.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-059",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26339 AND BINARY `RewardText`=BINARY 'Ah, yes, Kelsey told me to expect you. There\\'s still much to do before we can take on Crushcog.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-060",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26343 AND BINARY `RewardText`=BINARY 'These skins should do. Their quality isn\\'t too important, given that they\\'ll make up the inside layer of the boots, but it\\'s still important that they\\'re comfortable.\\r\\n\\r\\nIf they\\'re a bit too rigid, I\\'ll use some tiger blood to soften it up. Tricks o\\' the trade, you know?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-061",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26373 AND BINARY `RewardText`=BINARY 'If Gnomeregan Covert Operations is recommending you, then you must have made quite an impression. Your help will be most welcome here, as we\\'ve a wealth of enemies and few enough mountaineers to face them.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-062",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26378 AND BINARY `RewardText`=BINARY 'Murder, rookie. That\\'S what you\\'re looking at on the ground in front of us.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-063",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26433 AND BINARY `RewardText`=BINARY '<The goblin downs the water in one gulp.>\\r\\n\\r\\nAhh... do you know how hard it is to get fresh water in Stranglethorn? It\\'s no wonder that the nagas guard their shrine so ferociously!\\r\\n\\r\\nOh, right... your artifact, and clarity.\\r\\nClarity...\\r\\n\\r\\nI\\'ve got it!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-064",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26434 AND BINARY `RewardText`=BINARY '<Flem feels the hides and smiles to himself.>$B$BExcellent work, $n!  These reagents will serve perfectly.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-065",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26435 AND BINARY `RewardText`=BINARY 'Fascinating!\\r\\n\\r\\nI\\'ll need some time to study this. Why don\\'t you have a look around Booty Bay and come back later?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-066",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26450 AND BINARY `RewardText`=BINARY 'Nice work, $n. Now I\\'ve just got to decide what to do with all of these...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-067",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26487 AND BINARY `RewardText`=BINARY 'Hey hey! Not bad. not bad at all! You may have a future in resource acquisition. Or hotel managment.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-068",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26493 AND BINARY `RewardText`=BINARY 'Great! These look... disgusting. But probably pretty valuable. Let\\'s get to splitting these up. Some for me, some for Jasper, some for Chabal...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-069",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26494 AND BINARY `RewardText`=BINARY 'I\\'ll file these away for now. Maybe we can experiment later.\\r\\n\\r\\n<Jasper looks over at you.>\\r\\n\\r\\nYeah, you\\'ll do.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-070",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26495 AND BINARY `RewardText`=BINARY '<The troll looks into the package.>\\r\\n\\r\\nYou have my thanks.\\r\\n\\r\\nI have been waiting for you to approach me, $r. I have identified you as the most promising $r here in this strange town. I have a task for you, if you would be willing to take it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-071",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26503 AND BINARY `RewardText`=BINARY 'I knew it! Looks like Yowler is behind this uprising - which is incredible, because we keep killing gnolls named Yowler. I don\\'t know how many sons the original Yowler had, but it\\'s got to be close to a hundred.$B$BWell, looks like we got ourselves another Yowler to kill.$B$BMagistrate Solomon must be notified.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-072",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26504 AND BINARY `RewardText`=BINARY 'A job well done deserves a reward, wouldn\\'t you say?\\r\\n\\r\\nDon\\'t spend this all in one place, $c. Better to spread it around, if you catch my drift.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-073",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26505 AND BINARY `RewardText`=BINARY '<Magistrate Solomon puts on his monocle.>$B$BOh, you\\'re not Conacher. What have you got there?$B$B<Magistrate Solomon takes Parker\\'s report from you.>$B$BOh for pity\\'s sake. Yowler? AGAIN?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-074",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26506 AND BINARY `RewardText`=BINARY 'PERFECT! I\\'ll put these in the pot right away. Dinner should be ready in a few hours.$B$BThank you, darling!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-075",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26508 AND BINARY `RewardText`=BINARY 'Thank you for finding my necklace mister $c... you are very kind!  My kitty thanks you too - isn\\'t that right Effsee?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-076",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26510 AND BINARY `RewardText`=BINARY 'Excellent! Let me make a few adjustments here and we should be good to go.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-077",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26511 AND BINARY `RewardText`=BINARY 'That ought to teach those murlocs a lesson. Hopefully the next time they decide to raid our town they\\'ll think twice.$B$BWe both know that won\\'t happen.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-078",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26512 AND BINARY `RewardText`=BINARY '<The gnomecorder crackles and pops.>$B$BCan you hear me, $n? Is this thing on? Ah, yes, I see you there now.$B$BLet\\'s get to work!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-079",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26513 AND BINARY `RewardText`=BINARY 'Thank you, citizen. Without you, we would have starved or worse, been forced to go out and get food for ourselves.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-080",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26514 AND BINARY `RewardText`=BINARY '<The gnomecorder crackles and pops.>$B$BGood work, $n. I\\'ve just been handed some important information. It would appear that our most hated enemy, the Blackrock orcs, have wised up...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-081",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26533 AND BINARY `RewardText`=BINARY '<Jasper carefully analyzes the strange compound.>\\r\\n\\r\\nThis mixture is... I don\\'t understand it.\\r\\nPerhaps we need to run some clinical trials.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-082",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26535 AND BINARY `RewardText`=BINARY 'This is fascinating! Just think of all the applications!$B$BJust so we\\'re clear, I\\'m not thinking about using this to make an army of slaves or anything like that.  No, no... I\\'m much more interested in the ogre explosions!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-083",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26544 AND BINARY `RewardText`=BINARY '<The gnomecorder buzzes and whirs.>$B$BJust put the missive in the little compartment and I\\'ll read it. I am fluent in orcish.$B$B<You hear a distraught yell in the background.>$B$BIt looks like these orcs are here under the direct command of Yowler. That means Yowler must have the orc invasion plan.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-084",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26545 AND BINARY `RewardText`=BINARY '<Magistrate Solomon takes the plans from you and begins reading.>$B$BShadowhide army!? Damn those orcs to hell! These invasion plans speak of a massive build up of orcish and gnoll forces in the east. Looks like Gath\\'Ilzogg, the Blackrock general, is preparing to march his armies across Lakeshire and attack Stormwind directly!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-085",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26566 AND BINARY `RewardText`=BINARY 'So the high tinker himself has heard of my little project? Splendid! I\\'ve almost finished my latest prototype, but maybe you can help me chase down those last few parts.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-086",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26570 AND BINARY `RewardText`=BINARY 'You\\'ve probably bought us another day, maybe two. Nice work, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-087",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26592 AND BINARY `RewardText`=BINARY '<Flem weighs the gems in his hands and nods in approval.>\\r\\n\\r\\nYes, these will do. Now to perform the analysis...\\r\\n\\r\\n<The goblin clacks the gems together for a while, then looks up at you.>\\r\\n\\r\\nOh, you\\'re still here? You don\\'t think I\\'m a fraud or something, do you?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-088",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26618 AND BINARY `RewardText`=BINARY 'Don\\'t go thinking that was too easy. Far greater dangers lurk deeper in the woods.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-089",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26620 AND BINARY `RewardText`=BINARY 'Mmm-mmm! The skirtsteak\\'s the best part. It\\'s not an efficient way to cook, though.$B$BHere, have this recipe. It\\'s a little different, but flank meat\\'s easier to come by when you really need a meal.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-090",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26623 AND BINARY `RewardText`=BINARY 'Ah yes, a nice lump you have there! Let me just get this seasoned with my secret spices (no looking!) and get them to skittering on a skillet for a while...$B$BAnd, although Dusky Crab Cakes are my specialty and I won\\'t give out the recipe, here\\'s the recipe for a dish that\\'s almost as good.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-091",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26627 AND BINARY `RewardText`=BINARY 'Ah, welcome, stranger. I\\'d offer you something, but there\\'s not much here...$B$BCould I beg you to run some errands for a poor old hermit?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-092",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26645 AND BINARY `RewardText`=BINARY 'Splendid, $n. For your service to the people of Darkshire you shall be rewarded.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-093",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26652 AND BINARY `RewardText`=BINARY 'What is this? A comb? It\\'s lovely! And it glides through my hair as if it weren\\'t the stiff, stringy horror that it is.$B$BOh, if only I had a mirror...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-094",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26653 AND BINARY `RewardText`=BINARY 'Ah, ghost hair thread is what you need, is it? I\\'m afraid I have none in stock, but I can make some for you...if you can supply the ghost hair.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-095",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26654 AND BINARY `RewardText`=BINARY 'I can make a spool of ghost hair thread with this, and have a few strands to spare. Here are some coins for those extra strands.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-096",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26655 AND BINARY `RewardText`=BINARY 'Delightful! This will do splendidly...$B$BHere, good $n, take this as payment for your honorable deed.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-097",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26660 AND BINARY `RewardText`=BINARY 'You need some Zombie Juice, do you? Hmm...that\\'s some strong stuff - I don\\'t usually get requests for it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-098",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26661 AND BINARY `RewardText`=BINARY 'Good, you got the rot blossoms.$B$BI\\'ll whip up the zombie juice... it\\'s strong stuff, I warn you.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-099",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26676 AND BINARY `RewardText`=BINARY 'A thousand thanks, $n. You warm an old man\\'s heart with your foolish-...I mean...with your kindness!$B$BHere you are, friend. Take this as a token of my gratitude.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-100",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26686 AND BINARY `RewardText`=BINARY 'The people of Darkshire thank you, $n. You have proven yourself to be a great ally of The Night Watch.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-101",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26688 AND BINARY `RewardText`=BINARY 'Impressive, $n. It would seem that you are capable enough to handle yourself. Perhaps a more suitable challenge could be found for one of your abilities.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-102",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26689 AND BINARY `RewardText`=BINARY 'You performed well against the Shadow Weavers, $n. But even now, years after their first arrival, there seem to be so many to replace the ones we kill.$B$BI will put my faith in Master Carevin. No doubt he will get to the bottom of the problem.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-103",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26690 AND BINARY `RewardText`=BINARY '$n, to be honest with you, I did not believe that you would get this far, but you are clearly a $c to be reckoned with. In fact, if you wish to formally join Master Carevin\\'s struggle, I will gladly write for you a letter of recommendation.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-104",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26691 AND BINARY `RewardText`=BINARY 'Excuse me for my cold reception, $n, but as I\\'m sure you can tell, I am an extremely busy man. I see that you have impressed Calor--and I assure you, that is no small feat--and that he has given his recommendation.$B$BThere are unsavory types afoot, $n, and we can use the help of all who have proven themselves. We battle against demons, the undead, and those who would provide them aid. Be vigilant, be wary, and trust none who would not give aid to our cause.$B$BGlory under the Light.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-105",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26707 AND BINARY `RewardText`=BINARY 'I thank you, $c... and I\\'m sure the worgen that may be returned to sanity with the potion this will make would thank you too.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-106",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26717 AND BINARY `RewardText`=BINARY 'Sounds like a close call! But he ran off without harming you further...$B$BHe might be still fighting it. Master Harris must know!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-107",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26719 AND BINARY `RewardText`=BINARY 'Welcome to our humble camp. I wouldn\\'t call it pleasant, but it\\'s at least somewhat private.$B$BBeg your pardon? A worgen at the farm?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-108",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26728 AND BINARY `RewardText`=BINARY 'You are the help that we requested?$B$B<Althea sighs.>$B$BI suppose you will have to do.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-109",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26808 AND BINARY `RewardText`=BINARY '<The troll looks into the package.>\\r\\n\\r\\nYou have my thanks. You may tell your young dwarven friend that I am not sad. I am waiting. For you.\\r\\n\\r\\nI have identified you as the most promising dwarf here in this strange town. I have a task for you, if you would be willing to take it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-110",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26815 AND BINARY `RewardText`=BINARY '<Dask carefully analyzes the strange compound.>\\r\\n\\r\\nThis mixture is... PERFECT! Let\\'s see what it does to your potentially-titan artifact here!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-111",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26816 AND BINARY `RewardText`=BINARY 'This is fascinating! Just think of all the applications!$B$BThanks again, $n. Remember, if you ever need anything mixed for you... and I mean ANYTHING... you can always ask The Flask.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-112",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26818 AND BINARY `RewardText`=BINARY '<Linzi feels the hides and smiles to herself.>$B$BThese are so nice and cushy!  I think my customers are going to LOVE them!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-113",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26819 AND BINARY `RewardText`=BINARY 'Hooray! It\\'s been days and days since we last had Akiris reeds!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-114",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26820 AND BINARY `RewardText`=BINARY 'These statues are beautiful...\\r\\n\\r\\nWow, I had no idea the naga were so talented. Thanks. $n!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-115",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26854 AND BINARY `RewardText`=BINARY 'Here is the corpse of a dwarf -- mauled, frozen, and picked clean by mountain scavengers. Clutched in its hand is a book containing the roughly scribbled notes of Mori Hildelve. And around its frame, still in superior condition, is a Brigadier\\'s Vest.$B$BThis grisly scene must have been where the Siege Engine pilot met his end.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-116",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26855 AND BINARY `RewardText`=BINARY 'This is grim news, for Hildelve was a good friend. And I wish I could have been there with you when you found the beast, Mangeclaw!$B$BThank you, $n. Your deed will be remembered by the pilots of the Ironforge Siege Brigade.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-117",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26913 AND BINARY `RewardText`=BINARY 'You\\'re a quick learner, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-118",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26915 AND BINARY `RewardText`=BINARY 'You\\'ve caught on quickly, $n, and a quick mind will serve you well.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-119",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26917 AND BINARY `RewardText`=BINARY 'I knew you would master Steady Shot quickly. I\\'m looking forward to showing you other techniques as you get more experienced in the ways of the Hunter.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-120",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26918 AND BINARY `RewardText`=BINARY 'You\\'re a quick learner, $n. Return to me as you grow stronger and I\\'ll teach you more about using the Light to vanquish your enemies and strengthen your allies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-121",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26919 AND BINARY `RewardText`=BINARY 'You\\'re a quick learner, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-122",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26940 AND BINARY `RewardText`=BINARY 'I knew you would master this lesson quickly. You are a credit to the highborn and to all our kin. Remember, as you grow in power, return to me and I will instruct you further.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-123",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26945 AND BINARY `RewardText`=BINARY 'You\\'ve proven a capable student. When it is time to resume your training, return to me and I will show you other techniques.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-124",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26946 AND BINARY `RewardText`=BINARY 'You\\'ve learned quickly. If you are as sharp as you semm to be, you may prove to be one of my best students yet.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-125",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26947 AND BINARY `RewardText`=BINARY 'You are a quick study in our ways.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-126",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26948 AND BINARY `RewardText`=BINARY 'You have mastered the basics of the druidic ways quickly, $n. I have no doubt that your skills will often come in hand. Return to me when you need further training.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-127",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=26969 AND BINARY `RewardText`=BINARY 'It is a pleasure to teach such a capable student. As long as you continue the traditions faithfully, the shamanic arts will never be lost to our people again.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-128",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=27014 AND BINARY `RewardText`=BINARY 'You have arrived at last. During your training in Camp Narache, I will guide you in the ways of the $c. You have much to learn and I look forward to counting you among my students.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-129",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=27020 AND BINARY `RewardText`=BINARY 'You have done well, $n. Return to me when you are in need of further training.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-130",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=27021 AND BINARY `RewardText`=BINARY 'You have done well, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-131",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=27027 AND BINARY `RewardText`=BINARY 'Well done, $n. I see you will have no trouble mastering our more advanced arts as you gain experience. Return to me when you need further training.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-132",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=27067 AND BINARY `RewardText`=BINARY 'You have a knack for the druidic arts, $n. Wherever you go, your skills will be in demand. Return to me when you are ready for more training.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-133",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28551 AND BINARY `RewardText`=BINARY 'We\\'re facing heavy resistance from the Horde, $c. Any reinforcements are welcome.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-134",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28554 AND BINARY `RewardText`=BINARY 'If we can get things straightened out here, we have a chance to strike at the Alliance while most of their forces are busy in the Barrens.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-135",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28562 AND BINARY `RewardText`=BINARY 'Murder, rookie. That\\'S what you\\'re looking at on the ground in front of us.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-136",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28563 AND BINARY `RewardText`=BINARY 'Heard Westfall was in some deep doody.$B$B<Parker doesn\\'t even turn to face you.>$B$BWell, we got our own set of problems here. See them gnolls out there? Looks like they\\'re actin\\' up again. I don\\'t like it. Don\\'t like it one bit.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-137",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28564 AND BINARY `RewardText`=BINARY 'You are the help that we requested?$B$B<Althea sighs.>$B$BI suppose you will have to do.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-138",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28567 AND BINARY `RewardText`=BINARY 'Have our leaders finally heard my pleas? We\\'re down to just a handful of pilots and mountaineers to defend Loch Modan.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-139",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=28868 AND BINARY `RewardText`=BINARY 'Well done, $n. That\\'ll teach them not to mess with us in our home!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-140",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29580 AND BINARY `RewardText`=BINARY 'There are no hunters among us, but we\\'ll fight to protect our loved ones.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-141",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29581 AND BINARY `RewardText`=BINARY 'Ah... dreamleaf! So you want to see the Golden Dream, do you?$B$BCome to think of it, I haven\\'t seen the Dream in years - not since I was a cub spending long hours playing in the pools. Long before I took up the culinary arts.$B$BLooks like you brought enough dreamleaf for two cups of tea... so why not?$B$BHere\\'s to better days!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-142",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29585 AND BINARY `RewardText`=BINARY 'A survivor came in moments ago and said the flames are beginning to die down.$B$BWe owe our very way of life to you, stranger. I cannot possibly reward you adequately, but please take this.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-143",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29670 AND BINARY `RewardText`=BINARY 'This is extremely unsettling. If mogu are banding together like this all over the continent, it could become a major threat to Pandaria.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-144",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29873 AND BINARY `RewardText`=BINARY 'This place... it... it so SAD!\\r\\n\\r\\nKen-Ken never seen a place so sad.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-145",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29916 AND BINARY `RewardText`=BINARY 'They... they\\'re not stopping, but at least we fought back. Right?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-146",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=29917 AND BINARY `RewardText`=BINARY 'I know I should be the one fighting them off. Maybe I\\'m not cut out for shepherding after all.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-147",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30028 AND BINARY `RewardText`=BINARY 'Why thank you very much stranger. This has not been a good day, but you certainly have helped us make it better.\\r\\n\\r\\nPlease, take this, you\\'ve earned it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-148",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30064 AND BINARY `RewardText`=BINARY 'Thank you! What a relief it is to see these texts are safe.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-149",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30072 AND BINARY `RewardText`=BINARY 'Superb specimens. I will see to it they find their way to the right place. Please enjoy this free sample.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-150",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30081 AND BINARY `RewardText`=BINARY 'Pandaren got a case of the spooky-dooks!\\r\\n\\r\\nDooks get scared sometimes, don\\'t wanna come out. Poor, fluffy mopey-dopes must be ready to explode by now!\\r\\n\\r\\nThis just the thing to bring \\'em out. That make pandaren happy for sure!\\r\\n\\r\\nJust like ol\\' gramma used to say: can\\'t THROW if can\\'t GO!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-151",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30130 AND BINARY `RewardText`=BINARY 'Thank you hero. Kor is a brave warrior but he lacks compassion at times. Life must come before death, or there will be none of us left when the fighting is done.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-152",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30137 AND BINARY `RewardText`=BINARY 'Oh, wonderful!\\r\\n\\r\\nThese eggs look...well...they look a little on the small side. Are you sure you couldn\\'t find any better ones?\\r\\n\\r\\nOh well, I suppose with the current situation, we can\\'t be so picky.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-153",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30159 AND BINARY `RewardText`=BINARY 'Will those nasty Slitherscale saurok never give up?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-154",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30267 AND BINARY `RewardText`=BINARY 'Finally, someone who understands me.\\r\\nFishing is what it\\'s all about, right?\\r\\n\\r\\nMaybe I should leave New Cifera... just pack up my things and join the Anglers, down in the south. Of course, I couldn\\'t leave my family behind...\\r\\n\\r\\nBut still... a pandaren can dream, right?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-155",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30351 AND BINARY `RewardText`=BINARY 'That\\'s it! You pick, I punch!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-156",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=30628 AND BINARY `RewardText`=BINARY 'Peering inside, you find...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-157",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31135 AND BINARY `RewardText`=BINARY 'Why, you look great! I\\'ve heard bad things about what happens down there.$B$BWell, are you ready to start your training in the ways of the $c?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-158",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31137 AND BINARY `RewardText`=BINARY 'It\\'s good to meet you, $n. You\\'ve probably heard others speaking of Operation: Gnomeregan. Let me tell you a bit about what happened and why we left the dwarven city of Ironforge.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-159",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31138 AND BINARY `RewardText`=BINARY 'You picked that one up quickly. I can\\'t wait to show you some of my other favorite tricks.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-160",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31156 AND BINARY `RewardText`=BINARY 'We will honor our respective peoples by learning from each other. You will become a great $c. If I have anything to say about it. And I will learn the ways of your people.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-161",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31157 AND BINARY `RewardText`=BINARY 'Good, good. Your first challenge surpassed. We will learn much from each other. I can see.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-162",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31162 AND BINARY `RewardText`=BINARY 'Good work, mon! Dis stuff come easy to ya.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-163",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31165 AND BINARY `RewardText`=BINARY 'I am honored that Chief Hawkwind would allow me to train you and grant you your rite of passage. While I am a master in the ways of the $n, I am but a child in the ways of your people.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-164",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31166 AND BINARY `RewardText`=BINARY 'You have done well, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-165",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31170 AND BINARY `RewardText`=BINARY 'Ah, welcome. I have been teaching your people the ways of the $c, and they seem to be well suited for it. Perhaps you too will take to it as quickly as they.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-166",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31171 AND BINARY `RewardText`=BINARY 'I think, you\\'ve mastered the basics of the Tiger Palm technique, $n. Perhaps you will impress me, after all.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-167",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31286 AND BINARY `RewardText`=BINARY 'Ah, our merchandise. Madam Goya will be pleased. You have the gratitude of her ladyship.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-168",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=31287 AND BINARY `RewardText`=BINARY 'The deed is done and a debt must be paid. Here is your reward. You have our gratitude.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-169",
+      "query": "SELECT COUNT(*) FROM `quest_offer_reward` WHERE ID=32035 AND BINARY `RewardText`=BINARY 'Greetings, $c. Welcome to the Silken Fields.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-170",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=384 AND BINARY `CompletionText`=BINARY 'I\\'m going to need those crag boar ribs and a mug of Rhapsody Malt, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-171",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=24941 AND BINARY `CompletionText`=BINARY 'Paxton has already loaded a charge into the cannon. All it needs is the ammunition you improvised.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-172",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=24948 AND BINARY `CompletionText`=BINARY 'Burn it all, $c. Burn it to cinders!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-173",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=25002 AND BINARY `CompletionText`=BINARY 'What? My supply caravan was sacked by those cold-blooded scissor-paw things?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-174",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=25015 AND BINARY `CompletionText`=BINARY 'I should mention, you\\'re probably going to need a machete to hack through this mess.$B$BThis jungle came out of nowhere!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-175",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=25028 AND BINARY `CompletionText`=BINARY 'I am very busy, $c. This uncontrolled growth threatens to engulf the continent. Do you have any news?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-176",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26078 AND BINARY `CompletionText`=BINARY 'We need to hurry and get those bombers airborne!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-177",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26112 AND BINARY `CompletionText`=BINARY 'What is the meaning of this intrusion?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-178",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26145 AND BINARY `CompletionText`=BINARY 'Do you have eight trogg stone teeth to show me? If not, there is still work to be done, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-179",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26146 AND BINARY `CompletionText`=BINARY 'Loch Modan is under siege, $n! We need every able-bodied member of the Alliance to aid our cause. Have you killed those troggs yet?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-180",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26148 AND BINARY `CompletionText`=BINARY 'Your mission is not complete until Grawmug has been brought to death. Khaz Modan is counting on you, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-181",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26176 AND BINARY `CompletionText`=BINARY 'What can I do for you?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-182",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26222 AND BINARY `CompletionText`=BINARY 'Did you get those parts?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-183",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26285 AND BINARY `CompletionText`=BINARY 'Well, did you recover me missing supplies?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-184",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26329 AND BINARY `CompletionText`=BINARY 'Welcome back, $n.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-185",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26433 AND BINARY `CompletionText`=BINARY '<Flem\\'s ears perk up as you approach.>\\r\\n\\r\\nThe holy Water of Clarity? Is it here!?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-186",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26434 AND BINARY `CompletionText`=BINARY 'Make sure the reagents are extra-cushy, $n.  A scratchy reagent simply won\\'t do.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-187",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26435 AND BINARY `CompletionText`=BINARY 'Yes, $r? I\\'m quite busy'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-188",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26450 AND BINARY `CompletionText`=BINARY 'Let\\'s see \\'em!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-189",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26487 AND BINARY `CompletionText`=BINARY 'Let\\'s see... we\\'re going to need some shotguns for our nature hikes, rowboats for the oil righ day trip, and...\\r\\n\\r\\nOh, you\\'re back already?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-190",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26493 AND BINARY `CompletionText`=BINARY 'I hope you used the extraction procedure we discussed.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-191",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26494 AND BINARY `CompletionText`=BINARY 'Hey, is that the stuff? From the magazine?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-192",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26495 AND BINARY `CompletionText`=BINARY 'Care to explain yourself, $c?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-193",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26503 AND BINARY `CompletionText`=BINARY 'Did you find the gnoll plans?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-194",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26505 AND BINARY `CompletionText`=BINARY 'Where did I put my monocle?! Conacher is that you?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-195",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26506 AND BINARY `CompletionText`=BINARY 'Have you gotten my ingredients?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-196",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26508 AND BINARY `CompletionText`=BINARY 'Hi. I miss my necklace. My daddy got it for me. Daddy says that there are monsters in the lake. Did you beat up any monsters?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-197",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26510 AND BINARY `CompletionText`=BINARY 'Have you recovered the gnomecorder?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-198",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26513 AND BINARY `CompletionText`=BINARY 'Did you recover the supplies?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-199",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26514 AND BINARY `CompletionText`=BINARY 'Did you recover those collars?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-200",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26533 AND BINARY `CompletionText`=BINARY 'Excellent... you\\'re not a zombie yet.\\r\\nThat\\'s good.\\r\\n\\r\\nOh, umm... nothing. It\\'s just that... that was a potential risk. Did i forget to warn you?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-201",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26535 AND BINARY `CompletionText`=BINARY 'Did he use shimmerweed? I\\'m guessing he used shimmerweed$B$BNo wait... amberseeds!  It\\'s gotta be amberseeds.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-202",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26544 AND BINARY `CompletionText`=BINARY 'What have you found out?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-203",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26545 AND BINARY `CompletionText`=BINARY 'Do you have the Blackrock invasion plans?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-204",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26592 AND BINARY `CompletionText`=BINARY '<Flem\\'s eyes sparkle.>\\r\\n\\r\\nAre those gems I see?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-205",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26661 AND BINARY `CompletionText`=BINARY 'Hi, $n. Do you have those rot blossoms for me yet?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-206",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26815 AND BINARY `CompletionText`=BINARY 'Excellent... you\\'re not a zombie yet.\\r\\nThat\\'s good.\\r\\n\\r\\nOh, umm... nothing.  It\\'s just that... that was a potential risk.  Did I forget to warn you?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-207",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=26855 AND BINARY `CompletionText`=BINARY 'Hello, $n. Do you have word of my friend Hildelve?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-208",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=29580 AND BINARY `CompletionText`=BINARY 'Were there any tools left?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-209",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=29581 AND BINARY `CompletionText`=BINARY 'Yes, did you need something?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-210",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30028 AND BINARY `CompletionText`=BINARY 'Between birds and sprites we are never going to meet our quota to the Stormstout Brewery.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-211",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30064 AND BINARY `CompletionText`=BINARY 'How are the sutras? Are they damaged?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-212",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30072 AND BINARY `CompletionText`=BINARY 'Have you found all of the items? Did you pay close attention to our process?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-213",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30081 AND BINARY `CompletionText`=BINARY 'Cant\\'t believe Ken-Ken did not think of this sooner. It\\'s the ONE thing that can ruin his day...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-214",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30130 AND BINARY `CompletionText`=BINARY 'I\\'ve been punched, stabbed, thrown off of a cliff, hit in the face by someone\\'s mace, hit in the face by own mace, and fell off the elevator at Thunder Bluff on more than one occasion.\\r\\n\\r\\nNone of that pain sounds even half as bad as what Leza is going through. I hope this tea helps...'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-215",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30137 AND BINARY `CompletionText`=BINARY 'The saurok keep the stolen serpent eggs in their camp.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-216",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30267 AND BINARY `CompletionText`=BINARY 'I refuse to not fish. Fishing\\'s who I am!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-217",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=30351 AND BINARY `CompletionText`=BINARY 'I have never seen the mogu this numerous before. They have always been a nuisance but never this bad.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-218",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=31156 AND BINARY `CompletionText`=BINARY 'Ahh, you have come.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-219",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=31165 AND BINARY `CompletionText`=BINARY 'Ah, I am pleased to meet you.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-220",
+      "query": "SELECT COUNT(*) FROM `quest_request_items` WHERE ID=31286 AND BINARY `CompletionText`=BINARY 'Saurok are seldom this bold.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-221",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=8328 AND BINARY `RewardNextQuest`=BINARY 10068",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-222",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=8329 AND BINARY `RewardNextQuest`=BINARY 27091",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-223",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=8563 AND BINARY `RewardNextQuest`=BINARY 10073",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-224",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=8564 AND BINARY `RewardNextQuest`=BINARY 10072",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-225",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=9392 AND BINARY `RewardNextQuest`=BINARY 10071",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-226",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=9393 AND BINARY `RewardNextQuest`=BINARY 10070",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-227",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=9676 AND BINARY `RewardNextQuest`=BINARY 10069",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-228",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10068 AND BINARY `QuestDescription`=BINARY 'As you begin to grow in power, your connection to the arcane will develop, granting you access to new spells.$B$BGo, develop your power, and then demonstrate what you learn for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-229",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10069 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Seal of Command. Cast Seal of Command on yourself, then locate a Training Dummy outside the Sunspire and hit it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-230",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10069 AND BINARY `QuestDescription`=BINARY 'It is time for your first lesson in the ways of the Light, $n. As you fight more battles, it will bring you closer to the light, and you\\'ll start to uncover new abilities. Go, get more experience, and learn a new ability. Return and demonstrate it for me, and we\\'ll continue your training.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-231",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10070 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot. Locate a Training Dummy outside the Sunspire and practice using Steady Shot 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-232",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10070 AND BINARY `QuestDescription`=BINARY 'And now, it is time for your first lesson.$B$BAs you become more skilled, you will begin to discover new techniques.$B$BGo out, get some more experience, and learn your first new ability. Once you do, go find a training dummy and practice your new skill.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-233",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10071 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Eviscerate, then locate a Training Dummy outside the Sunspire and practice using Eviscerate 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-234",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10071 AND BINARY `QuestDescription`=BINARY 'As you grow in power, you\\'ll start to figure out the tricks of the trade.$B$BOne of the first things you\\'ll probably figure out is how to Eviscerate your enemy after landing some initial attacks. Get some experience, learn how to do it, and then find one of the training dummies outside and give it a try.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-235",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10072 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain. Practice casting it 5 times on nearby training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-236",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10072 AND BINARY `LogTitle`=BINARY 'Learning the Word'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-237",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10072 AND BINARY `QuestDescription`=BINARY 'As you grow in skill, so will the array of powers that you can call upon.$B$BI\\'d like you to go, continue to become more experienced, and discover a new spell. Once you do, come back and demonstrate it for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-238",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10073 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Corruption. Locate a Training Dummy outside the Sunspire and practice casting Corruption 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-239",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10073 AND BINARY `LogTitle`=BINARY 'Corruption'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-240",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=10073 AND BINARY `QuestDescription`=BINARY 'By now, you\\'ve heard the rumors about our kind, the warlocks. Pay them no mind; they are uttered by those jealous of our fearsome powers.$B$BAs you become more experienced, you will uncover mysteries of controlling fel energies. Go, continue your journey until you uncover a new technique. I want you to practice using this new spell on the training dummies outside the Sunspire.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-241",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24473 AND BINARY `RewardNextQuest`=BINARY 24474",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-242",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24526 AND BINARY `LogTitle`=BINARY 'Filling Up the Spellbook'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-243",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24526 AND BINARY `QuestDescription`=BINARY 'Excellent! Let\\'s get started.$B$BAs you grow in power, your connection to the arcane arts will deepen, and you\\'ll gain access to new spells and abilities. Go, get some more experience, and you\\'ll see what I mean. Come back when you learn something new and demonstrate it on the training dummies here.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-244",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24527 AND BINARY `LogDescription`=BINARY 'Reach Level 3 to learn Primal Strike, and then use Primal Strike 2 times on a Training Dummy near the entrance of Anvilmar.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-245",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24527 AND BINARY `QuestDescription`=BINARY 'Excellent! Let us begin.$B$BAs you grow along your journey, you will unlocked the ancient secrets of shamans. Primal Strike is the first such skill. The primal spirits, when called upon, will strengthen your arm to deliver a mighty blow.$B$BHelpful, isn\\'t it?'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-246",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24528 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Seal of Command. Use Seal of Command on yourself, and then hit one of the Training Dummies at the entrance to Anvilmar.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-247",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24528 AND BINARY `QuestDescription`=BINARY 'Are ye ready to start? Wonderful! We\\'re glad to have ye.$B$BAs ye get stronger, it brings ye closer to the light, and ye learn new techniques. Go ahead and get some more experience, and show me what ye learn.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-248",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24530 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot, then use Steady Shot 5 times on the Training Dummies outside the entrance to Anvilmar.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-249",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24530 AND BINARY `QuestDescription`=BINARY 'The life of a hunter is steeped in tradition, ye know. Trackin\\' mighty beasts through rugged terrain. Drinkin\\'. Travelin\\' the land, yer gun at yer side. Drinkin\\'. Survivin\\' on wits and courage and cunning, followed by a good stiff drink.$B$BBut before we get to the good stuff, though, ye\\'ll need to learn how to do the beginner stuff. Go and get some more experience, and ye\\'ll figure out how to do more things. Then ye\\' drink.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-250",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24531 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge, then use Charge on one of the Training Dummies outside the entrance to Anvilmar.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-251",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24531 AND BINARY `QuestDescription`=BINARY 'Lesson one. Aside from your sword and shield, what\\'s the most important tool you have in your arsenal?$B$B<Thran awaits your response.>$B$BOh never mind, I\\'ll answer it for you. It\\'s experience. As you get more experience, you\\'ll discover new techniques, which means you can be much more effective than you imagined. Go, get some experience, and learn something new. Then come back and demonstrate.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-252",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24532 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Eviscerate, then use Eviscerate 3 times on the Training Dummies near the entrance to Anvilmar.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-253",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24532 AND BINARY `QuestDescription`=BINARY 'When you get to be more experienced, you\\'ll start to find you can take advantage of new abilities. One of the things that you\\'ll learn is the ability to use combat maneuvers to weaken an opponent, and then hit them with a devastating technique. Go and get some experience, figure out how to do it, and then try it out on some of the dummies here.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-254",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24533 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain, then cast it 5 times on training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-255",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24533 AND BINARY `QuestDescription`=BINARY 'Now, if ya DO want to become somethin\\' special, ye\\'ll need to talk to me. A priest is nothin\\' without his spells. And how do you learn new spells? Ya go and get more experience. So go out, get stronger, and then come show me what ya learn.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-256",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24640 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Practice using Charge against a Tiki Target.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-257",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24640 AND BINARY `QuestDescription`=BINARY 'As ya get bettah\\' at fightin\\', you\\'ll start to find new tings that ya nevah knew you could do.$B$BWanna see? Go, train up some, and learn someting new.$B$B\\'Den come back and ya can show me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-258",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24760 AND BINARY `LogDescription`=BINARY 'Reach Level 3 to learn Primal Strike, and then use Primal Strike 3 times against a Tiki Target.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-259",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24760 AND BINARY `QuestDescription`=BINARY 'As ya grow in powah, you begin ta discovah the voices of da ancestahs speakin\\' to ya, teachin\\' you dere secrets. Tha first of \\'dese is to focus tha power of da elements into yer weapon. It allows ya to unleash a quick, vicious attack on your enemies. Dis should be easy enough for ya to make a lot of use of it.$B$BTry it out. Let me know when ya tink you have it down.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-260",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24766 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Moonfire. Practice using it on a Tiki target in the Darkspear Training Grounds.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-261",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24766 AND BINARY `QuestDescription`=BINARY 'As ya grow in powah, ya ability to call on nature gets strongah, too. Ya wanna see? Go get some experience and show me what ya\\' learn.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-262",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24772 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Eviscerate, then use Eviscerate 3 times against a Tiki Target.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-263",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24772 AND BINARY `QuestDescription`=BINARY 'As ya fight ya enemies, ya will learn new tricks you use ta be even bettah\\'. There\\'s one ya should be learnin\\' soon to let ya see dere weaknesses and set up for devastating combo attacks. After ya\\'ve struck a few blows to weaken ya foe, finish dem off with a vicious evisceration attack. When ya learn it, try it out. Let me know when ya tink you have it down.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-264",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24778 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot. Use Steady Shot 5 times on a Tiki Target.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-265",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24778 AND BINARY `QuestDescription`=BINARY 'As ya\\' start to get da hang of tings, ya gonna figure out how ta do new tricks.$B$BOne of da\\' first ya gonna learn is to keep a steady hand between shots, or else ya gonna find yaself exhausted and not really managin\\' to kill much.$B$BGo get some more experience \\'till ya figure it out, \\'den come back and try it out. Let me know when ya tink you have it down.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-266",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24784 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain. Use it 5 times on 5 Tiki training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-267",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=24784 AND BINARY `QuestDescription`=BINARY 'As ya get more skill out there in tha\\' world, you\\'ll start to discovah\\' new powahs.$B$BWhy dontcha go out an\\' go get yaself stronger, and come back when ya learn sometin\\' new. You can show me what ya learn.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-268",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25139 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot. Locate a Training Dummy and practice using Steady Shot 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-269",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25139 AND BINARY `QuestDescription`=BINARY 'You already know how to fire an arcane shot. Good. But doing so depletes your focus. To gain your focus back you will need to switch to a second type of ranged attack. Go out and get some more experience. As you do, you\\'ll learn some new abilities. The first of these will help you get your focus back.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-270",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25141 AND BINARY `LogDescription`=BINARY 'Reach Level 3 to Learn Eviscerate, then locate a Training Dummy and practice using Eviscerate 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-271",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25141 AND BINARY `QuestDescription`=BINARY 'Let\\'s start with the basics, shall we? I\\'m the only rogue trainer in town, so you\\'re going to have to learn it from me.$B$BGo get some more experience, figure out how to eviscerate your foes, and then show me on the training dummies here. I\\'ll evaluate your form.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-272",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25143 AND BINARY `LogDescription`=BINARY 'Learn Primal Strike by reaching Level 3, then look for a training dummy near Shikrik and practice using Primal Strike 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-273",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25143 AND BINARY `QuestDescription`=BINARY 'As you grow in power by gaining levels, you will discover the power to use new abilities. The first you will discover on your journey is Primal Strike. Use it to deliver a strike with your weapon, infused with the power of the elements.$B$BIt is time to learn and master your new skill. Practice using it on the training dummies outside the Den.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-274",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25145 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Corruption. Locate a Training Dummy and practice casting Corruption 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-275",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25145 AND BINARY `LogTitle`=BINARY 'Corruption'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-276",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25145 AND BINARY `QuestDescription`=BINARY 'It is my duty to train you, and I intend to do just that.$B$BAs you become more powerful, you will begin to hear the fel voices revealing new spells to you. Go, get more experience, learn a new spell, and then practice your new spell against one of the training dummies around here.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-277",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25147 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Locate a Training Dummy and practice using Charge.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-278",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=25147 AND BINARY `QuestDescription`=BINARY 'I\\'ve been instructed to prepare you for battle. Though, from the look of you, it looks like you\\'ve already spent a little time out in the field. Good.$B$BAs you continue your journey, you\\'ll discover that you can begin to use new techniques$B$BGo, get some more experience, and teach yourself how to Charge, then show me what you\\'ve learned.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-279",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26146 AND BINARY `QuestDescription`=BINARY 'We need to protect the Loch, $n! With so many of the King\\'s soldiers fighting valiantly on remote battlefields, we\\'ve become overwhelmed on the home front. Troggs are tunneling up from every crevice! The trogg infestation poses the largest threat to Ironforge.$B$BWe need you, brave adventurer, to venture forth and lay waste to the trogg threat. Slay twelve Stonesplinter troggs and venture back.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-280",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26198 AND BINARY `LogTitle`=BINARY 'The Arts of a Mage'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-281",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26200 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain. Use it 5 times on training dummies in New Tinkertown.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-282",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26200 AND BINARY `QuestDescription`=BINARY 'You know, as you go out into this crazy world and get more powerful, you\\'ll also start to discover new powers that you didn\\'t know before.$B$BWhy don\\'t you go out, get some more experience, and then come back and show me what you\\'ve learned!'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-283",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26201 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Corruption, then cast it on a Training Dummy in New Tinkertown 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-284",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26201 AND BINARY `QuestDescription`=BINARY 'I\\'m not at all surprised that a warlock like you fought your way out of Gnomeregan. Few people, even among the gnomes, truly understand the nature of the power we wield. As you become more powerful, you\\'re going to start hearing the fel voices revealing their secrets to you, teaching you new spells. I want you to go get some more experience. Once you learn something new, show me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-285",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26204 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Locate a Training Dummy in New Tinkertown and use Charge on it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-286",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26204 AND BINARY `QuestDescription`=BINARY 'Learning is the best way to improve. As you learn more, you\\'ll start to discover you can do things you never realized!$B$BGo, get some more experience, and learn a new technique. Then, come back and demonstrate it on a training dummy.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-287",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26207 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Eviscerate, then find a training dummy in New Tinkertown and practice using Eviscerate 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-288",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26207 AND BINARY `QuestDescription`=BINARY 'As you learn more and become a better rogue, you\\'ll start to learn new abilities.$B$BOne of the most potent ones is to chain together moves in a combination, exploiting your enemy\\'s weakness and opening up the opportunity to use stronger maneuvers. Go, get some more experience and figure out how to do it. Once you can, come back here and try it out.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-289",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26854 AND BINARY `QuestDescription`=BINARY 'My friend and fellow Siege Engine pilot, Mori Hildelve, is lost in the hills. We were looking for a rare ore that\\'s needed for a high-grade blastpowder, and during our search he drove his engine up a steep hill and busted it!$B$BStill convinced that ore was in these mountains, Hildelve charged me to guard our engines while he continued on foot.$B$BIt\\'s been days, and I\\'ve heard some beastly growls north of Helm\\'s Bed Lake, west of the tunnel. Mori\\'s tough as nails, but I\\'m worried.$B$BPlease, $n. Find him.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-290",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26904 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Corruption, then cast it 5 times on a Training Dummy near the entrance to Anvilmar.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-291",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26904 AND BINARY `LogTitle`=BINARY 'Corruption'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-292",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26904 AND BINARY `QuestDescription`=BINARY 'Few people, especially among our allies, truly understand the nature of the power we wield. They shun us for pursuing knowledge that they are too weak to use properly.$B$BAs you become more powerful, you will begin to discover new spells, further magnifying your power. Go, get more experience, then return once you\\'ve learned a new spell. We\\'ll see if you have it in you to truly master the dark arts.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-293",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26913 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge, then practice using Charge on a Training Dummy south of the entrance to Northshire Abbey.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-294",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26913 AND BINARY `QuestDescription`=BINARY 'Now that you\\'ve had the chance to test your abilities in battle, it\\'s time to explain one more reason why training is so important.$B$BAs you get more experience, you\\'ll be able to do new techniques you never thought of. Go, get some experience, learn a new skill, and demonstrate it on one of the training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-295",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26914 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn the Corruption ability, then practice casting Corruption 5 times on a Training Dummy south of the entrance to Northshire Abbey.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-296",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26914 AND BINARY `LogTitle`=BINARY 'Corruption'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-297",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26914 AND BINARY `QuestDescription`=BINARY 'We must take care in how we speak around the abbey and its environs, but don\\'t let that deter you from the path of power.$B$BAs you become more powerful, you will begin to hear the fel voices, granting you their power in the dark arts. Go, get more experience and learn a new spell. Once you have, practice it on the training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-298",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26915 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Eviscerate, then find a Training Dummy south of the entrance to Northshire Abbey and practice Eviscerate 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-299",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26915 AND BINARY `QuestDescription`=BINARY 'By now, you know the basics of combat as $c, but I want to teach you a new skill. As rogues, we are renowned for our ability to execute chains of combat techniques, often saving the most powerful strikes for the end.$B$BAs you get more experience, you\\'ll learn new things - and this is one of the ones you\\'ll learn first. Once you have, I want you to go try it on one of the training dummies south of the entrance to the abbey.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-300",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26916 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Frost Nova, then practice casting it 2 times on a Training Dummy south of the entrance to Northshire Abbey.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-301",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26916 AND BINARY `QuestDescription`=BINARY 'As a mage, you will learn a variety of spells as your understanding grows. All you need to do is get some more experience, and the secrets of the arcane will reveal themselves to you. You\\'ll see. Go develop your powers, and show me what you learn.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-302",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26917 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot, then find a Training Dummy south of the entrance to Northshire Abbey and practice using Steady Shot 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-303",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26917 AND BINARY `QuestDescription`=BINARY 'I\\'ve heard about your help in clearing out some of the orcs. You\\'ve shown that you can handle yourself in combat.$B$BAs you get more experience in combat, you\\'ll start learning how to do new things. I want you to go, get some more experience, then try the new abilities you learn on one of the training dummies south of the entrance to the abbey.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-304",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26918 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Seal of Command. Cast Seal of Command on yourself and then hit a Training Dummy south of the entrance to Northshire Abbey.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-305",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26918 AND BINARY `QuestDescription`=BINARY 'As you continue in your journey as a $c, you\\'ll become closer to the light, learning new abilities. Go, get more experience, and learn a new ability. Demonstrate it for me, and we will continue your training.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-306",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26940 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Frost Nova. Look for a Training Dummy near, and practice using it twice.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-307",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26940 AND BINARY `LogTitle`=BINARY 'Frost Nova'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-308",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26940 AND BINARY `QuestDescription`=BINARY 'We are the heirs to a legacy of arcane magic and your path will not be an easy one. Many still hold us responsible for the actions of our forebears, but our talents are needed.$B$BThough you must be cautious, it is important to develop your powers, as that will deepen your connection to the arcane and grant you access to new spells. Go - get more experience with your spells, and demonstrate what you learn for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-309",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26945 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Look for a Training Dummy and practice using Charge.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-310",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26945 AND BINARY `QuestDescription`=BINARY 'As you overcome the challenges before you, you\\'ll begin to learn new techniques.$B$BGo, get more experience, and learn a new skill. Then demonstrate it for me on one of the training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-311",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26946 AND BINARY `LogDescription`=BINARY 'Reach Level 3 and Learn Eviscerate. Look for a Training Dummy southeast of Aldrassil and practice using Eviscerate 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-312",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26946 AND BINARY `QuestDescription`=BINARY 'I\\'m certain that by now, you\\'ve mastered using Sinister Strike against your enemies. But, as you learn more and advance as a rogue, you\\'ll start to figure out new techniques. One you should figure out soon is called Eviscerate. It can be a strong way to end a combination of attacks.$B$BI want you to get some more experience, figure it out, then try it on a training dummy near the southeastern edge of Aldrassil.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-313",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26947 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot. Look for a Training Dummy southeast of Aldrassil, and practice using Steady Shot 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-314",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26947 AND BINARY `QuestDescription`=BINARY 'When most people think of the kaldorei, they conjure visions of druids and sentinels, but the way of the hunter is just as ancient and just as venerable.$B$BI\\'ve been observing you, and you\\'ve had quite a bit of experience handling that bow. As you gain more, you\\'ll start to learn some new abilities.$B$BI want you to go out, get some more experience, and figure out how to do something new. Then go use it on a training dummy near the southeastern edge of Aldrassil.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-315",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26948 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Moonfire. Use it on a training dummy in Aldrassil.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-316",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26948 AND BINARY `LogTitle`=BINARY 'Moonfire'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-317",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26948 AND BINARY `QuestDescription`=BINARY 'Druids play an important role in our society, but all too often we are seen as passive dreamers in a world that is changing around us.$B$BThe truth is, though, we must actively practice and go out onto the world to develop our connection to nature. So go, get some more experience. You will begin to feel your connection deepen, learning new skills. Demonstrate the first you learn for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-318",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26949 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain, then use it 5 times on training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-319",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26949 AND BINARY `LogTitle`=BINARY 'Learning the Word'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-320",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26949 AND BINARY `QuestDescription`=BINARY 'As you venture out into the world and develop your skills, you will begin to learn new abilities that you never knew you had within you. I\\'d like you to go out, get some more experience, and then show me the first new ability you learn.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-321",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26958 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Find a Training Dummy on the northwest side of the Crash Site and practice using Charge.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-322",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26958 AND BINARY `QuestDescription`=BINARY 'Let\\'s start your training right away. As you get more experience in combat, you\\'ll start to develop new techniques.$B$BGo, get some more experience, learn something new, and demonstrate it on the dummies to the northwest.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-323",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26963 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot. Find a Training Dummy on the northwest side of the Crash Site and practice using Steady Shot 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-324",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26963 AND BINARY `QuestDescription`=BINARY 'Let\\'s start your training right away. It\\'s going to be a struggle to survive here, and you\\'ll play an important role in making sure our people are safe and well-supplied.$B$BAs you become more experiened, you\\'ll begin to discover new abilities. Go ahead and go out, learn something new, and try it out. Return to me when you think you\\'ve mastered it.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-325",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26966 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Seal of Command. Apply Seal of Command, find a Training Dummy on the northwest side of the Crash Site and hit it with an attack.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-326",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26966 AND BINARY `QuestDescription`=BINARY 'As a paladin, you\\'re no stranger to the Light that touches all of us. But you also have the unique power to call upon the Light to help you in battle.$B$BAs you gain more experience, you\\'ll grow even closer to the Light and be able to call upon new powers in battle. Go, grow in experience until you have learned a new power, and then demonstrate it for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-327",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26968 AND BINARY `QuestDescription`=BINARY 'In your future as a mage, you\\'ll want to master a wide variety of spells. To do so, you need to deepen your connection by the arcane by growing in power. Go, get more experience as a mage, and demonstrate what you learn for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-328",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26969 AND BINARY `LogDescription`=BINARY 'Learn Primal Strike by reaching Level 3, and then find a Training Dummy on the northwest side of the Crash Site and practice using Primal Strike 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-329",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26969 AND BINARY `QuestDescription`=BINARY 'Your walk with the elemental powers will take you to many places. As you grow in power, you will begin to learn new abilities. Let us start your journey with a simple, but useful, lesson. Learn the secret of Primal Strike, and then practice your new skill using the training dummies to the northwest of the Crash Site. Return to me when you are finished.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-330",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26970 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain, then use it 5 times on target dummies near the crash site.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-331",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26970 AND BINARY `LogTitle`=BINARY 'Learning the Word'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-332",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=26970 AND BINARY `QuestDescription`=BINARY 'As a priest, one of your most important duties is to use the Light\\'s power to aid the wounded. Another is to use your power offensively, to protect them. As you grow more experienced, you will begin to uncover new abilities that you can use in your charge. Go, gain more experience, and then demonstrate the abilities you have learned to me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-333",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27020 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Locate a Training Dummy in Camp Narache and practice using Charge.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-334",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27020 AND BINARY `QuestDescription`=BINARY 'You have done well. As you continue along your path, you will grow, learning new techniques that you couldn\\'t have imagined before. Your first lesson is the power of experience. Go, learn a new ability, and demonstrate it for me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-335",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27021 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Steady Shot. Locate a Training Dummy in Camp Narache and practice using Steady Shot 5 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-336",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27021 AND BINARY `QuestDescription`=BINARY 'It is time for your first lesson, $n. You have a long way to go to master the ways of the hunter, but as you complete more of your journey, you begin to take new steps on that path.$B$BGo, get more experience, and figure out a new ability. Then, use it on the training dummies here.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-337",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27023 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Seal of Command. Locate a Training Dummy in Camp Narache, cast Seal of Command on yourself and hit the dummy.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-338",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27023 AND BINARY `QuestDescription`=BINARY 'It is always a pleasure to meet a fellow Sunwalker. We are not as numerous as some of the more ancient orders, but our ways are no less powerful and our members no less respected.$B$BAs you continue on your journey, you will grow closer to the light and gain abilities you couldn\\'t have imagined. Go, get more experience, and return when you\\'ve learned a new ability. Demonstrate it to me.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-339",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27027 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Primal Strike, and then locate a Training Dummy in Camp Narache and practice using Primal Strike 3 times.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-340",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27027 AND BINARY `QuestDescription`=BINARY 'I know you\\'ve been busy helping the braves protect Camp Narache from the bristlebacks. We\\'re going to need all the hammers and all the luck we can get. As your skills increase, so does your connection to the elements. This gives you access to new abilities. The first of these that we learn is Primal Strike. It should help you fell your enemies faster. Learn it, and then try it out.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-341",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27066 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Shadow Word: Pain. Practice using it 5 times on Training Dummies in Camp Narache.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-342",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27066 AND BINARY `LogTitle`=BINARY 'Learning the Word'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-343",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27066 AND BINARY `QuestDescription`=BINARY 'As you become more skilled, your skills will expand, and you will gain access to many new powers. Go - get some experience out there, and come back to me when you\\'ve learned something new. You can demonstrate on the training dummies nearby.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-344",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27067 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Moonfire. Practice using it on a Training Dummy in Camp Narache.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-345",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27067 AND BINARY `LogTitle`=BINARY 'Moonfire'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-346",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27067 AND BINARY `QuestDescription`=BINARY 'As you develop your skills, druid, you will begin to feel your connection to the Earthmother deepening. You will begin to understand new secrets of nature, and learn to cast new spells. Go now, get more experience, and return to me when you\\'ve learned a new spell. Demonstrate what you\\'ve learned.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-347",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27091 AND BINARY `LogDescription`=BINARY 'Reach level 3 to learn Charge. Locate a Training Dummy outside the Sunspire and practice using Charge.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-348",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=27091 AND BINARY `QuestDescription`=BINARY 'Good. You are off to a bright start. This road will be long, and as you become more accomplished, you will begin to discover that you can do things you could never have imagined before.$B$BGo, get more experience, and learn a new technique. Once you have, demonstrate it on one of the training dummies.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-349",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=30159 AND BINARY `AreaDescription`=BINARY 'Well done, $n. As soon as Suchi told me she sent you to recover the stolen eggs, I knew you would accomplish the task.\\r\\n\\r\\nOur instructors will make sure to return these eggs to a safer place.'",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-350",
+      "query": "SELECT COUNT(*) FROM `quest_template` WHERE ID=31170 AND BINARY `RewardNextQuest`=BINARY 31171",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-351",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=218 AND BINARY `PrevQuestID`=BINARY 24489",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-352",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=313 AND BINARY `PrevQuestID`=BINARY 25724",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-353",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=315 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-354",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=384 AND BINARY `RequiredSkillID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-355",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=384 AND BINARY `RequiredSkillPoints`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-356",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=412 AND BINARY `PrevQuestID`=BINARY 313",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-357",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=415 AND BINARY `NextQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-358",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=24473 AND BINARY `PrevQuestID`=BINARY 24470",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-359",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=24487 AND BINARY `PrevQuestID`=BINARY 24486",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-360",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=24493 AND BINARY `PrevQuestID`=BINARY 24491",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-361",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=24938 AND BINARY `PrevQuestID`=BINARY 24934",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-362",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=24943 AND BINARY `PrevQuestID`=BINARY 24941",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-363",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=24944 AND BINARY `PrevQuestID`=BINARY 24941",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-364",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25015 AND BINARY `PrevQuestID`=BINARY 25036",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-365",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25028 AND BINARY `PrevQuestID`=BINARY 25015",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-366",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25034 AND BINARY `PrevQuestID`=BINARY 25027",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-367",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25667 AND BINARY `PrevQuestID`=BINARY 25724",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-368",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25668 AND BINARY `PrevQuestID`=BINARY 25724",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-369",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25792 AND BINARY `PrevQuestID`=BINARY 313",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-370",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=25838 AND BINARY `PrevQuestID`=BINARY 25792",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-371",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=26958 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-372",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=26963 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-373",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=26966 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-374",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=26968 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-375",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=26969 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "release26-376",
+      "query": "SELECT COUNT(*) FROM `quest_template_addon` WHERE ID=26970 AND BINARY `PrevQuestID`=BINARY 0",
+      "expected_rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "demolitionist-relative-escape",
+      "query": "SELECT action_type,action_param1,target_y FROM smart_scripts WHERE entryorguid=4264500 AND source_type=9 AND id=1",
+      "expected_rows": [
+        [
+          "114",
+          "0",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "bloodfang-duplicate-removal",
+      "query": "SELECT COUNT(*) FROM creature WHERE guid IN (221484,221504,911770)",
+      "expected_rows": [
+        [
+          "0"
+        ]
+      ]
+    },
+    {
+      "id": "bloodfang-original-spawns-retained",
+      "query": "SELECT COUNT(*) FROM creature WHERE guid IN (220893,221482,911724)",
+      "expected_rows": [
+        [
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "bloodfang-native-binding",
+      "query": "SELECT AIName,ScriptName FROM creature_template WHERE entry=35118",
+      "expected_rows": [
+        [
+          "",
+          "npc_bloodfang_worgen"
+        ]
+      ]
+    }
+  ]
+}

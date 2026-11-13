@@ -16,6 +16,7 @@
 */
 
 #include "PlayerbotAI.h"
+#include "CompanionAccess.h"
 #include "RBAC.h"
 #include "Timer.h"
 #include <map>
@@ -45,6 +46,7 @@
 #include "NewRpgRoamTransport.h"  // #218 (beyond AC)
 #include "MotionMaster.h"
 #include "MoveSpline.h"
+#include "WaypointMovementGenerator.h"
 #include "MoveSplineInit.h"
 #include "Player.h"
 #include "PositionValue.h"
@@ -383,7 +385,7 @@ namespace
 
 void PlayerbotAI::HandleCommand(uint32 type, std::string const text, Player* fromPlayer)
 {
-    if (!bot || !fromPlayer)
+    if (!bot || !fromPlayer || !CanUseCompanions(fromPlayer))
         return;
 
     std::string filtered = text;
@@ -518,7 +520,15 @@ void PlayerbotAI::HandleCommands()
             continue;
         }
 
-        helper.ParseChatCommand(it->GetCommand(), owner);
+        // Chat triggers execute later in the engine, after ParseChatCommand
+        // returns. Allow their requested replies briefly without reopening
+        // routine quest/lifecycle narration.
+        std::string const& command = it->GetCommand();
+        if (command != "follow" && command != "stay" && command != "attack" && command != "summon" && command.compare(0, 3, "co ") != 0)
+            whispers["\001command-reply"] = time(nullptr);
+        processingChatCommand = true;
+        helper.ParseChatCommand(command, owner);
+        processingChatCommand = false;
         it = chatCommands.erase(it);
     }
 }
@@ -1070,6 +1080,32 @@ namespace
     {
         if (!bot || !bot->IsInWorld() || bot->IsBeingTeleported())
             return;
+        // Bots have no client to send CMSG_MOVE_SPLINE_DONE at a map boundary.
+        // The spline ends on the old map while the generator remains FLIGHT;
+        // previously the early return below left it there until logout saved a
+        // route whose next node was on another map (e.g. path 2301, nodes 6/7).
+        if (bot->GetMotionMaster() &&
+            bot->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE &&
+            bot->movespline->Finalized())
+        {
+            auto* flight = static_cast<FlightPathMovementGenerator*>(bot->GetMotionMaster()->top());
+            TaxiPathNodeList const& path = flight->GetPath();
+            uint32 const boundary = flight->GetPathAtMapEnd();
+            if (boundary > 0 && boundary < path.size() &&
+                path[boundary - 1].MapId == bot->GetMapId() && path[boundary].MapId != bot->GetMapId() &&
+                bot->GetExactDist(path[boundary - 1].LocX, path[boundary - 1].LocY, path[boundary - 1].LocZ) < 60.0f)
+            {
+                // Mirror TaxiHandler's far-map branch, preserving the flight
+                // until HandleTeleportAck resumes it on the destination map.
+                flight->SetCurrentNodeAfterTeleport();
+                TaxiPathNodeEntry const& next = path[flight->GetCurrentNode()];
+                flight->SkipCurrentNode();
+                bot->m_taxi.SetLastNodeIndex(boundary - 1);
+                bot->TeleportTo(next.MapId, next.LocX, next.LocY, next.LocZ,
+                    bot->GetOrientation(), TELE_TO_NOT_LEAVE_TAXI);
+            }
+            return;
+        }
         if (bot->IsInFlight() || !bot->GetMotionMaster() ||
             bot->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
             return;                                   // a leg is still running
@@ -1727,6 +1763,14 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
     if (RoamTransport::OnTransportLeg(bot))
         return true;
 
+    // A bounded surface-city visitor needs real walking/pathfinding between
+    // service stops even when no non-GM player is standing beside it.
+    if (bot->GetZoneId() == 4395 && bot->GetPositionZ() > 630.0f && !bot->GetGroup() &&
+        !HasActivePlayerMaster() && sConfigMgr->GetBoolDefault("AiPlayerbot.CityLife.Enable", true) &&
+        sConfigMgr->GetIntDefault("AiPlayerbot.CityLife.DalaranTarget", 24) > 0 &&
+        sRandomPlayerbotMgr->GetValue(bot, "city_visit_until") > uint32(time(nullptr)))
+        return true;
+
     // all bots forced active, no rotation or scaling needed
     if (sPlayerbotAIConfig->botActiveAlone >= 100 && !sPlayerbotAIConfig->botActiveAloneSmartScale)
         return true;
@@ -2169,6 +2213,7 @@ void PlayerbotAI::UpdateAIGroupMaster()
     if (master)
         masterBotAI = GET_PLAYERBOT_AI(master);
 
+
     // Test BG master set
     if ((!master || (masterBotAI && !masterBotAI->IsRealPlayer())) && group)
     {
@@ -2510,6 +2555,13 @@ void PlayerbotAI::HandleTeleportAck()
     // so its own ClearStaleFlightFlags never runs. Clear it here, with the same gates as isUseful.
     if ((wasFar || wasNear) && bot->IsInWorld() && !IsInVehicle() && !bot->HasUnitState(UNIT_STATE_IN_FLIGHT))
         ClearStaleFlightFlags(bot);
+    if ((wasFar || wasNear) && bot->IsInWorld() && bot->GetGroup())
+    {
+        // The bot can be briefly absent from ObjectAccessor during a worldport.
+        // Publish its attached state and real health after the acknowledgement.
+        bot->SetGroupUpdateFlag(GROUP_UPDATE_FULL);
+        bot->GetGroup()->SendUpdate();
+    }
     // AC parity: simulated teleport latency (AC PlayerbotAI.cpp:827 far, :859 near)
     if (wasFar)
         SetNextCheckDelay(urand(2000, 5000));
@@ -2983,14 +3035,9 @@ bool PlayerbotAI::SayToParty(const std::string& msg)
     if (!bot->GetGroup())
         return false;
 
-    /*WorldPacket data;
-    ChatHandler::BuildChatPacket(data, CHAT_MSG_PARTY, msg.c_str(), LANG_UNIVERSAL, CHAT_TAG_NONE, bot->GetGUID(),
-        bot->GetName());
-
-    for (auto reciever : GetPlayersInGroup())
-    {
-        sServerFacade->SendPacket(reciever, &data);
-    }*/
+    WorldPacket data;
+    ChatHandler::BuildChatPacket(data, CHAT_MSG_PARTY, LANG_UNIVERSAL, bot, nullptr, msg.c_str());
+    bot->GetGroup()->BroadcastPacket(&data, false);
 
     return true;
 }
@@ -3103,6 +3150,20 @@ bool PlayerbotAI::TellMasterNoFacing(std::string const text, PlayerbotSecurityLe
     PlayerbotAI* masterBotAI = nullptr;
     if (master)
         masterBotAI = GET_PLAYERBOT_AI(master);
+
+    // Routine quest/lifecycle/AI updates are not conversations. Keep explicit
+    // command replies and addon protocol traffic, but make ambient companion
+    // narration opt-in for a real player master.
+    bool addonReply = currentChat.first == CHAT_MSG_ADDON && currentChat.second >= time(nullptr);
+    auto requestedReply = whispers.find("\001command-reply");
+    bool recentRequest = requestedReply != whispers.end() && time(nullptr) - requestedReply->second <= 10;
+    bool routineNotice = text.compare(0, 5, "Hello") == 0 || text == "Hi!" || text.compare(0, 7, "Goodbye") == 0 ||
+        text.compare(0, 14, "Quest accepted") == 0 || text.compare(0, 15, "Quest completed") == 0;
+    if (master && bot->GetGroup() && bot->GetGroup() == master->GetGroup() &&
+        (!masterBotAI || masterBotAI->IsRealPlayer()) && !addonReply &&
+        (routineNotice || (!processingChatCommand && !recentRequest)) &&
+        !sConfigMgr->GetBoolDefault("AiPlayerbot.Companion.RoutineMessages", false))
+        return false;
 
     if ((!master || (masterBotAI && !masterBotAI->IsRealPlayer())) &&
         (sPlayerbotAIConfig->randomBotSayWithoutMaster || HasStrategy("debug", BOT_STATE_NON_COMBAT)))
@@ -5057,4 +5118,8 @@ bool PlayerbotAI::HasAggro(Unit* unit)
         return true;
     }
     return false;
+}
+void PlayerbotAI::SetMaster(Player* newMaster)
+{
+    master = (!newMaster || CanUseCompanions(newMaster)) ? newMaster : nullptr;
 }

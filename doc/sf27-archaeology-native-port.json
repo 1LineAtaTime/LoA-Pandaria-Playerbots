@@ -1,0 +1,17 @@
+{
+  "module": "archaeology",
+  "local_baseline": "9c32347f1",
+  "upstream": "df19329b209fa1d1ae80444b43f6201d5dc124f0",
+  "source_sha256": "e4456e2254ccfe4ae14759cce9bf2bcc8aa4ecd4c13afc54c305dccfcc3df1f8",
+  "upstream_names": [
+    "spell_archaeology_survey"
+  ],
+  "unregistered_legacy_classes_omitted": [],
+  "local_overridden": [],
+  "local_only_retained": [],
+  "api_adaptations": [
+    "Skyfire namespace to Trinity",
+    "override keyword",
+    "float aura amount callbacks"
+  ]
+}

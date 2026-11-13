@@ -104,7 +104,7 @@ RealmID = 1
 #        Example:     "@prefix@/share/skyfire"
 #        Default:     "."
 
-DataDir = "Data"
+DataDir = "."
 
 #
 #    LogsDir
@@ -113,7 +113,7 @@ DataDir = "Data"
 #                     Logs directory must exists, or log file creation will be disabled.
 #        Default:     "" - (Log files will be stored in the current path)
 
-LogsDir = "Logs"
+LogsDir = "./logs"
 
 #
 #    LoginDatabaseInfo
@@ -133,10 +133,10 @@ LogsDir = "Logs"
 #                     "127.0.0.1;3306;skyfire;skyfire;playerbots" - (PlayerbotsDatabaseInfo, the
 #                                                                   playerbots module; required)
 
-LoginDatabaseInfo     = "127.0.0.1;3306;root;root;auth"
-WorldDatabaseInfo     = "127.0.0.1;3306;root;root;world"
-CharacterDatabaseInfo = "127.0.0.1;3306;root;root;characters"
-PlayerbotsDatabaseInfo = "127.0.0.1;3306;root;root;playerbots"
+LoginDatabaseInfo     = "127.0.0.1;3306;DB_USER;CHANGE_ME;auth"
+WorldDatabaseInfo     = "127.0.0.1;3306;DB_USER;CHANGE_ME;world"
+CharacterDatabaseInfo = "127.0.0.1;3306;DB_USER;CHANGE_ME;characters"
+PlayerbotsDatabaseInfo = "127.0.0.1;3306;DB_USER;CHANGE_ME;playerbots"
 
 #
 #    LoginDatabase.WorkerThreads
@@ -2399,7 +2399,7 @@ Battleground.Override.LowLevels.MinPlayers.SA = 0
 Battleground.Override.LowLevels.MinPlayers.IC = 0
 
 #
-#    BattleGround.PremadeGroupWaitForMatch
+#    Battleground.PremadeGroupWaitForMatch
 #        Description: Time (in milliseconds) a pre-made group has to wait for matching group of the
 #                     other faction.
 #        Default:     1800000 - (Enabled, 30 minutes)
@@ -3076,11 +3076,27 @@ FirstOfTheKingdom.ThroneOfThunder = 1
 #
 #    AuctionHouseBot.Account
 #       Description: Account ID for AHBot characters. If non-zero, all auctions and bids associated
-#                    with the AHBot will randomly be assigned one of this account's characters.
+#                    with the AHBot will use this account's characters.
+#       Default:     0
+#
+#    AuctionHouseBot.GUID
+#       Description: Optional character GUID on the configured account to use exclusively for
+#                    legacy AuctionHouseBot auctions and bids. Zero selects any character on the account.
+#                    With UseRandomPlayerbots enabled, this character remains recognized as a bot owner,
+#                    while new auctions and bids use random playerbot characters.
+#       Default:     0
+#
+#    AuctionHouseBot.UseRandomPlayerbots
+#       Description: Use the accounts named by AiPlayerbot.RandomBotAccountPrefix and
+#                    AiPlayerbot.RandomBotAccountCount as auction sellers and buyers.
+#                    The selected character matches the auction house faction. Existing auctions
+#                    from AuctionHouseBot.Account/GUID remain recognized as bot auctions.
 #       Default:     0
 #
 
 AuctionHouseBot.Account = 0
+AuctionHouseBot.GUID = 0
+AuctionHouseBot.UseRandomPlayerbots = 0
 
 #
 #    AuctionHouseBot.Update.Interval
@@ -3301,11 +3317,18 @@ AuctionHouseBot.Items.ItemLevel.Max = 0
 
 #
 #    AuctionHouseBot.Items.ReqLevel.*
-#       Description: Prevent seller from listing items below/above this required level
-#       Default:     0 - (Disabled)
+#       Description: Prevent seller from listing items below/above this required level.
+#                    The maximum applies to every item class and forced includes.
+#                    Keep it below 100 when level 100 marks broken items.
+#       Default:     Min 0 - (Disabled), Max 99
 
 AuctionHouseBot.Items.ReqLevel.Min = 0
-AuctionHouseBot.Items.ReqLevel.Max = 0
+AuctionHouseBot.Items.ReqLevel.Max = 99
+
+# Refresh this many unbid legacy single-owner bot listings on startup so
+# new listings acquire random playerbot seller names. Maximum 1000.
+# Default: 0 (disabled)
+AuctionHouseBot.RefreshLegacyListings = 0
 
 #
 #    AuctionHouseBot.Items.ReqSkill.*
@@ -3425,7 +3448,9 @@ AuctionHouseBot.Class.Container.ItemLevel.Max = 0
 
 #
 #    AuctionHouseBot.forceIncludeItems
-#       Description: Include these items and ignore ALL filters
+#       Description: Include these items and ignore pricing, binding, and source filters.
+#                    Names marked TEST, DEPRECATED, UNUSED, DEBUG, PLACEHOLDER, DNT,
+#                    DNU, QA, or NYI remain excluded even when listed here.
 #                    List of ids with delimiter ','
 #       Default:     ""
 
@@ -3627,7 +3652,7 @@ AuctionHouseBot.Buyer.Recheck.Interval = 20
 #                         Example:  536870912 (512 mb)
 #
 
-Appender.Console=1,3,0,13 11 9 5 3 1
+Appender.Console=1,1,0
 Appender.Server=2,2,0,Server.log,w
 Appender.GM=2,2,15,gm/gm_%s.log
 Appender.DBErrors=2,2,0,DBErrors.log,w
@@ -3650,8 +3675,24 @@ Appender.DBErrors=2,2,0,DBErrors.log,w
 #                     (Using spaces as separator).
 #
 
-Logger.root=5,Console Server
-Logger.server=3,Console Server
+Logger.root=1,Console Server
+Logger.server=1,Console Server
+# Keep the root trace setting for diagnosis, but suppress per-step messages
+# from the busiest bot and movement categories. Info, warnings and errors
+# from most categories remain visible; the per-hit spell and damage categories
+# retain warnings and errors in the console and Server.log.
+Logger.maps=3,Console Server
+Logger.maps.mmaps=3,Console Server
+Logger.rbac=3,Console Server
+Logger.entities.unit=3,Console Server
+Logger.achievement=3,Console Server
+Logger.condition=3,Console Server
+Logger.spells=4,Console Server
+Logger.damage=4,Console Server
+Logger.scripts.ai=3,Console Server
+Logger.misc=3,Console Server
+Logger.auctionHouse=3,Console Server
+Logger.entities.creature=3,Console Server
 Logger.commands.gm=3,Console GM
 Logger.sql.sql=5,Console DBErrors
 
@@ -5356,3 +5397,25 @@ Load.Locales = 1
 
 #
 ###################################################################################################
+
+# City errands read by the main configuration manager.
+AiPlayerbot.RpgTownErrandEnable = 1
+AiPlayerbot.RpgTownErrandNearRadius = 400
+AiPlayerbot.RpgTownErrandRadius = 1200
+AiPlayerbot.RpgTownErrandCooldown = 1800
+AiPlayerbot.RpgTownErrandChance = 10
+AiPlayerbot.RpgTownErrandStayMin = 15
+AiPlayerbot.RpgTownErrandStayMax = 45
+AiPlayerbot.RpgTownErrandMaxBotsPerNpc = 3
+AiPlayerbot.RpgTownErrandWeightAuction = 40
+AiPlayerbot.RpgTownErrandWeightProfession = 25
+AiPlayerbot.RpgTownErrandWeightBank = 20
+AiPlayerbot.RpgTownErrandWeightMailbox = 6
+AiPlayerbot.RpgTownErrandAuctionRadius = 4000
+AiPlayerbot.RpgTownErrandFlightMinDistance = 800
+AiPlayerbot.RpgTownErrandWeightClassTrainer = 5
+AiPlayerbot.RpgTownErrandWeightStable = 3
+AiPlayerbot.RpgTownErrandWeightGuildBank = 2
+
+# Seed cached seller names before auction lists; no query-delay change.
+Auction.PrefetchSellerNames = 1

@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(bot_chat_policy_test LANGUAGES CXX)
+add_executable(bot_chat_policy_test throttle_test.cpp)
+target_compile_features(bot_chat_policy_test PRIVATE cxx_std_17)
+find_package(Threads REQUIRED)
+target_link_libraries(bot_chat_policy_test PRIVATE Threads::Threads)

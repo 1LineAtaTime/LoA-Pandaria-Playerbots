@@ -20,6 +20,7 @@
 #include "Object.h"
 #include "Player.h"
 #include "Random.h"
+#include "DeathknellIntroPolicy.h"
 #include "TemporarySummon.h"
 
 enum TirisfalGlades
@@ -1720,8 +1721,36 @@ struct npc_sedrick_calston : public ScriptedAI
     }
 };
 
+class player_deathknell_intro : public PlayerScript
+{
+public:
+    player_deathknell_intro() : PlayerScript("player_deathknell_intro") { }
+
+    static void AwakenIfIntroStarted(Player* player)
+    {
+        constexpr uint32 freshOutOfTheGrave=24959;
+        constexpr uint32 rigorMortis=73523;
+        QuestStatus status=player->GetQuestStatus(freshOutOfTheGrave);
+        if (DeathknellIntroPolicy::ShouldAwaken(player->GetRace()==RACE_UNDEAD_PLAYER,
+            player->HasAura(rigorMortis), status==QUEST_STATUS_INCOMPLETE || status==QUEST_STATUS_COMPLETE,
+            player->GetQuestRewardStatus(freshOutOfTheGrave)))
+            player->RemoveAurasDueToSpell(rigorMortis);
+    }
+
+    void OnLogin(Player* player) override { AwakenIfIntroStarted(player); }
+    static void HandleIntroQuest(Player* player, Quest const* quest)
+    {
+        if (quest->GetQuestId()==24959)
+            AwakenIfIntroStarted(player);
+    }
+    void OnQuestAdded(Player* player, Quest const* quest) override { HandleIntroQuest(player,quest); }
+    void OnQuestCompleted(Player* player, Quest const* quest) override { HandleIntroQuest(player,quest); }
+    void OnQuestRewarded(Player* player, Quest const* quest) override { HandleIntroQuest(player,quest); }
+};
+
 void AddSC_tirisfal_glades()
 {
+    new player_deathknell_intro();
     new creature_script<npc_aradne>("npc_aradne");
     new creature_script<npc_deathknell_grave_target>("npc_deathknell_grave_target");
     new creature_script<npc_risen_dead>("npc_risen_dead");

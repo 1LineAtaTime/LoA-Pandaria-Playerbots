@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-09",
+  "branch": "codex/autonomous-gameplay-qa",
+  "milestones": {
+    "0": {
+      "state": "PASS",
+      "evidence": "Existing isolated runtime, pool, native pilot and independent observer verified"
+    },
+    "1": {
+      "state": "PASS",
+      "evidence": "Native pilot120: four legitimately rewarded quests,53360 earned/equipped hands, normal logout/reconnect retained exact rewards and gear. See autonomous-gameplay-results-2026-11-09.md.",
+      "scope": "One Orc Warrior, normal movement; targeted quest objective25126 assigned via supported rpg command after diagnosing stall. Not whole-chain or race/class certification."
+    },
+    "2": {
+      "state": "IN PROGRESS",
+      "target_level": 15,
+      "evidence": "Pilot08 normal reconnect retained level4,25172 reward and53386 chest; continued via standalone adventure pipeline. Level15 not reached."
+    },
+    "3": {
+      "state": "NOT RUN"
+    },
+    "4": {
+      "state": "NOT RUN"
+    },
+    "5": {
+      "state": "NOT RUN"
+    },
+    "6": {
+      "state": "NOT RUN"
+    },
+    "7": {
+      "state": "NOT RUN"
+    }
+  },
+  "persistent_pilot": {
+    "guid": 120,
+    "race": 2,
+    "class_id": 1,
+    "initial_level": 1,
+    "latest_verified_level": 4,
+    "turned_in_quests": [
+      25152,
+      2383,
+      25128,
+      25126,
+      25172,
+      25127
+    ],
+    "completed_objective": {
+      "quest": 25126,
+      "entry": 3098,
+      "required": 6,
+      "observed": 6
+    },
+    "normal_speed_multiplier": 1,
+    "no_administrative_grants": true,
+    "gear_upgrade_verified": true,
+    "reconnect_verified": true,
+    "gear_upgrade": {
+      "item": 53360,
+      "slot": 9,
+      "prior_slot": "empty",
+      "source": "25126 reward choice3",
+      "reconnect_persisted": true,
+      "classification": "warrior-compatible mail hands; existing native item-usage/stat-weight reward selection"
+    },
+    "mainline_chain_observed": [
+      25152,
+      25126,
+      25172
+    ],
+    "additional_upgrade": {
+      "item": 53386,
+      "slot": 4,
+      "source": "25172 quest reward",
+      "reconnect_persisted": true
+    },
+    "additional_upgrades": [
+      {
+        "item": 53386,
+        "slot": 4,
+        "source": "25172 quest reward",
+        "reconnect_persisted": true
+      },
+      {
+        "item": 53362,
+        "slot": 7,
+        "source": "25127 quest reward",
+        "reconnect_persisted": true
+      }
+    ]
+  },
+  "observer": {
+    "profile": "GM observation, excluded from natural certification",
+    "realm_id": 1,
+    "map": 1,
+    "pilot_visible": true,
+    "wire_position_samples": 10,
+    "unique_positions": 9,
+    "normal_client_visual_acceptance": "NOT RUN"
+  },
+  "infrastructure": {
+    "original_owned_accounts": 14,
+    "original_owned_characters": 125,
+    "observer_accounts_added": 1,
+    "maximum_characters_per_account": 11,
+    "misconfigured_factory_bodies_created": 264,
+    "factory_population_excluded_from_certification": true
+  },
+  "full_content_certified": false,
+  "confirmed_defects": [
+    {
+      "id": "native-quest-grind-starvation",
+      "kind": "Playerbots AI defect",
+      "state": "PASS",
+      "expected": "Travel to selected objective/turn-in before unrelated proactive pulls",
+      "actual": "Completed25126 remained inDO_QUEST whileattackanything4.0 outrankedmovement3.0",
+      "evidence": "pilot05 JSONL + read-only rpg status",
+      "repair": "QuestTravelGrindingMultiplier; nativepilot06 moved back to Gornek",
+      "runtime_evidence": "pilot07: normal vendor sale,25126 reward,53360 equipped and persisted; pilot06 confirms travel back to Gornek"
+    },
+    {
+      "id": "unusable-vendor-goods-not-counted",
+      "kind": "Playerbots AI defect",
+      "state": "PASS",
+      "expected": "usage vendor/AH queries count unwanted unusable goods",
+      "actual": "FindUsableItemVisitor rejected recipe3609 copies in full backpack",
+      "repair": "Classification-only InventoryUsageVisitor",
+      "runtime_evidence": "pilot07: normal vendor sale,25126 reward,53360 equipped and persisted; pilot06 confirms travel back to Gornek"
+    },
+    {
+      "id": "quest-reward-capacity-recovery",
+      "kind": "Playerbots AI defect",
+      "state": "PASS",
+      "expected": "Normal vendor detour then normal quest reward",
+      "actual": "Complete quest remained at giver with no free slots",
+      "repair": "Reuse normalSellAction and nativevendor movement",
+      "runtime_evidence": "pilot07: normal vendor sale,25126 reward,53360 equipped and persisted; pilot06 confirms travel back to Gornek"
+    }
+  ],
+  "qa_deployment": {
+    "native_commit": "8e4b42d17c853e1773603338621d8ead26884807",
+    "world_sha256": "fb319652eb7983bc422c39b43e3d836202aa0b2136e897d51d000b52bd6ca4ee",
+    "production_modified": false
+  },
+  "unattended_qa": {
+    "implementation_commit": "bdd93d3d9a6ca6e995af9082d53887a9ec5fe6c8",
+    "launcher": "Run-Autonomous-QA.cmd",
+    "pipeline_profile": "adventure",
+    "reports": "out/qa-automation/adventure",
+    "does_not_require_codex": true,
+    "whole_game_certification": false,
+    "live_progress_run": "20261110T083806689367Z",
+    "live_progress_result": "Episode EXECUTED/reconnect PASS; campaign NEEDS_REVIEW correctly flags two missing configuration defaults; defaults restored in QA profile."
+  }
+}

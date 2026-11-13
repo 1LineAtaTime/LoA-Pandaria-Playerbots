@@ -40,7 +40,9 @@ void GameClient::RemoveAllowedMover(Unit* unit)
     if (unit->GetGameClientMovingMe() == this)
     {
         unit->SetGameClientMovingMe(nullptr);
-        SetActivelyMovedUnit(nullptr);
+        // Revoking an old vehicle must not clear a newer active player mover.
+        if (_activelyMovedUnit == unit)
+            SetActivelyMovedUnit(nullptr);
     }
 }
 

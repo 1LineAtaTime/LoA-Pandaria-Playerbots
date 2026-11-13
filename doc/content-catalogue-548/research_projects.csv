@@ -1,0 +1,180 @@
+id,name,comparison,behavior
+1,Test: Axe of Uber Super Slaying,client_asset_present,not_evaluated
+2,Test: Axe of Slaying,client_asset_present,not_evaluated
+4,Test: Shiny Beads,client_asset_present,not_evaluated
+9,Pewter Drinking Cup,client_asset_present,not_evaluated
+10,Test: Dwarf Project Test 2,client_asset_present,not_evaluated
+13,Test: Rare Dwarf Project Test 1,client_asset_present,not_evaluated
+40,Ceramic Funeral Urn,client_asset_present,not_evaluated
+42,Worn Hunting Knife,client_asset_present,not_evaluated
+44,Bone Gaming Dice,client_asset_present,not_evaluated
+70,Stone Gryphon,client_asset_present,not_evaluated
+72,Silver Neck Torc,client_asset_present,not_evaluated
+77,Zandalari Voodoo Doll,client_asset_present,not_evaluated
+87,Fetish of Hir'eek,client_asset_present,not_evaluated
+89,Lizard Foot Charm,client_asset_present,not_evaluated
+91,Wooden Whistle,client_asset_present,not_evaluated
+93,Belt Buckle with Anvilmar Crest,client_asset_present,not_evaluated
+95,Black Trilobite,client_asset_present,not_evaluated
+97,Beautiful Preserved Fern,client_asset_present,not_evaluated
+99,Highborne Pyxis,client_asset_present,not_evaluated
+101,Inlaid Ivory Comb,client_asset_present,not_evaluated
+103,Scandalous Silk Nightgown,client_asset_present,not_evaluated
+106,Fossilized Hatchling,client_asset_present,not_evaluated
+108,Cloak Clasp with Antlers,client_asset_present,not_evaluated
+112,Jade Asp with Ruby Eyes,client_asset_present,not_evaluated
+114,Feathered Gold Earring,client_asset_present,not_evaluated
+118,Moltenfist's Jeweled Goblet,client_asset_present,not_evaluated
+120,Eerie Smolderthorn Idol,client_asset_present,not_evaluated
+122,Cinnabar Bijou,client_asset_present,not_evaluated
+124,Coin from Eldre'Thalas,client_asset_present,not_evaluated
+126,Shattered Glaive,client_asset_present,not_evaluated
+128,Twisted Ammonite Shell,client_asset_present,not_evaluated
+130,Green Dragon Ring,client_asset_present,not_evaluated
+139,Notched Sword of Tunadil the Redeemer,client_asset_present,not_evaluated
+141,Bodacious Door Knocker,client_asset_present,not_evaluated
+143,Boot Heel with Scrollwork,client_asset_present,not_evaluated
+145,Golden Chamber Pot,client_asset_present,not_evaluated
+147,Winged Helm of Corehammer,client_asset_present,not_evaluated
+149,Ironstar's Petrified Shield,client_asset_present,not_evaluated
+153,Skull-Shaped Planter,client_asset_present,not_evaluated
+155,Bracelet of Jade and Coins,client_asset_present,not_evaluated
+157,Gahz'rilla Figurine,client_asset_present,not_evaluated
+159,Atal'ai Scepter,client_asset_present,not_evaluated
+161,Devilsaur Tooth,client_asset_present,not_evaluated
+163,Insect in Amber,client_asset_present,not_evaluated
+165,Kaldorei Amphora,client_asset_present,not_evaluated
+167,Ancient Shark Jaws,client_asset_present,not_evaluated
+169,Hairpin of Silver and Malachite,client_asset_present,not_evaluated
+171,Delicate Music Box,client_asset_present,not_evaluated
+173,Highborne Soul Mirror,client_asset_present,not_evaluated
+175,Druid and Priest Statue Set,client_asset_present,not_evaluated
+177,Dented Shield of Horuz Killcrow,client_asset_present,not_evaluated
+179,Scorched Staff of Shadow Priest Anund,client_asset_present,not_evaluated
+181,Scepter of Charlga Razorflank,client_asset_present,not_evaluated
+183,Mithril Chain of Angerforge,client_asset_present,not_evaluated
+185,Skull Staff of Shadowforge,client_asset_present,not_evaluated
+187,Clockwork Gnome,client_asset_present,not_evaluated
+189,Chalice of the Mountain Kings,client_asset_present,not_evaluated
+191,Tooth with Gold Filling,client_asset_present,not_evaluated
+193,Drakkari Sacrificial Knife,client_asset_present,not_evaluated
+195,"Zin'rokh, Destroyer of Worlds",client_asset_present,not_evaluated
+197,String of Small Pink Pearls,client_asset_present,not_evaluated
+199,Chest of Tiny Glass Animals,client_asset_present,not_evaluated
+201,Cracked Crystal Vial,client_asset_present,not_evaluated
+203,Scepter of Xavius,client_asset_present,not_evaluated
+205,Kaldorei Wind Chimes,client_asset_present,not_evaluated
+207,Queen Azshara's Dressing Gown,client_asset_present,not_evaluated
+209,Feathered Raptor Arm,client_asset_present,not_evaluated
+211,Vicious Ancient Fish,client_asset_present,not_evaluated
+213,Fossilized Raptor,client_asset_present,not_evaluated
+215,Tiny Bronze Scorpion,client_asset_present,not_evaluated
+217,Maul of Stone Guard Mur'og,client_asset_present,not_evaluated
+219,Gray Candle Stub,client_asset_present,not_evaluated
+221,Rusted Steak Knife,client_asset_present,not_evaluated
+223,Scepter of Nekros Skullcrusher,client_asset_present,not_evaluated
+225,Fierce Wolf Figurine,client_asset_present,not_evaluated
+231,Skull Drinking Cup,client_asset_present,not_evaluated
+233,Tile of Glazed Clay,client_asset_present,not_evaluated
+235,Fiendish Whip,client_asset_present,not_evaluated
+237,Headdress of the First Shaman,client_asset_present,not_evaluated
+239,Anklet with Golden Bells,client_asset_present,not_evaluated
+241,Carved Harp of Exotic Wood,client_asset_present,not_evaluated
+243,Strange Silver Paperweight,client_asset_present,not_evaluated
+245,Scepter of the Nathrezim,client_asset_present,not_evaluated
+250,Baroque Sword Scabbard,client_asset_present,not_evaluated
+252,Fine Crystal Candelabra,client_asset_present,not_evaluated
+254,Dignified Portrait,client_asset_present,not_evaluated
+256,Arrival of the Naaru,client_asset_present,not_evaluated
+258,The Last Relic of Argus,client_asset_present,not_evaluated
+260,Plated Elekk Goad,client_asset_present,not_evaluated
+262,Intricate Treasure Chest Key,client_asset_present,not_evaluated
+264,Nifflevar Bearded Axe,client_asset_present,not_evaluated
+266,Scramseax,client_asset_present,not_evaluated
+268,Flint Striker,client_asset_present,not_evaluated
+270,Fanged Cloak Pin,client_asset_present,not_evaluated
+273,Thorned Necklace,client_asset_present,not_evaluated
+275,Proto-Drake Skeleton,client_asset_present,not_evaluated
+277,Imprint of a Kraken Tentacle,client_asset_present,not_evaluated
+279,Spidery Sundial,client_asset_present,not_evaluated
+283,Scepter of Nezar'Azret,client_asset_present,not_evaluated
+285,Infested Ruby Ring,client_asset_present,not_evaluated
+287,Gruesome Heart Box,client_asset_present,not_evaluated
+289,Six-Clawed Cornice,client_asset_present,not_evaluated
+291,Ewer of Jormungar Blood,client_asset_present,not_evaluated
+293,Vizier's Scrawled Streamer,client_asset_present,not_evaluated
+295,Blessing of the Old God,client_asset_present,not_evaluated
+297,Puzzle Box of Yogg-Saron,client_asset_present,not_evaluated
+301,Silver Kris of Korl,client_asset_present,not_evaluated
+303,Warmaul of Burningeye,client_asset_present,not_evaluated
+305,Spiked Gauntlets of Anvilrage,client_asset_present,not_evaluated
+307,Word of Empress Zoe,client_asset_present,not_evaluated
+309,Scepter of Bronzebeard,client_asset_present,not_evaluated
+313,The Innkeeper's Daughter,client_asset_present,not_evaluated
+315,Staff of Sorcerer-Thane Thaurissan,client_asset_present,not_evaluated
+317,Tyrande's Favorite Doll,client_asset_present,not_evaluated
+319,Bones of Transformation,client_asset_present,not_evaluated
+323,Carcanet of the Hundred Magi,client_asset_present,not_evaluated
+325,Silver Scroll Case,client_asset_present,not_evaluated
+327,Umbra Crescent,client_asset_present,not_evaluated
+329,Wisp Amulet,client_asset_present,not_evaluated
+331,Castle of Sand,client_asset_present,not_evaluated
+333,Cat Statue with Emerald Eyes,client_asset_present,not_evaluated
+335,Soapstone Scarab Necklace,client_asset_present,not_evaluated
+339,Tiny Oasis Mosaic,client_asset_present,not_evaluated
+341,Engraved Scimitar Hilt,client_asset_present,not_evaluated
+343,Canopic Jar,client_asset_present,not_evaluated
+345,Sketch of a Desert Palace,client_asset_present,not_evaluated
+347,Pipe of Franclorn Forgewright,client_asset_present,not_evaluated
+349,Mummified Monkey Paw,client_asset_present,not_evaluated
+351,Staff of Ammunae,client_asset_present,not_evaluated
+353,Pendant of the Scarab Storm,client_asset_present,not_evaluated
+355,Scepter of Azj'Aqir,client_asset_present,not_evaluated
+357,Scimitar of the Sirocco,client_asset_present,not_evaluated
+359,Ring of the Boy Emperor,client_asset_present,not_evaluated
+371,Dwarven Baby Socks,client_asset_present,not_evaluated
+372,Necklace with Elune Pendant,client_asset_present,not_evaluated
+374,Shard of Petrified Wood,client_asset_present,not_evaluated
+378,Strange Velvet Worm,client_asset_present,not_evaluated
+380,Fine Bloodscalp Dinnerware,client_asset_present,not_evaluated
+628,Extinct Turtle Shell,client_asset_present,not_evaluated
+633,Haunted War Drum,client_asset_present,not_evaluated
+635,Ancient Amber,client_asset_present,not_evaluated
+637,Vrykul Drinking Horn,client_asset_present,not_evaluated
+639,Pterrordax Hatchling,client_asset_present,not_evaluated
+641,Voodoo Figurine,client_asset_present,not_evaluated
+1035,Pandaren Tea Set,client_asset_present,not_evaluated
+1037,Pandaren Game Board,client_asset_present,not_evaluated
+1039,Twin Stein Set of Brewfather Quan Tou Kuo,client_asset_present,not_evaluated
+1041,Walking Cane of Brewfather Ren Yun,client_asset_present,not_evaluated
+1043,Empty Keg of Brewfather Xin Wo Yin,client_asset_present,not_evaluated
+1045,Carved Bronze Mirror,client_asset_present,not_evaluated
+1047,Gold-Inlaid Porcelain Funerary Figurine,client_asset_present,not_evaluated
+1049,Apothecary Tins,client_asset_present,not_evaluated
+1051,Pearl of Yu'lon,client_asset_present,not_evaluated
+1053,Standard of Niuzao,client_asset_present,not_evaluated
+1057,Umbrella of Chi-Ji,client_asset_present,not_evaluated
+1059,Spear of Xuen,client_asset_present,not_evaluated
+1085,Manacles of Rebellion,client_asset_present,not_evaluated
+1087,Cracked Mogu Runestone,client_asset_present,not_evaluated
+1089,Terracotta Arm,client_asset_present,not_evaluated
+1091,Petrified Bone Whip,client_asset_present,not_evaluated
+1093,Thunder King Insignia,client_asset_present,not_evaluated
+1095,Edicts of the Thunder King,client_asset_present,not_evaluated
+1097,Iron Amulet,client_asset_present,not_evaluated
+1099,Warlord's Branding Iron,client_asset_present,not_evaluated
+1101,Mogu Coin,client_asset_present,not_evaluated
+1103,Worn Monument Ledger,client_asset_present,not_evaluated
+1105,Quilen Statuette,client_asset_present,not_evaluated
+1107,Anatomical Dummy,client_asset_present,not_evaluated
+1190,Test Project,client_asset_present,not_evaluated
+1834,Banner of the Mantid Empire,client_asset_present,not_evaluated
+1836,Ancient Sap Feeder,client_asset_present,not_evaluated
+1838,The Praying Mantid,client_asset_present,not_evaluated
+1840,Inert Sound Beacon,client_asset_present,not_evaluated
+1842,Remains of a Paragon,client_asset_present,not_evaluated
+1844,Mantid Lamp,client_asset_present,not_evaluated
+1846,Pollen Collector,client_asset_present,not_evaluated
+1848,Kypari Sap Container,client_asset_present,not_evaluated
+1850,Mantid Sky Reaver,client_asset_present,not_evaluated
+1852,Sonic Pulse Generator,client_asset_present,not_evaluated

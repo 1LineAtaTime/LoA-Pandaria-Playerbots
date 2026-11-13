@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "gameplay_tested": false,
+  "contracts": 6692,
+  "initial_mismatches": 6692,
+  "protected_fields_unchanged": true,
+  "unrelated_templates_unchanged": true,
+  "extra_stat_rows_unchanged": true,
+  "idempotent": true,
+  "changed_rows": {
+    "creature_template": 6312,
+    "creature_classlevelstats": 380
+  },
+  "fixture_removed": true
+}

@@ -832,14 +832,6 @@ class spell_dk_deaths_advance: public SpellScriptLoader
         {
             PrepareAuraScript(spell_dk_deaths_advance_AuraScript);
 
-            uint32 absorbPct;
-
-            bool Load() override
-            {
-                absorbPct = GetSpellInfo()->Effects[EFFECT_0].CalcValue(GetCaster());
-                return true;
-            }
-
             void CalculateEffect(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
             {
                 Unit* caster = GetCaster();
@@ -852,8 +844,9 @@ class spell_dk_deaths_advance: public SpellScriptLoader
 
             void Register() override
             {
-                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_0, SPELL_AURA_MOD_SPEED_NOT_STACK);
-                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_1, SPELL_AURA_MOD_MINIMUM_SPEED);
+                 // 96268 and 124285 place these two speed auras in opposite slots.
+                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_ALL, SPELL_AURA_MOD_SPEED_NOT_STACK);
+                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_deaths_advance_AuraScript::CalculateEffect, EFFECT_ALL, SPELL_AURA_MOD_MINIMUM_SPEED);
             }
         };
 
@@ -1761,7 +1754,7 @@ class spell_dk_soul_reaper : public AuraScript
 
     void Register() override
     {
-        OnEffectRemove += AuraEffectApplyFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -2055,32 +2048,35 @@ class aura_glyph_of_the_geist : public AuraScript
 {
     PrepareAuraScript(aura_glyph_of_the_geist);
 
+    bool Validate(SpellInfo const*) override { return sSpellMgr->GetSpellInfo(121916) != nullptr; }
+    bool Load() override { return GetUnitOwner()->ToPlayer() != nullptr; }
+
     void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        if (GetCaster()->ToPlayer()->GetSpecialization() == SPEC_DEATH_KNIGHT_UNHOLY)
+        if (GetTarget()->ToPlayer()->GetSpecialization() == SPEC_DEATH_KNIGHT_UNHOLY)
         {
-            Unit* pet = GetCaster()->ToPlayer()->GetPet();
+            Unit* pet = GetTarget()->ToPlayer()->GetPet();
             if (pet && pet->GetEntry() == 26125)
                 pet->CastSpell(pet, 121916, true); // Geist Transform
         }
         else
         {
-            if (Unit* minion = GetCaster()->ToPlayer()->GetFirstMinionByEntry(26125))
+            if (Unit* minion = GetTarget()->ToPlayer()->GetFirstMinionByEntry(26125))
                 minion->CastSpell(minion, 121916, true); // Geist Transform
         }
     }
 
     void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        if (GetCaster()->ToPlayer()->GetSpecialization() == SPEC_DEATH_KNIGHT_UNHOLY)
+        if (GetTarget()->ToPlayer()->GetSpecialization() == SPEC_DEATH_KNIGHT_UNHOLY)
         {
-            Unit* pet = GetCaster()->ToPlayer()->GetPet();
+            Unit* pet = GetTarget()->ToPlayer()->GetPet();
             if (pet && pet->GetEntry() == 26125)
                 pet->RemoveAurasDueToSpell(121916);
         }
         else
         {
-            if (Unit* minion = GetCaster()->ToPlayer()->GetFirstMinionByEntry(26125))
+            if (Unit* minion = GetTarget()->ToPlayer()->GetFirstMinionByEntry(26125))
                 minion->RemoveAurasDueToSpell(121916);
         }
     }
@@ -2694,18 +2690,43 @@ class spell_dk_rune_weapon_scaling : public AuraScript
 };
 
 // 51462 - Runic Corruption
-class spell_dk_runic_corruption : public AuraScript
+// SkyFire release26: proc from the runic-power spender hit, not a nonexistent spender aura.
+class spell_dk_runic_corruption : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_dk_runic_corruption);
+public:
+    spell_dk_runic_corruption() : SpellScriptLoader("spell_dk_runic_corruption") { }
 
-    void HandleProc(ProcEventInfo& eventInfo)
+    class spell_dk_runic_corruption_SpellScript : public SpellScript
     {
-        GetUnitOwner()->CastSpell(GetUnitOwner(), 51460, true);
-    }
+        PrepareSpellScript(spell_dk_runic_corruption_SpellScript);
 
-    void Register() override
+        void HandleOnHit()
+        {
+            if (Player* _player = GetCaster()->ToPlayer())
+            {
+                if (AuraEffect const* const runicCorruption = _player->GetDummyAuraEffect(SPELLFAMILY_DEATHKNIGHT, 4068, 0))
+                {
+                    if (roll_chance_i(45))
+                    {
+                        int32 basepoints0 = runicCorruption->GetAmount();
+                        if (Aura* aur = _player->GetAura(DK_SPELL_RUNIC_CORRUPTION_REGEN))
+                            aur->SetDuration(aur->GetDuration() + 3000);
+                        else
+                            _player->CastCustomSpell(_player, DK_SPELL_RUNIC_CORRUPTION_REGEN, &basepoints0, NULL, NULL, true);
+                    }
+                }
+            }
+        }
+
+        void Register() override
+        {
+            OnHit += SpellHitFn(spell_dk_runic_corruption_SpellScript::HandleOnHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
     {
-        OnProc += AuraProcFn(spell_dk_runic_corruption::HandleProc);
+        return new spell_dk_runic_corruption_SpellScript();
     }
 };
 
@@ -3395,98 +3416,30 @@ class spell_dk_blood_gorged : public AuraScript
     }
 };
 
+void AddSC_skyfire27_dk();
+
 void AddSC_deathknight_spell_scripts()
 {
-    new spell_script<spell_dk_gorefiends_grasp>("spell_dk_gorefiends_grasp");
-    new spell_dk_runic_empowerment();
-    new spell_dk_might_of_ursoc();
-    new aura_script<spell_dk_desecrated_ground>("spell_dk_desecrated_ground");
-    new aura_script<spell_dk_necrotic_strike>("spell_dk_necrotic_strike");
-    new spell_dk_festering_strike();
-    new aura_script<spell_dk_remorseless_winter_targets>("spell_dk_remorseless_winter_targets");
-    new spell_script<spell_dk_remorseless_winter>("spell_dk_remorseless_winter");
-    new aura_script<spell_dk_pillar_of_frost>("spell_dk_pillar_of_frost");
-    new spell_script<spell_dk_blood_charges>("spell_dk_blood_charges");
-    new spell_script<spell_dk_blood_tap>("spell_dk_blood_tap");
-    new spell_script<spell_dk_death_strike>("spell_dk_death_strike");
     new spell_script<spell_dk_death_strike_heal>("spell_dk_death_strike_heal");
-    new spell_dk_purgatory();
-    new spell_dk_purgatory_absorb();
-    new spell_dk_unholy_blight();
-    new spell_script<spell_dk_chilblains>("spell_dk_chilblains");
     new spell_script<spell_dk_outbreak>("spell_dk_outbreak");
-    new spell_dk_anti_magic_shell_raid();
     new aura_script<spell_dk_anti_magic_shell>("spell_dk_anti_magic_shell");
-    new spell_dk_anti_magic_zone();
-    new spell_dk_ghoul_explode();
-    new spell_dk_death_gate();
-    new spell_dk_death_pact();
-    new spell_dk_scourge_strike();
-    new spell_script<spell_dk_death_grip>("spell_dk_death_grip");
     new spell_script<spell_dk_death_grip_effect>("spell_dk_death_grip_effect");
-    new spell_dk_riposte();
-    new spell_dk_plague_strike();
-    new spell_dk_unholy_frenzy();
-    new spell_dk_glyph_of_horn_of_winter();
     new spell_dk_soul_reaper_effect();
-    new spell_dk_deaths_advance();
     new aura_script<spell_dk_death_and_decay>("spell_dk_death_and_decay");
-    new spell_script<spell_dk_glyph_of_death_and_decay>("spell_dk_glyph_of_death_and_decay");
-    new spell_script<spell_dk_death_coil>("spell_dk_death_coil");
-    new spell_script<spell_dk_bone_shield_check>("spell_dk_bone_shield_check");
-    new aura_script<spell_dk_bone_shield>("spell_dk_bone_shield");
-    new spell_script<spell_dk_plague_leech>("spell_dk_plague_leech");
-    new aura_script<spell_dk_sudden_doom>("spell_dk_sudden_doom");
     new aura_script<spell_dk_threat_of_tassarian>("spell_dk_threat_of_tassarian");
-    new aura_script<spell_dk_vampiric_blood>("spell_dk_vampiric_blood");
-    new aura_script<spell_dk_soul_reaper>("spell_dk_soul_reaper");
-    new spell_script<spell_dk_howling_blast>("spell_dk_howling_blast");
-    new aura_script<spell_dk_rune_converter>("spell_dk_rune_converter");
     new spell_script<spell_dk_blood_parasite>("spell_dk_blood_parasite");
     new creature_script<npc_bloodworm>("npc_bloodworm");
-    new aura_script<spell_dk_shadow_infusion_proc>("spell_dk_shadow_infusion_proc");
-    new aura_script<spell_dk_shadow_infusion>("spell_dk_shadow_infusion");
-    new spell_script<spell_dk_dark_transformation>("spell_dk_dark_transformation");
-    new spell_script<spell_dk_ghoul_ability>("spell_dk_ghoul_ability");
-    new spell_script<spell_dk_raise_dead>("spell_dk_raise_dead");
-    new spell_script<spell_dk_death_siphon>("spell_dk_death_siphon");
-    new aura_script<spell_dk_glyph_of_unholy_command>("spell_dk_glyph_of_unholy_command");
-    new spell_script<spell_dk_presence>("spell_dk_presence");
-    new spell_script<spell_dk_blood_boil>("spell_dk_blood_boil");
-    new spell_script<spell_dk_asphyxiate>("spell_dk_asphyxiate");
     new spell_script<spell_dk_summon_gargoyle>("spell_dk_summon_gargoyle");
     new creature_script<npc_ebon_gargoyle>("npc_ebon_gargoyle");
-    new spell_script<spell_dk_gargoyle_strike>("spell_dk_gargoyle_strike");
-    new aura_script<spell_dk_relentless_grip>("spell_dk_relentless_grip");
-    new aura_script<spell_dk_dark_simulacrum>("spell_dk_dark_simulacrum");
-    new spell_script<spell_dk_dancing_rune_weapon>("spell_dk_dancing_rune_weapon");
     new aura_script<spell_dk_dancing_rune_weapon_driver>("spell_dk_dancing_rune_weapon_driver");
-    new aura_script<spell_dk_rune_weapon_scaling>("spell_dk_rune_weapon_scaling");
-    new aura_script<spell_dk_runic_corruption>("spell_dk_runic_corruption");
-    new aura_script<spell_dk_t15_dps_4p_bonus>("spell_dk_t15_dps_4p_bonus");
     new creature_script<npc_dk_fallen_zandaliari>("npc_dk_fallen_zandaliari");
-    new aura_script<spell_dk_t15_blood_4p_bonus>("spell_dk_t15_blood_4p_bonus");
     new spell_script<spel_dk_death_shroud_duration>("spel_dk_death_shroud_duration");
-    new aura_script<spell_dk_death_shroud>("spell_dk_death_shroud");
-    new aura_script<spell_dk_t16_dps_4p_bonus>("spell_dk_t16_dps_4p_bonus");
-    new aura_script<spell_dk_t16_blood_2p_bonus>("spell_dk_t16_blood_2p_bonus");
-    new aura_script<spell_dk_t16_blood_4p_bonus>("spell_dk_t16_blood_4p_bonus");
-    new spell_script<spell_dk_frozen_power>("spell_dk_frozen_power");
-    new spell_script<spell_dk_pestilence>("spell_dk_pestilence");
-    new spell_script<spell_dk_glyph_of_strangulate>("spell_dk_glyph_of_strangulate");
-    new aura_script<spell_dk_will_of_the_necropolis>("spell_dk_will_of_the_necropolis");
-    new spell_script<spell_dk_will_of_the_necropolis_rune_tap>("spell_dk_will_of_the_necropolis_rune_tap");
-    new aura_script<spell_dk_crimson_scourge>("spell_dk_crimson_scourge");
-    new aura_script<spell_dk_wild_mushroom_plague_periodic>("spell_dk_wild_mushroom_plague_periodic");
-    new spell_script<spell_dk_wild_mushroom_plague_trigger>("spell_dk_wild_mushroom_plague_trigger");
     new creature_script<npc_dk_army_of_the_dead_ghoul>("npc_dk_army_of_the_dead_ghoul");
-    new aura_script<spell_dk_glyph_of_the_skeleton>("spell_dk_glyph_of_the_skeleton");
     new aura_script<spell_dk_glyph_of_regenerative_magic>("spell_dk_glyph_of_regenerative_magic");
     new aura_script<spell_dk_tricks_of_the_trade_fix>("spell_dk_tricks_of_the_trade_fix");
     new aura_script<spell_dk_scent_of_blood_main_hand>("spell_dk_scent_of_blood_main_hand");
-    new spell_script<spell_dk_glyph_of_the_loud_horn>("spell_dk_glyph_of_the_loud_horn");
     new atrigger_script<sat_dk_anti_magic_zone>("sat_dk_anti_magic_zone");
     new spell_script<spell_dk_death_gate_eff>("spell_dk_death_gate_eff");
     new aura_script<aura_glyph_of_the_geist>("aura_glyph_of_the_geist");
-    new aura_script<spell_dk_blood_gorged>("spell_dk_blood_gorged");
+    AddSC_skyfire27_dk();
 }

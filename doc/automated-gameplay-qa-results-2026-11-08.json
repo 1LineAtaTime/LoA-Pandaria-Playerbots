@@ -1,0 +1,580 @@
+{
+  "framework_tests_passed": 12,
+  "runs": [
+    {
+      "run": "full",
+      "gameplay_summary": {
+        "counts": {
+          "blocked": 0,
+          "failed": 5,
+          "passed": 10,
+          "untested": 7
+        },
+        "complete": false,
+        "ready": false
+      },
+      "data_summary": {
+        "counts": {
+          "blocked": 0,
+          "failed": 3,
+          "passed": 3,
+          "untested": 0
+        },
+        "complete": true,
+        "ready": false
+      },
+      "cases": [
+        {
+          "id": "quest-28766",
+          "status": "failed",
+          "last_step": "reconnect",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_acceptance_only"
+          ],
+          "error": "world connection closed",
+          "quest": 28766
+        },
+        {
+          "id": "quest-25152",
+          "status": "failed",
+          "last_step": "reconnect",
+          "checks": [
+            "create_immediate_enum_login",
+            "exact_xp_delta",
+            "exact_money_delta",
+            "quest_accepted_and_rewarded",
+            "xp_reward"
+          ],
+          "error": "world connection closed",
+          "quest": 25152
+        },
+        {
+          "id": "create-3-3",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-4-11",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "quest-24959",
+          "status": "failed",
+          "last_step": "reconnect",
+          "checks": [
+            "create_immediate_enum_login",
+            "exact_xp_delta",
+            "exact_money_delta",
+            "quest_accepted_and_rewarded",
+            "xp_reward"
+          ],
+          "error": "world connection closed",
+          "quest": 24959
+        },
+        {
+          "id": "create-6-1",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-7-8",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-8-7",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-9-4",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-10-2",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-11-5",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "quest-14078",
+          "status": "failed",
+          "last_step": "reconnect",
+          "checks": [
+            "create_immediate_enum_login",
+            "exact_xp_delta",
+            "exact_money_delta",
+            "quest_accepted_and_rewarded",
+            "xp_reward"
+          ],
+          "error": "world connection closed",
+          "quest": 14078
+        },
+        {
+          "id": "quest-30039",
+          "status": "failed",
+          "last_step": "reconnect",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_acceptance_only"
+          ],
+          "error": "world connection closed",
+          "quest": 30039
+        },
+        {
+          "id": "create-1-9",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login"
+          ]
+        },
+        {
+          "id": "create-1-6",
+          "status": "passed",
+          "last_step": "create_account",
+          "checks": [
+            "death_knight_level_requirement_enforced"
+          ]
+        },
+        {
+          "id": "quest-kill-objectives",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "quest-collect-and-use",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "quest-escort-phase-vehicle",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "spell-mechanics",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "boss-encounters",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "battlepay-transactions",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "companions-and-auctions",
+          "status": "untested",
+          "checks": []
+        }
+      ],
+      "cleanup_verified": true
+    },
+    {
+      "run": "quest-reentry",
+      "gameplay_summary": {
+        "counts": {
+          "blocked": 0,
+          "failed": 0,
+          "passed": 5,
+          "untested": 7
+        },
+        "complete": false,
+        "ready": false
+      },
+      "data_summary": {
+        "counts": {
+          "blocked": 0,
+          "failed": 6,
+          "passed": 4,
+          "untested": 0
+        },
+        "complete": true,
+        "ready": false
+      },
+      "cases": [
+        {
+          "id": "quest-28766",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_acceptance_only",
+            "logout_character_reentry"
+          ],
+          "quest": 28766
+        },
+        {
+          "id": "quest-25152",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login",
+            "exact_xp_delta",
+            "exact_money_delta",
+            "quest_accepted_and_rewarded",
+            "xp_reward",
+            "logout_character_reentry"
+          ],
+          "quest": 25152
+        },
+        {
+          "id": "quest-24959",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login",
+            "exact_xp_delta",
+            "exact_money_delta",
+            "quest_accepted_and_rewarded",
+            "xp_reward",
+            "logout_character_reentry"
+          ],
+          "quest": 24959
+        },
+        {
+          "id": "quest-14078",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login",
+            "exact_xp_delta",
+            "exact_money_delta",
+            "quest_accepted_and_rewarded",
+            "xp_reward",
+            "logout_character_reentry"
+          ],
+          "quest": 14078
+        },
+        {
+          "id": "quest-30039",
+          "status": "passed",
+          "last_step": "verified",
+          "checks": [
+            "create_immediate_enum_login",
+            "quest_acceptance_only",
+            "logout_character_reentry"
+          ],
+          "quest": 30039
+        },
+        {
+          "id": "quest-kill-objectives",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "quest-collect-and-use",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "quest-escort-phase-vehicle",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "spell-mechanics",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "boss-encounters",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "battlepay-transactions",
+          "status": "untested",
+          "checks": []
+        },
+        {
+          "id": "companions-and-auctions",
+          "status": "untested",
+          "checks": []
+        }
+      ],
+      "cleanup_verified": true
+    }
+  ],
+  "content_inventory": {
+    "quest_template": 18145,
+    "creature_template": 57634,
+    "item_template": 80022
+  },
+  "quest_coverage": {
+    "total": 18145,
+    "counts": {
+      "untested": 18140,
+      "passed": 3,
+      "partial": 2
+    },
+    "report": "quest-coverage.json",
+    "spell_and_boss_coverage": "not yet enumerated or validated"
+  },
+  "audits": [
+    {
+      "id": "objective_quest",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    },
+    {
+      "id": "objective_creature",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "8149",
+          "284684",
+          "108639"
+        ],
+        [
+          "8150",
+          "284686",
+          "108644"
+        ]
+      ]
+    },
+    {
+      "id": "objective_item",
+      "status": "failed",
+      "violation_count": 9,
+      "sample": [
+        [
+          "29048",
+          "251633",
+          "68676"
+        ],
+        [
+          "28940",
+          "252842",
+          "68604"
+        ],
+        [
+          "29466",
+          "254733",
+          "71961"
+        ],
+        [
+          "29056",
+          "256401",
+          "68680"
+        ],
+        [
+          "29046",
+          "256709",
+          "68674"
+        ],
+        [
+          "10794",
+          "273866",
+          "113135"
+        ],
+        [
+          "29534",
+          "255255",
+          "72108"
+        ],
+        [
+          "29554",
+          "261256",
+          "73366"
+        ],
+        [
+          "32475",
+          "269899",
+          "93660"
+        ]
+      ]
+    },
+    {
+      "id": "objective_gameobject",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "30759",
+          "272423",
+          "223458"
+        ],
+        [
+          "30974",
+          "268034",
+          "212375"
+        ]
+      ]
+    },
+    {
+      "id": "quest_start_target",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    },
+    {
+      "id": "quest_end_target",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    },
+    {
+      "id": "waypoint_ownership",
+      "status": "failed",
+      "violation_count": 3,
+      "sample": [
+        [
+          "564238",
+          "0"
+        ],
+        [
+          "564239",
+          "0"
+        ],
+        [
+          "564240",
+          "0"
+        ]
+      ]
+    },
+    {
+      "id": "waypoint_path",
+      "status": "failed",
+      "violation_count": 2,
+      "sample": [
+        [
+          "914942",
+          "9149420"
+        ],
+        [
+          "522984",
+          "522984"
+        ]
+      ]
+    },
+    {
+      "id": "active_smartai_ownership",
+      "status": "failed",
+      "violation_count": 62,
+      "sample": [
+        [
+          "4542"
+        ],
+        [
+          "7357"
+        ],
+        [
+          "8567"
+        ],
+        [
+          "10399"
+        ],
+        [
+          "19991"
+        ],
+        [
+          "23575"
+        ],
+        [
+          "29625"
+        ],
+        [
+          "29679"
+        ],
+        [
+          "32851"
+        ],
+        [
+          "35077"
+        ],
+        [
+          "35486"
+        ],
+        [
+          "37143"
+        ],
+        [
+          "37179"
+        ],
+        [
+          "37213"
+        ],
+        [
+          "39710"
+        ],
+        [
+          "39833"
+        ],
+        [
+          "39947"
+        ],
+        [
+          "39951"
+        ],
+        [
+          "40223"
+        ],
+        [
+          "40650"
+        ]
+      ]
+    },
+    {
+      "id": "shop_item_reference",
+      "status": "passed",
+      "violation_count": 0,
+      "sample": []
+    }
+  ],
+  "all_content_validated": false,
+  "network_reauthentication_failure_resolved": false,
+  "final_smoke": {
+    "passed": 1,
+    "total": 1,
+    "cleanup_verified": true
+  },
+  "final_suite_scenarios": 23,
+  "harness_sha256": {
+    "qa_compare.py": "7c67e158ae68ba3614dc7f989bc493fca1aeb9d1ba395e4dae4d6e4090320365",
+    "qa_inventory.py": "3c474c069b2e54cfc5deae6c95d64683c6901472a6e41fb29421c046ec288352",
+    "qa_report.py": "b21ecbf8ac63d854945d8ef1576c1bd5d0f090f1dd7d26b59ff371c420598421",
+    "qa_run.py": "bf1e1950b79b00a8c0c055755d56e11bb46665c03d6d3505618a646d795f0247",
+    "qa_spec.py": "8facc39ccec9405bb1a9e3e52e1eb26a36b52cffd7ad58dabb84cb735ec99117",
+    "starter_campaign.py": "a78126457e29349d1c09543391955341c54b8b07f4688d1d637e17e5fdb582f9"
+  },
+  "suite_sha256": "eda80f2ee5919b143fad49e0060c306ba6b398a89308815eb986c91ba61e0003"
+}

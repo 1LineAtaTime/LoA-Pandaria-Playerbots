@@ -1,0 +1,289 @@
+id,name,comparison,behavior
+0,Eastern Kingdoms,client_asset_present,not_evaluated
+1,Kalimdor,client_asset_present,not_evaluated
+13,Testing,client_asset_present,not_evaluated
+25,Scott Test,client_asset_present,not_evaluated
+30,Alterac Valley,client_asset_present,not_evaluated
+33,Shadowfang Keep,client_asset_present,not_evaluated
+34,Stormwind Stockade,client_asset_present,not_evaluated
+35,<unused>StormwindPrison,client_asset_present,not_evaluated
+36,Deadmines,client_asset_present,not_evaluated
+37,Azshara Crater,client_asset_present,not_evaluated
+42,Collin's Test,client_asset_present,not_evaluated
+43,Wailing Caverns,client_asset_present,not_evaluated
+44,<unused> Monastery,client_asset_present,not_evaluated
+47,Razorfen Kraul,client_asset_present,not_evaluated
+48,Blackfathom Deeps,client_asset_present,not_evaluated
+70,Uldaman,client_asset_present,not_evaluated
+90,Gnomeregan,client_asset_present,not_evaluated
+109,Sunken Temple,client_asset_present,not_evaluated
+129,Razorfen Downs,client_asset_present,not_evaluated
+169,Emerald Dream,client_asset_present,not_evaluated
+189,Scarlet Monastery of Old,client_asset_present,not_evaluated
+209,Zul'Farrak,client_asset_present,not_evaluated
+229,Blackrock Spire,client_asset_present,not_evaluated
+230,Blackrock Depths,client_asset_present,not_evaluated
+249,Onyxia's Lair,client_asset_present,not_evaluated
+269,Opening of the Dark Portal,client_asset_present,not_evaluated
+289,Scholomance OLD,client_asset_present,not_evaluated
+309,Ancient Zul'Gurub,client_asset_present,not_evaluated
+329,Stratholme,client_asset_present,not_evaluated
+349,Maraudon,client_asset_present,not_evaluated
+369,Deeprun Tram,client_asset_present,not_evaluated
+389,Ragefire Chasm,client_asset_present,not_evaluated
+409,Molten Core,client_asset_present,not_evaluated
+429,Dire Maul,client_asset_present,not_evaluated
+449,Alliance PVP Barracks,client_asset_present,not_evaluated
+450,Horde PVP Barracks,client_asset_present,not_evaluated
+451,Development Land,client_asset_present,not_evaluated
+469,Blackwing Lair,client_asset_present,not_evaluated
+489,Warsong Gulch,client_asset_present,not_evaluated
+509,Ruins of Ahn'Qiraj,client_asset_present,not_evaluated
+529,Arathi Basin,client_asset_present,not_evaluated
+530,Outland,client_asset_present,not_evaluated
+531,Ahn'Qiraj Temple,client_asset_present,not_evaluated
+532,Karazhan,client_asset_present,not_evaluated
+533,Naxxramas,client_asset_present,not_evaluated
+534,The Battle for Mount Hyjal,client_asset_present,not_evaluated
+540,Hellfire Citadel: The Shattered Halls,client_asset_present,not_evaluated
+542,Hellfire Citadel: The Blood Furnace,client_asset_present,not_evaluated
+543,Hellfire Citadel: Ramparts,client_asset_present,not_evaluated
+544,Magtheridon's Lair,client_asset_present,not_evaluated
+545,Coilfang: The Steamvault,client_asset_present,not_evaluated
+546,Coilfang: The Underbog,client_asset_present,not_evaluated
+547,Coilfang: The Slave Pens,client_asset_present,not_evaluated
+548,Coilfang: Serpentshrine Cavern,client_asset_present,not_evaluated
+550,Tempest Keep,client_asset_present,not_evaluated
+552,Tempest Keep: The Arcatraz,client_asset_present,not_evaluated
+553,Tempest Keep: The Botanica,client_asset_present,not_evaluated
+554,Tempest Keep: The Mechanar,client_asset_present,not_evaluated
+555,Auchindoun: Shadow Labyrinth,client_asset_present,not_evaluated
+556,Auchindoun: Sethekk Halls,client_asset_present,not_evaluated
+557,Auchindoun: Mana-Tombs,client_asset_present,not_evaluated
+558,Auchindoun: Auchenai Crypts,client_asset_present,not_evaluated
+559,Nagrand Arena,client_asset_present,not_evaluated
+560,The Escape From Durnholde,client_asset_present,not_evaluated
+562,Blade's Edge Arena,client_asset_present,not_evaluated
+564,Black Temple,client_asset_present,not_evaluated
+565,Gruul's Lair,client_asset_present,not_evaluated
+566,Eye of the Storm,client_asset_present,not_evaluated
+568,Zul'Aman,client_asset_present,not_evaluated
+571,Northrend,client_asset_present,not_evaluated
+572,Ruins of Lordaeron,client_asset_present,not_evaluated
+573,ExteriorTest,client_asset_present,not_evaluated
+574,Utgarde Keep,client_asset_present,not_evaluated
+575,Utgarde Pinnacle,client_asset_present,not_evaluated
+576,The Nexus,client_asset_present,not_evaluated
+578,The Oculus,client_asset_present,not_evaluated
+580,The Sunwell,client_asset_present,not_evaluated
+582,Transport: Rut'theran to Auberdine,client_asset_present,not_evaluated
+584,Transport: Menethil to Theramore,client_asset_present,not_evaluated
+585,Magister's Terrace,client_asset_present,not_evaluated
+586,Transport: Exodar to Auberdine,client_asset_present,not_evaluated
+587,Transport: Feathermoon Ferry,client_asset_present,not_evaluated
+588,Transport: Menethil to Auberdine,client_asset_present,not_evaluated
+589,Transport: Orgrimmar to Grom'Gol,client_asset_present,not_evaluated
+590,Transport: Grom'Gol to Undercity,client_asset_present,not_evaluated
+591,Transport: Undercity to Orgrimmar,client_asset_present,not_evaluated
+592,Transport: Borean Tundra Test,client_asset_present,not_evaluated
+593,Transport: Booty Bay to Ratchet,client_asset_present,not_evaluated
+594,Transport: Howling Fjord Sister Mercy (Quest),client_asset_present,not_evaluated
+595,The Culling of Stratholme,client_asset_present,not_evaluated
+596,Transport: Naglfar,client_asset_present,not_evaluated
+597,Craig Test,client_asset_present,not_evaluated
+598,Sunwell Fix (Unused),client_asset_present,not_evaluated
+599,Halls of Stone,client_asset_present,not_evaluated
+600,Drak'Tharon Keep,client_asset_present,not_evaluated
+601,Azjol-Nerub,client_asset_present,not_evaluated
+602,Halls of Lightning,client_asset_present,not_evaluated
+603,Ulduar,client_asset_present,not_evaluated
+604,Gundrak,client_asset_present,not_evaluated
+605,Development Land (non-weighted textures),client_asset_present,not_evaluated
+606,QA and DVD,client_asset_present,not_evaluated
+607,Strand of the Ancients,client_asset_present,not_evaluated
+608,Violet Hold,client_asset_present,not_evaluated
+609,Ebon Hold,client_asset_present,not_evaluated
+610,Transport: Tirisfal to Vengeance Landing,client_asset_present,not_evaluated
+612,Transport: Menethil to Valgarde,client_asset_present,not_evaluated
+613,Transport: Orgrimmar to Warsong Hold,client_asset_present,not_evaluated
+614,Transport: Stormwind to Valiance Keep,client_asset_present,not_evaluated
+615,The Obsidian Sanctum,client_asset_present,not_evaluated
+616,The Eye of Eternity,client_asset_present,not_evaluated
+617,Dalaran Sewers,client_asset_present,not_evaluated
+618,The Ring of Valor,client_asset_present,not_evaluated
+619,Ahn'kahet: The Old Kingdom,client_asset_present,not_evaluated
+620,Transport: Moa'ki to Unu'pe,client_asset_present,not_evaluated
+621,Transport: Moa'ki to Kamagua,client_asset_present,not_evaluated
+622,Transport: Orgrim's Hammer,client_asset_present,not_evaluated
+623,Transport: The Skybreaker,client_asset_present,not_evaluated
+624,Vault of Archavon,client_asset_present,not_evaluated
+627,unused,client_asset_present,not_evaluated
+628,Isle of Conquest,client_asset_present,not_evaluated
+631,Icecrown Citadel,client_asset_present,not_evaluated
+632,The Forge of Souls,client_asset_present,not_evaluated
+637,Abyssal Maw Exterior,client_asset_present,not_evaluated
+638,Gilneas,client_asset_present,not_evaluated
+641,Transport: Alliance Airship BG,client_asset_present,not_evaluated
+642,Transport: HordeAirshipBG,client_asset_present,not_evaluated
+643,Throne of the Tides,client_asset_present,not_evaluated
+644,Halls of Origination,client_asset_present,not_evaluated
+645,Blackrock Caverns,client_asset_present,not_evaluated
+646,Deepholm,client_asset_present,not_evaluated
+647,Transport: Orgrimmar to Thunder Bluff,client_asset_present,not_evaluated
+648,LostIsles,client_asset_present,not_evaluated
+649,Trial of the Crusader,client_asset_present,not_evaluated
+650,Trial of the Champion,client_asset_present,not_evaluated
+651,ElevatorSpawnTest,client_asset_present,not_evaluated
+654,Gilneas2,client_asset_present,not_evaluated
+655,GilneasPhase1,client_asset_present,not_evaluated
+656,GilneasPhase2,client_asset_present,not_evaluated
+657,The Vortex Pinnacle,client_asset_present,not_evaluated
+658,Pit of Saron,client_asset_present,not_evaluated
+659,Lost Isles Volcano Eruption,client_asset_present,not_evaluated
+660,Deephome Ceiling,client_asset_present,not_evaluated
+661,Lost Isles Town in a Box,client_asset_present,not_evaluated
+662,Transport: Alliance Vashj'ir Ship,client_asset_present,not_evaluated
+668,Halls of Reflection,client_asset_present,not_evaluated
+669,Blackwing Descent,client_asset_present,not_evaluated
+670,Grim Batol,client_asset_present,not_evaluated
+671,The Bastion of Twilight,client_asset_present,not_evaluated
+672,Transport: The Skybreaker (Icecrown Citadel Raid),client_asset_present,not_evaluated
+673,Transport: Orgrim's Hammer (Icecrown Citadel Raid),client_asset_present,not_evaluated
+674,Transport: Ship to Vashj'ir,client_asset_present,not_evaluated
+712,Transport: The Skybreaker (IC Dungeon),client_asset_present,not_evaluated
+713,Transport: Orgrim's Hammer (IC Dungeon),client_asset_present,not_evaluated
+718,Trasnport: The Mighty Wind (Icecrown Citadel Raid),client_asset_present,not_evaluated
+719,Mount Hyjal Phase 1,client_asset_present,not_evaluated
+720,Firelands,client_asset_present,not_evaluated
+721,Firelands Terrain 2,client_asset_present,not_evaluated
+723,Stormwind,client_asset_present,not_evaluated
+724,The Ruby Sanctum,client_asset_present,not_evaluated
+725,The Stonecore,client_asset_present,not_evaluated
+726,Twin Peaks,client_asset_present,not_evaluated
+727,Silvershard Mines,client_asset_present,not_evaluated
+728,The Battle for Gilneas (Old City Map),client_asset_present,not_evaluated
+730,Maelstrom Zone,client_asset_present,not_evaluated
+731,Stonetalon Bomb,client_asset_present,not_evaluated
+732,Tol Barad,client_asset_present,not_evaluated
+734,Ahn'Qiraj Terrace,client_asset_present,not_evaluated
+736,Twilight Highlands Dragonmaw Phase,client_asset_present,not_evaluated
+738,Ship to Vashj'ir (Orgrimmar -> Vashj'ir),client_asset_present,not_evaluated
+739,Vashj'ir Sub - Horde,client_asset_present,not_evaluated
+740,Vashj'ir Sub - Alliance,client_asset_present,not_evaluated
+741,Twilight Highlands Horde Transport,client_asset_present,not_evaluated
+742,Vashj'ir Sub - Horde - Circling Abyssal Maw,client_asset_present,not_evaluated
+743,Vashj'ir Sub - Alliance circling Abyssal Maw,client_asset_present,not_evaluated
+746,Uldum Phase Oasis,client_asset_present,not_evaluated
+747,Transport: Deepholm Gunship,client_asset_present,not_evaluated
+748,Transport: Onyxia/Nefarian Elevator,client_asset_present,not_evaluated
+749,Transport: Gilneas Moving Gunship,client_asset_present,not_evaluated
+750,Transport: Gilneas Static Gunship,client_asset_present,not_evaluated
+751,Redridge - Orc Bomb,client_asset_present,not_evaluated
+752,Redridge - Bridge Phase One,client_asset_present,not_evaluated
+753,Redridge - Bridge Phase Two,client_asset_present,not_evaluated
+754,Throne of the Four Winds,client_asset_present,not_evaluated
+755,Lost City of the Tol'vir,client_asset_present,not_evaluated
+757,Baradin Hold,client_asset_present,not_evaluated
+759,Uldum Phased Entrance,client_asset_present,not_evaluated
+760,Twilight Highlands Phased Entrance,client_asset_present,not_evaluated
+761,The Battle for Gilneas,client_asset_present,not_evaluated
+762,Twilight Highlands Zeppelin 1,client_asset_present,not_evaluated
+763,Twilight Highlands Zeppelin 2,client_asset_present,not_evaluated
+764,Uldum - Phase Wrecked Camp,client_asset_present,not_evaluated
+765,Krazzworks Attack Zeppelin,client_asset_present,not_evaluated
+766,Transport: Gilneas Moving Gunship 02,client_asset_present,not_evaluated
+767,Transport: Gilneas Moving Gunship 03,client_asset_present,not_evaluated
+859,Zul'Gurub,client_asset_present,not_evaluated
+860,The Wandering Isle,client_asset_present,not_evaluated
+861,Molten Front,client_asset_present,not_evaluated
+870,Pandaria,client_asset_present,not_evaluated
+930,(UNUSED) Scenario: Alcaz Island,client_asset_present,not_evaluated
+938,End Time,client_asset_present,not_evaluated
+939,Well of Eternity,client_asset_present,not_evaluated
+940,Hour of Twilight,client_asset_present,not_evaluated
+951,Nexus Legendary,client_asset_present,not_evaluated
+959,Shado-Pan Monastery,client_asset_present,not_evaluated
+960,Temple of the Jade Serpent,client_asset_present,not_evaluated
+961,Stormstout Brewery,client_asset_present,not_evaluated
+962,Gate of the Setting Sun,client_asset_present,not_evaluated
+967,Dragon Soul,client_asset_present,not_evaluated
+968,Rated Eye of the Storm,client_asset_present,not_evaluated
+971,Jade Forest Alliance Hub Phase,client_asset_present,not_evaluated
+972,Jade Forest Battlefield Phase,client_asset_present,not_evaluated
+974,Darkmoon Faire,client_asset_present,not_evaluated
+975,Turtle Ship Phase 01,client_asset_present,not_evaluated
+976,Turtle Ship Phase 02,client_asset_present,not_evaluated
+977,Maelstrom Deathwing Fight,client_asset_present,not_evaluated
+980,Tol'Viron Arena,client_asset_present,not_evaluated
+994,Mogu'shan Palace,client_asset_present,not_evaluated
+995,The Depths [UNUSED],client_asset_present,not_evaluated
+996,Terrace of Endless Spring,client_asset_present,not_evaluated
+998,Temple of Kotmogu,client_asset_present,not_evaluated
+999,Theramore's Fall (H),client_asset_present,not_evaluated
+1000,Theramore's Fall (A),client_asset_present,not_evaluated
+1001,Scarlet Halls,client_asset_present,not_evaluated
+1004,Scarlet Monastery,client_asset_present,not_evaluated
+1005,A Brewing Storm,client_asset_present,not_evaluated
+1007,Scholomance,client_asset_present,not_evaluated
+1008,Mogu'shan Vaults,client_asset_present,not_evaluated
+1009,Heart of Fear,client_asset_present,not_evaluated
+1010,CTF3,client_asset_present,not_evaluated
+1011,Siege of Niuzao Temple,client_asset_present,not_evaluated
+1014,(UNUSED) Peak of Serenity Scenario,client_asset_present,not_evaluated
+1019,Ruins of Theramore,client_asset_present,not_evaluated
+1024,Greenstone Village,client_asset_present,not_evaluated
+1028,(UNUSED) Scenario: Mogu Ruins,client_asset_present,not_evaluated
+1029,(UNUSED) Scenario: Mogu Crypt,client_asset_present,not_evaluated
+1030,Crypt of Forgotten Kings,client_asset_present,not_evaluated
+1031,Arena of Annihilation,client_asset_present,not_evaluated
+1032,Pet Battle - Jade Forest,client_asset_present,not_evaluated
+1035,Temple of Kotmogu,client_asset_present,not_evaluated
+1043,Brawl'gar Arena,client_asset_present,not_evaluated
+1048,Unga Ingoo,client_asset_present,not_evaluated
+1049,(UNUSED) Scenario: Black Ox Temple,client_asset_present,not_evaluated
+1050,Assault on Zan'vess,client_asset_present,not_evaluated
+1051,Brewmoon Festival,client_asset_present,not_evaluated
+1060,Level Design Land - Dev Only,client_asset_present,not_evaluated
+1061,Horde Beach Daily Area,client_asset_present,not_evaluated
+1062,Alliance Beach Daily Area,client_asset_present,not_evaluated
+1064,Mogu Island Daily Area,client_asset_present,not_evaluated
+1066,Stormwind Gunship Pandaria Start Area,client_asset_present,not_evaluated
+1074,Orgrimmar Gunship Pandaria Start,client_asset_present,not_evaluated
+1075,Theramore's Fall Phase,client_asset_present,not_evaluated
+1076,Jade Forest Horde Starting Area,client_asset_present,not_evaluated
+1095,Dagger in the Dark,client_asset_present,not_evaluated
+1098,Throne of Thunder,client_asset_present,not_evaluated
+1099,Naval Battle Scenario,client_asset_present,not_evaluated
+1101,Defense Of The Ale House BG,client_asset_present,not_evaluated
+1102,Domination Point,client_asset_present,not_evaluated
+1103,Lion's Landing,client_asset_present,not_evaluated
+1104,A Little Patience,client_asset_present,not_evaluated
+1105,Deepwind Gorge,client_asset_present,not_evaluated
+1106,Jaina Dalaran Scenario,client_asset_present,not_evaluated
+1107,Warlock Area,client_asset_present,not_evaluated
+1112,Pursuing the Black Harvest,client_asset_present,not_evaluated
+1113,Transport: DarkmoonCarousel,client_asset_present,not_evaluated
+1120,Thunder King Horde Hub,client_asset_present,not_evaluated
+1121,Thunder Island Alliance Hub,client_asset_present,not_evaluated
+1122,City Siege - Mogu Island Progression Scenario,client_asset_present,not_evaluated
+1123,Lightning Forge - Mogu Island Progression Scenario,client_asset_present,not_evaluated
+1124,Shipyard - Mogu Island Progression Scenario,client_asset_present,not_evaluated
+1125,Alliance Hub - Mogu Island Progression Scenario,client_asset_present,not_evaluated
+1126,Mogu Island Progression Events,client_asset_present,not_evaluated
+1127,Final Gate - Mogu Island Progression Scenario,client_asset_present,not_evaluated
+1128,Mogu Island Events - Horde Base,client_asset_present,not_evaluated
+1129,Mogu Island Events - Alliance Base,client_asset_present,not_evaluated
+1130,Blood in the Snow,client_asset_present,not_evaluated
+1131,The Secrets of Ragefire,client_asset_present,not_evaluated
+1132,Transport: The Skybag (Brawl'gar Arena),client_asset_present,not_evaluated
+1133,Transport: Zandalari Ship (Mogu Island),client_asset_present,not_evaluated
+1134,The Tiger's Peak,client_asset_present,not_evaluated
+1135,Mogu Island Loot Room,client_asset_present,not_evaluated
+1136,Siege of Orgrimmar,client_asset_present,not_evaluated
+1144,Heart of the Old God Scenario,client_asset_present,not_evaluated
+1148,Proving Grounds,client_asset_present,not_evaluated
+1155,Stromgarde Keep,client_asset_present,not_evaluated
+1157,Halfhill Scenario,client_asset_present,not_evaluated
+1161,Celestial Tournament,client_asset_present,not_evaluated
+1172,Transport: Siege of Orgrimmar (Alliance),client_asset_present,not_evaluated
+1173,Transport: Siege of Orgrimmar (Horde),client_asset_present,not_evaluated

@@ -1,0 +1,622 @@
+id,name,comparison,behavior
+1,Northshire Abbey,client_asset_present,not_evaluated
+2,"Stormwind, Elwynn",client_asset_present,not_evaluated
+3,Programmer Isle,client_asset_present,not_evaluated
+4,"Sentinel Hill, Westfall",client_asset_present,not_evaluated
+5,"Lakeshire, Redridge",client_asset_present,not_evaluated
+6,"Ironforge, Dun Morogh",client_asset_present,not_evaluated
+7,"Menethil Harbor, Wetlands",client_asset_present,not_evaluated
+8,"Thelsamar, Loch Modan",client_asset_present,not_evaluated
+9,"Booty Bay, Stranglethorn",client_asset_present,not_evaluated
+10,"The Sepulcher, Silverpine Forest",client_asset_present,not_evaluated
+11,"Undercity, Tirisfal",client_asset_present,not_evaluated
+12,"Darkshire, Duskwood",client_asset_present,not_evaluated
+13,"Tarren Mill, Hillsbrad",client_asset_present,not_evaluated
+14,"Southshore, Hillsbrad",client_asset_present,not_evaluated
+15,Eastern Plaguelands,client_asset_present,not_evaluated
+16,"Refuge Pointe, Arathi",client_asset_present,not_evaluated
+17,"Hammerfall, Arathi",client_asset_present,not_evaluated
+18,"Booty Bay, Stranglethorn",client_asset_present,not_evaluated
+19,"Booty Bay, Stranglethorn",client_asset_present,not_evaluated
+20,"Grom'gol, Stranglethorn",client_asset_present,not_evaluated
+21,"New Kargath, Badlands",client_asset_present,not_evaluated
+22,"Thunder Bluff, Mulgore",client_asset_present,not_evaluated
+23,"Orgrimmar, Durotar",client_asset_present,not_evaluated
+24,"Generic, World Target 002",client_asset_present,not_evaluated
+25,"The Crossroads, Northern Barrens",client_asset_present,not_evaluated
+26,"Lor'danel, Darkshore",client_asset_present,not_evaluated
+27,"Rut'theran Village, Teldrassil",client_asset_present,not_evaluated
+28,"Astranaar, Ashenvale",client_asset_present,not_evaluated
+29,"Sun Rock Retreat, Stonetalon Mountains",client_asset_present,not_evaluated
+30,"Westreach Summit, Thousand Needles",client_asset_present,not_evaluated
+31,"Shadebough, Feralas",client_asset_present,not_evaluated
+32,"Theramore, Dustwallow Marsh",client_asset_present,not_evaluated
+33,"Thal'darah Overlook, Stonetalon Mountains",client_asset_present,not_evaluated
+34,"Transport, Booty Bay",client_asset_present,not_evaluated
+35,"Transport, Orgrimmar",client_asset_present,not_evaluated
+36,"Generic, World Target 001",client_asset_present,not_evaluated
+37,"Nijel's Point, Desolace",client_asset_present,not_evaluated
+38,"Shadowprey Village, Desolace",client_asset_present,not_evaluated
+39,"Gadgetzan, Tanaris",client_asset_present,not_evaluated
+40,"Gadgetzan, Tanaris",client_asset_present,not_evaluated
+41,"Feathermoon, Feralas",client_asset_present,not_evaluated
+42,"Camp Mojache, Feralas",client_asset_present,not_evaluated
+43,"Aerie Peak, The Hinterlands",client_asset_present,not_evaluated
+44,"Bilgewater Harbor, Azshara",client_asset_present,not_evaluated
+45,"Nethergarde Keep, Blasted Lands",client_asset_present,not_evaluated
+46,"Transport, Southshore",client_asset_present,not_evaluated
+47,"Transport, Grom'gol",client_asset_present,not_evaluated
+48,"Bloodvenom Post, Felwood [DISABLED in 4.x]",client_asset_present,not_evaluated
+49,Moonglade,client_asset_present,not_evaluated
+50,"Transport, Menethil Harbor",client_asset_present,not_evaluated
+51,"Transport, Auberdine",client_asset_present,not_evaluated
+52,"Everlook, Winterspring",client_asset_present,not_evaluated
+53,"Everlook, Winterspring",client_asset_present,not_evaluated
+54,"Transport, Feathermoon",client_asset_present,not_evaluated
+55,"Brackenwall Village, Dustwallow Marsh",client_asset_present,not_evaluated
+56,"Stonard, Swamp of Sorrows",client_asset_present,not_evaluated
+57,"Fishing Village, Teldrassil",client_asset_present,not_evaluated
+58,"Zoram'gar Outpost, Ashenvale",client_asset_present,not_evaluated
+59,"Dun Baldar, Alterac Valley",client_asset_present,not_evaluated
+60,"Frostwolf Keep, Alterac Valley",client_asset_present,not_evaluated
+61,"Splintertree Post, Ashenvale",client_asset_present,not_evaluated
+62,"Nighthaven, Moonglade",client_asset_present,not_evaluated
+63,"Nighthaven, Moonglade",client_asset_present,not_evaluated
+64,"Talrendis Point, Azshara (NEVER in 4.x)",client_asset_present,not_evaluated
+65,"Talonbranch Glade, Felwood",client_asset_present,not_evaluated
+66,"Chillwind Camp, Western Plaguelands",client_asset_present,not_evaluated
+67,"Light's Hope Chapel, Eastern Plaguelands",client_asset_present,not_evaluated
+68,"Light's Hope Chapel, Eastern Plaguelands",client_asset_present,not_evaluated
+69,Moonglade,client_asset_present,not_evaluated
+70,"Flame Crest, Burning Steppes",client_asset_present,not_evaluated
+71,"Morgan's Vigil, Burning Steppes",client_asset_present,not_evaluated
+72,"Cenarion Hold, Silithus",client_asset_present,not_evaluated
+73,"Cenarion Hold, Silithus",client_asset_present,not_evaluated
+74,"Thorium Point, Searing Gorge",client_asset_present,not_evaluated
+75,"Thorium Point, Searing Gorge",client_asset_present,not_evaluated
+76,"Revantusk Village, The Hinterlands",client_asset_present,not_evaluated
+77,"Vendetta Point, Southern Barrens",client_asset_present,not_evaluated
+78,Naxxramas,client_asset_present,not_evaluated
+79,"Marshal's Stand, Un'Goro Crater",client_asset_present,not_evaluated
+80,"Ratchet, Northern Barrens",client_asset_present,not_evaluated
+81,Filming,client_asset_present,not_evaluated
+82,Silvermoon City,client_asset_present,not_evaluated
+83,"Tranquillien, Ghostlands",client_asset_present,not_evaluated
+84,"Plaguewood Tower, Eastern Plaguelands",client_asset_present,not_evaluated
+85,"Northpass Tower, Eastern Plaguelands",client_asset_present,not_evaluated
+86,"Eastwall Tower, Eastern Plaguelands",client_asset_present,not_evaluated
+87,"Crown Guard Tower, Eastern Plaguelands",client_asset_present,not_evaluated
+88,"Transport, Exodar",client_asset_present,not_evaluated
+89,"Transport, Theramore",client_asset_present,not_evaluated
+90,"Transport, Undercity",client_asset_present,not_evaluated
+91,Quest - Azuremyst Shaman Target,client_asset_present,not_evaluated
+92,Quest - Azuremyst Shaman Start,client_asset_present,not_evaluated
+93,"Blood Watch, Bloodmyst Isle",client_asset_present,not_evaluated
+94,The Exodar,client_asset_present,not_evaluated
+95,Zangarmarsh - Quest - As the Crow Flies,client_asset_present,not_evaluated
+96,Zangarmarsh - Quest - As the Crow Flies - End,client_asset_present,not_evaluated
+97,Quest - Elekk Path to Kessel,client_asset_present,not_evaluated
+98,Quest - Elekk to Kessel Target,client_asset_present,not_evaluated
+99,"Thrallmar, Hellfire Peninsula",client_asset_present,not_evaluated
+100,"Honor Hold, Hellfire Peninsula",client_asset_present,not_evaluated
+101,"Temple of Telhamat, Hellfire Peninsula",client_asset_present,not_evaluated
+102,"Falcon Watch, Hellfire Peninsula",client_asset_present,not_evaluated
+103,Nagrand - PvP - Attack Run Start 1 ,client_asset_present,not_evaluated
+104,Nagrand - PvP - Attack Run End 1,client_asset_present,not_evaluated
+105,Nagrand - PvP - Attack Run Start 2,client_asset_present,not_evaluated
+106,Nagrand - PvP - Attack Run End 2,client_asset_present,not_evaluated
+107,Nagrand - PvP - Attack Run Start 3,client_asset_present,not_evaluated
+108,Nagrand - PvP - Attack Run End 3,client_asset_present,not_evaluated
+109,Nagrand - PvP - Attack Run Start 4,client_asset_present,not_evaluated
+110,Nagrand - PvP - Attack Run End 4,client_asset_present,not_evaluated
+111,Eversong - Duskwither Teleport,client_asset_present,not_evaluated
+112,Eversong - Duskwither Teleport End,client_asset_present,not_evaluated
+113,Quest - Nethrandamus Start,client_asset_present,not_evaluated
+114,Quest - Nethrandamus End Target,client_asset_present,not_evaluated
+115,Quest - Caverns of Time OH - Begin,client_asset_present,not_evaluated
+116,Quest - Caverns of Time OH - End,client_asset_present,not_evaluated
+117,"Telredor, Zangarmarsh",client_asset_present,not_evaluated
+118,"Zabra'jin, Zangarmarsh",client_asset_present,not_evaluated
+119,"Telaar, Nagrand",client_asset_present,not_evaluated
+120,"Garadar, Nagrand",client_asset_present,not_evaluated
+121,"Allerian Stronghold, Terokkar Forest",client_asset_present,not_evaluated
+122,"Area 52, Netherstorm",client_asset_present,not_evaluated
+123,"Shadowmoon Village, Shadowmoon Valley",client_asset_present,not_evaluated
+124,"Wildhammer Stronghold, Shadowmoon Valley",client_asset_present,not_evaluated
+125,"Sylvanaar, Blade's Edge Mountains",client_asset_present,not_evaluated
+126,"Thunderlord Stronghold, Blade's Edge Mountains",client_asset_present,not_evaluated
+127,"Stonebreaker Hold, Terokkar Forest",client_asset_present,not_evaluated
+128,"Shattrath, Terokkar Forest",client_asset_present,not_evaluated
+129,"Hellfire Peninsula, The Dark Portal",client_asset_present,not_evaluated
+130,"Hellfire Peninsula, The Dark Portal",client_asset_present,not_evaluated
+131,Quest - Horde Hellfire Start,client_asset_present,not_evaluated
+132,Quest - Horde Hellfire End,client_asset_present,not_evaluated
+133,Quest - Hellfire Peninsula (Alliance Path) Start,client_asset_present,not_evaluated
+134,Quest - Hellfire Peninsula (Alliance) End,client_asset_present,not_evaluated
+135,"Quest - Hellfire, Aerial Mission (Horde) Start",client_asset_present,not_evaluated
+136,"Quest - Hellfire, Aerial Mission (Horde) End",client_asset_present,not_evaluated
+137,"Quest - Hellfire, Aerial Mission (Alliance) Start",client_asset_present,not_evaluated
+138,"Quest - Hellfire, Aerial Mission (Alliance) End",client_asset_present,not_evaluated
+139,"The Stormspire, Netherstorm",client_asset_present,not_evaluated
+140,"Altar of Sha'tar, Shadowmoon Valley",client_asset_present,not_evaluated
+141,"Spinebreaker Ridge, Hellfire Peninsula",client_asset_present,not_evaluated
+142,Hellfire Peninsula - Reaver's Fall,client_asset_present,not_evaluated
+143,Quest - Caverns of Time (Intro Flight Path) (End),client_asset_present,not_evaluated
+144,Quest - Caverns of Time (Intro Flight Path) (Start),client_asset_present,not_evaluated
+145,Quest - Netherstorm - Stealth Flight - Begin,client_asset_present,not_evaluated
+146,Quest - Netherstorm - Stealth Flight - End,client_asset_present,not_evaluated
+147,Hellfire Peninsula - Force Camp Beach Head,client_asset_present,not_evaluated
+148,"Shatter Point, Hellfire Peninsula (Beach Assault)",client_asset_present,not_evaluated
+149,"Shatter Point, Hellfire Peninsula",client_asset_present,not_evaluated
+150,"Cosmowrench, Netherstorm",client_asset_present,not_evaluated
+151,"Swamprat Post, Zangarmarsh",client_asset_present,not_evaluated
+152,Quest - Netherstorm - Manaforge Ultris (Start),client_asset_present,not_evaluated
+153,Quest - Netherstorm - Manaforge Ultris (End),client_asset_present,not_evaluated
+154,Quest - Netherstorm - Manaforge Ultris (Second Pass) Start,client_asset_present,not_evaluated
+155,Quest - Netherstorm - Manaforge Ultris (Second Pass) End,client_asset_present,not_evaluated
+156,"Toshley's Station, Blade's Edge Mountains",client_asset_present,not_evaluated
+157,Quest - Blade's Edge - Vision Guide - Start,client_asset_present,not_evaluated
+158,Quest - Blade's Edge - Vision Guide - End,client_asset_present,not_evaluated
+159,"Sanctum of the Stars, Shadowmoon Valley",client_asset_present,not_evaluated
+160,"Evergrove, Blade's Edge Mountains",client_asset_present,not_evaluated
+161,Quest - Nether Dragon Ally - Start,client_asset_present,not_evaluated
+162,Quest - Nether Dragon Ally - End,client_asset_present,not_evaluated
+163,"Mok'Nathal Village, Blade's Edge Mountains",client_asset_present,not_evaluated
+164,"Orebor Harborage, Zangarmarsh",client_asset_present,not_evaluated
+165,"Transport, Northrend 2",client_asset_present,not_evaluated
+166,"Emerald Sanctuary, Felwood",client_asset_present,not_evaluated
+167,"Forest Song, Ashenvale",client_asset_present,not_evaluated
+168,Filming,client_asset_present,not_evaluated
+169,Quest - Netherwing Ledge - Mine Cart Ride - South - Start,client_asset_present,not_evaluated
+170,Quest - Netherwing Ledge - Mine Cart Ride - South - End,client_asset_present,not_evaluated
+171,Skettis,client_asset_present,not_evaluated
+172,Ogri'La,client_asset_present,not_evaluated
+173,Quest - Yarzill Flight Start,client_asset_present,not_evaluated
+174,Quest - Yarzill Flight Start End,client_asset_present,not_evaluated
+175,"Transport, Howling Fjord",client_asset_present,not_evaluated
+176,Quest - Howling Fjord Tauren Canoe (Start),client_asset_present,not_evaluated
+177,Quest - Howling Fjord Tauren Canoe (End),client_asset_present,not_evaluated
+178,"Transport, Borean Tundra",client_asset_present,not_evaluated
+179,"Mudsprocket, Dustwallow Marsh",client_asset_present,not_evaluated
+180,Quest - Dustwallow - Alcaz Survey Start,client_asset_present,not_evaluated
+181,Quest - Dustwallow - Alcaz Survey End,client_asset_present,not_evaluated
+182,Quest - Howling Fjord - Break the Blockade Zeppelin,client_asset_present,not_evaluated
+183,"Valgarde Port, Howling Fjord",client_asset_present,not_evaluated
+184,"Fort Wildervar, Howling Fjord",client_asset_present,not_evaluated
+185,"Westguard Keep, Howling Fjord",client_asset_present,not_evaluated
+186,Quest - Howling Fjord - Flight to the Windrunner - Start,client_asset_present,not_evaluated
+187,Quest - Howling Fjord - Flight to the Windrunner - End,client_asset_present,not_evaluated
+188,Quest - Howling Fjord - Test at Sea - Start,client_asset_present,not_evaluated
+189,Quest - Howling Fjord - Test at Sea - End,client_asset_present,not_evaluated
+190,"New Agamand, Howling Fjord",client_asset_present,not_evaluated
+191,"Vengeance Landing, Howling Fjord",client_asset_present,not_evaluated
+192,"Camp Winterhoof, Howling Fjord",client_asset_present,not_evaluated
+193,Quest - Howling Fjord - Mission: Plague This! - End,client_asset_present,not_evaluated
+194,Quest - Howling Fjord - Mission: Plague This! - Start,client_asset_present,not_evaluated
+195,"Rebel Camp, Stranglethorn Vale",client_asset_present,not_evaluated
+196,Test - SP,client_asset_present,not_evaluated
+197,Test SP2,client_asset_present,not_evaluated
+198,Test SP1,client_asset_present,not_evaluated
+199,Quest - Howling Fjord - McGoyver Start,client_asset_present,not_evaluated
+200,Quest - Howling Fjord - McGoyver End,client_asset_present,not_evaluated
+201,Development Land - Kyle Radue Start,client_asset_present,not_evaluated
+202,Development Land - Kyle Radue End,client_asset_present,not_evaluated
+203,Quest - Stars' Rest -> Wintergarde,client_asset_present,not_evaluated
+204,Quest - New Agamand -> Venomspite,client_asset_present,not_evaluated
+205,"Zul'Aman, Ghostlands",client_asset_present,not_evaluated
+206,"Transport, Feathermoon (NE Ship)",client_asset_present,not_evaluated
+207,Quest - Howling Fjord - Sister Mercy (Start),client_asset_present,not_evaluated
+208,Quest - Howling Fjord - Sister Mercy (End),client_asset_present,not_evaluated
+209,Quest - Sunwell Daily - Dead Scar Bombing - Start,client_asset_present,not_evaluated
+210,Quest - Sunwell Daily - Dead Scar Bombing - End,client_asset_present,not_evaluated
+211,Quest - Sunwell Daily - Ship Bombing - Start,client_asset_present,not_evaluated
+212,Quest - Sunwell Daily - Ship Bombing - End,client_asset_present,not_evaluated
+213,Shattered Sun Staging Area,client_asset_present,not_evaluated
+214,Quest - Howling Fjord - Naglfar (Start),client_asset_present,not_evaluated
+215,Quest - Howling Fjord - Naglfar (Nodes),client_asset_present,not_evaluated
+218,"Transport, Howling Fjord (Gondola, Top)",client_asset_present,not_evaluated
+219,"Transport, Howling Fjord (Gondola, Bottom)",client_asset_present,not_evaluated
+221,"Amber Ledge, Borean (To Beryl)",client_asset_present,not_evaluated
+222,"Beryl Point, Borean",client_asset_present,not_evaluated
+223,Quest - Naglevar,client_asset_present,not_evaluated
+224,"Borean Tundra, Naglevar",client_asset_present,not_evaluated
+225,"Amber Ledge, Borean (to Coldarra)",client_asset_present,not_evaluated
+226,"Transitus Shield, Coldarra",client_asset_present,not_evaluated
+227,"Transport, PattyMacDevTest",client_asset_present,not_evaluated
+228,Development Land - Pat Test Start,client_asset_present,not_evaluated
+229,Development Land - Pat Test End,client_asset_present,not_evaluated
+230,"Transport, Tuskarr 01",client_asset_present,not_evaluated
+231,"Transport, Tuskarr 02",client_asset_present,not_evaluated
+232,Borean Tundra - Warsong Hold Wolf Start,client_asset_present,not_evaluated
+233,Borean Tundra - Warsong Hold Wolf End,client_asset_present,not_evaluated
+234,"Coldarra Ledge, Coldarra",client_asset_present,not_evaluated
+235,"Transitus Shield, Coldarra (NOT USED)",client_asset_present,not_evaluated
+236,"Coldarra, Keristrasza to Malygos",client_asset_present,not_evaluated
+237,"Coldarra, Keristrasza Landing",client_asset_present,not_evaluated
+239,Borean Tundra - Quest - Dusk Start,client_asset_present,not_evaluated
+240,Borean Tundra - Quest - Dusk - End,client_asset_present,not_evaluated
+241,"Transport, Valiance Keep",client_asset_present,not_evaluated
+242,Quest - Dragonblight - Spiritual Vision - Begin,client_asset_present,not_evaluated
+243,Quest - Dragonblight - Spiritual Vision - End,client_asset_present,not_evaluated
+244,"Wintergarde Keep, Dragonblight",client_asset_present,not_evaluated
+245,"Valiance Keep, Borean Tundra",client_asset_present,not_evaluated
+246,"Fizzcrank Airstrip, Borean Tundra",client_asset_present,not_evaluated
+247,"Stars' Rest, Dragonblight",client_asset_present,not_evaluated
+248,"Apothecary Camp, Howling Fjord",client_asset_present,not_evaluated
+249,"Camp Oneqwah, Grizzly Hills",client_asset_present,not_evaluated
+250,"Conquest Hold, Grizzly Hills",client_asset_present,not_evaluated
+251,"Fordragon Hold, Dragonblight",client_asset_present,not_evaluated
+252,"Wyrmrest Temple, Dragonblight",client_asset_present,not_evaluated
+253,"Amberpine Lodge, Grizzly Hills",client_asset_present,not_evaluated
+254,"Venomspite, Dragonblight",client_asset_present,not_evaluated
+255,"Westfall Brigade, Grizzly Hills",client_asset_present,not_evaluated
+256,"Agmar's Hammer, Dragonblight",client_asset_present,not_evaluated
+257,"Warsong Hold, Borean Tundra",client_asset_present,not_evaluated
+258,"Taunka'le Village, Borean Tundra",client_asset_present,not_evaluated
+259,"Bor'gorok Outpost, Borean Tundra",client_asset_present,not_evaluated
+260,"Kor'kron Vanguard, Dragonblight",client_asset_present,not_evaluated
+261,Quest - Stars' Rest to Wintergarde End,client_asset_present,not_evaluated
+262,"Grizzly Hills, Alliance Log Ride Start 01",client_asset_present,not_evaluated
+263,"Grizzly Hills, Alliance Log Ride End 01",client_asset_present,not_evaluated
+264,"Transport, Auberdine (NEW)",client_asset_present,not_evaluated
+265,"Transport, Theramore (NEW)",client_asset_present,not_evaluated
+266,"Transport, Menethil (NEW)",client_asset_present,not_evaluated
+267,"Grizzly Hills, Alliance Log Ride Start",client_asset_present,not_evaluated
+268,"Grizzly Hills, Alliance Log Ride End",client_asset_present,not_evaluated
+269,Quest - Westguard Keep to Wintergarde Keep Begin,client_asset_present,not_evaluated
+270,Quest - Westguard Keep to Wintergarde Keep End,client_asset_present,not_evaluated
+271,"Grizzly Hills, Horde Log Ride Start",client_asset_present,not_evaluated
+272,"Grizzly Hills, Horde Log Ride End",client_asset_present,not_evaluated
+273,"Wyrmrest Temple - bottom to top, Dragonblight - Begin",client_asset_present,not_evaluated
+274,"Wyrmrest Temple - bottom to top, Dragonblight - End",client_asset_present,not_evaluated
+275,"Wyrmrest Temple - top to bottom, Dragonblight - Begin",client_asset_present,not_evaluated
+276,"Wyrmrest Temple - top to bottom, Dragonblight - End",client_asset_present,not_evaluated
+277,"Wyrmrest Temple - top to middle, Dragonblight - Begin",client_asset_present,not_evaluated
+278,"Wyrmrest Temple - top to middle, Dragonblight - End",client_asset_present,not_evaluated
+279,"Wyrmrest Temple - middle to top, Dragonblight - End",client_asset_present,not_evaluated
+280,"Wyrmrest Temple - middle to top, Dragonblight - Begin",client_asset_present,not_evaluated
+281,"Wyrmrest Temple - middle to bottom, Dragonblight - End",client_asset_present,not_evaluated
+282,"Wyrmrest Temple - middle to bottom, Dragonblight - Begin",client_asset_present,not_evaluated
+283,"Wyrmrest Temple - bottom to middle, Dragonblight - End",client_asset_present,not_evaluated
+284,"Wyrmrest Temple - bottom to middle, Dragonblight - Begin",client_asset_present,not_evaluated
+285,Quest - Wintergarde -> Stars' Rest (Start),client_asset_present,not_evaluated
+286,Quest - Wintergarde -> Stars' Rest (End),client_asset_present,not_evaluated
+287,Quest - Valgarde -> Westguard Keep Start,client_asset_present,not_evaluated
+288,Quest - Valgarde -> Westguard Keep End,client_asset_present,not_evaluated
+289,"Amber Ledge, Borean Tundra",client_asset_present,not_evaluated
+290,"Argent Stand, Zul'Drak",client_asset_present,not_evaluated
+291,"Ruined City Post 01, Zul'Drak",client_asset_present,not_evaluated
+292,Flavor - Stormwind Harbor  - Start,client_asset_present,not_evaluated
+293,Flavor - Stormwind Harbor - Stop,client_asset_present,not_evaluated
+294,"Moa'ki, Dragonblight",client_asset_present,not_evaluated
+295,"Kamagua, Howling Fjord",client_asset_present,not_evaluated
+296,"Unu'pe, Borean Tundra",client_asset_present,not_evaluated
+297,Sholazar Basin - Quest - Reconnaisance - Start,client_asset_present,not_evaluated
+298,Sholazar Basin - Quest - Reconnaisance - End,client_asset_present,not_evaluated
+299,Transport: Menethil <-> Valgarde,client_asset_present,not_evaluated
+300,"Transport, Stormwind",client_asset_present,not_evaluated
+301,Quest - Borean Tundra - Check In With Bixie - Begin,client_asset_present,not_evaluated
+302,Quest - Borean Tundra - Check In With Bixie - End,client_asset_present,not_evaluated
+303,"Valiance Landing Camp, Wintergrasp",client_asset_present,not_evaluated
+304,"The Argent Stand, Zul'Drak",client_asset_present,not_evaluated
+305,"Ebon Watch, Zul'Drak",client_asset_present,not_evaluated
+306,"Light's Breach, Zul'Drak",client_asset_present,not_evaluated
+307,"Zim'Torga, Zul'Drak",client_asset_present,not_evaluated
+308,"River's Heart, Sholazar Basin",client_asset_present,not_evaluated
+309,"Nesingwary Base Camp, Sholazar Basin",client_asset_present,not_evaluated
+310,Dalaran,client_asset_present,not_evaluated
+311,"Camp Onequah, Grizzly Hills (Quest)",client_asset_present,not_evaluated
+312,"Light's Breach, Zul'Drak (Quest)",client_asset_present,not_evaluated
+313,"Westfall Brigade, Grizzly Hills (Quest)",client_asset_present,not_evaluated
+314,"Zim'Torga, Zul'Drak (Quest)",client_asset_present,not_evaluated
+315,Acherus: The Ebon Hold,client_asset_present,not_evaluated
+316,Ebon Hold - Acherus -> Death's Breach Start,client_asset_present,not_evaluated
+317,Ebon Hold - Acherus -> Death's Breach End,client_asset_present,not_evaluated
+318,Ebon Hold - Death's Breach -> Acherus Start,client_asset_present,not_evaluated
+319,Ebon Hold - Death's Breach -> Acherus End,client_asset_present,not_evaluated
+320,"K3, The Storm Peaks",client_asset_present,not_evaluated
+321,"Frosthold, The Storm Peaks",client_asset_present,not_evaluated
+322,"Dun Niffelem, The Storm Peaks",client_asset_present,not_evaluated
+323,"Grom'arsh Crash-Site, The Storm Peaks",client_asset_present,not_evaluated
+324,"Camp Tunka'lo, The Storm Peaks",client_asset_present,not_evaluated
+325,"Death's Rise, Icecrown",client_asset_present,not_evaluated
+326,"Ulduar, The Storm Peaks",client_asset_present,not_evaluated
+327,"Bouldercrag's Refuge, The Storm Peaks",client_asset_present,not_evaluated
+328,"Transport, Icecrown Airship (A)",client_asset_present,not_evaluated
+329,"Transport, Icecrown Airship (H)",client_asset_present,not_evaluated
+330,"Transport, Icecrown (Target)",client_asset_present,not_evaluated
+331,"Gundrak, Zul'Drak",client_asset_present,not_evaluated
+332,"Warsong Camp, Wintergrasp",client_asset_present,not_evaluated
+333,"The Shadow Vault, Icecrown",client_asset_present,not_evaluated
+334,"The Argent Vanguard, Icecrown",client_asset_present,not_evaluated
+335,"Crusaders' Pinnacle, Icecrown",client_asset_present,not_evaluated
+336,"Windrunner's Overlook, Crystalsong Forest",client_asset_present,not_evaluated
+337,"Sunreaver's Command, Crystalsong Forest",client_asset_present,not_evaluated
+338,"Blackfathom Camp, Ashenvale",client_asset_present,not_evaluated
+339,"Grove of the Ancients, Darkshore",client_asset_present,not_evaluated
+340,"Argent Tournament Grounds, Icecrown",client_asset_present,not_evaluated
+341,Ulduar Raid - Interior - Insertion Point,client_asset_present,not_evaluated
+342,Ulduar Raid - Iron Concourse,client_asset_present,not_evaluated
+343,"Splintertree, Ashenvale",client_asset_present,not_evaluated
+344,Quest - Splintertree  Post -> Zoramgar,client_asset_present,not_evaluated
+345,"Quest - Zoramgar, Ashenvale",client_asset_present,not_evaluated
+346,"Ashenvale 4.x, Azshara to Mor'shan Ramparts",client_asset_present,not_evaluated
+347,"Ashenvale 4.x, Mor'shan Landing",client_asset_present,not_evaluated
+348,Transport: Thunder Bluff <-> Org (Zep),client_asset_present,not_evaluated
+349,"Andruk, Zoram'gar",client_asset_present,not_evaluated
+350,"Hellscream's Watch, Ashenvale",client_asset_present,not_evaluated
+351,"Stardust Spire, Ashenvale",client_asset_present,not_evaluated
+352,Isle of Conquest - Gunships,client_asset_present,not_evaluated
+354,"The Mor'Shan Ramparts, Ashenvale",client_asset_present,not_evaluated
+356,"Silverwind Refuge, Ashenvale",client_asset_present,not_evaluated
+358,Quest - Icecrown - North Sea Kraken Bombing - Start,client_asset_present,not_evaluated
+359,Quest - Icecrown - North Sea Kraken Bombing - End,client_asset_present,not_evaluated
+360,"Cliffwalker Post, Stonetalon Mountains",client_asset_present,not_evaluated
+361,"Windshear Hold, Stonetalon Mountains",client_asset_present,not_evaluated
+362,"Krom'gar Fortress, Stonetalon Mountains",client_asset_present,not_evaluated
+363,"Malaka'jin, Stonetalon Mountains",client_asset_present,not_evaluated
+364,"Northwatch Expedition Base Camp, Stonetalon Mountains",client_asset_present,not_evaluated
+365,"Farwatcher's Glen, Stonetalon Mountains",client_asset_present,not_evaluated
+366,"Furien's Post, Desolace",client_asset_present,not_evaluated
+367,"Thargad's Camp, Desolace",client_asset_present,not_evaluated
+368,"Karnum's Glade, Desolace",client_asset_present,not_evaluated
+369,"Thunk's Abode, Desolace",client_asset_present,not_evaluated
+370,"Ethel Rethor, Desolace",client_asset_present,not_evaluated
+371,Vashj'ir - Alliance Start,client_asset_present,not_evaluated
+372,Vashj'ir - Alliance End,client_asset_present,not_evaluated
+373,Mulgore - Red Cloud Mesa: To Bloodhoof,client_asset_present,not_evaluated
+374,Mulgore - Red Cloud Mesa: To Bloodhoof (End),client_asset_present,not_evaluated
+375,"Transport, Gadgetzan",client_asset_present,not_evaluated
+376,Icecrown Raid - Airship Battle Taxi Paths,client_asset_present,not_evaluated
+377,Icecrown Dungeon - Gunships,client_asset_present,not_evaluated
+378,Quest - Dun Morogh - Coldridge Valley - Pack Your Bags End,client_asset_present,not_evaluated
+379,Icecrown Raid - Saurfang's Ship (End),client_asset_present,not_evaluated
+380,Icecrown Raid - Saurfang's Ship (Start),client_asset_present,not_evaluated
+381,Quest [Transport] Icecrown Raid - Saurfang Ship (START),client_asset_present,not_evaluated
+382,Quest [Transport] Icecrown Raid - Saurfang Ship (END),client_asset_present,not_evaluated
+383,"Thondroril River, Eastern Plaguelands",client_asset_present,not_evaluated
+384,"The Bulwark, Tirisfal",client_asset_present,not_evaluated
+386,"Mossy Pile, Un'Goro Crater",client_asset_present,not_evaluated
+387,"Honor's Stand, Southern Barrens",client_asset_present,not_evaluated
+388,"Northwatch Hold, Southern Barrens",client_asset_present,not_evaluated
+389,"Fort Triumph, Southern Barrens",client_asset_present,not_evaluated
+390,"Hunter's Hill, Southern Barrens",client_asset_present,not_evaluated
+391,"Desolation Hold, Southern Barrens",client_asset_present,not_evaluated
+392,CC Prologue - GT - Quest - Vent Horizon - Start,client_asset_present,not_evaluated
+393,CC Prologue - GT - Quest - Vent Horizon - End,client_asset_present,not_evaluated
+394,CC Prologue - GT - Battle Flight - Start,client_asset_present,not_evaluated
+395,CC Prologue - GT - Battle Flight - End,client_asset_present,not_evaluated
+402,"Bloodhoof Village, Mulgore",client_asset_present,not_evaluated
+404,Durotar - ET - CC Prologue Spy Frog Start,client_asset_present,not_evaluated
+405,Durotar - ET - CC Prologue Spy Frog End,client_asset_present,not_evaluated
+413,"Quest - ""To The Summit"" - Westreach Summit - End",client_asset_present,not_evaluated
+414,"Quest - ""To The Summit"" - Camp Mojache -> Westreach Summit - Begin",client_asset_present,not_evaluated
+429,"Quest - ""To The Summit"" - Mudsprocket -> Westreach Summit - Begin",client_asset_present,not_evaluated
+433,"Quest - ""To New Thalanaar"" - Mudsprocket -> New Thalanaar - Begin",client_asset_present,not_evaluated
+434,"Quest - ""To New Thalanaar"" - New Thalanaar - End",client_asset_present,not_evaluated
+436,"Quest - ""To New Thalanaar"" - Shadebough -> New Thalanaar - Begin",client_asset_present,not_evaluated
+438,Durotar - ET - CC Prologue Troll Taxi Bat Start,client_asset_present,not_evaluated
+439,Durotar - ET - CC Prologue Troll Recruit End,client_asset_present,not_evaluated
+440,Durotar - ET - CC Prologue - Troll Battle End,client_asset_present,not_evaluated
+456,"Dolanaar, Teldrassil",client_asset_present,not_evaluated
+457,"Darnassus, Teldrassil",client_asset_present,not_evaluated
+458,"Nozzlepot's Outpost, Northern Barrens",client_asset_present,not_evaluated
+460,"Brill, Tirisfal Glades",client_asset_present,not_evaluated
+509,Quest Path 2063: Brian's 4.0 Test Path ,client_asset_present,not_evaluated
+513,"Fizzle & Pozzik's Speedbarge, Thousand Needles",client_asset_present,not_evaluated
+521,"Smuggler's Scar, Vashj'ir",client_asset_present,not_evaluated
+522,"Silver Tide Hollow, Vashj'ir",client_asset_present,not_evaluated
+523,"Tranquil Wash, Vashj'ir",client_asset_present,not_evaluated
+524,"Darkbreak Cove, Vashj'ir",client_asset_present,not_evaluated
+525,"Legion's Rest, Vashj'ir",client_asset_present,not_evaluated
+526,"Tenebrous Cavern, Vashj'ir",client_asset_present,not_evaluated
+531,"Dawnrise Expedition, Tanaris",client_asset_present,not_evaluated
+532,"Gunstan's Dig, Tanaris",client_asset_present,not_evaluated
+536,"Sen'jin Village, Durotar",client_asset_present,not_evaluated
+537,"Razor Hill, Durotar",client_asset_present,not_evaluated
+538,test - JZB - Orgrim's Hammer,client_asset_present,not_evaluated
+539,"Bootlegger Outpost, Tanaris",client_asset_present,not_evaluated
+540,"The Sludgewerks, Stonetalon Mountains",client_asset_present,not_evaluated
+541,"Mirkfallon Post, Stonetalon Mountains",client_asset_present,not_evaluated
+551,"Whelgar's Retreat, Wetlands",client_asset_present,not_evaluated
+552,"Greenwarden's Grove, Wetlands",client_asset_present,not_evaluated
+553,"Dun Modr, Wetlands",client_asset_present,not_evaluated
+554,"Slabchisel's Survey, Wetlands",client_asset_present,not_evaluated
+555,"Farstrider Lodge, Loch Modan",client_asset_present,not_evaluated
+557,"Shrine of Aviana, Hyjal",client_asset_present,not_evaluated
+558,"Grove of Aessina, Hyjal",client_asset_present,not_evaluated
+559,"Nordrassil, Hyjal",client_asset_present,not_evaluated
+560,"Quest Path 2171: [3.x] Transport, Org -> Undercity (Thundercaller)",client_asset_present,not_evaluated
+561,"Quest Path 2172: [3.x] Transport, Thunder Bluff -> Org (Zephyr)",client_asset_present,not_evaluated
+562,"Quest Path 2173: [3.x] Transport, Borean Tundra -> Org (Mighty Wind)",client_asset_present,not_evaluated
+563,"Quest Path 2174: [3.x] Transport, Grom'gol -> Orgrimmar (The Iron Eagle)",client_asset_present,not_evaluated
+564,Quest Path 2175: Stonetalon 4.x - Taxi to Thal'darah Overlook Start,client_asset_present,not_evaluated
+565,"Dreamer's Rest, Feralas",client_asset_present,not_evaluated
+567,"Tower of Estulan, Feralas",client_asset_present,not_evaluated
+568,"Camp Ataya, Feralas",client_asset_present,not_evaluated
+569,"Stonemaul Hold, Feralas",client_asset_present,not_evaluated
+574,Quest Path 2201: Dun Morogh - Quest - Flight to Ironforge Airfield,client_asset_present,not_evaluated
+575,Quest Path 2203: Dun Morogh - Quest - Striking Back (Bombing Run),client_asset_present,not_evaluated
+577,"Quest Path 2206: Ironforge, Dun Morogh - Quest - Breadcrumb to Loch Modan",client_asset_present,not_evaluated
+578,Quest Path 2207: Dun Morogh - Quest - Flight to Gol'Bolar from Ironforge Airfield,client_asset_present,not_evaluated
+582,"Goldshire, Elwynn",client_asset_present,not_evaluated
+583,"Moonbrook, Westfall",client_asset_present,not_evaluated
+584,"Furlbrow's Pumpkin Farm, Westfall",client_asset_present,not_evaluated
+585,"Quest Path 293: Transport, Auberdine -> Rut'theran Village, Teldrassil (NO LONGER USED in 4.x)",client_asset_present,not_evaluated
+586,Justin Test Node 1,client_asset_present,not_evaluated
+587,Justin Test Node 2,client_asset_present,not_evaluated
+589,"Eastvale Logging Camp, Elwynn",client_asset_present,not_evaluated
+590,"Fort Livingston, Stranglethorn",client_asset_present,not_evaluated
+591,"Explorers' League Digsite, Stranglethorn",client_asset_present,not_evaluated
+592,"Hardwrench Hideaway, Stranglethorn",client_asset_present,not_evaluated
+593,"Bambala, Stranglethorn",client_asset_present,not_evaluated
+594,"Whisperwind Grove, Felwood",client_asset_present,not_evaluated
+595,"Wildheart Point, Felwood",client_asset_present,not_evaluated
+596,"Shalewind Canyon, Redridge",client_asset_present,not_evaluated
+597,"Irontree Clearing, Felwood",client_asset_present,not_evaluated
+598,"Marshtide Watch, Swamp of Sorrows",client_asset_present,not_evaluated
+599,"Bogpaddle, Swamp of Sorrows",client_asset_present,not_evaluated
+600,"The Harborage, Swamp of Sorrows",client_asset_present,not_evaluated
+601,"Galen's Fall, Arathi",client_asset_present,not_evaluated
+602,"Surwich, Blasted Lands",client_asset_present,not_evaluated
+603,"Sunveil Excursion, Blasted Lands",client_asset_present,not_evaluated
+604,"Dreadmaul Hold, Blasted Lands",client_asset_present,not_evaluated
+605,"Voldrin's Hold, Vashj'ir",client_asset_present,not_evaluated
+606,"Sandy Beach, Vashj'ir",client_asset_present,not_evaluated
+607,"Sandy Beach, Vashj'ir",client_asset_present,not_evaluated
+608,"Sandy Beach, Vashj'ir",client_asset_present,not_evaluated
+609,"Sandy Beach, Vashj'ir",client_asset_present,not_evaluated
+610,"Stygian Bounty, Vashj'ir",client_asset_present,not_evaluated
+611,"Voldrin's Hold, Vashj'ir",client_asset_present,not_evaluated
+612,"Stygian Bounty, Vashj'ir",client_asset_present,not_evaluated
+613,"Southern Rocketway, Azshara",client_asset_present,not_evaluated
+614,"Northern Rocketway, Azshara",client_asset_present,not_evaluated
+615,"Camp Everstill, Redridge",client_asset_present,not_evaluated
+616,"Gates of Sothann, Hyjal",client_asset_present,not_evaluated
+617,"Hiri'watha Research Station, The Hinterlands",client_asset_present,not_evaluated
+618,"Stormfeather Outpost, The Hinterlands",client_asset_present,not_evaluated
+619,"Kharanos, Dun Morogh",client_asset_present,not_evaluated
+620,"Gol'Bolar Quarry, Dun Morogh",client_asset_present,not_evaluated
+621,Quest Path 2367: QA's Test Path 1,client_asset_present,not_evaluated
+622,"Raven Hill, Duskwood",client_asset_present,not_evaluated
+623,Quest Path 2374: Deeopholm Test Copy,client_asset_present,not_evaluated
+624,"Azure Watch, Azuremyst Isle",client_asset_present,not_evaluated
+625,"Fairbreeze Village, Eversong Woods",client_asset_present,not_evaluated
+626,"Quest Path 508: zzzThe Exodar -> Blood Watch, Bloodmyst Isle",client_asset_present,not_evaluated
+627,"Quest Path 2376: zzzThe Exodar -> Azure Watch, Azuremyst Isle",client_asset_present,not_evaluated
+628,"Quest Path 507: zzzBlood Watch, Bloodmyst Isle -> The Exodar",client_asset_present,not_evaluated
+629,"Quest Path 2375: zzzAzure Watch, Azuremyst Isle -> The Exodar",client_asset_present,not_evaluated
+630,"Light's Shield Tower, Eastern Plaguelands",client_asset_present,not_evaluated
+631,"Falconwing Square, Eversong Woods",client_asset_present,not_evaluated
+632,"Bloodwatcher Point, Badlands",client_asset_present,not_evaluated
+633,"Dustwind Dig, Badlands",client_asset_present,not_evaluated
+634,"Dragon's Mouth, Badlands",client_asset_present,not_evaluated
+635,"Fuselight, Badlands",client_asset_present,not_evaluated
+645,"Forsaken High Command, Silverpine Forest",client_asset_present,not_evaluated
+646,"Forsaken Forward Command, Gilneas",client_asset_present,not_evaluated
+649,"Andorhal, Western Plaguelands",client_asset_present,not_evaluated
+650,"Andorhal, Western Plaguelands",client_asset_present,not_evaluated
+651,"The Menders' Stead, Western Plaguelands",client_asset_present,not_evaluated
+652,"Ramkahen, Uldum",client_asset_present,not_evaluated
+653,"Oasis of Vir'sar, Uldum",client_asset_present,not_evaluated
+654,"The Forsaken Front, Silverpine Forest",client_asset_present,not_evaluated
+656,"Crushblow, Twilight Highlands",client_asset_present,not_evaluated
+657,"The Gullet, Twilight Highlands",client_asset_present,not_evaluated
+658,"Vermillion Redoubt, Twilight Highlands",client_asset_present,not_evaluated
+659,"Bloodgulch, Twilight Highlands",client_asset_present,not_evaluated
+660,"The Krazzworks, Twilight Highlands",client_asset_present,not_evaluated
+661,"Dragonmaw Port, Twilight Highlands",client_asset_present,not_evaluated
+662,"Highbank, Twilight Highlands",client_asset_present,not_evaluated
+663,"Victor's Point, Twilight Highlands",client_asset_present,not_evaluated
+664,"Firebeard's Patrol, Twilight Highlands",client_asset_present,not_evaluated
+665,"Thundermar, Twilight Highlands",client_asset_present,not_evaluated
+666,"Kirthaven, Twilight Highlands",client_asset_present,not_evaluated
+667,"Ruins of Southshore, Hillsbrad",client_asset_present,not_evaluated
+668,"Southpoint Gate, Hillsbrad",client_asset_present,not_evaluated
+669,"Eastpoint Tower, Hillsbrad",client_asset_present,not_evaluated
+670,"Strahnbrad, Alterac Mountains",client_asset_present,not_evaluated
+672,"Hearthglen, Western Plaguelands",client_asset_present,not_evaluated
+673,"Iron Summit, Searing Gorge",client_asset_present,not_evaluated
+674,"Schnottz's Landing, Uldum",client_asset_present,not_evaluated
+675,"Flamestar Post, Burning Steppes",client_asset_present,not_evaluated
+676,"Chiselgrip, Burning Steppes",client_asset_present,not_evaluated
+681,"Forsaken Rear Guard, Silverpine Forest",client_asset_present,not_evaluated
+682,Quest Path 1843: Transport - Gadgetzan to ??? JZB RVM Test [DISABLED],client_asset_present,not_evaluated
+683,"Valormok, Azshara",client_asset_present,not_evaluated
+728,Quest Path 2653: 4.1 - ZG Event - Rebel Camp -> Explorers' League,client_asset_present,not_evaluated
+757,Quest Path 2695: PattyMac Taxi Path Speed Test,client_asset_present,not_evaluated
+781,"Sanctuary of Malorne, Hyjal",client_asset_present,not_evaluated
+888,Quest Path 2837: Quest - Jade Forest: (DLA) - Dawnblossom to Jade Mines,client_asset_present,not_evaluated
+894,"Grookin Hill, Jade Forest",client_asset_present,not_evaluated
+895,"Dawn's Blossom, Jade Forest",client_asset_present,not_evaluated
+906,Dragon Soul Raid - Wyrmrest Temple Base,client_asset_present,not_evaluated
+907,Dragon Soul Raid - East Sarlac,client_asset_present,not_evaluated
+918,Quest Path 2954: Quest - Valley of the Four Winds (Flyback: Chen A) PRK,client_asset_present,not_evaluated
+919,Quest Path 2955: Quest - Valley of the Four Winds (Flyback: Chen B) PRK,client_asset_present,not_evaluated
+920,Quest Path 2956: Quest - Valley of the Four Winds (Flyback: Chen C) PRK,client_asset_present,not_evaluated
+921,Quest Path 2957: Quest - Valley of the Four Winds (Flyback: Chen D) PRK,client_asset_present,not_evaluated
+922,Quest Path 2958: Quest - Valley of the Four Winds (Flyback: Sad Panda A) PRK,client_asset_present,not_evaluated
+923,Quest Path 2959: Quest - Valley of the Four Winds (Flyback: Sad Panda B) PRK,client_asset_present,not_evaluated
+924,Quest Path 2960: Quest - Valley of the Four Winds (Flyback: Horde A) PRK,client_asset_present,not_evaluated
+925,Quest Path 2961: Quest - Valley of the Four Winds (Flyback: Alliance A) PRK,client_asset_present,not_evaluated
+926,Quest Path 2962: Quest - Valley of the Four Winds (Flyback: Horde B) PRK,client_asset_present,not_evaluated
+927,Quest Path 2963: Quest - Valley of the Four Winds (Flyback: Alliance B) PRK,client_asset_present,not_evaluated
+935,Quest Path 2986: Jade Forest: -hmc (Taxi: Glassfin Village to Dawnblossom),client_asset_present,not_evaluated
+949,Quest Path 3002: Jade Forest: -hmc (Taxi: Serpent's Spine to Statue Top),client_asset_present,not_evaluated
+950,Quest Path 3003: Jade Forest: -hmc (Taxi: Statue Top to Serpent's Spine),client_asset_present,not_evaluated
+951,Quest Path 3004: Quest - Jade Forest - Fort Grookin -> Ka Pao Rise ,client_asset_present,not_evaluated
+963,Quest Path 3018: Quest - Jade Forest - Glassfin Village -> Ka Pao Rise ,client_asset_present,not_evaluated
+966,"Paw'Don Village, Jade Forest",client_asset_present,not_evaluated
+967,"The Arboretum, Jade Forest",client_asset_present,not_evaluated
+968,"Jade Temple Grounds, Jade Forest",client_asset_present,not_evaluated
+969,"Sri-La Village, Jade Forest",client_asset_present,not_evaluated
+970,"Emperor's Omen, Jade Forest",client_asset_present,not_evaluated
+971,"Tian Monastery, Jade Forest",client_asset_present,not_evaluated
+972,"Pearlfin Village, Jade Forest",client_asset_present,not_evaluated
+973,"Honeydew Village, Jade Forest",client_asset_present,not_evaluated
+984,"Pang's Stead, Valley of the Four Winds",client_asset_present,not_evaluated
+985,"Halfhill, Valley of the Four Winds",client_asset_present,not_evaluated
+986,"Zhu's Watch, Krasarang Wilds",client_asset_present,not_evaluated
+987,"Thunder Cleft, Krasarang Wilds",client_asset_present,not_evaluated
+988,"The Incursion, Krasarang Wilds",client_asset_present,not_evaluated
+989,"Stoneplow, Valley of the Four Winds",client_asset_present,not_evaluated
+990,"Dawnchaser Retreat, Krasarang Wilds",client_asset_present,not_evaluated
+991,"Sentinel Basecamp, Krasarang Wilds",client_asset_present,not_evaluated
+992,"Cradle of Chi-Ji, Krasarang Wilds",client_asset_present,not_evaluated
+993,"Marista, Krasarang Wilds",client_asset_present,not_evaluated
+998,Quest Path 3154: Quest - Kun-Lai Summit - Neverrest Peak -> Valley of Emperors,client_asset_present,not_evaluated
+1009,Quest Path 3173: Quest - Kun-Lai Summit - Valley -> Whispercloud Rise,client_asset_present,not_evaluated
+1016,Quest Path 3066: Quest - Jade Forest - Serpent's Spine -> VotFW - JLR,client_asset_present,not_evaluated
+1017,"Binan Village, Kun-Lai Summit",client_asset_present,not_evaluated
+1018,"Temple of the White Tiger, Kun-Lai Summit",client_asset_present,not_evaluated
+1019,"Eastwind Rest, Kun-Lai Summit",client_asset_present,not_evaluated
+1020,"Westwind Rest, Kun-Lai Summit",client_asset_present,not_evaluated
+1021,"Zouchin Village, Kun-Lai Summit",client_asset_present,not_evaluated
+1022,"One Keg, Kun-Lai Summit",client_asset_present,not_evaluated
+1023,"Kota Basecamp, Kun-Lai Summit",client_asset_present,not_evaluated
+1024,"Shado-Pan Fallback, Kun-Lai Summit",client_asset_present,not_evaluated
+1025,"Winter's Blossom, Kun-Lai Summit",client_asset_present,not_evaluated
+1029,"Tavern in the Mists, The Veiled Stair",client_asset_present,not_evaluated
+1030,Quest Path 3244: Jade Forest: -hmc (Taxi: Serpent's Spine to East Temple),client_asset_present,not_evaluated
+1032,Quest Path 3246: Quest - Kun-Lai Summit - GoWB - To the Wall! (NLC),client_asset_present,not_evaluated
+1038,Quest Path 3248: Quest - Kun-Lai Summit - GoWB - Back from the Wall (NLC),client_asset_present,not_evaluated
+1046,Jade Forest - Cliff path 04 Start,client_asset_present,not_evaluated
+1047,Jade Forest - Cliff path 04 End,client_asset_present,not_evaluated
+1048,Quest Path 3263: Jade forest - Cliff path 04,client_asset_present,not_evaluated
+1049,Quest Path 3264: Jade Forest - Cliff Path 01,client_asset_present,not_evaluated
+1050,Quest Path 3265: Jade Forest - Cliff Path 02,client_asset_present,not_evaluated
+1051,Quest Path 3266: Jade Forest - Cliff Path 03,client_asset_present,not_evaluated
+1052,"Grassy Cline, Valley of the Four Winds",client_asset_present,not_evaluated
+1053,"Longying Outpost, Townlong Steppes",client_asset_present,not_evaluated
+1054,"Gao-Ran Battlefront, Townlong Steppes",client_asset_present,not_evaluated
+1055,"Rensai's Watchpost, Townlong Steppes",client_asset_present,not_evaluated
+1056,"Shado-Pan Garrison, Townlong Steppes",client_asset_present,not_evaluated
+1057,"Shrine of Seven Stars, Vale of Eternal Blossoms",client_asset_present,not_evaluated
+1058,"Shrine of Two Moons, Vale of Eternal Blossoms",client_asset_present,not_evaluated
+1070,"Klaxxi'vess, Dread Wastes",client_asset_present,not_evaluated
+1071,"Soggy's Gamble, Dread Wastes",client_asset_present,not_evaluated
+1072,"The Sunset Brewgarden, Dread Wastes",client_asset_present,not_evaluated
+1073,"Serpent's Spine, Vale of Eternal Blossoms",client_asset_present,not_evaluated
+1076,Quest Path 3375: Jade Forest: JSB - East Temple -> Grookin' Hill,client_asset_present,not_evaluated
+1079,Quest Path 3377: Jade Forest: JSB - East Temple -> Glassfin Village,client_asset_present,not_evaluated
+1080,"Serpent's Overlook, Jade Forest",client_asset_present,not_evaluated
+1090,"The Briny Muck, Dread Wastes",client_asset_present,not_evaluated
+1091,Quest Path 3448: Dread Wastes: Klaxxi'vess -> Briny Muck Quest Path,client_asset_present,not_evaluated
+1092,Quest Path 3449: Dread Wastes: Klaxxi'vess -> Lake of Stars Quest Path,client_asset_present,not_evaluated
+1104,Test - Spy Quest H01a - PRK,client_asset_present,not_evaluated
+1105,Test - Spy Quest H01b - PRK,client_asset_present,not_evaluated
+1114,Quest Path 3481: Quest - Kun-Lai Summit: JLR - Zouchin Village -> Isle of Reckoning,client_asset_present,not_evaluated
+1115,"The Lion's Redoubt, Dread Wastes",client_asset_present,not_evaluated
+1116,Quest Path 3482: Quest - Kun-Lai Summit: JLR - Isle of Reckoning - Zouchin,client_asset_present,not_evaluated
+1117,"Serpent's Spine, Kun-Lai Summit",client_asset_present,not_evaluated
+1130,Quest Path 3506: Jade Forest: -hmc (Taxi: Serpent's Spine to Statue Top) NEW (Tab 870),client_asset_present,not_evaluated
+1131,Quest Path 3507: Jade Forest: -hmc (Taxi: Statue Top to Serpent's Spine) NEW (Tab 870),client_asset_present,not_evaluated
+1190,"Lion's Landing, Krasarang Wilds",client_asset_present,not_evaluated
+1195,"Domination Point, Krasarang Wilds",client_asset_present,not_evaluated
+1221,"Beeble's Wreck, Isle Of Giants",client_asset_present,not_evaluated
+1222,"Bozzle's Wreck, Isle Of Giants",client_asset_present,not_evaluated
+1284,Quest Path 3877: Garrosh Raid - Siege Engineer - Pipe Transfer,client_asset_present,not_evaluated
+1291,Quest Path 3885: Timeless Isle 5.4 - Vignette - Source of Water - Bubble Up (RKS) [REUSEME],client_asset_present,not_evaluated
+1292,Quest Path 3886: Timeless Isle 5.4 - Vignette - Source of Water - Bubble Down (RKS) [REUSEME],client_asset_present,not_evaluated
+1293,"Tushui Landing, Timeless Isle",client_asset_present,not_evaluated
+1294,"Huojin Landing, Timeless Isle",client_asset_present,not_evaluated

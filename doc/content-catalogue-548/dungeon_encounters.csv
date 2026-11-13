@@ -1,0 +1,700 @@
+id,name,map_id,difficulty_id,credit_rows,credit_definitions,comparison,behavior
+1069,Baron Ashbury,33,0,0,,credit_mapping_absent_review,not_evaluated
+1070,Baron Silverlaine,33,0,0,,credit_mapping_absent_review,not_evaluated
+1071,Commander Springvale,33,0,0,,credit_mapping_absent_review,not_evaluated
+1073,Lord Walden,33,0,0,,credit_mapping_absent_review,not_evaluated
+1072,Lord Godfrey,33,0,2,DUNGEON_NORMAL/0/46964/8;DUNGEON_HEROIC/0/46964/327,credit_mapping_present,not_evaluated
+1144,Hogger,34,1,1,DUNGEON_NORMAL/0/46254/12,credit_mapping_present,not_evaluated
+1145,Lord Overheat,34,1,1,DUNGEON_NORMAL/0/46264/0,credit_mapping_present,not_evaluated
+1146,Randolph Moloch,34,1,1,DUNGEON_NORMAL/0/46383/0,credit_mapping_present,not_evaluated
+1064,Glubtok,36,0,2,DUNGEON_NORMAL/0/47162/0;DUNGEON_HEROIC/0/47162/0,credit_mapping_present,not_evaluated
+1065,Helix Gearbreaker,36,0,2,DUNGEON_NORMAL/0/47296/0;DUNGEON_HEROIC/0/47296/0,credit_mapping_present,not_evaluated
+1063,Foe Reaper 5000,36,0,2,DUNGEON_HEROIC/0/43778/0;DUNGEON_NORMAL/0/43778/0,credit_mapping_present,not_evaluated
+1062,Admiral Ripsnarl,36,0,2,DUNGEON_HEROIC/0/47626/0;DUNGEON_NORMAL/0/47626/0,credit_mapping_present,not_evaluated
+1060,"""Captain"" Cookie",36,0,2,DUNGEON_NORMAL/0/47739/6;DUNGEON_HEROIC/0/47739/0,credit_mapping_present,not_evaluated
+1081,Vanessa VanCleef,36,2,1,DUNGEON_HEROIC/0/49541/326,credit_mapping_present,not_evaluated
+585,Lady Anacondra,43,1,1,DUNGEON_NORMAL/0/3671/0,credit_mapping_present,not_evaluated
+586,Lord Cobrahn,43,1,1,DUNGEON_NORMAL/0/3669/0,credit_mapping_present,not_evaluated
+587,Kresh,43,1,1,DUNGEON_NORMAL/0/3653/0,credit_mapping_present,not_evaluated
+588,Lord Pythas,43,1,1,DUNGEON_NORMAL/0/3670/0,credit_mapping_present,not_evaluated
+589,Skum,43,1,1,DUNGEON_NORMAL/0/3674/0,credit_mapping_present,not_evaluated
+590,Lord Serpentis,43,1,1,DUNGEON_NORMAL/0/3673/0,credit_mapping_present,not_evaluated
+591,Verdan the Everliving,43,1,1,DUNGEON_NORMAL/0/5775/0,credit_mapping_present,not_evaluated
+592,Mutanus the Devourer,43,1,1,DUNGEON_NORMAL/0/3654/1,credit_mapping_present,not_evaluated
+440,Death Speaker Jargba,47,1,1,DUNGEON_NORMAL/0/4428/0,credit_mapping_present,not_evaluated
+438,Roogug,47,1,1,DUNGEON_NORMAL/0/6168/0,credit_mapping_present,not_evaluated
+439,Aggem Thorncurse,47,1,1,DUNGEON_NORMAL/0/4424/0,credit_mapping_present,not_evaluated
+441,Overlord Ramtusk,47,1,1,DUNGEON_NORMAL/0/4420/0,credit_mapping_present,not_evaluated
+883,Agathelos the Raging,47,1,1,DUNGEON_NORMAL/0/4422/0,credit_mapping_present,not_evaluated
+443,Charlga Razorflank,47,1,1,DUNGEON_NORMAL/0/4421/16,credit_mapping_present,not_evaluated
+219,Ghamoo-ra,48,1,1,DUNGEON_NORMAL/0/4887/0,credit_mapping_present,not_evaluated
+220,Lady Sarevess,48,1,1,DUNGEON_NORMAL/0/4831/0,credit_mapping_present,not_evaluated
+221,Gelihast,48,1,1,DUNGEON_NORMAL/0/6243/0,credit_mapping_present,not_evaluated
+222,Lorgus Jett,48,1,1,DUNGEON_NORMAL/0/12902/0,credit_mapping_present,not_evaluated
+224,Old Serra'kis,48,1,1,DUNGEON_NORMAL/0/4830/0,credit_mapping_present,not_evaluated
+225,Twilight Lord Kelris,48,1,1,DUNGEON_NORMAL/0/4832/0,credit_mapping_present,not_evaluated
+226,Aku'mai,48,1,1,DUNGEON_NORMAL/0/4829/10,credit_mapping_present,not_evaluated
+547,Revelosh,70,1,1,DUNGEON_NORMAL/0/6910/0,credit_mapping_present,not_evaluated
+548,The Lost Dwarves,70,1,1,DUNGEON_NORMAL/0/6906/0,credit_mapping_present,not_evaluated
+549,Ironaya,70,1,1,DUNGEON_NORMAL/0/7228/0,credit_mapping_present,not_evaluated
+551,Ancient Stone Keeper,70,1,1,DUNGEON_NORMAL/0/7206/0,credit_mapping_present,not_evaluated
+552,Galgann Firehammer,70,1,1,DUNGEON_NORMAL/0/7291/0,credit_mapping_present,not_evaluated
+553,Grimlok,70,1,1,DUNGEON_NORMAL/0/4854/0,credit_mapping_present,not_evaluated
+554,Archaedas,70,1,1,DUNGEON_NORMAL/0/2748/22,credit_mapping_present,not_evaluated
+379,Grubbis,90,1,1,DUNGEON_NORMAL/0/7361/0,credit_mapping_present,not_evaluated
+378,Viscous Fallout,90,1,1,DUNGEON_NORMAL/0/7079/0,credit_mapping_present,not_evaluated
+380,Electrocutioner 6000,90,1,1,DUNGEON_NORMAL/0/6235/0,credit_mapping_present,not_evaluated
+381,Crowd Pummeler 9-60,90,1,1,DUNGEON_NORMAL/0/6229/0,credit_mapping_present,not_evaluated
+382,Mekgineer Thermaplugg,90,1,1,DUNGEON_NORMAL/0/7800/14,credit_mapping_present,not_evaluated
+492,Avatar of Hakkar,109,1,1,DUNGEON_NORMAL/0/8443/0,credit_mapping_present,not_evaluated
+488,Jammal'an the Prophet,109,1,1,DUNGEON_NORMAL/0/5710/0,credit_mapping_present,not_evaluated
+486,Dreamscythe,109,1,1,DUNGEON_NORMAL/0/5721/0,credit_mapping_present,not_evaluated
+487,Weaver,109,1,1,DUNGEON_NORMAL/0/5720/0,credit_mapping_present,not_evaluated
+490,Morphaz,109,1,1,DUNGEON_NORMAL/0/5719/0,credit_mapping_present,not_evaluated
+491,Hazzas,109,1,1,DUNGEON_NORMAL/0/5722/0,credit_mapping_present,not_evaluated
+493,Shade of Eranikus,109,1,1,DUNGEON_NORMAL/0/5709/28,credit_mapping_present,not_evaluated
+434,Tuten'kash,129,1,1,DUNGEON_NORMAL/0/7355/0,credit_mapping_present,not_evaluated
+435,Mordresh Fire Eye,129,1,1,DUNGEON_NORMAL/0/7357/0,credit_mapping_present,not_evaluated
+436,Glutton,129,1,1,DUNGEON_NORMAL/0/8567/0,credit_mapping_present,not_evaluated
+437,Amnennar the Coldbringer,129,1,1,DUNGEON_NORMAL/0/7358/20,credit_mapping_present,not_evaluated
+444,Interrogator Vishas,189,1,1,DUNGEON_NORMAL/0/3983/0,credit_mapping_present,not_evaluated
+446,Houndmaster Loksey,189,1,1,DUNGEON_NORMAL/0/3974/0,credit_mapping_present,not_evaluated
+447,Arcanist Doan,189,1,1,DUNGEON_NORMAL/0/6487/0,credit_mapping_present,not_evaluated
+448,Herod,189,1,1,DUNGEON_NORMAL/0/3975/0,credit_mapping_present,not_evaluated
+449,High Inquisitor Fairbanks,189,1,1,DUNGEON_NORMAL/0/4542/0,credit_mapping_present,not_evaluated
+450,High Inquisitor Whitemane,189,1,1,DUNGEON_NORMAL/0/3977/0,credit_mapping_present,not_evaluated
+593,Hydromancer Velratha,209,1,1,DUNGEON_NORMAL/0/7795/0,credit_mapping_present,not_evaluated
+594,Ghaz'rilla,209,1,1,DUNGEON_NORMAL/0/7273/0,credit_mapping_present,not_evaluated
+595,Antu'sul,209,1,1,DUNGEON_NORMAL/0/8127/0,credit_mapping_present,not_evaluated
+596,Theka the Martyr,209,1,1,DUNGEON_NORMAL/0/7272/0,credit_mapping_present,not_evaluated
+597,Witch Doctor Zum'rah,209,1,1,DUNGEON_NORMAL/0/7271/0,credit_mapping_present,not_evaluated
+598,Nekrum Gutchewer,209,1,1,DUNGEON_NORMAL/0/7796/0,credit_mapping_present,not_evaluated
+599,Shadowpriest Sezz'ziz,209,1,1,DUNGEON_NORMAL/0/7275/0,credit_mapping_present,not_evaluated
+600,Chief Ukorz Sandscalp,209,1,1,DUNGEON_NORMAL/0/7267/24,credit_mapping_present,not_evaluated
+267,Highlord Omokk,229,1,1,DUNGEON_NORMAL/0/9196/0,credit_mapping_present,not_evaluated
+268,Shadow Hunter Vosh'gajin,229,1,1,DUNGEON_NORMAL/0/9236/0,credit_mapping_present,not_evaluated
+269,War Master Voone,229,1,1,DUNGEON_NORMAL/0/9237/0,credit_mapping_present,not_evaluated
+270,Mother Smolderweb,229,1,1,DUNGEON_NORMAL/0/10596/0,credit_mapping_present,not_evaluated
+271,Urok Doomhowl,229,1,1,DUNGEON_NORMAL/0/10584/0,credit_mapping_present,not_evaluated
+272,Quartermaster Zigris,229,1,1,DUNGEON_NORMAL/0/9736/0,credit_mapping_present,not_evaluated
+274,Halycon,229,1,1,DUNGEON_NORMAL/0/10220/0,credit_mapping_present,not_evaluated
+273,Gizrul the Slavener,229,1,1,DUNGEON_NORMAL/0/10268/0,credit_mapping_present,not_evaluated
+275,Overlord Wyrmthalak,229,1,1,DUNGEON_NORMAL/0/9568/32,credit_mapping_present,not_evaluated
+276,Pyroguard Emberseer,229,1,1,DUNGEON_NORMAL/0/9816/0,credit_mapping_present,not_evaluated
+277,Solakar Flamewreath,229,1,1,DUNGEON_NORMAL/0/10264/0,credit_mapping_present,not_evaluated
+278,Warchief Rend Blackhand,229,1,1,DUNGEON_NORMAL/0/10429/0,credit_mapping_present,not_evaluated
+279,The Beast,229,1,1,DUNGEON_NORMAL/0/10430/0,credit_mapping_present,not_evaluated
+280,General Drakkisath,229,1,1,DUNGEON_NORMAL/0/10363/0,credit_mapping_present,not_evaluated
+227,High Interrogator Gerstahn,230,1,1,DUNGEON_NORMAL/0/9018/30,credit_mapping_present,not_evaluated
+228,Lord Roccor,230,1,1,DUNGEON_NORMAL/0/9025/0,credit_mapping_present,not_evaluated
+229,Houndmaster Grebmar,230,1,1,DUNGEON_NORMAL/0/9319/0,credit_mapping_present,not_evaluated
+230,Ring of Law,230,1,1,DUNGEON_NORMAL/0/10096/0,credit_mapping_present,not_evaluated
+231,Pyromancer Loregrain,230,1,1,DUNGEON_NORMAL/0/9024/0,credit_mapping_present,not_evaluated
+232,Lord Incendius,230,1,1,DUNGEON_NORMAL/0/9017/0,credit_mapping_present,not_evaluated
+233,Warder Stilgiss,230,1,1,DUNGEON_NORMAL/0/9041/0,credit_mapping_present,not_evaluated
+234,Fineous Darkvire,230,1,1,DUNGEON_NORMAL/0/9056/0,credit_mapping_present,not_evaluated
+235,Bael'Gar,230,1,1,DUNGEON_NORMAL/0/9016/0,credit_mapping_present,not_evaluated
+236,General Angerforge,230,1,1,DUNGEON_NORMAL/0/9033/0,credit_mapping_present,not_evaluated
+237,Golem Lord Argelmach,230,1,1,DUNGEON_NORMAL/0/8983/0,credit_mapping_present,not_evaluated
+238,Hurley Blackbreath,230,1,1,DUNGEON_NORMAL/0/9537/0,credit_mapping_present,not_evaluated
+239,Phalanx,230,1,1,DUNGEON_NORMAL/0/9502/0,credit_mapping_present,not_evaluated
+240,Ribbly Screwspigot,230,1,1,DUNGEON_NORMAL/0/9543/0,credit_mapping_present,not_evaluated
+241,Plugger Spazzring,230,1,1,DUNGEON_NORMAL/0/9499/0,credit_mapping_present,not_evaluated
+242,Ambassador Flamelash,230,1,1,DUNGEON_NORMAL/0/9156/0,credit_mapping_present,not_evaluated
+243,The Seven,230,1,1,DUNGEON_NORMAL/0/9035/0,credit_mapping_present,not_evaluated
+244,Magmus,230,1,1,DUNGEON_NORMAL/0/9938/0,credit_mapping_present,not_evaluated
+245,Emperor Dagran Thaurissan,230,1,1,DUNGEON_NORMAL/0/9019/276,credit_mapping_present,not_evaluated
+1084,Onyxia,249,0,0,,credit_mapping_absent_review,not_evaluated
+287,Chrono Lord Deja,269,1,1,DUNGEON_NORMAL/0/17879/0,credit_mapping_present,not_evaluated
+288,Chrono Lord Deja,269,2,1,DUNGEON_HEROIC/0/17879/0,credit_mapping_present,not_evaluated
+289,Temporus,269,1,1,DUNGEON_NORMAL/0/17880/0,credit_mapping_present,not_evaluated
+290,Temporus,269,2,1,DUNGEON_HEROIC/0/17880/0,credit_mapping_present,not_evaluated
+291,Aeonus,269,1,1,DUNGEON_NORMAL/0/17881/171,credit_mapping_present,not_evaluated
+292,Aeonus,269,2,1,DUNGEON_HEROIC/0/17881/182,credit_mapping_present,not_evaluated
+451,Kirtonos the Herald,289,1,1,DUNGEON_NORMAL/0/10506/0,credit_mapping_present,not_evaluated
+452,Jandice Barov,289,1,1,DUNGEON_NORMAL/0/10503/0,credit_mapping_present,not_evaluated
+453,Rattlegore,289,1,1,DUNGEON_NORMAL/0/11622/0,credit_mapping_present,not_evaluated
+454,Marduk Blackpool,289,1,1,DUNGEON_NORMAL/0/10433/0,credit_mapping_present,not_evaluated
+455,Vectus,289,1,1,DUNGEON_NORMAL/0/10432/0,credit_mapping_present,not_evaluated
+456,Ras Frostwhisper,289,1,1,DUNGEON_NORMAL/0/10508/0,credit_mapping_present,not_evaluated
+457,Instructor Malicia,289,1,1,DUNGEON_NORMAL/0/10505/0,credit_mapping_present,not_evaluated
+458,Doctor Theolen Krastinov,289,1,1,DUNGEON_NORMAL/0/11261/0,credit_mapping_present,not_evaluated
+459,Lorekeeper Polkelt,289,1,1,DUNGEON_NORMAL/0/10901/0,credit_mapping_present,not_evaluated
+460,The Ravenian,289,1,1,DUNGEON_NORMAL/0/10507/0,credit_mapping_present,not_evaluated
+461,Lord Alexei Barov,289,1,1,DUNGEON_NORMAL/0/10504/0,credit_mapping_present,not_evaluated
+462,Lady Illucia Barov,289,1,1,DUNGEON_NORMAL/0/10502/0,credit_mapping_present,not_evaluated
+463,Darkmaster Gandling,289,1,1,DUNGEON_NORMAL/0/1853/0,credit_mapping_present,not_evaluated
+785,High Priestess Jeklik,309,1,1,DUNGEON_NORMAL/0/14517/0,credit_mapping_present,not_evaluated
+784,High Priest Venoxis,309,1,1,DUNGEON_NORMAL/0/14507/0,credit_mapping_present,not_evaluated
+786,High Priestess Mar'li,309,1,1,DUNGEON_NORMAL/0/14510/0,credit_mapping_present,not_evaluated
+787,Bloodlord Mandokir,309,1,1,DUNGEON_NORMAL/0/11382/0,credit_mapping_present,not_evaluated
+788,Edge of Madness,309,1,1,DUNGEON_NORMAL/0/15083/0,credit_mapping_present,not_evaluated
+789,High Priest Thekal,309,1,1,DUNGEON_NORMAL/0/14509/0,credit_mapping_present,not_evaluated
+790,Gahz'ranka,309,1,1,DUNGEON_NORMAL/0/15114/0,credit_mapping_present,not_evaluated
+791,High Priestess Arlokk,309,1,1,DUNGEON_NORMAL/0/14515/0,credit_mapping_present,not_evaluated
+792,Jin'do the Hexxer,309,1,1,DUNGEON_NORMAL/0/11380/0,credit_mapping_present,not_evaluated
+793,Hakkar,309,1,1,DUNGEON_NORMAL/0/14834/0,credit_mapping_present,not_evaluated
+473,Hearthsinger Forresten,329,1,1,DUNGEON_NORMAL/0/10558/0,credit_mapping_present,not_evaluated
+474,Timmy the Cruel,329,1,1,DUNGEON_NORMAL/0/10808/0,credit_mapping_present,not_evaluated
+476,Commander Malor,329,1,1,DUNGEON_NORMAL/0/11032/0,credit_mapping_present,not_evaluated
+475,Willey Hopebreaker,329,1,1,DUNGEON_NORMAL/0/10997/0,credit_mapping_present,not_evaluated
+477,Instructor Galford,329,1,1,DUNGEON_NORMAL/0/10811/0,credit_mapping_present,not_evaluated
+478,Balnazzar,329,1,1,DUNGEON_NORMAL/0/10813/40,credit_mapping_present,not_evaluated
+472,The Unforgiven,329,1,1,DUNGEON_NORMAL/0/10516/0,credit_mapping_present,not_evaluated
+479,Baroness Anastari,329,1,1,DUNGEON_NORMAL/0/10436/0,credit_mapping_present,not_evaluated
+480,Nerub'enkan,329,1,1,DUNGEON_NORMAL/0/10437/0,credit_mapping_present,not_evaluated
+481,Maleki the Pallid,329,1,1,DUNGEON_NORMAL/0/10438/0,credit_mapping_present,not_evaluated
+482,Magistrate Barthilas,329,1,1,DUNGEON_NORMAL/0/10435/0,credit_mapping_present,not_evaluated
+483,Ramstein the Gorger,329,1,1,DUNGEON_NORMAL/0/10439/0,credit_mapping_present,not_evaluated
+484,Lord Aurius Rivendare,329,1,1,DUNGEON_NORMAL/0/10440/274,credit_mapping_present,not_evaluated
+422,Noxxion,349,1,1,DUNGEON_NORMAL/0/13282/0,credit_mapping_present,not_evaluated
+423,Razorlash,349,1,1,DUNGEON_NORMAL/0/12258/26,credit_mapping_present,not_evaluated
+427,Tinkerer Gizlock,349,1,1,DUNGEON_NORMAL/0/13601/0,credit_mapping_present,not_evaluated
+424,Lord Vyletongue,349,1,1,DUNGEON_NORMAL/0/12236/272,credit_mapping_present,not_evaluated
+425,Celebras the Cursed,349,1,1,DUNGEON_NORMAL/0/12225/0,credit_mapping_present,not_evaluated
+426,Landslide,349,1,1,DUNGEON_NORMAL/0/12203/0,credit_mapping_present,not_evaluated
+428,Rotgrip,349,1,1,DUNGEON_NORMAL/0/13596/0,credit_mapping_present,not_evaluated
+429,Princess Theradras,349,1,1,DUNGEON_NORMAL/0/12201/273,credit_mapping_present,not_evaluated
+1443,Adarogg,389,0,1,DUNGEON_NORMAL/0/61408/0,credit_mapping_present,not_evaluated
+1444,Dark Shaman Koranthal,389,0,1,DUNGEON_NORMAL/0/61412/0,credit_mapping_present,not_evaluated
+1445,Slagmaw,389,0,1,DUNGEON_NORMAL/0/61463/0,credit_mapping_present,not_evaluated
+1446,Lava Guard Gordoth,389,0,1,DUNGEON_NORMAL/0/61528/4,credit_mapping_present,not_evaluated
+663,Lucifron,409,3,1,RAID_40MAN/0/12118/0,credit_mapping_present,not_evaluated
+664,Magmadar,409,3,1,RAID_40MAN/0/11982/0,credit_mapping_present,not_evaluated
+665,Gehennas,409,3,1,RAID_40MAN/0/12259/0,credit_mapping_present,not_evaluated
+666,Garr,409,3,1,RAID_40MAN/0/12057/0,credit_mapping_present,not_evaluated
+667,Shazzrah,409,3,1,RAID_40MAN/0/12264/0,credit_mapping_present,not_evaluated
+668,Baron Geddon,409,3,1,RAID_40MAN/0/12056/0,credit_mapping_present,not_evaluated
+669,Sulfuron Harbinger,409,3,1,RAID_40MAN/0/12098/0,credit_mapping_present,not_evaluated
+670,Golemagg the Incinerator,409,3,1,RAID_40MAN/0/11988/0,credit_mapping_present,not_evaluated
+671,Majordomo Executus,409,3,1,RAID_40MAN/0/12018/0,credit_mapping_present,not_evaluated
+672,Ragnaros,409,3,1,RAID_40MAN/0/11502/48,credit_mapping_present,not_evaluated
+343,Zevrim Thornhoof,429,1,1,DUNGEON_NORMAL/0/11490/0,credit_mapping_present,not_evaluated
+344,Hydrospawn,429,1,1,DUNGEON_NORMAL/0/13280/0,credit_mapping_present,not_evaluated
+345,Lethtendris,429,1,1,DUNGEON_NORMAL/0/14327/0,credit_mapping_present,not_evaluated
+346,Alzzin the Wildshaper,429,1,1,DUNGEON_NORMAL/0/11492/34,credit_mapping_present,not_evaluated
+350,Tendris Warpwood,429,1,1,DUNGEON_NORMAL/0/11489/0,credit_mapping_present,not_evaluated
+347,Illyanna Ravenoak,429,1,1,DUNGEON_NORMAL/0/11488/0,credit_mapping_present,not_evaluated
+348,Magister Kalendris,429,1,1,DUNGEON_NORMAL/0/11487/0,credit_mapping_present,not_evaluated
+349,Immol'thar,429,1,1,DUNGEON_NORMAL/0/11496/0,credit_mapping_present,not_evaluated
+361,Prince Tortheldrin,429,1,1,DUNGEON_NORMAL/0/11486/36,credit_mapping_present,not_evaluated
+362,Guard Mol'dar,429,1,1,DUNGEON_NORMAL/0/14326/0,credit_mapping_present,not_evaluated
+363,Stomper Kreeg,429,1,1,DUNGEON_NORMAL/0/14322/0,credit_mapping_present,not_evaluated
+364,Guard Fengus,429,1,1,DUNGEON_NORMAL/0/14321/0,credit_mapping_present,not_evaluated
+365,Guard Slip'kik,429,1,1,DUNGEON_NORMAL/0/14323/0,credit_mapping_present,not_evaluated
+366,Captain Kromcrush,429,1,1,DUNGEON_NORMAL/0/14325/0,credit_mapping_present,not_evaluated
+367,Cho'Rush the Observer,429,1,1,DUNGEON_NORMAL/0/14324/0,credit_mapping_present,not_evaluated
+368,King Gordok,429,1,1,DUNGEON_NORMAL/0/11501/38,credit_mapping_present,not_evaluated
+610,Razorgore the Untamed,469,3,1,RAID_40MAN/0/12435/0,credit_mapping_present,not_evaluated
+611,Vaelastrasz the Corrupt,469,3,1,RAID_40MAN/0/13020/0,credit_mapping_present,not_evaluated
+612,Broodlord Lashlayer,469,3,1,RAID_40MAN/0/12017/0,credit_mapping_present,not_evaluated
+613,Firemaw,469,3,1,RAID_40MAN/0/11983/0,credit_mapping_present,not_evaluated
+614,Ebonroc,469,3,1,RAID_40MAN/0/14601/0,credit_mapping_present,not_evaluated
+615,Flamegor,469,3,1,RAID_40MAN/0/11981/0,credit_mapping_present,not_evaluated
+616,Chromaggus,469,3,1,RAID_40MAN/0/14020/0,credit_mapping_present,not_evaluated
+617,Nefarian,469,3,1,RAID_40MAN/0/11583/50,credit_mapping_present,not_evaluated
+718,Kurinnaxx,509,3,1,RAID_10MAN_NORMAL/0/15348/0,credit_mapping_present,not_evaluated
+719,General Rajaxx,509,3,1,RAID_10MAN_NORMAL/0/15341/0,credit_mapping_present,not_evaluated
+720,Moam,509,3,1,RAID_10MAN_NORMAL/0/15340/0,credit_mapping_present,not_evaluated
+721,Buru the Gorger,509,3,1,RAID_10MAN_NORMAL/0/15370/0,credit_mapping_present,not_evaluated
+722,Ayamiss the Hunter,509,3,1,RAID_10MAN_NORMAL/0/15369/0,credit_mapping_present,not_evaluated
+723,Ossirian the Unscarred,509,3,1,RAID_10MAN_NORMAL/0/15339/160,credit_mapping_present,not_evaluated
+709,The Prophet Skeram,531,3,1,RAID_40MAN/0/15263/0,credit_mapping_present,not_evaluated
+710,Silithid Royalty,531,3,1,RAID_40MAN/0/15544/0,credit_mapping_present,not_evaluated
+711,Battleguard Sartura,531,3,1,RAID_40MAN/0/15516/0,credit_mapping_present,not_evaluated
+712,Fankriss the Unyielding,531,3,1,RAID_40MAN/0/15510/0,credit_mapping_present,not_evaluated
+713,Viscidus,531,3,1,RAID_40MAN/0/15299/0,credit_mapping_present,not_evaluated
+714,Princess Huhuran,531,3,1,RAID_40MAN/0/15509/0,credit_mapping_present,not_evaluated
+715,Twin Emperors,531,3,1,RAID_40MAN/0/15275/0,credit_mapping_present,not_evaluated
+716,Ouro,531,3,1,RAID_40MAN/0/15517/0,credit_mapping_present,not_evaluated
+717,C'thun,531,3,1,RAID_40MAN/0/15727/161,credit_mapping_present,not_evaluated
+652,Attumen the Huntsman,532,3,1,RAID_10MAN_NORMAL/0/15550/0,credit_mapping_present,not_evaluated
+653,Moroes,532,3,1,RAID_10MAN_NORMAL/0/15687/0,credit_mapping_present,not_evaluated
+654,Maiden of the Virtue,532,3,1,RAID_10MAN_NORMAL/0/16457/0,credit_mapping_present,not_evaluated
+655,Opera Event,532,3,1,RAID_10MAN_NORMAL/0/16812/0,credit_mapping_present,not_evaluated
+656,The Curator,532,3,1,RAID_10MAN_NORMAL/0/15691/0,credit_mapping_present,not_evaluated
+657,Terestian Illhoof,532,3,1,RAID_10MAN_NORMAL/0/15688/0,credit_mapping_present,not_evaluated
+658,Shade of Aran,532,3,1,RAID_10MAN_NORMAL/0/16524/0,credit_mapping_present,not_evaluated
+659,Netherspite,532,3,1,RAID_10MAN_NORMAL/0/15689/0,credit_mapping_present,not_evaluated
+660,Chess Event,532,3,1,RAID_10MAN_NORMAL/0/22520/0,credit_mapping_present,not_evaluated
+661,Prince Malchezaar,532,3,1,RAID_10MAN_NORMAL/0/15690/175,credit_mapping_present,not_evaluated
+662,Nightbane,532,3,1,RAID_10MAN_NORMAL/0/17225/0,credit_mapping_present,not_evaluated
+1107,Anub'Rekhan,533,0,0,,credit_mapping_absent_review,not_evaluated
+1110,Grand Widow Faerlina,533,0,0,,credit_mapping_absent_review,not_evaluated
+1116,Maexxna,533,0,0,,credit_mapping_absent_review,not_evaluated
+1117,Noth the Plaguebringer,533,0,0,,credit_mapping_absent_review,not_evaluated
+1112,Heigan the Unclean,533,0,0,,credit_mapping_absent_review,not_evaluated
+1115,Loatheb,533,0,0,,credit_mapping_absent_review,not_evaluated
+1113,Instructor Razuvious,533,0,0,,credit_mapping_absent_review,not_evaluated
+1109,Gothik the Harvester,533,0,0,,credit_mapping_absent_review,not_evaluated
+1121,The Four Horsemen,533,0,0,,credit_mapping_absent_review,not_evaluated
+1118,Patchwerk,533,0,0,,credit_mapping_absent_review,not_evaluated
+1111,Grobbulus,533,0,0,,credit_mapping_absent_review,not_evaluated
+1108,Gluth,533,0,0,,credit_mapping_absent_review,not_evaluated
+1120,Thaddius,533,0,0,,credit_mapping_absent_review,not_evaluated
+1119,Sapphiron,533,0,0,,credit_mapping_absent_review,not_evaluated
+1114,Kel'Thuzad,533,0,0,,credit_mapping_absent_review,not_evaluated
+618,Rage Winterchill,534,3,1,RAID_25MAN_NORMAL/0/17767/0,credit_mapping_present,not_evaluated
+619,Anetheron,534,3,1,RAID_25MAN_NORMAL/0/17808/0,credit_mapping_present,not_evaluated
+620,Kaz'rogal,534,3,1,RAID_25MAN_NORMAL/0/17888/0,credit_mapping_present,not_evaluated
+621,Azgalor,534,3,1,RAID_25MAN_NORMAL/0/17842/0,credit_mapping_present,not_evaluated
+622,Archimonde,534,3,1,RAID_25MAN_NORMAL/0/17968/195,credit_mapping_present,not_evaluated
+407,Grand Warlock Nethekurse,540,1,1,DUNGEON_NORMAL/0/16807/0,credit_mapping_present,not_evaluated
+408,Grand Warlock Nethekurse,540,2,1,DUNGEON_HEROIC/0/16807/0,credit_mapping_present,not_evaluated
+409,Blood Guard Porung,540,2,1,DUNGEON_HEROIC/0/20923/0,credit_mapping_present,not_evaluated
+410,Warbringer O'mrogg,540,1,1,DUNGEON_NORMAL/0/16809/0,credit_mapping_present,not_evaluated
+411,Warbringer O'mrogg,540,2,1,DUNGEON_HEROIC/0/16809/0,credit_mapping_present,not_evaluated
+412,Warchief Kargath Bladefist,540,1,1,DUNGEON_NORMAL/0/16808/138,credit_mapping_present,not_evaluated
+413,Warchief Kargath Bladefist,540,2,1,DUNGEON_HEROIC/0/16808/189,credit_mapping_present,not_evaluated
+401,The Maker,542,1,1,DUNGEON_NORMAL/0/17381/0,credit_mapping_present,not_evaluated
+402,The Maker,542,2,1,DUNGEON_HEROIC/0/17381/0,credit_mapping_present,not_evaluated
+403,Broggok,542,1,1,DUNGEON_NORMAL/0/17380/0,credit_mapping_present,not_evaluated
+404,Broggok,542,2,1,DUNGEON_HEROIC/0/17380/0,credit_mapping_present,not_evaluated
+405,Keli'dan the Breaker,542,1,1,DUNGEON_NORMAL/0/17377/137,credit_mapping_present,not_evaluated
+406,Keli'dan the Breaker,542,2,1,DUNGEON_HEROIC/0/17377/187,credit_mapping_present,not_evaluated
+392,Watchkeeper Gargolmar,543,1,1,DUNGEON_NORMAL/0/17306/0,credit_mapping_present,not_evaluated
+393,Watchkeeper Gargolmar,543,2,1,DUNGEON_HEROIC/0/17306/0,credit_mapping_present,not_evaluated
+394,Omor the Unscarred,543,1,1,DUNGEON_NORMAL/0/17308/0,credit_mapping_present,not_evaluated
+395,Omor the Unscarred,543,2,1,DUNGEON_HEROIC/0/17308/0,credit_mapping_present,not_evaluated
+396,Vazruden the Herald,543,1,1,DUNGEON_NORMAL/0/17537/136,credit_mapping_present,not_evaluated
+397,Vazruden the Herald,543,2,1,DUNGEON_HEROIC/0/17537/188,credit_mapping_present,not_evaluated
+651,Magtheridon,544,3,1,RAID_25MAN_NORMAL/0/17257/176,credit_mapping_present,not_evaluated
+314,Hydromancer Thespia,545,1,1,DUNGEON_NORMAL/0/17797/0,credit_mapping_present,not_evaluated
+315,Hydromancer Thespia,545,2,1,DUNGEON_HEROIC/0/17797/0,credit_mapping_present,not_evaluated
+316,Mekgineer Steamrigger,545,1,1,DUNGEON_NORMAL/0/17796/0,credit_mapping_present,not_evaluated
+317,Mekgineer Steamrigger,545,2,1,DUNGEON_HEROIC/0/17796/0,credit_mapping_present,not_evaluated
+318,Warlord Kalithresh,545,1,1,DUNGEON_NORMAL/0/17798/147,credit_mapping_present,not_evaluated
+319,Warlord Kalithresh,545,2,1,DUNGEON_HEROIC/0/17798/185,credit_mapping_present,not_evaluated
+320,Hungarfen,546,1,1,DUNGEON_NORMAL/0/17770/0,credit_mapping_present,not_evaluated
+321,Hungarfen,546,2,1,DUNGEON_HEROIC/0/17770/0,credit_mapping_present,not_evaluated
+322,Ghaz'an,546,1,1,DUNGEON_NORMAL/0/18105/0,credit_mapping_present,not_evaluated
+323,Ghaz'an,546,2,1,DUNGEON_HEROIC/0/18105/0,credit_mapping_present,not_evaluated
+329,Swamplord Musel'ek,546,1,1,DUNGEON_NORMAL/0/17826/0,credit_mapping_present,not_evaluated
+330,Swamplord Musel'ek,546,2,1,DUNGEON_HEROIC/0/17826/0,credit_mapping_present,not_evaluated
+331,The Black Stalker,546,1,1,DUNGEON_NORMAL/0/17882/146,credit_mapping_present,not_evaluated
+332,The Black Stalker,546,2,1,DUNGEON_HEROIC/0/17882/186,credit_mapping_present,not_evaluated
+301,Mennu the Betrayer,547,1,1,DUNGEON_NORMAL/0/17941/0,credit_mapping_present,not_evaluated
+304,Mennu the Betrayer,547,2,1,DUNGEON_HEROIC/0/17941/0,credit_mapping_present,not_evaluated
+302,Rokmar the Crackler,547,1,1,DUNGEON_NORMAL/0/17991/0,credit_mapping_present,not_evaluated
+305,Rokmar the Crackler,547,2,1,DUNGEON_HEROIC/0/17991/0,credit_mapping_present,not_evaluated
+303,Quagmirran,547,1,1,DUNGEON_NORMAL/0/17942/140,credit_mapping_present,not_evaluated
+306,Quagmirran,547,2,1,DUNGEON_HEROIC/0/17942/184,credit_mapping_present,not_evaluated
+623,Hydross the Unstable,548,3,1,RAID_25MAN_NORMAL/0/21216/0,credit_mapping_present,not_evaluated
+624,The Lurker Below,548,3,1,RAID_25MAN_NORMAL/0/21217/0,credit_mapping_present,not_evaluated
+625,Leotheras the Blind,548,3,1,RAID_25MAN_NORMAL/0/21215/0,credit_mapping_present,not_evaluated
+626,Fathom-Lord Karathress,548,3,1,RAID_25MAN_NORMAL/0/21214/0,credit_mapping_present,not_evaluated
+627,Morogrim Tidewalker,548,3,1,RAID_25MAN_NORMAL/0/21213/0,credit_mapping_present,not_evaluated
+628,Lady Vashj,548,3,1,RAID_25MAN_NORMAL/0/21212/194,credit_mapping_present,not_evaluated
+730,Al'ar,550,3,1,RAID_25MAN_NORMAL/0/19514/0,credit_mapping_present,not_evaluated
+731,Void Reaver,550,3,1,RAID_25MAN_NORMAL/0/19516/0,credit_mapping_present,not_evaluated
+732,High Astromancer Solarian,550,3,1,RAID_25MAN_NORMAL/0/18805/0,credit_mapping_present,not_evaluated
+733,Kael'thas Sunstrider,550,3,1,RAID_25MAN_NORMAL/0/19622/193,credit_mapping_present,not_evaluated
+494,Zereketh the Unbound,552,1,1,DUNGEON_NORMAL/0/20870/0,credit_mapping_present,not_evaluated
+495,Zereketh the Unbound,552,2,1,DUNGEON_HEROIC/0/20870/0,credit_mapping_present,not_evaluated
+496,Dalliah the Doomsayer,552,1,1,DUNGEON_NORMAL/0/20885/0,credit_mapping_present,not_evaluated
+497,Dalliah the Doomsayer,552,2,1,DUNGEON_HEROIC/0/20885/0,credit_mapping_present,not_evaluated
+498,Wrath-Scryer Soccothrates,552,1,1,DUNGEON_NORMAL/0/20886/0,credit_mapping_present,not_evaluated
+499,Wrath-Scryer Soccothrates,552,2,1,DUNGEON_HEROIC/0/20886/0,credit_mapping_present,not_evaluated
+500,Harbinger Skyriss,552,1,1,DUNGEON_NORMAL/0/20912/174,credit_mapping_present,not_evaluated
+501,Harbinger Skyriss,552,2,1,DUNGEON_HEROIC/0/20912/190,credit_mapping_present,not_evaluated
+502,Commander Sarannis,553,1,1,DUNGEON_NORMAL/0/17976/0,credit_mapping_present,not_evaluated
+504,Commander Sarannis,553,2,1,DUNGEON_HEROIC/0/17976/0,credit_mapping_present,not_evaluated
+505,High Botanist Freywinn,553,1,1,DUNGEON_NORMAL/0/17975/0,credit_mapping_present,not_evaluated
+506,High Botanist Freywinn,553,2,1,DUNGEON_HEROIC/0/17975/0,credit_mapping_present,not_evaluated
+507,Thorngrin the Tender,553,1,1,DUNGEON_NORMAL/0/17978/0,credit_mapping_present,not_evaluated
+508,Thorngrin the Tender,553,2,1,DUNGEON_HEROIC/0/17978/0,credit_mapping_present,not_evaluated
+509,Laj,553,1,1,DUNGEON_NORMAL/0/17980/0,credit_mapping_present,not_evaluated
+510,Laj,553,2,1,DUNGEON_HEROIC/0/17980/0,credit_mapping_present,not_evaluated
+511,Warp Splinter,553,1,1,DUNGEON_NORMAL/0/17977/173,credit_mapping_present,not_evaluated
+512,Warp Splinter,553,2,1,DUNGEON_HEROIC/0/17977/191,credit_mapping_present,not_evaluated
+513,Mechano-Lord Capacitus,554,1,1,DUNGEON_NORMAL/0/19219/0,credit_mapping_present,not_evaluated
+514,Mechano-Lord Capacitus,554,2,1,DUNGEON_HEROIC/0/19219/0,credit_mapping_present,not_evaluated
+515,Nethermancer Sepethrea,554,1,1,DUNGEON_NORMAL/0/19221/0,credit_mapping_present,not_evaluated
+516,Nethermancer Sepethrea,554,2,1,DUNGEON_HEROIC/0/19221/0,credit_mapping_present,not_evaluated
+517,Pathaleon the Calculator,554,1,1,DUNGEON_NORMAL/0/19220/172,credit_mapping_present,not_evaluated
+518,Pathaleon the Calculator,554,2,1,DUNGEON_HEROIC/0/19220/192,credit_mapping_present,not_evaluated
+208,Ambassador Hellmaw,555,1,1,DUNGEON_NORMAL/0/18731/0,credit_mapping_present,not_evaluated
+255,Ambassador Hellmaw,555,2,1,DUNGEON_HEROIC/0/18731/0,credit_mapping_present,not_evaluated
+209,Blackheart the Inciter,555,1,1,DUNGEON_NORMAL/0/18667/0,credit_mapping_present,not_evaluated
+256,Blackheart the Inciter,555,2,1,DUNGEON_HEROIC/0/18667/0,credit_mapping_present,not_evaluated
+210,Grandmaster Vorpil,555,1,1,DUNGEON_NORMAL/0/18732/0,credit_mapping_present,not_evaluated
+257,Grandmaster Vorpil,555,2,1,DUNGEON_HEROIC/0/18732/0,credit_mapping_present,not_evaluated
+211,Murmur,555,1,1,DUNGEON_NORMAL/0/18708/151,credit_mapping_present,not_evaluated
+258,Murmur,555,2,1,DUNGEON_HEROIC/0/18708/181,credit_mapping_present,not_evaluated
+206,Darkweaver Syth,556,1,1,DUNGEON_NORMAL/0/18472/0,credit_mapping_present,not_evaluated
+252,Darkweaver Syth,556,2,1,DUNGEON_HEROIC/0/18472/0,credit_mapping_present,not_evaluated
+207,Talon King Ikiss,556,1,1,DUNGEON_NORMAL/0/18473/150,credit_mapping_present,not_evaluated
+254,Talon King Ikiss,556,2,1,DUNGEON_HEROIC/0/18473/180,credit_mapping_present,not_evaluated
+253,Anzu,556,2,1,DUNGEON_HEROIC/0/23035/0,credit_mapping_present,not_evaluated
+203,Pandemonius,557,1,1,DUNGEON_NORMAL/0/18341/0,credit_mapping_present,not_evaluated
+248,Pandemonius,557,2,1,DUNGEON_HEROIC/0/18341/0,credit_mapping_present,not_evaluated
+204,Tavarok,557,1,1,DUNGEON_NORMAL/0/18343/0,credit_mapping_present,not_evaluated
+249,Tavarok,557,2,1,DUNGEON_HEROIC/0/18343/0,credit_mapping_present,not_evaluated
+250,Yor,557,2,1,DUNGEON_HEROIC/0/22930/0,credit_mapping_present,not_evaluated
+205,Nexus-Prince Shaffar,557,1,1,DUNGEON_NORMAL/0/18344/148,credit_mapping_present,not_evaluated
+251,Nexus-Prince Shaffar,557,2,1,DUNGEON_HEROIC/0/18344/179,credit_mapping_present,not_evaluated
+201,Shirrak the Dead Watcher,558,1,1,DUNGEON_NORMAL/0/18371/0,credit_mapping_present,not_evaluated
+246,Shirrak the Dead Watcher,558,2,1,DUNGEON_HEROIC/0/18371/0,credit_mapping_present,not_evaluated
+202,Exarch Maladaar,558,1,1,DUNGEON_NORMAL/0/18373/149,credit_mapping_present,not_evaluated
+247,Exarch Maladaar,558,2,1,DUNGEON_HEROIC/0/18373/178,credit_mapping_present,not_evaluated
+286,Lieutenant Drake,560,2,1,DUNGEON_HEROIC/0/17848/0,credit_mapping_present,not_evaluated
+285,Lieutenant Drake,560,1,1,DUNGEON_NORMAL/0/17848/0,credit_mapping_present,not_evaluated
+283,Captain Skarloc,560,1,1,DUNGEON_NORMAL/0/17862/0,credit_mapping_present,not_evaluated
+284,Captain Skarloc,560,2,1,DUNGEON_HEROIC/0/17862/0,credit_mapping_present,not_evaluated
+281,Epoch Hunter,560,1,1,DUNGEON_NORMAL/0/18096/170,credit_mapping_present,not_evaluated
+282,Epoch Hunter,560,2,1,DUNGEON_HEROIC/0/18096/183,credit_mapping_present,not_evaluated
+601,High Warlord Naj'entus,564,3,1,RAID_25MAN_NORMAL/0/22887/0,credit_mapping_present,not_evaluated
+602,Supremus,564,3,1,RAID_25MAN_NORMAL/0/22898/0,credit_mapping_present,not_evaluated
+603,Shade of Akama,564,3,1,RAID_25MAN_NORMAL/0/22841/0,credit_mapping_present,not_evaluated
+604,Teron Gorefiend,564,3,1,RAID_25MAN_NORMAL/0/22871/0,credit_mapping_present,not_evaluated
+605,Gurtogg Bloodboil,564,3,1,RAID_25MAN_NORMAL/0/22948/0,credit_mapping_present,not_evaluated
+606,Reliquary of Souls,564,3,1,RAID_25MAN_NORMAL/0/23420/0,credit_mapping_present,not_evaluated
+607,Mother Shahraz,564,3,1,RAID_25MAN_NORMAL/0/22947/0,credit_mapping_present,not_evaluated
+608,The Illidari Council,564,3,1,RAID_25MAN_NORMAL/0/23426/0,credit_mapping_present,not_evaluated
+609,Illidan Stormrage,564,3,1,RAID_25MAN_NORMAL/0/22917/196,credit_mapping_present,not_evaluated
+649,High King Maulgar,565,3,1,RAID_25MAN_NORMAL/0/18831/0,credit_mapping_present,not_evaluated
+650,Gruul the Dragonkiller,565,3,1,RAID_25MAN_NORMAL/0/19044/177,credit_mapping_present,not_evaluated
+1189,Akil'zon,568,0,0,,credit_mapping_absent_review,not_evaluated
+1190,Nalorakk,568,0,0,,credit_mapping_absent_review,not_evaluated
+1191,Jan'alai,568,0,0,,credit_mapping_absent_review,not_evaluated
+1192,Halazzi,568,0,0,,credit_mapping_absent_review,not_evaluated
+1193,Hex Lord Malacrass,568,0,0,,credit_mapping_absent_review,not_evaluated
+1194,Daakara,568,0,0,,credit_mapping_absent_review,not_evaluated
+571,Prince Keleseth,574,1,1,DUNGEON_NORMAL/0/23953/0,credit_mapping_present,not_evaluated
+572,Prince Keleseth,574,2,1,DUNGEON_HEROIC/0/23953/0,credit_mapping_present,not_evaluated
+573,Skarvold & Dalronn,574,1,1,DUNGEON_NORMAL/0/24201/0,credit_mapping_present,not_evaluated
+574,Skarvold & Dalronn,574,2,1,DUNGEON_HEROIC/0/24201/0,credit_mapping_present,not_evaluated
+575,Ingvar the Plunderer,574,1,1,DUNGEON_NORMAL/0/23980/202,credit_mapping_present,not_evaluated
+576,Ingvar the Plunderer,574,2,1,DUNGEON_HEROIC/0/23980/242,credit_mapping_present,not_evaluated
+577,Svala Sorrowgrave,575,1,1,DUNGEON_NORMAL/0/26668/0,credit_mapping_present,not_evaluated
+578,Svala Sorrowgrave,575,2,1,DUNGEON_HEROIC/0/26668/0,credit_mapping_present,not_evaluated
+579,Gortok Palehoof,575,1,1,DUNGEON_NORMAL/0/26687/0,credit_mapping_present,not_evaluated
+580,Gortok Palehoof,575,2,1,DUNGEON_HEROIC/0/26687/0,credit_mapping_present,not_evaluated
+581,Skadi the Ruthless,575,1,1,DUNGEON_NORMAL/0/26693/0,credit_mapping_present,not_evaluated
+582,Skadi the Ruthless,575,2,1,DUNGEON_HEROIC/0/26693/0,credit_mapping_present,not_evaluated
+583,King Ymiron,575,1,1,DUNGEON_NORMAL/0/26861/203,credit_mapping_present,not_evaluated
+584,King Ymiron,575,2,1,DUNGEON_HEROIC/0/26861/205,credit_mapping_present,not_evaluated
+519,Frozen Commander,576,2,1,DUNGEON_HEROIC/0/26796/0,credit_mapping_present,not_evaluated
+520,Grand Magus Telestra,576,1,1,DUNGEON_NORMAL/0/26731/0,credit_mapping_present,not_evaluated
+521,Grand Magus Telestra,576,2,1,DUNGEON_HEROIC/0/26731/0,credit_mapping_present,not_evaluated
+522,Anomalus,576,1,1,DUNGEON_NORMAL/0/26763/0,credit_mapping_present,not_evaluated
+523,Anomalus,576,2,1,DUNGEON_HEROIC/0/26763/0,credit_mapping_present,not_evaluated
+524,Ormorok the Tree-Shaper,576,1,1,DUNGEON_NORMAL/0/26794/0,credit_mapping_present,not_evaluated
+525,Ormorok the Tree-Shaper,576,2,1,DUNGEON_HEROIC/0/26794/0,credit_mapping_present,not_evaluated
+526,Keristrasza,576,1,1,DUNGEON_NORMAL/0/26723/225,credit_mapping_present,not_evaluated
+527,Keristrasza,576,2,1,DUNGEON_HEROIC/0/26723/226,credit_mapping_present,not_evaluated
+528,Drakos the Interrogator,578,1,1,DUNGEON_NORMAL/0/27654/0,credit_mapping_present,not_evaluated
+529,Drakos the Interrogator,578,2,1,DUNGEON_HEROIC/0/27654/0,credit_mapping_present,not_evaluated
+530,Varos Cloudstrider,578,1,1,DUNGEON_NORMAL/0/27447/0,credit_mapping_present,not_evaluated
+531,Varos Cloudstrider,578,2,1,DUNGEON_HEROIC/0/27447/0,credit_mapping_present,not_evaluated
+532,Mage-Lord Urom,578,1,1,DUNGEON_NORMAL/0/27655/0,credit_mapping_present,not_evaluated
+533,Mage-Lord Urom,578,2,1,DUNGEON_HEROIC/0/27655/0,credit_mapping_present,not_evaluated
+534,Ley-Guardian Eregos,578,1,1,DUNGEON_NORMAL/0/27656/206,credit_mapping_present,not_evaluated
+535,Ley-Guardian Eregos,578,2,1,DUNGEON_HEROIC/0/27656/211,credit_mapping_present,not_evaluated
+724,Kalecgos,580,3,1,RAID_25MAN_NORMAL/0/24892/0,credit_mapping_present,not_evaluated
+725,Brutallus,580,3,1,RAID_25MAN_NORMAL/0/24882/0,credit_mapping_present,not_evaluated
+726,Felmyst,580,3,1,RAID_25MAN_NORMAL/0/25038/0,credit_mapping_present,not_evaluated
+727,Eredar Twins,580,3,1,RAID_25MAN_NORMAL/0/25165/0,credit_mapping_present,not_evaluated
+728,M'uru,580,3,1,RAID_25MAN_NORMAL/0/25840/0,credit_mapping_present,not_evaluated
+729,Kil'jaeden,580,3,1,RAID_25MAN_NORMAL/0/25315/199,credit_mapping_present,not_evaluated
+414,Selin Fireheart,585,1,1,DUNGEON_NORMAL/0/24723/0,credit_mapping_present,not_evaluated
+415,Selin Fireheart,585,2,1,DUNGEON_HEROIC/0/24723/0,credit_mapping_present,not_evaluated
+416,Vexallus,585,1,1,DUNGEON_NORMAL/0/24744/0,credit_mapping_present,not_evaluated
+417,Vexallus,585,2,1,DUNGEON_HEROIC/0/24744/0,credit_mapping_present,not_evaluated
+418,Priestess Delrissa,585,1,1,DUNGEON_NORMAL/0/24560/0,credit_mapping_present,not_evaluated
+419,Priestess Delrissa,585,2,1,DUNGEON_HEROIC/0/24560/0,credit_mapping_present,not_evaluated
+420,Kael'thas Sunstrider,585,1,1,DUNGEON_NORMAL/0/24664/198,credit_mapping_present,not_evaluated
+421,Kael'thas Sunstrider,585,2,1,DUNGEON_HEROIC/0/24664/201,credit_mapping_present,not_evaluated
+293,Meathook,595,1,1,DUNGEON_NORMAL/0/26529/0,credit_mapping_present,not_evaluated
+297,Meathook,595,2,1,DUNGEON_HEROIC/0/26529/0,credit_mapping_present,not_evaluated
+294,Salram the Fleshcrafter,595,1,1,DUNGEON_NORMAL/0/26530/0,credit_mapping_present,not_evaluated
+298,Salram the Fleshcrafter,595,2,1,DUNGEON_HEROIC/0/26530/0,credit_mapping_present,not_evaluated
+295,Chrono-Lord Epoch,595,1,1,DUNGEON_NORMAL/0/26532/0,credit_mapping_present,not_evaluated
+299,Chrono-Lord Epoch,595,2,1,DUNGEON_HEROIC/0/26532/0,credit_mapping_present,not_evaluated
+296,Mal'ganis,595,1,1,DUNGEON_NORMAL/1/58630/0,credit_mapping_present,not_evaluated
+300,Mal'ganis,595,2,1,DUNGEON_HEROIC/1/58630/0,credit_mapping_present,not_evaluated
+1348,Omar the Test Dragon,598,1,1,DUNGEON_NORMAL/0/16089/0,credit_mapping_present,not_evaluated
+563,Krystallus,599,1,1,DUNGEON_NORMAL/0/27977/0,credit_mapping_present,not_evaluated
+564,Krystallus,599,2,1,DUNGEON_HEROIC/0/27977/0,credit_mapping_present,not_evaluated
+565,Maiden of Grief,599,1,1,DUNGEON_NORMAL/0/27975/0,credit_mapping_present,not_evaluated
+566,Maiden of Grief,599,2,1,DUNGEON_HEROIC/0/27975/0,credit_mapping_present,not_evaluated
+567,Tribunal of Ages,599,1,1,DUNGEON_NORMAL/1/59046/0,credit_mapping_present,not_evaluated
+568,Tribunal of Ages,599,2,1,DUNGEON_HEROIC/1/59046/0,credit_mapping_present,not_evaluated
+569,Sjonnir the Ironshaper,599,1,1,DUNGEON_NORMAL/0/27978/208,credit_mapping_present,not_evaluated
+570,Sjonnir the Ironshaper,599,2,1,DUNGEON_HEROIC/0/27978/213,credit_mapping_present,not_evaluated
+369,Trollgore,600,1,1,DUNGEON_NORMAL/0/26630/0,credit_mapping_present,not_evaluated
+370,Trollgore,600,2,1,DUNGEON_HEROIC/0/26630/0,credit_mapping_present,not_evaluated
+371,Novos the Summoner,600,1,1,DUNGEON_NORMAL/0/26631/0,credit_mapping_present,not_evaluated
+372,Novos the Summoner,600,2,1,DUNGEON_HEROIC/0/26631/0,credit_mapping_present,not_evaluated
+373,King Dred,600,1,1,DUNGEON_NORMAL/0/27483/0,credit_mapping_present,not_evaluated
+374,King Dred,600,2,1,DUNGEON_HEROIC/0/27483/0,credit_mapping_present,not_evaluated
+375,The Prophet Tharon'ja,600,1,1,DUNGEON_NORMAL/1/61863/214,credit_mapping_present,not_evaluated
+376,The Prophet Tharon'ja,600,2,1,DUNGEON_HEROIC/1/61863/215,credit_mapping_present,not_evaluated
+216,Krik'thir the Gatewatcher,601,1,1,DUNGEON_NORMAL/0/28684/0,credit_mapping_present,not_evaluated
+264,Krik'thir the Gatewatcher,601,2,1,DUNGEON_HEROIC/0/28684/0,credit_mapping_present,not_evaluated
+217,Hadronox,601,1,1,DUNGEON_NORMAL/0/28921/0,credit_mapping_present,not_evaluated
+265,Hadronox,601,2,1,DUNGEON_HEROIC/0/28921/0,credit_mapping_present,not_evaluated
+218,Anub'arak,601,1,1,DUNGEON_NORMAL/0/29120/204,credit_mapping_present,not_evaluated
+266,Anub'arak,601,2,1,DUNGEON_HEROIC/0/29120/241,credit_mapping_present,not_evaluated
+555,General Bjarngrim,602,1,1,DUNGEON_NORMAL/0/28586/0,credit_mapping_present,not_evaluated
+556,General Bjarngrim,602,2,1,DUNGEON_HEROIC/0/28586/0,credit_mapping_present,not_evaluated
+557,Volkhan,602,1,1,DUNGEON_NORMAL/0/28587/0,credit_mapping_present,not_evaluated
+558,Volkhan,602,2,1,DUNGEON_HEROIC/0/28587/0,credit_mapping_present,not_evaluated
+559,Ionar,602,1,1,DUNGEON_NORMAL/0/28546/0,credit_mapping_present,not_evaluated
+560,Ionar,602,2,1,DUNGEON_HEROIC/0/28546/0,credit_mapping_present,not_evaluated
+561,Loken,602,1,1,DUNGEON_NORMAL/0/28923/207,credit_mapping_present,not_evaluated
+562,Loken,602,2,1,DUNGEON_HEROIC/0/28923/212,credit_mapping_present,not_evaluated
+1132,Flame Leviathan,603,0,0,,credit_mapping_absent_review,not_evaluated
+1136,Ignis the Furnace Master,603,0,0,,credit_mapping_absent_review,not_evaluated
+1139,Razorscale,603,0,0,,credit_mapping_absent_review,not_evaluated
+1142,XT-002 Deconstructor,603,0,0,,credit_mapping_absent_review,not_evaluated
+1140,The Assembly of Iron,603,0,0,,credit_mapping_absent_review,not_evaluated
+1137,Kologarn,603,0,0,,credit_mapping_absent_review,not_evaluated
+1131,Auriaya,603,0,0,,credit_mapping_absent_review,not_evaluated
+1135,Hodir,603,0,0,,credit_mapping_absent_review,not_evaluated
+1141,Thorim,603,0,0,,credit_mapping_absent_review,not_evaluated
+1164,Elder Brightleaf,603,0,0,,credit_mapping_absent_review,not_evaluated
+1165,Elder Ironbranch,603,0,0,,credit_mapping_absent_review,not_evaluated
+1166,Elder Stonebark,603,0,0,,credit_mapping_absent_review,not_evaluated
+1133,Freya,603,0,0,,credit_mapping_absent_review,not_evaluated
+1138,Mimiron,603,0,0,,credit_mapping_absent_review,not_evaluated
+1134,General Vezax,603,0,0,,credit_mapping_absent_review,not_evaluated
+1143,Yogg-Saron,603,0,0,,credit_mapping_absent_review,not_evaluated
+1130,Algalon the Observer,603,0,0,,credit_mapping_absent_review,not_evaluated
+383,Slad'ran,604,1,1,DUNGEON_NORMAL/0/29304/0,credit_mapping_present,not_evaluated
+384,Slad'ran,604,2,1,DUNGEON_HEROIC/0/29304/0,credit_mapping_present,not_evaluated
+385,Drakkari Colossus,604,1,1,DUNGEON_NORMAL/0/29573/0,credit_mapping_present,not_evaluated
+386,Drakkari Colossus,604,2,1,DUNGEON_HEROIC/0/29573/0,credit_mapping_present,not_evaluated
+387,Moorabi,604,1,1,DUNGEON_NORMAL/0/29305/0,credit_mapping_present,not_evaluated
+388,Moorabi,604,2,1,DUNGEON_HEROIC/0/29305/0,credit_mapping_present,not_evaluated
+390,Gal'darah,604,1,1,DUNGEON_NORMAL/0/29306/216,credit_mapping_present,not_evaluated
+389,Eck the Ferocious,604,2,1,DUNGEON_HEROIC/0/29932/0,credit_mapping_present,not_evaluated
+391,Gal'darah,604,2,1,DUNGEON_HEROIC/0/29306/217,credit_mapping_present,not_evaluated
+541,First Prisoner,608,1,1,DUNGEON_NORMAL/0/29315/0,credit_mapping_present,not_evaluated
+542,First Prisoner,608,2,1,DUNGEON_HEROIC/0/29315/0,credit_mapping_present,not_evaluated
+543,Second Prisoner,608,1,1,DUNGEON_NORMAL/0/29316/0,credit_mapping_present,not_evaluated
+544,Second Prisoner,608,2,1,DUNGEON_HEROIC/0/29316/0,credit_mapping_present,not_evaluated
+545,Cyanigosa,608,1,1,DUNGEON_NORMAL/0/31134/220,credit_mapping_present,not_evaluated
+546,Cyanigosa,608,2,1,DUNGEON_HEROIC/0/31134/221,credit_mapping_present,not_evaluated
+1093,Vesperon,615,0,0,,credit_mapping_absent_review,not_evaluated
+1092,Tenebron,615,0,0,,credit_mapping_absent_review,not_evaluated
+1091,Shadron,615,0,0,,credit_mapping_absent_review,not_evaluated
+1090,Sartharion,615,0,0,,credit_mapping_absent_review,not_evaluated
+1094,Malygos,616,0,0,,credit_mapping_absent_review,not_evaluated
+212,Elder Nadox,619,1,1,DUNGEON_NORMAL/0/29309/0,credit_mapping_present,not_evaluated
+259,Elder Nadox,619,2,1,DUNGEON_HEROIC/0/29309/0,credit_mapping_present,not_evaluated
+213,Prince Taldaram,619,1,1,DUNGEON_NORMAL/0/29308/0,credit_mapping_present,not_evaluated
+260,Prince Taldaram,619,2,1,DUNGEON_HEROIC/0/29308/0,credit_mapping_present,not_evaluated
+214,Jedoga Shadowseeker,619,1,1,DUNGEON_NORMAL/0/29310/0,credit_mapping_present,not_evaluated
+261,Jedoga Shadowseeker,619,2,1,DUNGEON_HEROIC/0/29310/0,credit_mapping_present,not_evaluated
+215,Herald Volazj,619,1,1,DUNGEON_NORMAL/0/29311/218,credit_mapping_present,not_evaluated
+262,Amanitar,619,2,1,DUNGEON_HEROIC/0/30258/0,credit_mapping_present,not_evaluated
+263,Herald Volazj,619,2,1,DUNGEON_HEROIC/0/29311/219,credit_mapping_present,not_evaluated
+1126,Archavon the Stone Watcher,624,0,0,,credit_mapping_absent_review,not_evaluated
+1127,Emalon the Storm Watcher,624,0,0,,credit_mapping_absent_review,not_evaluated
+1128,Koralon the Flame Watcher,624,0,0,,credit_mapping_absent_review,not_evaluated
+1129,Toravon the Ice Watcher,624,0,0,,credit_mapping_absent_review,not_evaluated
+1101,Lord Marrowgar,631,0,0,,credit_mapping_absent_review,not_evaluated
+1100,Lady Deathwhisper,631,0,0,,credit_mapping_absent_review,not_evaluated
+1099,Icecrown Gunship Battle,631,0,0,,credit_mapping_absent_review,not_evaluated
+1096,Deathbringer Saurfang,631,0,0,,credit_mapping_absent_review,not_evaluated
+1104,Rotface,631,0,0,,credit_mapping_absent_review,not_evaluated
+1097,Festergut,631,0,0,,credit_mapping_absent_review,not_evaluated
+1102,Professor Putricide,631,0,0,,credit_mapping_absent_review,not_evaluated
+1095,Blood Council,631,0,0,,credit_mapping_absent_review,not_evaluated
+1103,Queen Lana'thel,631,0,0,,credit_mapping_absent_review,not_evaluated
+1098,Valithria Dreamwalker,631,0,0,,credit_mapping_absent_review,not_evaluated
+1105,Sindragosa,631,0,0,,credit_mapping_absent_review,not_evaluated
+1106,The Lich King,631,0,0,,credit_mapping_absent_review,not_evaluated
+829,Bronjahm,632,1,1,DUNGEON_NORMAL/0/36497/0,credit_mapping_present,not_evaluated
+830,Bronjahm ,632,2,1,DUNGEON_HEROIC/0/36497/0,credit_mapping_present,not_evaluated
+831,Devourer of Souls,632,1,1,DUNGEON_NORMAL/0/36502/251,credit_mapping_present,not_evaluated
+832,Devourer of Souls,632,2,1,DUNGEON_HEROIC/0/36502/252,credit_mapping_present,not_evaluated
+1045,Lady Naz'jar,643,0,0,,credit_mapping_absent_review,not_evaluated
+1044,Commander Ulthok,643,0,0,,credit_mapping_absent_review,not_evaluated
+1046,Mindbender Ghur'sha,643,0,0,,credit_mapping_absent_review,not_evaluated
+1047,Ozumat,643,0,2,DUNGEON_NORMAL/0/42172/302;DUNGEON_HEROIC/0/42172/324,credit_mapping_present,not_evaluated
+1080,Temple Guardian Anhuur,644,0,0,,credit_mapping_absent_review,not_evaluated
+1076,Earthrager Ptah,644,0,0,,credit_mapping_absent_review,not_evaluated
+1075,Anraphet,644,0,0,,credit_mapping_absent_review,not_evaluated
+1077,Isiset,644,0,0,,credit_mapping_absent_review,not_evaluated
+1074,Ammunae,644,0,0,,credit_mapping_absent_review,not_evaluated
+1079,Setesh,644,0,0,,credit_mapping_absent_review,not_evaluated
+1078,Rajh,644,0,2,DUNGEON_NORMAL/0/39378/305;DUNGEON_HEROIC/0/39378/321,credit_mapping_present,not_evaluated
+1040,Rom'ogg Bonecrusher,645,0,0,,credit_mapping_absent_review,not_evaluated
+1038,"Corla, Herald of Twilight",645,0,0,,credit_mapping_absent_review,not_evaluated
+1039,Karsh Steelbender,645,0,0,,credit_mapping_absent_review,not_evaluated
+1037,Beauty,645,0,0,,credit_mapping_absent_review,not_evaluated
+1036,Ascendant Lord Obsidius,645,0,2,DUNGEON_NORMAL/0/39705/303;DUNGEON_HEROIC/0/39705/323,credit_mapping_present,not_evaluated
+1088,Northrend Beasts,649,0,0,,credit_mapping_absent_review,not_evaluated
+1087,Lord Jaraxxus,649,0,0,,credit_mapping_absent_review,not_evaluated
+1086,Faction Champions,649,0,0,,credit_mapping_absent_review,not_evaluated
+1089,Val'kyr Twins,649,0,0,,credit_mapping_absent_review,not_evaluated
+1085,Anub'arak,649,0,0,,credit_mapping_absent_review,not_evaluated
+334,Grand Champions,650,1,1,DUNGEON_NORMAL/1/68572/0,credit_mapping_present,not_evaluated
+336,Grand Champions,650,2,1,DUNGEON_HEROIC/1/68572/0,credit_mapping_present,not_evaluated
+338,Argent Champion,650,1,1,DUNGEON_NORMAL/1/68574/0,credit_mapping_present,not_evaluated
+339,Argent Champion,650,2,1,DUNGEON_HEROIC/1/68574/0,credit_mapping_present,not_evaluated
+340,The Black Knight,650,1,1,DUNGEON_NORMAL/1/68663/245,credit_mapping_present,not_evaluated
+341,The Black Knight,650,2,1,DUNGEON_HEROIC/1/68663/249,credit_mapping_present,not_evaluated
+1043,Grand Vizier Ertan,657,0,0,,credit_mapping_absent_review,not_evaluated
+1041,Altairus,657,0,0,,credit_mapping_absent_review,not_evaluated
+1042,Asaad,657,0,2,DUNGEON_NORMAL/0/43875/311;DUNGEON_HEROIC/0/43875/319,credit_mapping_present,not_evaluated
+833,Forgemaster Garfrost,658,1,1,DUNGEON_NORMAL/0/36494/0,credit_mapping_present,not_evaluated
+834,Forgemaster Garfrost,658,2,1,DUNGEON_HEROIC/0/36494/0,credit_mapping_present,not_evaluated
+835,Krick,658,1,1,DUNGEON_NORMAL/0/36476/0,credit_mapping_present,not_evaluated
+836,Krick,658,2,1,DUNGEON_HEROIC/0/36476/0,credit_mapping_present,not_evaluated
+837,Scourgelord Tyrannus,658,1,1,DUNGEON_NORMAL/0/36658/253,credit_mapping_present,not_evaluated
+838,Scourgelord Tyrannus,658,2,1,DUNGEON_HEROIC/0/36658/254,credit_mapping_present,not_evaluated
+842,Falric,668,2,1,DUNGEON_HEROIC/0/38112/0,credit_mapping_present,not_evaluated
+841,Falric,668,1,1,DUNGEON_NORMAL/0/38112/0,credit_mapping_present,not_evaluated
+840,Marwyn,668,2,1,DUNGEON_HEROIC/0/38113/0,credit_mapping_present,not_evaluated
+839,Marwyn,668,1,1,DUNGEON_NORMAL/0/38113/0,credit_mapping_present,not_evaluated
+843,Escaped from Arthas,668,1,1,DUNGEON_NORMAL/1/72830/255,credit_mapping_present,not_evaluated
+844,Escaped from Arthas,668,2,1,DUNGEON_HEROIC/1/72830/256,credit_mapping_present,not_evaluated
+1027,Omnotron Defense System,669,0,0,,credit_mapping_absent_review,not_evaluated
+1024,Magmaw,669,0,0,,credit_mapping_absent_review,not_evaluated
+1022,Atramedes,669,0,0,,credit_mapping_absent_review,not_evaluated
+1023,Chimaeron,669,0,0,,credit_mapping_absent_review,not_evaluated
+1025,Maloriak,669,0,0,,credit_mapping_absent_review,not_evaluated
+1026,Nefarian's End,669,0,0,,credit_mapping_absent_review,not_evaluated
+1051,General Umbriss,670,0,0,,credit_mapping_absent_review,not_evaluated
+1050,Forgemaster Throngus,670,0,0,,credit_mapping_absent_review,not_evaluated
+1048,Drahga Shadowburner,670,0,0,,credit_mapping_absent_review,not_evaluated
+1049,Erudax,670,0,2,DUNGEON_NORMAL/0/40484/304;DUNGEON_HEROIC/0/40484/322,credit_mapping_present,not_evaluated
+1030,Halfus Wyrmbreaker,671,0,0,,credit_mapping_absent_review,not_evaluated
+1032,Theralion and Valiona,671,0,0,,credit_mapping_absent_review,not_evaluated
+1028,Ascendant Council,671,0,0,,credit_mapping_absent_review,not_evaluated
+1029,Cho'gall,671,0,0,,credit_mapping_absent_review,not_evaluated
+1082,Sinestra,671,5,1,RAID_10MAN_HEROIC/0/45213/0,credit_mapping_present,not_evaluated
+1083,Sinestra,671,6,1,RAID_25MAN_HEROIC/0/45213/0,credit_mapping_present,not_evaluated
+1197,Beth'tilac,720,0,0,,credit_mapping_absent_review,not_evaluated
+1204,Lord Rhyolith,720,0,0,,credit_mapping_absent_review,not_evaluated
+1205,Shannox,720,0,0,,credit_mapping_absent_review,not_evaluated
+1206,Alysrazor,720,0,0,,credit_mapping_absent_review,not_evaluated
+1200,Baleroc,720,0,0,,credit_mapping_absent_review,not_evaluated
+1185,Majordomo Staghelm,720,0,0,,credit_mapping_absent_review,not_evaluated
+1203,Ragnaros,720,0,0,,credit_mapping_absent_review,not_evaluated
+1147,Baltharus the Warborn,724,0,0,,credit_mapping_absent_review,not_evaluated
+1149,Saviana Ragefire,724,0,0,,credit_mapping_absent_review,not_evaluated
+1148,General Zarithrian,724,0,0,,credit_mapping_absent_review,not_evaluated
+1150,Halion,724,0,0,,credit_mapping_absent_review,not_evaluated
+1056,Corborus,725,0,0,,credit_mapping_absent_review,not_evaluated
+1059,Slabhide,725,0,0,,credit_mapping_absent_review,not_evaluated
+1058,Ozruk,725,0,0,,credit_mapping_absent_review,not_evaluated
+1057,High Priestess Azil,725,0,2,DUNGEON_NORMAL/0/42333/307;DUNGEON_HEROIC/0/42333/320,credit_mapping_present,not_evaluated
+1035,Conclave of Wind,754,0,0,,credit_mapping_absent_review,not_evaluated
+1034,Al'Akir,754,0,0,,credit_mapping_absent_review,not_evaluated
+1052,General Husam,755,0,0,,credit_mapping_absent_review,not_evaluated
+1053,High Prophet Barim,755,0,0,,credit_mapping_absent_review,not_evaluated
+1054,Lockmaw,755,0,0,,credit_mapping_absent_review,not_evaluated
+1055,Siamat,755,0,2,DUNGEON_NORMAL/0/44819/312;DUNGEON_HEROIC/0/44819/325,credit_mapping_present,not_evaluated
+1033,Argaloth,757,0,0,,credit_mapping_absent_review,not_evaluated
+1250,Occu'thar,757,0,0,,credit_mapping_absent_review,not_evaluated
+1332,Alizabal,757,0,0,,credit_mapping_absent_review,not_evaluated
+1178,High Priest Venoxis,859,0,0,,credit_mapping_absent_review,not_evaluated
+1179,Bloodlord Mandokir,859,0,0,,credit_mapping_absent_review,not_evaluated
+1188,Cache of Madness,859,0,0,,credit_mapping_absent_review,not_evaluated
+1180,High Priestess Kilnara,859,0,0,,credit_mapping_absent_review,not_evaluated
+1181,Zanzil,859,0,0,,credit_mapping_absent_review,not_evaluated
+1182,Jin'do the Godbreaker,859,0,0,,credit_mapping_absent_review,not_evaluated
+1563,Galleon,870,0,0,,credit_mapping_absent_review,not_evaluated
+1564,Sha of Anger,870,0,0,,credit_mapping_absent_review,not_evaluated
+1571,Nalak,870,0,0,,credit_mapping_absent_review,not_evaluated
+1587,Oondasta,870,0,0,,credit_mapping_absent_review,not_evaluated
+1269,First Echo,938,0,0,,credit_mapping_absent_review,not_evaluated
+1268,Second Echo,938,0,0,,credit_mapping_absent_review,not_evaluated
+1271,Murozond,938,0,0,,credit_mapping_absent_review,not_evaluated
+1272,Peroth'arn,939,0,0,,credit_mapping_absent_review,not_evaluated
+1273,Queen Azshara,939,0,0,,credit_mapping_absent_review,not_evaluated
+1274,Mannoroth,939,0,0,,credit_mapping_absent_review,not_evaluated
+1337,Arcurion,940,0,0,,credit_mapping_absent_review,not_evaluated
+1340,Asira Dawnslayer,940,0,0,,credit_mapping_absent_review,not_evaluated
+1339,Archbishop Benedictus,940,0,0,,credit_mapping_absent_review,not_evaluated
+1303,Gu Cloudstrike,959,0,0,,credit_mapping_absent_review,not_evaluated
+1304,Master Snowdrift,959,0,0,,credit_mapping_absent_review,not_evaluated
+1305,Sha of Violence,959,0,0,,credit_mapping_absent_review,not_evaluated
+1306,Taran Zhu,959,0,2,DUNGEON_NORMAL/1/123095/466;DUNGEON_HEROIC/1/123095/470,credit_mapping_present,not_evaluated
+1418,Wise Mari,960,0,0,,credit_mapping_absent_review,not_evaluated
+1417,Lorewalker Stonestep,960,0,0,,credit_mapping_absent_review,not_evaluated
+1416,Liu Flameheart,960,0,0,,credit_mapping_absent_review,not_evaluated
+1439,Sha of Doubt,960,0,2,DUNGEON_NORMAL/0/56439/464;DUNGEON_HEROIC/0/56439/468,credit_mapping_present,not_evaluated
+1412,Ook-Ook,961,0,0,,credit_mapping_absent_review,not_evaluated
+1413,Hoptallus,961,0,0,,credit_mapping_absent_review,not_evaluated
+1414,Yan-Zhu the Uncasked,961,0,2,DUNGEON_NORMAL/0/59479/465;DUNGEON_HEROIC/0/59479/469,credit_mapping_present,not_evaluated
+1397,Saboteur Kip'tilak,962,0,0,,credit_mapping_absent_review,not_evaluated
+1405,Striker Ga'dok,962,0,0,,credit_mapping_absent_review,not_evaluated
+1406,Commander Ri'mok,962,0,0,,credit_mapping_absent_review,not_evaluated
+1419,Raigonn,962,0,2,DUNGEON_NORMAL/0/56877/631;DUNGEON_HEROIC/0/56877/471,credit_mapping_present,not_evaluated
+1292,Morchok,967,0,0,,credit_mapping_absent_review,not_evaluated
+1294,Warlord Zon'ozz,967,0,0,,credit_mapping_absent_review,not_evaluated
+1295,Yor'sahj the Unsleeping,967,0,0,,credit_mapping_absent_review,not_evaluated
+1296,Hagara,967,0,0,,credit_mapping_absent_review,not_evaluated
+1297,Ultraxion,967,0,0,,credit_mapping_absent_review,not_evaluated
+1298,Warmaster Blackhorn,967,0,0,,credit_mapping_absent_review,not_evaluated
+1291,Spine of Deathwing,967,0,0,,credit_mapping_absent_review,not_evaluated
+1299,Madness of Deathwing,967,0,0,,credit_mapping_absent_review,not_evaluated
+1442,Trial of the King,994,0,0,,credit_mapping_absent_review,not_evaluated
+1509,Gekkan,994,1,1,DUNGEON_NORMAL/0/61243/0,credit_mapping_present,not_evaluated
+1510,Gekkan,994,2,1,DUNGEON_HEROIC/0/61243/0,credit_mapping_present,not_evaluated
+1441,Xin the Weaponmaster,994,0,2,DUNGEON_NORMAL/0/61398/467;DUNGEON_HEROIC/0/61398/519,credit_mapping_present,not_evaluated
+1409,Protectors of the Endless,996,0,0,,credit_mapping_absent_review,not_evaluated
+1505,Tsulong,996,0,0,,credit_mapping_absent_review,not_evaluated
+1506,Lei Shi,996,0,0,,credit_mapping_absent_review,not_evaluated
+1431,Sha of Fear,996,0,0,,credit_mapping_absent_review,not_evaluated
+1422,Houndmaster Braun,1001,0,0,,credit_mapping_absent_review,not_evaluated
+1421,Armsmaster Harlan,1001,0,0,,credit_mapping_absent_review,not_evaluated
+1420,Flameweaver Koegler,1001,0,2,DUNGEON_NORMAL/0/59150/163;DUNGEON_HEROIC/0/59150/473,credit_mapping_present,not_evaluated
+1423,Thalnos the Soulrender,1004,0,0,,credit_mapping_absent_review,not_evaluated
+1424,Brother Korloff,1004,0,0,,credit_mapping_absent_review,not_evaluated
+1425,High Inquisitor Whitemane,1004,0,2,DUNGEON_NORMAL/0/3977/164;DUNGEON_HEROIC/0/3977/474,credit_mapping_present,not_evaluated
+1426,Instructor Chillheart,1007,0,0,,credit_mapping_absent_review,not_evaluated
+1427,Jandice Barov,1007,0,0,,credit_mapping_absent_review,not_evaluated
+1428,Rattlegore,1007,0,0,,credit_mapping_absent_review,not_evaluated
+1429,Lilian Voss,1007,0,0,,credit_mapping_absent_review,not_evaluated
+1430,Darkmaster Gandling,1007,0,2,DUNGEON_NORMAL/0/59080/2;DUNGEON_HEROIC/0/59080/472,credit_mapping_present,not_evaluated
+1395,The Stone Guard,1008,0,0,,credit_mapping_absent_review,not_evaluated
+1390,Feng the Accursed,1008,0,0,,credit_mapping_absent_review,not_evaluated
+1434,Gara'jal the Spiritbinder,1008,0,0,,credit_mapping_absent_review,not_evaluated
+1436,The Spirit Kings,1008,0,0,,credit_mapping_absent_review,not_evaluated
+1500,Elegon,1008,0,0,,credit_mapping_absent_review,not_evaluated
+1407,Will of the Emperor,1008,0,0,,credit_mapping_absent_review,not_evaluated
+1507,Imperial Vizier Zor'lok,1009,0,0,,credit_mapping_absent_review,not_evaluated
+1504,Blade Lord Ta'yak,1009,0,0,,credit_mapping_absent_review,not_evaluated
+1463,Garalon,1009,0,0,,credit_mapping_absent_review,not_evaluated
+1498,Wind Lord Mel'jarak,1009,0,0,,credit_mapping_absent_review,not_evaluated
+1499,Amber-Shaper Un'sok,1009,0,0,,credit_mapping_absent_review,not_evaluated
+1501,Grand Empress Shek'zeer,1009,0,0,,credit_mapping_absent_review,not_evaluated
+1465,Vizier Jin'bak,1011,0,0,,credit_mapping_absent_review,not_evaluated
+1502,Commander Vo'jak,1011,0,0,,credit_mapping_absent_review,not_evaluated
+1447,General Pa'valak,1011,0,0,,credit_mapping_absent_review,not_evaluated
+1464,Wing Leader Ner'onok,1011,0,2,DUNGEON_NORMAL/0/62205/0;DUNGEON_HEROIC/0/62205/0,credit_mapping_present,not_evaluated
+1577,Jin'rokh the Breaker,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1575,Horridon,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1570,Council of Elders,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1565,Tortos,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1578,Megaera,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1573,Ji-Kun,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1572,Durumu the Forgotten,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1574,Primordius,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1576,Dark Animus,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1559,Iron Qon,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1560,Twin Consorts,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1579,Lei Shen,1098,0,0,,credit_mapping_absent_review,not_evaluated
+1580,Ra-den,1098,5,1,RAID_10MAN_HEROIC/1/140182/0,credit_mapping_present,not_evaluated
+1581,Ra-den,1098,6,1,RAID_25MAN_HEROIC/1/140182/0,credit_mapping_present,not_evaluated
+1602,Immerseus,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1598,Fallen Protectors,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1624,Norushen,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1604,Sha of Pride,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1622,Galakras,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1600,Iron Juggernaut,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1606,Kor'kron Dark Shaman,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1603,General Nazgrim,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1595,Malkorok,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1594,Spoils of Pandaria,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1599,Thok the Bloodthirsty,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1601,Siegecrafter Blackfuse,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1593,Paragons of the Klaxxi,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1623,Garrosh Hellscream,1136,0,0,,credit_mapping_absent_review,not_evaluated
+1605,Omar's Test Encounter (Cosmetic only) DNT,1136,0,0,,credit_mapping_absent_review,not_evaluated

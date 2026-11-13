@@ -40,7 +40,7 @@ bool PointMovementGenerator<T>::DoInitialize(T* unit)
     Movement::MoveSplineInit init(unit);
     init.MoveTo(i_x, i_y, i_z, m_generatePath);
     if (speed > 0.0f)
-        init.SetVelocity(speed);
+        init.SetVelocity(speed, __func__);
     init.Launch();
 
     // Call for creature group update
@@ -71,7 +71,7 @@ bool PointMovementGenerator<T>::DoUpdate(T* unit, uint32 /*diff*/)
         Movement::MoveSplineInit init(unit);
         init.MoveTo(i_x, i_y, i_z, m_generatePath);
         if (speed > 0.0f) // Default value for point motion type is 0.0, if 0.0 spline will use GetSpeed on unit
-            init.SetVelocity(speed);
+            init.SetVelocity(speed, __func__);
         init.Launch();
 
         // Call for creature group update

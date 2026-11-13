@@ -1308,38 +1308,45 @@ class spell_dru_cat_form : public AuraScript
 };
 
 // Skull Bash (cat) - 80965 and Skull Bash (bear) - 80964
+// SkyFire release26 charge/interrupt order and validated triggered spells.
 class spell_dru_skull_bash : public SpellScriptLoader
 {
-    public:
-        spell_dru_skull_bash() : SpellScriptLoader("spell_dru_skull_bash") { }
+public:
+    spell_dru_skull_bash() : SpellScriptLoader("spell_dru_skull_bash") { }
 
-        class spell_dru_skull_bash_SpellScript : public SpellScript
+    class spell_dru_skull_bash_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_dru_skull_bash_SpellScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
         {
-            PrepareSpellScript(spell_dru_skull_bash_SpellScript);
-
-            void HandleOnHit()
-            {
-                if (Player* _player = GetCaster()->ToPlayer())
-                {
-                    if (Unit* target = GetHitUnit())
-                    {
-                        _player->CastSpell(target, SPELL_DRUID_SKULL_BASH_MANA_COST, true);
-                        _player->CastSpell(target, SPELL_DRUID_SKULL_BASH_INTERUPT, true);
-                        _player->CastSpell(target, SPELL_DRUID_SKULL_BASH_CHARGE, true);
-                    }
-                }
-            }
-
-            void Register() override
-            {
-                OnHit += SpellHitFn(spell_dru_skull_bash_SpellScript::HandleOnHit);
-            }
-        };
-
-        SpellScript* GetSpellScript() const override
-        {
-            return new spell_dru_skull_bash_SpellScript();
+            return sSpellMgr->GetSpellInfo(SPELL_DRUID_SKULL_BASH_MANA_COST)
+                && sSpellMgr->GetSpellInfo(SPELL_DRUID_SKULL_BASH_INTERUPT)
+                && sSpellMgr->GetSpellInfo(SPELL_DRUID_SKULL_BASH_CHARGE);
         }
+
+        void HandleHit()
+        {
+            Unit* caster = GetCaster();
+            Unit* target = GetHitUnit();
+            if (!caster || !target)
+                return;
+
+            caster->CastSpell(target, SPELL_DRUID_SKULL_BASH_CHARGE, true);
+            caster->CastSpell(target, SPELL_DRUID_SKULL_BASH_INTERUPT, true);
+            caster->CastSpell(target, SPELL_DRUID_SKULL_BASH_MANA_COST, true);
+        }
+
+        void Register() override
+        {
+            OnHit += SpellHitFn(spell_dru_skull_bash_SpellScript::HandleHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_dru_skull_bash_SpellScript();
+    }
 };
 
 // 102355 - Faerie Swarm
@@ -4837,147 +4844,31 @@ class spell_druid_astral_communion : public SpellScriptLoader
         }
 };
 
+void AddSC_skyfire27_druid();
+
 void AddSC_druid_spell_scripts()
 {
-    new aura_script<spell_dru_tooth_and_claw_absorb>("spell_dru_tooth_and_claw_absorb");
-    new spell_script<spell_dru_tooth_and_claw_trigger>("spell_dru_tooth_and_claw_trigger");
-    new spell_script<spell_dru_swipe_and_maul_bleed>("spell_dru_swipe_and_maul_bleed");
-    new spell_script<spell_dru_genesis>("spell_dru_genesis");
-    new spell_dru_glyph_of_the_treant();
-    new spell_dru_incarnation_chosen_of_elune();
-    new aura_script<spell_dru_incarnation_skins>("spell_dru_incarnation_skins");
-    new spell_dru_glyph_of_shred();
-    new spell_dru_wild_charge_moonkin();
-    new spell_dru_tigers_fury();
-    new spell_dru_play_death();
-    new spell_dru_life_tap();
-    new spell_dru_soul_swap();
-    new spell_script<spell_dru_demonic_circle_teleport>("spell_dru_demonic_circle_teleport");
-    new spell_script<spell_dru_shattering_blow>("spell_dru_shattering_blow");
-    new spell_dru_moonfire();
-    new aura_script<spell_dru_natures_vigil>("spell_dru_natures_vigil");
-    new spell_script<spell_dru_natures_vigil_damage>("spell_dru_natures_vigil_damage");
-    new spell_script<spell_dru_natures_vigil_heal>("spell_dru_natures_vigil_heal");
-    new spell_dru_cenarion_ward();
     new atrigger_script<sat_druid_solar_beam>("sat_druid_solar_beam");
-    new spell_dru_dash();
-    new spell_script<spell_dru_rip_duration>("spell_dru_rip_duration");
-    new spell_script<spell_dru_savage_defense>("spell_dru_savage_defense");
-    new spell_dru_bear_hug();
     new spell_dru_ravage();
     new spell_dru_mark_of_the_wild();
-    new spell_dru_glyph_of_regrowth();
     new aura_script<spell_dru_cat_form>("spell_dru_cat_form");
-    new spell_dru_skull_bash();
-    new spell_script<spell_dru_faerie_swarm>("spell_dru_faerie_swarm");
-    new aura_script<spell_dru_astral_communion>("spell_dru_astral_communion");
-    new spell_dru_shooting_stars();
-    new spell_script<spell_dru_celestial_alignment>("spell_dru_celestial_alignment");
-    new spell_script<spell_dru_frenzied_regeneration>("spell_dru_frenzied_regeneration");
     new spell_dru_stampeding_roar_speed();
-    new spell_script<spell_dru_stampeding_roar>("spell_dru_stampeding_roar");
-    new aura_script<spell_dru_innervate>("spell_dru_innervate");
-    new spell_script<spell_dru_glyph_of_innervate>("spell_dru_glyph_of_innervate");
-    new spell_script<spell_dru_teleport_moonglade>("spell_dru_teleport_moonglade");
-    new spell_script<spell_dru_growl>("spell_dru_growl");
-    new spell_script<spell_dru_activate_cat_form>("spell_dru_activate_cat_form");
     new spell_script<spell_dru_eclipse>("spell_dru_eclipse");
-    new spell_script<spell_dru_eclipse_energize>("spell_dru_eclipse_energize");
-    new spell_script<spell_dru_eclipse_solar>("spell_dru_eclipse_solar");
-    new spell_script<spell_dru_eclipse_lunar>("spell_dru_eclipse_lunar");
-    new spell_script<spell_dru_glyph_of_omens>("spell_dru_glyph_of_omens");
-    new aura_script<spell_dru_eclipse_remove>("spell_dru_eclipse_remove");
     new aura_script<spell_dru_eclipse_effect>("spell_dru_eclipse_effect");
-    new spell_dru_t10_restoration_4p_bonus();
-    new spell_dru_swift_flight_passive();
-    new aura_script<spell_dru_savage_roar>("spell_dru_savage_roar");
-    new spell_script<spell_dru_savage_roar_duration_check>("spell_dru_savage_roar_duration_check");
-    new spell_dru_survival_instincts();
-    new spell_dru_yseras_gift();
-    new spell_dru_yseras_gift_heal_ally();
-    new aura_script<spell_dru_t15_restoration_4p_bonus>("spell_dru_t15_restoration_4p_bonus");
-    new spell_script<spell_dru_swiftmend>("spell_dru_swiftmend");
-    new aura_script<spell_dru_efflorescence>("spell_dru_efflorescence");
-    new spell_script<spell_dru_efflorescence_heal>("spell_dru_efflorescence_heal");
-    new spell_script<spell_dru_faerie_fire>("spell_dru_faerie_fire");
-    new spell_script<spell_dru_lacerate>("spell_dru_lacerate");
-    new aura_script<spell_dru_primal_fury>("spell_dru_primal_fury");
-    new spell_script<spell_dru_ferocious_bite>("spell_dru_ferocious_bite");
-    new aura_script<spell_dru_harmony>("spell_dru_harmony");
-    new spell_script<spell_dru_tree_of_life>("spell_dru_tree_of_life");
-    new spell_script<spell_dru_wild_growth>("spell_dru_wild_growth");
     new aura_script<spell_dru_wild_growth_heal>("spell_dru_wild_growth_heal");
-    new spell_script<spell_dru_healing_touch_dream_of_cenarius>("spell_dru_healing_touch_dream_of_cenarius");
-    new spell_script<spell_dru_wrath_dream_of_cenarius>("spell_dru_wrath_dream_of_cenarius");
     new aura_script<spell_dur_dream_of_cenarius>("spell_dur_dream_of_cenarius");
-    new spell_script<spell_dru_wild_mushroom>("spell_dru_wild_mushroom");
-    new spell_script<spell_dru_wild_mushroom_detonate>("spell_dru_wild_mushroom_detonate");
-    new spell_script<spell_dru_wild_mushroom_bloom>("spell_dru_wild_mushroom_bloom");
-    new spell_script<spell_dru_wild_mushroom_heal>("spell_dru_wild_mushroom_heal");
-    new aura_script<spell_dru_wild_mushroom_overheal>("spell_dru_wild_mushroom_overheal");
-    new creature_script<npc_wild_mushroom>("npc_wild_mushroom");
-    new creature_script<npc_fungal_growth>("npc_fungal_growth");
-    new aura_script<spell_dru_lifebloom>("spell_dru_lifebloom");
-    new spell_script<spell_dru_lifebloom_refresh>("spell_dru_lifebloom_refresh");
-    new spell_script<spell_dru_swipe>("spell_dru_swipe");
     new atrigger_script<sat_druid_ursols_vortex>("sat_druid_ursols_vortex");
-    new aura_script<spell_dru_heart_of_the_wild>("spell_dru_heart_of_the_wild");
-    new aura_script<spell_dru_heart_of_the_wild_bonus>("spell_dru_heart_of_the_wild_bonus");
-    new spell_script<spell_dru_savage_roar_glyphed>("spell_dru_savage_roar_glyphed");
-    new aura_script<spell_dru_living_seed>("spell_dru_living_seed");
     new aura_script<spell_dru_living_seed_heal>("spell_dru_living_seed_heal");
     new aura_script<spell_dru_starfall>("spell_dru_starfall");
     new spell_script<spell_dru_starfall_damage>("spell_dru_starfall_damage");
-    new spell_script<spell_dru_thrash_bear>("spell_dru_thrash_bear");
-    new aura_script<spell_dru_shooting_stars_trigger>("spell_dru_shooting_stars_trigger");
-    new aura_script<spell_dru_shooting_stars_proc>("spell_dru_shooting_stars_proc");
-    new aura_script<spell_dru_soul_of_the_forest>("spell_dru_soul_of_the_forest");
-    new spell_script<spell_dru_soul_of_the_forest_mangle>("spell_dru_soul_of_the_forest_mangle");
-    new spell_script<spell_dru_soul_of_the_forest_feral>("spell_dru_soul_of_the_forest_feral");
-    new spell_script<spell_dru_shred>("spell_dru_shred");
-    new aura_script<spell_dru_item_pvp_feral_4p>("spell_dru_item_pvp_feral_4p");
-    new aura_script<spell_dru_stampede_effect>("spell_dru_stampede_effect");
-    new aura_script<spell_dru_stampede_timer>("spell_dru_stampede_timer");
     new aura_script<spell_dru_override_ravage>("spell_dru_override_ravage");
     new aura_script<spell_dru_leader_of_the_pack>("spell_dru_leader_of_the_pack");
-    new aura_script<spell_dru_bear_form>("spell_dru_bear_form");
-    new spell_script<spell_dru_force_of_nature_balance>("spell_dru_force_of_nature_balance");
-    new spell_script<spell_dru_force_of_nature_restoration>("spell_dru_force_of_nature_restoration");
-    new spell_script<spell_dru_force_of_nature_feral>("spell_dru_force_of_nature_feral");
     new spell_script<spell_dru_force_of_nature_guradian>("spell_dru_force_of_nature_guradian");
-    new creature_script<npc_force_of_nature_balance>("npc_force_of_nature_balance");
-    new creature_script<npc_force_of_nature_restoration>("npc_force_of_nature_restoration");
-    new aura_script<spell_dru_force_of_nature_rake>("spell_dru_force_of_nature_rake");
     new spell_script<spell_dru_cat_form_check>("spell_dru_cat_form_check");
-    new aura_script<spell_dru_travel_form>("spell_dru_travel_form");
-    new spell_script<spell_dru_glyph_of_fae_silence>("spell_dru_glyph_of_fae_silence");
-    new aura_script<spell_dru_bear_form_passive>("spell_dru_bear_form_passive");
-    new aura_script<spell_dru_glyph_of_fae_silence_cooldown>("spell_dru_glyph_of_fae_silence_cooldown");
-    new aura_script<spell_dru_t15_guardian_4p_bonus>("spell_dru_t15_guardian_4p_bonus");
-    new aura_script<spell_dru_t16_guardian_2p_bonus>("spell_dru_t16_guardian_2p_bonus");
     new spell_script<spell_dur_t16_guardian_4p_bonus>("spell_dur_t16_guardian_4p_bonus");
-    new spell_script<spell_dru_t16_feral_2p_bonus>("spell_dru_t16_feral_2p_bonus");
-    new aura_script<spell_dru_t16_feral_4p_bonus>("spell_dru_t16_feral_4p_bonus");
-    new aura_script<spell_dru_feral_rage>("spell_dru_feral_rage");
-    new aura_script<spell_dru_t16_balance_2p_bonus>("spell_dru_t16_balance_2p_bonus");
-    new aura_script<spell_dru_sage_mender>("spell_dru_sage_mender");
     new aura_script<spell_dru_vengeance>("spell_dru_vengeance");
-    new aura_script<spell_dru_glyph_of_rejuvenation>("spell_dru_glyph_of_rejuvenation");
-    new aura_script<spell_dru_glyph_of_healing_touch>("spell_dru_glyph_of_healing_touch");
-    new aura_script<spell_dru_symbiosis_caster_aura>("spell_dru_symbiosis_caster_aura");
-    new aura_script<spell_dru_symbiosis_target_check>("spell_dru_symbiosis_target_check");
-    new spell_script<spell_dru_symbiosis>("spell_dru_symbiosis");
-    new aura_script<spell_dru_symbiosis_fortifying_brew>("spell_dru_symbiosis_fortifying_brew");
-    new aura_script<spell_dru_killer_instinct>("spell_dru_killer_instinct");
-    new aura_script<spell_dru_sudden_eclipse>("spell_dru_sudden_eclipse");
-    new aura_script<spell_dru_prowl>("spell_dru_prowl");
-    new aura_script<spell_dru_glyph_of_hurricane>("spell_dru_glyph_of_hurricane");
     new aura_script<spell_dru_shapeshift_move_speed>("spell_dru_shapeshift_move_speed");
-    new aura_script<spell_dru_berserk_bear>("spell_dru_berserk_bear");
-    new aura_script<spell_dru_glyph_of_the_predator>("spell_dru_glyph_of_the_predator");
-    new aura_script<spell_dru_glyph_of_the_chameleon_fix>("spell_dru_glyph_of_the_chameleon_fix");
-    new aura_script<spell_dru_glyph_of_the_chameleon>("spell_dru_glyph_of_the_chameleon");
-    new spell_script<spell_dru_intimidating_roar>("spell_dru_intimidating_roar");
     new spell_druid_celestial_alignment();
     new spell_druid_astral_communion();
+    AddSC_skyfire27_druid();
 }

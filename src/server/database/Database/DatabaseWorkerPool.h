@@ -105,6 +105,10 @@ class DatabaseWorkerPool
         //! Statement must be prepared with the CONNECTION_SYNCH flag.
         void DirectExecute(PreparedStatement<T>* stmt);
 
+        //! Executes once without replay after a lost acknowledgement. Takes ownership of stmt.
+        //! A false result may have an unknown outcome; reconcile durable state before retrying.
+        bool DirectExecuteChecked(PreparedStatement<T>* stmt, uint64* affectedRows = nullptr);
+
         /**
             Synchronous query (with resultset) methods.
         */

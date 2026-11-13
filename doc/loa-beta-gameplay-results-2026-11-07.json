@@ -1,0 +1,461 @@
+[
+  {
+    "run": "starter-before",
+    "cases": [
+      {
+        "race": 1,
+        "class_id": 1,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "quest": 28757,
+        "error": "quest acceptance not persisted"
+      },
+      {
+        "race": 2,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 25152
+      },
+      {
+        "race": 3,
+        "class_id": 3,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 4,
+        "class_id": 11,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 5,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 24959
+      },
+      {
+        "race": 6,
+        "class_id": 1,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 7,
+        "class_id": 8,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 8,
+        "class_id": 7,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 9,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 10,
+        "class_id": 2,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 11,
+        "class_id": 5,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 22,
+        "class_id": 4,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "error": "no quest actor spawn"
+      },
+      {
+        "race": 24,
+        "class_id": 10,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "quest": 30038,
+        "error": "quest acceptance not persisted"
+      },
+      {
+        "race": 1,
+        "class_id": 9,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "quest": 28757,
+        "error": "quest acceptance not persisted"
+      },
+      {
+        "race": 1,
+        "class_id": 6,
+        "status": "failed",
+        "checks": [],
+        "error": "creation response 3b"
+      }
+    ],
+    "cleanup_verified_now": true
+  },
+  {
+    "run": "starter-baseline",
+    "cases": [
+      {
+        "race": 1,
+        "class_id": 1,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_acceptance_only"
+        ],
+        "quest": 28766
+      },
+      {
+        "race": 2,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 25152
+      },
+      {
+        "race": 3,
+        "class_id": 3,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 4,
+        "class_id": 11,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 5,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 24959
+      },
+      {
+        "race": 6,
+        "class_id": 1,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 7,
+        "class_id": 8,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 8,
+        "class_id": 7,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 9,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 10,
+        "class_id": 2,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 11,
+        "class_id": 5,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 22,
+        "class_id": 4,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "quest": 14093,
+        "error": "quest acceptance not persisted"
+      },
+      {
+        "race": 24,
+        "class_id": 10,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_acceptance_only"
+        ],
+        "quest": 30039
+      },
+      {
+        "race": 1,
+        "class_id": 9,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 1,
+        "class_id": 6,
+        "status": "passed",
+        "checks": [
+          "death_knight_level_requirement_enforced"
+        ]
+      }
+    ],
+    "cleanup_verified_now": true
+  },
+  {
+    "run": "human-combat-before",
+    "cases": [
+      {
+        "race": 1,
+        "class_id": 1,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "quest": 28766,
+        "combat_credits": [
+          {
+            "count": 1,
+            "required": 6,
+            "entry": 49871
+          },
+          {
+            "count": 2,
+            "required": 6,
+            "entry": 49871
+          }
+        ],
+        "error": "kill objective not completed within bounded route"
+      }
+    ],
+    "cleanup_verified_now": true
+  },
+  {
+    "run": "starter-deployed",
+    "cases": [
+      {
+        "race": 1,
+        "class_id": 1,
+        "status": "failed",
+        "checks": [
+          "create_immediate_enum_login"
+        ],
+        "quest": 28766,
+        "error": "quest acceptance not persisted"
+      },
+      {
+        "race": 2,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 25152
+      },
+      {
+        "race": 3,
+        "class_id": 3,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 4,
+        "class_id": 11,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 5,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 24959
+      },
+      {
+        "race": 6,
+        "class_id": 1,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 7,
+        "class_id": 8,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 8,
+        "class_id": 7,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 9,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 10,
+        "class_id": 2,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 11,
+        "class_id": 5,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 22,
+        "class_id": 4,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_accepted_and_rewarded",
+          "xp_reward"
+        ],
+        "quest": 14078
+      },
+      {
+        "race": 24,
+        "class_id": 10,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_acceptance_only"
+        ],
+        "quest": 30039
+      },
+      {
+        "race": 1,
+        "class_id": 9,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login"
+        ]
+      },
+      {
+        "race": 1,
+        "class_id": 6,
+        "status": "passed",
+        "checks": [
+          "death_knight_level_requirement_enforced"
+        ]
+      }
+    ],
+    "cleanup_verified_now": true
+  },
+  {
+    "run": "human-deployed-repeat",
+    "cases": [
+      {
+        "race": 1,
+        "class_id": 1,
+        "status": "passed",
+        "checks": [
+          "create_immediate_enum_login",
+          "quest_acceptance_only"
+        ],
+        "quest": 28766
+      }
+    ],
+    "cleanup_verified_now": true
+  }
+]

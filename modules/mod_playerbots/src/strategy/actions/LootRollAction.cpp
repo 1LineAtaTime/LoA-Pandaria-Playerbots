@@ -31,6 +31,7 @@
  */
 
 #include "LootRollAction.h"
+#include "CompanionLoot.h"
 
 #include "Event.h"
 #include "Group.h"
@@ -60,6 +61,13 @@ bool LootRollAction::Execute(Event /*event*/)
         auto voteItr = roll->playerVote.find(bot->GetGUID());
         if (voteItr == roll->playerVote.end() || voteItr->second != NOT_EMITED_YET)
             continue;
+
+        if (IsGoldOnlyCompanion(bot))
+        {
+            group->CountRollVote(roll->lootGUID, bot->GetGUID(), roll->itemSlot, uint8(PASS));
+            voted = true;
+            continue;
+        }
 
         uint32 itemId = roll->itemid;
         int32 itemRandomPropId = roll->itemRandomPropId;

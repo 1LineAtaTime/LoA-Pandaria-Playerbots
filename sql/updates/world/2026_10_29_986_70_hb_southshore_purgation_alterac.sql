@@ -37,7 +37,8 @@ INSERT INTO `creature` (`guid`,`id`,`map`,`zoneId`,`areaId`,`spawnMask`,`phaseMa
 -- spawns (both: 40 x 48272, 0 x 48260; the 48260 template exists in 4.4.2 with no spawns). 61 of the 71 stand on no sniffed
 -- spot and three pairs are exact duplicates (176798/176834, 176801/176835, 176824/176852). The quest already works through
 -- the KillCredit; this only makes the field match the sniff. Optional.
-DELETE FROM `waypoint_data` WHERE `id` IN (SELECT `path_id` FROM `creature_addon` WHERE `guid` IN (SELECT `guid` FROM `creature` WHERE `id`=48260) AND `path_id`<>0);
+-- Equivalent indexed join avoids a correlated full scan on MariaDB.
+DELETE w FROM `creature` c JOIN `creature_addon` a ON a.guid=c.guid JOIN `waypoint_data` w ON w.id=a.path_id WHERE c.id=48260 AND a.path_id<>0;
 DELETE FROM `creature_addon` WHERE `guid` IN (SELECT `guid` FROM (SELECT `guid` FROM `creature` WHERE `id`=48260) AS g);
 DELETE FROM `creature` WHERE `id`=48260;
 -- The 32 sniffed 48272 spots mop lacks (the other 8 are already there), guids 3110030-3110061; mop's 48272 wander 3 kept.

@@ -1,0 +1,477 @@
+{
+  "base": "8a26cd41fece10e18335ebc078f6ff7e99412c2d",
+  "tip": "68f80984313dc15a6144d4e91c325632810a488d",
+  "commits": [
+    {
+      "commit": "073ed82d78709c2a389f2227ba961e5e938daa8b",
+      "title": "DB/GameObject: Stop the Gilneas gunship from crashing the client",
+      "files": [
+        "sql/updates/world/2026_11_08_00_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "f5c5f1c4e50b3555ff2cc43cc929a519d5e38199",
+      "title": "Scripts/Hillsbrad: Turn Drek'Thar's wheelchair wheels along the chair's sides",
+      "files": [
+        "src/server/game/Entities/Vehicle/Vehicle.cpp",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "866c21ba1cd8905b2e23e4ffedca15fe96f154ac",
+      "title": "Scripts/Hillsbrad: Count only 12 yd or more as in the Stormpike cameras at login",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "8deede10913f50fbf686c96463118039f74425d6",
+      "title": "DB/Spell: Remove the gnome Irradiated aura outside New Tinkertown again",
+      "files": [
+        "sql/updates/world/2026_11_07_03_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "33f1523324b1cfe8a6d3da393648c66e2ee1277d",
+      "title": "DB/Creature: Have the Stormpike Engineers throw dynamite every 17-20 s and melee between throws",
+      "files": [
+        "sql/updates/world/2026_11_07_88_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "00dfd83b1809b32b2f8479d58ee46f85efc4fb60",
+      "title": "Core/Unit: Stop a creature's looping emote when it attacks and when it dies",
+      "files": [
+        "src/server/game/Entities/Unit/Unit.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "6f2ea3dd6a645d6fe5fe297624e5693b175bf089",
+      "title": "Core/Spell: Give casters below a spell's base level no per-level bonus",
+      "files": [
+        "src/server/game/Spells/SpellInfo.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "659c720c014bc1bcd8a15d903ad4b799551a8d19",
+      "title": "Scripts/Hillsbrad: Have the Banshee carry the agent off in Cry of the Banshee",
+      "files": [
+        "sql/updates/world/2026_11_07_85_world.sql",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_headland.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "37d6849f3731cc6fb1d6b0d066dd7c545c051555",
+      "title": "Scripts/Hillsbrad: Move the Stormpike Apocalypse rider to each finger's camera seat",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "83bb7cca737be1f2ed5c39213cd9bd72c442d525",
+      "title": "Scripts/Hillsbrad: Correct FlyCurve's comment on where the view looks",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "8d550436b2c03f9411f1d04d724d0bbdff044479",
+      "title": "Scripts/Hillsbrad: Move the March of the Stormpike rider to each finger's camera seat",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "1e2560da8bf5b5997b4057511c4290efa2252de3",
+      "title": "DB/Creature: Walk the Tarren Mill road Dreadguards on patrol",
+      "files": [
+        "sql/updates/world/2026_11_07_81_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "8def69949f5dc364fb1e1bbcbb7251f4f7d7a7d7",
+      "title": "DB/Quest: Let Cave Yetis drop The Heart of the Matter's heart every time",
+      "files": [
+        "sql/updates/world/2026_11_07_83_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "06efeb590ec309418fcd8a9bf08449025dedea00",
+      "title": "DB/Creature: Sit Tog'thar and Drull on Nils Beerot's couches",
+      "files": [
+        "sql/updates/world/2026_11_07_80_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "cc3af2e727b7e84f2947c1fcf44ca8301e853dc5",
+      "title": "Scripts/Hillsbrad: Bring Lilith as the player's companion and SI:7 disguise",
+      "files": [
+        "sql/updates/world/2026_11_07_34_world.sql",
+        "src/server/scripts/EasternKingdoms/CMakeLists.txt",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_headland.cpp",
+        "src/server/scripts/ScriptLoader/ScriptLoader.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "25146db7bc5449e5aa47348590ee3ee214190382",
+      "title": "DB/Creature: Let the Headland instructors be insulted into a fight",
+      "files": [
+        "sql/updates/world/2026_11_07_33_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "b5b61a988edd0825797a5326bc6e9f62f8c873c4",
+      "title": "Core/Player: Let a forced reaction decide who a player can talk to",
+      "files": [
+        "src/server/game/Entities/Player/Player.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "a7ff486ec4663e76f164ed75c645371f1edf3dc3",
+      "title": "DB/Creature: Give the poisoned Stormpike Trainees their lines",
+      "files": [
+        "sql/updates/world/2026_11_07_32_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "839c8782c4dc9437dc6d8378cd52278eccdc9d3a",
+      "title": "DB/Creature: Let the Banshee Mirror take each SI:7 agent once",
+      "files": [
+        "sql/updates/world/2026_11_07_31_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "ab4221470941762bad13412d198ef22f2d6a6a2a",
+      "title": "DB/Quest: Restore the texts of Melisara's field quests",
+      "files": [
+        "sql/updates/world/2026_11_07_30_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "03c5a03eb44b761779a939c4da397c1d9a75a2eb",
+      "title": "DB/Creature: Remove doubled Dun Garok Spirits",
+      "files": [
+        "sql/updates/world/2026_11_07_51_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "2937d134d8d376eddbb76aa824b292f6b309a797",
+      "title": "DB/Creature: Keep Zephyrus on his roof",
+      "files": [
+        "sql/updates/world/2026_11_07_29_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "4ff6e1429b12e113ae153f51240b9da93165c1c2",
+      "title": "DB/Quest: Restore the Eastpoint and Durnholde quest emotes and Extinction's request text",
+      "files": [
+        "sql/updates/world/2026_11_07_28_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "cc7dbd2aee4b9f1d5a11dc9575e4a7b8897d22f3",
+      "title": "DB/Misc: Treat area trigger 6578 as Eastpoint Tower's inn",
+      "files": [
+        "sql/updates/world/2026_11_07_50_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "97c1200c878121ea4f6cd8bb6a8ab0e84c885aa2",
+      "title": "DB/Creature: Move Innkeeper Durgens to his sniffed spot",
+      "files": [
+        "sql/updates/world/2026_11_07_27_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "fd86778075a4286cea2a142488a657aff24a70b6",
+      "title": "DB/Creature: Let Captain Ironhill's Ghost wander inside his quest's trigger",
+      "files": [
+        "sql/updates/world/2026_11_07_26_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "965c67e87672a5a37c86620d59ccfd87e0f17973",
+      "title": "DB/Creature: Give D-1000 his shapeshifting forms",
+      "files": [
+        "sql/updates/world/2026_11_07_25_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "3e1a00c5293f6b45a1f3441557c3b69c1eb52b9b",
+      "title": "Scripts/Hillsbrad: Give Infernus's Rush of Flame its trail of fire",
+      "files": [
+        "sql/updates/world/2026_11_07_24_world.sql",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_durnholde.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "8045bac3f6097087096828631fce44d2c131b6e9",
+      "title": "DB/Creature: Add Infernus's patrol in Durnholde",
+      "files": [
+        "sql/updates/world/2026_11_07_23_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "ef3a0660b8dbf156fb9e5fefe502c832459e3fb2",
+      "title": "Scripts/Hillsbrad: Make Teracula's Rupture Line erupt",
+      "files": [
+        "sql/updates/world/2026_11_07_22_world.sql",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_durnholde.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "34f989b33fb13a0e5fd3719ddf930174402d08e9",
+      "title": "Scripts/Hillsbrad: Give Zephyrus's Tornado its knockback",
+      "files": [
+        "sql/updates/world/2026_11_07_21_world.sql",
+        "src/server/scripts/EasternKingdoms/CMakeLists.txt",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_durnholde.cpp",
+        "src/server/scripts/ScriptLoader/ScriptLoader.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "734eb5e7a30301af5b5fa156a82bfb4a0dd026af",
+      "title": "DB/Creature: Add Nils Beerot's therapy session at Eastpoint Tower",
+      "files": [
+        "sql/updates/world/2026_11_07_20_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "0c7ae1e9abe74247f42ef7d4984c336d026719d6",
+      "title": "DB/Creature: Keep the Breaking the Hand credit bunnies at their spots",
+      "files": [
+        "sql/updates/world/2026_11_07_41_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "04e754bb9922b5d17fb014fa06bfe31a6a8a1dda",
+      "title": "DB/Quest: Restore the turn-in emotes and texts of the Cromush story",
+      "files": [
+        "sql/updates/world/2026_11_07_40_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "003104461eb12aed213f145eaad2e0c5fef832bd",
+      "title": "Scripts/Hillsbrad: Put the wheels on Drek'Thar's wheelchair",
+      "files": [
+        "sql/updates/world/2026_11_07_42_world.sql",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "236529bb8794aaa34fe44a4a05403dd27bfd9f12",
+      "title": "Scripts/Hillsbrad: Set down a player who logged out in a Tarren Mill scene camera",
+      "files": [
+        "src/server/game/Handlers/CharacterHandler.cpp",
+        "src/server/game/Scripting/ScriptMgr.cpp",
+        "src/server/game/Scripting/ScriptMgr.h",
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "0b72554ce3d91452ee84b8b8b9f7a166636be103",
+      "title": "Scripts/Hillsbrad: Keep the pocket-nukes in sight and watch each go off",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "5df6911359e01c88692562a763cd4a8402086b40",
+      "title": "Scripts/Hillsbrad: Fly the Stormpike cameras on curves, lifted off the ground",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "1c452b3b31e5caef52ce041b2b24aea38986863b",
+      "title": "Scripts/Hillsbrad: Let Cromush yell once the player is back from Stormpike Apocalypse",
+      "files": [
+        "src/server/scripts/EasternKingdoms/zone_hillsbrad_sludge_stormpike.cpp"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "fe0034389cb695e59e36968ebc1d83343fd33042",
+      "title": "DB/Quest: Remove the stale starter of Elixir of Agony 515",
+      "files": [
+        "sql/updates/world/2026_11_07_17_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "5ba73ff3f652845d903aa8220ff95cc84c392623",
+      "title": "DB/Creature: Remove the static Tarren Mill Deathguard",
+      "files": [
+        "sql/updates/world/2026_11_07_16_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "1004879ff3d0a7f1da46a3024512e092de81e666",
+      "title": "DB/Quest: Add the emotes and texts of the Tarren Mill side quests",
+      "files": [
+        "sql/updates/world/2026_11_07_15_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "6d7f0b67a2765b1d5eafc898710524de9d951b76",
+      "title": "DB/Quest: Make A Fighting Chance's blessed fawns fight and explode",
+      "files": [
+        "sql/updates/world/2026_11_07_14_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "b0460ff08e1ee91dbb0d007b3aa1f5184178d66a",
+      "title": "DB/Quest: Use the TDB drop rates for Tarren Mill's quest items",
+      "files": [
+        "sql/updates/world/2026_11_07_13_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "62aecea3324e58b1e27a14b920e3c05ab3e41dca",
+      "title": "DB/Creature: Remove the stacked yetis at the Hillsbrad yeti cave",
+      "files": [
+        "sql/updates/world/2026_11_07_12_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "24e0313dab3f6228a415ff6ee8c03e2c24e5ebb9",
+      "title": "DB/Creature: Put one Yetimus on the sniffed patrol",
+      "files": [
+        "sql/updates/world/2026_11_07_11_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "f07b60d8fab4dce919b58482e6276be7e4ca2b6e",
+      "title": "DB/Creature: Give stable masters their stable flag",
+      "files": [
+        "sql/updates/world/2026_11_07_10_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "58c1b2f2093d8eb3af093562d5b95d7b58537cc4",
+      "title": "DB/Quests: Show the objective of exploration quests once in other locales too",
+      "files": [
+        "sql/updates/world/2026_11_07_02_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "06427df087b1dafe66423e68a12ba8a9b50c78e8",
+      "title": "DB/Quests: Show the objective of exploration quests once",
+      "files": [
+        "sql/updates/world/2026_11_07_01_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    },
+    {
+      "commit": "0d07694626adaa6b7e216218b0cd4098ae0a271a",
+      "title": "DB/Temple of the Jade Serpent: Remove the static Liu Flameheart spawn",
+      "files": [
+        "sql/updates/world/2026_11_07_00_world.sql"
+      ],
+      "source_status": "merged1500aed86b",
+      "gameplay_status": "UNVERIFIED_UNLESS_COVERED_BY_NAMED_CONTRACT"
+    }
+  ],
+  "custom_native_fix": "2daf99f5f0 reward-choice common validation and duplicate suppression",
+  "sql_files": 38,
+  "qa_status": "paired native,38 SQL and14 alias triggers verified;23 latest natural cases and1controlled vehicle pass",
+  "played_status": "deployed;world12452/auth44944 listening;zero new startup signatures",
+  "retail_all_content_certified": false,
+  "affected_world_tables": 24,
+  "alias_triggers": 14
+}
