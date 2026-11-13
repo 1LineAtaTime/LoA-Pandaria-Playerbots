@@ -63,36 +63,6 @@ public:
 };
 
 /*######
-## npc_augustus_the_touched
-######*/
-
-class npc_augustus_the_touched : public CreatureScript
-{
-public:
-    npc_augustus_the_touched() : CreatureScript("npc_augustus_the_touched") { }
-
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
-    {
-        player->PlayerTalkClass->ClearMenus();
-        if (action == GOSSIP_ACTION_TRADE)
-            player->GetSession()->SendListInventory(creature->GetGUID());
-        return true;
-    }
-
-    bool OnGossipHello(Player* player, Creature* creature) override
-    {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
-        if (creature->IsVendor() && player->GetQuestRewardStatus(6164))
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
-
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-        return true;
-    }
-};
-
-/*######
 ## npc_darrowshire_spirit
 ######*/
 
@@ -322,7 +292,6 @@ struct npc_scourge_siege_engineer : public ScriptedAI
 void AddSC_eastern_plaguelands()
 {
     new npc_ghoul_flayer();
-    new npc_augustus_the_touched();
     new npc_darrowshire_spirit();
     new npc_tirion_fordring();
     new creature_script<npc_scourge_siege_engineer>("npc_scourge_siege_engineer");
