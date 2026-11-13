@@ -2539,9 +2539,37 @@ enum ZenKiki
     SPELL_DISEASED_SPIT                         = 81236,
 
     EVENT_DISEASED_SPIT                         = 1,
+    EVENT_ZENKIKI_ASSIST                        = 1,
 
     SAY_ZENKIKI_POKED                           = 0
 };
+
+// What a companion that fights for its master should attack: his melee target, else his selected target if he is fighting it (a
+// caster's spells set no melee victim), else whatever attacks him
+static Unit* SelectMasterTarget(Creature* me, Unit* owner)
+{
+    auto canFight = [me](Unit* target)
+    {
+        return target && target->IsAlive() && me->IsWithinDistInMap(target, 50.0f) && me->IsValidAttackTarget(target);
+    };
+
+    Unit* victim = owner->GetVictim();
+    if (canFight(victim))
+        return victim;
+
+    if (Player* player = owner->ToPlayer())
+    {
+        Unit* selected = player->GetSelectedUnit();
+        if (selected && player->IsInCombatWith(selected) && canFight(selected))
+            return selected;
+    }
+
+    for (Unit* attacker : owner->getAttackers())
+        if (canFight(attacker))
+            return attacker;
+
+    return nullptr;
+}
 
 // 83819, 83456 - Escorting Zen'Kiki
 // Given by spell_area while Zen'Kiki, the Druid 26953 or Zen'Kiki and the Cultists 26955 (83819, Zen'Kiki 44904) or A Different
@@ -2549,9 +2577,49 @@ enum ZenKiki
 // bound to the aura (effect 2, a dummy), so he stayed with the player after the quest was abandoned or handed in. He now goes when
 // the aura does; death is left to the guardian's own rules. The summon stays out of the quest summon slot (see
 // spell_wpl_escorting_zenkiki_summon).
+// A living Zen'Kiki left more than 60 yd behind is brought to the player every 5 s, as Bond of the Val'kyr does with the val'kyr.
+// Only a pet is put back at its master's feet by the follow movement (FollowMovementGenerator::Update); a guardian matches his
+// speed only while out of combat (GetFollowVelocity), is not pulled out of a fight its master has left (Creature::SelectVictim
+// keeps the victim while an attacker is out of the master's range), and stops being updated once no player is near it. So a
+// player who rode on while Zen'Kiki was fighting, or only flagged in combat, lost him for good. One that is dead or gone is not
+// called again here: he is asked back from Adrine Towhide or at the Menders' Stead (see 2026_11_12_02).
 class spell_wpl_escorting_zenkiki : public AuraScript
 {
     PrepareAuraScript(spell_wpl_escorting_zenkiki);
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->IsFlying() || player->GetVehicle())
+            return;
+
+        Creature* zenkiki = nullptr;
+        std::list<Creature*> minions;
+        player->GetAllMinionsByEntry(minions, GetId() == SPELL_ESCORTING_ZENKIKI_HAWKS ? NPC_ZENKIKI_HAWKS : NPC_ZENKIKI_ESCORT);
+        for (Creature* minion : minions)
+            if (minion->IsAlive() && !minion->IsDestroyedObject())
+                zenkiki = minion;
+
+        if (!zenkiki || zenkiki->IsWithinDistInMap(player, 60.0f))
+            return;
+
+        // Whatever he was fighting is out of his master's reach by now: the evade drops the fight (and its attackers drop him)
+        if ((zenkiki->IsInCombat() || zenkiki->GetVictim()) && zenkiki->IsAIEnabled)
+            zenkiki->AI()->EnterEvadeMode();
+
+        Position pos = player->GetNearPosition(player->GetObjectSize(), 0.0f);
+        zenkiki->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), player->GetOrientation());
+        zenkiki->GetMotionMaster()->Clear();
+        zenkiki->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, zenkiki->GetFollowAngle());
+    }
 
     void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
@@ -2563,6 +2631,8 @@ class spell_wpl_escorting_zenkiki : public AuraScript
 
     void Register() override
     {
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_wpl_escorting_zenkiki::CalcPeriodic, EFFECT_2, SPELL_AURA_DUMMY);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_wpl_escorting_zenkiki::OnPeriodic, EFFECT_2, SPELL_AURA_DUMMY);
         AfterEffectRemove += AuraEffectRemoveFn(spell_wpl_escorting_zenkiki::AfterRemove, EFFECT_2, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
     }
 };
@@ -2600,6 +2670,70 @@ class spell_wpl_escorting_zenkiki_summon : public SpellScript
     {
         OnEffectHit += SpellEffectFn(spell_wpl_escorting_zenkiki_summon::HandleSummon, EFFECT_0, SPELL_EFFECT_SUMMON);
     }
+};
+
+// 44904 - Zen'Kiki (Zen'Kiki, the Druid and Zen'Kiki and the Cultists, summoned by Escorting Zen'Kiki 83819)
+// His SmartAI as before (Mark of the Wild, Wrath, the form antics), but he no longer picks his own fights. A plain guardian is
+// aggressive (Guardian::InitStats) and SmartAI::MoveInLineOfSight attacks every hostile within Creature::GetAttackDistance, which
+// is 20 yd plus one per level the guardian (his master's level) is above the mob, up to 45 yd: he pulled every pack along the road,
+// kept fighting after his master had ridden on and was never seen again. He is defensive now, like Thurman's minutemen: he joins
+// what his master fights (Zen'Kiki, the Druid needs that) and defends himself, nothing else. While his master rides, he follows:
+// a mounted player fights nothing (Unit::Attack), so Zen'Kiki starts no fight for him and leaves the one he was only flagged
+// into (a master entering combat puts his minions in combat, and a guardian in combat no longer keeps his master's speed).
+struct npc_wpl_zenkiki_escort : public SmartAI
+{
+    npc_wpl_zenkiki_escort(Creature* creature) : SmartAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        me->SetReactState(REACT_DEFENSIVE);
+        _events.ScheduleEvent(EVENT_ZENKIKI_ASSIST, 1s);
+        SmartAI::IsSummonedBy(summoner);
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    void AttackStart(Unit* who) override
+    {
+        if (!who)
+            return;
+
+        // Riding past: only what has turned on Zen'Kiki himself
+        Unit* owner = me->GetCharmerOrOwner();
+        if (owner && owner->IsMounted() && who->GetVictim() != me)
+            return;
+
+        SmartAI::AttackStart(who);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+        if (_events.ExecuteEvent() == EVENT_ZENKIKI_ASSIST)
+        {
+            _events.ScheduleEvent(EVENT_ZENKIKI_ASSIST, 1s);
+
+            if (Unit* owner = me->GetCharmerOrOwner())
+            {
+                if (owner->IsMounted())
+                {
+                    if (me->IsInCombat() && me->getAttackers().empty())
+                    {
+                        EnterEvadeMode(EVADE_REASON_OTHER);
+                        return;
+                    }
+                }
+                else if (!me->GetVictim() && owner->IsInCombat())
+                    if (Unit* victim = SelectMasterTarget(me, owner))
+                        AttackStart(victim);
+            }
+        }
+
+        SmartAI::UpdateAI(diff);
+    }
+
+private:
+    EventMap _events;
 };
 
 // 44269 - Zen'Kiki (A Different Approach, summoned by Escorting Zen'Kiki 83456)
@@ -3060,7 +3194,7 @@ struct npc_wpl_provincial_minuteman : public ScriptedAI
             if (!me->GetVictim() && !me->HasReactState(REACT_PASSIVE))
                 if (Unit* owner = me->GetCharmerOrOwner())
                     if (owner->IsInCombat())
-                        if (Unit* victim = SelectOwnerTarget(owner))
+                        if (Unit* victim = SelectMasterTarget(me, owner))
                             AttackStart(victim);
             _events.ScheduleEvent(EVENT_MINUTEMAN_ASSIST, 1s);
         }
@@ -3072,31 +3206,6 @@ struct npc_wpl_provincial_minuteman : public ScriptedAI
     }
 
 private:
-    bool CanFight(Unit* target) const
-    {
-        return target && target->IsAlive() && me->IsWithinDistInMap(target, 50.0f) && me->IsValidAttackTarget(target);
-    }
-
-    Unit* SelectOwnerTarget(Unit* owner) const
-    {
-        Unit* victim = owner->GetVictim();
-        if (CanFight(victim))
-            return victim;
-
-        if (Player* player = owner->ToPlayer())
-        {
-            Unit* selected = player->GetSelectedUnit();
-            if (selected && player->IsInCombatWith(selected) && CanFight(selected))
-                return selected;
-        }
-
-        for (Unit* attacker : owner->getAttackers())
-            if (CanFight(attacker))
-                return attacker;
-
-        return nullptr;
-    }
-
     EventMap _events;
 };
 
@@ -4292,6 +4401,7 @@ void AddSC_western_plaguelands()
     new aura_script<spell_wpl_escorting_zenkiki>("spell_wpl_escorting_zenkiki");
     new spell_script<spell_wpl_escorting_zenkiki_summon>("spell_wpl_escorting_zenkiki_summon");
     new spell_script<spell_wpl_zenkiki_wrath>("spell_wpl_zenkiki_wrath");
+    new creature_script<npc_wpl_zenkiki_escort>("npc_wpl_zenkiki_escort");
     new creature_script<npc_wpl_zenkiki_hawk_helper>("npc_wpl_zenkiki_hawk_helper");
     new creature_script<npc_wpl_diseased_hawk>("npc_wpl_diseased_hawk");
     new creature_script<npc_wpl_captive_plaguebear>("npc_wpl_captive_plaguebear");
