@@ -65,8 +65,8 @@ authors and contributors.
 + A 5.4.8 (build 18414) game client, enUS locale, for the data extraction below.
 
 ## Latest builds (CI)
-Untested development builds of this branch are published at most once a day, when it has
-new commits (no extracted map data):
+Untested development builds of the `playerbot-beta` branch are published at most once a day,
+when it has new commits (no extracted map data):
 **[latest playerbot-beta build](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/ci-playerbot-beta)**.
 For a tested package, use the
 [releases](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases).
