@@ -123,12 +123,9 @@ WayPoint* SmartAI::GetNextWayPoint()
 
 void SmartAI::StartPath(bool run/* = false*/, uint32 pathId/* = 0*/, bool repeat/* = false*/, Unit* invoker/* = nullptr*/, uint32 nodeId/* = 1*/)
 {
-    if (me->IsInCombat())// no wp movement in combat
-    {
-        TC_LOG_ERROR("misc", "SmartAI::StartPath: Creature entry %u wanted to start waypoint movement while in combat, ignoring.", me->GetEntry());
-        return;
-    }
-
+    // #1011: no in-combat refusal - AC SmartAI::StartPath (SmartAI.cpp:235) starts the path in or out of combat. The old TC
+    // guard dropped every "On Just Summoned - Start WP" of summons that aggro on spawn (Angershade/Gharsul 8488, Kalecgos
+    // 36689, Civilian Recruit 25220): they never walked their scripted path.
     if (HasEscortState(SMART_ESCORT_ESCORTING))
         StopPath();
  
@@ -611,12 +608,37 @@ void SmartAI::JustAppeared()
     if (me->isDead())
         return;
 
-    mDespawnTime = 0;
-    mDespawnState = 0;
+    // #1011, AC parity (AC Creature.cpp:718 "Skip for temp summons: InitializeAI already reset them, and JustRespawned would
+    // clobber state set synchronously during SUMMON"): a summon's first appearance must not clear the escort state, phase and
+    // timers its "On Just Summoned" SAI set in the summon tick - every SAI summon that starts a path stopped at WP1 (67 entries,
+    // e.g. Civilian Recruit 25220, Kalecgos 36689). Kept here, not in Creature::Update, so CreatureAI::JustAppeared's
+    // follow-on-spawn for pets / guardians still runs; a summon's later respawns reset as before.
+    // #1020: SMART_EVENT_RESPAWN does not fire here either. InitializeAI already fired it (AC fires it there only, AC
+    // SmartAI.cpp:1080, and never in JustRespawned for a summon), so a second firing doubled every repeatable "On Respawn"
+    // talk, cast, summon and quest credit of a summon (e.g. the Verog 3395 yell reached the client twice). Rows that must run
+    // after a synchronous vehicle boarding use "On Passenger Boarded", as AC data does (Captured Riding Bat 38540, Eagle
+    // Spirit 36790: sql 2026_10_30_1020).
+    if (!mAppearedOnce && me->IsSummon())
+    {
+        mAppearedOnce = true;
+        return;
+    }
+
+    // A respawn: the AI object survives it, and with it the despawn state of a forced despawn of a
+    // living creature - it then despawned itself again at every respawn, invisible, until a restart. Not on the first appearance:
+    // InitializeAI just ran, and a summon may have been told to despawn after a delay in the tick it was created.
+    if (mAppearedOnce)
+    {
+        mDespawnTime = 0;
+        mDespawnState = 0;
+        me->SetVisible(true);
+    }
+    mAppearedOnce = true;
+
     mEscortState = SMART_ESCORT_NONE;
-    me->SetVisible(true);
     if (me->GetFaction() != me->GetCreatureTemplate()->faction)
         me->RestoreFaction();
+
     GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);
     Reset();
     mFollowGuid.Clear();//do not reset follower on Reset(), we need it after combat evade
@@ -757,6 +779,8 @@ void SmartAI::PassengerBoarded(Unit* who, int8 seatId, bool apply)
 void SmartAI::InitializeAI()
 {
     GetScript()->OnInitialize(me);
+    // The first JustAppeared after this keeps the despawn state (see JustAppeared)
+    mAppearedOnce = false;
     if (!me->isDead())
         Reset();
     GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);

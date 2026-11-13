@@ -18,13 +18,13 @@
 /* ScriptData
 SDName: Eversong_Woods
 SD%Complete: 100
-SDComment: Quest support: 8488, 8490
+SDComment: Quest support: 8487, 8490
 SDCategory: Eversong Woods
 EndScriptData */
 
 /* ContentData
-npc_apprentice_mirveda
 npc_infused_crystal
+go_tainted_soil
 EndContentData */
 
 #include "ScriptMgr.h"
@@ -32,95 +32,10 @@ EndContentData */
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"
 #include "Player.h"
+#include "GameObjectAI.h"
 
-enum UnexpectedResults
-{
-    // Quest
-    QUEST_UNEXPECTED_RESULT         = 8488,
-
-    // Creatures
-    NPC_GHARZUL                     = 15958,
-    NPC_ANGERSHADE                  = 15656
-};
-
-class npc_apprentice_mirveda : public CreatureScript
-{
-public:
-    npc_apprentice_mirveda() : CreatureScript("npc_apprentice_mirveda") { }
-
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
-    {
-        if (quest->GetQuestId() == QUEST_UNEXPECTED_RESULT)
-        {
-            CAST_AI(npc_apprentice_mirveda::npc_apprentice_mirvedaAI, creature->AI())->Summon = true;
-            CAST_AI(npc_apprentice_mirveda::npc_apprentice_mirvedaAI, creature->AI())->PlayerGUID = player->GetGUID();
-        }
-        return true;
-    }
-
-    CreatureAI* GetAI(Creature* creature) const override
-    {
-        return new npc_apprentice_mirvedaAI(creature);
-    }
-
-    struct npc_apprentice_mirvedaAI : public ScriptedAI
-    {
-        npc_apprentice_mirvedaAI(Creature* creature) : ScriptedAI(creature), Summons(me) { }
-
-        uint32 KillCount;
-        ObjectGuid PlayerGUID;
-        bool Summon;
-        SummonList Summons;
-
-        void Reset() override
-        {
-            KillCount = 0;
-            PlayerGUID = ObjectGuid::Empty;
-            Summons.DespawnAll();
-            Summon = false;
-        }
-
-        void JustEngagedWith(Unit* /*who*/) override { }
-
-        void JustSummoned(Creature* summoned) override
-        {
-            summoned->AI()->AttackStart(me);
-            Summons.Summon(summoned);
-        }
-
-        void SummonedCreatureDespawn(Creature* summoned) override
-        {
-            Summons.Despawn(summoned);
-            ++KillCount;
-        }
-
-        void JustDied(Unit* /*killer*/) override
-        {
-            if (PlayerGUID)
-                if (Player* player = ObjectAccessor::FindPlayer(PlayerGUID))
-                    player->FailQuest(QUEST_UNEXPECTED_RESULT);
-        }
-
-        void UpdateAI(uint32 /*diff*/) override
-        {
-            if (KillCount >= 3 && PlayerGUID)
-                if (Player* player = ObjectAccessor::FindPlayer(PlayerGUID))
-                    if (player->GetQuestStatus(QUEST_UNEXPECTED_RESULT) == QUEST_STATUS_INCOMPLETE)
-                    {
-                        player->CompleteQuest(QUEST_UNEXPECTED_RESULT);
-                        Reset();
-                    }
-
-            if (Summon)
-            {
-                me->SummonCreature(NPC_GHARZUL,    8749.505f, -7132.595f, 35.31983f, 3.816502f, TEMPSUMMON_CORPSE_DESPAWN, 4000ms);
-                me->SummonCreature(NPC_ANGERSHADE, 8755.38f, -7131.521f, 35.30957f, 3.816502f,  TEMPSUMMON_CORPSE_DESPAWN, 4000ms);
-                me->SummonCreature(NPC_ANGERSHADE, 8753.199f, -7125.975f, 35.31986f, 3.816502f, TEMPSUMMON_CORPSE_DESPAWN, 4000ms);
-                Summon = false;
-            }
-        }
-    };
-};
+// #1001: Apprentice Mirveda / Unexpected Results (8488) is SmartAI, as on AC (no C++ script there); see
+// sql/updates/world/2026_10_29_1001b_mirveda_ac_smartai.sql
 
 /*######
 ## npc_infused_crystal
@@ -261,9 +176,53 @@ class spell_lorthemar_mass_charm : public SpellScript
     }
 };
 
+// Quest 8487: Corrupted Soil
+enum TaintedSoil
+{
+    GO_TAINTED_SOIL_SAMPLE  = 180921,
+    GO_TAINTED_SOIL_TRAP    = 181583
+};
+
+class go_tainted_soil : public GameObjectScript
+{
+public:
+    go_tainted_soil() : GameObjectScript("go_tainted_soil") { }
+
+    struct go_tainted_soilAI : public GameObjectAI
+    {
+        go_tainted_soilAI(GameObject* go) : GameObjectAI(go) { }
+
+        void Reset() override
+        {
+            if (GameObject* trap = me->FindNearestGameObject(GO_TAINTED_SOIL_TRAP, 1.0f))
+                if (!trap->isSpawned())
+                    trap->Respawn();
+        }
+    };
+
+    GameObjectAI* GetAI(GameObject* go) const override
+    {
+        return new go_tainted_soilAI(go);
+    }
+
+    void OnLootStateChanged(GameObject* go, uint32 state, Unit* /*unit*/) override
+    {
+        if (state == GO_JUST_DEACTIVATED)
+        {
+            if (GameObject* trap = go->FindNearestGameObject(GO_TAINTED_SOIL_TRAP, 1.0f))
+            {
+                trap->SetRespawnTime(go->GetRespawnDelay());
+                trap->SaveRespawnTime();
+                trap->SendObjectDeSpawnAnim(trap->GetGUID());
+                trap->UpdateObjectVisibility();
+            }
+        }
+    }
+};
+
 void AddSC_eversong_woods()
 {
-    new npc_apprentice_mirveda();
     new npc_infused_crystal();
     new spell_script<spell_lorthemar_mass_charm>("spell_lorthemar_mass_charm");
+    new go_tainted_soil();
 }

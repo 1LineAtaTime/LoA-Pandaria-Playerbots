@@ -268,7 +268,7 @@ struct ScriptedAI : public CreatureAI
     //       Remember that if you modified _isCombatMovementAllowed (e.g: using SetCombatMovement) it will not be reset at Reset().
     //       It will keep the last value you set.
     void SetCombatMovement(bool allowMovement);
-    bool IsCombatMovementAllowed() const
+    bool IsCombatMovementAllowed() const override
     {
         return _isCombatMovementAllowed;
     }

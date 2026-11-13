@@ -267,7 +267,11 @@ objectUpdateBuffer.WriteByteSeq(objectGUID[7]);
                 //     if (Creature* sourceCreature = sObjectAccessor->FindCreature(vignette->GeSourceGuid()))
                 //         vignette->UpdatePosition(G3D::Vector3(sourceCreature->GetPositionX(), sourceCreature->GetPositionY(), sourceCreature->GetPositionZ()));
                 // });
-                if (Map* map = sMapMgr->FindBaseMap(vignette->m_Map))
+                // Only the owner's own map: this runs in Player::Update on that map's update thread. The base map of
+                // m_Map can be another map (or the instance parent) that another map thread is changing at the same
+                // time, and reading its object store raced (crash 2026-10-28 in Trinity::Find<Creature>).
+                Map* map = m_Owner->FindMap();
+                if (map && map->GetId() == vignette->m_Map)
                     if (Creature* sourceCreature = map->GetCreature(vignette->GeSourceGuid()))
                         vignette->UpdatePosition(G3D::Vector3(sourceCreature->GetPositionX(), sourceCreature->GetPositionY(), sourceCreature->GetPositionZ()));
             }

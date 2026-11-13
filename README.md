@@ -22,12 +22,26 @@ authors and contributors.
 + Class rotations for every class and specialisation of MoP, including the Monk, with PvE and
   PvP priorities, interrupts, defensives and pet control.
 + Bot chat: greetings, reactions, battleground and group chatter, and duels around the cities.
++ Town errands: bots visit vendors, repairers, trainers, the auction house, banks, mailboxes
+  and stable masters, and fly to a far town when the errand needs it.
++ Optional, off by default: bots that follow their master across maps
+  (`AiPlayerbot.FollowTeleport`) and bots that respect crowd control set by others
+  (`AiPlayerbot.RespectCrowdControl`).
+
+**World content**
++ The Forsaken questline (Tirisfal Glades, Silverpine Forest, Hillsbrad Foothills), Wandering
+  Isle fixes and start-zone training dummies.
++ Creature abilities for thousands of open-world and dungeon creatures, Deadmines, Wailing
+  Caverns and Ragefire Chasm encounter data, and gathering-node placement fixes.
 
 **Performance**
-+ Reworked bot tick scheduling and per-bot update delays: with about 1000 bots online the world
-  update averages a few milliseconds (median 2 ms in our 1000-bot runs), at no extra CPU cost.
++ Reworked bot tick scheduling and per-bot update delays: the world keeps a steady update rate
+  with about 1000 bots online, without extra CPU cost.
 + `.server info` prints the update-time statistics of the last 500 world updates (mean, median,
   95th and 99th percentile, max), so the cost of a bot population can be measured directly.
++ Map updates: `MapUpdateInterval` is read from the config (default 10 ms); sessions and players
+  update every world tick, and the full map update runs per map group.
++ Lower memory per creature, per spell and per bot, so large bot populations fit in less RAM.
 
 **Testing and diagnostics**
 + A headless client (`contrib/headless-client/`): a scriptable, graphics-free 5.4.8 client that
@@ -51,14 +65,13 @@ authors and contributors.
 + A 5.4.8 (build 18414) game client, enUS locale, for the data extraction below.
 
 ## Latest builds (CI)
-This branch has no automatic builds. Untested development builds of the `playerbot-beta`
-branch (Windows x64, Linux x64, macOS arm64 and a database with every SQL update applied)
-are published at most once a day:
-**[latest playerbot-beta build](../../releases/tag/ci-playerbot-beta)**.
+Untested development builds of the `playerbot-beta` branch are published at most once a day,
+when it has new commits (no extracted map data):
+**[latest playerbot-beta build](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases/tag/ci-playerbot-beta)**.
 For a tested package, use the
 [releases](https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots/releases).
 
-The beta pre-release is optional. It has five assets:
+The pre-release has five assets:
 
 + `playerbot-beta-ci-win64.zip`, `playerbot-beta-ci-linux-x64.zip`,
   `playerbot-beta-ci-macos-arm64.zip`: the binaries.
@@ -70,9 +83,14 @@ The beta pre-release is optional. It has five assets:
 Downloading a run's Actions artifact gives you a GitHub wrapper zip with both database files
 inside; use the release assets instead.
 
-A fresh install takes every package (server, extractors, database) from the same release.
-Each package is complete on its own: never unpack one over another, or a development build
-over a release.
+A fresh install takes:
+
++ the extractors from the latest full [release](../../releases), to build `dbc`, `maps`,
+  `vmaps` and `mmaps` once from your client;
++ the binaries, the database zip and the SQL sources from the latest playerbot-beta build
+  (or all of them from a release, for a tested package).
+
+Each package is complete on its own: never unpack one over another.
 
 ## Getting started
 
@@ -106,7 +124,7 @@ Copy `dbc`, `maps`, `vmaps`, `mmaps` and `cameras` into one folder and point `Da
 ### 3. Databases
 For a new install: create four empty databases (for example `auth`, `characters`, `world`,
 `playerbots`), give one MySQL user access to all four, and import the four dumps
-of the release's `database` zip:
+of the release's `database` zip or of `playerbot-beta-ci-database.zip`:
 
 ```
 mysql -u<user> -p auth       < auth.sql
@@ -128,9 +146,9 @@ Copy the `.conf.dist` files next to the binaries and drop the `.dist` suffix:
 + `authserver.conf`: `LoginDatabaseInfo`.
 + `worldserver.conf`: `LoginDatabaseInfo`, `WorldDatabaseInfo`, `CharacterDatabaseInfo`,
   `PlayerbotsDatabaseInfo`, `DataDir`, `LogsDir`.
-+ `playerbots.conf` (placed next to `worldserver.conf`): the same `PlayerbotsDatabaseInfo`, and
-  the bot population, e.g. `AiPlayerbot.MinRandomBots`, `AiPlayerbot.MaxRandomBots` and
-  `AiPlayerbot.RandomBotAccountCount`. `AiPlayerbot.Enabled = 0` turns the module off.
++ `playerbots.conf` (placed next to `worldserver.conf`): the bot population, e.g. `AiPlayerbot.MinRandomBots`, `AiPlayerbot.MaxRandomBots` and
+  `AiPlayerbot.RandomBotAccountCount` (0 = sized automatically). `AiPlayerbot.Enabled = 0` turns the
+  module off. The playerbots database connection is set only in `worldserver.conf`.
 
 Database updates: the dumps are complete, so `Updates.EnableDatabases = 0` (the shipped
 default) is fine for a new install. To upgrade an existing install, see
@@ -150,13 +168,11 @@ database if clients connect from other machines.
 1. Back up all four databases (`mysqldump`).
 2. Replace the binaries. Keep your `.conf` files and copy any new keys from the new
    `.conf.dist` files.
-3. Extract the SQL sources (the `Source code` zip of the release you upgrade to) and set, in
-   `worldserver.conf`: `Updates.EnableDatabases = 7` (1 auth + 2 characters + 4 world; 15
-   with 8 playerbots from v1.1.0-beta on), `SourceDirectory` = the extracted folder that
-   contains `sql/` and `modules/` (the top folder of the `Source code` zip),
-   `MySQLExecutable` = your `mysql` client (`mysql.exe` on Windows). With v1.0.x binaries,
-   apply new files from `modules/mod_playerbots/data/sql/playerbots/updates` to the
-   playerbots database by hand.
+3. Extract the SQL sources (`playerbot-beta-ci-sql.zip`, or the `Source code` zip of a
+   release) and set, in `worldserver.conf`: `Updates.EnableDatabases = 15`
+   (1 auth + 2 characters + 4 world + 8 playerbots), `SourceDirectory` = the extracted
+   `sql-sources` folder, the one that contains `sql/` and `modules/` (for a `Source code`
+   zip, its top folder), `MySQLExecutable` = your `mysql` client (`mysql.exe` on Windows).
 4. Start the worldserver once: the updater applies only the missing updates, in order, and
    records them.
 
@@ -177,3 +193,7 @@ Read file [COPYING](COPYING.md)
 
 ## Authors &amp; Contributors
 Read file [THANKS](THANKS.md)
+
+Contributed work is published commit by commit with its original authors. The status of
+each commit of pull request #15 (included, changed, partial, had, rejected) is listed in
+[PR 15 port status](doc/PR15-port-status.md).

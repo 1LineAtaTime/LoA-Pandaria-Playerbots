@@ -21,6 +21,7 @@
 #include <G3D/Quat.h>
 #include "Spline.h"
 #include "DBCStores.h"
+#include "ObjectGuid.h"
 
 struct KeyFrame;
 struct GameObjectTemplate;
@@ -76,6 +77,19 @@ struct TransportTemplate
     float accelTime;
     float accelDist;
     uint32 entry;
+
+    // Phase rule of the continent spawn, from the `transports` row (phaseUseFlags / phaseid / phasegroup, the
+    // TrinityCore master columns). Empty = no rule: the transport is sent to every player on its map, as before.
+    // Otherwise only to players holding one of these phases, or with phaseInverse to everyone except them.
+    std::vector<uint32> phases;
+    bool phaseInverse = false;
+};
+
+enum TransportPhaseUseFlags : uint8
+{
+    TRANSPORT_PHASE_USE_FLAGS_ALWAYS_VISIBLE = 0x1,
+    TRANSPORT_PHASE_USE_FLAGS_INVERSE        = 0x2,
+    TRANSPORT_PHASE_USE_FLAGS_ALL            = TRANSPORT_PHASE_USE_FLAGS_ALWAYS_VISIBLE | TRANSPORT_PHASE_USE_FLAGS_INVERSE
 };
 
 typedef std::map<uint32, TransportAnimationEntry const*> TransportPathContainer;
@@ -141,6 +155,9 @@ class TransportMgr
             return NULL;
         }
 
+        // Continent transports with a phase rule (filled once at startup, read-only afterwards)
+        std::vector<ObjectGuid> const& GetPhasedTransports() const { return _phasedTransports; }
+
         void AddLocalTransportSpawn(uint16 mapId, uint32 spawnMask, uint32 guid)
         {
             for (uint8 i = 0; spawnMask != 0; i++, spawnMask >>= 1)
@@ -170,6 +187,8 @@ class TransportMgr
         TransportAnimationContainer _transportAnimations;
 
         TransportInstanceMap _localTransportSpawns;
+
+        std::vector<ObjectGuid> _phasedTransports;
 };
 
 #define sTransportMgr TransportMgr::instance()

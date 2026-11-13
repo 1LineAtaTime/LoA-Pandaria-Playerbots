@@ -120,7 +120,6 @@ namespace Movement
         bool isCyclic() const { return splineflags.cyclic; }
         bool isFalling() const { return splineflags.falling; }
         bool HasAnimation() const { return splineflags.animation; }
-        bool IsWalking() { return splineflags.walkmode; }
         bool IsEnteringTransport() { return splineflags.transportEnter; }
         AnimTier GetAnimation() const { return (AnimTier)splineflags.getAnimationId(); }
         Vector3 FinalDestination() const { return Initialized() ? spline.getPoint(spline.last()) : Vector3(); }

@@ -3753,6 +3753,13 @@ namespace
                 // target -> non-combat "dps assist" -> Attack()), not by setting "current target", which no
                 // trigger reads on its own on either core.
                 botAI->GetAiObjectContext()->GetValue<GuidVector>("prioritized targets")->Set({victim->GetGUID()});
+                // #941: Driving() makes this bot active, but AllowActivity() caches its answer for ~5 s. A cached
+                // "inactive" from before the command left the bot on a minimal tick and a 10 s passiveDelay sleep once
+                // the mob engaged (wp935x: MoP warrior's first action at 12.6 s, AC's at 2 s). Refresh the cache and end
+                // the wait now, as WakeDuelant does for duels; a running cast keeps its own wait.
+                botAI->AllowActivity(ALL_ACTIVITY, true);
+                if (!bot->IsNonMeleeSpellCasted(false, false, true))
+                    botAI->SetNextCheckDelay(0);
                 TC_LOG_DEBUG("playerbots", "[SCENARIO] %s target acquired entry=%u target=%u dist=%.1f",
                     bot->GetName().c_str(), local.attackEntry, local.attackGuid, bot->GetExactDist(victim));
             }
@@ -4971,7 +4978,7 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
     if (scenario == "spec" || scenario == "bgtest" || scenario == "bgend" || scenario == "lfgstate" ||
         scenario == "queuegate" || scenario == "clearqueue" || scenario == "leavegroup" || scenario == "lfgjoin" || scenario == "lfgleave" || scenario == "role" ||
         scenario == "acceptinvite" || scenario == "unbind" || scenario == "instinfo" || scenario == "unaura" || scenario == "bgqueueinfo" ||
-        scenario == "additem" || scenario == "strategy" || scenario == "imbueinfo" || scenario == "dismount" || scenario == "setfly" ||
+        scenario == "additem" || scenario == "equipitem" || scenario == "nearhp" || scenario == "attackers" || scenario == "visibleitems" || scenario == "strategy" || scenario == "imbueinfo" || scenario == "dismount" || scenario == "setfly" ||
         scenario == "hasitem" || scenario == "questreward" || scenario == "bosshp" || scenario == "abinfo" || scenario == "useitem" || scenario == "despawnnear" || scenario == "encounter" || scenario == "engage" ||
         scenario == "cansee" ||  // #519
         scenario == "dgstate" || scenario == "dgdropcart" || scenario == "dgpick" || scenario == "dgtake" || scenario == "ratedbg")  // #895 ratedbg; #797 (MoP-only Deepwind Gorge cart verbs, BotScenarioQueue.cpp)

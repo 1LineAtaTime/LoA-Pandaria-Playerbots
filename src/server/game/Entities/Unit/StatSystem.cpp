@@ -483,6 +483,11 @@ void Player::UpdateMaxHealth()
 
 void Player::UpdateMaxPower(Powers power)
 {
+    // The alternate power maximum belongs to SPELL_AURA_ENABLE_ALT_POWER (UnitPowerBar) or to the script that set it; it has no
+    // stat source, so a recalculation (login, level-up) would only reset it to 0 and clamp the current value with it.
+    if (power == POWER_ALTERNATE_POWER)
+        return;
+
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
 
     float bonusPower = (power == POWER_MANA && GetCreatePowers(power) > 0) ? GetManaBonusFromIntellect() : 0;
@@ -1189,6 +1194,11 @@ void Creature::UpdateMaxHealth()
 
 void Creature::UpdateMaxPower(Powers power)
 {
+    // The alternate power maximum belongs to SPELL_AURA_ENABLE_ALT_POWER (UnitPowerBar) or to the script that set it; it has no
+    // stat source, so a recalculation (login, level-up) would only reset it to 0 and clamp the current value with it.
+    if (power == POWER_ALTERNATE_POWER)
+        return;
+
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
 
     float value  = GetTotalAuraModValue(unitMod);
@@ -1241,21 +1251,25 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
             break;
     }
 
-    //float att_speed = float(GetAttackTime(attType))/1000.0f;
+    // creature_classlevelstats damage columns are damage per second (as in TrinityCore and AzerothCore,
+    // Creature::CalculateMinMaxDamage): the weapon damage and the attack power part are both multiplied by the
+    // base attack time, so a slower creature hits harder per swing at the same damage per second.
+    float att_speed = GetAPMultiplier(attType, false);
 
     float weapon_mindamage = GetWeaponDamageRange(attType, MINDAMAGE);
     float weapon_maxdamage = GetWeaponDamageRange(attType, MAXDAMAGE);
 
-    /* per-creature/per-difficulty damage multiplier (from difficulty table, default 1.0)
-       combined with any runtime override (e.g. world events) */
+    // per-creature damage modifier: creature_template.DamageModifier x the rank's config rate on every map (AC
+    // StatSystem.cpp:1169, ObjectMgr.cpp:628/1216); where the map has a creature_template_difficulty row for the creature
+    // (instances, battlegrounds) that row's DamageModifier replaces it, so nothing is multiplied twice
     float dmg_multiplier = GetCreatureTemplate()->dmg_multiplier;
     if (auto mod = sObjectMgr->SelectDifficultyInfo(GetMap(), GetEntry()))
-        dmg_multiplier *= mod->DamageMod;
+        dmg_multiplier = mod->DamageMod;
 
     float att_pwr_change = GetTotalAttackPowerValue(attType);
 
-    float base_value  = GetModifierValue(unitMod, BASE_VALUE) + (att_pwr_change * GetAPMultiplier(attType, false) / 14.0f);
-    float base_pct    = GetModifierValue(unitMod, BASE_PCT);
+    float base_value  = GetModifierValue(unitMod, BASE_VALUE) + att_pwr_change / 14.0f;
+    float base_pct    = GetModifierValue(unitMod, BASE_PCT) * att_speed;
     float total_value = GetModifierValue(unitMod, TOTAL_VALUE);
     float total_pct   = GetModifierValue(unitMod, TOTAL_PCT);
 
@@ -1497,6 +1511,11 @@ void Guardian::UpdateMaxHealth()
 
 void Guardian::UpdateMaxPower(Powers power)
 {
+    // The alternate power maximum belongs to SPELL_AURA_ENABLE_ALT_POWER (UnitPowerBar) or to the script that set it; it has no
+    // stat source, so a recalculation (login, level-up) would only reset it to 0 and clamp the current value with it.
+    if (power == POWER_ALTERNATE_POWER)
+        return;
+
     if (GetPowerIndex(power) == MAX_POWERS)
         return;
 

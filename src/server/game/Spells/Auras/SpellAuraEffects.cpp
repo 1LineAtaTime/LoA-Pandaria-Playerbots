@@ -4273,22 +4273,12 @@ void AuraEffect::HandleAuraModIncreaseHealth(AuraApplication const* aurApp, uint
 
     Unit* target = aurApp->GetTarget();
 
-    if (apply)
-    {
-        target->HandleStatModifier(UNIT_MOD_HEALTH, TOTAL_VALUE, float(GetAmount()), apply);
-        target->ModifyHealth(GetAmount());
-    }
-    else
-    {
-        if (target->IsAlive())
-        {
-            if (int32(target->GetHealth()) > GetAmount())
-                target->ModifyHealth(-GetAmount());
-            else
-                target->SetHealth(1);
-        }
-        target->HandleStatModifier(UNIT_MOD_HEALTH, TOTAL_VALUE, float(GetAmount()), apply);
-    }
+    // Change current health by the same amount as the maximum; read it before SetMaxHealth clamps it; a living target
+    // keeps at least 1 health.
+    int64 const health = target->GetHealth();
+    target->HandleStatModifier(UNIT_MOD_HEALTH, TOTAL_VALUE, float(GetAmount()), apply);
+    if (target->IsAlive())
+        target->SetHealth(uint32(std::max<int64>(1, health + (apply ? GetAmount() : -GetAmount()))));
 }
 
 void AuraEffect::HandleAuraModIncreaseHealth2(AuraApplication const* aurApp, uint8 mode, bool apply) const

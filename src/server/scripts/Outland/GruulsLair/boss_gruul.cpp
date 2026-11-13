@@ -308,7 +308,7 @@ class spell_gruul_shatter_effect : public SpellScriptLoader
                 if (!GetHitUnit())
                     return;
 
-                float radius = GetSpellInfo()->Effects[EFFECT_0].CalcRadius(GetCaster());
+                float radius = GetSpellInfo()->Effects[EFFECT_0].CalcRadius(GetCaster(), SpellTargetIndex::TargetB); // #970: CPP boss_gruul.cpp:315
                 if (!radius)
                     return;
 

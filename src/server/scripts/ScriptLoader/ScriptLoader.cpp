@@ -342,6 +342,12 @@ void AddSC_isle_of_queldanas();
 void AddSC_loch_modan();
 void AddSC_redridge_mountains();
 void AddSC_silverpine_forest();
+void AddSC_hillsbrad_purgation();
+void AddSC_hillsbrad_sludge_stormpike();
+void AddSC_hillsbrad_brazie();
+void AddSC_hillsbrad_azurelode();
+void AddSC_hillsbrad_durnholde();
+void AddSC_hillsbrad_headland();
 void AddSC_stormwind_city();
 void AddSC_tol_barad();
 void AddSC_stranglethorn_vale();
@@ -1379,6 +1385,12 @@ void AddEasternKingdomsScripts()
     AddSC_loch_modan();
     AddSC_redridge_mountains();
     AddSC_silverpine_forest();
+    AddSC_hillsbrad_purgation();
+    AddSC_hillsbrad_sludge_stormpike();
+    AddSC_hillsbrad_brazie();
+    AddSC_hillsbrad_azurelode();
+    AddSC_hillsbrad_durnholde();
+    AddSC_hillsbrad_headland();
     AddSC_stormwind_city();
     AddSC_tol_barad();
     AddSC_stranglethorn_vale();
@@ -2149,13 +2161,18 @@ void AddSC_custom_reward();
 void AddSC_boost_profession();
 void AddSC_custom_items();
 void AddSC_solocraft_system();
+void AddSC_battle_pay_items();
 
 void AddCustomScripts()
 {
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
 //AddSC_npc_teleport();
-//AddSC_wow_token();
+    // #963: commented out in 1bdf4040 (2022-11-26) together with every custom script, because
+    // dfe2399c (2022-10-29) had deleted the Custom/*.cpp files and these calls no longer linked.
+    // wow_token.cpp came back in c55a9421 (2023-02-08) but its call was never re-enabled.
+    AddSC_wow_token();
+    AddSC_battle_pay_items();
 //AddSC_custom_reward();
 //AddSC_boost_profession();
 //AddSC_custom_items();

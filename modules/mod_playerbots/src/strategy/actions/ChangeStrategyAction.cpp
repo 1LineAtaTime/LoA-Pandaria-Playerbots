@@ -3,7 +3,7 @@
 #include "Event.h"
 #include "Helper.h"
 #include "LastMovementValue.h"
-//#include "PlayerbotDbStore.h"
+#include "PlayerbotRepository.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 
@@ -22,7 +22,11 @@ bool ChangeCombatStrategyAction::Execute(Event event)
             case '+':
             case '-':
             case '~':
-                //sPlayerbotDbStore->Save(botAI);
+                PlayerbotRepository::instance().Save(botAI);
+                break;
+            case '!':
+                botAI->SelectiveResetStrategies(BOT_STATE_COMBAT);
+                PlayerbotRepository::instance().Save(botAI);
                 break;
             case '?':
                 break;
@@ -60,7 +64,11 @@ bool ChangeNonCombatStrategyAction::Execute(Event event)
             case '+':
             case '-':
             case '~':
-                //sPlayerbotDbStore->Save(botAI);
+                PlayerbotRepository::instance().Save(botAI);
+                break;
+            case '!':
+                botAI->SelectiveResetStrategies(BOT_STATE_NON_COMBAT);
+                PlayerbotRepository::instance().Save(botAI);
                 break;
             case '?':
                 break;

@@ -1055,7 +1055,7 @@ class spell_shadopan_apparitions : public SpellScriptLoader
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_shadopan_apparitions_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                // 112060 has its TargetB (SRC_AREA_ENTRY) cleared by SpellMgr corrections, so there is no area target list to filter.
             }
         };
 

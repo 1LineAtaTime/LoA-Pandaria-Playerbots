@@ -151,7 +151,7 @@ namespace Movement
             MoveSplineFlag::FallingSlow | MoveSplineFlag::Parabolic | MoveSplineFlag::Animation | MoveSplineFlag::Cyclic |
             MoveSplineFlag::Enter_Cycle | MoveSplineFlag::Frozen | MoveSplineFlag::UncompressedPath |
             MoveSplineFlag::OrientationFixed | MoveSplineFlag::OrientationInversed | MoveSplineFlag::TransportEnter |
-            MoveSplineFlag::TransportExit | MoveSplineFlag::Walkmode))
+            MoveSplineFlag::TransportExit) || args.walk)
             return false;
 
         if (moveFlags & (MOVEMENTFLAG_ROOT | MOVEMENTFLAG_WALKING | MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING |
@@ -236,7 +236,7 @@ namespace Movement
             // If spline is initialized with SetWalk method it only means we need to select
             // walk move speed for it but not add walk flag to unit
             uint32 moveFlagsForSpeed = moveFlags;
-            if (args.flags.walkmode)
+            if (args.walk)
                 moveFlagsForSpeed |= MOVEMENTFLAG_WALKING;
             else
                 moveFlagsForSpeed &= ~MOVEMENTFLAG_WALKING;
@@ -315,7 +315,8 @@ namespace Movement
         // Elevators also use MOVEMENTFLAG_ONTRANSPORT but we do not keep track of their position changes
         args.TransformForTransport = unit->GetTransGUID();
         // mix existing state into new
-        args.flags.walkmode = unit->m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING);
+        args.walk = unit->m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING);
+        args.flags.canSwim = unit->CanSwim();
         args.flags.flying = unit->m_movementInfo.HasMovementFlag(MovementFlags(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_DISABLE_GRAVITY));
         args.flags.smoothGroundPath = true; // enabled by default, CatmullRom mode or client config "pathSmoothing" will disable this
     }

@@ -1040,6 +1040,11 @@ namespace
         // the master's deck-valid one.
         bool const snapped = SnapToDeckOffsetFromMaster(bot, master, transport);
 
+        // Tell the clients around the bot that it is a passenger, on the deck spot it was just moved to: neither
+        // AddPassenger nor the snap's Relocate sends a packet, so observers kept the bot where it was put down and it
+        // hung in the air once the transport moved on. Same announce as the ambient transport check in UpdateAI.
+        StopOnCurrentPos(bot);
+
         // Evidence line: never dereferences null (every pointer is guarded above / by the helpers).
         // Cheap: TC_LOG_DEBUG only evaluates its arguments when the playerbots category is enabled
         // (Log.h TC_LOG_MESSAGE_BODY), so the two raycast probes cost nothing when it is off.
@@ -1379,9 +1384,12 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
             // RoamTransport's DeckUnder uses. The core's 30 yd hull ray (Map.cpp:2578-2587) also hits the hull under a
             // bot swimming at the docked ship's waterline (w69 Stallian, z 0.6) or standing on a pier above it. A rider
             // of this same transport (newTransport == GetTransport()) keeps the tolerant #223 rule.
+            // #948: the deck ray still hit for a swimmer right under the hull (Valiance Keep 190536, z 0.6, rode
+            // inside the hull), so a bot in the water never attaches to a boat/zeppelin either.
             if (newTransport && newTransport != bot->GetTransport() &&
                 newTransport->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT &&
-                !IsUnderStaticTransportDeck(newTransport, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()))
+                (!IsUnderStaticTransportDeck(newTransport, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ()) ||
+                 bot->IsInWater()))
                 newTransport = nullptr;
 
             if (newTransport != bot->GetTransport())
@@ -2004,7 +2012,7 @@ void PlayerbotAI::Reset(bool full)
     }
 }
 
-void PlayerbotAI::ResetStrategies()
+void PlayerbotAI::ResetStrategies(bool /*load*/)
 {
     for (uint8 i = 0; i < BOT_STATE_MAX; i++)
         _engines[i]->removeAllStrategies();
@@ -2068,6 +2076,26 @@ void PlayerbotAI::ChangeStrategy(std::string const names, BotState type)
         return;
 
     e->ChangeStrategy(names);
+}
+
+void PlayerbotAI::SelectiveResetStrategies(BotState type)
+{
+    Engine* e = _engines[type];
+    if (!e)
+        return;
+
+    e->removeAllStrategies();
+
+    if (type == BOT_STATE_COMBAT)
+        AiFactory::AddDefaultCombatStrategies(bot, this, e);
+    else if (type == BOT_STATE_NON_COMBAT)
+        AiFactory::AddDefaultNonCombatStrategies(bot, this, e);
+
+    // AC Bot/PlayerbotAI.cpp:1788-1789: re-apply the current map's instance strategy
+    if (sPlayerbotAIConfig->applyInstanceStrategies)
+        ApplyInstanceStrategies(bot->GetMapId());
+
+    e->Init();
 }
 
 void PlayerbotAI::ClearStrategies(BotState type)
@@ -2346,9 +2374,16 @@ void PlayerbotAI::DoNextAction(bool min)
 
 
     bool hasMountAura = bot->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED) ||
-        bot->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
+        bot->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED) ||
+        bot->HasAuraType(SPELL_AURA_MOUNTED);  // #957, see below
     if (hasMountAura && !bot->IsMounted())
     {
+        // #957 (MoP-only): on this core the mount speed is a separate MountCapability spell and Unit::Dismount() leaves
+        // the SPELL_AURA_MOUNTED aura (#134). Dropping only the speed aura left a mount aura that, once the bot sat on a
+        // taxi mount, Unit::GetMountCapability rejected (no speed aura) at the next area change - its removal dismounted
+        // the rider mid-flight. Drop the stale mount aura with it (HandleAuraMounted also removes its speed aura).
+        if (bot->HasAuraType(SPELL_AURA_MOUNTED))
+            bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
         bot->RemoveAurasByType(SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED);
         bot->RemoveAurasByType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
     }
@@ -2362,12 +2397,16 @@ void PlayerbotAI::HandleTeleportAck()
     if (IsRealPlayer())
         return;
 
-    bot->GetMotionMaster()->Clear(true);
-    bot->StopMoving();
     bool const wasFar = bot->IsBeingTeleportedFar();
     bool const wasNear = bot->IsBeingTeleportedNear();
     if (bot->IsBeingTeleportedNear())
     {
+        // #953: the movement reset belongs to the near branch only (AC HandleTeleportAck clears movement after the far
+        // ack, and only when not in flight). Run before the far ack, it finalized the taxi generator, so a cross-map
+        // flight hop never resumed (the ack's IsInFlight -> ContinueTaxiFlight branch was skipped) and the stale route
+        // was saved and replayed on the wrong map at the next login.
+        bot->GetMotionMaster()->Clear(true);
+        bot->StopMoving();
         // Temporary fix for instance can not enter
         if (!bot->IsInWorld())
         {
@@ -2419,9 +2458,26 @@ void PlayerbotAI::HandleTeleportAck()
     }
     if (bot->IsBeingTeleportedFar())
     {
+        // #953 (AC HandleTeleportAck order): ack first, then clear movement only when not in flight - a cross-map taxi hop
+        // resumes through the ack's IsInFlight -> ContinueTaxiFlight branch. A bot that is not in flight and still not
+        // at the teleport destination after the ack is put there (diagnostic for the zone-0 strandings).
+        WorldLocation const dest = bot->GetTeleportDest();
         while (bot->IsBeingTeleportedFar())
         {
             bot->GetSession()->HandleMoveWorldportAck();
+        }
+        if (bot->IsInWorld() && !bot->IsInFlight())
+        {
+            bot->GetMotionMaster()->Clear(true);
+            bot->StopMoving();
+        }
+        if (bot->IsInWorld() && !bot->IsInFlight() && bot->GetMapId() == dest.GetMapId() &&
+            bot->GetExactDist2d(dest.GetPositionX(), dest.GetPositionY()) > 5.0f)
+        {
+            TC_LOG_DEBUG("playerbots", "[TELEPORT] %s pos-mismatch after far teleport: map %u at (%.1f,%.1f,%.1f), dest (%.1f,%.1f,%.1f) - corrected",
+                bot->GetName().c_str(), bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
+                dest.GetPositionX(), dest.GetPositionY(), dest.GetPositionZ());
+            bot->NearTeleportTo(dest.GetPositionX(), dest.GetPositionY(), dest.GetPositionZ(), dest.GetOrientation());
         }
         // AC's core recomputes position data (outdoors flag, zone/area) on a far teleport
         // (AC MovementHandler.cpp:106); this core only does it on relocation, so a bot that left from
@@ -3608,6 +3664,12 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
     if (!target)
         target = bot;
 
+    // #967: AC PlayerbotAI.cpp:3502-3503 `if (!IsValidUnit(target)) return false;` (AC PlayerbotAI.h:622-625: IsInWorld()
+    // && !IsDuringRemoveFromWorld()). This core has no IsDuringRemoveFromWorld: same IsInWorld() adapter as
+    // CanCastVehicleSpell (#581).
+    if (!target->IsInWorld())
+        return false;
+
     if (Pet* pet = bot->GetPet())
         if (pet->HasSpell(spellid))
             return true;
@@ -3630,18 +3692,25 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
     if (!spellInfo)
         return castFailed("no-spellinfo");
 
+    // #967: AC PlayerbotAI.cpp:3558-3568, verbatim (why=flight-form): no cast from flight form out of combat.
+    if ((bot->GetShapeshiftForm() == FORM_FLIGHT || bot->GetShapeshiftForm() == FORM_FLIGHT_EPIC) && !bot->IsInCombat())
+        return castFailed("flight-form");
+
     uint32 CastingTime = !spellInfo->IsChanneled() ? spellInfo->CalcCastTime(bot->GetLevel()) : spellInfo->GetDuration();
     if ((CastingTime || spellInfo->IsAutoRepeatRangedSpell()) && bot->isMoving())
         return castFailed("moving");
 
     if (!itemTarget)
     {
-        if (target->IsImmunedToSpell(spellInfo, spellInfo->GetAllEffectsMechanicMask()))
+        // #967: AC PlayerbotAI.cpp:3586-3601 lets Deep Freeze (44572) through on an immune target (bosses). 5.4.8 keeps
+        // the rule: Deep Freeze deals damage to a target permanently immune to stuns (same spell id on this core).
+        if (target->IsImmunedToSpell(spellInfo, spellInfo->GetAllEffectsMechanicMask()) && spellid != 44572)
             return castFailed("immune");
 
         if (bot != target && sServerFacade->GetDistance2d(bot, target) > sPlayerbotAIConfig->sightDistance)
             return castFailed("range");
     }
+
 
     Unit* oldSel = bot->GetSelectedUnit();
     // TRIGGERED_IGNORE_POWER_AND_REAGENT_COST flag for not calling CheckPower in check

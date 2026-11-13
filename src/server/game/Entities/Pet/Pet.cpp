@@ -1124,10 +1124,34 @@ void Pet::_SaveAuras(CharacterDatabaseTransaction trans)
 
     for (AuraMap::const_iterator itr = m_ownedAuras.begin(); itr != m_ownedAuras.end(); ++itr)
     {
-        if (!itr->second->CanBeSaved())
+        // check if the aura has to be saved (AC Pet::_SaveAuras filter)
+        if (!itr->second->CanBeSaved() || IsPetAura(itr->second))
             continue;
 
         Aura* aura = itr->second;
+        if (aura->GetDuration() < 60 * IN_MILLISECONDS)
+            continue;
+
+        // don't save infinite negative auras (lavas, transformations etc)
+        if (aura->IsPermanent() && !aura->GetSpellInfo()->IsPositive())
+            continue;
+
+        // don't save auras that cannot be cancelled
+        if (aura->GetSpellInfo()->HasAttribute(SPELL_ATTR0_CANT_CANCEL))
+            continue;
+
+        // don't save hidden auras
+        if (aura->GetSpellInfo()->HasAttribute(SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR))
+            continue;
+
+        // don't save auras with a model change
+        if (aura->GetSpellInfo()->HasAura(SPELL_AURA_TRANSFORM))
+            continue;
+
+        // don't save auras removed on map change
+        if (aura->GetSpellInfo()->HasAuraInterruptFlag(AURA_INTERRUPT_FLAG_CHANGE_MAP))
+            continue;
+
         auto aurApp = GetAuraApplication(aura->GetId(), aura->GetCasterGUID(), aura->GetCastItemGUID());
         if (!aurApp)
             continue;

@@ -284,15 +284,29 @@ static std::multimap<uint32, uint32> sItemSpecOverrideByItemId;
 // (bracket, queue) pair - the full-index walk was ~1% of the dominant map thread at 2000 bots.
 static std::map<uint32, std::vector<PvPDifficultyEntry const*>> sPvPDifficultyByMap;
 
+// #924: one table of MAX_SPELL_EFFECTS entries per difficulty the spell actually has effects for (almost always one).
+// The former effects[MAX_DIFFICULTY][MAX_SPELL_EFFECTS] array cost every spell ~3.8 KB, ~370 MB in total.
 struct SpellEffect
 {
-    SpellEffect()
+    typedef std::array<SpellEffectEntry const*, MAX_SPELL_EFFECTS> EffectTable;
+    std::vector<std::pair<uint32, EffectTable>> byDifficulty;
+
+    SpellEffectEntry const* Get(uint32 difficulty, uint32 effect) const
     {
-        for (auto&& it : effects)
-            std::fill(std::begin(it), std::end(it), nullptr);
+        for (auto const& entry : byDifficulty)
+            if (entry.first == difficulty)
+                return entry.second[effect];
+        return nullptr;
     }
 
-    SpellEffectEntry const* effects[MAX_DIFFICULTY][MAX_SPELL_EFFECTS];
+    SpellEffectEntry const*& Slot(uint32 difficulty, uint32 effect)
+    {
+        for (auto& entry : byDifficulty)
+            if (entry.first == difficulty)
+                return entry.second[effect];
+        byDifficulty.emplace_back(difficulty, EffectTable{});
+        return byDifficulty.back().second[effect];
+    }
 };
 
 typedef std::unordered_map<uint32, SpellEffect> SpellEffectMap;
@@ -842,7 +856,7 @@ void DBCManager::LoadDBCStores(const std::string& dataPath, uint32 defaultLocale
     {
         if (SpellEffectEntry const *spellEffect = sSpellEffectStore.LookupEntry(i))
         {
-            sSpellEffectMap[spellEffect->EffectSpellId].effects[spellEffect->EffectDifficulty][spellEffect->EffectIndex] = spellEffect;
+            sSpellEffectMap[spellEffect->EffectSpellId].Slot(spellEffect->EffectDifficulty, spellEffect->EffectIndex) = spellEffect;
         }
     }
 
@@ -975,10 +989,10 @@ SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint3
     if (itr == sSpellEffectMap.end())
         return nullptr;
 
-    if (itr->second.effects[difficulty][effect])
-        return itr->second.effects[difficulty][effect];
+    if (SpellEffectEntry const* entry = itr->second.Get(difficulty, effect))
+        return entry;
 
-    return itr->second.effects[REGULAR_DIFFICULTY][effect];
+    return itr->second.Get(REGULAR_DIFFICULTY, effect);
 }
 
 TalentSpellPos const* DBCManager::GetTalentSpellPos(uint32 spellId)

@@ -310,7 +310,9 @@ bool Quest::IsAutoAccept() const
 
 bool Quest::IsTurnIn() const
 {
-    return !sWorld->getBoolConfig(CONFIG_QUEST_IGNORE_AUTO_COMPLETE) && (_type == QUEST_TYPE_TURNIN || HasFlag(QUEST_FLAGS_AUTO_COMPLETE));
+    // A turn-in quest has nothing to do (QuestType 0). QUEST_FLAGS_AUTO_COMPLETE only means the quest is handed in from the log
+    // (the quest giver's voice, a communication device) once its objectives are done; it is not a turn-in quest.
+    return !sWorld->getBoolConfig(CONFIG_QUEST_IGNORE_AUTO_COMPLETE) && _type == QUEST_TYPE_TURNIN;
 }
 
 bool Quest::IsRaidQuest(Difficulty difficulty) const

@@ -334,7 +334,9 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         template<class T> void RemoveFromMap(T *, bool);
 
         void VisitNearbyCellsOf(WorldObject* obj, TypeContainerVisitor<Trinity::ObjectUpdater, GridTypeMapContainer> &gridVisitor, TypeContainerVisitor<Trinity::ObjectUpdater, WorldTypeMapContainer> &worldVisitor);
-        virtual void Update(const uint32);
+        // #935 (AC Map.h): t_diff = time since this map's last full update (0 on the ticks that only update sessions and
+        // players), s_diff = the world tick.
+        virtual void Update(const uint32 t_diff, const uint32 s_diff);
 
         float GetVisibilityRange() const { return m_VisibleDistance; }
         void SetVisibilityRange(float distance) { m_VisibleDistance = distance; }
@@ -786,6 +788,9 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
 
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
         GridMap* GridMaps[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
+        // #924: vmap + navmesh loaded for this grid (base maps). Terrain lookups load only GridMaps (AC parity), so a
+        // terrain tile can exist before its grid is created; EnsureGridCreated_i then still loads the collision data.
+        bool _gridCollisionLoaded[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
         std::bitset<TOTAL_NUMBER_OF_CELLS_PER_MAP*TOTAL_NUMBER_OF_CELLS_PER_MAP> marked_cells;
 
         bool i_scriptLock;
@@ -886,7 +891,7 @@ class InstanceMap : public Map
         ~InstanceMap();
         bool AddPlayerToMap(Player*);
         void RemovePlayerFromMap(Player*, bool);
-        void Update(const uint32);
+        void Update(const uint32 t_diff, const uint32 s_diff) override;
         void CreateInstanceData(bool load);
         bool Reset(uint8 method);
         uint32 GetScriptId() { return i_script_id; }

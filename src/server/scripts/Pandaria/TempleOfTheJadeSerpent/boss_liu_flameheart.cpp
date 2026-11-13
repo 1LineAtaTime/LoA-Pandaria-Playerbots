@@ -17,6 +17,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "CreatureTextMgr.h"
 #include "MoveSplineInit.h"
 #include "GameObjectAI.h"
 #include "temple_of_the_jade_serpent.h"
@@ -329,6 +330,26 @@ class boss_yu_lon_tjs : public CreatureScript
 
                 if (instance)
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
+            }
+
+            // #1013: Yu'lon is Liu's phase-3 summon at 30% hp (InitializeAI). Evading on his own healed him to 100% while Liu stayed
+            // up, so his fake death (Cleansing Breath, Liu becomes selectable) never came. An evade before that is a wipe of the
+            // encounter: reset it through Liu, whose EnterEvadeMode despawns her summons (him included) and fails the boss state.
+            void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
+            {
+                if (leaveEvent)
+                    return;
+
+                if (Creature* liu = instance ? Unit::GetCreature(*me, instance->GetGuidData(DATA_LIU)) : nullptr)
+                {
+                    if (liu->IsAlive() && liu->IsAIEnabled)
+                    {
+                        liu->AI()->EnterEvadeMode(why);
+                        return;
+                    }
+                }
+
+                ScriptedAI::EnterEvadeMode(why);
             }
 
             void DamageTaken(Unit* attacker, uint32& damage) override
@@ -757,7 +778,9 @@ class npc_lie_flameheart_trash_base_ai : public CreatureScript
                 if (!talked)
                 {
                     talked = true;
-                    Talk(TALK_MOVE_AWAY);
+                    // #1010: Serpent Warrior 62171 (the only user) has no creature_text here or in the reference 5.4.8 world DB
+                    if (sCreatureTextMgr->TextExist(me->GetEntry(), TALK_MOVE_AWAY))
+                        Talk(TALK_MOVE_AWAY);
                     me->SetReactState(REACT_PASSIVE);
                     Movement::MoveSplineInit init(me);
                     for (uint8 i = 0; i < 2; ++i)
@@ -809,7 +832,9 @@ class spell_liu_flameheart_cleansing_breath : public SpellScriptLoader
                 if (!target)
                     return;
 
-                if (target->IsAIEnabled)
+                // only the targets that have a death line (group 9); others (Serpent Warrior 62171, Liu 56732) logged
+                // "Could not find Text/TextGroup ... Ignoring" for every breath
+                if (target->IsAIEnabled && sCreatureTextMgr->TextExist(target->GetEntry(), TALK_DEATH))
                     target->AI()->Talk(TALK_DEATH);
 
                 if (Player* originalCaster = target->GetLootRecipient())

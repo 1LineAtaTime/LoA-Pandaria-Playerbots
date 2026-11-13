@@ -72,6 +72,10 @@ public:
 
     static inline std::string GetTableName();
 
+    // Root of the sql tree; a `$` in updates_include paths stands for it.
+    static std::string GetSourceDirectory();
+
+    // A file, or a directory whose *.sql files are all applied in filename order.
     static std::string GetBaseFile();
 
     static bool IsEnabled(uint32 const updateMask);

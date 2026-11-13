@@ -1,0 +1,24 @@
+-- #977 Gilneas City: the worgen chain stops after "By the Skin of His Teeth" (14154) / "Brothers In Arms" (26129).
+-- Idempotent. Needs a worldserver restart (quest_template_addon is cached at boot).
+--
+-- Cause: 24930 "While You're At It" (Lord Godfrey 35115) had PrevQuestID = -14157, i.e. it could only be taken while
+-- "Old Divisions" (14157) was still in the quest log. 14157 is a talk-to quest (Genn -> Captain Broderick), so a
+-- player who turns it in without first visiting Godfrey can never get 24930 again. But 14159 "The Rebel Lord's
+-- Arsenal" (King Genn Greymane 35112) needs BOTH 24930 and 26129 (both carry NextQuestID 14159 and
+-- ExclusiveGroup -24930 = "all of the group"), so Genn never offers 14159 and the chain is dead.
+-- Reproduced live 2026-10-28 (headless, natural path 14157 -> 28850 -> 14154 -> 26129 without 24930): after turning
+-- in 26129 Genn offers nothing, accepting 14159 is refused, and Godfrey refuses 24930.
+--
+-- Sources (read 2026-10-28):
+--   TC434 = TrinityCore TDB_full_world_434.22011 quest_template_addon: 24930 PrevQuestID 0 (14159 needs 26129 only).
+--   SF548 = ProjectSkyfire SFDB_full_548_26.002 quest_template: 24930 PrevQuestId 0.
+--   Wowpedia "While You're At It" (MediaWiki API): previous = Safety in Numbers (no Old-Divisions-in-progress gate);
+--   Wowpedia "The Rebel Lord's Arsenal": previous = Brothers In Arms & While You're At It (so the both-required
+--   group -24930 -> 14159 is kept).
+--   EMU (the reference 5.4.8 world DB) and AK (a second 5.4.8 world DB) carry the same -14157 as ours (inherited trap).
+-- Fix: drop the "-14157 active" gate. Godfrey stays visible in phase 2 until 14159 is rewarded, so 24930 can always be
+-- picked up before it is needed; characters already stuck after 26129 can now take 24930 and then get 14159.
+--
+-- Undo: UPDATE `quest_template_addon` SET `PrevQuestID` = -14157 WHERE `ID` = 24930 AND `PrevQuestID` = 0;
+
+UPDATE `quest_template_addon` SET `PrevQuestID` = 0 WHERE `ID` = 24930 AND `PrevQuestID` = -14157;

@@ -1248,7 +1248,6 @@ class spell_malkorok_displaced_energy : public SpellScript
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_malkorok_displaced_energy::SelectTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_malkorok_displaced_energy::CopyTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_malkorok_displaced_energy::CopyTargets, EFFECT_2, TARGET_UNIT_SRC_AREA_ENEMY);
     }
 };

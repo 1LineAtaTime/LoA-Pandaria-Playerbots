@@ -49,17 +49,24 @@ public:
     RandomPlayerbotFactory(uint32 accountId);
     virtual ~RandomPlayerbotFactory() {}
 
-    Player* CreateRandomBot(WorldSession* session, Classes cls, std::unordered_map<NameRaceAndGender, std::vector<std::string>>& names);
+    // team: ALLIANCE or HORDE for a character of that faction (the addclass accounts), 0 for either
+    Player* CreateRandomBot(WorldSession* session, uint8 cls,
+        std::unordered_map<NameRaceAndGender, std::vector<std::string>>& names, uint32 team = 0);
     static void CreateRandomBots();
+    static uint32 CalculateTotalAccountCount();
+    static uint32 CalculateAvailableCharsPerAccount();
+    // Beyond AC: AiPlayerbot.RandomBotAccountSlackPct (0 = AC) is included
+    static uint32 CalculateNeededRndBotAccounts();
     // #611 item 4: AC Bot/Factory/RandomPlayerbotFactory.h:56
     static std::string const CreateRandomGuildName();
 
 private:
+    static bool IsValidRaceClassCombination(uint8 race, uint8 cls, uint32 expansion);
+    static bool IsPlayableClass(uint8 cls);
+    static uint32 GetCharsPerAccount(bool withDeathKnight);
     std::string const CreateRandomBotName(NameRaceAndGender raceAndGender);
 
-
     uint32 accountId;
-    static std::map<uint8, std::vector<uint8>> availableRaces;
 };
 
 #endif

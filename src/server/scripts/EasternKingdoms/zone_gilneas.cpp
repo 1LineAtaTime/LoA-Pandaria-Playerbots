@@ -1409,6 +1409,7 @@ public:
 
         bool _playerSeated;
         bool _aranasSaved;
+        ObjectGuid _riderToEscort;
 
         void AttackStart(Unit* /*who*/) override { }
         void JustEngagedWith(Unit* /*who*/) override { }
@@ -1423,14 +1424,12 @@ public:
         {
             if (who->GetTypeId() == TYPEID_PLAYER)
             {
-                _playerSeated = true;
-
+                // #998: the escort starts on the next UpdateAI, not here. The 14293 accept script summons this horse and
+                // seats the player in the same call, so this runs before the horse's first Creature::Update, whose
+                // JustAppeared() (npc_escortAI, fired on every creature's first update since upstream c6c7d32e) sets the
+                // escort state back to NONE: a Start() made here was lost and the horse never left its spawn.
                 if (apply)
-                {
-                    Start(false, true, who->GetGUID());
-                    me->SetSpeed(MOVE_WALK, 1.0f, true);
-                    me->SetSpeed(MOVE_RUN, 1.3f, true);
-                }
+                    _riderToEscort = who->GetGUID();
             }
             else 
             {
@@ -1550,13 +1549,30 @@ public:
 
         void UpdateAI(uint32 diff) override
         {
+            // #998: JustAppeared has run by now (Creature::Update calls it before UpdateAI on the first tick)
+            if (_riderToEscort)
+            {
+                ObjectGuid const riderGuid = _riderToEscort;
+                _riderToEscort.Clear();
+                if (Player* rider = ObjectAccessor::GetPlayer(*me, riderGuid))
+                {
+                    if (rider->GetVehicleBase() == me)
+                    {
+                        Start(false, true, riderGuid);
+                        me->SetSpeed(MOVE_WALK, 1.0f, true);
+                        me->SetSpeed(MOVE_RUN, 1.3f, true);
+                        _playerSeated = true;
+                    }
+                }
+            }
+
             npc_escortAI::UpdateAI(diff);
-            Player* player = GetPlayerForEscort();
 
             if (_playerSeated)
             {
-                player->SetClientControl(me, 0);
                 _playerSeated = false;
+                if (Player* player = GetPlayerForEscort())
+                    player->SetClientControl(me, 0);
             }
         }
     };
@@ -2587,6 +2603,10 @@ namespace GilneasLastChanceAtHumanity
         NPC_LORD_GODFREY_PILLORY        = 36330,
         NPC_KING_GENN_GREYMANE_PILLORY  = 36332,
         SPELL_CURSE_OF_THE_WORGEN       = 68630,
+        // #999: the curse's linked 68631 makes the player invisible (type 9, 100), and an invisible player only sees units that
+        // detect his invisibility (WorldObject::CanDetectInvisibilityOf; AC has the same rule). 60922 "Generic Quest
+        // Invisibility Detection 3" = detect type 9, 100. The static Genn 375757 gets it from creature_addon (SQL 2026_10_29_999).
+        SPELL_SEE_QUEST_INVIS_3         = 60922,
 
         SAY_KRENNAN_NOT_GIVING_UP       = 0,       // BT 36344
         SAY_GODFREY_PROTOCOL            = 0,       // BT 36336
@@ -2619,10 +2639,12 @@ struct npc_krennan_aranas_pillory : public ScriptedAI
 
         _playerGuid = player->GetGUID();
         me->SetReactState(REACT_PASSIVE);
+        me->AddAura(SPELL_SEE_QUEST_INVIS_3, me);   // #999: else the cursed (invisible) player cannot see him
 
         if (TempSummon* godfrey = me->SummonCreature(NPC_LORD_GODFREY_PILLORY, GodfreySpawnPos, TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, me->GetPrivateObjectOwner()))
         {
             godfrey->SetReactState(REACT_PASSIVE);
+            godfrey->AddAura(SPELL_SEE_QUEST_INVIS_3, godfrey);   // #999
             _godfreyGuid = godfrey->GetGUID();
         }
 
@@ -3286,9 +3308,9 @@ private:
 
 // #506 - Lorna Crowley 43566 on the static gunship deck: the boarding timeline. Port of ShatterCore
 // npc_gilneas_endgame_controller (gilneas_chapter_4.cpp:1645-1921); offsets from arming (= a 26706 player on the
-// deck), Korm Bonegrind 43567 is released at the furnace beat, his death launches the wyverns (81779 = credit +
-// ride), the event re-arms 123 s later. Differences: Lorna herself stays out of the fight (her template is
-// IMMUNE_TO_NPC here and the timeline lives in her AI, so she must not die); the Navigator answers "Dabu?" after
+// deck), Korm Bonegrind 43567 is released at the furnace beat, his death or the explosion 45 s later (#1029) launches
+// the wyverns (81779 = credit + ride), the event re-arms 123 s later. Differences: Lorna herself stays out of the
+// fight (her template is IMMUNE_TO_NPC here and the timeline lives in her AI, so she must not die); the Navigator answers "Dabu?" after
 // "Hands up, greenskins!" (Wowpedia "Endgame (quest)" Notes, MediaWiki API 2026-10-09; not in ShatterCore).
 struct npc_lorna_crowley_endgame : public ScriptedAI
 {
@@ -3304,6 +3326,7 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
         EVENT_ENDGAME_FURNACE,
         EVENT_ENDGAME_BIG_ORC,
         EVENT_ENDGAME_KORM_POLL,
+        EVENT_ENDGAME_EXPLOSION,
         EVENT_ENDGAME_WYVERN_YELL,
         EVENT_ENDGAME_LAUNCH,
         EVENT_ENDGAME_RESET,
@@ -3333,8 +3356,13 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
         if (_armTimer <= diff)
         {
             _armTimer = 2000;
-            if (!_running && HasEligiblePlayerNearby(40.0f))
-                Arm();
+            if (!_running)
+            {
+                if (HasEligiblePlayerNearby(40.0f))
+                    Arm();
+                else if (HasEligiblePlayerAtFurnace())
+                    ArmAtFurnace();
+            }
         }
         else
             _armTimer -= diff;
@@ -3372,23 +3400,32 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
                     SayToBoarders(me, SAY_LORNA_FURNACE);
                     ActivateKorm();
                     _events.ScheduleEvent(EVENT_ENDGAME_KORM_POLL, 2s);
+                    _events.ScheduleEvent(EVENT_ENDGAME_EXPLOSION, 45s);
                     break;
                 case EVENT_ENDGAME_BIG_ORC:
                     SayToBoarders(me, SAY_LORNA_BIG_ORC);
                     break;
                 case EVENT_ENDGAME_KORM_POLL:
                     if (IsKormDead())
-                    {
-                        _abandonedPolls = 0;
-                        _events.ScheduleEvent(EVENT_ENDGAME_WYVERN_YELL, 750ms);
-                        _events.ScheduleEvent(EVENT_ENDGAME_LAUNCH, 3200ms);
-                        _events.ScheduleEvent(EVENT_ENDGAME_RESET, 123s);
-                    }
+                        BeginEscape();
                     else
                     {
-                        if (++_kormPolls % 10 == 0)
-                            if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                        if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                        {
+                            if (++_kormPolls % 10 == 0)
                                 LogKorm(korm, "alive");
+                            // #1024: after Korm kills the player (or evades) he went home idle and never engaged again, while
+                            // the timeline kept waiting for his death. Release him again and send him at the nearest player
+                            // on 26706 within 60 yd, as at the furnace beat.
+                            if (korm->IsAlive() && !korm->IsInCombat() && !korm->IsInEvadeMode())
+                            {
+                                korm->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                                korm->SetReactState(REACT_AGGRESSIVE);
+                                if (Player* target = korm->SelectNearestPlayer(60.0f))
+                                    if (target->IsAlive() && target->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE && korm->IsAIEnabled)
+                                        korm->AI()->AttackStart(target);
+                            }
+                        }
                         // Nobody left to kill Korm for ~3 minutes: reset (ShatterCore :1733-1742).
                         if (HasEligiblePlayerNearby(250.0f))
                             _abandonedPolls = 0;
@@ -3399,6 +3436,11 @@ struct npc_lorna_crowley_endgame : public ScriptedAI
                         }
                         _events.ScheduleEvent(EVENT_ENDGAME_KORM_POLL, 2s);
                     }
+                    break;
+                case EVENT_ENDGAME_EXPLOSION:
+                    if (Creature* korm = ObjectAccessor::GetCreature(*me, _kormGuid))
+                        LogKorm(korm, "still alive at the explosion");
+                    BeginEscape();
                     break;
                 case EVENT_ENDGAME_WYVERN_YELL:
                     Talk(SAY_LORNA_WYVERNS);
@@ -3432,6 +3474,33 @@ private:
         _events.ScheduleEvent(EVENT_ENDGAME_DOWNSTAIRS, 126900ms);
         _events.ScheduleEvent(EVENT_ENDGAME_FURNACE, 172300ms);
         _events.ScheduleEvent(EVENT_ENDGAME_BIG_ORC, 183600ms);
+    }
+
+    // #1028: a player who comes back already at the furnace (relog or server restart mid-boarding, or after a reset)
+    // never gets within 40 yd of the top deck again, so the boarding never armed and Korm kept IMMUNE_TO_PC.
+    // Resume at the furnace beat for that player instead of replaying the deck timeline.
+    void ArmAtFurnace()
+    {
+        _running = true;
+        _kormGuid.Clear();
+        _events.Reset();
+
+        _events.ScheduleEvent(EVENT_ENDGAME_FURNACE, 2s);
+        _events.ScheduleEvent(EVENT_ENDGAME_BIG_ORC, 13300ms);
+    }
+
+    bool HasEligiblePlayerAtFurnace() const
+    {
+        Creature* korm = me->FindNearestCreature(GilneasEndgame::NPC_KORM_BONEGRIND, 250.0f);
+        if (!korm)
+            return false;
+
+        std::list<Player*> players;
+        korm->GetPlayerListInGrid(players, 40.0f);
+        for (Player* player : players)
+            if (player->IsAlive() && player->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE)
+                return true;
+        return false;
     }
 
     // Wave 27 (t439 cp9): the "say" lines (40 yd) never reached the boarding player while the yells (300 yd) did. The
@@ -3571,6 +3640,25 @@ private:
         return !korm || !korm->IsAlive();
     }
 
+    // #1029: the explosives go off on the ship's own clock, not on Korm's death. Wowpedia "Korm Bonegrind" Notes (MediaWiki
+    // API, 2026-10-30): "If he does not spawn, the event will eventually go on, and you will be able to complete the
+    // quest"; "Endgame (quest)" Notes: Lorna says "Just hold them off now!" and the explosives go off as the ship reaches the
+    // wall. Korm (level 12 elite, 30x health = 7410 hp, reference 5.4.8 data) is sized for Lorna's boarding party, which
+    // fights beside the player in the original event. Here the party stays on the decks (the ship has no navmesh, and a
+    // squad that could engage him pulled him off the furnace room in wave 30), so a quest-level player (about 450-890 hp,
+    // 10-15 dps) can not kill him alone: a level-24 warrior lost a 4.5-minute fight with Korm still at 28%. ShatterCore
+    // gated the escape on his death (IsKormDead only). Now his death brings the escape forward, and otherwise it starts
+    // 45 s after the furnace beat, when "hold them off" is over.
+    void BeginEscape()
+    {
+        _events.CancelEvent(EVENT_ENDGAME_KORM_POLL);
+        _events.CancelEvent(EVENT_ENDGAME_EXPLOSION);
+        _abandonedPolls = 0;
+        _events.ScheduleEvent(EVENT_ENDGAME_WYVERN_YELL, 750ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_LAUNCH, 3200ms);
+        _events.ScheduleEvent(EVENT_ENDGAME_RESET, 123s);
+    }
+
     // ShatterCore gilneas_chapter_4.cpp:1881-1896 (LaunchWyverns): 81779 gives the credit, summons the wyvern and
     // seats the caster.
     void LaunchWyverns()
@@ -3618,6 +3706,41 @@ private:
     uint32 _abandonedPolls = 0;
     uint32 _kormPolls = 0;
     ObjectGuid _kormGuid;
+};
+
+// #1024 - Rope 204428 (the two ropes on the top deck of the static gunship). This is the way down for the player.
+// Lorna yells "Everyone else, use the ropes to rappel down", and Wowpedia "Endgame (quest)" Notes (MediaWiki API,
+// 2026-10-30) say the boarding party rappels down and the player follows it to the captain's quarters, then down to
+// the engine room. In the ship's collision model (Nd_Hordegunship.wmo) the top deck (z 178.6) has no walkable link to
+// the rafters (z ~128.5). The rafters reach the furnace room (z 105.4, Korm Bonegrind) by a ramp. The DBC chain
+// 81425 -> 81422 "Jump 2" (control vehicle on a nearby rope 43793) + 81992 "Rope 2" has no target conditions and no
+// rope-vehicle movement in any source we have. So a click only cast 81422 and the player stayed on the top deck,
+// where Korm (released at the furnace beat) never got a player within reach, and Lorna's timeline waited for his death
+// indefinitely. Instead, the click moves the player to the rope-bottom mark under that rope, the same marks
+// SquadDescend uses for the squad.
+class go_gilneas_gunship_rope : public GameObjectScript
+{
+public:
+    go_gilneas_gunship_rope() : GameObjectScript("go_gilneas_gunship_rope") { }
+
+    bool OnGossipHello(Player* player, GameObject* go) override
+    {
+        using namespace GilneasEndgame;
+
+        if (go->GetMapId() != 654 || go->GetPositionZ() < 170.0f)
+            return false; // not a top-deck rope of the static gunship: default use
+
+        if (!player->IsAlive() || player->GetVehicle())
+            return true;
+
+        Position const* bottom = nullptr;
+        for (Position const& pos : SquadMidLevelPos)
+            if (!bottom || go->GetExactDist2dSq(&pos) < go->GetExactDist2dSq(bottom))
+                bottom = &pos;
+
+        player->NearTeleportTo(bottom->GetPositionX(), bottom->GetPositionY(), bottom->GetPositionZ() + 0.5f, bottom->GetOrientation());
+        return true;
+    }
 };
 
 // #506 - Wyvern 43713 (vehicle 983, summoned and ridden through 81779): loop off the ship, then the escape to Keel
@@ -4688,6 +4811,7 @@ void AddSC_gilneas()
     new npc_hippogryph_endgame();
     new creature_script<npc_hippogryph>("npc_hippogryph");
     new creature_script<npc_lorna_crowley_endgame>("npc_lorna_crowley_endgame");
+    new go_gilneas_gunship_rope();
     new creature_script<npc_wyvern_endgame>("npc_wyvern_endgame");
     new creature_script<npc_stout_mountain_horse>("npc_stout_mountain_horse");
     new npc_krennan_aranas_battle();

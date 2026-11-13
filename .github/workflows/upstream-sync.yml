@@ -16,8 +16,9 @@ name: Upstream sync
 # 2. build    - linux_gcc.yml builds the candidate.
 # 3. database - the newest release database plus every SQL update must apply without an error, and the new update
 #               files must apply a second time (idempotent).
-# 4. finish   - when the gates pass, playerbot-beta is fast-forwarded to the candidate. The upstream-sync-last tag moves
-#               to the upstream head, so the next run looks only at newer commits. A commit that needs review, a failed
+# 4. finish   - when the gates pass, playerbot-beta is fast-forwarded to the candidate. The upstream-sync-last tag (on the
+#               playerbot-beta tip, message "upstream <sha>") records the upstream head, so the next run looks only at
+#               newer commits. A commit that needs review, a failed
 #               gate or a moved playerbot-beta fails the run, and GitHub's Actions e-mail tells the owner; the job
 #               summary lists every commit and why.
 #
@@ -98,7 +99,11 @@ jobs:
         set -euo pipefail
         since="$SINCE_INPUT"
         if [ -n "$since" ] && ! [[ "$since" =~ ^[0-9a-f]{7,40}$ ]]; then echo "::error::since must be a commit sha"; exit 1; fi
-        if [ -z "$since" ]; then since=$(git rev-parse -q --verify "refs/tags/$STATE_TAG^{commit}" || true); fi
+        # The tag sits on a commit of ours and names the last upstream commit checked in its message ("upstream <sha>"):
+        # a tag on the upstream commit itself cannot be pushed, since its history holds upstream workflow files.
+        if [ -z "$since" ]; then
+          since=$(git for-each-ref --format='%(contents:subject)' "refs/tags/$STATE_TAG" | sed -n 's/^upstream \([0-9a-f]\{40\}\)$/\1/p')
+        fi
         base=$(git rev-parse HEAD)
         python3 -I ../ci/.github/upstream-sync/upstream_sync.py apply --work . --upstream "upstream/$UPSTREAM_BRANCH" \
           --since "$since" --window-hours "$WINDOW_HOURS" --out ../upstream-sync.json | tee ../upstream-sync.txt
@@ -338,10 +343,12 @@ jobs:
         fi
         if [ "$NO_PUSH" = true ]; then move_tag=0; fi
         if [ "$move_tag" = 1 ] && [ -n "$UPSTREAM_HEAD" ]; then
-          git remote add upstream "$UPSTREAM_URL"
-          git fetch --no-tags --quiet upstream "+refs/heads/$UPSTREAM_BRANCH:refs/remotes/upstream/$UPSTREAM_BRANCH"
+          # An annotated tag on our own branch tip that names the upstream commit: GITHUB_TOKEN may not push a ref
+          # whose history adds workflow files, which a tag on the upstream commit itself would do.
+          git fetch --quiet origin "+refs/heads/$TARGET:refs/remotes/origin/$TARGET"
           git push --quiet origin ":refs/tags/$STATE_TAG" 2>/dev/null || true
-          git tag -f "$STATE_TAG" "$UPSTREAM_HEAD"
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            tag -f -a "$STATE_TAG" -m "upstream $UPSTREAM_HEAD" "origin/$TARGET"
           git push --quiet origin "refs/tags/$STATE_TAG"
           summary "- $STATE_TAG -> ${UPSTREAM_HEAD:0:8}: the next run looks only at newer upstream commits."
         fi

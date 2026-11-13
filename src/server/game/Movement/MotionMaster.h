@@ -160,7 +160,11 @@ class TC_GAME_API MotionMaster
         void MoveRandom(float wanderDistance = 0.0f);
         void MoveFollow(Unit* target, float dist, float angle, MovementSlot slot = MOTION_SLOT_ACTIVE);
         void MoveFormation(Unit* leader, float range, float angle, uint32 point1, uint32 point2);
-        void MoveChase(Unit* target, float dist = 0.0f, float angle = 0.0f);
+        void MoveChase(Unit* target, Optional<ChaseRange> dist = {}, Optional<ChaseAngle> angle = {});
+        void MoveChase(Unit* target, float dist, float angle) { MoveChase(target, ChaseRange(dist), ChaseAngle(angle)); }
+        void MoveChase(Unit* target, float dist) { MoveChase(target, ChaseRange(dist)); }
+        void MoveCircleTarget(Unit* target);
+        void MoveBackwards(Unit* target, float dist);
         void MoveConfused();
         void MoveFleeing(Unit* enemy, uint32 time = 0);
         void MovePoint(uint32 id, Position const& pos, bool generatePath = true)

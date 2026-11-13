@@ -63,6 +63,14 @@
 HANDLE WorldMpq = NULL;
 HANDLE LocaleMpq = NULL;
 
+// Archives that make up LocaleMpq, in load order: the base archive, the locale archive, then every patch archive
+std::vector<std::basic_string<TCHAR>> LocaleMpqChain;
+
+// Extraction results, printed as a summary at the end
+uint32 ExtractedFileCount = 0;
+std::vector<std::string> FailedFiles;
+std::vector<std::string> RecoveredFiles;
+
 typedef struct
 {
     char name[64];
@@ -145,11 +153,17 @@ TCHAR const* LocalesT[] =
 void CreateDir(std::filesystem::path const& path)
 {
     namespace fs = std::filesystem;
-    if (fs::exists(path))
+    std::error_code error;
+    if (fs::is_directory(path, error))
         return;
 
-    if (!fs::create_directory(path))
-        throw std::runtime_error("Unable to create directory" + path.string());
+    // Also creates a missing output folder (-o) instead of aborting on an uncaught exception
+    fs::create_directories(path, error);
+    if (!fs::is_directory(path))
+    {
+        printf("Fatal error: unable to create directory '%s' (%s)\n", path.string().c_str(), error.message().c_str());
+        exit(1);
+    }
 }
 
 bool FileExists(TCHAR const* fileName)
@@ -248,13 +262,14 @@ uint32 ReadBuild(int locale)
 
     char buff[512];
     DWORD readBytes = 0;
-    SFileReadFile(dbcFile, buff, 512, &readBytes, NULL);
+    SFileReadFile(dbcFile, buff, sizeof(buff) - 1, &readBytes, NULL);
     if (!readBytes)
     {
-        printf("Fatal error: Not found %s file!\n", filename.c_str());
+        printf("Fatal error: Cannot read %s (error %u), the client's patch archives may be incomplete!\n", filename.c_str(), uint32(GetLastError()));
         exit(1);
     }
 
+    buff[readBytes] = 0;
     std::string text = buff;
     SFileCloseFile(dbcFile);
 
@@ -1082,27 +1097,193 @@ void ExtractMapsFromMpq(uint32 build)
     delete [] map_ids;
 }
 
-bool ExtractFile(HANDLE fileInArchive, char const* filename)
+// Reads a whole file from an archive. Returns false with the StormLib error when the read fails,
+// e.g. ERROR_FILE_CORRUPT when a patch in the file's chain does not apply to the version below it.
+bool ReadArchivedFile(HANDLE fileInArchive, std::vector<char>& data, DWORD& error)
+{
+    data.clear();
+    error = 0;
+
+    char buffer[0x10000];
+    for (;;)
+    {
+        DWORD readBytes = 0;
+        bool ok = SFileReadFile(fileInArchive, buffer, sizeof(buffer), &readBytes, NULL);
+        if (readBytes > 0)
+            data.insert(data.end(), buffer, buffer + readBytes);
+
+        if (!ok)
+        {
+            DWORD lastError = GetLastError();
+            if (lastError == ERROR_HANDLE_EOF)
+                return true;
+
+            error = lastError;
+            return false;
+        }
+
+        if (readBytes == 0)
+            return true;
+    }
+}
+
+bool WriteOutputFile(char const* filename, std::vector<char> const& data)
 {
     FILE* output = fopen(filename, "wb");
-    if(!output)
+    if (!output)
     {
         printf("Can't create the output file '%s'\n", filename);
         return false;
     }
 
-    char  buffer[0x10000];
-    DWORD readBytes = 1;
+    bool ok = data.empty() || fwrite(data.data(), 1, data.size(), output) == data.size();
+    if (fclose(output) != 0)
+        ok = false;
 
-    while (readBytes > 0)
+    if (!ok)
     {
-        SFileReadFile(fileInArchive, buffer, sizeof(buffer), &readBytes, NULL);
-        if (readBytes > 0)
-            fwrite(buffer, 1, readBytes, output);
+        printf("Can't write the output file '%s'\n", filename);
+        remove(filename);
     }
 
-    fclose(output);
+    return ok;
+}
+
+// Extracts an opened archive file. A failed read never leaves an output file behind.
+bool ExtractFile(HANDLE fileInArchive, char const* filename)
+{
+    std::vector<char> data;
+    DWORD error = 0;
+    if (!ReadArchivedFile(fileInArchive, data, error))
+    {
+        printf("Error: cannot read the archived data for '%s' (error %u)\n", filename, uint32(error));
+        FailedFiles.push_back(filename);
+        return false;
+    }
+
+    if (!WriteOutputFile(filename, data))
+    {
+        FailedFiles.push_back(filename);
+        return false;
+    }
+
+    ++ExtractedFileCount;
     return true;
+}
+
+// Reads a file through the base archive, the locale archive and the given LocaleMpqChain entries only
+bool ReadThroughPartialChain(char const* archivedName, std::vector<size_t> const& patches, std::vector<char>& data)
+{
+    HANDLE mpq = NULL;
+    if (LocaleMpqChain.size() < 2 || !SFileOpenArchive(LocaleMpqChain[0].c_str(), 0, MPQ_OPEN_READ_ONLY, &mpq))
+        return false;
+
+    bool ok = SFileOpenPatchArchive(mpq, LocaleMpqChain[1].c_str(), "", 0);
+    for (size_t i = 0; ok && i < patches.size(); ++i)
+        ok = SFileOpenPatchArchive(mpq, LocaleMpqChain[patches[i]].c_str(), "", 0);
+
+    HANDLE file = NULL;
+    if (ok && SFileOpenFileEx(mpq, archivedName, SFILE_OPEN_PATCHED_FILE, &file))
+    {
+        DWORD error = 0;
+        ok = ReadArchivedFile(file, data, error);
+        SFileCloseFile(file);
+    }
+    else
+        ok = false;
+
+    SFileCloseArchive(mpq);
+    return ok;
+}
+
+// Called when the patched read of a locale file fails. Rebuilds the file's patch chain one archive at a time,
+// in load order, and leaves out every archive whose version of the file does not apply to the result so far.
+// The outcome is the newest version of the file that the client's archives can produce.
+bool RecoverFromBrokenPatchChain(char const* archivedName, std::vector<char>& data)
+{
+    // Only the patch archives that hold their own version of this file matter
+    std::vector<size_t> holders;
+    for (size_t i = 2; i < LocaleMpqChain.size(); ++i)
+    {
+        HANDLE mpq = NULL;
+        if (!SFileOpenArchive(LocaleMpqChain[i].c_str(), 0, MPQ_OPEN_READ_ONLY, &mpq))
+            continue;
+
+        if (SFileHasFile(mpq, archivedName))
+            holders.push_back(i);
+
+        SFileCloseArchive(mpq);
+    }
+
+    std::vector<size_t> applied;
+    bool found = ReadThroughPartialChain(archivedName, applied, data);
+    for (size_t holder : holders)
+    {
+        std::vector<size_t> trial = applied;
+        trial.push_back(holder);
+
+        std::vector<char> trialData;
+        if (ReadThroughPartialChain(archivedName, trial, trialData))
+        {
+            applied.swap(trial);
+            data.swap(trialData);
+            found = true;
+        }
+        else
+            _tprintf(_T("  skipped %s: its version of the file does not apply\n"), LocaleMpqChain[holder].c_str());
+    }
+
+    return found;
+}
+
+// Extracts a DBC/DB2 file from LocaleMpq to the output folder
+bool ExtractLocaleFile(char const* archivedName, std::string const& outputFile)
+{
+    HANDLE file = NULL;
+    if (!SFileOpenFileEx(LocaleMpq, archivedName, SFILE_OPEN_PATCHED_FILE, &file))
+    {
+        printf("Unable to open file %s in the archive (error %u)\n", archivedName, uint32(GetLastError()));
+        FailedFiles.push_back(outputFile);
+        return false;
+    }
+
+    std::vector<char> data;
+    DWORD error = 0;
+    bool ok = ReadArchivedFile(file, data, error);
+    SFileCloseFile(file);
+
+    if (!ok)
+    {
+        printf("Warning: %s cannot be read through the client's patch chain (error %u), recovering the newest readable version\n", archivedName, uint32(error));
+        if (!RecoverFromBrokenPatchChain(archivedName, data))
+        {
+            printf("Error: %s could not be recovered, '%s' was not written\n", archivedName, outputFile.c_str());
+            FailedFiles.push_back(outputFile);
+            return false;
+        }
+
+        printf("  recovered %s: %u bytes\n", archivedName, uint32(data.size()));
+        RecoveredFiles.push_back(outputFile);
+    }
+
+    if (!WriteOutputFile(outputFile.c_str(), data))
+    {
+        FailedFiles.push_back(outputFile);
+        return false;
+    }
+
+    ++ExtractedFileCount;
+    return true;
+}
+
+void PrintExtractionSummary()
+{
+    printf("\nSummary: %u DBC/DB2/camera files extracted, %u failed, %u recovered from an older patch level\n",
+        ExtractedFileCount, uint32(FailedFiles.size()), uint32(RecoveredFiles.size()));
+    for (std::string const& file : FailedFiles)
+        printf("  failed: %s\n", file.c_str());
+    for (std::string const& file : RecoveredFiles)
+        printf("  recovered (older version, check your client's patch archives): %s\n", file.c_str());
 }
 
 void ExtractDBCFiles(int l, bool basicLocale)
@@ -1112,7 +1293,6 @@ void ExtractDBCFiles(int l, bool basicLocale)
     SFILE_FIND_DATA foundFile;
     memset(&foundFile, 0, sizeof(foundFile));
     HANDLE listFile = SFileFindFirstFile(LocaleMpq, "DBFilesClient\\*dbc", &foundFile, NULL);
-    HANDLE dbcFile = NULL;
     uint32 count = 0;
     if (listFile)
     {
@@ -1131,22 +1311,14 @@ void ExtractDBCFiles(int l, bool basicLocale)
 
         do
         {
-            if (!SFileOpenFileEx(LocaleMpq, foundFile.cFileName, SFILE_OPEN_PATCHED_FILE, &dbcFile))
-            {
-                printf("Unable to open file %s in the archive\n", foundFile.cFileName);
-                continue;
-            }
-
             filename = foundFile.cFileName;
             size_t path_sper_pos_found = filename.rfind('\\');
             if (path_sper_pos_found != std::string::npos)
             {
                 filename = outputPath + filename.substr(path_sper_pos_found + 1);
-                if (ExtractFile(dbcFile, filename.c_str()))
+                if (ExtractLocaleFile(foundFile.cFileName, filename))
                     ++count;
             }
-
-            SFileCloseFile(dbcFile);
         } while (SFileFindNextFile(listFile, &foundFile));
 
         SFileFindClose(listFile);
@@ -1233,7 +1405,6 @@ void ExtractDB2Files(int l, bool /*basicLocale*/)
     SFILE_FIND_DATA foundFile;
     memset(&foundFile, 0, sizeof(foundFile));
     HANDLE listFile = SFileFindFirstFile(LocaleMpq, "DBFilesClient\\*db2", &foundFile, NULL);
-    HANDLE dbcFile = NULL;
     uint32 count = 0;
     if (listFile)
     {
@@ -1248,22 +1419,14 @@ void ExtractDB2Files(int l, bool /*basicLocale*/)
 
         do
         {
-            if (!SFileOpenFileEx(LocaleMpq, foundFile.cFileName, SFILE_OPEN_PATCHED_FILE, &dbcFile))
-            {
-                printf("Unable to open file %s in the archive\n", foundFile.cFileName);
-                continue;
-            }
-
             filename = foundFile.cFileName;
             size_t path_sper_pos_found = filename.rfind('\\');
             if (path_sper_pos_found != std::string::npos)
             {
                 filename = outputPath + filename.substr(path_sper_pos_found + 1);
-                if (ExtractFile(dbcFile, filename.c_str()))
+                if (ExtractLocaleFile(foundFile.cFileName, filename))
                     ++count;
             }
-
-            SFileCloseFile(dbcFile);
         } while (SFileFindNextFile(listFile, &foundFile));
 
         SFileFindClose(listFile);
@@ -1289,6 +1452,9 @@ bool LoadLocaleMPQFile(int locale)
         return false;
     }
 
+    LocaleMpqChain.clear();
+    LocaleMpqChain.push_back(buff);
+
     memset(buff, 0, sizeof(buff));
     _stprintf(buff, _T("%s/Data/%s/locale-%s.MPQ"), input_path, LocalesT[locale], LocalesT[locale]);
     if (!SFileOpenPatchArchive(LocaleMpq, buff, prefix, 0))
@@ -1303,6 +1469,7 @@ bool LoadLocaleMPQFile(int locale)
         return false;
     }
 
+    LocaleMpqChain.push_back(buff);
     _tprintf(_T("\nLoading %s locale MPQs\n"), LocalesT[locale]);
 
     for (int i = 0; Builds[i] && Builds[i] <= CONF_TargetBuild; ++i)
@@ -1320,7 +1487,10 @@ bool LoadLocaleMPQFile(int locale)
             continue;
         }
         else
+        {
+            LocaleMpqChain.push_back(buff);
             _tprintf(_T("Loaded %s\n"), buff);
+        }
     }
 
     for (int i = 0; Builds[i] && Builds[i] <= CONF_TargetBuild; ++i)
@@ -1333,10 +1503,15 @@ bool LoadLocaleMPQFile(int locale)
         {
             if (GetLastError() != ERROR_FILE_NOT_FOUND)
                 _tprintf(_T("Cannot open patch archive %s\n"), buff);
+            else
+                _tprintf(_T("Not found %s\n"), buff);
             continue;
         }
         else
+        {
+            LocaleMpqChain.push_back(buff);
             _tprintf(_T("Loaded %s\n"), buff);
+        }
     }
 
     for (int i = 0; Builds[i] && Builds[i] <= CONF_TargetBuild; ++i)
@@ -1352,7 +1527,10 @@ bool LoadLocaleMPQFile(int locale)
             continue;
         }
         else
+        {
+            LocaleMpqChain.push_back(buff);
             _tprintf(_T("Loaded %s\n"), buff);
+        }
     }
 
     for (int i = 0; Builds[i] && Builds[i] <= CONF_TargetBuild; ++i)
@@ -1369,7 +1547,10 @@ bool LoadLocaleMPQFile(int locale)
             continue;
         }
         else
+        {
+            LocaleMpqChain.push_back(buff);
             _tprintf(_T("Loaded %s\n"), buff);
+        }
     }
 
     printf("\n");
@@ -1452,6 +1633,9 @@ void LoadCommonMPQFiles(uint32 build)
 
 int main(int argc, char * arg[])
 {
+    // Unbuffered, so a log redirected to a file keeps every line even if the tool stops early
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     printf("Map & DBC Extractor\n");
     printf("===================\n");
 
@@ -1548,5 +1732,6 @@ int main(int argc, char * arg[])
         SFileCloseArchive(LocaleMpq);
     }
 
-    return 0;
+    PrintExtractionSummary();
+    return FailedFiles.empty() ? 0 : 1;
 }

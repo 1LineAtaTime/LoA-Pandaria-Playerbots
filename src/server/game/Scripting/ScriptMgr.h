@@ -792,6 +792,10 @@ public:
     // Called in Spell::Cast.
     virtual void OnSpellCast(Player* /*player*/, Spell* /*spell*/, bool /*skipCheck*/) { }
 
+    // Called when a player has been loaded from the database, before the client is told where the player is and before the
+    // player enters the map: the place to correct the player's position (Relocate) without any teleport.
+    virtual void OnLoadFromDB(Player* /*player*/) { }
+
     // Called when a player logs in.
     virtual void OnLogin(Player* /*player*/) { }
 
@@ -1220,6 +1224,7 @@ public: /* PlayerScript */
     void OnPlayerEmote(Player* player, uint32 emote);
     void OnPlayerTextEmote(Player* player, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
     void OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck);
+    void OnPlayerLoadFromDB(Player* player);
     void OnPlayerLogin(Player* player);
     void OnPlayerLogout(Player* player);
     void OnPlayerCreate(Player* player);

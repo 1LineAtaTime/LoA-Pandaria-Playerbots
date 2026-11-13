@@ -439,7 +439,9 @@ void ObjectMgr::LoadCreatureTemplates()
     //                                            73           74         75           76           77          78            79          80          81          82          83
                                               "HoverHeight, Health_mod, Mana_mod, Mana_mod_extra, Armor_mod, RacialLeader, questItem1, questItem2, questItem3, questItem4, questItem5, "
     //                                            84           85          86           87            88                   89               90          91
-                                              " questItem6, movementId, RegenHealth, VignetteID, TrackingQuestID,  mechanic_immune_mask, flags_extra, ScriptName "
+                                              " questItem6, movementId, RegenHealth, VignetteID, TrackingQuestID,  mechanic_immune_mask, flags_extra, ScriptName, "
+    //                                            92 (read as fields[87])
+                                              "DamageModifier "
                                               "FROM creature_template ct LEFT JOIN creature_template_movement ctm ON ct.entry = ctm.CreatureId;");
 
     if (!result)
@@ -564,7 +566,9 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
         creatureTemplate.MechanicImmuneMask = fields[84].GetUInt32();
         creatureTemplate.flags_extra        = fields[85].GetUInt32();
         creatureTemplate.ScriptID           = GetScriptId(fields[86].GetString());
-        creatureTemplate.dmg_multiplier     = 1.0f;
+        // AC ObjectMgr.cpp:628: the template's melee damage modifier, used on every map without a creature_template_difficulty
+        // row for the creature (the open world); a difficulty row replaces it (Creature::UpdateDamagePhysical)
+        creatureTemplate.dmg_multiplier     = fields[87].GetFloat();
 }
 
 void ObjectMgr::LoadCreatureTemplateModels()
@@ -756,8 +760,8 @@ void ObjectMgr::LoadCreatureDifficultyModifiers()
     _creatureDifficulty.clear();
     _creatureDifficulty.resize(MAX_CREATURE_DIFFICULTY);
 
-    //                                               0        1            2           3            4         5
-    QueryResult result = WorldDatabase.Query("SELECT id, difficulty+0, DamageModifier, health_mod, level_min, level_max FROM creature_template_difficulty");
+    //                                               0        1            2           3            4         5         6        7
+    QueryResult result = WorldDatabase.Query("SELECT id, difficulty+0, DamageModifier, health_mod, level_min, level_max, mingold, maxgold FROM creature_template_difficulty");
     if (!result)
     {
         TC_LOG_INFO("server.loading", ">> Loaded 0 creature difficulty modifiers. DB table `creature_template_difficulty` is empty.");
@@ -788,6 +792,9 @@ void ObjectMgr::LoadCreatureDifficultyModifiers()
         info.HealthMod         = fields[3].GetFloat();
         info.LevelMin          = fields[4].GetUInt8();
         info.LevelMax          = fields[5].GetUInt8();
+        info.HasGold           = !fields[6].IsNull() && !fields[7].IsNull();
+        info.MinGold           = info.HasGold ? fields[6].GetUInt32() : 0;
+        info.MaxGold           = info.HasGold ? fields[7].GetUInt32() : 0;
         ++count;
 
         _creatureDifficulty[difficulty].insert({ creature, info });
@@ -979,6 +986,9 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
 
     if (cInfo->RangeAttackTime == 0)
         const_cast<CreatureTemplate*>(cInfo)->RangeAttackTime = BASE_ATTACK_TIME;
+
+    // AC ObjectMgr.cpp:1216: the Rate.Creature.*.Damage config rate of the rank (1.0 by default)
+    const_cast<CreatureTemplate*>(cInfo)->dmg_multiplier *= Creature::_GetDamageMod(cInfo->rank);
 
     if ((cInfo->npcflag & UNIT_NPC_FLAG_TRAINER) && cInfo->trainer_type >= MAX_TRAINER_TYPE)
         TC_LOG_ERROR("sql.sql", "Creature (Entry: %u) has wrong trainer type %u.", cInfo->Entry, cInfo->trainer_type);
@@ -11015,7 +11025,7 @@ void ObjectMgr::LoadRealmCompletedChallenges()
                                                  "member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec FROM group_completed_challenges");
     if (!result)
     {
-        TC_LOG_ERROR("server.loading", ">> Loaded 0 group completed challenges. DB table `group_completed_challenges` is empty.");
+        TC_LOG_INFO("server.loading", ">> Loaded 0 group completed challenges. DB table `group_completed_challenges` is empty (expected on a fresh character DB).");
         return;
     }
 
@@ -11116,7 +11126,7 @@ void ObjectMgr::LoadChallengeRewards()
     }
     while (result->NextRow());
 
-    TC_LOG_ERROR("server.loading", ">> Loaded %u challenge mode rewards in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u challenge mode rewards in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::AddGroupCompletedChallenge(uint32 mapId, RealmCompletedChallenge challengers)

@@ -458,7 +458,7 @@ class boss_sha_of_fear : public CreatureScript
                 if (!newPandaMap.empty())
                 {
                     if (newPandaMap.size() > 1)
-                        std::advance(itr, std::rand() % (newPandaMap.size() - 1));
+                        std::advance(itr, urand(0, newPandaMap.size() - 1));
                     
                     if (itr != newPandaMap.cend())
                     {
@@ -473,9 +473,12 @@ class boss_sha_of_fear : public CreatureScript
                     }
                 }
 
-                itr = pandaMap.begin();
+                if (pandaMap.empty())
+                    return;
 
-                std::advance(itr, std::rand() % (pandaMap.size() - 1));
+                // any bowman, the last one included (rand() % (size - 1) skipped it and divided by zero for a single one)
+                itr = pandaMap.begin();
+                std::advance(itr, urand(0, pandaMap.size() - 1));
 
                 if (itr != pandaMap.cend())
                     DoCast(me, itr->first->spellId);

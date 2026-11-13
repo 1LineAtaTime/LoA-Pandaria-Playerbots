@@ -155,7 +155,9 @@ struct npc_training_target : public ScriptedAI
     {
         _scheduler.Update(diff);
 
-        if (!UpdateVictim())
+        // Passive targets never get a victim, so UpdateVictim() would never let them reach the evade below and
+        // attackers would stay in combat
+        if (!me->IsInCombat())
             return;
 
         if (_resetTimer <= diff)

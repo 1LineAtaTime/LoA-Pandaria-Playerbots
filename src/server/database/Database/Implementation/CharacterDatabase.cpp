@@ -657,8 +657,11 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_INS_PET_SPELL, "INSERT INTO pet_spell (guid, spell, active) VALUES (?, ?, ?) "
         "ON DUPLICATE KEY UPDATE active = VALUES(active)", CONNECTION_BOTH);
     PrepareStatement(CHAR_INS_PET_AURA, "INSERT INTO pet_aura (guid, caster_guid, item_guid, spell, effect_mask, recalculate_mask, stackcount, maxduration, remaintime, remaincharges, slot) "
-                                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-    PrepareStatement(CHAR_INS_PET_AURA_EFFECT, "INSERT INTO pet_aura_effect (guid, slot, effect, base_amount, amount) VALUES (?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+                                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                                        "ON DUPLICATE KEY UPDATE recalculate_mask = VALUES(recalculate_mask), stackcount = VALUES(stackcount), maxduration = VALUES(maxduration), "
+                                        "remaintime = VALUES(remaintime), remaincharges = VALUES(remaincharges), slot = VALUES(slot)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_INS_PET_AURA_EFFECT, "INSERT INTO pet_aura_effect (guid, slot, effect, base_amount, amount) VALUES (?, ?, ?, ?, ?) "
+        "ON DUPLICATE KEY UPDATE base_amount = VALUES(base_amount), amount = VALUES(amount)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_SEL_CHAR_PET_BY_ID, "SELECT id, entry, owner, modelid, level, exp, Reactstate, slot, name, renamed, curhealth, curmana, abdata, savetime, CreatedBySpell, PetType, specialization FROM character_pet WHERE owner = ? AND id = ?", CONNECTION_SYNCH);
     PrepareStatement(CHAR_SEL_CHAR_PET_BY_ENTRY, "SELECT id, entry, owner, modelid, level, exp, Reactstate, slot, name, renamed, curhealth, curmana, abdata, savetime, CreatedBySpell, PetType, specialization FROM character_pet WHERE owner = ? AND entry = ?", CONNECTION_SYNCH);
     PrepareStatement(CHAR_SEL_CHAR_PET_BY_SLOT, "SELECT id, entry, owner, modelid, level, exp, Reactstate, slot, name, renamed, curhealth, curmana, abdata, savetime, CreatedBySpell, PetType, specialization FROM character_pet WHERE owner = ? AND slot = ?", CONNECTION_SYNCH);

@@ -748,6 +748,7 @@ class SpellMgr
         void LoadPetSpellMap();
         void LoadSpellAreas();
         void LoadSpellInfoStore();
+        void ShrinkSpellInfoEffects();  // #924
         void UnloadSpellInfoStore();
         void UnloadSpellInfoImplicitTargetConditionLists();
         void LoadSpellInfoCustomAttributes();

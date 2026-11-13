@@ -970,8 +970,18 @@ class spell_warl_conflagrate_aura : public SpellScript
 
     void HandleAura(SpellEffIndex eff)
     {
-        if (!GetHitUnit()->HasAura(SPELL_WARLOCK_IMMOLATE) && !GetCaster()->HasAura(SPELL_WARLOCK_GLYPH_OF_CONFLAGRATE))
-            PreventEffectForTarget(GetHitUnit(), eff);
+        Unit* target = GetHitUnit();
+        if (target->HasAura(SPELL_WARLOCK_IMMOLATE) || GetCaster()->HasAura(SPELL_WARLOCK_GLYPH_OF_CONFLAGRATE))
+            return;
+
+        // #963: a reflected Conflagrate launches on the caster (Spell::DoAllEffectOnLaunchTarget, SPELL_MISS_REFLECT), but its
+        // TargetInfo still carries the reflecting unit's GUID, so PreventEffectForTarget(caster) found no entry and the aura
+        // landed on the warlock. Strip the effect from the entry that is actually being processed (the explicit target).
+        if (target == GetCaster())
+            if (Unit* explTarget = GetExplTargetUnit())
+                target = explTarget;
+
+        PreventEffectForTarget(target, eff);
     }
 
     void Register() override
@@ -3371,7 +3381,10 @@ class spell_warl_havoc_target_selector : public SpellScript
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_0, TARGET_UNIT_TARGET_ENEMY);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_1, TARGET_UNIT_TARGET_ENEMY);
+        // Only some of the Havoc spells have a second enemy-target effect.
+        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId))
+            if (spell->Effects[EFFECT_1].TargetA.GetTarget() == TARGET_UNIT_TARGET_ENEMY || spell->Effects[EFFECT_1].TargetB.GetTarget() == TARGET_UNIT_TARGET_ENEMY)
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_havoc_target_selector::SelectTargets, EFFECT_1, TARGET_UNIT_TARGET_ENEMY);
         AfterCast += SpellCastFn(spell_warl_havoc_target_selector::HandleCast);
     }
 };
@@ -3563,7 +3576,12 @@ class spell_warl_command_demon : public SpellScript
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_warl_command_demon::CheckCast);
-        OnEffectHitTarget += SpellEffectFn(spell_warl_command_demon::SuppressDefault, EFFECT_0, SPELL_EFFECT_DUMMY);
+        // Felstorm/Wrathstorm (119914, 119915) carry a FORCE_CAST effect instead of a DUMMY.
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+        if (spell && spell->Effects[EFFECT_0].Effect == SPELL_EFFECT_FORCE_CAST)
+            OnEffectHitTarget += SpellEffectFn(spell_warl_command_demon::SuppressDefault, EFFECT_0, SPELL_EFFECT_FORCE_CAST);
+        else
+            OnEffectHitTarget += SpellEffectFn(spell_warl_command_demon::SuppressDefault, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
 
@@ -3726,8 +3744,11 @@ class spell_warl_demonic_gateway_summon : public SpellScript
 
     void Register() override
     {
-        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestPurple, EFFECT_0, TARGET_UNK_125);
-        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestGreen,  EFFECT_0, TARGET_UNK_138);
+        // 113890 (purple) uses target 125, 113886 (green) uses target 138: bind the one the spell has.
+        if (m_scriptSpellId == 113890)
+            OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestPurple, EFFECT_0, TARGET_UNK_125);
+        else
+            OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_warl_demonic_gateway_summon::SelectDestGreen,  EFFECT_0, TARGET_UNK_138);
     }
 };
 

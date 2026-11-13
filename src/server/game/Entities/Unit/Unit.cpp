@@ -16,6 +16,7 @@
 */
 
 #include "Unit.h"
+#include "AbstractFollower.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "Battleground.h"
@@ -380,11 +381,14 @@ void Unit::Update(uint32 p_time)
     _damageTrackingTimer -= p_time;
     while (_damageTrackingTimer <= 0)
     {
-        std::copy(_npcDamageTaken.begin(), _npcDamageTaken.end() - 1, _npcDamageTaken.begin() + 1);
-        std::copy(_playerDamageTaken.begin(), _playerDamageTaken.end() - 1, _playerDamageTaken.begin() + 1);
+        if (_damageTaken)
+        {
+            std::copy(_damageTaken->npc.begin(), _damageTaken->npc.end() - 1, _damageTaken->npc.begin() + 1);
+            std::copy(_damageTaken->player.begin(), _damageTaken->player.end() - 1, _damageTaken->player.begin() + 1);
 
-        _npcDamageTaken[0] = 0;
-        _playerDamageTaken[0] = 0;
+            _damageTaken->npc[0] = 0;
+            _damageTaken->player[0] = 0;
+        }
 
         _damageTrackingTimer += DAMAGE_TRACKING_UPDATE_INTERVAL;
     }
@@ -684,6 +688,99 @@ void Unit::GetRandomContactPoint(const Unit* obj, float &x, float &y, float &z, 
         --attacker_number;
     GetNearPoint(obj, x, y, z, distance2dMin + (distance2dMax - distance2dMin) * (float) rand_norm(),
                  GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI / 2) - static_cast<float>(M_PI) * (float) rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
+}
+
+bool Unit::GetMeleeAttackPoint(Unit* attacker, Position& pos)
+{
+    if (!attacker)
+    {
+        return false;
+    }
+
+    AttackerSet const& attackers = getAttackers();
+
+    if (attackers.size() <= 1) // if the attackers are not more than one
+    {
+        return false;
+    }
+
+    float meleeReach = GetExactDist2d(attacker);
+    if (meleeReach <= 0)
+    {
+        return false;
+    }
+
+    float minAngle = 0;
+    Unit* refUnit = nullptr;
+    uint32 validAttackers = 0;
+
+    double attackerSize = attacker->GetCollisionRadius();
+
+    for (auto const& otherAttacker : attackers)
+    {
+        // if the otherAttacker is not valid, skip
+        if (!otherAttacker || otherAttacker->GetGUID() == attacker->GetGUID() ||
+            !otherAttacker->IsWithinMeleeRange(this) || otherAttacker->isMoving())
+        {
+            continue;
+        }
+
+        float curretAngle = atan(attacker->GetExactDist2d(otherAttacker) / meleeReach);
+        if (minAngle == 0 || curretAngle < minAngle)
+        {
+            minAngle = curretAngle;
+            refUnit = otherAttacker;
+        }
+
+        validAttackers++;
+    }
+
+    if (!validAttackers || !refUnit)
+    {
+        return false;
+    }
+
+    float contactDist = attackerSize + refUnit->GetCollisionRadius();
+    float requiredAngle = atan(contactDist / meleeReach);
+    float attackersAngle = atan(attacker->GetExactDist2d(refUnit) / meleeReach);
+
+    // in instance: the more attacker there are, the higher will be the tollerance
+    // outside: creatures should not intersecate
+    float angleTollerance = attacker->GetMap()->IsDungeon() ? requiredAngle - requiredAngle * tanh(validAttackers / 5.0f) : requiredAngle;
+
+    if (attackersAngle > angleTollerance)
+    {
+        return false;
+    }
+
+    double angle = atan(contactDist / meleeReach);
+
+    float angularRadius = frand(0.1f, 0.3f) + angle;
+    int8 direction = (urand(0, 1) ? -1 : 1);
+    float currentAngle = GetAngle(refUnit);
+    float absAngle = currentAngle + angularRadius * direction;
+
+    // stay at the attacker's current distance; GetNearPoint here adds both combat reaches itself
+    float x, y, z;
+    float distance = meleeReach - GetCombatReach() - attacker->GetCombatReach();
+    GetNearPoint(attacker, x, y, z, distance, absAngle);
+
+    // the attacker is the one that walks there, so its own walk and water rules apply
+    if (!GetMap()->CanReachPositionAndGetValidCoords(attacker, x, y, z, true, true))
+    {
+        // try the other side of the reference attacker; AC uses absAngle * -1, which mirrors the world
+        // angle across the x axis instead (deliberate deviation, bug fix)
+        GetNearPoint(attacker, x, y, z, distance, currentAngle - angularRadius * direction);
+
+        if (!GetMap()->CanReachPositionAndGetValidCoords(attacker, x, y, z, true, true))
+        {
+            return false;
+        }
+    }
+
+    pos.Relocate(x, y, z);
+
+    return true;
 }
 
 AuraApplication * Unit::GetVisibleAura(uint8 slot) const
@@ -1057,10 +1154,12 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
             victim->ToCreature()->LowerPlayerDamageReq(health < damage ? health : damage);
     }
 
+    if (!victim->_damageTaken)
+        victim->_damageTaken = std::make_unique<DamageTakenHistory>();
     if (GetTypeId() != TYPEID_PLAYER)
-        victim->_npcDamageTaken[0] += damage;
+        victim->_damageTaken->npc[0] += damage;
     else
-        victim->_playerDamageTaken[0] += damage;
+        victim->_damageTaken->player[0] += damage;
 
     if (health <= damage)
     {
@@ -4169,12 +4268,14 @@ void Unit::_RemoveNoStackAurasDueToAura(Aura* aura)
     }
 }
 
+Unit::AuraEffectList const Unit::s_emptyAuraEffectList{};
+
 void Unit::_RegisterAuraEffect(AuraEffect* aurEff, bool apply)
 {
     if (apply)
-        m_modAuras [aurEff->GetAuraType()].push_back(aurEff);
-    else
-        m_modAuras [aurEff->GetAuraType()].remove(aurEff);
+        ModAurasFor(aurEff->GetAuraType()).push_back(aurEff);
+    else if (AuraEffectList* effects = FindModAuras(aurEff->GetAuraType()))
+        effects->remove(aurEff);
 }
 
 // All aura base removes should go threw this function!
@@ -4505,7 +4606,11 @@ void Unit::RemoveAurasDueToItemSpell(uint32 spellId, uint64 castItemGuid)
 
 void Unit::RemoveAurasByType(AuraType auraType, uint64 casterGUID, Aura* except, bool negative, bool positive)
 {
-    for (AuraEffectList::iterator iter = m_modAuras [auraType].begin(); iter != m_modAuras [auraType].end();)
+    AuraEffectList* effectsPtr = FindModAuras(auraType);
+    if (!effectsPtr)
+        return;
+    AuraEffectList& effects = *effectsPtr;
+    for (AuraEffectList::iterator iter = effects.begin(); iter != effects.end();)
     {
         Aura* aura = (*iter)->GetBase();
         AuraApplication * aurApp = aura->GetApplicationOfTarget(GetGUID());
@@ -4517,22 +4622,27 @@ void Unit::RemoveAurasByType(AuraType auraType, uint64 casterGUID, Aura* except,
             uint32 removedAuras = m_removedAurasCount;
             RemoveAura(aurApp);
             if (m_removedAurasCount > removedAuras + 1)
-                iter = m_modAuras [auraType].begin();
+                iter = effects.begin();
         }
     }
 }
 
 void Unit::RemoveAurasByTypeOnImmunity(AuraType auraType)
 {
-    for (auto itr = m_modAuras[auraType].begin(); itr != m_modAuras[auraType].end();)
+    AuraEffectList* effectsPtr = FindModAuras(auraType);
+    if (!effectsPtr)
+        return;
+    AuraEffectList& effects = *effectsPtr;
+    for (auto itr = effects.begin(); itr != effects.end();)
     {
-        Aura* aura = (*itr)->GetBase();
+        AuraEffect* auraEffect = *itr;
+        Aura* aura = auraEffect->GetBase();
         AuraApplication* aurApp = aura->GetApplicationOfTarget(GetGUID());
         ++itr;
         // Apparently, we shouldn't remove root auras by type
         if (aura->GetSpellInfo()->Id == 142913) // Displaced Energy
         {
-            aura->RemoveEffect((*itr)->GetEffIndex());
+            aura->RemoveEffect(auraEffect->GetEffIndex());
             continue;
         }
         if (!aura->GetSpellInfo()->HasAttribute(SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY))
@@ -4540,7 +4650,7 @@ void Unit::RemoveAurasByTypeOnImmunity(AuraType auraType)
             uint32 removedAuras = m_removedAurasCount;
             RemoveAura(aurApp);
             if (m_removedAurasCount > removedAuras + 1)
-                itr = m_modAuras[auraType].begin();
+                itr = effects.begin();
         }
     }
 }
@@ -5250,7 +5360,8 @@ bool Unit::HasAura(uint32 spellId, uint64 casterGUID, uint64 itemCasterGUID, uin
 
 bool Unit::HasAuraType(AuraType auraType) const
 {
-    return (!m_modAuras [auraType].empty());
+    AuraEffectList const* effects = FindModAuras(auraType);
+    return effects && !effects->empty();
 }
 
 bool Unit::HasAuraTypeWithCaster(AuraType auratype, uint64 caster) const
@@ -5353,7 +5464,11 @@ uint32 Unit::GetDiseasesByCaster(uint64 casterGUID, bool remove)
     uint32 diseases = 0;
     for (AuraType const* itr = diseaseAuraTypes; *itr != SPELL_AURA_NONE; ++itr)
     {
-        for (AuraEffectList::iterator i = m_modAuras [*itr].begin(); i != m_modAuras [*itr].end();)
+        AuraEffectList* effectsPtr = FindModAuras(*itr);
+        if (!effectsPtr)
+            continue;
+        AuraEffectList& effects = *effectsPtr;
+        for (AuraEffectList::iterator i = effects.begin(); i != effects.end();)
         {
             // Get auras with disease dispel type by caster
             if ((*i)->GetSpellInfo()->Dispel == DISPEL_DISEASE
@@ -5364,7 +5479,7 @@ uint32 Unit::GetDiseasesByCaster(uint64 casterGUID, bool remove)
                 if (remove)
                 {
                     RemoveAura((*i)->GetId(), (*i)->GetCasterGUID());
-                    i = m_modAuras [*itr].begin();
+                    i = effects.begin();
                     continue;
                 }
             }
@@ -8432,13 +8547,15 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
         case 65081:
         {
             // Proc only from PW:S cast
-            if (!(procSpell->SpellFamilyFlags [0] & 0x00000001))
+            if (!procSpell || !(procSpell->SpellFamilyFlags [0] & 0x00000001))
                 return false;
             break;
         }
         // Culling the Herd
         case 70893:
         {
+            if (!procSpell)
+                return false;
             // check if we're doing a critical hit
             if (!(procSpell->SpellFamilyFlags [1] & 0x10000000) && (procEx != PROC_EX_CRITICAL_HIT))
                 return false;
@@ -8864,6 +8981,10 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
 
         ToCreature()->SendAIReaction(AI_REACTION_HOSTILE);
         ToCreature()->CallAssistance();
+
+        // Remove emote state - will be restored on creature reset (LoadCreaturesAddon on evade and respawn), as TrinityCore
+        if (!IsControlledByPlayer())
+            SetEmoteState(EMOTE_ONESHOT_NONE);
     }
 
     // delay offhand weapon attack to next attack time
@@ -12611,6 +12732,9 @@ void Unit::setDeathState(DeathState s)
         SetHealth(0);
         if (GetPowerType() != POWER_MANA)
             SetPower(GetPowerType(), 0);
+        // a corpse doesn't keep working or sitting (TrinityCore, TCPP and AzerothCore clear it on death too); not for players
+        if (GetTypeId() == TYPEID_UNIT)
+            SetEmoteState(EMOTE_ONESHOT_NONE);
 
         // players in instance don't have ZoneScript, but they have InstanceScript
         if (ZoneScript* zoneScript = GetZoneScript() ? GetZoneScript() : GetInstanceScript())
@@ -13787,6 +13911,13 @@ void Unit::AddToWorld()
     RebuildTerrainSwaps();
 }
 
+void Unit::RemoveAllFollowers()
+{
+    // detach chase/follow/formation generators targeting us, they stop on their next update
+    while (!_followers.empty())
+        (*_followers.begin())->SetTarget(nullptr);
+}
+
 void Unit::RemoveFromWorld()
 {
     // cleanup
@@ -13806,6 +13937,7 @@ void Unit::RemoveFromWorld()
         RemoveCharmAuras();
         RemoveBindSightAuras();
         RemoveBoundAuras();
+        RemoveAllFollowers();
 
         RemoveAllGameObjects();
         RemoveAllDynObjects();
@@ -15082,7 +15214,7 @@ void Unit::ClearComboPointHolders()
         ObjectGuid guid = *m_comboPointHolders.begin();
 
         Player* player = ObjectAccessor::FindPlayer(guid);
-        if (player && player->GetComboTarget() && player->GetComboTarget()->GetGUID() == GetGUID())     // recheck for safe
+        if (player && player->GetComboTargetGUID() == GetGUID())   // By GUID, the pointer may dangle     // recheck for safe
             player->ClearComboPoints();                                                                 // remove also guid from m_ComboPointHolders;
         else
             m_comboPointHolders.erase(guid);                                                            // or remove manually
@@ -16066,7 +16198,19 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
             if (uint32 lootid = creature->GetCreatureTemplate()->lootid)
                 loot->FillLoot(creature, lootid, LootTemplates_Creature, looter, false, false, creature->GetMap()->GetDifficulty());
 
-            loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
+            // The difficulty row's gold, when it has one, as Creature::SelectLevel takes its level: the dungeon revamps keep
+            // their heroic gold in creature_template and run normal mode at a far lower level.
+            uint32 minGold = creature->GetCreatureTemplate()->mingold;
+            uint32 maxGold = creature->GetCreatureTemplate()->maxgold;
+            if (creature->GetMap()->GetDifficulty() > REGULAR_DIFFICULTY || creature->GetMap()->IsBattleground())
+                if (CreatureDifficultyInfo const* difficultyInfo = sObjectMgr->SelectDifficultyInfo(creature->GetMap(), creature->GetEntry()))
+                    if (difficultyInfo->HasGold)
+                    {
+                        minGold = difficultyInfo->MinGold;
+                        maxGold = difficultyInfo->MaxGold;
+                    }
+
+            loot->generateMoneyLoot(minGold, maxGold);
         }
 
         player->RewardPlayerAndGroupAtKill(victim, false);
@@ -16355,6 +16499,11 @@ void Unit::SetControlled(bool apply, UnitState state)
                 SetStunned(false);
                 break;
             case UNIT_STATE_ROOT:
+                // a creature rooted by creature_template_movement / creature_movement_override stays rooted when a root aura
+                // ends, it leaves a vehicle or a script unroots it (AC Unit.cpp:14006, TCPP's sessile guard)
+                if (GetTypeId() == TYPEID_UNIT && ToCreature()->IsRootedByMovementTemplate())
+                    return;
+
                 if (HasAuraType(SPELL_AURA_MOD_ROOT) || GetVehicle())
                     return;
 
@@ -17381,9 +17530,11 @@ void Unit::SetPhaseMask(uint32 newPhaseMask, bool update)
     // Phase pets and summons
     if (IsInWorld())
     {
-         for (ControlList::const_iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr)
-            if ((*itr)->GetTypeId() == TYPEID_UNIT)
-                (*itr)->SetPhaseMask(newPhaseMask, true);
+        // (setphased-controlled) as in SetPhased: walk a copy, a unit can leave the control list during its phase change
+        ControlList const controlled = m_Controlled;
+        for (Unit* unit : controlled)
+            if (m_Controlled.find(unit) != m_Controlled.end() && unit->GetTypeId() == TYPEID_UNIT)
+                unit->SetPhaseMask(newPhaseMask, true);
 
         for (uint8 i = 0; i < SUMMON_SLOT_MAX; ++i)
             if (m_SummonSlot [i])
@@ -17414,9 +17565,12 @@ bool Unit::SetPhased(uint32 id, bool update, bool apply)
         GetThreatManager().EvaluateSuppressed(true);
     }
 
-    for (ControlList::const_iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr)
-        if ((*itr)->GetTypeId() == TYPEID_UNIT)
-            (*itr)->SetPhased(id, true, apply);
+    // (setphased-controlled) the phase change of a controlled unit can end what made it controlled (an aura bound to the other
+    // phase is removed): it then takes itself out of m_Controlled. Walk a copy and skip what is not controlled any more.
+    ControlList const controlled = m_Controlled;
+    for (Unit* unit : controlled)
+        if (m_Controlled.find(unit) != m_Controlled.end() && unit->GetTypeId() == TYPEID_UNIT)
+            unit->SetPhased(id, true, apply);
 
     for (uint8 i = 0; i < SUMMON_SLOT_MAX; ++i)
         if (m_SummonSlot[i])
@@ -20302,23 +20456,29 @@ void Unit::BuildTeleportUpdateData(WorldPacket* data)
 
 uint32 Unit::GetNpcDamageTakenInPastSecs(uint32 secs) const
 {
-    auto const offset = std::min<size_t>(secs, _npcDamageTaken.size());
-    return std::accumulate(_npcDamageTaken.begin(), _npcDamageTaken.begin() + offset, 0u);
+    if (!_damageTaken)
+        return 0;
+    auto const offset = std::min<size_t>(secs, _damageTaken->npc.size());
+    return std::accumulate(_damageTaken->npc.begin(), _damageTaken->npc.begin() + offset, 0u);
 }
 
 uint32 Unit::GetPlayerDamageTakenInPastSecs(uint32 secs) const
 {
-    auto const offset = std::min<size_t>(secs, _playerDamageTaken.size());
-    return std::accumulate(_playerDamageTaken.begin(), _playerDamageTaken.begin() + offset, 0u);
+    if (!_damageTaken)
+        return 0;
+    auto const offset = std::min<size_t>(secs, _damageTaken->player.size());
+    return std::accumulate(_damageTaken->player.begin(), _damageTaken->player.begin() + offset, 0u);
 }
 
 uint32 Unit::GetDamageTakenInPastSecs(uint32 secs) const
 {
-    auto const offset = std::min<size_t>(secs, _npcDamageTaken.size());
+    if (!_damageTaken)
+        return 0;
+    auto const offset = std::min<size_t>(secs, _damageTaken->npc.size());
 
     uint32 damage = 0;
     for (size_t i = 0; i < offset; ++i)
-        damage += _npcDamageTaken[i] + _playerDamageTaken[i];
+        damage += _damageTaken->npc[i] + _damageTaken->player[i];
 
     return damage;
 }

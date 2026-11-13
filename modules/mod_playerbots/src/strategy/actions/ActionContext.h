@@ -53,6 +53,7 @@
 #include "ReachTargetActions.h"
 #include "ResetInstancesAction.h"
 #include "StayActions.h"
+#include "TeleportToMasterAction.h"
 #include "ImbueAction.h"
 #include "UseItemAction.h"
 #include "RevealGatheringItemAction.h"  // #377
@@ -150,6 +151,7 @@ public:
         creators["move out of enemy contact"] = &ActionContext::move_out_of_enemy_contact;
         creators["move out of collision"] = &ActionContext::move_out_of_collision;
         creators["stay"] = &ActionContext::stay;
+        creators["teleport to master"] = &ActionContext::teleport_to_master;
         creators["sit"] = &ActionContext::sit;
         // #149 (AC LeaveGroupAction.h:41): ported above, adapted to this fork's PlayerbotAI
         // (no GetGroupLeader(); see the class comment in LeaveGroupAction.h).
@@ -392,6 +394,7 @@ private:
     static Action* _return(PlayerbotAI* botAI) { return new ReturnAction(botAI); }
     static Action* return_to_stay_position(PlayerbotAI* botAI) { return new ReturnToStayPositionAction(botAI); }
     static Action* stay(PlayerbotAI* botAI) { return new StayAction(botAI); }
+    static Action* teleport_to_master(PlayerbotAI* botAI) { return new TeleportToMasterAction(botAI); }
     static Action* sit(PlayerbotAI* botAI) { return new SitAction(botAI); }
     static Action* runaway(PlayerbotAI* botAI) { return new RunAwayAction(botAI); }
     // #269

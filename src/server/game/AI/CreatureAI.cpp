@@ -355,8 +355,17 @@ void CreatureAI::JustEnteredCombat(Unit* who)
     // AI object, so a respawned creature can still be flagged as engaged. Clear that stale engagement so
     // EngagementStart/JustEngagedWith runs for the new fight. Skipped while evading: CombatManager can
     // notify without the combat flag being set (SetInCombatState returns early on UNIT_STATE_EVADE).
-    if (IsEngaged() && me->IsInCombat())
+    if (IsEngaged())
+    {
+        // No combat flag: Unit::SetInCombatState refused it (dead or evading unit), so no new fight starts.
+        // Keep the engagement, as AC/TC do (CreatureAI::JustEnteredCombat: !IsEngaged() && !CanHaveThreatList()).
+        // Falling through only logged "EngagementStart called even though creature is already engaged"
+        // (mostly player-owned guardians in battlegrounds, re-notified through a refreshed PvP combat reference).
+        if (!me->IsInCombat())
+            return;
+
         EngagementOver();
+    }
 
     if (!me->CanHaveThreatList())
         EngagementStart(who);
@@ -366,7 +375,7 @@ void CreatureAI::EngagementStart(Unit* who)
 {
     if (IsEngaged())
     {
-        TC_LOG_ERROR("scripts.ai", "CreatureAI::EngagementStart called even though creature is already engaged.");
+        TC_LOG_ERROR("scripts.ai", "CreatureAI::EngagementStart called even though creature is already engaged. Creature entry %u guid %u map %u", me->GetEntry(), me->GetDBTableGUIDLow(), me->GetMapId()); // AC logs GetDebugInfo() here (AC CreatureAI.cpp:290)
         return;
     }
 
@@ -383,6 +392,48 @@ void CreatureAI::EngagementOver()
     }
 
     _isEngaged = false;
+}
+
+void CreatureAI::MoveCircleChecks()
+{
+    Unit* victim = me->GetVictim();
+
+    if (
+        !victim ||
+        !me->IsFreeToMove() || me->HasUnitMovementFlag(MOVEMENTFLAG_ROOT) ||
+        !me->IsWithinMeleeRange(victim) || me == victim->GetVictim()
+    )
+    {
+        return;
+    }
+
+    /**
+     *  optimization, disable circling movement for NPC vs NPC combat
+     */
+    if (!sWorld->getBoolConfig(CONFIG_CREATURE_REPOSITION_AGAINST_NPCS) && victim->GetTypeId() != TYPEID_PLAYER && !victim->IsPet())
+        return;
+
+    me->GetMotionMaster()->MoveCircleTarget(me->GetVictim());
+}
+
+void CreatureAI::MoveBackwardsChecks()
+{
+    Unit* victim = me->GetVictim();
+
+    if (!victim || !me->IsFreeToMove() || me->HasUnitMovementFlag(MOVEMENTFLAG_ROOT))
+        return;
+
+    /**
+     *  optimization, disable backwards movement for NPC vs NPC combat
+     */
+    if (!sWorld->getBoolConfig(CONFIG_CREATURE_REPOSITION_AGAINST_NPCS) && victim->GetTypeId() != TYPEID_PLAYER && !victim->IsPet())
+    {
+        return;
+    }
+
+    float moveDist = me->GetMeleeRange(victim) / 2;
+
+    me->GetMotionMaster()->MoveBackwards(victim, moveDist);
 }
 
 bool CreatureAI::CheckInRoom()
@@ -464,6 +515,13 @@ bool CreatureAI::UpdateVictimWithGaze()
     if (!me->IsInCombat() && !CombatDroppedWithoutEvade(me, IsEngaged()))
         return false;
 
+    // #1001: AC CreatureAI.cpp:351 returns while !IsEngaged(): a creature in combat only through a combat reference (another
+    // creature attacked it, it has threatened nobody) waits for its attacker instead of evading through SelectVictim with an
+    // empty threat list - Apprentice Mirveda 15402 evaded in the tick her summons attacked her. Narrowed to an empty threat list
+    // (see #904 above: _isEngaged can stay set after a fight here); JustEnteredCombat clears a stale engagement on a new fight.
+    if (!IsEngaged() && me->CanHaveThreatList() && me->GetThreatManager().IsThreatListEmpty(true))
+        return false;
+
     if (me->HasReactState(REACT_PASSIVE))
     {
         if (me->GetVictim())
@@ -516,6 +574,13 @@ bool CreatureAI::UpdateVictim()
         return false;
     }
 
+    // #1001: AC CreatureAI.cpp:351 returns while !IsEngaged(): a creature in combat only through a combat reference (another
+    // creature attacked it, it has threatened nobody) waits for its attacker instead of evading through SelectVictim with an
+    // empty threat list - Apprentice Mirveda 15402 evaded in the tick her summons attacked her. Narrowed to an empty threat list
+    // (see #904 above: _isEngaged can stay set after a fight here); JustEnteredCombat clears a stale engagement on a new fight.
+    if (!IsEngaged() && me->CanHaveThreatList() && me->GetThreatManager().IsThreatListEmpty(true))
+        return false;
+
     if (InstanceScript* instance = me->GetInstanceScript())
     {
         // Exclude some npc from Temple of the Jade Serpent, Gates of the Setting Sun & Proving Grounds
@@ -532,7 +597,11 @@ bool CreatureAI::UpdateVictim()
             AttackStart(victim);
         return me->GetVictim();
     }
-    else if (me->GetThreatManager().IsThreatListEmpty())
+    // A passive creature only evades once nobody is fighting it any more (AC/TC CreatureAI::UpdateVictim: passive and out of
+    // combat -> EVADE_REASON_NO_HOSTILES). Offline threat references still count: a scripted surrender that turns the creature
+    // passive and immune to players (Hogger 448 at 1 hp) puts its attackers offline, and counting only online references
+    // made it evade, heal to full and restart the fight instead of finishing its script.
+    else if (me->GetThreatManager().IsThreatListEmpty(true))
     {
         EnterEvadeMode();
         return false;

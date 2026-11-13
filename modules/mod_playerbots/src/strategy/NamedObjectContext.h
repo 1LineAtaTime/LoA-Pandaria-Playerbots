@@ -9,6 +9,8 @@
 #include <list>
 #include <set>
 #include <unordered_map>
+#include <typeindex>
+#include <mutex>
 #include <unordered_set>
 #include <vector>
 
@@ -43,7 +45,13 @@ class NamedObjectFactory
 public:
     // #72: public like AC (NamedObjectContext.h:44-47) so NamedObjectFactoryList can merge the creators.
     typedef T* (*ActionCreator)(PlayerbotAI* botAI);
-    std::unordered_map<std::string, ActionCreator> creators;
+    typedef std::unordered_map<std::string, ActionCreator> CreatorMap;
+    CreatorMap creators;
+    // #928 step 1: when set, the creators of every context of this dynamic type (one static copy shared by all bots,
+    // see NamedObjectContext::ShareCreatorsByType); `creators` is then empty.
+    CreatorMap const* sharedCreators = nullptr;
+
+    CreatorMap const& Creators() const { return sharedCreators ? *sharedCreators : creators; }
 
 public:
     T* create(std::string name, PlayerbotAI* botAI)
@@ -56,10 +64,11 @@ public:
             name = name.substr(0, found);
         }
 
-        if (creators.find(name) == creators.end())
+        typename CreatorMap::const_iterator it = Creators().find(name);
+        if (it == Creators().end())
             return nullptr;
 
-        ActionCreator creator = creators[name];
+        ActionCreator creator = it->second;
         if (!creator)
             return nullptr;
 
@@ -74,8 +83,7 @@ public:
     std::set<std::string> supports()
     {
         std::set<std::string> keys;
-        for (typename std::unordered_map<std::string, ActionCreator>::iterator it = creators.begin();
-             it != creators.end(); it++)
+        for (typename CreatorMap::const_iterator it = Creators().begin(); it != Creators().end(); it++)
             keys.insert(it->first);
 
         return keys;
@@ -133,6 +141,36 @@ public:
     bool IsShared() { return shared; }
     bool IsSupportsSiblings() { return supportsSiblings; }
 
+    // #928 step 1 (memory, AC builds shared creator maps once: AiObjectContext::BuildAllSharedContexts): every bot used
+    // to build each context with its own name -> creator map (~0.6 GB at 3000 bots). Contexts of one dynamic type
+    // always register the same creators (constructors take no arguments and register unconditionally), so the first
+    // one becomes the shared copy and later ones drop their own. Lookups and precedence are unchanged. A context whose
+    // map differs in size from the shared copy keeps its own (should not happen; it only costs memory).
+    void ShareCreatorsByType()
+    {
+        if (this->sharedCreators)
+            return;
+
+        static std::mutex registryLock;
+        static std::unordered_map<std::type_index, typename NamedObjectFactory<T>::CreatorMap*> registry;
+
+        std::lock_guard<std::mutex> guard(registryLock);
+        std::type_index const type(typeid(*this));
+        auto found = registry.find(type);
+        if (found == registry.end())
+        {
+            auto* copy = new typename NamedObjectFactory<T>::CreatorMap(std::move(this->creators));
+            registry.emplace(type, copy);
+            this->sharedCreators = copy;
+        }
+        else if (found->second->size() == this->creators.size())
+            this->sharedCreators = found->second;
+        else
+            return;
+
+        typename NamedObjectFactory<T>::CreatorMap().swap(this->creators);
+    }
+
     std::set<std::string> GetCreated()
     {
         std::set<std::string> keys;
@@ -154,6 +192,9 @@ class NamedObjectContextList
 public:
     virtual ~NamedObjectContextList()
     {
+        for (T* object : owned)
+            delete object;
+
         for (typename std::vector<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
         {
             NamedObjectContext<T>* context = *i;
@@ -164,8 +205,18 @@ public:
 
     void Add(NamedObjectContext<T>* context)
     {
+        if (!context->IsShared())
+            context->ShareCreatorsByType();
         contexts.push_back(context);
-        created.clear();  // #72: a new context can answer a name that was a miss so far
+        // #72: a new context can answer a name that was a miss so far. #924: only the misses are dropped - the found
+        // objects are owned by this list now, and the new context is last, so their first-match result stands.
+        for (auto i = created.begin(); i != created.end();)
+        {
+            if (!i->second)
+                i = created.erase(i);
+            else
+                ++i;
+        }
     }
 
     // #72 perf: AC NamedObjectContextList::GetContextObject (NamedObjectContext.h:204-212) answers from one per-bot
@@ -179,12 +230,19 @@ public:
         if (found != created.end())
             return found->second;
 
+        // #924: a shared context still answers from its own cache (one object for every bot); any other context only
+        // creates - it used to cache every name it was asked for, misses included, so each lookup left an entry in
+        // every context it walked past (~45 per name). This list now owns those objects (AC: the list owns `created`).
         T* result = nullptr;
         for (typename std::vector<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
         {
-            if (T* object = (*i)->create(name, botAI))
+            bool const shared = (*i)->IsShared();
+            T* object = shared ? (*i)->create(name, botAI) : (*i)->NamedObjectFactory<T>::create(name, botAI);
+            if (object)
             {
                 result = object;
+                if (!shared)
+                    owned.push_back(object);
                 break;
             }
         }
@@ -195,18 +253,18 @@ public:
 
     void Update()
     {
-        for (typename std::vector<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
-        {
-            if (!(*i)->IsShared())
-                (*i)->Update();
-        }
+        for (T* object : owned)
+            object->Update();
     }
 
     void Reset()
     {
+        for (T* object : owned)
+            object->Reset();
         for (typename std::vector<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
         {
-            (*i)->Reset();
+            if ((*i)->IsShared())
+                (*i)->Reset();
         }
     }
 
@@ -246,12 +304,14 @@ public:
     std::set<std::string> GetCreated()
     {
         std::set<std::string> result;
+        for (auto const& entry : created)
+            result.insert(entry.first);
         for (typename std::vector<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
         {
+            if (!(*i)->IsShared())
+                continue;
             std::set<std::string> createdKeys = (*i)->GetCreated();
-
-            for (std::set<std::string>::iterator j = createdKeys.begin(); j != createdKeys.end(); j++)
-                result.insert(*j);
+            result.insert(createdKeys.begin(), createdKeys.end());
         }
 
         return result;
@@ -259,7 +319,8 @@ public:
 
 private:
     std::vector<NamedObjectContext<T>*> contexts;
-    std::unordered_map<std::string, T*> created;  // #72: non-owning lookup index (AC NamedObjectContextList::created)
+    std::unordered_map<std::string, T*> created;  // #72: lookup index (AC NamedObjectContextList::created), misses too
+    std::vector<T*> owned;                          // #924: objects created by non-shared contexts (deleted with the list)
 };
 
 // #72 perf: AC NamedObjectFactoryList (NamedObjectContext.h:257-309) - the factories' creators are merged into one map

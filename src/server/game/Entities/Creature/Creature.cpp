@@ -19,6 +19,7 @@
 #include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
+#include "ChaseMovementGenerator.h"
 #include "Common.h"
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"
@@ -209,6 +210,12 @@ bool ForcedDespawnDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
+#include "HeapProfConfig.h"
+#if LOA_HEAPPROF
+#include <atomic>
+std::atomic<int64_t> g_heapprofLiveCreatures{0}; // #924 profiling branch: live count for HeapProfiler dumps
+#endif
+
 Creature::Creature(bool isWorldObject) : Unit(isWorldObject), MapObject(),
 lootForPickPocketed(false), lootForBody(false), m_groupLootTimer(0), lootingGroupLowGUID(0),
 m_PlayerDamageReq(0), m_lootRecipient(), m_lootRecipientGroup(0), m_corpseRemoveTime(0), m_respawnTime(0),
@@ -217,6 +224,9 @@ m_defaultMovementType(IDLE_MOTION_TYPE), m_spawnId(0), m_equipmentId(0), m_origi
 m_AlreadySearchedAssistance(false), m_cannotReachTarget(false), m_cannotReachTimer(0), m_regenHealth(true), m_AI_locked(false), _isMissingSwimmingFlagOutOfCombat(false), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL),
 m_creatureInfo(nullptr), m_creatureData(nullptr), m_path_id(0), m_formation(nullptr), m_triggerJustAppeared(true), m_respawnDelayMax(0), dynamicHealthPlayersCount(0)
 {
+#if LOA_HEAPPROF
+    ++g_heapprofLiveCreatures; // #924 profiling branch
+#endif
     m_regenTimer = 0;
     m_valuesCount = UNIT_END;
 
@@ -239,6 +249,9 @@ m_creatureInfo(nullptr), m_creatureData(nullptr), m_path_id(0), m_formation(null
 
 Creature::~Creature()
 {
+#if LOA_HEAPPROF
+    --g_heapprofLiveCreatures; // #924 profiling branch
+#endif
     delete i_AI;
     i_AI = NULL;
 
@@ -507,7 +520,7 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
     if (!GetCreatureAddon())
         SetSheath(SHEATH_STATE_MELEE);
 
-    SelectLevel(GetCreatureTemplate());
+    SelectLevel(GetCreatureTemplate(), true);  // an entry change in view must not re-roll the level (level-up effect; AC: UpdateEntry changelevel=false)
     SetFaction(cInfo->faction);
 
     uint32 npcflag, unit_flags, dynamicflags;
@@ -530,6 +543,10 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
     SetUInt32Value(OBJECT_FIELD_DYNAMIC_FLAGS, dynamicflags);
 
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+
+    // Only ever added here, not cleared: transport passengers also get this state from their transport
+    if (cInfo->flags_extra & CREATURE_FLAG_EXTRA_IGNORE_PATHFINDING)
+        AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 
     SetMeleeDamageSchool(SpellSchools(cInfo->dmgschool));
     CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(GetLevel(), cInfo->unit_class);
@@ -591,6 +608,10 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
         //ApplySpellImmune(0, IMMUNITY_ID, 49560, true); // not needed, grip not pull boss (TODO: fix 1 spell 66017)
         ApplySpellImmune(0, IMMUNITY_ID, 61391, true);
     }
+
+    // creature_template_movement.Rooted / creature_movement_override.Rooted (AC Creature.cpp:698)
+    if (IsRootedByMovementTemplate())
+        SetControlled(true, UNIT_STATE_ROOT);
 
     UpdateMovementFlags();
 
@@ -750,6 +771,32 @@ void Creature::Update(uint32 diff)
                 LastCharmerGUID.Clear();
             }
 
+            Unit* victim = GetVictim();
+            if (victim && IsAIEnabled && !IsInEvadeMode())
+            {
+                // If we are closer than 50% of the combat reach we are going to reposition the victim
+                if (diff >= m_moveBackwardsMovementTime)
+                {
+                    float MaxRange = GetCollisionRadius() + victim->GetCollisionRadius();
+
+                    if (IsInDist(victim, MaxRange))
+                        AI()->MoveBackwardsChecks();
+
+                    m_moveBackwardsMovementTime = urand(MOVE_BACKWARDS_CHECK_INTERVAL, MOVE_BACKWARDS_CHECK_INTERVAL * 3);
+                }
+                else
+                    m_moveBackwardsMovementTime -= diff;
+
+                // Circling the target
+                if (diff >= m_moveCircleMovementTime)
+                {
+                    AI()->MoveCircleChecks();
+                    m_moveCircleMovementTime = urand(MOVE_CIRCLE_CHECK_INTERVAL, MOVE_CIRCLE_CHECK_INTERVAL * 2);
+                }
+                else
+                    m_moveCircleMovementTime -= diff;
+            }
+
             if (!IsInEvadeMode() && IsAIEnabled)
             {
                 // do not allow the AI to be changed during update
@@ -823,6 +870,37 @@ void Creature::RegenerateMana()
     addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) * CREATURE_REGEN_INTERVAL / (5 * IN_MILLISECONDS);
 
     ModifyPower(POWER_MANA, addvalue);
+}
+
+bool Creature::IsFreeToMove()
+{
+    // Only a creature chasing its current victim may reposition itself, and not while the chase is still
+    // moving it (AC: chase movement and no MOVEMENTFLAG_SPLINE_ENABLED)
+    if (GetMotionMaster()->GetCurrentMovementGeneratorType() != CHASE_MOTION_TYPE || HasUnitState(UNIT_STATE_CHASE_MOVE))
+        return false;
+
+    ChaseMovementGenerator const* chase = dynamic_cast<ChaseMovementGenerator const*>(GetMotionMaster()->GetCurrentMovementGenerator());
+    if (!chase || !chase->GetTarget() || chase->GetTarget() != GetVictim())
+        return false;
+
+    // A chase with an angle (e.g. ScriptedAI::DoStartMovement(target, 0, 0), behind-target scripts) keeps its
+    // owner in that cone and would undo any step around the victim
+    if (chase->GetAngle())
+        return false;
+
+    // Combat movement turned off by the script (ScriptedAI::SetCombatMovement, SMART_ACTION_SET_COMBAT_MOVE)
+    if (!IsAIEnabled || !AI() || !AI()->IsCombatMovementAllowed())
+        return false;
+
+    // The chase movement stops its owner on the next update while it cannot move or is casting
+    if (HasUnitFlag(UNIT_FLAG_DISABLE_MOVE) || HasUnitState(UNIT_STATE_NOT_MOVE) || IsNonMeleeSpellCasted(false))
+        return false;
+
+    // Do not reposition ourself when we are not allowed to move
+    if ((IsMovementPreventedByCasting() || isMoving() || !CanFreeMove()) && !movespline->Finalized())
+        return false;
+
+    return true;
 }
 
 void Creature::DoFleeToGetAssistance()
@@ -1271,7 +1349,7 @@ void Creature::SaveToDB(uint32 mapid, uint16 spawnMask, uint32 phaseMask)
     WorldDatabase.CommitTransaction(trans);
 }
 
-void Creature::SelectLevel(const CreatureTemplate* cinfo)
+void Creature::SelectLevel(const CreatureTemplate* cinfo, bool keepLevel)
 {
     uint8 dbminlevel = cinfo->minlevel;
     uint8 dbmaxlevel = cinfo->maxlevel;
@@ -1292,7 +1370,15 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     // level
     uint8 minlevel = std::min(dbmaxlevel, dbminlevel);
     uint8 maxlevel = std::max(dbmaxlevel, dbminlevel);
-    uint8 level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+    uint8 level;
+    if (minlevel == maxlevel)
+        level = minlevel;
+    else if (keepLevel && m_levelRolled && m_rolledLevel >= minlevel && m_rolledLevel <= maxlevel)
+        level = m_rolledLevel;
+    else
+        level = urand(minlevel, maxlevel);
+    m_rolledLevel = level;
+    m_levelRolled = true;
 
     // #702: AutoBalance level scaling (off unless AutoBalance.Enable.Global = 1). AC calls OnBeforeCreatureSelectLevel
     // at this point (AC Creature.cpp:1523), so everything below is computed for the scaled level.
@@ -1319,6 +1405,12 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     }
     else if (scaledExpansion >= 0)
         expansion = uint32(scaledExpansion); // #702: the column of the scaled level (AutoBalance::ExpansionColumnForLevel)
+
+    // A column with no health at this level (the loader stores a missing basehp as 1, #175) takes the column of the level.
+    // The Cataclysm and MoP dungeon revamps keep the expansion of their heroic level (exp 3 at 85-87) and run their normal
+    // mode from creature_template_difficulty at levels 15-21, where basehp3 has no data and they had 1 x health_mod HP.
+    if (stats->BaseHealth[expansion] <= 1)
+        expansion = AutoBalance::ExpansionColumnForLevel(level);
 
     // health
     uint32 health = uint32(std::ceil(stats->BaseHealth[expansion] * hpmod * _GetHealthMod(rank)));
@@ -1815,6 +1907,9 @@ void Creature::setDeathState(DeathState s)
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS, cinfo->npcflag);
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, cinfo->npcflag2);
         ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~UNIT_STATE_IGNORE_PATHFINDING));
+        // the wipe above drops the DB root set in UpdateEntry (the root movement flag stays): put it back
+        if (IsRootedByMovementTemplate())
+            SetControlled(true, UNIT_STATE_ROOT);
         SetMeleeDamageSchool(SpellSchools(cinfo->dmgschool));
         LoadCreaturesAddon(true);
         ApplyInstanceAuraIfNeeded();
@@ -2313,7 +2408,8 @@ bool Creature::_IsTargetAcceptable(const Unit* target) const
     const Unit* targetVictim = target->getAttackerForHelper();
 
     // if I'm already fighting target, or I'm hostile towards the target, the target is acceptable
-    if (myVictim == target || targetVictim == this || IsHostileTo(target))
+    // a caster that hits a neutral creature from range has no melee victim, so check the combat state as well
+    if (myVictim == target || targetVictim == this || IsHostileTo(target) || GetCombatManager().IsInCombatWith(target))
         return true;
 
     // if the target's victim is friendly, and the target is neutral, the target is acceptable
@@ -2414,6 +2510,16 @@ bool Creature::LoadCreaturesAddon(bool reload)
 
     if (creatureAddon->emote != 0)
         SetEmoteState(Emote(creatureAddon->emote));
+
+    // the anim kits of creature_addon were loaded but never applied (sniffed poses such as scouts hanging from a ledge)
+    if (creatureAddon->aiAnimKit != 0)
+        SetAIAnimKitId(creatureAddon->aiAnimKit);
+
+    if (creatureAddon->movementAnimKit != 0)
+        SetMovementAnimKitId(creatureAddon->movementAnimKit);
+
+    if (creatureAddon->meleeAnimKit != 0)
+        SetMeleeAnimKitId(creatureAddon->meleeAnimKit);
 
     // Check if visibility distance different
     if (creatureAddon->visibilityDistanceType != VisibilityDistanceType::Normal)
@@ -2999,6 +3105,10 @@ Unit* Creature::SelectNearestHostileUnitInAggroRange(bool useLOS) const
 void Creature::UpdateMovementFlags(bool force)
 {
     if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED) || IsPet() || GetTransport())
+        return;
+
+    // Creatures with CREATURE_FLAG_EXTRA_NO_MOVE_FLAGS_UPDATE control their movement flags in their own scripts
+    if (GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_NO_MOVE_FLAGS_UPDATE)
         return;
 
     // It should be rather rare for creatures to transition between ground, water and air with random movement,

@@ -11,14 +11,13 @@
  *    in PlayerbotAI::UpdateAIGroupMaster(), a .cpp-private flow - see group-functionality-parity.md
  *    section 2 "Master selection"); that flow already re-evaluates the master every tick, so clearing
  *    a stale master here is enough - the next tick's UpdateAIGroupMaster() picks the replacement.
- *  - AC's PlayerbotRepository::instance().Reset(botAI) (a saved custom-strategy-override eraser) has
- *    no equivalent on this fork (no PlayerbotRepository class); dropped.
  */
 
 #include "ResetAiAction.h"
 
 #include "Event.h"
 #include "Group.h"
+#include "PlayerbotRepository.h"
 #include "Playerbots.h"
 
 bool ResetAiAction::Execute(Event /*event*/)
@@ -31,7 +30,8 @@ bool ResetAiAction::Execute(Event /*event*/)
             botAI->SetMaster(nullptr);
     }
 
-    botAI->ResetStrategies();
+    PlayerbotRepository::instance().Reset(botAI);
+    botAI->ResetStrategies(false);
     botAI->Reset(false);
     botAI->TellMaster("AI was reset to defaults");
     return true;

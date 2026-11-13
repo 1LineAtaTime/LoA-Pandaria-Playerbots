@@ -1,0 +1,2922 @@
+/*
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/* Hillsbrad Foothills: the Sludge Fields and the Stormpike scenes
+ *
+ * No One Here Gets Out Alive (28192)   the camera tour of the Sludge Fields
+ * Freedom for Lydon (28209)            Lydon and Johnny Awesome go with the player, up to Stillwater's head
+ * Welcome to the Machine (28096)       the quest giver on the Skeletal Steed and his three visitors
+ * A Blight Upon the Land (28237)       Lydon's sentence and Warden Stillwater's new form
+ * Matters of Loyalty (28600)           Drek'Thar refuses to aid the Forsaken
+ * March of the Stormpike (28506)       the camera tour of the four fingers of Hillsbrad
+ * Stormpike Apocalypse (28616)         the pocket-nukes go off
+ * Stormpike Rendezvous (28348)         Orkus overhears Vanndar and Balinda on the Southshore docks
+ *
+ * Sourced: the spells (5.4.8 Spell.dbc: the camera summons, their ride auras with the scene's phase, the end spells with
+ * QUEST_COMPLETE), the actors (their summon spells and templates), every line (broadcast_text), the Sludge Fields camera start
+ * (spell_target_position of 89144 in the Cataclysm Classic TDB), Stillwater's combat spells (its SmartAI in the same TDB) and
+ * the order of the scenes (warcraft.wiki.gg). Ours: the camera paths, every timing, where the actors stand, the vehicle of the
+ * three Stormpike cameras (no source has it), the replay when a scene was interrupted and setting a player down who logged out
+ * in one of them. None of this was sniffed.
+ */
+
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "CombatAI.h"
+#include "Player.h"
+#include "Vehicle.h"
+#include "TemporarySummon.h"
+#include "SpellScript.h"
+#include "DBCStores.h"
+#include "SpellMgr.h"
+#include "SmartAI.h"
+
+namespace
+{
+
+enum HillsbradScenes
+{
+    // The camera's own steps; the scenes number theirs from EVENT_SCENE_FIRST on
+    EVENT_CAMERA_WAIT_FOR_RIDER                 = 1,
+    EVENT_SCENE_FIRST                           = 10,
+
+    // The camera's lift off the ground; the scenes number their own points from 1
+    POINT_CAMERA_LIFT                           = 100
+};
+
+// The player's own summon of an entry near the player (personal summons are private: closest-creature searches skip them)
+ObjectGuid FindOwnSummon(Player* player, uint32 entry, float range = 100.0f)
+{
+    std::list<Creature*> creatures;
+    player->GetCreatureListWithEntryInGrid(creatures, entry, range);
+    for (Creature* creature : creatures)
+        if (creature->IsAlive() && creature->IsSummon() && creature->ToTempSummon()->GetSummonerGUID() == player->GetGUID())
+            return creature->GetGUID();
+    return ObjectGuid::Empty;
+}
+
+// Starts a scene: the summon spell seats the player in the camera. If the camera did not come (the spell failed), the quest is
+// completed at once, so that the chain can never stop here (ours).
+void StartScene(Player* player, uint32 questId, uint32 cameraEntry, uint32 summonSpellId)
+{
+    player->CastSpell(player, summonSpellId, true);
+    if (FindOwnSummon(player, cameraEntry, 50.0f).IsEmpty() && player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
+        player->AreaExploredOrEventHappens(questId);
+}
+
+// Starts a scene again for a player whose quest is still open (logged out, crashed or left the area mid-scene), when the player
+// talks to the quest giver again. Ours: retail had no replay, the scene could not be interrupted there.
+bool ReplayScene(Player* player, uint32 questId, uint32 cameraEntry, uint32 summonSpellId)
+{
+    if (player->GetQuestStatus(questId) != QUEST_STATUS_INCOMPLETE || player->GetVehicle())
+        return false;
+
+    if (!FindOwnSummon(player, cameraEntry, 200.0f).IsEmpty())
+        return false;
+
+    CloseGossipMenuFor(player);
+    StartScene(player, questId, cameraEntry, summonSpellId);
+    return true;
+}
+
+// The scene cameras. Summoned on the player by the scene's summon spell, whose ride aura seats the player (hidden:
+// spell_hillsbrad_scene_camera_ride; with the scene's phase). The camera waits for its rider, plays the scene, then lets the
+// player out and casts the end spell on the player: it puts the player back at the quest giver and completes the quest. Getting
+// out early ends the scene the same way (the end spells are named Cancel Cinematic), so the quest is never left open by a scene
+// that went wrong.
+class npc_hillsbrad_scene_camera : public VehicleAI
+{
+public:
+    npc_hillsbrad_scene_camera(Creature* creature, uint32 questId, uint32 endSpellId, float speedRate) : VehicleAI(creature),
+        _questId(questId), _endSpellId(endSpellId), _speedRate(speedRate), _boardTries(0), _started(false), _done(false), _changingSeat(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (Player* player = summoner->ToPlayer())
+            _playerGUID = player->GetGUID();
+
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NOT_SELECTABLE);
+        me->SetCanFly(true);
+        me->SetDisableGravity(true);
+        me->SetSpeed(MOVE_RUN, _speedRate);
+        me->SetSpeed(MOVE_FLIGHT, _speedRate);
+
+        _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
+
+        // The summon spot is on the ground: the view would start under it where the ground rises
+        if (_liftHeight > 0.0f)
+            FlyPath(POINT_CAMERA_LIFT, { { me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + _liftHeight } });
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (apply || _changingSeat || passenger->GetGUID() != _playerGUID)
+            return;
+
+        // The player got out early, also before the scene started: Finish sets the player down at the quest giver
+        if (!_done)
+            Finish();
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != EFFECT_MOTION_TYPE && type != POINT_MOTION_TYPE)
+            return;
+
+        if (_done)
+            return;
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+            Arrived(pointId, player);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        if (_done)
+            return;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld())
+        {
+            // Logged out: the quest giver plays the scene again (ReplayScene)
+            _done = true;
+            DespawnActors();
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        if (_started && player->GetVehicleBase() != me)
+        {
+            Finish();
+            return;
+        }
+
+        _events.Update(diff);
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            if (eventId == EVENT_CAMERA_WAIT_FOR_RIDER)
+            {
+                if (player->GetVehicleBase() == me)
+                {
+                    _started = true;
+                    Start(player);
+                }
+                else if (++_boardTries < 10)
+                    _events.ScheduleEvent(EVENT_CAMERA_WAIT_FOR_RIDER, 500ms);
+                else
+                {
+                    // The player never got in: complete the quest anyway (ours), the chain must not stop here. The ride
+                    // aura's hiding and phase may still be on the player without the seat: take them off. Finish casts the
+                    // end spell, which sets the player down at the quest giver (where the quest was accepted) and credits
+                    // the quest, or credits it directly
+                    RemoveRideAura(player);
+                    Finish();
+                }
+                return;
+            }
+
+            SceneEvent(eventId, player);
+            if (_done)
+                return;
+        }
+    }
+
+protected:
+    virtual void Start(Player* player) = 0;
+    virtual void SceneEvent(uint32 /*eventId*/, Player* /*player*/) { }
+    virtual void Arrived(uint32 /*pointId*/, Player* /*player*/) { }
+
+    // Flies the camera from where it is through the given points
+    void FlyPath(uint32 pointId, std::initializer_list<Position> points)
+    {
+        std::vector<Position> path;
+        path.push_back(me->GetPosition());
+        for (Position const& point : points)
+            path.push_back(point);
+
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(pointId, path.data(), path.size(), false, true);
+    }
+
+    // Flies the camera from where it is along one curve that rounds off the corners of the given points (a clamped uniform cubic
+    // B-spline: it starts here, ends on the last point and passes inside the others), sent as points `step` yards apart. The
+    // client runs a smooth spline at an even pace per segment and turns the vehicle along it, so a spline through a few far-apart,
+    // unevenly spaced points speeds up and slows down at every point where the spacing changes and swings round each corner;
+    // evenly spaced points on a curve without corners fly at one speed and turn steadily. Where the view looks is up to the seat's
+    // CameraMode: a mode locked on a world point (lockedTargetOffsetBase 2: March of the Stormpike, Stormpike Apocalypse) stays on
+    // that point whichever way the vehicle turns.
+    void FlyCurve(uint32 pointId, std::initializer_list<Position> corners, float step)
+    {
+        Position const here = me->GetPosition();
+        std::vector<Position> controls(3, here);
+        controls.insert(controls.end(), corners.begin(), corners.end());
+        Position const last = controls.back();
+        controls.push_back(last);
+        controls.push_back(last);
+
+        uint32 const subSteps = 16;
+        std::vector<Position> dense;
+        dense.push_back(here);
+        for (size_t i = 0; i + 3 < controls.size(); ++i)
+        {
+            Position const& c0 = controls[i];
+            Position const& c1 = controls[i + 1];
+            Position const& c2 = controls[i + 2];
+            Position const& c3 = controls[i + 3];
+            for (uint32 k = 1; k <= subSteps; ++k)
+            {
+                float t = float(k) / subSteps;
+                float b0 = (1.0f - t) * (1.0f - t) * (1.0f - t) / 6.0f;
+                float b1 = (3.0f * t * t * t - 6.0f * t * t + 4.0f) / 6.0f;
+                float b2 = (-3.0f * t * t * t + 3.0f * t * t + 3.0f * t + 1.0f) / 6.0f;
+                float b3 = t * t * t / 6.0f;
+                dense.emplace_back(
+                    b0 * c0.GetPositionX() + b1 * c1.GetPositionX() + b2 * c2.GetPositionX() + b3 * c3.GetPositionX(),
+                    b0 * c0.GetPositionY() + b1 * c1.GetPositionY() + b2 * c2.GetPositionY() + b3 * c3.GetPositionY(),
+                    b0 * c0.GetPositionZ() + b1 * c1.GetPositionZ() + b2 * c2.GetPositionZ() + b3 * c3.GetPositionZ());
+            }
+        }
+
+        float length = 0.0f;
+        for (size_t i = 0; i + 1 < dense.size(); ++i)
+            length += dense[i].GetExactDist(dense[i + 1]);
+
+        size_t const count = std::max<size_t>(1, size_t(std::lround(length / step)));
+        float const spacing = length / count;
+
+        std::vector<Position> path;
+        path.push_back(here);
+        float walked = 0.0f;
+        float next = spacing;
+        for (size_t i = 0; i + 1 < dense.size(); ++i)
+        {
+            Position const& a = dense[i];
+            Position const& b = dense[i + 1];
+            float segment = a.GetExactDist(b);
+            while (segment > 0.0f && walked + segment >= next && path.size() < count)
+            {
+                float f = (next - walked) / segment;
+                path.emplace_back(a.GetPositionX() + (b.GetPositionX() - a.GetPositionX()) * f,
+                    a.GetPositionY() + (b.GetPositionY() - a.GetPositionY()) * f,
+                    a.GetPositionZ() + (b.GetPositionZ() - a.GetPositionZ()) * f);
+                next += spacing;
+            }
+            walked += segment;
+        }
+        path.push_back(last);
+
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(pointId, path.data(), path.size(), false, true);
+    }
+
+    void FaceTo(float x, float y)
+    {
+        me->SetFacingTo(me->GetAngle(x, y));
+    }
+
+    // Moves the rider to another seat of the camera, whose CameraMode the client then uses. Unit::ChangeSeat takes the passenger
+    // off (PassengerBoarded with apply false) and seats them again within the call: that is no early exit.
+    void ChangeRiderSeat(Player* player, int8 seatId)
+    {
+        _changingSeat = true;
+        player->ChangeSeat(seatId);
+        _changingSeat = false;
+
+        // RemovePassenger's Parachute for a rider with MOVEMENTFLAG_FLYING (flight form: boarding only drops mounts); nobody got out
+        player->RemoveAurasDueToSpell(VEHICLE_SPELL_PARACHUTE);
+    }
+
+    // An actor of the scene: the player's private summon, passive and out of reach
+    Creature* SummonActor(uint32 entry, Position const& pos)
+    {
+        Creature* actor = me->SummonCreature(entry, pos, TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, _playerGUID);
+        if (!actor)
+            return nullptr;
+
+        actor->SetReactState(REACT_PASSIVE);
+        actor->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        actor->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+        actor->SetHomePosition(pos);
+        _actorGUIDs.push_back(actor->GetGUID());
+        return actor;
+    }
+
+    Creature* GetActor(ObjectGuid const& guid) const
+    {
+        return ObjectAccessor::GetCreature(*me, guid);
+    }
+
+    // The ride aura the summon spell seats the player with (its effect value), on the player
+    void RemoveRideAura(Player* player)
+    {
+        if (SpellInfo const* summon = sSpellMgr->GetSpellInfo(me->GetUInt32Value(UNIT_FIELD_CREATED_BY_SPELL)))
+            if (uint32 ride = uint32(summon->Effects[EFFECT_0].CalcValue()))
+                player->RemoveAurasDueToSpell(ride);
+    }
+
+    void DespawnActors()
+    {
+        for (ObjectGuid const& guid : _actorGUIDs)
+            if (Creature* actor = ObjectAccessor::GetCreature(*me, guid))
+                actor->DespawnOrUnsummon();
+        _actorGUIDs.clear();
+    }
+
+    // Lets the player out, then casts the end spell (a teleport and the quest credit) once getting off is over. The client only
+    // gives the player back their own view once it has played the exit's jump: a teleport sent in the same tick (the end spell
+    // cast on the player still in the seat: Player::TeleportTo exits the vehicle and teleports at once) cut the jump off and
+    // left the view stuck at the camera's last spot. From PassengerBoarded the teleport would run before the jump, which would
+    // carry the player back to the camera (as in What Tomorrow Brings). Until the teleport the player hovers where the camera
+    // let go (gravity off; getting off gives gravity back, and the player fell until the teleport came). Not rooted: rooting
+    // stops the exit's jump with a stop spline in the same tick, just like the teleport. If the end spell fails, the player is
+    // sent to its spot directly rather than dropped. A player who got out early is not held.
+    void Finish()
+    {
+        if (_done)
+            return;
+
+        _done = true;
+        _events.Reset();
+        DespawnActors();
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            bool const hover = player->GetVehicleBase() == me;
+            if (hover)
+            {
+                player->ExitVehicle();
+                player->SetDisableGravity(true);
+            }
+
+            uint32 questId = _questId;
+            uint32 endSpellId = _endSpellId;
+            ReturnHook hook = _returnHook;
+            player->m_Events.AddLambdaEventAtOffset([player, questId, endSpellId, hook, hover]()
+            {
+                if (!player->IsInWorld())
+                    return;
+
+                if (!player->GetVehicle())
+                    player->CastSpell(player, endSpellId, true);
+
+                if (hover && !player->GetVehicle() && !player->IsBeingTeleported())
+                    if (SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(endSpellId, EFFECT_0))
+                        if (dest->target_mapId == player->GetMapId())
+                            player->NearTeleportTo(dest->target_X, dest->target_Y, dest->target_Z, dest->target_Orientation);
+
+                // The end spell's QUEST_COMPLETE, done directly if the spell could not hit (still on a vehicle, spell failed)
+                if (player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
+                    player->AreaExploredOrEventHappens(questId);
+
+                if (hook)
+                    RunReturnHook(player, hook, endSpellId, 20);
+
+                // Once set down: a teleport cast in the player's own update only goes out at the end of it. The enable is always
+                // sent, and once more a little later: the player's own movement packets replace the server's flags
+                // (WorldSession::HandleMovementOpcode), so one sent before the client took the hold clears the server's
+                // MOVEMENTFLAG_DISABLE_GRAVITY, Unit::SetDisableGravity(false) then sends nothing and the client keeps the hold
+                // (no jumping, walking down a slope keeps the height).
+                if (hover)
+                    for (uint32 delay : { 100, 1500 })
+                        player->m_Events.AddLambdaEventAtOffset([player]()
+                        {
+                            if (!player->IsInWorld() || player->GetVehicle() || player->IsInFlight() || player->HasAuraType(SPELL_AURA_FLY)
+                                || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+                                return;
+
+                            if (!player->SetDisableGravity(false))
+                            {
+                                TC_LOG_DEBUG("scripts", "npc_hillsbrad_scene_camera: %s had no MOVEMENTFLAG_DISABLE_GRAVITY left on the server, sending the gravity enable anyway",
+                                    player->GetName().c_str());
+                                player->SetDisableGravity(false, true);
+                            }
+                        }, delay);
+            }, 300);
+        }
+
+        me->DespawnOrUnsummon(500);
+    }
+
+    typedef void (*ReturnHook)(Player*);
+
+    // Runs the hook once the end spell's teleport is over and the player is at its spot. The teleport cast in Finish's lambda is
+    // only stored at that point (Player::TeleportTo in Unit::Update), and the player arrives when the client acknowledges it, so
+    // the check repeats every 250 ms, `tries` times at most. A player who never arrives misses the hook.
+    static void RunReturnHook(Player* player, ReturnHook hook, uint32 endSpellId, uint32 tries)
+    {
+        player->m_Events.AddLambdaEventAtOffset([player, hook, endSpellId, tries]()
+        {
+            if (!player->IsInWorld())
+                return;
+
+            SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(endSpellId, EFFECT_0);
+            if (!player->IsBeingTeleported() && (!dest || player->GetExactDist2d(dest->target_X, dest->target_Y) < 10.0f))
+                hook(player);
+            else if (tries > 1)
+                RunReturnHook(player, hook, endSpellId, tries - 1);
+        }, 250);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ReturnHook _returnHook = nullptr;
+    float _liftHeight = 0.0f;
+
+private:
+    std::vector<ObjectGuid> _actorGUIDs;
+    uint32 _questId;
+    uint32 _endSpellId;
+    float _speedRate;
+    uint32 _boardTries;
+    bool _started;
+    bool _done;
+    bool _changingSeat;
+};
+
+// A passive actor of a scene: the camera moves and speaks for it
+struct npc_hillsbrad_scene_actor : public ScriptedAI
+{
+    npc_hillsbrad_scene_actor(Creature* creature) : ScriptedAI(creature) { }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
+
+    // Drek'thar's Wheelchair 48971 (Matters of Loyalty): its wheel seats 1 and 2 (VehicleSeat 9200/9226) pitch the passenger
+    // 90 degrees, which stands Drek'thar's Wheelchair Wheel up facing the way the chair faces. The client turns a seated
+    // passenger by its own transport-relative facing after the seat's pitch (CVehiclePassenger_C::ComputeModelTransform), so a
+    // quarter turn to the outside lays each wheel along the chair's side.
+    void GetPassengerEnterPosition(Unit* /*passenger*/, int8 seatId, Position& pos) override
+    {
+        if (me->GetEntry() == 48971 && (seatId == 1 || seatId == 2))
+            pos.SetOrientation(seatId == 1 ? float(M_PI) / 2.0f : float(M_PI) * 1.5f);
+    }
+};
+
+} // namespace
+
+/*######
+## No One Here Gets Out Alive (28192)
+######*/
+
+enum NoOneHereGetsOutAlive
+{
+    QUEST_NO_ONE_HERE_GETS_OUT_ALIVE            = 28192,
+
+    NPC_SLUDGE_FIELDS_CAMERA                    = 47928,
+
+    SPELL_SUMMON_SLUDGE_FIELDS_CAMERA           = 89144,
+    SPELL_TELEPORT_TO_SLUDGE_FIELDS_LAB         = 89148,
+
+    TALK_SLUDGE_CAMERA_TROUBLE                  = 0,
+
+    POINT_SLUDGE_RISE                           = 1,
+    POINT_SLUDGE_TOUR                           = 2,
+
+    EVENT_SLUDGE_TOUR                           = EVENT_SCENE_FIRST,
+    EVENT_SLUDGE_END
+};
+
+// 47781 - Warden Stillwater
+// Accepting No One Here Gets Out Alive starts the camera tour (Summon Sludge Fields Camera, cast on the player).
+struct npc_hillsbrad_warden_stillwater_sludge : public ScriptedAI
+{
+    npc_hillsbrad_warden_stillwater_sludge(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_NO_ONE_HERE_GETS_OUT_ALIVE)
+            StartScene(player, QUEST_NO_ONE_HERE_GETS_OUT_ALIVE, NPC_SLUDGE_FIELDS_CAMERA, SPELL_SUMMON_SLUDGE_FIELDS_CAMERA);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        return ReplayScene(player, QUEST_NO_ONE_HERE_GETS_OUT_ALIVE, NPC_SLUDGE_FIELDS_CAMERA, SPELL_SUMMON_SLUDGE_FIELDS_CAMERA);
+    }
+};
+
+// 47928 - Sludge Fields Camera
+// Summoned in front of Stillwater (spell_target_position of 89144) with the player in it and phase 326 "The Sludge Fields"
+// (Sludge Field Camera). "There's trouble at the Sludge Fields...", then the camera flies once around the fields, over the
+// infected laborers and the guards' barricades, and comes back to Stillwater; Teleport to Sludge Fields Lab sets the player
+// down in front of him and completes the quest. The path is ours: the camera lifts off at once (the summon spot is on the
+// ground, a little below the ground around it, so the view started under it), then flies one curve round the fields and back,
+// 9 yd or more above the ground and the silos (checked against the extracted maps and vmaps), arriving facing Stillwater.
+struct npc_hillsbrad_sludge_fields_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_sludge_fields_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_NO_ONE_HERE_GETS_OUT_ALIVE, SPELL_TELEPORT_TO_SLUDGE_FIELDS_LAB, 1.5f) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        npc_hillsbrad_scene_camera::IsSummonedBy(summoner);
+
+        // 7 yd up, leaning towards the fields, as the player is seated
+        FlyPath(POINT_SLUDGE_RISE, { { -500.35f, 82.8f, 63.0f } });
+    }
+
+    void Start(Player* player) override
+    {
+        Talk(TALK_SLUDGE_CAMERA_TROUBLE, player);
+        _events.ScheduleEvent(EVENT_SLUDGE_TOUR, 3s);
+    }
+
+    void SceneEvent(uint32 eventId, Player* /*player*/) override
+    {
+        switch (eventId)
+        {
+            case EVENT_SLUDGE_TOUR:
+                // Corners the curve rounds off; it ends on Stillwater's spot
+                FlyCurve(POINT_SLUDGE_TOUR,
+                {
+                    { -495.0f,   60.0f,  72.0f },
+                    { -475.0f,   10.0f,  89.0f },
+                    { -462.0f,  -50.0f,  94.0f },
+                    { -444.0f, -112.0f, 101.0f },
+                    { -503.0f, -152.0f,  97.0f },
+                    { -568.0f,  -84.0f,  93.0f },
+                    { -564.0f,   22.0f,  82.0f },
+                    { -530.0f,   30.0f,  76.0f },
+                    { -508.0f,   45.0f,  69.0f },
+                    { -503.0f,   68.0f,  64.0f }
+                }, 6.0f);
+                break;
+            case EVENT_SLUDGE_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* /*player*/) override
+    {
+        if (pointId != POINT_SLUDGE_TOUR)
+            return;
+
+        // Stillwater's spot: the curve arrives within a few degrees of facing him
+        FaceTo(-500.719f, 90.8021f);
+        _events.ScheduleEvent(EVENT_SLUDGE_END, 3s);
+    }
+};
+
+/*######
+## Lydon and Johnny Awesome go with the player (Freedom for Lydon to A Blight Upon the Land)
+######*/
+
+enum SludgeFieldsCompanions
+{
+    QUEST_FREEDOM_FOR_LYDON                     = 28209,
+    QUEST_DO_IT_FOR_TWINKLES                    = 28231,
+    QUEST_A_BLIGHT_UPON_THE_LAND                = 28237,
+
+    NPC_MASTER_APOTHECARY_LYDON                 = 48020,
+    NPC_JOHNNY_AWESOME                          = 48021,
+    NPC_TWINKLES                                = 47870,
+
+    SPELL_SLUDGE_FIELD_SUMMON_CONTROLLER        = 89292,
+    SPELL_SUMMON_LYDON                          = 89295,
+    SPELL_SUMMON_JOHNNY                         = 89296,
+
+    // Johnny Awesome 48021
+    TALK_JOHNNY_TAKE_ME_WITH_YOU                = 0,  // 48285
+    TALK_JOHNNY_TWINKLES                        = 1,  // 48283
+    TALK_JOHNNY_THEY_WILL_PAY                   = 2,  // 48284
+
+    // Warden Stillwater's intro (A Blight Upon the Land) holds the companions beside the player and lets them go again
+    ACTION_COMPANION_HOLD                       = 1,
+    ACTION_COMPANION_RELEASE                    = 2,
+
+    EVENT_COMPANION_CHECK                       = 1,
+    EVENT_COMPANION_THEY_WILL_PAY               = 2,
+
+    SLUDGE_FIELDS_COMPANION_COUNT               = 2
+};
+
+uint32 const SludgeFieldsCompanionEntries[SLUDGE_FIELDS_COMPANION_COUNT] = { NPC_MASTER_APOTHECARY_LYDON, NPC_JOHNNY_AWESOME };
+uint32 const SludgeFieldsCompanionSummonSpells[SLUDGE_FIELDS_COMPANION_COUNT] = { SPELL_SUMMON_LYDON, SPELL_SUMMON_JOHNNY };
+
+// Lydon on the player's left, Johnny on the right (ours): the two summon spells share one destination, so both would otherwise
+// take the same follow angle and stand inside each other with overlapping quest clicks (as the Battlefront trio in Silverpine)
+float const SludgeFieldsCompanionFollowAngles[SLUDGE_FIELDS_COMPANION_COUNT] = { float(M_PI / 2), float(M_PI * 3 / 2) };
+
+// How close Johnny has to come to Twinkles' grave to see her (ours)
+float const TwinklesSightRange = 12.0f;
+
+namespace
+{
+
+// An unsummoned companion stays in the owner's list until the map removes it (TempSummon::UnSummon only queues it)
+bool IsLiveSludgeFieldsCompanion(Creature* companion, Player* player)
+{
+    return companion->IsInWorld() && !companion->IsDestroyedObject() && companion->IsAlive() && companion->IsInMap(player);
+}
+
+// The player's own living companion of an entry (Lydon and Johnny are the player's guardians, not personal summons)
+Creature* GetSludgeFieldsCompanion(Player* player, uint32 entry)
+{
+    std::list<Creature*> companions;
+    player->GetAllMinionsByEntry(companions, entry);
+    for (Creature* companion : companions)
+        if (IsLiveSludgeFieldsCompanion(companion, player))
+            return companion;
+    return nullptr;
+}
+
+// Both go with the player from Freedom for Lydon until A Blight Upon the Land is turned in. Lydon leaves once Stillwater's
+// head is taken (the quest complete): then the static Lydon 47900 waits by Stillwater's spot to take it (phase 333; Wowhead
+// comment on 47900: "The other follows you around and does the fighting. Then this one reappears again after Stillwater is
+// killed"). Do it for Twinkles runs beside that chain and only Johnny ends it (both TDBs, Wowhead), and the farm's Johnny
+// 47869 still offers it after A Blight Upon the Land: Johnny also stays while it is in the log, whichever order the two are
+// done in (ours).
+bool WantsSludgeFieldsCompanion(Player* player, uint32 entry)
+{
+    if (player->GetQuestStatus(QUEST_FREEDOM_FOR_LYDON) == QUEST_STATUS_REWARDED)
+    {
+        QuestStatus blight = player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND);
+        if (blight != QUEST_STATUS_REWARDED && (entry != NPC_MASTER_APOTHECARY_LYDON || blight != QUEST_STATUS_COMPLETE))
+            return true;
+    }
+
+    if (entry != NPC_JOHNNY_AWESOME)
+        return false;
+
+    QuestStatus twinkles = player->GetQuestStatus(QUEST_DO_IT_FOR_TWINKLES);
+    return twinkles == QUEST_STATUS_INCOMPLETE || twinkles == QUEST_STATUS_COMPLETE;
+}
+
+// One of each that the player's quests call for: a companion that is dead or was left far behind is replaced (after a login,
+// a death, a flight or a teleport the player has none), one that is no longer called for leaves
+void SummonSludgeFieldsCompanions(Player* player)
+{
+    if (!player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->GetVehicle())
+        return;
+
+    for (uint8 i = 0; i < SLUDGE_FIELDS_COMPANION_COUNT; ++i)
+    {
+        bool const wanted = WantsSludgeFieldsCompanion(player, SludgeFieldsCompanionEntries[i]);
+
+        std::list<Creature*> companions;
+        player->GetAllMinionsByEntry(companions, SludgeFieldsCompanionEntries[i]);
+
+        bool found = false;
+        for (Creature* companion : companions)
+        {
+            if (companion->IsDestroyedObject())
+                continue;
+            if (wanted && !found && IsLiveSludgeFieldsCompanion(companion, player) && companion->IsWithinDist(player, 100.0f))
+                found = true;
+            else
+                companion->ToTempSummon()->UnSummon();
+        }
+
+        if (!wanted)
+            player->RemoveAurasDueToSpell(SludgeFieldsCompanionSummonSpells[i]);
+
+        if (found || !wanted)
+            continue;
+
+        player->CastSpell(player, SludgeFieldsCompanionSummonSpells[i], true);
+
+        if (Creature* companion = GetSludgeFieldsCompanion(player, SludgeFieldsCompanionEntries[i]))
+        {
+            if (companion->HasUnitTypeMask(UNIT_MASK_MINION))
+                static_cast<Minion*>(companion)->SetFollowAngle(SludgeFieldsCompanionFollowAngles[i]);
+
+            float x, y, z;
+            player->GetClosePoint(x, y, z, companion->GetObjectSize(), PET_FOLLOW_DIST, SludgeFieldsCompanionFollowAngles[i]);
+            companion->NearTeleportTo(x, y, z, player->GetOrientation());
+            companion->GetMotionMaster()->Clear();
+            companion->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, SludgeFieldsCompanionFollowAngles[i]);
+        }
+    }
+}
+
+void RemoveSludgeFieldsCompanions(Unit* owner)
+{
+    for (uint8 i = 0; i < SLUDGE_FIELDS_COMPANION_COUNT; ++i)
+    {
+        owner->RemoveAllMinionsByEntry(SludgeFieldsCompanionEntries[i]);
+        owner->RemoveAurasDueToSpell(SludgeFieldsCompanionSummonSpells[i]);
+    }
+}
+
+} // namespace
+
+// 89292 - Sludge Field Summon Controller
+// Lydon and Johnny Awesome go with the player from Freedom for Lydon until A Blight Upon the Land is turned in, Lydon only
+// until Stillwater's head is taken (warcraft.wiki.gg, Freedom for Lydon: "Upon completion, Lydon and Johnny accompany the player"; Wowhead comments on
+// Protocol and A Blight Upon the Land), Johnny also while Do it for Twinkles is in the log (WantsSludgeFieldsCompanion).
+// The controller is the player's aura in the Sludge Fields (its casting requirements: area group 2831 = area 286; the
+// quest bounds are spell_area's). Summon Lydon and Summon Johnny (89295, 89296) make them the player's guardians
+// (SummonProperties 3045: ally, without the personal-spawn flag, so other players see them too) and they follow and fight
+// beside the player. Its periodic trigger, Lydon/Johnny Broadcast (89293, every 60 s), has no known effect; instead the
+// aura checks every 5 s for a missing companion (ours, as Battlefront Summon Master Aura in Silverpine). They leave with
+// the aura. Its first effect's amount records that Johnny has mourned Twinkles, so he does it once per aura, not per summon.
+class spell_hillsbrad_sludge_field_summon_controller : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_sludge_field_summon_controller);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SUMMON_LYDON, SPELL_SUMMON_JOHNNY });
+    }
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        // At login the aura comes back before the player is in the world: the first periodic tick summons them then
+        if (Player* player = GetTarget()->ToPlayer())
+            SummonSludgeFieldsCompanions(player);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        RemoveSludgeFieldsCompanions(GetTarget());
+    }
+
+    void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+    {
+        isPeriodic = true;
+        amplitude = 5 * IN_MILLISECONDS;
+    }
+
+    void OnPeriodic(AuraEffect const* /*aurEff*/)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        // spell_area takes the aura away when the quests change too; this is the fallback
+        if (!WantsSludgeFieldsCompanion(player, NPC_MASTER_APOTHECARY_LYDON)
+            && !WantsSludgeFieldsCompanion(player, NPC_JOHNNY_AWESOME))
+        {
+            Remove();
+            return;
+        }
+
+        SummonSludgeFieldsCompanions(player);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_sludge_field_summon_controller::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_sludge_field_summon_controller::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_hillsbrad_sludge_field_summon_controller::CalcPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_hillsbrad_sludge_field_summon_controller::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+};
+
+// 48020 - Master Apothecary Lydon, 48021 - Johnny Awesome (the player's companions)
+// They follow the player, help in every fight the player is in, and start and end their quests (Protocol, Burnside Must Fall, A
+// Blight Upon the Land; Do it for Twinkles). Johnny brought to Twinkles' grave: "TWINKLES! TWINKLES! NOOOOO!!" (with his scream,
+// its sound), then "I won't let them get away with this, Twinkles. They will pay! They will all pay!" (Wowhead comments on Do it
+// for Twinkles; the spells Johnny & Twinkles 89364/89365 send him the trigger on retail, the range is ours). No combat spells
+// are known for either.
+struct npc_hillsbrad_sludge_fields_companion : public ScriptedAI
+{
+    npc_hillsbrad_sludge_fields_companion(Creature* creature) : ScriptedAI(creature), _held(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _ownerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_DEFENSIVE);
+        me->GetMotionMaster()->MoveFollow(summoner, PET_FOLLOW_DIST, me->GetFollowAngle());
+        _events.ScheduleEvent(EVENT_COMPANION_CHECK, 1s);
+    }
+
+    void Reset() override
+    {
+        me->SetReactState(_held ? REACT_PASSIVE : REACT_DEFENSIVE);
+    }
+
+    void DoAction(int32 action) override
+    {
+        switch (action)
+        {
+            case ACTION_COMPANION_HOLD:
+                _held = true;
+                me->CombatStop(true);
+                me->SetReactState(REACT_PASSIVE);
+                me->GetMotionMaster()->Clear();
+                break;
+            case ACTION_COMPANION_RELEASE:
+                if (!_held)
+                    break;
+                _held = false;
+                me->SetReactState(REACT_DEFENSIVE);
+                if (Player* owner = GetOwner())
+                {
+                    me->GetMotionMaster()->Clear();
+                    me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void OwnerAttackedBy(Unit* attacker) override
+    {
+        HelpOwner(attacker);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_COMPANION_CHECK:
+                    CheckTwinkles();
+                    _events.ScheduleEvent(EVENT_COMPANION_CHECK, 1s);
+                    break;
+                case EVENT_COMPANION_THEY_WILL_PAY:
+                    Talk(TALK_JOHNNY_THEY_WILL_PAY, GetOwner());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (_held)
+            return;
+
+        // Guardians hear OwnerAttackedBy but not OwnerAttacked (only the pet does): join the player's own attacks from here
+        if (!me->GetVictim())
+            if (Player* owner = GetOwner())
+            {
+                if (Unit* target = owner->GetVictim())
+                    HelpOwner(target);
+                else if (!owner->getAttackers().empty())
+                    HelpOwner(*owner->getAttackers().begin());
+            }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    Player* GetOwner() const
+    {
+        return ObjectAccessor::GetPlayer(*me, _ownerGUID);
+    }
+
+    void HelpOwner(Unit* target)
+    {
+        if (!_held && target && !me->GetVictim() && me->IsValidAttackTarget(target))
+            AttackStart(target);
+    }
+
+    void CheckTwinkles()
+    {
+        if (me->GetEntry() != NPC_JOHNNY_AWESOME || _held || me->IsInCombat())
+            return;
+
+        Player* owner = GetOwner();
+        if (!owner || owner->GetQuestStatus(QUEST_DO_IT_FOR_TWINKLES) == QUEST_STATUS_REWARDED)
+            return;
+
+        // Once per controller aura (its amount), not once per summon: a re-summoned Johnny does not mourn her again
+        AuraEffect* controller = owner->GetAuraEffect(SPELL_SLUDGE_FIELD_SUMMON_CONTROLLER, EFFECT_0);
+        if (!controller || controller->GetAmount() || !me->FindNearestCreature(NPC_TWINKLES, TwinklesSightRange))
+            return;
+
+        controller->SetAmount(1);
+        Talk(TALK_JOHNNY_TWINKLES, owner);
+        _events.ScheduleEvent(EVENT_COMPANION_THEY_WILL_PAY, 4s);
+    }
+
+    EventMap _events;
+    ObjectGuid _ownerGUID;
+    bool _held;
+};
+
+// 47900 - Master Apothecary Lydon (in his cage until Protocol is taken, phase 196; by Stillwater's spot once his head is
+// taken, phase 333)
+// Turning in Freedom for Lydon gives the player the Sludge Field Summon Controller (spell_area, re-checked as the quest is
+// rewarded), and Johnny begs to be taken along (warcraft.wiki.gg, Freedom for Lydon: "You're not leaving me to rot in this
+// place! Take me with you!"; said by the companion, as the farm's Johnny 47869 stays where he is). He also ends A Blight Upon
+// the Land, after which only a Johnny still owed Do it for Twinkles stays.
+struct npc_hillsbrad_caged_lydon : public ScriptedAI
+{
+    npc_hillsbrad_caged_lydon(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
+    {
+        if (!player->HasAura(SPELL_SLUDGE_FIELD_SUMMON_CONTROLLER))
+            return;
+
+        // A Blight Upon the Land turned in with Do it for Twinkles still in the log: Lydon leaves now, Johnny stays
+        if (quest->GetQuestId() == QUEST_A_BLIGHT_UPON_THE_LAND)
+        {
+            SummonSludgeFieldsCompanions(player);
+            return;
+        }
+
+        if (quest->GetQuestId() != QUEST_FREEDOM_FOR_LYDON)
+            return;
+
+        SummonSludgeFieldsCompanions(player);
+        if (Creature* johnny = GetSludgeFieldsCompanion(player, NPC_JOHNNY_AWESOME))
+            johnny->AI()->Talk(TALK_JOHNNY_TAKE_ME_WITH_YOU, player);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
+/*######
+## A Blight Upon the Land (28237)
+######*/
+
+enum ABlightUponTheLand
+{
+    NPC_FLESH_SHAPER_ARNAULD                    = 48081,
+    NPC_SLUDGE_GUARD                            = 48083,
+
+    SPELL_PLAGUE_SLIME                          = 89461,
+    SPELL_PLAGUE_BARREL                         = 89463,
+    SPELL_SMASH                                 = 89450,
+
+    // Warden Stillwater 48103, his new form: the Wight Scientist model at three times the size
+    DISPLAY_STILLWATER_NEW_FORM                 = 30993,
+
+    TALK_STILLWATER_LYDON_ALIVE                 = 0,
+    TALK_STILLWATER_ALLEGIANCES                 = 1,
+    TALK_STILLWATER_JENNY                       = 2,
+    TALK_STILLWATER_THREAT                      = 3,
+    TALK_STILLWATER_EVOLUTION                   = 4,
+    TALK_STILLWATER_KILL_THEM_ALL               = 5,
+    TALK_STILLWATER_NEW_FORM                    = 6,
+
+    TALK_LYDON_SENTENCE                         = 10,
+    TALK_LYDON_TRAITOROUS_SCUM                  = 11,
+    TALK_LYDON_KNEEL                            = 12,
+
+    // SmartAI of Arnauld and the Sludge Guards (2026_10_28_41): turn hostile and attack the closest player
+    DATA_FOLLOWERS_ATTACK                       = 1,
+
+    EVENT_BLIGHT_INTRO                          = 1,
+    EVENT_BLIGHT_INTRO_LAST                     = 9,
+    EVENT_BLIGHT_PLAGUE_BARREL                  = 20,
+    EVENT_BLIGHT_PLAGUE_SLIME                   = 21,
+    EVENT_BLIGHT_SMASH                          = 22
+};
+
+float const StillwaterIntroRange = 25.0f;
+float const StillwaterIntroLeaveRange = 60.0f;
+
+// 48080 - Warden Stillwater
+// Phase 332 shows him with Flesh-Shaper Arnauld and his Sludge Guards to players on A Blight Upon the Land. When one comes
+// near, the player's companions Lydon and Johnny Awesome (whom Stillwater calls Jenny) step up beside the player, Lydon passes
+// the sentence and Stillwater's people attack, and the companions fight with the player (the dialogue in the order of the
+// wiki's notes; where they stand is ours). The blow that would kill Stillwater makes
+// him yell "Stand before my new form and tremble!" and take his new form (48103's model, and its health: HealthModifier 10
+// against his 3 in the Cataclysm Classic TDB); SMASH! then throws the players back and kills his followers (its instakill
+// effect, given the followers by conditions). He drops his head as before (his own loot).
+struct npc_hillsbrad_warden_stillwater_blight : public ScriptedAI
+{
+    npc_hillsbrad_warden_stillwater_blight(Creature* creature) : ScriptedAI(creature), _introStarted(false), _newForm(false),
+        _baseMaxHealth(0), _introCheckTimer(1000) { }
+
+    void Reset() override
+    {
+        _events.Reset();
+        // Also on respawn (Creature::Respawn resets the AI): the intro's hostile faction is not kept past death or evade
+        me->SetFaction(me->GetCreatureTemplate()->faction);
+        if (_newForm)
+        {
+            _newForm = false;
+            me->DeMorph();
+            if (_baseMaxHealth)
+                me->SetMaxHealth(_baseMaxHealth);
+            me->SetFullHealth();
+        }
+    }
+
+    void MoveInLineOfSight(Unit* who) override
+    {
+        ScriptedAI::MoveInLineOfSight(who);
+
+        if (Player* player = who->ToPlayer())
+            TryStartIntro(player);
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        _introStarted = false;
+        me->SetFaction(me->GetCreatureTemplate()->faction);
+        ReleaseWitnesses();
+        ScriptedAI::EnterEvadeMode(why);
+    }
+
+    void EnterCombat(Unit* /*who*/) override
+    {
+        // Cataclysm Classic TDB SmartAI: Plague Barrel 5-8 s, then every 12-15 s; Plague Slime after 10 s, then every 18-22 s
+        _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_BARREL, 5s, 8s);
+        _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_SLIME, 10s);
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+    {
+        if (_newForm || damage < me->GetHealth())
+            return;
+
+        damage = me->GetHealth() - 1;
+        _newForm = true;
+        _baseMaxHealth = me->GetMaxHealth();
+
+        Talk(TALK_STILLWATER_NEW_FORM);
+        me->SetDisplayId(DISPLAY_STILLWATER_NEW_FORM);
+        me->SetMaxHealth(_baseMaxHealth * 10 / 3);
+        me->SetFullHealth();
+        me->CastSpell(me, SPELL_SMASH, true);
+
+        // Cataclysm Classic TDB SmartAI: SMASH! on close every 15-25 s
+        _events.ScheduleEvent(EVENT_BLIGHT_SMASH, 15s, 25s);
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        // He respawns friendly, for the next player's intro (Respawn keeps the faction). The companions stay with the player
+        // until his head is taken; then Lydon leaves for the static Lydon 47900 here (Sludge Field Summon Controller).
+        _introStarted = false;
+        _events.Reset();
+        me->SetFaction(me->GetCreatureTemplate()->faction);
+        ReleaseWitnesses();
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+
+        if (!me->IsInCombat())
+        {
+            // A player standing still is not seen again: look for one here as well (e.g. once the controller brought Lydon back)
+            if (!_introStarted && me->IsAlive())
+            {
+                if (_introCheckTimer <= diff)
+                {
+                    _introCheckTimer = 1000;
+                    std::list<Player*> players;
+                    me->GetPlayerListInGrid(players, StillwaterIntroRange);
+                    for (Player* player : players)
+                        if (TryStartIntro(player))
+                            break;
+                }
+                else
+                    _introCheckTimer -= diff;
+            }
+
+            while (uint32 eventId = _events.ExecuteEvent())
+            {
+                if (eventId >= EVENT_BLIGHT_INTRO && eventId <= EVENT_BLIGHT_INTRO_LAST)
+                    IntroStep(eventId);
+            }
+            return;
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_BLIGHT_PLAGUE_BARREL:
+                    DoCastVictim(SPELL_PLAGUE_BARREL);
+                    _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_BARREL, 12s, 15s);
+                    break;
+                case EVENT_BLIGHT_PLAGUE_SLIME:
+                    DoCastVictim(SPELL_PLAGUE_SLIME);
+                    _events.ScheduleEvent(EVENT_BLIGHT_PLAGUE_SLIME, 18s, 22s);
+                    break;
+                case EVENT_BLIGHT_SMASH:
+                    if (me->GetVictim() && me->IsWithinDistInMap(me->GetVictim(), 10.0f))
+                    {
+                        DoCast(me, SPELL_SMASH);
+                        _events.ScheduleEvent(EVENT_BLIGHT_SMASH, 15s, 25s);
+                    }
+                    else
+                        _events.ScheduleEvent(EVENT_BLIGHT_SMASH, 2s);
+                    break;
+                default:
+                    break;
+            }
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    bool TryStartIntro(Player* player)
+    {
+        if (_introStarted || me->IsInCombat() || !me->IsAlive())
+            return false;
+
+        if (!player->IsAlive() || player->IsGameMaster() || !me->IsWithinDistInMap(player, StillwaterIntroRange)
+            || player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_INCOMPLETE || !me->IsWithinLOSInMap(player))
+            return false;
+
+        StartIntro(player);
+        return _introStarted;
+    }
+
+    void StartIntro(Player* player)
+    {
+        // The player's own Lydon and Johnny (Sludge Field Summon Controller). Without Lydon there is no sentence: the intro waits
+        // until the controller has brought him back (every 5 s; UpdateAI looks for the player again every second). Not summoned
+        // from here: this can run inside a visibility update of the grid.
+        Creature* lydon = GetSludgeFieldsCompanion(player, NPC_MASTER_APOTHECARY_LYDON);
+        if (!lydon)
+            return;
+
+        _introStarted = true;
+        _playerGUID = player->GetGUID();
+        me->GetMotionMaster()->Clear();
+        me->StopMoving();
+        me->SetFacingToObject(player);
+
+        // Lydon and Johnny step up to either side behind the player (ours)
+        float angle = player->GetAngle(me);
+        HoldWitness(player, lydon, angle + float(M_PI) * 0.7f, _lydonGUID);
+        HoldWitness(player, GetSludgeFieldsCompanion(player, NPC_JOHNNY_AWESOME), angle - float(M_PI) * 0.7f, _johnnyGUID);
+
+        _events.ScheduleEvent(EVENT_BLIGHT_INTRO, 1s);
+    }
+
+    void HoldWitness(Player* player, Creature* witness, float angle, ObjectGuid& guid)
+    {
+        if (!witness)
+            return;
+
+        witness->AI()->DoAction(ACTION_COMPANION_HOLD);
+        float x, y, z;
+        player->GetNearPoint(player, x, y, z, 2.5f, angle);
+        witness->GetMotionMaster()->MovePoint(0, x, y, z);
+        guid = witness->GetGUID();
+    }
+
+    void FaceWitnessesToMe()
+    {
+        for (ObjectGuid const& guid : { _lydonGUID, _johnnyGUID })
+            if (Creature* witness = ObjectAccessor::GetCreature(*me, guid))
+                witness->SetFacingToObject(me);
+    }
+
+    // Back to following the player (and to the player's fight, if there is one)
+    void ReleaseWitnesses()
+    {
+        for (ObjectGuid const& guid : { _lydonGUID, _johnnyGUID })
+            if (Creature* witness = ObjectAccessor::GetCreature(*me, guid))
+                if (witness->IsAIEnabled)
+                    witness->AI()->DoAction(ACTION_COMPANION_RELEASE);
+        _lydonGUID.Clear();
+        _johnnyGUID.Clear();
+    }
+
+    void AbortIntro()
+    {
+        _events.Reset();
+        _introStarted = false;
+        ReleaseWitnesses();
+        me->GetMotionMaster()->MoveTargetedHome();
+    }
+
+    void IntroStep(uint32 eventId)
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        Creature* lydon = ObjectAccessor::GetCreature(*me, _lydonGUID);
+        if (!player || !player->IsAlive() || !me->IsWithinDistInMap(player, StillwaterIntroLeaveRange) || !lydon
+            || player->GetQuestStatus(QUEST_A_BLIGHT_UPON_THE_LAND) != QUEST_STATUS_INCOMPLETE)
+        {
+            AbortIntro();
+            return;
+        }
+
+        Milliseconds next = 0ms;
+        switch (eventId)
+        {
+            case 1:
+                Talk(TALK_STILLWATER_LYDON_ALIVE);
+                next = 3s;
+                break;
+            case 2:
+                me->SetFacingToObject(player);
+                FaceWitnessesToMe();
+                Talk(TALK_STILLWATER_ALLEGIANCES, player);
+                next = 4s;
+                break;
+            case 3:
+                if (Creature* johnny = ObjectAccessor::GetCreature(*me, _johnnyGUID))
+                    me->SetFacingToObject(johnny);
+                Talk(TALK_STILLWATER_JENNY);
+                next = 5s;
+                break;
+            case 4:
+                lydon->AI()->Talk(TALK_LYDON_SENTENCE);
+                next = 8s;
+                break;
+            case 5:
+                lydon->AI()->Talk(TALK_LYDON_TRAITOROUS_SCUM);
+                next = 4s;
+                break;
+            case 6:
+                lydon->AI()->Talk(TALK_LYDON_KNEEL);
+                next = 3s;
+                break;
+            case 7:
+                me->SetFacingToObject(lydon);
+                Talk(TALK_STILLWATER_THREAT);
+                next = 3s;
+                break;
+            case 8:
+                Talk(TALK_STILLWATER_EVOLUTION);
+                next = 6s;
+                break;
+            case EVENT_BLIGHT_INTRO_LAST:
+            {
+                Talk(TALK_STILLWATER_KILL_THEM_ALL);
+                me->SetFaction(14);
+                ReleaseWitnesses();
+
+                std::list<Creature*> followers;
+                me->GetCreatureListWithEntryInGrid(followers, NPC_SLUDGE_GUARD, 40.0f);
+                me->GetCreatureListWithEntryInGrid(followers, NPC_FLESH_SHAPER_ARNAULD, 40.0f);
+                for (Creature* follower : followers)
+                    if (follower->IsAlive() && follower->IsAIEnabled && !follower->IsInCombat())
+                        follower->AI()->SetData(DATA_FOLLOWERS_ATTACK, 1);
+
+                AttackStart(player);
+                break;
+            }
+            default:
+                break;
+        }
+
+        if (next > 0ms)
+            _events.ScheduleEvent(eventId + 1, next);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _lydonGUID;
+    ObjectGuid _johnnyGUID;
+    bool _introStarted;
+    bool _newForm;
+    uint32 _baseMaxHealth;
+    uint32 _introCheckTimer;
+};
+
+/*######
+## Matters of Loyalty (28600)
+######*/
+
+enum MattersOfLoyalty
+{
+    QUEST_MATTERS_OF_LOYALTY                    = 28600,
+
+    NPC_AID_OF_THE_FROSTWOLF_CAMERA             = 48986,
+    NPC_DREKTHAR                                = 48969,
+    NPC_DREKTHARS_WHEELCHAIR                    = 48971,
+    NPC_CAPTAIN_GALVANGAR                       = 48980,
+    NPC_DREKTHARS_WHEELCHAIR_WHEEL              = 48970,
+
+    SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA    = 91356,
+    SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY   = 91358,
+    SPELL_MIRROR_IMAGE_AURA                     = 90746,
+
+    // Drek'Thar: the twelve lines of the scene, in order
+    TALK_DREKTHAR_FIRST                         = 0,
+    TALK_DREKTHAR_LAST                          = 11,
+
+    POINT_FROSTWOLF_VANTAGE                     = 1,
+    POINT_GALVANGAR_OUT_OF_THE_TUNNEL           = 2,
+
+    EVENT_FROSTWOLF_ACTORS_BOARD                = EVENT_SCENE_FIRST,
+    EVENT_FROSTWOLF_GALVANGAR_WALK,
+    EVENT_FROSTWOLF_TALK,
+    EVENT_FROSTWOLF_GALVANGAR_TURN_BACK,
+    EVENT_FROSTWOLF_END
+};
+
+// The entrance to Alterac Valley next to Voggah (the Pvp_Alterac_Ent01 doorway), where Galvangar comes out, and where he stops
+Position const GalvangarTunnelPos   = { 405.0f, -1004.0f, 111.6f, float(M_PI) };
+Position const GalvangarStopPos     = { 388.5f, -1004.0f, 110.2f };
+Position const FrostwolfVantagePos  = { 378.0f,  -989.0f, 117.0f };
+
+// Pauses after each of Drek'Thar's lines (ours)
+Milliseconds const DrekTharLineDelays[TALK_DREKTHAR_LAST + 1] =
+{
+    4s, 3s, 7s, 4s, 8s, 5s, 7s, 5s, 4s, 7s, 8s, 3s
+};
+
+// 13817 - Voggah Deathgrip
+// Accepting Matters of Loyalty starts the scene (Summon Aid of the Frostwolf Camera, cast on the player).
+struct npc_hillsbrad_voggah_deathgrip : public ScriptedAI
+{
+    npc_hillsbrad_voggah_deathgrip(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_MATTERS_OF_LOYALTY)
+            StartScene(player, QUEST_MATTERS_OF_LOYALTY, NPC_AID_OF_THE_FROSTWOLF_CAMERA, SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        return ReplayScene(player, QUEST_MATTERS_OF_LOYALTY, NPC_AID_OF_THE_FROSTWOLF_CAMERA, SPELL_SUMMON_AID_OF_THE_FROSTWOLF_CAMERA);
+    }
+};
+
+// 48986 - Aid of the Frostwolf Camera
+// Summoned on the player with phase 357 (Aid of the Frostwolf Camera); the same spell leaves a Cloned Image of the player in
+// front of Voggah. Summon Drek'thar/Crew, done directly: Captain Galvangar pushes Drek'Thar in his wheelchair out of the
+// Alterac Valley tunnel (Galvangar carries the wheelchair, which carries Drek'Thar: vehicles 1367 and 1363), Drek'Thar refuses
+// the Forsaken their aid, and Cancel Cinematic puts the player back in front of Voggah and completes the quest. The wheelchair
+// is a plain chair model (WORGEN_CHAIR_01); its two other seats, 0.55 yd to each side, carry Drek'thar's Wheelchair Wheels,
+// turned a quarter outwards by npc_hillsbrad_scene_actor::GetPassengerEnterPosition.
+struct npc_hillsbrad_aid_of_the_frostwolf_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_aid_of_the_frostwolf_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MATTERS_OF_LOYALTY, SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY, 1.0f), _line(0)
+    {
+        _liftHeight = 3.0f;
+    }
+
+    void Start(Player* /*player*/) override
+    {
+        if (Creature* galvangar = SummonActor(NPC_CAPTAIN_GALVANGAR, GalvangarTunnelPos))
+            _galvangarGUID = galvangar->GetGUID();
+        if (Creature* wheelchair = SummonActor(NPC_DREKTHARS_WHEELCHAIR, GalvangarTunnelPos))
+            _wheelchairGUID = wheelchair->GetGUID();
+        if (Creature* drekthar = SummonActor(NPC_DREKTHAR, GalvangarTunnelPos))
+            _drektharGUID = drekthar->GetGUID();
+        for (ObjectGuid& wheelGUID : _wheelGUIDs)
+            if (Creature* wheel = SummonActor(NPC_DREKTHARS_WHEELCHAIR_WHEEL, GalvangarTunnelPos))
+                wheelGUID = wheel->GetGUID();
+
+        me->GetMotionMaster()->MovePoint(POINT_FROSTWOLF_VANTAGE, FrostwolfVantagePos, false);
+        _events.ScheduleEvent(EVENT_FROSTWOLF_ACTORS_BOARD, 500ms);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        Creature* galvangar = GetActor(_galvangarGUID);
+        Creature* drekthar = GetActor(_drektharGUID);
+        if (!galvangar || !drekthar)
+        {
+            Finish();
+            return;
+        }
+
+        switch (eventId)
+        {
+            case EVENT_FROSTWOLF_ACTORS_BOARD:
+                if (Creature* wheelchair = GetActor(_wheelchairGUID))
+                {
+                    wheelchair->EnterVehicle(galvangar, 0);
+                    drekthar->EnterVehicle(wheelchair, 0);
+                    for (uint8 i = 0; i < 2; ++i)
+                        if (Creature* wheel = GetActor(_wheelGUIDs[i]))
+                            wheel->EnterVehicle(wheelchair, i + 1);
+                }
+                _events.ScheduleEvent(EVENT_FROSTWOLF_GALVANGAR_WALK, 2s);
+                break;
+            case EVENT_FROSTWOLF_GALVANGAR_WALK:
+                galvangar->SetWalk(true);
+                galvangar->GetMotionMaster()->MovePoint(POINT_GALVANGAR_OUT_OF_THE_TUNNEL, GalvangarStopPos);
+                // About the walk out of the tunnel (16 yd)
+                _events.ScheduleEvent(EVENT_FROSTWOLF_TALK, 7s);
+                break;
+            case EVENT_FROSTWOLF_TALK:
+                if (_line == 0)
+                    galvangar->SetFacingToObject(player);
+                drekthar->AI()->Talk(TALK_DREKTHAR_FIRST + _line, player);
+                if (_line < TALK_DREKTHAR_LAST)
+                    _events.ScheduleEvent(EVENT_FROSTWOLF_TALK, DrekTharLineDelays[_line]);
+                else
+                    _events.ScheduleEvent(EVENT_FROSTWOLF_GALVANGAR_TURN_BACK, DrekTharLineDelays[_line]);
+                ++_line;
+                break;
+            case EVENT_FROSTWOLF_GALVANGAR_TURN_BACK:
+                galvangar->GetMotionMaster()->MovePoint(0, GalvangarTunnelPos);
+                _events.ScheduleEvent(EVENT_FROSTWOLF_END, 4s);
+                break;
+            case EVENT_FROSTWOLF_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* /*player*/) override
+    {
+        if (pointId == POINT_FROSTWOLF_VANTAGE)
+            FaceTo(GalvangarStopPos.GetPositionX() + 4.0f, GalvangarStopPos.GetPositionY());
+    }
+
+private:
+    ObjectGuid _galvangarGUID;
+    ObjectGuid _wheelchairGUID;
+    ObjectGuid _drektharGUID;
+    ObjectGuid _wheelGUIDs[2];
+    uint8 _line;
+};
+
+// 48700 - Cloned Image
+// Summon Cloned Image (triggered by Summon Aid of the Frostwolf Camera) stands in for the hidden player in front of Voggah.
+// Mirror Image Aura makes it look like the player; it goes when the player leaves the camera.
+struct npc_hillsbrad_cloned_image : public ScriptedAI
+{
+    npc_hillsbrad_cloned_image(Creature* creature) : ScriptedAI(creature), _checkTimer(5000) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        Player* player = summoner->ToPlayer();
+        if (!player)
+            return;
+
+        _playerGUID = player->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NOT_SELECTABLE);
+        // Mirror Image Aura, put on directly (its target is a nearby-entry search): the player is its caster, so it clones the player
+        player->AddAura(SPELL_MIRROR_IMAGE_AURA, me);
+        me->SetFacingTo(me->GetAngle(GalvangarStopPos.GetPositionX(), GalvangarStopPos.GetPositionY()));
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (_checkTimer > diff)
+        {
+            _checkTimer -= diff;
+            return;
+        }
+        _checkTimer = 1000;
+
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->GetVehicle())
+            me->DespawnOrUnsummon();
+    }
+
+private:
+    ObjectGuid _playerGUID;
+    uint32 _checkTimer;
+};
+
+/*######
+## High Warlord Cromush: March of the Stormpike (28506), Stormpike Apocalypse (28616)
+######*/
+
+enum StormpikeScenes
+{
+    QUEST_MARCH_OF_THE_STORMPIKE                = 28506,
+    QUEST_STORMPIKE_APOCALYPSE                  = 28616,
+
+    NPC_HIGH_WARLORD_CROMUSH                    = 48545,
+    NPC_TARREN_MILL_CAMERA                      = 48696,
+    NPC_STORMPIKE_APOCALYPSE_CAMERA             = 49152,
+    NPC_GOBLIN_POCKET_NUKE_GAVINS_NAZE          = 49153,
+    NPC_GOBLIN_POCKET_NUKE_THE_HEADLAND         = 49168,
+    NPC_GOBLIN_POCKET_NUKE_CORRAHNS_DAGGER      = 49169,
+    NPC_GOBLIN_POCKET_NUKE_SOFERAS_NAZE         = 49171,
+    NPC_MAGRUDER                                = 49165,
+    NPC_LIEUTENANT_JAN_LAGRAVE                  = 49166,
+
+    SPELL_SUMMON_TARREN_MILL_CAMERA             = 90713,
+    SPELL_CANCEL_CINEMATIC_MARCH                = 90711,
+    SPELL_SUMMON_STORMPIKE_APOCALYPSE           = 91608,
+    SPELL_CANCEL_CINEMATIC_APOCALYPSE           = 91607,
+    SPELL_GLOBAL_THERMONUCLEAR_WAR              = 91617,
+
+    TALK_CROMUSH_HILLSBRAD_IS_OURS              = 10,
+
+    // Tarren Mill Camera: the narration, in order
+    TALK_MARCH_FIRST                            = 0,
+
+    TALK_LAGRAVE_DEFUSE                         = 0,
+    TALK_MAGRUDER_WHAT_IS_THIS                  = 0,
+    TALK_MAGRUDER_WIRES                         = 1,
+    TALK_MAGRUDER_RUN                           = 2,
+
+    POINT_MARCH_SOFERAS_NAZE                    = 1,
+    POINT_MARCH_CORRAHNS_DAGGER                 = 2,
+    POINT_MARCH_THE_HEADLAND                    = 3,
+    POINT_MARCH_GAVINS_NAZE                     = 4,
+    POINT_MARCH_GRASP                           = 5,
+
+    // Seats of Vehicle 1343 (Tarren Mill Camera); the first, Sofera's Naze, is where the ride aura puts the rider
+    SEAT_MARCH_CORRAHNS_DAGGER                  = 1,
+    SEAT_MARCH_THE_HEADLAND                     = 2,
+    SEAT_MARCH_GAVINS_NAZE                      = 3,
+
+    // Seats of Vehicle 1379 (Stormpike Apocalypse Camera); the first, Gavin's Naze, is where the ride aura puts the rider
+    SEAT_APOCALYPSE_THE_HEADLAND                = 1,
+    SEAT_APOCALYPSE_CORRAHNS_DAGGER             = 2,
+    SEAT_APOCALYPSE_SOFERAS_NAZE                = 3,
+
+    POINT_APOCALYPSE_GAVINS_NAZE                = 1,
+    POINT_APOCALYPSE_THE_HEADLAND               = 2,
+    POINT_APOCALYPSE_CORRAHNS_DAGGER            = 3,
+    POINT_APOCALYPSE_SOFERAS_NAZE               = 4,
+
+    EVENT_MARCH_SECOND_LINE                     = EVENT_SCENE_FIRST,
+    EVENT_MARCH_FLY_ON,
+    EVENT_MARCH_END,
+
+    EVENT_APOCALYPSE_FLY                        = EVENT_SCENE_FIRST,
+    EVENT_APOCALYPSE_LAGRAVE_DEFUSE,
+    EVENT_APOCALYPSE_MAGRUDER_WHAT_IS_THIS,
+    EVENT_APOCALYPSE_MAGRUDER_WIRES,
+    EVENT_APOCALYPSE_MAGRUDER_RUN,
+    EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS,
+    EVENT_APOCALYPSE_NEXT_NUKE_BLOWS,
+    EVENT_APOCALYPSE_TO_THE_HEADLAND,
+    EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER,
+    EVENT_APOCALYPSE_TO_SOFERAS_NAZE,
+    EVENT_APOCALYPSE_END
+};
+
+// 48545 - High Warlord Cromush
+// Accepting March of the Stormpike or Stormpike Apocalypse starts its scene (Summon Tarren Mill Camera, Summon Stormpike
+// Apocalypse, cast on the player).
+struct npc_hillsbrad_high_warlord_cromush : public ScriptedAI
+{
+    npc_hillsbrad_high_warlord_cromush(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_MARCH_OF_THE_STORMPIKE)
+            StartScene(player, QUEST_MARCH_OF_THE_STORMPIKE, NPC_TARREN_MILL_CAMERA, SPELL_SUMMON_TARREN_MILL_CAMERA);
+        else if (quest->GetQuestId() == QUEST_STORMPIKE_APOCALYPSE)
+            StartScene(player, QUEST_STORMPIKE_APOCALYPSE, NPC_STORMPIKE_APOCALYPSE_CAMERA, SPELL_SUMMON_STORMPIKE_APOCALYPSE);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        return ReplayScene(player, QUEST_MARCH_OF_THE_STORMPIKE, NPC_TARREN_MILL_CAMERA, SPELL_SUMMON_TARREN_MILL_CAMERA)
+            || ReplayScene(player, QUEST_STORMPIKE_APOCALYPSE, NPC_STORMPIKE_APOCALYPSE_CAMERA, SPELL_SUMMON_STORMPIKE_APOCALYPSE);
+    }
+};
+
+// Where the player set the pocket-nukes in Breaking the Hand: the four Credit bunnies (and Four Fingers Spell Focus objects)
+Position const SoferasNazeNukePos       = { 235.465f, -850.531f, 146.945f };
+Position const CorrahnsDaggerNukePos    = { -26.2726f, -550.632f, 151.308f };
+Position const TheHeadlandNukePos       = { -104.951f, -287.163f, 143.865f };
+Position const GavinsNazeNukePos        = { -104.993f, -69.8663f, 147.112f };
+
+// 48696 - Tarren Mill Camera
+// Summoned on the player with phase 355 (Tarren Mill Camera). It flies from Tarren Mill over the four fingers of Hillsbrad in
+// the order of the narration, stopping at each while the two lines on it show, rises over Gavin's Naze for the last line, and
+// Cancel Cinematic puts the player back in front of Cromush and completes the quest. The path is ours: each leg is one curve
+// (FlyCurve), 17 yd or more above the ground and the vmaps once the camera is off the first rise (checked against the extracted
+// maps and vmaps). Where the camera looks is not the vehicle's facing: Vehicle 1343 has four seats, one per finger, and each
+// seat's CameraMode (124, 126, 127, 128, "March of the Stormpike 01-04") holds the view on a fixed point in the world, at its
+// finger (lockedTargetOffsetBase 2, CCameraModeLocked::CalcTargetCameraShot). The rider changes seat as each leg starts. Each stop
+// frames that point and the Stormpike camp round it, which the lines describe: the Headland, Corrahn's Dagger and Gavin's Naze stops
+// are within Visibility.Distance.Continents (90 yd) of most of their camp. Sofera's Naze is left where it was.
+struct npc_hillsbrad_tarren_mill_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_tarren_mill_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH, 3.5f), _line(TALK_MARCH_FIRST), _stop(0)
+    {
+        _liftHeight = 7.0f;
+    }
+
+    void Start(Player* player) override
+    {
+        FlyOn(player);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        switch (eventId)
+        {
+            case EVENT_MARCH_SECOND_LINE:
+                Talk(_line++, player);
+                _events.ScheduleEvent(EVENT_MARCH_FLY_ON, 5s);
+                break;
+            case EVENT_MARCH_FLY_ON:
+                FlyOn(player);
+                break;
+            case EVENT_MARCH_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* player) override
+    {
+        switch (pointId)
+        {
+            case POINT_MARCH_SOFERAS_NAZE:
+            case POINT_MARCH_CORRAHNS_DAGGER:
+            case POINT_MARCH_THE_HEADLAND:
+            case POINT_MARCH_GAVINS_NAZE:
+                break;
+            case POINT_MARCH_GRASP:
+                // "Together the fingers represent the grasp of Stormpike closing upon us."
+                Talk(_line++, player);
+                _events.ScheduleEvent(EVENT_MARCH_END, 6s);
+                return;
+            default:
+                return;
+        }
+
+        // The finger's name, then what the Stormpike do there
+        Talk(_line++, player);
+        _events.ScheduleEvent(EVENT_MARCH_SECOND_LINE, 5s);
+    }
+
+private:
+    void FlyOn(Player* player)
+    {
+        switch (++_stop)
+        {
+            case POINT_MARCH_SOFERAS_NAZE:
+                FlyCurve(POINT_MARCH_SOFERAS_NAZE, { { -5.0f, -895.0f, 95.0f }, { 100.0f, -860.0f, 160.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
+                break;
+            case POINT_MARCH_CORRAHNS_DAGGER:
+                ChangeRiderSeat(player, SEAT_MARCH_CORRAHNS_DAGGER);
+                FlyCurve(POINT_MARCH_CORRAHNS_DAGGER, { { 60.0f, -720.0f, 200.0f }, { -5.0f, -570.0f, 178.0f } }, 6.0f);
+                break;
+            case POINT_MARCH_THE_HEADLAND:
+                ChangeRiderSeat(player, SEAT_MARCH_THE_HEADLAND);
+                FlyCurve(POINT_MARCH_THE_HEADLAND, { { -40.0f, -470.0f, 205.0f }, { -60.0f, -370.0f, 195.0f }, { -100.0f, -300.0f, 180.0f } }, 6.0f);
+                break;
+            case POINT_MARCH_GAVINS_NAZE:
+                ChangeRiderSeat(player, SEAT_MARCH_GAVINS_NAZE);
+                FlyCurve(POINT_MARCH_GAVINS_NAZE, { { -70.0f, -215.0f, 195.0f }, { -58.0f, -135.0f, 172.0f } }, 6.0f);
+                break;
+            case POINT_MARCH_GRASP:
+                // Stays in Gavin's Naze's seat: backs off and rises, still looking at the finger
+                FlyCurve(POINT_MARCH_GRASP, { { -45.0f, -235.0f, 230.0f } }, 6.0f);
+                break;
+            default:
+                Finish();
+                break;
+        }
+    }
+
+    uint8 _line;
+    uint8 _stop;
+};
+
+// Cromush's yell once the player is back in Tarren Mill and in front of him (RunReturnHook waits for the teleport)
+static void CromushHillsbradIsOurs(Player* player)
+{
+    if (Creature* cromush = player->FindNearestCreature(NPC_HIGH_WARLORD_CROMUSH, 30.0f))
+        if (cromush->IsAIEnabled)
+            cromush->AI()->Talk(TALK_CROMUSH_HILLSBRAD_IS_OURS, player);
+}
+
+// 49152 - Stormpike Apocalypse Camera
+// Summoned on the player with phase 364 (Stormpike Apocalypse Camera). The actors are those of the 5.4.8 summon spells, done
+// directly: Magruder (Summon Magruder) and Lieutenant Jan Lagrave (Summon Pixin) at the pocket-nuke on Gavin's Naze (Summon
+// Goblin Pocket Nuke), and one pocket-nuke on each of the other fingers. The camera flies to Gavin's Naze, where Lagrave asks
+// Magruder to defuse the nuke and Magruder runs; the nuke goes off (Global Thermonuclear War), and the camera pulls back over
+// the Headland, Corrahn's Dagger and Sofera's Naze, stopping at each to watch its nuke go off. Cancel Cinematic puts the player back in
+// front of Cromush and completes the quest, and Cromush yells "LOK'TAR! HILLSBRAD IS OURS!". The path is ours: each leg is one
+// curve (FlyCurve), 19 yd or more above the ground and the vmaps once off the first rise, arriving at most 73 yd from the nuke
+// (checked against the extracted maps and vmaps). Where the camera looks is not the vehicle's facing: Vehicle 1379 has four seats,
+// one per finger, and each seat's CameraMode (133, 136, 137, 138, "Stormpike Apocalypse Camera 01-04") holds the view on a fixed
+// point in the world, within a few yards of that finger's nuke. The rider changes seat as each leg starts, and at each stop the
+// nuke is at most 7 degrees from the view's centre.
+struct npc_hillsbrad_stormpike_apocalypse_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_stormpike_apocalypse_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_APOCALYPSE, SPELL_CANCEL_CINEMATIC_APOCALYPSE, 5.0f)
+    {
+        _liftHeight = 7.0f;
+        _returnHook = &CromushHillsbradIsOurs;
+    }
+
+    void Start(Player* /*player*/) override
+    {
+        _nukeGUIDs[0] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_GAVINS_NAZE, GavinsNazeNukePos);
+        _nukeGUIDs[1] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_THE_HEADLAND, TheHeadlandNukePos);
+        _nukeGUIDs[2] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_CORRAHNS_DAGGER, CorrahnsDaggerNukePos);
+        _nukeGUIDs[3] = SummonNuke(NPC_GOBLIN_POCKET_NUKE_SOFERAS_NAZE, SoferasNazeNukePos);
+
+        // Bent over the nuke, on the platform where it stands (ours)
+        if (Creature* magruder = SummonActor(NPC_MAGRUDER, { -102.0f, -72.5f, 147.0f }))
+        {
+            magruder->SetFacingTo(magruder->GetAngle(&GavinsNazeNukePos));
+            _magruderGUID = magruder->GetGUID();
+        }
+        if (Creature* lagrave = SummonActor(NPC_LIEUTENANT_JAN_LAGRAVE, { -107.5f, -72.5f, 147.0f }))
+        {
+            lagrave->SetFacingTo(lagrave->GetAngle(&GavinsNazeNukePos));
+            _lagraveGUID = lagrave->GetGUID();
+        }
+
+        _events.ScheduleEvent(EVENT_APOCALYPSE_FLY, 1s);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        Creature* magruder = GetActor(_magruderGUID);
+        Creature* lagrave = GetActor(_lagraveGUID);
+
+        switch (eventId)
+        {
+            case EVENT_APOCALYPSE_FLY:
+                FlyCurve(POINT_APOCALYPSE_GAVINS_NAZE,
+                {
+                    { -5.0f, -890.0f, 100.0f },
+                    { -60.0f, -600.0f, 200.0f },
+                    { -100.0f, -330.0f, 195.0f },
+                    { -95.0f, -140.0f, 175.0f },
+                    { -93.0f, -92.0f, 158.0f }
+                }, 6.0f);
+                break;
+            case EVENT_APOCALYPSE_LAGRAVE_DEFUSE:
+                if (lagrave)
+                    lagrave->AI()->Talk(TALK_LAGRAVE_DEFUSE, player);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_MAGRUDER_WHAT_IS_THIS, 4s);
+                break;
+            case EVENT_APOCALYPSE_MAGRUDER_WHAT_IS_THIS:
+                if (magruder)
+                    magruder->AI()->Talk(TALK_MAGRUDER_WHAT_IS_THIS, player);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_MAGRUDER_WIRES, 4s);
+                break;
+            case EVENT_APOCALYPSE_MAGRUDER_WIRES:
+                if (magruder)
+                    magruder->AI()->Talk(TALK_MAGRUDER_WIRES, player);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_MAGRUDER_RUN, 6s);
+                break;
+            case EVENT_APOCALYPSE_MAGRUDER_RUN:
+                if (magruder)
+                {
+                    magruder->AI()->Talk(TALK_MAGRUDER_RUN, player);
+                    magruder->SetWalk(false);
+                    magruder->GetMotionMaster()->MovePoint(0, -95.0f, -45.0f, 142.0f);
+                }
+                if (lagrave)
+                {
+                    lagrave->SetWalk(false);
+                    lagrave->GetMotionMaster()->MovePoint(0, -110.0f, -45.0f, 145.0f);
+                }
+                _events.ScheduleEvent(EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS, 2s);
+                break;
+            case EVENT_APOCALYPSE_GAVINS_NAZE_BLOWS:
+                Detonate(0);
+                _events.ScheduleEvent(EVENT_APOCALYPSE_TO_THE_HEADLAND, 3s);
+                break;
+            case EVENT_APOCALYPSE_NEXT_NUKE_BLOWS:
+                // Arrived a moment ago, looking at it: it goes off, and the camera stays to watch
+                Detonate(_nextNuke);
+                if (_nextNuke == 1)
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER, 2500ms);
+                else if (_nextNuke == 2)
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_TO_SOFERAS_NAZE, 2500ms);
+                else
+                    _events.ScheduleEvent(EVENT_APOCALYPSE_END, 5s);
+                break;
+            case EVENT_APOCALYPSE_TO_THE_HEADLAND:
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_THE_HEADLAND);
+                FlyCurve(POINT_APOCALYPSE_THE_HEADLAND, { { -65.0f, -100.0f, 175.0f }, { -62.0f, -170.0f, 205.0f }, { -78.0f, -190.0f, 205.0f }, { -92.0f, -235.0f, 190.0f } }, 6.0f);
+                break;
+            case EVENT_APOCALYPSE_TO_CORRAHNS_DAGGER:
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_CORRAHNS_DAGGER);
+                FlyCurve(POINT_APOCALYPSE_CORRAHNS_DAGGER, { { -100.0f, -300.0f, 205.0f }, { -70.0f, -400.0f, 215.0f }, { -50.0f, -440.0f, 205.0f }, { -38.0f, -490.0f, 190.0f } }, 6.0f);
+                break;
+            case EVENT_APOCALYPSE_TO_SOFERAS_NAZE:
+                ChangeRiderSeat(player, SEAT_APOCALYPSE_SOFERAS_NAZE);
+                FlyCurve(POINT_APOCALYPSE_SOFERAS_NAZE, { { -5.0f, -560.0f, 215.0f }, { 50.0f, -680.0f, 235.0f }, { 95.0f, -800.0f, 235.0f }, { 125.0f, -880.0f, 205.0f }, { 175.0f, -865.0f, 185.0f } }, 6.0f);
+                break;
+            case EVENT_APOCALYPSE_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Arrived(uint32 pointId, Player* /*player*/) override
+    {
+        switch (pointId)
+        {
+            case POINT_APOCALYPSE_GAVINS_NAZE:
+                FaceTo(GavinsNazeNukePos.GetPositionX(), GavinsNazeNukePos.GetPositionY());
+                _events.ScheduleEvent(EVENT_APOCALYPSE_LAGRAVE_DEFUSE, 1s);
+                break;
+            case POINT_APOCALYPSE_THE_HEADLAND:
+                FaceTo(TheHeadlandNukePos.GetPositionX(), TheHeadlandNukePos.GetPositionY());
+                _nextNuke = 1;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
+                break;
+            case POINT_APOCALYPSE_CORRAHNS_DAGGER:
+                FaceTo(CorrahnsDaggerNukePos.GetPositionX(), CorrahnsDaggerNukePos.GetPositionY());
+                _nextNuke = 2;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
+                break;
+            case POINT_APOCALYPSE_SOFERAS_NAZE:
+                FaceTo(SoferasNazeNukePos.GetPositionX(), SoferasNazeNukePos.GetPositionY());
+                _nextNuke = 3;
+                _events.ScheduleEvent(EVENT_APOCALYPSE_NEXT_NUKE_BLOWS, 1500ms);
+                break;
+            default:
+                break;
+        }
+    }
+
+private:
+    ObjectGuid SummonNuke(uint32 entry, Position const& pos)
+    {
+        Creature* nuke = SummonActor(entry, pos);
+        if (!nuke)
+            return ObjectGuid::Empty;
+
+        // Past the map's visibility range (Visibility.Distance.Continents), the nuke and its spell would never reach the client
+        nuke->SetCustomVisibilityDistance(VISIBILITY_DISTANCE_GIGANTIC, false);
+        return nuke->GetGUID();
+    }
+
+    // Global Thermonuclear War: its conditions keep it on the nukes and the two engineers
+    void Detonate(uint8 index)
+    {
+        if (Creature* nuke = GetActor(_nukeGUIDs[index]))
+            nuke->CastSpell(nuke, SPELL_GLOBAL_THERMONUCLEAR_WAR, true);
+    }
+
+    ObjectGuid _nukeGUIDs[4];
+    uint8 _nextNuke = 0;
+    ObjectGuid _magruderGUID;
+    ObjectGuid _lagraveGUID;
+};
+
+/*######
+## Stormpike Rendezvous (28348)
+######*/
+
+// Orkus tells how he ended up in the water: on the docks of the Ruins of Southshore he overheard Vanndar Stormpike and Captain
+// Balinda Stonehearth, who meet Ivar Bloodfang at Purgation Isle, fought them, called Kasha, and was thrown into the sea.
+//
+// Sourced: the spells (5.4.8 Spell.dbc: 89971 Summon Orkus Camera, whose effect value names the ride 89970 Orkus Camera with
+// phase 343 "Stormpike Rendezvous" and quest invisibility 4; the actors' summons 89983-89986, Summon Orkus/Vanndar/Kasha/Balinda;
+// 89987 Cancel Cinematic, teleport + QUEST_COMPLETE 28348), the camera's vehicle (1325, sniffed in mop's template), every line
+// (broadcast_text 48624-48647), the order of the scene (warcraft.wiki.gg; a Wowhead comment quoting the lines in order) and that it
+// is a skippable camera scene in which Kasha lands and fights (Wowhead comments, 2010). Orkus', Vanndar's and Balinda's spots and
+// Orkus' two jumps are those of LoA's old SmartAI for the scene (source unknown; they fit the docks of the extracted vmaps).
+// Ours: the camera's spot, every timing, Kasha's flight and landing spot, where Vanndar throws Orkus (into the shallows off
+// the docks), the dwarves leaving by teleport (the wiki says they teleport out; Teleport Visual Only is ours), that the actors
+// are the player's private summons summoned from here rather than by their spells, and that the fight is played with attack
+// animations: the actors never enter combat, as a creature entering combat loses its immunity to players (Unit::SetInCombatWith)
+// and the elite Stormpike then killed the player.
+// Retail's actors were real hostile mobs (a comment: skipping the scene left a hostile Balinda on the shore).
+
+enum StormpikeRendezvous
+{
+    QUEST_STORMPIKE_RENDEZVOUS                  = 28348,
+
+    NPC_ORKUS_CAMERA                            = 48395,
+    NPC_RENDEZVOUS_KASHA                        = 48396,
+    NPC_RENDEZVOUS_ORKUS                        = 48397,
+    NPC_RENDEZVOUS_VANNDAR                      = 48403,
+    NPC_RENDEZVOUS_BALINDA                      = 48407,
+
+    SPELL_SUMMON_ORKUS_CAMERA                   = 89971,
+    SPELL_CANCEL_CINEMATIC_RENDEZVOUS           = 89987,
+    SPELL_TELEPORT_VISUAL_ONLY                  = 51347,
+
+    // Orkus Camera (the narration)
+    TALK_RENDEZVOUS_FACILITIES                  = 0,    // 48624
+    TALK_RENDEZVOUS_OUTHOUSE                    = 1,    // 48626
+    // Kingslayer Orkus 48397
+    TALK_RENDEZVOUS_ORKUS_SMELL                 = 0,    // 48625
+    TALK_RENDEZVOUS_ORKUS_HELLSCREAM            = 1,    // 48627
+    TALK_RENDEZVOUS_ORKUS_YOU_FACE              = 2,    // 48643
+    TALK_RENDEZVOUS_ORKUS_KASHA                 = 3,    // 48644
+    // Vanndar Stormpike 48403
+    TALK_RENDEZVOUS_VANNDAR_WHERE               = 0,    // 48635
+    TALK_RENDEZVOUS_VANNDAR_LOOK                = 1,    // 48641
+    TALK_RENDEZVOUS_VANNDAR_ENOUGH              = 2,    // 48645
+    TALK_RENDEZVOUS_VANNDAR_LEAVE               = 3,    // 48646
+    // Captain Balinda Stonehearth 48407
+    TALK_RENDEZVOUS_BALINDA_PURGATION           = 0,    // 48639
+    TALK_RENDEZVOUS_BALINDA_SMELL               = 1,    // 48640
+    TALK_RENDEZVOUS_BALINDA_AYE                 = 2,    // 48647
+
+    POINT_RENDEZVOUS_KASHA_LANDED               = 1,
+    POINT_RENDEZVOUS_KASHA_SEA                  = 2,
+
+    EVENT_RENDEZVOUS_ORKUS_SMELL                = EVENT_SCENE_FIRST,
+    EVENT_RENDEZVOUS_OUTHOUSE,
+    EVENT_RENDEZVOUS_ORKUS_HELLSCREAM,
+    EVENT_RENDEZVOUS_VANNDAR_WHERE,
+    EVENT_RENDEZVOUS_BALINDA_PURGATION,
+    EVENT_RENDEZVOUS_BALINDA_SMELL,
+    EVENT_RENDEZVOUS_VANNDAR_LOOK,
+    EVENT_RENDEZVOUS_ORKUS_JUMP_UP,
+    EVENT_RENDEZVOUS_ORKUS_YOU_FACE,
+    EVENT_RENDEZVOUS_ORKUS_ATTACKS,
+    EVENT_RENDEZVOUS_FIGHT,
+    EVENT_RENDEZVOUS_ORKUS_KASHA,
+    EVENT_RENDEZVOUS_KASHA_LANDING,
+    EVENT_RENDEZVOUS_VANNDAR_ENOUGH,
+    EVENT_RENDEZVOUS_VANNDAR_LEAVE,
+    EVENT_RENDEZVOUS_BALINDA_AYE,
+    EVENT_RENDEZVOUS_TELEPORT_OUT,
+    EVENT_RENDEZVOUS_END
+};
+
+// LoA's old SmartAI spots: the outhouse (the end of his walk there), the top of it, and Vanndar and Balinda on the dock (vmap
+// surface 6.88). Orkus starts at the outhouse, as he has just come out of it (facing the dock: ours)
+Position const RendezvousOuthousePos        = { -890.572f, -574.041f, 7.29059f, 2.36f };
+Position const RendezvousOuthouseTopPos     = { -891.764f, -571.821f, 8.60625f };
+Position const RendezvousVanndarPos         = { -904.302f, -560.513f, 6.87974f, 2.25001f };
+Position const RendezvousBalindaPos         = { -901.909f, -557.962f, 6.87974f, 2.25001f };
+// Ours, all on the dock's surface or in the shallows off it (ground.py): Orkus lands in front of Vanndar; Kasha comes out
+// of the sky inland, out of the camera's view, and lands on the dock 3 yd from Balinda; Vanndar throws Orkus into
+// the shallows 25 yd from 312261, and Kasha flies after him. The kneeling Orkus 312261 and the collapsed Kasha 312260 stay in
+// sight in the scene (phases 187 and 200: the scene phase is added to the player's, it takes none away), so the camera stands
+// with them at its back and the throw goes away from them: they stay out of frame for the whole scene.
+Position const RendezvousOrkusFightPos      = { -902.0f, -562.6f, 6.88f };
+Position const RendezvousKashaSkyPos        = { -880.0f, -605.0f, 35.0f };
+Position const RendezvousKashaLandPos       = { -899.6f, -556.2f, 6.88f };
+Position const RendezvousOrkusSeaPos        = { -924.5f, -557.0f, -1.4f };
+Position const RendezvousKashaSeaPos        = { -927.0f, -560.0f, 4.0f };
+
+// 48218 - Kingslayer Orkus (at the Ruins of Southshore)
+// His SmartAI (the drowning Orkus, the Road to Purgation gossip) is kept. Accepting Stormpike Rendezvous starts the scene (Summon
+// Orkus Camera, cast on the player); talking to him with the quest still open plays it again.
+struct npc_hillsbrad_kingslayer_orkus_southshore : public SmartAI
+{
+    npc_hillsbrad_kingslayer_orkus_southshore(Creature* creature) : SmartAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        SmartAI::OnQuestAccept(player, quest);
+
+        if (quest->GetQuestId() == QUEST_STORMPIKE_RENDEZVOUS)
+            StartScene(player, QUEST_STORMPIKE_RENDEZVOUS, NPC_ORKUS_CAMERA, SPELL_SUMMON_ORKUS_CAMERA);
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        if (ReplayScene(player, QUEST_STORMPIKE_RENDEZVOUS, NPC_ORKUS_CAMERA, SPELL_SUMMON_ORKUS_CAMERA))
+            return true;
+
+        return SmartAI::OnGossipHello(player);
+    }
+};
+
+// 48395 - Orkus Camera
+// Summoned on the player with phase 343 (Stormpike Rendezvous), 10 yd above the shore between Orkus and the docks, looking at
+// the docks with Orkus and Kasha at its back. Cancel Cinematic puts the player back in front of Orkus and completes the quest.
+struct npc_hillsbrad_orkus_camera : public npc_hillsbrad_scene_camera
+{
+    npc_hillsbrad_orkus_camera(Creature* creature) : npc_hillsbrad_scene_camera(creature, QUEST_STORMPIKE_RENDEZVOUS, SPELL_CANCEL_CINEMATIC_RENDEZVOUS, 1.0f), _kashaLanded(false) { }
+
+    void Start(Player* player) override
+    {
+        FaceTo(-897.0f, -566.0f);
+
+        if (Creature* orkus = SummonActor(NPC_RENDEZVOUS_ORKUS, RendezvousOuthousePos))
+            _orkusGUID = orkus->GetGUID();
+        if (Creature* vanndar = SummonActor(NPC_RENDEZVOUS_VANNDAR, RendezvousVanndarPos))
+            _vanndarGUID = vanndar->GetGUID();
+        if (Creature* balinda = SummonActor(NPC_RENDEZVOUS_BALINDA, RendezvousBalindaPos))
+            _balindaGUID = balinda->GetGUID();
+
+        // "I had just finished making use of the facilities on the docks when..."
+        Talk(TALK_RENDEZVOUS_FACILITIES, player);
+        _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_SMELL, 6s);
+    }
+
+    void SceneEvent(uint32 eventId, Player* player) override
+    {
+        Creature* orkus = GetActor(_orkusGUID);
+        Creature* vanndar = GetActor(_vanndarGUID);
+        Creature* balinda = GetActor(_balindaGUID);
+        if (!orkus || !vanndar || !balinda)
+        {
+            Finish();
+            return;
+        }
+
+        switch (eventId)
+        {
+            case EVENT_RENDEZVOUS_ORKUS_SMELL:
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_SMELL, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_OUTHOUSE, 6s);
+                break;
+            case EVENT_RENDEZVOUS_OUTHOUSE:
+                // "As I emerged from the outhouse, I saw them!"
+                Talk(TALK_RENDEZVOUS_OUTHOUSE, player);
+                orkus->SetFacingToObject(vanndar);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_HELLSCREAM, 6s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_HELLSCREAM:
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_HELLSCREAM, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_WHERE, 3s);
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_WHERE:
+                vanndar->SetFacingToObject(balinda);
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_WHERE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_BALINDA_PURGATION, 7s);
+                break;
+            case EVENT_RENDEZVOUS_BALINDA_PURGATION:
+                balinda->SetFacingToObject(vanndar);
+                balinda->AI()->Talk(TALK_RENDEZVOUS_BALINDA_PURGATION, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_BALINDA_SMELL, 6s);
+                break;
+            case EVENT_RENDEZVOUS_BALINDA_SMELL:
+                balinda->SetFacingToObject(orkus);
+                balinda->AI()->Talk(TALK_RENDEZVOUS_BALINDA_SMELL, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_LOOK, 6s);
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_LOOK:
+                vanndar->SetFacingToObject(orkus);
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_LOOK, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_JUMP_UP, 3s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_JUMP_UP:
+                orkus->GetMotionMaster()->MoveJump(RendezvousOuthouseTopPos, 10.0f, 10.0f);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_YOU_FACE, 2s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_YOU_FACE:
+                orkus->SetFacingToObject(vanndar);
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_YOU_FACE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_ATTACKS, 3s);
+                break;
+            case EVENT_RENDEZVOUS_ORKUS_ATTACKS:
+                orkus->GetMotionMaster()->MoveJump(RendezvousOrkusFightPos, 15.0f, 15.0f);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_FIGHT, 1500ms);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_ORKUS_KASHA, 6s);
+                break;
+            case EVENT_RENDEZVOUS_FIGHT:
+            {
+                // The fight, played with attack animations only (see above)
+                orkus->SetFacingToObject(vanndar);
+                vanndar->SetFacingToObject(orkus);
+                orkus->HandleEmoteCommand(urand(0, 1) ? EMOTE_ONESHOT_ATTACK1H : EMOTE_ONESHOT_ATTACK2HTIGHT);
+                vanndar->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                Creature* kasha = _kashaLanded ? GetActor(_kashaGUID) : nullptr;
+                if (kasha)
+                {
+                    kasha->SetFacingToObject(balinda);
+                    balinda->SetFacingToObject(kasha);
+                    kasha->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                    balinda->HandleEmoteCommand(EMOTE_ONESHOT_SPELL_CAST_OMNI);
+                }
+                else
+                {
+                    balinda->SetFacingToObject(orkus);
+                    balinda->HandleEmoteCommand(EMOTE_ONESHOT_SPELL_CAST_OMNI);
+                }
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_FIGHT, Milliseconds(urand(1200, 1700)));
+                break;
+            }
+            case EVENT_RENDEZVOUS_ORKUS_KASHA:
+                orkus->AI()->Talk(TALK_RENDEZVOUS_ORKUS_KASHA, player);
+                // Summoned in mid-air: her create packet goes out from AddToMap before gravity is turned off here, but neither
+                // the server nor the client drops a creature that has no falling flag, and she appears out of the camera's view
+                if (Creature* kasha = SummonActor(NPC_RENDEZVOUS_KASHA, RendezvousKashaSkyPos))
+                {
+                    _kashaGUID = kasha->GetGUID();
+                    kasha->SetCanFly(true);
+                    kasha->SetDisableGravity(true);
+                    kasha->GetMotionMaster()->MovePoint(POINT_RENDEZVOUS_KASHA_LANDED, RendezvousKashaLandPos, false);
+                    _events.ScheduleEvent(EVENT_RENDEZVOUS_KASHA_LANDING, 500ms);
+                }
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_ENOUGH, 16s);
+                break;
+            case EVENT_RENDEZVOUS_KASHA_LANDING:
+                // Kasha lands on the dock and joins the fight
+                if (Creature* kasha = GetActor(_kashaGUID))
+                {
+                    if (kasha->GetExactDist(&RendezvousKashaLandPos) > 1.0f)
+                    {
+                        _events.ScheduleEvent(EVENT_RENDEZVOUS_KASHA_LANDING, 500ms);
+                        break;
+                    }
+
+                    kasha->SetDisableGravity(false);
+                    kasha->SetCanFly(false);
+                    _kashaLanded = true;
+                }
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_ENOUGH:
+                _events.CancelEvent(EVENT_RENDEZVOUS_FIGHT);
+                _events.CancelEvent(EVENT_RENDEZVOUS_KASHA_LANDING);
+                _kashaLanded = false;
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_ENOUGH, player);
+                vanndar->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK2HTIGHT);
+                orkus->GetMotionMaster()->MoveJump(RendezvousOrkusSeaPos, 20.0f, 12.0f);
+                if (Creature* kasha = GetActor(_kashaGUID))
+                {
+                    kasha->SetCanFly(true);
+                    kasha->SetDisableGravity(true);
+                    kasha->GetMotionMaster()->MovePoint(POINT_RENDEZVOUS_KASHA_SEA, RendezvousKashaSeaPos, false);
+                }
+                // Between the dock and the spot in the sea: both stay in view, 312261 and 312260 stay behind the camera
+                FaceTo(-913.25f, -559.8f);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_VANNDAR_LEAVE, 5s);
+                break;
+            case EVENT_RENDEZVOUS_VANNDAR_LEAVE:
+                FaceTo(-899.0f, -562.0f);
+                vanndar->SetFacingToObject(balinda);
+                vanndar->AI()->Talk(TALK_RENDEZVOUS_VANNDAR_LEAVE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_BALINDA_AYE, 5s);
+                break;
+            case EVENT_RENDEZVOUS_BALINDA_AYE:
+                balinda->SetFacingToObject(vanndar);
+                balinda->AI()->Talk(TALK_RENDEZVOUS_BALINDA_AYE, player);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_TELEPORT_OUT, 2s);
+                break;
+            case EVENT_RENDEZVOUS_TELEPORT_OUT:
+                vanndar->CastSpell(vanndar, SPELL_TELEPORT_VISUAL_ONLY, true);
+                balinda->CastSpell(balinda, SPELL_TELEPORT_VISUAL_ONLY, true);
+                vanndar->DespawnOrUnsummon(1000);
+                balinda->DespawnOrUnsummon(1000);
+                _events.ScheduleEvent(EVENT_RENDEZVOUS_END, 4s);
+                break;
+            case EVENT_RENDEZVOUS_END:
+                Finish();
+                break;
+            default:
+                break;
+        }
+    }
+
+private:
+    ObjectGuid _orkusGUID;
+    ObjectGuid _vanndarGUID;
+    ObjectGuid _balindaGUID;
+    ObjectGuid _kashaGUID;
+    bool _kashaLanded;
+};
+
+/*######
+## Welcome to the Machine (28096)
+######*/
+
+// The player sits on the Skeletal Steed at Southpoint Gate as the quest giver: Dumass walks in, then Kingslayer Orkus flies in on
+// his frost wyrm, then Johnny Awesome rides in, each only once the one before has been handed his quest and has gone, while
+// High Executor Darthalia comments. Each is talked into his quest through two or three gossip windows, says his parting line and
+// leaves the way he was sent: Dumass, sent southeast to the Azurelode Mine, runs north; Orkus flies off southeast over the gate;
+// Johnny rides northeast through the gate towards the Sludge Fields. Getting off the steed sends them all away (the 2011-09-09
+// hotfix on warcraft.wiki.gg).
+//
+// Sourced (5.4.8 data): the spells - 88542 Summon Skeletal Steed, whose effect value names the ride spell 88543 Ride Skeletal
+// Steed (phase 317 "Welcome to the Machine", quest invisibility 4 on the rider), 88476 Quest Giver (makes its target cast 88563
+// Summon High Executor Darthalia), 88574 Cancel Questgiver; the spell_target_position spots of the summons; every line
+// (broadcast_text 47658-47689); the gossip windows and their options (gossip_menu 12272-12279 with their npc_text, the options
+// of the retail TDB); the mounts; the order and the directions (warcraft.wiki.gg, the options' own text). Ours: who casts the
+// Quest Giver aura and when (the player, once seated) and that it ends with the scene, every timing, the spot in front of the
+// steed, Orkus' start in the air and every approach and departure path, and that the visitors are summoned from here as private
+// summons of the player (the spells' summon properties are personal) rather than by casting their spells.
+
+enum WelcomeToTheMachine
+{
+    QUEST_WELCOME_TO_THE_MACHINE                = 28096,
+
+    NPC_MACHINE_JOHNNY_AWESOME                  = 47442,
+    NPC_MACHINE_KINGSLAYER_ORKUS                = 47443,
+    NPC_MACHINE_DUMASS                          = 47444,
+    NPC_MACHINE_DARTHALIA                       = 47499,
+
+    SPELL_MACHINE_QUEST_GIVER                   = 88476,    // forces its target to cast 88563 Summon High Executor Darthalia
+    SPELL_MACHINE_CANCEL_QUESTGIVER             = 88574,    // removes 88476 from its caster
+
+    // The last gossip window of each visitor: its option hands him his quest (12273 -> 12272, 12276 -> 12275 -> 12274,
+    // 12279 -> 12278 -> 12277; the windows before it only lead on, through gossip_menu_option.ActionMenuID)
+    GOSSIP_MENU_MACHINE_DUMASS_LAST             = 12272,
+    GOSSIP_MENU_MACHINE_ORKUS_LAST              = 12274,
+    GOSSIP_MENU_MACHINE_JOHNNY_LAST             = 12277,
+
+    // High Executor Darthalia (47499)
+    TALK_MACHINE_DARTHALIA_STAND_TALL           = 0,    // 47658
+    TALK_MACHINE_DARTHALIA_ONE_COMING           = 1,    // 47659
+    TALK_MACHINE_DARTHALIA_NEW_FORSAKEN         = 2,    // 47666
+    TALK_MACHINE_DARTHALIA_THIS_ORC             = 3,    // 47667
+    TALK_MACHINE_DARTHALIA_NEVER_RETURNS        = 4,    // 47680
+    TALK_MACHINE_DARTHALIA_ON_YOUR_OWN          = 5,    // 47681
+
+    // The visitors: group 0 is the parting line, the arrival lines start at group 1
+    TALK_MACHINE_VISITOR_PARTING                = 0,
+    TALK_MACHINE_VISITOR_ARRIVAL                = 1,
+
+    // The steed
+    EVENT_MACHINE_CHECK_RIDER                   = 1,
+    EVENT_MACHINE_DARTHALIA                     = 2,
+    EVENT_MACHINE_NEXT_VISITOR                  = 3,
+    EVENT_MACHINE_WATCH_VISITOR                 = 4,
+    EVENT_MACHINE_DISMOUNT                      = 5,
+
+    // The visitors
+    EVENT_MACHINE_VISITOR_ARRIVED               = 1,
+    EVENT_MACHINE_VISITOR_TALK                  = 2,
+    EVENT_MACHINE_VISITOR_STUCK                 = 3,
+    EVENT_MACHINE_VISITOR_LEAVE                 = 4,
+    EVENT_MACHINE_VISITOR_LEAVE_NEXT            = 5,
+    EVENT_MACHINE_VISITOR_GONE                  = 6,
+
+    POINT_MACHINE_ARRIVE                        = 1,
+    POINT_MACHINE_LEAVE                         = 2,
+
+    MACHINE_VISITOR_COUNT                       = 3
+};
+
+struct MachineVisitor
+{
+    uint32 Entry;
+    Position Spawn;             // spell_target_position of its summon spell (Orkus: ours, see below)
+    uint8 ArrivalLines;
+    int8 DarthaliaBefore;       // her line as he comes
+    int8 DarthaliaAfter;        // and once he is gone (-1: none)
+};
+
+MachineVisitor const MachineVisitors[MACHINE_VISITOR_COUNT] =
+{
+    { NPC_MACHINE_DUMASS,           { -580.382f, 453.204f, 81.575f, 4.7473f },   1, TALK_MACHINE_DARTHALIA_ONE_COMING,  TALK_MACHINE_DARTHALIA_NEW_FORSAKEN },
+    // Orkus flies in: he starts in the air about 100 yd behind his summon spot (88560: -586.156 472.934 82.487), out of
+    // sight but inside the cells that are updated around the player, and passes over that spot
+    { NPC_MACHINE_KINGSLAYER_ORKUS, { -605.0f, 520.0f, 115.0f, 4.94f },          3, TALK_MACHINE_DARTHALIA_THIS_ORC,    TALK_MACHINE_DARTHALIA_NEVER_RETURNS },
+    { NPC_MACHINE_JOHNNY_AWESOME,   { -582.636f, 470.513f, 82.4887f, 4.76475f }, 1, TALK_MACHINE_DARTHALIA_ON_YOUR_OWN, -1 }
+};
+
+float const MachineSteedFacing = 2.47837f;     // the steed at the gate (47445)
+Position const MachineDarthaliaSpot = { -572.135f, 428.285f, 80.3627f, 2.25147f };   // 88563 (where the real Darthalia stands)
+// A visitor stops this far from the rider, on his own side: the steed stands wherever Summon Skeletal Steed put it, and the
+// gossip range (INTERACTION_DISTANCE, 5 yd) is measured from the player's own position (ours)
+float const MachineVisitorDistance  = 2.5f;
+
+// Orkus' approach: down over his summon spot to the spot in front of the steed (ground clearance checked against the
+// 5.4.8 terrain and vmaps: 30 yd at the start, nothing in the way)
+Position const MachineOrkusArrival[] =
+{
+    { -586.2f, 472.9f, 100.0f },
+    { -581.0f, 446.0f, 88.0f }
+};
+
+// The departures, each the way the visitor was sent. The camp's wall runs north-south at y 392-404 with the gate at
+// x -572 to -596, so everyone going into Hillsbrad passes through the gate.
+// Dumass: sent southeast, he runs north along the camp (the joke of "NORTH! GOT IT!")
+Position const MachineDumassDeparture[] =
+{
+    { -535.0f, 412.0f, 85.0f },
+    { -515.0f, 414.0f, 87.0f }
+};
+// Orkus: southeast, "more south than east, probably off the coast": he takes off and flies out over the gate
+Position const MachineOrkusDeparture[] =
+{
+    { -586.0f, 412.0f, 90.0f },
+    { -590.0f, 395.0f, 99.0f },
+    { -630.0f, 375.0f, 110.0f },
+    { -660.0f, 362.0f, 118.0f }
+};
+// Johnny: northeast to the Sludge Fields, through the gate
+Position const MachineJohnnyDeparture[] =
+{
+    { -584.0f, 398.0f, 77.7f },
+    { -555.0f, 362.0f, 81.0f }
+};
+
+// 47444 Dumass, 47443 Kingslayer Orkus, 47442 Johnny Awesome - the player's private summons, called by the steed below
+struct npc_hillsbrad_machine_visitor : public ScriptedAI
+{
+    npc_hillsbrad_machine_visitor(Creature* creature) : ScriptedAI(creature), _arrivalLine(0), _leavePoint(0), _arrived(false),
+        _leaving(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (!summoner->IsPlayer())
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        _playerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
+        // Not to be talked to before he stands in front of the steed
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+
+        // Where he stops: close to the rider, on the side he comes from
+        Position const& rider = summoner->GetPosition();
+        float const angle = rider.GetAbsoluteAngle(me);
+        _spot.Relocate(rider.GetPositionX() + MachineVisitorDistance * std::cos(angle), rider.GetPositionY() + MachineVisitorDistance * std::sin(angle),
+            rider.GetPositionZ());
+        float const ground = me->GetMap()->GetHeight(_spot.GetPositionX(), _spot.GetPositionY(), _spot.GetPositionZ() + 5.0f, true);
+        if (ground > INVALID_HEIGHT)
+            _spot.m_positionZ = ground;
+
+        switch (me->GetEntry())
+        {
+            case NPC_MACHINE_KINGSLAYER_ORKUS:
+            {
+                me->SetCanFly(true);
+                me->SetDisableGravity(true);
+                std::vector<Position> arrival(std::begin(MachineOrkusArrival), std::end(MachineOrkusArrival));
+                arrival.push_back(_spot);
+                FlyPath(POINT_MACHINE_ARRIVE, arrival.data(), arrival.data() + arrival.size());
+                break;
+            }
+            case NPC_MACHINE_JOHNNY_AWESOME:
+                me->SetWalk(false);
+                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, _spot);
+                break;
+            default:
+                me->SetWalk(true);
+                me->GetMotionMaster()->MovePoint(POINT_MACHINE_ARRIVE, _spot);
+                break;
+        }
+
+        // Whatever kept him from coming, he must be there to be talked to (ours: the quest stays completable)
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_STUCK, 40s);
+    }
+
+    void MovementInform(uint32 type, uint32 pointId) override
+    {
+        if (type != POINT_MOTION_TYPE && type != EFFECT_MOTION_TYPE)
+            return;
+
+        // The next move is started from the update: a move started here is undone when the finished one is finalized
+        if (pointId == POINT_MACHINE_ARRIVE && !_arrived)
+            _events.ScheduleEvent(EVENT_MACHINE_VISITOR_ARRIVED, 100ms);
+        else if (pointId == POINT_MACHINE_LEAVE && _leaving)
+            _events.ScheduleEvent(EVENT_MACHINE_VISITOR_LEAVE_NEXT, 100ms);
+    }
+
+    // Group members see each other's private summons; a visitor only talks to the player on the steed
+    bool OnGossipHello(Player* player) override
+    {
+        if (player->GetGUID() == _playerGUID)
+            return false;
+
+        CloseGossipMenuFor(player);
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 /*gossipListId*/) override
+    {
+        if (player->GetGUID() != _playerGUID)
+        {
+            CloseGossipMenuFor(player);
+            return true;
+        }
+
+        // The menu id comes from the client: only the window the player really has open counts
+        if (_leaving || menuId != LastMenu() || player->PlayerTalkClass->GetGossipMenu().GetMenuId() != menuId)
+            return false;   // the windows before the last one lead on by themselves
+
+        CloseGossipMenuFor(player);
+        _leaving = true;
+        _events.Reset();
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+        Talk(TALK_MACHINE_VISITOR_PARTING, player);
+        player->KilledMonsterCredit(me->GetEntry());
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_LEAVE, 3s);
+        // Gone at the latest after this, wherever his way ended
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_GONE, 30s);
+        return true;
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+        if (!player || !player->IsInWorld())
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_MACHINE_VISITOR_STUCK:
+                    if (!_arrived)
+                    {
+                        me->GetMotionMaster()->Clear();
+                        me->NearTeleportTo(_spot.GetPositionX(), _spot.GetPositionY(), _spot.GetPositionZ(), me->GetOrientation());
+                        Arrive(player);
+                    }
+                    break;
+                case EVENT_MACHINE_VISITOR_ARRIVED:
+                    if (!_arrived)
+                        Arrive(player);
+                    break;
+                case EVENT_MACHINE_VISITOR_TALK:
+                    Talk(TALK_MACHINE_VISITOR_ARRIVAL + _arrivalLine, player);
+                    if (++_arrivalLine < ArrivalLines())
+                        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_TALK, 5s);
+                    break;
+                case EVENT_MACHINE_VISITOR_LEAVE:
+                    if (me->GetEntry() == NPC_MACHINE_KINGSLAYER_ORKUS)
+                    {
+                        me->SetCanFly(true);
+                        me->SetDisableGravity(true);
+                        FlyPath(POINT_MACHINE_LEAVE, std::begin(MachineOrkusDeparture), std::end(MachineOrkusDeparture));
+                        _leavePoint = uint8(std::size(MachineOrkusDeparture));
+                    }
+                    else
+                    {
+                        me->SetWalk(false);
+                        MoveOn();
+                    }
+                    break;
+                case EVENT_MACHINE_VISITOR_LEAVE_NEXT:
+                    if (_leavePoint >= DeparturePoints())
+                    {
+                        me->DespawnOrUnsummon();
+                        return;
+                    }
+                    MoveOn();
+                    break;
+                case EVENT_MACHINE_VISITOR_GONE:
+                    me->DespawnOrUnsummon();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void Arrive(Player* player)
+    {
+        _arrived = true;
+        if (me->GetEntry() == NPC_MACHINE_KINGSLAYER_ORKUS)
+        {
+            // Lands
+            me->SetDisableGravity(false);
+            me->SetCanFly(false);
+        }
+        me->SetFacingToObject(player);
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_GOSSIP);
+        _events.ScheduleEvent(EVENT_MACHINE_VISITOR_TALK, 500ms);
+    }
+
+    // The next point of a ground departure
+    void MoveOn()
+    {
+        Position const* path = me->GetEntry() == NPC_MACHINE_JOHNNY_AWESOME ? MachineJohnnyDeparture : MachineDumassDeparture;
+        me->GetMotionMaster()->MovePoint(POINT_MACHINE_LEAVE, path[_leavePoint++]);
+    }
+
+    void FlyPath(uint32 pointId, Position const* begin, Position const* end)
+    {
+        std::vector<Position> path;
+        path.push_back(me->GetPosition());   // replaced by the current position when the spline starts
+        path.insert(path.end(), begin, end);
+        me->GetMotionMaster()->Clear();
+        me->GetMotionMaster()->MoveSmoothPath(pointId, path.data(), path.size(), false, true);
+    }
+
+    uint8 DeparturePoints() const
+    {
+        switch (me->GetEntry())
+        {
+            case NPC_MACHINE_KINGSLAYER_ORKUS: return uint8(std::size(MachineOrkusDeparture));
+            case NPC_MACHINE_JOHNNY_AWESOME:   return uint8(std::size(MachineJohnnyDeparture));
+            default:                           return uint8(std::size(MachineDumassDeparture));
+        }
+    }
+
+    uint32 LastMenu() const
+    {
+        switch (me->GetEntry())
+        {
+            case NPC_MACHINE_KINGSLAYER_ORKUS: return GOSSIP_MENU_MACHINE_ORKUS_LAST;
+            case NPC_MACHINE_JOHNNY_AWESOME:   return GOSSIP_MENU_MACHINE_JOHNNY_LAST;
+            default:                           return GOSSIP_MENU_MACHINE_DUMASS_LAST;
+        }
+    }
+
+    uint8 ArrivalLines() const
+    {
+        for (MachineVisitor const& visitor : MachineVisitors)
+            if (visitor.Entry == me->GetEntry())
+                return visitor.ArrivalLines;
+        return 0;
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    Position _spot;
+    uint8 _arrivalLine;
+    uint8 _leavePoint;
+    bool _arrived;
+    bool _leaving;
+};
+
+// 47488 - Skeletal Steed, summoned by Summon Skeletal Steed (88542) when the player clicks the steed at the gate
+// Its one seat (8976) can control it, so seating the player charms the steed; a plain ScriptedAI is switched off for PossessedAI
+// then and the scene would never start. VehicleAI stays on, as the scene cameras do.
+struct npc_hillsbrad_machine_skeletal_steed : public VehicleAI
+{
+    npc_hillsbrad_machine_skeletal_steed(Creature* creature) : VehicleAI(creature), _visitor(0), _boarded(false), _ended(false) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        Player* player = summoner->ToPlayer();
+        if (!player || player->GetQuestStatus(QUEST_WELCOME_TO_THE_MACHINE) != QUEST_STATUS_INCOMPLETE || player->GetVehicle())
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+
+        // Summon Skeletal Steed is a vehicle summon: right after this the core makes the player cast the ride spell its effect
+        // value names; spell_hillsbrad_machine_summon_skeletal_steed seats the player with the generic ride instead, as
+        // Ride Skeletal Steed (88543) would put the player in phase 317 and hide every actor.
+        _playerGUID = player->GetGUID();
+        me->SetReactState(REACT_PASSIVE);
+        // Facing the road, as the steed at the gate does (the spell's destination has no orientation)
+        me->SetFacingTo(MachineSteedFacing);
+        _events.ScheduleEvent(EVENT_MACHINE_CHECK_RIDER, 2s);
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 /*seatId*/, bool apply) override
+    {
+        if (passenger->GetGUID() != _playerGUID)
+            return;
+
+        if (!apply)
+        {
+            End();
+            return;
+        }
+
+        if (!_boarded)
+        {
+            _boarded = true;
+            // "Stand there and wait": the controlling seat would let the player ride off, away from the visitors
+            me->SetControlled(true, UNIT_STATE_ROOT);
+            me->SetFacingTo(MachineSteedFacing);
+            _events.ScheduleEvent(EVENT_MACHINE_DARTHALIA, 1s);
+        }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        VehicleAI::UpdateAI(diff);
+
+        if (_ended)
+            return;
+
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID);
+            if (!player || !player->IsInWorld() || player->GetQuestStatus(QUEST_WELCOME_TO_THE_MACHINE) == QUEST_STATUS_NONE)
+            {
+                End();
+                return;
+            }
+
+            switch (eventId)
+            {
+                case EVENT_MACHINE_CHECK_RIDER:
+                    if (!_boarded)
+                    {
+                        End();
+                        return;
+                    }
+                    break;
+                case EVENT_MACHINE_DARTHALIA:
+                    // The Quest Giver aura brings the player's own Darthalia (88563, onto the real one's spot); removing it
+                    // sends her away (spell_hillsbrad_machine_quest_giver)
+                    player->CastSpell(player, SPELL_MACHINE_QUEST_GIVER, true);
+                    _darthaliaGUID = FindOwnSummon(player, NPC_MACHINE_DARTHALIA, 30.0f);
+                    if (_darthaliaGUID.IsEmpty())
+                        if (TempSummon* darthalia = player->SummonCreature(NPC_MACHINE_DARTHALIA, MachineDarthaliaSpot,
+                            TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID()))
+                            _darthaliaGUID = darthalia->GetGUID();
+                    DarthaliaTalk(TALK_MACHINE_DARTHALIA_STAND_TALL, player);
+                    _events.ScheduleEvent(EVENT_MACHINE_NEXT_VISITOR, 6s);
+                    break;
+                case EVENT_MACHINE_NEXT_VISITOR:
+                    // A visitor already dealt with (before a logout) is skipped
+                    while (_visitor < MACHINE_VISITOR_COUNT
+                        && player->GetReqKillOrCastCurrentCount(QUEST_WELCOME_TO_THE_MACHINE, MachineVisitors[_visitor].Entry))
+                        ++_visitor;
+
+                    if (_visitor >= MACHINE_VISITOR_COUNT)
+                    {
+                        _events.ScheduleEvent(EVENT_MACHINE_DISMOUNT, 3s);
+                        break;
+                    }
+
+                    DarthaliaTalk(MachineVisitors[_visitor].DarthaliaBefore, player);
+                    // He comes, talks and leaves by himself (npc_hillsbrad_machine_visitor)
+                    if (TempSummon* visitor = player->SummonCreature(MachineVisitors[_visitor].Entry, MachineVisitors[_visitor].Spawn,
+                        TEMPSUMMON_MANUAL_DESPAWN, 0ms, 0, player->GetGUID()))
+                        _visitorGUID = visitor->GetGUID();
+                    _events.ScheduleEvent(EVENT_MACHINE_WATCH_VISITOR, 1s);
+                    break;
+                case EVENT_MACHINE_WATCH_VISITOR:
+                {
+                    Creature* visitor = ObjectAccessor::GetCreature(*me, _visitorGUID);
+                    if (!visitor || !visitor->IsAlive())
+                    {
+                        // He has his quest and is gone
+                        if (MachineVisitors[_visitor].DarthaliaAfter >= 0)
+                            DarthaliaTalk(uint8(MachineVisitors[_visitor].DarthaliaAfter), player);
+                        _visitorGUID.Clear();
+                        ++_visitor;
+                        _events.ScheduleEvent(EVENT_MACHINE_NEXT_VISITOR, 6s);
+                        break;
+                    }
+                    _events.ScheduleEvent(EVENT_MACHINE_WATCH_VISITOR, 1s);
+                    break;
+                }
+                case EVENT_MACHINE_DISMOUNT:
+                    // All three have their quests: the player gets off, which ends the scene
+                    End();
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    void DarthaliaTalk(uint8 textId, Player* player)
+    {
+        if (Creature* darthalia = ObjectAccessor::GetCreature(*me, _darthaliaGUID))
+            if (darthalia->IsAIEnabled)
+                darthalia->AI()->Talk(textId, player);
+    }
+
+    void End()
+    {
+        if (_ended)
+            return;
+
+        _ended = true;
+        _events.Reset();
+
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
+        {
+            if (player->IsInWorld() && !player->GetSession()->PlayerLogout())
+                player->CastSpell(player, SPELL_MACHINE_CANCEL_QUESTGIVER, true);
+            if (player->GetVehicleBase() == me)
+                player->ExitVehicle();
+        }
+
+        for (ObjectGuid const& guid : { _visitorGUID, _darthaliaGUID })
+            if (Creature* actor = ObjectAccessor::GetCreature(*me, guid))
+                actor->DespawnOrUnsummon();
+
+        me->DespawnOrUnsummon(500);
+    }
+
+    EventMap _events;
+    ObjectGuid _playerGUID;
+    ObjectGuid _darthaliaGUID;
+    ObjectGuid _visitorGUID;
+    uint8 _visitor;
+    bool _boarded;
+    bool _ended;
+};
+
+// 88476 - Quest Giver: the player's own Darthalia, whom the aura brought (its effect 1 has the player cast 88563), leaves with it
+// 88542 - Summon Skeletal Steed
+// A vehicle summon: the core would seat the player with the spell its effect value names, Ride Skeletal Steed (88543). 88543 also
+// carries phase 317, and this core rebuilds a player's phases from every phase aura on them (WorldObject::UpdatePhasing...), so the
+// player saw nothing but phase 317 - the visitors, Darthalia and the rest of the world vanished - even with the phase effect's
+// handler prevented. The summon is done here as the core does it (the spell's entry, summon properties, private to the caster),
+// and the player is seated with the generic ride instead. Ours: the scene's actors are the player's private summons anyway; the
+// only thing lost is 88543's quest invisibility, so other players can see the player sitting on the steed.
+class spell_hillsbrad_machine_summon_skeletal_steed : public SpellScript
+{
+    PrepareSpellScript(spell_hillsbrad_machine_summon_skeletal_steed);
+
+    void HandleSummon(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+
+        Unit* caster = GetCaster();
+        WorldLocation const* dest = GetHitDest();
+        if (!caster || !dest)
+            return;
+
+        SpellEffectInfo const& effect = GetSpellInfo()->Effects[effIndex];
+        SummonPropertiesEntry const* properties = sSummonPropertiesStore.LookupEntry(effect.MiscValueB);
+        int32 const duration = GetSpellInfo()->GetDuration();
+        TempSummon* steed = caster->GetMap()->SummonCreature(uint32(effect.MiscValue), *dest, properties, Milliseconds(duration > 0 ? duration : 0),
+            caster, GetSpellInfo()->Id, 0, caster->GetGUID());
+        if (!steed || !steed->IsVehicle())
+            return;
+
+        steed->SetFaction(caster->GetFaction());
+        caster->CastSpell(steed, VEHICLE_SPELL_RIDE_HARDCODED, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_hillsbrad_machine_summon_skeletal_steed::HandleSummon, EFFECT_0, SPELL_EFFECT_SUMMON);
+    }
+};
+
+class spell_hillsbrad_machine_quest_giver : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_machine_quest_giver);
+
+    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsInWorld())
+            return;
+
+        if (Creature* darthalia = ObjectAccessor::GetCreature(*player, FindOwnSummon(player, NPC_MACHINE_DARTHALIA)))
+            darthalia->DespawnOrUnsummon();
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_machine_quest_giver::AfterRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 89149 - Sludge Field Camera, 91354 - Aid of the Frostwolf Camera, 90714 - Tarren Mill Camera, 91609 - Stormpike Apocalypse Camera
+// The ride auras of the five cameras (89149, 89970 Orkus Camera, 90714, 91354, 91609) also make the rider invisible (quest
+// invisibility 4). In this core an invisible unit only sees the units that detect its invisibility
+// (WorldObject::CanDetectInvisibilityOf), and nothing in the world detects type 4, so
+// the rider saw no creature at all during the tour, the scene's own actors included (the scene phase has nothing to do with
+// it: unphased spawns stay in sight with phase 169). The invisibility is not applied; the rider is hidden from everyone else
+// the server-side way instead (as a GM is), which leaves the rider's own sight alone. Ours: as with the invisibility, other
+// players and creatures do not see the rider; unlike it, group members do not either.
+class spell_hillsbrad_scene_camera_ride : public AuraScript
+{
+    PrepareAuraScript(spell_hillsbrad_scene_camera_ride);
+
+    void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        PreventDefaultAction();
+
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !player->IsVisible())
+            return;
+
+        _hidden = true;
+        player->SetVisible(false);
+    }
+
+    // The phase comes after the hiding, and a phase change only refreshes what a visible player sees: without this the scene
+    // phase's own spawns only showed up once the camera had moved on
+    void AfterApplyPhase(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (_hidden)
+            GetTarget()->UpdateObjectVisibility();
+    }
+
+    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        PreventDefaultAction();
+
+        if (!_hidden)
+            return;
+
+        _hidden = false;
+        GetTarget()->SetVisible(true);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_hillsbrad_scene_camera_ride::HandleApply, EFFECT_1, SPELL_AURA_MOD_INVISIBILITY, AURA_EFFECT_HANDLE_CHANGE_AMOUNT_SEND_FOR_CLIENT_MASK);
+        AfterEffectApply += AuraEffectApplyFn(spell_hillsbrad_scene_camera_ride::AfterApplyPhase, EFFECT_2, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(spell_hillsbrad_scene_camera_ride::HandleRemove, EFFECT_1, SPELL_AURA_MOD_INVISIBILITY, AURA_EFFECT_HANDLE_CHANGE_AMOUNT_SEND_FOR_CLIENT_MASK);
+    }
+
+    bool _hidden = false;
+};
+
+// A player who logs out (or crashes) in a scene camera is saved at the camera's position (Player::SaveToDB runs before the vehicle
+// exit), up to 125 yd above a hostile camp, and would fall to their death on logging in. Ours, as retail's scenes could not be
+// left. Those whose scene quest is still open and who are in the air over the scene are set down at its end spot, in front of
+// the quest giver who plays it again (ReplayScene). The position is corrected before the player enters the map, so the client
+// is told the right place from the start: a near teleport at login would depend on the client answering it from the loading
+// screen, and the player's movement is ignored until it does. The checks keep this to such a player: the quest is also open for
+// a party member who confirmed it, and one of those may be anywhere, flying, swimming or walking on water. A saved position
+// can't tell a camera from a jump: someone in the same state who logged out mid-jump over a drop is set down at the giver too.
+class player_hillsbrad_scene_logout : public PlayerScript
+{
+public:
+    player_hillsbrad_scene_logout() : PlayerScript("player_hillsbrad_scene_logout") { }
+
+    void OnLoadFromDB(Player* player) override
+    {
+        struct AerialScene
+        {
+            uint32 QuestId;
+            uint32 EndSpellId;
+            float Radius; // how far from the end spot the camera flies
+            float Margin; // how high above the surface counts as in the camera
+        };
+
+        static AerialScene const scenes[] =
+        {
+            { QUEST_MATTERS_OF_LOYALTY,     SPELL_CANCEL_CINEMATIC_MATTERS_OF_LOYALTY,  60.0f,   5.0f },
+            { QUEST_MARCH_OF_THE_STORMPIKE, SPELL_CANCEL_CINEMATIC_MARCH,               1000.0f, 12.0f },
+            { QUEST_STORMPIKE_APOCALYPSE,   SPELL_CANCEL_CINEMATIC_APOCALYPSE,          1000.0f, 12.0f }
+        };
+
+        if (!player->IsAlive() || !player->m_taxi.empty() || player->GetTransport() || player->HasAuraType(SPELL_AURA_FLY)
+            || player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+            return;
+
+        for (AerialScene const& scene : scenes)
+        {
+            if (player->GetQuestStatus(scene.QuestId) != QUEST_STATUS_INCOMPLETE)
+                continue;
+
+            SpellTargetPosition const* dest = sSpellMgr->GetSpellTargetPosition(scene.EndSpellId, EFFECT_0);
+            if (!dest || dest->target_mapId != player->GetMapId() || player->GetExactDist2d(dest->target_X, dest->target_Y) > scene.Radius)
+                continue;
+
+            // The margin is set per scene, below the lowest the camera flies once it has risen: the Matters of Loyalty camera hovers
+            // 7 yd up, the Stormpike cameras stay 17 yd or more above the ground and the vmaps after their 7 yd lift at Cromush. A
+            // player standing on anything, or in the air from a jump, has less. No surface found below (under the world) still sets
+            // the player down.
+            float const x = player->GetPositionX();
+            float const y = player->GetPositionY();
+            float const z = player->GetPositionZ();
+            Map* map = player->GetMap();
+
+            // The player's grid may not exist yet: a terrain lookup only loads the terrain tile, so without the grid's vmap and
+            // gameobjects a player in a cave or on a roof would read as in the air. AddPlayerToMap loads this grid next anyway,
+            // on this same thread; a player moved away just leaves it loaded until it expires.
+            map->LoadGrid(x, y);
+
+            float surface = map->GetHeight(player->GetPhaseMask(), x, y, z, true, MAX_FALL_DISTANCE);
+            LiquidData liquid;
+            liquid.level = INVALID_HEIGHT;
+            if (map->GetLiquidStatus(player->GetPhaseMask(), x, y, z, MAP_ALL_LIQUIDS, &liquid) != LIQUID_MAP_NO_WATER)
+                surface = std::max(surface, liquid.level);
+            if (z - surface <= scene.Margin)
+                continue;
+
+            TC_LOG_DEBUG("scripts", "player_hillsbrad_scene_logout: %s logged in %.1f %.1f %.1f in the air with quest %u open, setting them down",
+                player->GetName().c_str(), x, y, z, scene.QuestId);
+            player->Relocate(dest->target_X, dest->target_Y, dest->target_Z, dest->target_Orientation);
+            player->SetFallInformation(0, dest->target_Z);
+            return;
+        }
+    }
+};
+
+void AddSC_hillsbrad_sludge_stormpike()
+{
+    new player_hillsbrad_scene_logout();
+    new creature_script<npc_hillsbrad_machine_skeletal_steed>("npc_hillsbrad_machine_skeletal_steed");
+    new creature_script<npc_hillsbrad_machine_visitor>("npc_hillsbrad_machine_visitor");
+    new aura_script<spell_hillsbrad_machine_quest_giver>("spell_hillsbrad_machine_quest_giver");
+    new aura_script<spell_hillsbrad_scene_camera_ride>("spell_hillsbrad_scene_camera_ride");
+    new spell_script<spell_hillsbrad_machine_summon_skeletal_steed>("spell_hillsbrad_machine_summon_skeletal_steed");
+    new creature_script<npc_hillsbrad_scene_actor>("npc_hillsbrad_scene_actor");
+    new creature_script<npc_hillsbrad_warden_stillwater_sludge>("npc_hillsbrad_warden_stillwater_sludge");
+    new creature_script<npc_hillsbrad_sludge_fields_camera>("npc_hillsbrad_sludge_fields_camera");
+    new aura_script<spell_hillsbrad_sludge_field_summon_controller>("spell_hillsbrad_sludge_field_summon_controller");
+    new creature_script<npc_hillsbrad_sludge_fields_companion>("npc_hillsbrad_sludge_fields_companion");
+    new creature_script<npc_hillsbrad_caged_lydon>("npc_hillsbrad_caged_lydon");
+    new creature_script<npc_hillsbrad_warden_stillwater_blight>("npc_hillsbrad_warden_stillwater_blight");
+    new creature_script<npc_hillsbrad_voggah_deathgrip>("npc_hillsbrad_voggah_deathgrip");
+    new creature_script<npc_hillsbrad_aid_of_the_frostwolf_camera>("npc_hillsbrad_aid_of_the_frostwolf_camera");
+    new creature_script<npc_hillsbrad_cloned_image>("npc_hillsbrad_cloned_image");
+    new creature_script<npc_hillsbrad_high_warlord_cromush>("npc_hillsbrad_high_warlord_cromush");
+    new creature_script<npc_hillsbrad_tarren_mill_camera>("npc_hillsbrad_tarren_mill_camera");
+    new creature_script<npc_hillsbrad_stormpike_apocalypse_camera>("npc_hillsbrad_stormpike_apocalypse_camera");
+    new creature_script<npc_hillsbrad_kingslayer_orkus_southshore>("npc_hillsbrad_kingslayer_orkus_southshore");
+    new creature_script<npc_hillsbrad_orkus_camera>("npc_hillsbrad_orkus_camera");
+}

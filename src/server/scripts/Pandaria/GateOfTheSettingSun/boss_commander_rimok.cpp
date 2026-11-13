@@ -394,6 +394,18 @@ class spell_rimok_saboteur_bombard : public SpellScriptLoader
             }
         };
 
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_rimok_saboteur_bombard_AuraScript();
+        }
+};
+
+// 120202 - Bombard (triggered by 120559, the periodic aura above): the target filter belongs to the triggered spell
+class spell_rimok_saboteur_bombard_trigger : public SpellScriptLoader
+{
+    public:
+        spell_rimok_saboteur_bombard_trigger() : SpellScriptLoader("spell_rimok_saboteur_bombard_trigger") { }
+
         class spell_bombard_rimok_SpellScript : public SpellScript
         {
             PrepareSpellScript(spell_bombard_rimok_SpellScript);
@@ -412,11 +424,6 @@ class spell_rimok_saboteur_bombard : public SpellScriptLoader
         SpellScript* GetSpellScript() const override
         {
             return new spell_bombard_rimok_SpellScript();
-        }
-
-        AuraScript* GetAuraScript() const override
-        {
-            return new spell_rimok_saboteur_bombard_AuraScript();
         }
 };
 
@@ -455,5 +462,6 @@ void AddSC_boss_commander_rimok()
     new npc_krikthik_saboteur();
     new npc_add_generator();
     new spell_rimok_saboteur_bombard();
+    new spell_rimok_saboteur_bombard_trigger();
     new spell_rimok_viscous_fluid();
 }

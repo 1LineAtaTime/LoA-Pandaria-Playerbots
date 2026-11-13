@@ -139,6 +139,9 @@ public:
     bool randomBotLoginAtStartup;
     std::string randomBotAccountPrefix;
     uint32 randomBotAccountCount;
+    // Beyond AC (default 0 = AC): percent of extra random bot accounts and characters over MaxRandomBots, so the pool is
+    // not sized exactly to the bot count (RandomPlayerbotFactory::CalculateNeededRndBotAccounts)
+    uint32 randomBotAccountSlackPct;
     bool randomBotRandomPassword;
     std::vector<uint32> randomBotAccounts;
 
@@ -250,6 +253,8 @@ public:
     // Bot add (.playerbots bot / .npcbot addclass; maxAddedBots already existed above).
     int32 addClassCommand;
     int32 addClassAccountPoolSize;
+    // AC PlayerbotAIConfig.h:453: scales the gear score an addclass bot is re-geared to on login (PlayerbotHolder::OnBotLogin)
+    float autoInitEquipLevelLimitRatio;
     bool autoInitOnly;
 
     // Chat (PlayerbotAI::HandleCommand).
@@ -272,6 +277,9 @@ public:
     bool allowSummonWhenMasterIsDead;
     bool allowSummonWhenBotIsDead;
     int32 reviveBotWhenSummoned;
+    bool followTeleport;           // beyond AC (#985), default off
+    bool respectCrowdControl;      // beyond AC (#985), default off: AttackersValue skips breakable-CC targets
+    uint32 followTeleportDelay;
     bool botRepairWhenSummon;
     bool summonAtInnkeepersEnabled;
     // AC PlayerbotAIConfig.h:287 / .cpp:407-408 (#530 item 6): per-bot diagnostic logs only for bots with a real-player master.

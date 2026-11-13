@@ -2086,7 +2086,7 @@ class spell_total_annihilation : public SpellScript
 
     void Register() override
     {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_total_annihilation::CountTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        // 129711 only triggers 117914 (the spell with SRC_AREA_ENTRY), so CountTargets can never run on it (targetCount stays 0).
         AfterCast += SpellCastFn(spell_total_annihilation::CheckTargets);
     }
 };

@@ -721,11 +721,12 @@ namespace
     }
 
     // The core's melee damage per hit of a creature with damage modifier 1, as StatSystem.cpp Creature::UpdateDamagePhysical
-    // computes it: attack power * attack time / 14 plus the average weapon damage Creature::SelectLevel sets (1.0 - 1.5 x base).
+    // computes it: (attack power / 14 plus the average weapon damage Creature::SelectLevel sets, 1.0 - 1.5 x base) x attack
+    // time. The damage columns are damage per second.
     float NativeMeleePerHit(CreatureBaseStats const* stats, uint32 column, uint32 attackTimeMs)
     {
-        return float(stats->AttackPower) * float(attackTimeMs) / 14000.0f +
-            1.25f * stats->BaseDamage[std::min<uint32>(column, MAX_CREATURE_BASE_DAMAGE - 1)];
+        return (float(stats->AttackPower) / 14.0f +
+            1.25f * stats->BaseDamage[std::min<uint32>(column, MAX_CREATURE_BASE_DAMAGE - 1)]) * float(attackTimeMs) / 1000.0f;
     }
 
     struct LevelRatios
@@ -2035,7 +2036,7 @@ void AutoBalance::OnCreatureUpdate(Creature* creature)
     bool const manaUser = creature->GetPowerType() == POWER_MANA && creature->GetMaxPower(POWER_MANA) > 0;
     float const manaPct = manaUser ? float(creature->GetPower(POWER_MANA)) / float(creature->GetMaxPower(POWER_MANA)) : 1.0f;
     CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
-    creature->SelectLevel(cinfo);                                       // re-enters OnCreatureSelectLevel / ModifyCreatureHealthMana
+    creature->SelectLevel(cinfo, true);                                 // keeps the roll; re-enters OnCreatureSelectLevel / ModifyCreatureHealthMana
     if (!creature->IsPet())
     {
         float const armor = float(sObjectMgr->GetCreatureBaseStats(creature->GetLevel(), cinfo->unit_class)->GenerateArmor(cinfo));

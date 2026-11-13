@@ -27,18 +27,19 @@ class MapUpdateRequest
         Map& m_map;
         MapUpdater& m_updater;
         uint32 m_diff;
+        uint32 s_diff;   // #935: the world tick (AC MapUpdateRequest)
 
     public:
 
-        MapUpdateRequest(Map& m, MapUpdater& u, uint32 d)
-            : m_map(m), m_updater(u), m_diff(d)
+        MapUpdateRequest(Map& m, MapUpdater& u, uint32 d, uint32 sd)
+            : m_map(m), m_updater(u), m_diff(d), s_diff(sd)
         {
         }
 
         void call()
         {
             //TC_METRIC_TIMER("map_update_time_diff", TC_METRIC_TAG("map_id", std::to_string(m_map.GetId())));
-            m_map.Update (m_diff);
+            m_map.Update(m_diff, s_diff);
             m_updater.update_finished();
         }
 };
@@ -75,13 +76,13 @@ void MapUpdater::wait()
     lock.unlock();
 }
 
-void MapUpdater::schedule_update(Map& map, uint32 diff)
+void MapUpdater::schedule_update(Map& map, uint32 diff, uint32 s_diff)
 {
     std::lock_guard<std::mutex> lock(_lock);
 
     ++pending_requests;
 
-    _queue.Push(new MapUpdateRequest(map, *this, diff));
+    _queue.Push(new MapUpdateRequest(map, *this, diff, s_diff));
 }
 
 bool MapUpdater::activated()

@@ -160,6 +160,15 @@ void npc_escortAI::JustDied(Unit* /*killer*/)
 
 void npc_escortAI::JustAppeared()
 {
+    // #1000, AC parity: this is AC's npc_escortAI::JustRespawned (AC ScriptedEscortAI.cpp:169-183), and AC never runs it for
+    // a temp summon (AC Creature.cpp:718 "Skip for temp summons: InitializeAI already reset them, and JustRespawned would
+    // clobber state set synchronously during SUMMON"). Our JustAppeared runs on every creature's first update, so an escort
+    // started before it - in IsSummonedBy, in the summoner's JustSummoned / SetGUID / SetData / DoAction right after
+    // SummonCreature, or in PassengerBoarded of a boarding done in the summon call - was wiped here (and Reset() cleared what
+    // IsSummonedBy stored): the NPC reached its first waypoint and stood still. InitializeAI already ran Reset() for a summon.
+    if (me->IsSummon())
+        return;
+
     m_uiEscortState = STATE_ESCORT_NONE;
 
     if (!IsCombatMovementAllowed())

@@ -188,8 +188,11 @@ public:
     void ReInitCurrentEngine();
     virtual bool DoSpecificAction(std::string const name, Event event = Event(), bool silent = false, std::string const qualifier = "");
 
-    void ResetStrategies();
+    // AzerothCore's signature; the bot's stored strategies are loaded by PlayerbotRepository::Load at login
+    void ResetStrategies(bool load = false);
     void ChangeStrategy(std::string const name, BotState type);
+    // Resets only the combat or non-combat engine to the class and spec defaults ("co !" / "nc !")
+    void SelectiveResetStrategies(BotState type);
     void ClearStrategies(BotState type);
     std::vector<std::string> GetStrategies(BotState type);
 

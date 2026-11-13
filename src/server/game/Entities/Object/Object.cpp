@@ -2435,6 +2435,11 @@ bool WorldObject::CanNeverSee(WorldObject const* obj) const
     if (GetMap() != obj->GetMap() || !InSamePhase(obj))
         return true;
 
+    // the passengers of a moving transport with a phase rule (its crew, its riders) are seen together with it only
+    if (Transport const* transport = obj->GetTransport())
+        if (transport != GetTransport() && transport->HasPhaseRule() && !transport->CanBeSeenByPhase(this))
+            return true;
+
     if (obj->m_explicitSeerGuid == GetGUID())
         return false;
 

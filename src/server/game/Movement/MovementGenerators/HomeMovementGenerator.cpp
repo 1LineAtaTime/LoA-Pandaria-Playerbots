@@ -52,7 +52,7 @@ void HomeMovementGenerator<Creature>::SetTargetLocation(Creature* owner)
 
     arrived = false;
 
-    owner->ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~UNIT_STATE_EVADE | UNIT_STATE_IGNORE_PATHFINDING));
+    owner->ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~(UNIT_STATE_EVADE | UNIT_STATE_IGNORE_PATHFINDING)));
 }
 
 template<>

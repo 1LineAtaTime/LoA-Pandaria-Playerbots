@@ -16,6 +16,7 @@
 */
 
 #include "ScriptMgr.h"
+#include "SpellMgr.h"
 #include "ScriptedCreature.h"
 #include "siege_of_orgrimmar.h"
 #include "Vehicle.h"
@@ -2297,7 +2298,10 @@ class spell_soo_shockwave_missle : public SpellScript
         AfterCast += SpellCastFn(spell_soo_shockwave_missle::HandleAfterCast);
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_soo_shockwave_missle::FilterTargets, EFFECT_1, TARGET_UNIT_DEST_AREA_ENEMY);
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_soo_shockwave_missle::FilterShredderTargets, EFFECT_2, TARGET_UNIT_DEST_AREA_ENTRY);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_soo_shockwave_missle::FilterTargets, EFFECT_3, TARGET_UNIT_DEST_AREA_ENEMY);
+        // 144658 has its fourth effect on SRC_AREA_ENEMY, the other shockwave ids on DEST_AREA_ENEMY.
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+        bool srcArea = spell && spell->Effects[EFFECT_3].TargetB.GetTarget() == TARGET_UNIT_SRC_AREA_ENEMY;
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_soo_shockwave_missle::FilterTargets, EFFECT_3, srcArea ? TARGET_UNIT_SRC_AREA_ENEMY : TARGET_UNIT_DEST_AREA_ENEMY);
     }
 };
 

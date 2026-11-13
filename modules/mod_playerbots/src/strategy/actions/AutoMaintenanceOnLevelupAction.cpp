@@ -14,6 +14,12 @@
 
 #include <sstream>
 
+// strategy/RPG/NewRpgRoamTransport.cpp (#954): a young roam trip holds off the level teleport.
+namespace RoamTransport
+{
+bool DefersRandomTeleport(Player* bot);
+}  // namespace RoamTransport
+
 namespace
 {
 // #533: AC AutoMaintenanceOnLevelupAction::FormatSpell (Ai/Base/Actions/AutoMaintenanceOnLevelupAction.cpp:148-159).
@@ -149,6 +155,16 @@ void AutoMaintenanceOnLevelupAction::AutoTeleportForLevel()
 
     if (botAI->HasRealPlayerMaster())
         return;
+
+    // #954 (beyond AC, AC has no roam trips): a bot on a young roam trip is already travelling to a destination picked
+    // for its level; the teleport's PlayerbotAI::Reset would end the trip ("abandon status-reset": after the refresh
+    // teleport was deferred, 13 per hour at 1000 bots were this level-up teleport after a quest turn-in, 2026-10-28).
+    // RandomPlayerbotMgr's periodic teleport re-checks the placement later.
+    if (RoamTransport::DefersRandomTeleport(bot))
+    {
+        TC_LOG_DEBUG("playerbots", "[ROAMTRIP] %s level-up teleport skipped (trip under way)", bot->GetName().c_str());
+        return;
+    }
 
     sRandomPlayerbotMgr->RandomTeleportForLevel(bot);
 }

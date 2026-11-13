@@ -31,6 +31,12 @@
 #include "WorldSession.h"
 #include "WorldPacket.h"
 #include "Player.h"
+#include "Creature.h"
+#include "GameObject.h"
+#include "HeapProfConfig.h"
+// #924 profiling branch (defined in worldserver/HeapProfiler.cpp)
+void HeapProf_MeasureBegin();
+void HeapProf_MeasureEnd(int64_t& bytes, int64_t& count);
 #include "Vehicle.h"
 #include "SkillExtraItems.h"
 #include "SkillDiscovery.h"
@@ -593,7 +599,17 @@ void World::LoadConfigSettings(bool reload)
     if (reload)
         sMapMgr->SetGridCleanUpDelay(m_int_configs[CONFIG_INTERVAL_GRIDCLEAN]);
 
-    m_int_configs[CONFIG_INTERVAL_MAPUPDATE] = 200; // Don't mess around with mapupdate cause of the issues with the mmaps.
+    // #931 AC parity (AC WorldConfig.cpp:176, worldserver.conf.dist MapUpdateInterval = 10): this was hard-coded to 200 ms
+    // ("issues with the mmaps", from before MapUpdate.Threads > 1), so maps advanced 5 times a second and each cycle
+    // carried 200 ms of work (p99 ticks 110-150 ms at 3000 bots, up to 200 ms extra latency for real players).
+    m_int_configs[CONFIG_INTERVAL_MAPUPDATE] = sConfigMgr->GetIntDefault("MapUpdateInterval", 10);
+    if (m_int_configs[CONFIG_INTERVAL_MAPUPDATE] < MIN_MAP_UPDATE_DELAY)
+    {
+        TC_LOG_ERROR("server.loading", "MapUpdateInterval (%i) must be greater %u. Use this minimal value.", m_int_configs[CONFIG_INTERVAL_MAPUPDATE], MIN_MAP_UPDATE_DELAY);
+        m_int_configs[CONFIG_INTERVAL_MAPUPDATE] = MIN_MAP_UPDATE_DELAY;
+    }
+    if (reload)
+        sMapMgr->SetMapUpdateInterval(m_int_configs[CONFIG_INTERVAL_MAPUPDATE]);   // AC World.cpp:203
 
     m_int_configs[CONFIG_INTERVAL_CHANGEWEATHER] = sConfigMgr->GetIntDefault("ChangeWeatherInterval", 10 * MINUTE * IN_MILLISECONDS);
 
@@ -1028,6 +1044,7 @@ void World::LoadConfigSettings(bool reload)
     }
 
     m_bool_configs[CONFIG_DETECT_POS_COLLISION] = sConfigMgr->GetBoolDefault("DetectPosCollision", true);
+    m_bool_configs[CONFIG_CREATURE_REPOSITION_AGAINST_NPCS] = sConfigMgr->GetBoolDefault("Creature.RepositionAgainstNpcs", true);
 
     m_int_configs[CONFIG_CHANNEL_CONSTANT_LOCALE]      = sConfigMgr->GetIntDefault("Channel.ConstantLocale", 0);
     m_bool_configs[CONFIG_RESTRICTED_LFG_CHANNEL]      = sConfigMgr->GetBoolDefault("Channel.RestrictedLfg", true);
@@ -1387,11 +1404,15 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_LFG_SOLO]                     = sConfigMgr->GetBoolDefault("LFGSolo.Enabled", false);
     m_bool_configs[CONFIG_LFG_CASTDESERTER]             = sConfigMgr->GetBoolDefault("DungeonFinder.CastDeserter", false);
     m_bool_configs[CONFIG_LFG_OVERRIDE_ROLES_REQUIRED]  = sConfigMgr->GetBoolDefault("DungeonFinder.OverrideRolesRequired", false);
+    m_bool_configs[CONFIG_LFG_DUNGEON_OVERRIDE_ROLES_REQUIRED] = sConfigMgr->GetBoolDefault("DungeonFinder.DungeonOverrideRolesRequired", false);
     m_bool_configs[CONFIG_LFG_MULTIQUEUE_ENABLED]       = sConfigMgr->GetBoolDefault("DungeonFinder.MultiqueueEnabled", false);
     m_bool_configs[CONFIG_LFG_KEEP_QUEUES_IN_DUNGEON]   = sConfigMgr->GetBoolDefault("DungeonFinder.KeepQueuesInDungeon", false);
     m_int_configs[CONFIG_LFG_TANKS_NEEDED]              = sConfigMgr->GetIntDefault("DungeonFinder.TanksNeeded", 1);
     m_int_configs[CONFIG_LFG_HEALERS_NEEDED]            = sConfigMgr->GetIntDefault("DungeonFinder.HealersNeeded", 1);
     m_int_configs[CONFIG_LFG_DPS_NEEDED]                = sConfigMgr->GetIntDefault("DungeonFinder.DPSNeeded", 3);
+    m_int_configs[CONFIG_LFG_DUNGEON_TANKS_NEEDED]      = sConfigMgr->GetIntDefault("DungeonFinder.DungeonTanksNeeded", 1);
+    m_int_configs[CONFIG_LFG_DUNGEON_HEALERS_NEEDED]    = sConfigMgr->GetIntDefault("DungeonFinder.DungeonHealersNeeded", 1);
+    m_int_configs[CONFIG_LFG_DUNGEON_DPS_NEEDED]        = sConfigMgr->GetIntDefault("DungeonFinder.DungeonDPSNeeded", 3);
     m_int_configs[CONFIG_LFG_SHORTAGE_CHECK_INTERVAL]   = sConfigMgr->GetIntDefault("DungeonFinder.ShortageCheckInterval", 5);
     m_int_configs[CONFIG_LFG_SHORTAGE_PERCENT]          = sConfigMgr->GetIntDefault("DungeonFinder.ShortagePercent", 50);
     m_int_configs[CONFIG_LFG_MAX_LFR_QUEUES]            = sConfigMgr->GetIntDefault("DungeonFinder.MaxLfrQueues", 3);
@@ -2527,6 +2548,26 @@ void World::SetInitialWorldSettings()
 	}
 
 #endif
+
+#if LOA_HEAPPROF
+    // #924 profiling branch: heap cost of one freshly constructed object (HeapProfiler.cpp counts operator new).
+    {
+        int64 b = 0, c = 0;
+        HeapProf_MeasureBegin();
+        Creature* probeCreature = new Creature();
+        HeapProf_MeasureEnd(b, c);
+        TC_LOG_INFO("server.worldserver", "[HEAPPROF] new Creature: %lld bytes in %lld allocations (sizeof Creature=%u Unit=%u WorldObject=%u)",
+            (long long)b, (long long)c, uint32(sizeof(Creature)), uint32(sizeof(Unit)), uint32(sizeof(WorldObject)));
+        delete probeCreature;
+        HeapProf_MeasureBegin();
+        GameObject* probeGo = new GameObject();
+        HeapProf_MeasureEnd(b, c);
+        TC_LOG_INFO("server.worldserver", "[HEAPPROF] new GameObject: %lld bytes in %lld allocations (sizeof GameObject=%u Player=%u)",
+            (long long)b, (long long)c, uint32(sizeof(GameObject)), uint32(sizeof(Player)));
+        delete probeGo;
+    }
+#endif
+    sSpellMgr->ShrinkSpellInfoEffects();  // #924: after every loader that edits SpellInfo effects
 
     TC_LOG_INFO("server.worldserver", "World initialized in %u minutes %u seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000));
 

@@ -288,6 +288,21 @@ class spell_common_combo_point_delayed : public SpellScript
     }
 };
 
+// Returns true if any of the first three effects of the spell uses the given implicit target type.
+// Used so that a script only binds the target hooks the spell actually has (avoids boot-time validation errors).
+static bool SpellHasImplicitTarget(uint32 spellId, Targets targetType)
+{
+    SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellId);
+    if (!spell)
+        return false;
+
+    for (uint8 i = 0; i < 3; ++i)
+        if (spell->Effects[i].TargetA.GetTarget() == targetType || spell->Effects[i].TargetB.GetTarget() == targetType)
+            return true;
+
+    return false;
+}
+
 // 20167 - Seal of Insight
 // 108000 - Nick of Time
 // 109822 - Nick of Time
@@ -310,8 +325,10 @@ class spell_common_smart_heal_one_target : public spell_smart_heal
 
     void Register() override
     {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_one_target::FilterTargets, EFFECT_ALL, TARGET_UNIT_CASTER_AREA_RAID);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_one_target::FilterTargets, EFFECT_ALL, TARGET_UNIT_DEST_AREA_ALLY);
+        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_CASTER_AREA_RAID))
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_one_target::FilterTargets, EFFECT_ALL, TARGET_UNIT_CASTER_AREA_RAID);
+        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_DEST_AREA_ALLY))
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_one_target::FilterTargets, EFFECT_ALL, TARGET_UNIT_DEST_AREA_ALLY);
     }
 };
 
@@ -331,8 +348,10 @@ class spell_common_smart_heal_six_targets : public spell_smart_heal
 
     void Register() override
     {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_six_targets::FilterTargets, EFFECT_ALL, TARGET_UNIT_DEST_AREA_ALLY);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_six_targets::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ALLY);
+        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_DEST_AREA_ALLY))
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_six_targets::FilterTargets, EFFECT_ALL, TARGET_UNIT_DEST_AREA_ALLY);
+        if (SpellHasImplicitTarget(m_scriptSpellId, TARGET_UNIT_SRC_AREA_ALLY))
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_common_smart_heal_six_targets::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ALLY);
     }
 };
 

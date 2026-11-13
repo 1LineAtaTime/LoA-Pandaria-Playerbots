@@ -1104,12 +1104,21 @@ void Spell::EffectTriggerRitualOfSummoning(SpellEffIndex effIndex)
     m_caster->CastSpell((Unit*)NULL, spellInfo, false);
 }
 
+// A creature rooted by creature_template_movement / creature_movement_override is not pulled or jumped by spell
+// effects, as knockback skips a rooted target: MotionMaster::Update does not update the jump generator under root, so it
+// would stay on top for the whole fight.
+static bool IsRootedByMovementTemplate(Unit const* unit)
+{
+    Creature const* creature = unit->ToCreature();
+    return creature && creature->IsRootedByMovementTemplate();
+}
+
 void Spell::EffectJump(SpellEffIndex effIndex)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_LAUNCH_TARGET)
         return;
 
-    if (m_caster->IsInFlight())
+    if (m_caster->IsInFlight() || IsRootedByMovementTemplate(m_caster))
         return;
 
     if (!unitTarget)
@@ -1128,7 +1137,7 @@ void Spell::EffectJumpDest(SpellEffIndex effIndex)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_LAUNCH)
         return;
 
-    if (m_caster->IsInFlight())
+    if (m_caster->IsInFlight() || IsRootedByMovementTemplate(m_caster))
         return;
 
     if (!m_targets.HasDst())
@@ -4216,7 +4225,7 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
                 case 45151:
                 {
                     //Workaround for Range ... should be global for every ScriptEffect
-                    float radius = m_spellInfo->Effects[effIndex].CalcRadius();
+                    float radius = m_spellInfo->Effects[effIndex].CalcRadius(nullptr, SpellTargetIndex::TargetB); // #970: CPP SpellEffects.cpp:3249
                     if (unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER && unitTarget->GetDistance(m_caster) >= radius && !unitTarget->HasAura(46394) && unitTarget != m_caster)
                         unitTarget->CastSpell(unitTarget, 46394, true);
 
@@ -4874,8 +4883,17 @@ void Spell::EffectActivateObject(SpellEffIndex effIndex)
     if (!gameObjTarget)
         return;
 
-    ScriptInfo activateCommand;
-    activateCommand.command = SCRIPT_COMMAND_ACTIVATE_OBJECT;
+    // #942: Map::ScriptCommandStart keeps a pointer to the record until the command runs. When this spell is cast from
+    // inside Map::ScriptsProcess (i_scriptLock held), that is after this function returns, so a stack record was read
+    // dead (3000-bot soak: SCRIPT_COMMAND_TALK with stale stack words as broadcast_text ids). Same command, but one
+    // zero-initialised record for the whole run. (AC acts on the GO directly by GameObjectActions instead.)
+    static ScriptInfo const activateCommand = []
+    {
+        ScriptInfo info{};
+        info.type = SCRIPTS_SPELL;
+        info.command = SCRIPT_COMMAND_ACTIVATE_OBJECT;
+        return info;
+    }();
 
     // int32 unk = m_spellInfo->Effects[effIndex].MiscValue; // This is set for EffectActivateObject spells; needs research
 
@@ -5700,7 +5718,7 @@ void Spell::EffectPullTowards(SpellEffIndex effIndex)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
         return;
 
-    if (!unitTarget)
+    if (!unitTarget || IsRootedByMovementTemplate(unitTarget))
         return;
 
     float speedZ = (float)(m_spellInfo->Effects[effIndex].CalcValue() / 10);

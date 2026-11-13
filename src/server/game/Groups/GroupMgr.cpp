@@ -235,9 +235,12 @@ void GroupMgr::LoadGroups()
     {
         uint32 oldMSTime = getMSTime();
         //                                                   0           1        2              3             4             5            6
-        QueryResult result = CharacterDatabase.Query("SELECT gi.guid, i.map, gi.instance, gi.permanent, i.difficulty, i.resettime, COUNT(g.guid) "
-            "FROM group_instance gi INNER JOIN instance i ON gi.instance = i.id "
-            "LEFT JOIN character_instance ci LEFT JOIN `groups` g ON g.leaderGuid = ci.guid ON ci.instance = gi.instance AND ci.permanent = 1 GROUP BY gi.instance ORDER BY gi.guid");
+        // #965: the old form (LEFT JOIN ... GROUP BY gi.instance with non-aggregated gi.guid / i.* columns) fails on MySQL
+        // 5.7+ with sql_mode=only_full_group_by (errno 1055), so no group instance save loaded at any boot. Count the
+        // permanently bound group leaders per instance in a correlated subquery instead (TrinityCore 3.3.5 GroupMgr form).
+        QueryResult result = CharacterDatabase.Query("SELECT gi.guid, i.map, gi.instance, gi.permanent, i.difficulty, i.resettime, "
+            "(SELECT COUNT(1) FROM character_instance ci INNER JOIN `groups` g ON ci.guid = g.leaderGuid WHERE ci.instance = gi.instance AND ci.permanent = 1) "
+            "FROM group_instance gi INNER JOIN instance i ON gi.instance = i.id ORDER BY gi.guid");
         if (!result)
         {
             TC_LOG_INFO("server.loading", ">> Loaded 0 group-instance saves. DB table `group_instance` is empty!");

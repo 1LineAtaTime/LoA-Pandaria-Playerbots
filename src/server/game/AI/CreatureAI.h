@@ -110,6 +110,12 @@ class TC_GAME_API CreatureAI : public UnitAI
         // Distract creature, if player gets too close while stealthed/prowling
         void TriggerAlert(Unit const* who) const;
 
+        // Periodic melee repositioning, called from Creature::Update
+        void MoveCircleChecks();
+        void MoveBackwardsChecks();
+        // False when the script turned combat movement off (AC keeps this flag on the creature)
+        virtual bool IsCombatMovementAllowed() const { return true; }
+
         bool CanSeeEvenInPassiveMode() { return m_canSeeEvenInPassiveMode; }
         void SetCanSeeEvenInPassiveMode(bool canSeeEvenInPassiveMode) { m_canSeeEvenInPassiveMode = canSeeEvenInPassiveMode; }
         

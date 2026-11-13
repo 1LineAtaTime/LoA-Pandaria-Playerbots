@@ -324,6 +324,7 @@ i_scriptLock(false), _defaultLight(sDBCManager.GetDefaultMapLight(id))
         {
             //z code
             GridMaps[idx][j] =NULL;
+            _gridCollisionLoaded[idx][j] = false;
             setNGrid(NULL, idx, j);
         }
     }
@@ -525,8 +526,16 @@ void Map::EnsureGridCreated_i(const GridCoord &p)
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
         int gy = (MAX_NUMBER_OF_GRIDS - 1) - p.y_coord;
 
+        // #924: the terrain tile may already be loaded by a terrain lookup (Map::GetGrid); the vmap and navmesh tiles
+        // are loaded here, once per grid, as LoadMapAndVMap did.
         if (!GridMaps[gx][gy])
-            LoadMapAndVMap(gx, gy);
+            LoadMap(gx, gy);
+        if (i_InstanceId == 0 && !_gridCollisionLoaded[gx][gy])
+        {
+            LoadVMap(gx, gy);
+            LoadMMap(gx, gy);
+            _gridCollisionLoaded[gx][gy] = true;
+        }
     }
 }
 
@@ -743,6 +752,14 @@ bool Map::AddToMap(Transport* obj)
         {
             if (itr->GetSource()->GetTransport() != obj && itr->GetSource()->IsInWorld())
             {
+                // a transport with a phase rule only to the players of its phase
+                if (obj->HasPhaseRule())
+                {
+                    if (!obj->CanBeSeenByPhase(itr->GetSource()))
+                        continue;
+                    obj->SetPhaseSeenBy(itr->GetSource(), true);
+                }
+
                 UpdateData data(GetId());
                 obj->BuildCreateUpdateBlockForPlayer(&data, itr->GetSource());
                 WorldPacket packet;
@@ -955,25 +972,34 @@ void Map::RemoveObjectFromMapUpdateList(WorldObject* obj)
         _RemoveObjectFromUpdateList(obj);
 }
 
-void Map::Update(const uint32 t_diff)
+void Map::Update(const uint32 t_diff, const uint32 s_diff)
 {
     uint32 updateTimeMark;
     if (!Instanceable()) // Map update time for instanced maps is handled in InstanceMap::Update
         updateTimeMark = getMSTime();
 
-    _dynamicTree.update(t_diff);
-    /// update worldsessions for existing players
+    // #935 (AC Map.cpp:436-466, pussywizard's split): every world tick updates the sessions and the players of every map
+    // with the world tick (s_diff); everything below (creatures and grid objects, scripts, relocations, object update
+    // packets) runs only on this map's turn of MapManager's step cycle (t_diff = time since its last full update).
+    if (t_diff)
+        _dynamicTree.update(t_diff);
     for (m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
     {
         Player* player = m_mapRefIter->GetSource();
         if (player && player->IsInWorld())
         {
-            //player->Update(t_diff);
             WorldSession* session = player->GetSession();
             MapSessionFilter updater(session);
-            session->Update(t_diff, updater);
+            session->Update(s_diff, updater);
+
+            // update players at tick (AC): on a full tick they are updated in the loop below
+            if (!t_diff)
+                player->Update(s_diff);
         }
     }
+
+    if (!t_diff)
+        return;
     /// update active cells around players and active objects
     _updatableObjectListRecheckTimer.Update(t_diff); // #850: AC Map.cpp:478
     resetMarkedCells();
@@ -993,8 +1019,8 @@ void Map::Update(const uint32 t_diff)
         if (!player || !player->IsInWorld())
             continue;
 
-        // update players at tick
-        player->Update(t_diff);
+        // update players at tick (#935: by the world tick on every tick, AC)
+        player->Update(s_diff);
 
         VisitNearbyCellsOf(player, grid_object_update, world_object_update);
 
@@ -1067,6 +1093,13 @@ void Map::Update(const uint32 t_diff)
         WorldPacket packet(SMSG_UPDATE_OBJECT, 4096);
         for (auto&& it : updatePlayers)
         {
+            // Bots read no object updates (AzerothCore's playerbots filter)
+            if (!sScriptMgr->OnPlayerbotCheckUpdatesToSend(it.first))
+            {
+                it.second.Clear();
+                continue;
+            }
+
             it.second.BuildPacket(&packet);
             it.first->GetSession()->SendPacket(&packet);
             packet.clear();
@@ -1153,6 +1186,8 @@ void Map::RemoveFromMap(Transport* obj, bool remove)
             if (itr->GetSource()->GetTransport() != obj && itr->GetSource()->IsInWorld())
                 itr->GetSource()->SendDirectMessage(&packet);
     }
+
+    obj->ClearPhaseSeen();
 
     if (_transportsUpdateIter != _transports.end())
     {
@@ -1941,8 +1976,12 @@ bool Map::UnloadGrid(NGridType& ngrid, bool unloadAll)
                 GridMaps[gx][gy]->unloadData();
                 delete GridMaps[gx][gy];
             }
-            VMAP::VMapFactory::createOrGetVMapManager()->unloadMap(GetId(), gx, gy);
-            MMAP::MMapFactory::createOrGetMMapManager()->unloadMap(GetId(), gx, gy);
+            if (_gridCollisionLoaded[gx][gy])
+            {
+                VMAP::VMapFactory::createOrGetVMapManager()->unloadMap(GetId(), gx, gy);
+                MMAP::MMapFactory::createOrGetMMapManager()->unloadMap(GetId(), gx, gy);
+                _gridCollisionLoaded[gx][gy] = false;
+            }
         }
         else
             ((MapInstanced*)m_parentMap)->RemoveGridMapReference(GridCoord(gx, gy));
@@ -1982,6 +2021,17 @@ void Map::UnloadAll()
         ++i;
         UnloadGrid(grid, true);       // deletes the grid and removes it from the GridRefManager
     }
+
+    // #924: terrain tiles loaded by terrain lookups for grids that were never created (base maps own their tiles)
+    if (i_InstanceId == 0)
+        for (int gx = 0; gx < MAX_NUMBER_OF_GRIDS; ++gx)
+            for (int gy = 0; gy < MAX_NUMBER_OF_GRIDS; ++gy)
+                if (GridMaps[gx][gy])
+                {
+                    GridMaps[gx][gy]->unloadData();
+                    delete GridMaps[gx][gy];
+                    GridMaps[gx][gy] = nullptr;
+                }
 
     for (TransportsContainer::iterator itr = _transports.begin(); itr != _transports.end();)
     {
@@ -2761,8 +2811,21 @@ inline GridMap* Map::GetGrid(float x, float y)
     int gx=(int)(32-x/SIZE_OF_GRIDS);                       //grid x
     int gy=(int)(32-y/SIZE_OF_GRIDS);                       //grid y
 
-    // ensure GridMap is loaded
-    EnsureGridCreated(GridCoord(63-gx, 63-gy));
+    // #924: on a base map only the terrain tile is needed here (AC Map::GetAreaId / GetZoneId do not create grids).
+    // Creating the grid also loaded its vmap and navmesh: bots asking the zone of grind spots up to 2500 yd away kept
+    // ~0.9 GB of navmesh / vmap / terrain for grids nobody was in at 3000 bots. Instances keep the old path (their
+    // terrain is a reference to the parent map's tile).
+    if (i_InstanceId == 0)
+    {
+        if (!GridMaps[gx][gy])
+        {
+            std::lock_guard<std::mutex> guard(GridLock);
+            if (!GridMaps[gx][gy])
+                LoadMap(gx, gy);
+        }
+    }
+    else
+        EnsureGridCreated(GridCoord(63-gx, 63-gy));
 
     return GridMaps[gx][gy];
 }
@@ -2804,6 +2867,10 @@ Transport* Map::GetTransportForPos(uint32 phase, float x, float y, float z, Worl
     for (TransportsContainer::const_iterator itr = _transports.begin(); itr != _transports.end(); ++itr)
         if ((*itr)->IsInWorld() && (*itr)->GetExactDist(x, y, z) < 75.0f && (*itr)->m_model)
         {
+            // not a transport of another phase (the object asking cannot see it), unless it already rides it
+            if (worldobject && (*itr)->HasPhaseRule() && worldobject->GetTransport() != *itr && !(*itr)->CanBeSeenByPhase(worldobject))
+                continue;
+
             float dist = 30.0f;
             bool hit = (*itr)->m_model->intersectRay(r, dist, false, phase, VMAP::ModelIgnoreFlags::Nothing);
             if (hit)
@@ -3377,8 +3444,19 @@ void Map::SendInitTransports(Player* player)
     // Hack to send out transports
     UpdateData transData(player->GetMapId());
     for (TransportsContainer::const_iterator i = _transports.begin(); i != _transports.end(); ++i)
+    {
+        // a transport with a phase rule only when the player is in its phase (its riders get it from SendInitSelf)
+        if ((*i)->HasPhaseRule())
+        {
+            bool const seen = *i == player->GetTransport() || (*i)->CanBeSeenByPhase(player);
+            (*i)->SetPhaseSeenBy(player, seen);
+            if (!seen)
+                continue;
+        }
+
         if (*i != player->GetTransport())
             (*i)->BuildCreateUpdateBlockForPlayer(&transData, player);
+    }
 
     WorldPacket packet;
     transData.BuildPacket(&packet);
@@ -3390,8 +3468,13 @@ void Map::SendRemoveTransports(Player* player)
     // Hack to send out transports
     UpdateData transData(player->GetMapId());
     for (TransportsContainer::const_iterator i = _transports.begin(); i != _transports.end(); ++i)
+    {
+        if ((*i)->HasPhaseRule())
+            (*i)->SetPhaseSeenBy(player, false);
+
         if (*i != player->GetTransport())
             (*i)->BuildOutOfRangeUpdateBlock(&transData);
+    }
 
     WorldPacket packet;
     transData.BuildPacket(&packet);
@@ -3949,11 +4032,15 @@ bool InstanceMap::AddPlayerToMap(Player* player)
     return true;
 }
 
-void InstanceMap::Update(const uint32 t_diff)
+void InstanceMap::Update(const uint32 t_diff, const uint32 s_diff)
 {
     uint32 updateTimeMark = getMSTime();
 
-    Map::Update(t_diff);
+    Map::Update(t_diff, s_diff);
+
+    // #935: the instance script runs with the full update only (AC InstanceMap::Update)
+    if (!t_diff)
+        return;
 
     if (i_data)
         i_data->Update(t_diff);

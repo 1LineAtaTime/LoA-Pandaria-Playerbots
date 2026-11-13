@@ -127,6 +127,16 @@ jobs:
       ref: ${{ needs.check.outputs.sha }}
       package: true
 
+  linux_x86_64:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/linux-x86_64.yml
+    with:
+      ref: ${{ needs.check.outputs.sha }}
+      package: true
+
   macos:
     needs: check
     if: >-
@@ -472,10 +482,11 @@ jobs:
   # builds macOS again. Windows, Linux and the database must succeed. !cancelled() keeps a
   # run cancelled by hand from publishing.
   publish:
-    needs: [check, windows, linux, macos, database]
+    needs: [check, windows, linux, linux_x86_64, macos, database]
     if: >-
       ${{ !cancelled() && needs.check.outputs.build == 'true'
       && needs.windows.result == 'success' && needs.linux.result == 'success'
+      && needs.linux_x86_64.result == 'success'
       && needs.database.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
@@ -498,7 +509,7 @@ jobs:
       run: |
         set -euo pipefail
         mkdir -p out
-        for os in win64 linux-x64; do
+        for os in win64 linux-x64 linux-x86_64; do
           zip=$(find dl -name "ci-$os.zip" | head -n 1)
           if [ -z "$zip" ]; then echo "::error::No ci-$os.zip in the build artifacts"; exit 1; fi
           mv "$zip" "out/$BRANCH-ci-$os.zip"
@@ -544,6 +555,7 @@ jobs:
           echo
           echo "- \`$BRANCH-ci-win64.zip\`: Windows x64. Needs the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
           echo "- \`$BRANCH-ci-linux-x64.zip\`: Linux x64, built on Ubuntu 24.04 against its Boost, MySQL client, OpenSSL and readline packages."
+          echo "- \`$BRANCH-ci-linux-x86_64.zip\`: Linux x86-64 baseline, runs on any x86-64 CPU."
           echo "$MACOS_LINE"
           echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\` for a **new install**: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes."
           echo "- \`$BRANCH-ci-sql.zip\`: the SQL update files up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install."
