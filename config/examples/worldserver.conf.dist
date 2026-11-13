@@ -2805,7 +2805,7 @@ SoloQueue.MatchMakerRatingDifference = 150
 #
 #     SoloQueue.AverageItemlevel
 #        Description: The average ilvl needed in order to join a soloq
-#        Default:     0  
+#        Default:     0
 
 SoloQueue.AverageItemlevel = 450
 
@@ -2833,7 +2833,7 @@ SoloQueue.NotAcceptedRatingPenalty = 20
 #
 #     SoloQueue.TeammateBaseRatingDifference
 #        Description: The amount of base artificial MMR incrimentation the queue will give for the group each time its matchmaking system fails to find a matching group
-#                     Note: Limited by SoloQueue.ProgressiveMMR.Threashold					
+#                     Note: Limited by SoloQueue.ProgressiveMMR.Threashold
 #					  Note2: With SoloQueue.ProgressiveMMR.Enabled set to false, this value will be used only once, and never to be increased.
 #        Default:     150
 
@@ -2849,7 +2849,7 @@ SoloQueue.ProgressiveMMR.Threashold = 400
 
 #
 #     SoloQueue.TeammateBlockingTimer
-#        Description: The amount of time that soloq teammates will be locked off of eachother before the matchmaking system allows them to be in the same team again. 
+#        Description: The amount of time that soloq teammates will be locked off of eachother before the matchmaking system allows them to be in the same team again.
 #        Default:     300 (5 minutes)
 
 SoloQueue.TeammateBlockingTimer = 300
@@ -2863,7 +2863,7 @@ SoloQueue.MinQueueSize = 6
 
 #
 #     SoloQueue.MinPvpPower
-#        Description: The minimum amount of pvp power/healing the player needs to have in order to be able to queue for a soloq match 
+#        Description: The minimum amount of pvp power/healing the player needs to have in order to be able to queue for a soloq match
 #        Default:     0
 
 SoloQueue.MinPvpPower = 0
@@ -3265,7 +3265,7 @@ BattlePay.Currency = 3
 # BLACK MARKET SETTINGS
 #
 #    BlackMarket.Open
-#        Description: 
+#        Description:
 #        Default:     1 - (Open)
 #                     0 - (Closed)
 #
@@ -3282,7 +3282,7 @@ BlackMarket.MaxAuctions = 12
 
 #
 #    BlackMarket.AuctionDelay
-#        Description: 
+#        Description:
 #        Default:     12 (hours)
 #
 
@@ -3290,7 +3290,7 @@ BlackMarket.AuctionDelay = 1
 
 #
 #    BlackMarket.AuctionDelayMod
-#        Description: 
+#        Description:
 #        Default:     60
 #
 
@@ -3865,7 +3865,7 @@ AuctionHouseBot.DisableTGsAboveReqSkillRank = 0
 #
 #    Battle Coin Vendor Custom Enable
 #        Description: Enables Custom Gold to Battle Coin Exchange Menu with Battle Coin Vendor
-#  
+#
 #        Default:     0 (disabled)
 #                     1 (enabled)
 
@@ -3938,8 +3938,8 @@ AutoBalance.Enable.5MHeroic = 1
 AutoBalance.Enable.10MHeroic = 1
 AutoBalance.Enable.25MHeroic = 1
 AutoBalance.Enable.OtherHeroic = 1
-AutoBalance.Disable.PerInstance = 
-AutoBalance.DisabledID = 
+AutoBalance.Disable.PerInstance =
+AutoBalance.DisabledID =
 AutoBalance.MinPlayers = 1
 AutoBalance.MinPlayers.Heroic = 1
 AutoBalance.MinPlayers.Raid = 1
@@ -4120,7 +4120,7 @@ Ilvl.Scaling.PvE = 463
 Ilvl.Scaling.PvP = 463
 PetBattles.Endabled = 1
 ICore.Arena.HighLatencyThreshold = 200
-ICore.Arena.PrecastSpells = 
+ICore.Arena.PrecastSpells =
 IsleofThunder.Stage = 1
 IsleofThunder.Progression.Horde = 0
 IsleofThunder.Progression.Alliance = 0
@@ -4150,7 +4150,7 @@ ICore.RoyaleEvent.Enabled = 1
 VengeanceMultipier = 1.000000
 BoostPromotion.Enabled = 0
 Eluna.Enabled = 1
-IPLocationFile = 
+IPLocationFile =
 Battleground.Override.LowLevels.MinPlayers = 0
 Battleground.Override.LowLevels.MinPlayers.AV = 0
 Battleground.Override.LowLevels.MinPlayers.WS = 0
@@ -4448,8 +4448,8 @@ Map.UpdatableObjectList = 0
 AuctionHouseBot.Alliance.Items.Amount.Ratio = 100
 AuctionHouseBot.Horde.Items.Amount.Ratio = 100
 AuctionHouseBot.Neutral.Items.Amount.Ratio = 100
-AuctionHouseBot.forceIncludeItems = 
-AuctionHouseBot.forceExcludeItems = 
+AuctionHouseBot.forceIncludeItems =
+AuctionHouseBot.forceExcludeItems =
 AuctionHouseBot.Buyer.Alliance.Enabled = 1
 AuctionHouseBot.Buyer.Horde.Enabled = 1
 AuctionHouseBot.Buyer.Neutral.Enabled = 1
@@ -4584,20 +4584,20 @@ AuctionHouseBot.BidPrice.Min = 0.600000
 AuctionHouseBot.BidPrice.Max = 0.900000
 Arena.BonusReward.GamesCount.2v2 = 0
 Arena.BonusReward.Item.2v2 = 0
-Arena.BonusReward.MailTitle.2v2 = 
-Arena.BonusReward.MailText.2v2 = 
+Arena.BonusReward.MailTitle.2v2 =
+Arena.BonusReward.MailText.2v2 =
 Arena.BonusReward.GamesCount.3v3 = 0
 Arena.BonusReward.Item.3v3 = 0
-Arena.BonusReward.MailTitle.3v3 = 
-Arena.BonusReward.MailText.3v3 = 
+Arena.BonusReward.MailTitle.3v3 =
+Arena.BonusReward.MailText.3v3 =
 Arena.BonusReward.GamesCount.5v5 = 0
 Arena.BonusReward.Item.5v5 = 0
-Arena.BonusReward.MailTitle.5v5 = 
-Arena.BonusReward.MailText.5v5 = 
+Arena.BonusReward.MailTitle.5v5 =
+Arena.BonusReward.MailText.5v5 =
 Arena.BonusReward.GamesCount.RBG = 0
 Arena.BonusReward.Item.RBG = 0
-Arena.BonusReward.MailTitle.RBG = 
-Arena.BonusReward.MailText.RBG = 
+Arena.BonusReward.MailTitle.RBG =
+Arena.BonusReward.MailText.RBG =
 Eluna.ScriptPath = lua_scripts
 MinWorldUpdateTime = 1
 WorldUpdateTimeLogInterval = 0

@@ -46,7 +46,7 @@ ConfVersion=2024050400
 #		WARLOCK
 #		MONK
 #		DRUID
-#	RANDOM BOT DEFAULT TALENT SPEC 
+#	RANDOM BOT DEFAULT TALENT SPEC
 #    	WARRIOR
 # 		PALADIN
 #       HUNTER
@@ -59,7 +59,7 @@ ConfVersion=2024050400
 #   	DRUID
 #	PLAYERBOT SYSTEM SETTINGS
 #		DATABASE & CONNECTIONS
-#		DEBUG		
+#		DEBUG
 #		CHAT SETTINGS
 #		LOGS
 #	DEPRECIATED (TEMPORARY)
@@ -2020,7 +2020,7 @@ AiPlayerbot.RandomBotAutoJoinEYCount = 1
 # Known issue: When enabling a lot of brackats in combination with multiple instances,
 #              can lead to more instances created by bots than intended (over-queuing).
 #
-# This section controls the level brackets and 
+# This section controls the level brackets and
 # automatic bot participation in battlegrounds and arenas.
 #
 # Brackets:
@@ -2480,7 +2480,7 @@ AiPlayerbot.PremadeSpecGlyph.11.3 = 45602,43332,40915,104102,43316,40912
 ###################################
 
 ####################################################################################################
-# 
+#
 #
 #
 
@@ -2532,7 +2532,7 @@ AiPlayerbot.WorldBuff.0.11.3.80.80 = 53760,57358			    #DRUID FERAL CAT
 ###################################
 
 ####################################################################################################
-# 
+#
 #
 #
 

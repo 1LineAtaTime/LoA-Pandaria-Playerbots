@@ -1,6 +1,6 @@
 -- OPTIONAL static shop catalogue only. No accounts, balances, purchases or receipts.
 -- Use a scratch catalogue first; ID collisions are ignored, not merged semantically.
-/*M!999999\- enable the sandbox mode */ 
+/*M!999999\- enable the sandbox mode */
 
 
 
@@ -333,6 +333,3 @@ INSERT IGNORE INTO `locales_battle_pay_entry` (`id`, `title_loc1`, `title_loc2`,
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
-
-
