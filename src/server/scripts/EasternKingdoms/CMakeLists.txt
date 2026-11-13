@@ -122,6 +122,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/zone_eastern_plaguelands.cpp
   EasternKingdoms/zone_eastern_plaguelands_caravan.cpp
   EasternKingdoms/zone_eastern_plaguelands_chapel.cpp
+  EasternKingdoms/zone_eastern_plaguelands_darrowshire.cpp
   EasternKingdoms/Stratholme/boss_baroness_anastari.cpp
   EasternKingdoms/Stratholme/boss_nerubenkan.cpp
   EasternKingdoms/Stratholme/instance_stratholme.cpp
