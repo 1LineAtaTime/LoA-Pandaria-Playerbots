@@ -22,7 +22,8 @@
    champions!"), Argent Wardens 45698 rise from the four corners (Summon Argent Warden NW/NE/SE/SW 85263-85266 and their
    spell_target_position rows), walk in (the waypoint paths of the old static wardens, a sniff of one trial), and when they
    are down George says "Your warm-up is complete. Now, the real trial begins!" and fights; he dies saying "Well-done, heroes.
-   You have passed my test of combat." His kill is the objective.
+   You have passed my test of combat." His kill is the objective. The quest's reward spell 81778 "Set Argent Dawn Faction To
+   Min Revered" lifts the Argent Dawn standing to Revered (comments: players with reputation bonuses ended above 0/21000).
    Ours: two waves of four, the second when the first is down or 30 s after it rose; the actors are private to the reader's
    group, so several groups can run the trial at once; the trial ends when no living member of that group who still has
    the quest is within 30 yd of the focus for 5 s; the NE path (the sniff has none for that corner). */
@@ -34,6 +35,8 @@
 #include "Group.h"
 #include "ObjectAccessor.h"
 #include "TemporarySummon.h"
+#include "ReputationMgr.h"
+#include "DBCStores.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
@@ -61,6 +64,8 @@ enum TrialOfTheCrypt
     DATA_TRIAL_READER               = 2,
     POINT_WARDEN_IN                 = 1,
 
+    FACTION_ARGENT_DAWN             = 529,
+    REPUTATION_REVERED              = 21000,
 };
 
 enum TrialEvents
@@ -546,9 +551,39 @@ class spell_epl_trial_of_the_crypt : public SpellScript
     }
 };
 
+// 81778 - Trial of the Crypt: Set Argent Dawn Faction To Min Revered (RewardSpell of 27464, cast on the player at the turn-in)
+// A bare dummy: lifts the Argent Dawn standing to Revered 0/21000. The difference is added as a gain, so the guild perk and
+// Diplomacy apply (comments: 22880 and 24960 with bonuses); a standing at or above Revered is left alone.
+class spell_epl_trial_of_the_crypt_reputation : public SpellScript
+{
+    PrepareSpellScript(spell_epl_trial_of_the_crypt_reputation);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetHitUnit() ? GetHitUnit()->ToPlayer() : nullptr;
+        FactionEntry const* argentDawn = sFactionStore.LookupEntry(FACTION_ARGENT_DAWN);
+        if (!player || !argentDawn)
+            return;
+
+        int32 standing = player->GetReputationMgr().GetReputation(argentDawn);
+        if (standing >= REPUTATION_REVERED)
+            return;
+
+        float gain = player->CalculateReputationGain(REPUTATION_SOURCE_SPELL, 0, REPUTATION_REVERED - standing, FACTION_ARGENT_DAWN);
+        if (gain > 0.0f)
+            player->GetReputationMgr().ModifyReputation(argentDawn, gain);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_epl_trial_of_the_crypt_reputation::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 void AddSC_eastern_plaguelands_chapel()
 {
     new creature_script<npc_epl_lord_raymond_george>("npc_epl_lord_raymond_george");
     new creature_script<npc_epl_argent_warden>("npc_epl_argent_warden");
     new spell_script<spell_epl_trial_of_the_crypt>("spell_epl_trial_of_the_crypt");
+    new spell_script<spell_epl_trial_of_the_crypt_reputation>("spell_epl_trial_of_the_crypt_reputation");
 }
