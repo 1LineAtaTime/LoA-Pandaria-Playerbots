@@ -769,6 +769,7 @@ enum EnthralledValkyr
     SPELL_BOND_OF_THE_VALKYR_WPL                = 84204,
     SPELL_SUMMON_ENTHRALLED_VALKYR_GUARDIAN     = 84016,
     SPELL_SUMMON_ENTHRALLED_VALKYR_PET          = 84149,
+    SPELL_SUMMON_ENTHRALLED_VALKYR_ANDORHAL     = 84198,
     SPELL_RAISE_FORSAKEN_FELSTONE               = 84143,
     SPELL_RAISE_FORSAKEN_ANDORHAL               = 84197,
     SPELL_NOTIFY_VALKYR_FELSTONE                = 84145,
@@ -791,19 +792,72 @@ enum EnthralledValkyr
 
 // The val'kyr a quest of this chain needs: the guardian while When Death is Not Enough is in the log, the pet (with Call to Arms on
 // its bar) during Combat Training and Ace in the Hole
+static bool IsValkyrQuestInLog(Player* player, uint32 questId)
+{
+    QuestStatus status = player->GetQuestStatus(questId);
+    return status == QUEST_STATUS_INCOMPLETE || status == QUEST_STATUS_COMPLETE;
+}
+
 static uint32 GetWantedValkyrEntry(Player* player)
 {
-    auto inLog = [player](uint32 questId)
-    {
-        QuestStatus status = player->GetQuestStatus(questId);
-        return status == QUEST_STATUS_INCOMPLETE || status == QUEST_STATUS_COMPLETE;
-    };
-
-    if (inLog(QUEST_COMBAT_TRAINING_HORDE) || inLog(QUEST_ACE_IN_THE_HOLE))
+    if (IsValkyrQuestInLog(player, QUEST_COMBAT_TRAINING_HORDE) || IsValkyrQuestInLog(player, QUEST_ACE_IN_THE_HOLE))
         return NPC_ENTHRALLED_VALKYR_PET;
-    if (inLog(QUEST_WHEN_DEATH_IS_NOT_ENOUGH))
+    if (IsValkyrQuestInLog(player, QUEST_WHEN_DEATH_IS_NOT_ENOUGH))
         return NPC_ENTHRALLED_VALKYR_GUARDIAN;
     return 0;
+}
+
+// Whether the player stands where the spell may be cast (its SpellCastingRequirements area group, as Spell::CheckCast checks it)
+static bool IsInSpellArea(Player* player, uint32 spellId)
+{
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    if (!spellInfo)
+        return false;
+
+    uint32 zone, area;
+    player->GetZoneAndAreaId(zone, area);
+    return spellInfo->CheckLocation(player->GetMapId(), zone, area, player) == SPELL_CAST_OK;
+}
+
+// Where the quest needs its val'kyr, from the area groups of the 5.4.8 summon spells: 84016 and 84149 (When Death is Not Enough,
+// Combat Training) only in AreaGroup 2726, Charred Outpost and Felstone Field; 84198, the summon for Andorhal, only in AreaGroup
+// 2705, Andorhal, where Ace in the Hole is played. Bond of the Val'kyr covers the whole zone (spell_area 28), so outside these
+// areas she is not called (a cast there only fails with "You are in the wrong zone").
+static bool IsInValkyrArea(Player* player, uint32 entry)
+{
+    if (entry == NPC_ENTHRALLED_VALKYR_GUARDIAN)
+        return IsInSpellArea(player, SPELL_SUMMON_ENTHRALLED_VALKYR_GUARDIAN);
+
+    return (IsValkyrQuestInLog(player, QUEST_COMBAT_TRAINING_HORDE) && IsInSpellArea(player, SPELL_SUMMON_ENTHRALLED_VALKYR_PET))
+        || (IsValkyrQuestInLog(player, QUEST_ACE_IN_THE_HOLE) && IsInSpellArea(player, SPELL_SUMMON_ENTHRALLED_VALKYR_ANDORHAL));
+}
+
+// Calls the val'kyr with her summon spell where it can be cast. In Andorhal it cannot: 84149 is limited to Felstone, and 84198
+// summons another entry (44492) as a plain guardian (SummonProperties 2341: ally, no slot), which gives no pet bar, while Ace in the
+// Hole needs Call to Arms ("use your Call to Arms ability"). There the pet is summoned as 84149's effect does it
+// (Spell::EffectSummonType -> SummonGuardian): same entry, SummonProperties 3032 (pet category, slot 6, so a pet bar and one
+// val'kyr only), same duration, created by 84149.
+static void SummonValkyr(Player* player, uint32 entry)
+{
+    uint32 spellId = entry == NPC_ENTHRALLED_VALKYR_PET ? SPELL_SUMMON_ENTHRALLED_VALKYR_PET : SPELL_SUMMON_ENTHRALLED_VALKYR_GUARDIAN;
+    if (IsInSpellArea(player, spellId))
+    {
+        player->CastSpell(player, spellId, true);
+        return;
+    }
+
+    if (entry != NPC_ENTHRALLED_VALKYR_PET)
+        return;
+
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SummonPropertiesEntry const* properties = spellInfo ? sSummonPropertiesStore.LookupEntry(spellInfo->Effects[EFFECT_0].MiscValueB) : nullptr;
+    if (!properties)
+        return;
+
+    Position pos = player->GetNearPosition(player->GetObjectSize(), 0.0f);
+    TempSummon* summon = player->GetMap()->SummonCreature(entry, pos, properties, Milliseconds(spellInfo->GetDuration()), player, spellInfo->Id);
+    if (summon && summon->HasUnitTypeMask(UNIT_MASK_MINION))
+        static_cast<Minion*>(summon)->SetFollowAngle(player->GetAngle(summon));
 }
 
 // The player's living val'kyr of the given entry, wherever she is on the map (a hearth or a spirit healer leaves her behind)
@@ -818,16 +872,18 @@ static Creature* FindValkyrOf(Player* player, uint32 entry)
 }
 
 // 84204 - Bond of the Val'kyr
-// Given by spell_area in Western Plaguelands while one of the three quests is in the log. Summons the val'kyr that quest needs, swaps
-// her for the other one when the chain moves on and brings her back after a login, a death or a teleport. Both summons use summon
-// slot 6, so a new one replaces the old one.
+// Given by spell_area in Western Plaguelands while one of the three quests is in the log. Summons the val'kyr that quest needs where
+// it needs her (IsInValkyrArea), swaps her for the other one when the chain moves on and brings her back after a login, a death or a
+// teleport. Once called she follows her master out of that area too. One left behind is brought back to him while he is in her area,
+// and dismissed (and only called again there) while he is not. Both summons use summon slot 6, so a new one replaces the old one.
 class spell_wpl_bond_of_the_valkyr : public AuraScript
 {
     PrepareAuraScript(spell_wpl_bond_of_the_valkyr);
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_SUMMON_ENTHRALLED_VALKYR_GUARDIAN, SPELL_SUMMON_ENTHRALLED_VALKYR_PET });
+        return ValidateSpellInfo({ SPELL_SUMMON_ENTHRALLED_VALKYR_GUARDIAN, SPELL_SUMMON_ENTHRALLED_VALKYR_PET,
+            SPELL_SUMMON_ENTHRALLED_VALKYR_ANDORHAL });
     }
 
     void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
@@ -856,8 +912,9 @@ class spell_wpl_bond_of_the_valkyr : public AuraScript
         GetTarget()->RemoveAllMinionsByEntry(NPC_ENTHRALLED_VALKYR_PET);
     }
 
-    // The pet replaces a hunter's or warlock's own pet; once the player has called his own pet back, she is only brought back when
-    // he has none, so the two are not swapped every few seconds
+    // On apply the pet is called even if a hunter or warlock has his own pet out. In Andorhal the direct summon then replaces his
+    // pet (Unit::SetMinion); in Felstone the cast fails instead (SPELL_FAILED_ALREADY_HAVE_SUMMON) and she is not called while his
+    // pet is out. On the later checks she is only called when he has no pet, so the two are not swapped every few seconds.
     static void Check(Player* player, bool force)
     {
         if (!player->IsInWorld() || !player->IsAlive() || player->IsInFlight() || player->GetVehicle())
@@ -876,13 +933,26 @@ class spell_wpl_bond_of_the_valkyr : public AuraScript
         if (valkyr && valkyr->IsWithinDistInMap(player, 60.0f))
             return;
 
-        if (wanted == NPC_ENTHRALLED_VALKYR_PET && !valkyr && !force && player->GetPetGUID())
+        if (!IsInValkyrArea(player, wanted))
+        {
+            if (valkyr)
+                valkyr->DespawnOrUnsummon();
+            return;
+        }
+
+        // One left far behind is brought to him rather than replaced: UnSummon only queues her removal, so a new one summoned in the
+        // same tick would not become his pet (Unit::SetMinion keeps the old one of the same entry) and he would lose its pet GUID
+        if (valkyr)
+        {
+            Position pos = player->GetNearPosition(player->GetObjectSize(), 0.0f);
+            valkyr->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), player->GetOrientation());
+            return;
+        }
+
+        if (wanted == NPC_ENTHRALLED_VALKYR_PET && !force && player->GetPetGUID())
             return;
 
-        if (valkyr)
-            valkyr->DespawnOrUnsummon();
-
-        player->CastSpell(player, wanted == NPC_ENTHRALLED_VALKYR_PET ? SPELL_SUMMON_ENTHRALLED_VALKYR_PET : SPELL_SUMMON_ENTHRALLED_VALKYR_GUARDIAN, true);
+        SummonValkyr(player, wanted);
     }
 
     void Register() override
