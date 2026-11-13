@@ -1754,6 +1754,7 @@ class spell_dk_soul_reaper : public AuraScript
 
     void Register() override
     {
+        // Soul Reaper's effect1 is periodic dummy; use the removal hook's matching function wrapper.
         OnEffectRemove += AuraEffectRemoveFn(spell_dk_soul_reaper::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
     }
 };

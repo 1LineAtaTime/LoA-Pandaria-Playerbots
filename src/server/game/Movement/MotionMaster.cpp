@@ -306,10 +306,11 @@ void MotionMaster::Update(uint32 diff)
     // itself sees UNIT_STATE_NOT_MOVE, stops the spline and records the stall, then relaunches to the same node on
     // release. Skipping it here meant the stall was never recorded and the released patroller was parked for
     // STOP_TIME_FOR_PLAYER (3 min, wave t894). Only the waypoint generator is let through; the others keep the skip.
+    // The home generator is let through too, so a rooted or stunned creature can finish its evade.
     if (_owner->HasUnitState(UNIT_STATE_ROOT | UNIT_STATE_STUNNED))
     {
         MovementGenerator* top = Empty() ? nullptr : GetCurrentMovementGenerator();
-        if (!top || top->GetMovementGeneratorType() != WAYPOINT_MOTION_TYPE)
+        if (!top || (top->GetMovementGeneratorType() != WAYPOINT_MOTION_TYPE && top->GetMovementGeneratorType() != HOME_MOTION_TYPE))
             return;
     }
 

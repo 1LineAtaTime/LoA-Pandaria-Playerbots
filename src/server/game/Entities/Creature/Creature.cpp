@@ -611,6 +611,10 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
         ApplySpellImmune(0, IMMUNITY_ID, 61391, true);
     }
 
+    // creature_template_movement.Rooted / creature_movement_override.Rooted (AC Creature.cpp:698)
+    if (IsRootedByMovementTemplate())
+        SetControlled(true, UNIT_STATE_ROOT);
+
     UpdateMovementFlags();
 
     //We must update last scriptId or it looks like we reloaded a script, breaking some things such as gossip temporarily
@@ -1892,6 +1896,9 @@ void Creature::setDeathState(DeathState s)
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS, cinfo->npcflag);
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, cinfo->npcflag2);
         ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~UNIT_STATE_IGNORE_PATHFINDING));
+        // the wipe above drops the DB root set in UpdateEntry (the root movement flag stays): put it back
+        if (IsRootedByMovementTemplate())
+            SetControlled(true, UNIT_STATE_ROOT);
         SetMeleeDamageSchool(SpellSchools(cinfo->dmgschool));
         LoadCreaturesAddon(true);
         ApplyInstanceAuraIfNeeded();

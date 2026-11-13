@@ -8569,13 +8569,15 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
         case 65081:
         {
             // Proc only from PW:S cast
-            if (!(procSpell->SpellFamilyFlags [0] & 0x00000001))
+            if (!procSpell || !(procSpell->SpellFamilyFlags [0] & 0x00000001))
                 return false;
             break;
         }
         // Culling the Herd
         case 70893:
         {
+            if (!procSpell)
+                return false;
             // check if we're doing a critical hit
             if (!(procSpell->SpellFamilyFlags [1] & 0x10000000) && (procEx != PROC_EX_CRITICAL_HIT))
                 return false;
@@ -16542,6 +16544,11 @@ void Unit::SetControlled(bool apply, UnitState state)
                 SetStunned(false);
                 break;
             case UNIT_STATE_ROOT:
+                // a creature rooted by creature_template_movement / creature_movement_override stays rooted when a root aura
+                // ends, it leaves a vehicle or a script unroots it (AC Unit.cpp:14006, TCPP's sessile guard)
+                if (GetTypeId() == TYPEID_UNIT && ToCreature()->IsRootedByMovementTemplate())
+                    return;
+
                 if (HasAuraType(SPELL_AURA_MOD_ROOT) || GetVehicle())
                     return;
 

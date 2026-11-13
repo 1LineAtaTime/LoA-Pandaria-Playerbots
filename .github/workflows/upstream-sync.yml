@@ -1,0 +1,351 @@
+name: Upstream sync
+
+# Every 6 hours: pull the new Legends-of-Azeroth master commits into playerbot-beta when that is safe.
+#
+# 1. select   - the upstream commits that arrived since the last check (the upstream-sync-last tag; with no tag, the last
+#               6 hours). .github/upstream-sync/upstream_sync.py marks each one:
+#                 already - in playerbot-beta already (ancestor, a "(cherry picked from commit <sha>)" trailer, or a
+#                           hand port: the patch reverses cleanly and its new SQL updates are present)
+#                 auto    - only SQL updates and/or source under src/ (core and scripts), at most 15 files / 600 lines,
+#                           writes no row this fork's own SQL updates write, and every changed source region is more
+#                           than 5 lines from this fork's own edits to that file (log-format-only edits do not count)
+#                 review  - anything else (modules, CI, cmake, dep, schema changes, large, overlapping, does not apply):
+#                           it and every later commit are left out
+#               The leading run of "auto" commits is applied (author and date kept, " (#n)" dropped from the subject,
+#               added SQL updates renamed to today's free name) and pushed to a scratch branch.
+# 2. build    - linux_gcc.yml builds the candidate.
+# 3. database - the newest release database plus every SQL update must apply without an error, and the new update
+#               files must apply a second time (idempotent).
+# 4. finish   - when the gates pass, playerbot-beta is fast-forwarded to the candidate. The upstream-sync-last tag moves
+#               to the upstream head, so the next run looks only at newer commits. A commit that needs review, a failed
+#               gate or a moved playerbot-beta fails the run, and GitHub's Actions e-mail tells the owner; the job
+#               summary lists every commit and why.
+#
+# workflow_dispatch: "since" starts after a given upstream commit instead of the tag; "no_push" runs every check but
+# pushes nothing and leaves the tag where it is (for testing).
+
+on:
+  schedule:
+    - cron: '41 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Upstream commit to start after (empty: the upstream-sync-last tag, or the last 6 hours)"
+        type: string
+        default: ''
+      no_push:
+        description: "Run every check but push nothing and leave the tag where it is"
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_URL: https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8.git
+  UPSTREAM_BRANCH: master
+  TARGET: playerbot-beta
+  STATE_TAG: upstream-sync-last
+  WINDOW_HOURS: '6'
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    outputs:
+      auto: ${{ steps.plan.outputs.auto }}
+      review: ${{ steps.plan.outputs.review }}
+      candidate: ${{ steps.plan.outputs.candidate }}
+      branch: ${{ steps.plan.outputs.branch }}
+      base: ${{ steps.plan.outputs.base }}
+      upstream_head: ${{ steps.plan.outputs.upstream_head }}
+    steps:
+    - name: Checkout the sync script
+      uses: actions/checkout@v4
+      with:
+        path: ci
+        sparse-checkout: .github/upstream-sync
+        persist-credentials: false
+
+    - name: Checkout ${{ env.TARGET }}
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.TARGET }}
+        path: work
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: Fetch upstream
+      working-directory: work
+      run: |
+        set -euo pipefail
+        git remote add upstream "$UPSTREAM_URL"
+        git fetch --no-tags --quiet upstream "+refs/heads/$UPSTREAM_BRANCH:refs/remotes/upstream/$UPSTREAM_BRANCH"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+    - name: Select and apply
+      id: plan
+      working-directory: work
+      env:
+        SINCE_INPUT: ${{ inputs.since }}
+      run: |
+        set -euo pipefail
+        since="$SINCE_INPUT"
+        if [ -n "$since" ] && ! [[ "$since" =~ ^[0-9a-f]{7,40}$ ]]; then echo "::error::since must be a commit sha"; exit 1; fi
+        if [ -z "$since" ]; then since=$(git rev-parse -q --verify "refs/tags/$STATE_TAG^{commit}" || true); fi
+        base=$(git rev-parse HEAD)
+        python3 -I ../ci/.github/upstream-sync/upstream_sync.py apply --work . --upstream "upstream/$UPSTREAM_BRANCH" \
+          --since "$since" --window-hours "$WINDOW_HOURS" --out ../upstream-sync.json | tee ../upstream-sync.txt
+        python3 -I - <<'PY'
+        import json, os
+        r = json.load(open("../upstream-sync.json"))
+        out = open(os.environ["GITHUB_OUTPUT"], "a")
+        out.write("auto=%d\nreview=%d\nupstream_head=%s\n" % (r["auto"], r["review"], r["upstream_head"]))
+        s = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+        s.write("## Upstream sync\n\nUpstream head `%s`, window: %s. %d new: %d auto, %d review, %d already in.\n\n"
+                % (r["upstream_head"][:8], r["window"], len(r["commits"]), r["auto"], r["review"], r["already"]))
+        s.write("| Commit | Verdict | Subject | Why / notes |\n|---|---|---|---|\n")
+        for c in r["commits"]:
+            notes = "<br>".join(c.get("reasons", []) + ["renamed " + x for x in c.get("renames", [])])
+            s.write("| [`%s`](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8/commit/%s) | %s | %s | %s |\n"
+                    % (c["sha"][:8], c["sha"], c["verdict"], c["subject"].replace("|", "\\|"), notes.replace("|", "\\|")))
+        PY
+        echo "base=$base" >> "$GITHUB_OUTPUT"
+        auto=$(python3 -I -c 'import json;print(json.load(open("../upstream-sync.json"))["auto"])')
+        if [ "$auto" -gt 0 ]; then
+          branch="upstream-sync/run-$GITHUB_RUN_ID"
+          git push --quiet origin "HEAD:refs/heads/$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "candidate=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Upload the report
+      uses: actions/upload-artifact@v4
+      with:
+        name: upstream-sync-report
+        path: |
+          upstream-sync.json
+          upstream-sync.txt
+        retention-days: 30
+
+  build:
+    needs: select
+    if: needs.select.outputs.auto != '0' && needs.select.outputs.auto != ''
+    permissions:
+      contents: read
+    uses: ./.github/workflows/linux_gcc.yml
+    with:
+      ref: ${{ needs.select.outputs.candidate }}
+
+  database:
+    needs: select
+    if: needs.select.outputs.auto != '0' && needs.select.outputs.auto != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          # Throwaway database inside this job, not a secret.
+          MYSQL_ROOT_PASSWORD: ci-root
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pci-root"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ needs.select.outputs.candidate }}
+      BASE: ${{ needs.select.outputs.base }}
+      MYSQL_PASSWORD: ci-root
+    steps:
+    - name: Find the MySQL container
+      env:
+        CONTAINER: ${{ job.services.mysql.id }}
+      run: echo "MYSQL_CONTAINER=$CONTAINER" >> "$GITHUB_ENV"
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.select.outputs.candidate }}
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Download the baseline release database
+      run: |
+        set -euo pipefail
+        BASELINE=""
+        for tag in $(gh release list -R "$REPO" --exclude-drafts --limit 100 \
+                       --json tagName,publishedAt --jq 'sort_by(.publishedAt) | reverse | .[].tagName'); do
+          case "$tag" in ci-*) continue ;; esac
+          n=$(gh release view "$tag" -R "$REPO" --json assets \
+                --jq '[.assets[].name | select(endswith("-database.zip"))] | length')
+          [ "$n" -gt 0 ] || continue
+          status=$(gh api "repos/$REPO/compare/$tag...$SHA" --jq .status)
+          case "$status" in ahead|identical) BASELINE="$tag"; break ;; esac
+        done
+        if [ -z "$BASELINE" ]; then echo "::error::No release with a database zip found"; exit 1; fi
+        echo "Baseline database: $BASELINE" | tee -a "$GITHUB_STEP_SUMMARY"
+        mkdir -p baseline/zip baseline/db
+        gh release download "$BASELINE" -R "$REPO" -p '*-database.zip' -D baseline/zip
+        unzip -q baseline/zip/*-database.zip -d baseline/db
+        for db in auth characters world playerbots; do
+          [ -f "baseline/db/$db.sql" ] || { echo "::error::$BASELINE database zip has no $db.sql"; exit 1; }
+        done
+
+    - name: Import the baseline databases
+      run: |
+        set -euo pipefail
+        mysql() { docker exec -i -e MYSQL_PWD="$MYSQL_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot \
+                    --default-character-set=utf8mb4 --max-allowed-packet=1GB "$@"; }
+        mysql -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2; SET GLOBAL sync_binlog = 0;
+                  SET GLOBAL max_allowed_packet = 1073741824;"
+        for db in auth characters world playerbots; do
+          mysql -e "CREATE DATABASE \`$db\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+          mysql "$db" < "baseline/db/$db.sql"
+        done
+
+    # Same rules as the database job of beta-prerelease.yml (and the worldserver's DBUpdater): the update directories of
+    # each database's updates_include table, applied in file name order when not yet in the updates table. Then the
+    # update files the candidate adds are applied once more: they must be idempotent. Any SQL error fails the job.
+    - name: Apply the SQL updates
+      run: |
+        set -euo pipefail
+        git diff --name-only --diff-filter=A "$BASE" "$SHA" -- 'sql/updates/*.sql' > new-updates.txt
+        echo "New update files:"; cat new-updates.txt
+        python3 - <<'PY'
+        import os, pathlib, re, subprocess, sys
+
+        MYSQL = ["docker", "exec", "-i", "-e", "MYSQL_PWD=" + os.environ["MYSQL_PASSWORD"],
+                 os.environ["MYSQL_CONTAINER"], "mysql", "-uroot",
+                 "--default-character-set=utf8mb4", "--max-allowed-packet=1GB"]
+        ROOTS = {"auth": ".", "characters": ".", "world": ".", "playerbots": "modules/mod_playerbots"}
+        NAME = re.compile(r"^[A-Za-z0-9._-]+[.]sql$")
+
+        def query(db, sql):
+            r = subprocess.run(MYSQL + ["-N", "-B", "-e", sql, db], capture_output=True, text=True)
+            if r.returncode:
+                print(r.stderr, file=sys.stderr)
+                sys.exit(f"query failed on {db}: {sql}")
+            return [line.split("\t") for line in r.stdout.splitlines() if line]
+
+        def walk(path, depth=1):
+            for p in sorted(path.iterdir()):
+                if p.is_dir():
+                    if depth < 10:
+                        yield from walk(p, depth + 1)
+                elif p.suffix == ".sql":
+                    yield p
+
+        def run(db, f):
+            with open(f, "rb") as fh:
+                if subprocess.run(MYSQL + [db], stdin=fh).returncode:
+                    print(f"::error file={f}::applying {f} to {db} failed")
+                    sys.exit(1)
+
+        total = 0
+        db_of = {}
+        for db, root in ROOTS.items():
+            applied = {row[0] for row in query(db, "SELECT `name` FROM `updates`")}
+            available = {}
+            for path, state in query(db, "SELECT `path`, `state` FROM `updates_include`"):
+                directory = pathlib.Path(root + path[1:] if path.startswith("$") else path)
+                if not directory.is_dir():
+                    continue
+                for f in walk(directory):
+                    if f.name in available:
+                        sys.exit(f"duplicate update file name {f.name}: {available[f.name][0]} and {f}")
+                    available[f.name] = (f, "RELEASED" if state == "RELEASED" else "ARCHIVED")
+            for name in sorted(n for n in available if n not in applied):
+                f, state = available[name]
+                if not NAME.match(name):
+                    sys.exit(f"unexpected update file name {name!r}")
+                run(db, f)
+                query(db, f"REPLACE INTO `updates` (`name`, `hash`, `state`, `speed`) VALUES ('{name}', '', '{state}', 0)")
+                db_of[str(f)] = db
+                total += 1
+        print(f"Applied {total} SQL updates on top of the baseline.")
+        new = [l.strip() for l in open("new-updates.txt") if l.strip()]
+        for f in new:
+            db = db_of.get(f)
+            if db is None:
+                sys.exit(f"::error file={f}::{f} was not applied (not in an update directory?)")
+            print(f"Re-applying {f} to {db} (idempotence)")
+            run(db, f)
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
+            out.write(f"Applied {total} SQL updates on top of the baseline; {len(new)} new file(s) applied twice.\n")
+        PY
+
+  finish:
+    needs: [select, build, database]
+    if: always() && needs.select.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout ${{ env.TARGET }}
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.TARGET }}
+        fetch-depth: 0
+
+    - name: Merge, move the state tag, report
+      env:
+        AUTO: ${{ needs.select.outputs.auto }}
+        REVIEW: ${{ needs.select.outputs.review }}
+        CANDIDATE: ${{ needs.select.outputs.candidate }}
+        BRANCH: ${{ needs.select.outputs.branch }}
+        BASE: ${{ needs.select.outputs.base }}
+        UPSTREAM_HEAD: ${{ needs.select.outputs.upstream_head }}
+        BUILD: ${{ needs.build.result }}
+        DATABASE: ${{ needs.database.result }}
+        NO_PUSH: ${{ inputs.no_push }}
+      run: |
+        set -euo pipefail
+        fail=0
+        move_tag=1
+        summary() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+        if [ "${AUTO:-0}" -gt 0 ]; then
+          if [ "$BUILD" = success ] && [ "$DATABASE" = success ]; then
+            git fetch --quiet origin "refs/heads/$BRANCH:refs/remotes/origin/candidate"
+            now=$(git rev-parse "origin/$TARGET")
+            if [ "$now" != "$BASE" ]; then
+              summary "- $TARGET moved during the run ($BASE -> $now): nothing merged; the next run retries."
+              fail=1; move_tag=0
+            elif [ "$NO_PUSH" = true ]; then
+              summary "- Gates passed; no_push is set, so $TARGET stays at ${BASE:0:8} (candidate ${CANDIDATE:0:8})."
+            else
+              git push origin "$CANDIDATE:refs/heads/$TARGET"
+              summary "- Gates passed: $TARGET fast-forwarded ${BASE:0:8} -> ${CANDIDATE:0:8} ($AUTO upstream commit(s))."
+            fi
+          else
+            summary "- A gate failed (build: $BUILD, database: $DATABASE): nothing merged. The candidate stays on branch $BRANCH for inspection."
+            fail=1
+          fi
+        fi
+        if [ "${REVIEW:-0}" -gt 0 ]; then
+          summary "- $REVIEW upstream commit(s) need a manual review (see the select job's table)."
+          fail=1
+        fi
+        if [ "$NO_PUSH" = true ]; then move_tag=0; fi
+        if [ "$move_tag" = 1 ] && [ -n "$UPSTREAM_HEAD" ]; then
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch --no-tags --quiet upstream "+refs/heads/$UPSTREAM_BRANCH:refs/remotes/upstream/$UPSTREAM_BRANCH"
+          git push --quiet origin ":refs/tags/$STATE_TAG" 2>/dev/null || true
+          git tag -f "$STATE_TAG" "$UPSTREAM_HEAD"
+          git push --quiet origin "refs/tags/$STATE_TAG"
+          summary "- $STATE_TAG -> ${UPSTREAM_HEAD:0:8}: the next run looks only at newer upstream commits."
+        fi
+        if [ -n "$BRANCH" ] && { [ "$fail" = 0 ] || [ "$NO_PUSH" = true ]; }; then
+          git push --quiet origin ":refs/heads/$BRANCH" || true
+        fi
+        exit "$fail"

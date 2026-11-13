@@ -363,7 +363,7 @@ void WorldSession::HandleBattlePetSetFlags(WorldPacket& recvData)
     recvData >> flag;
 
     petEntry[5] = recvData.ReadBit();
-    petEntry[4] = recvData.ReadBit();
+    petEntry[2] = recvData.ReadBit();
     uint8 mode = recvData.ReadBits(2);
     petEntry[1] = recvData.ReadBit();
     petEntry[4] = recvData.ReadBit();
