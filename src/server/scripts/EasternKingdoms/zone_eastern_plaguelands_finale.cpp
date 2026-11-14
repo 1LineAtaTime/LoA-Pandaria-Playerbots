@@ -74,7 +74,69 @@ class spell_epl_lieutenant_death_grip : public SpellScript
     }
 };
 
+/*######
+## Scourged Mass (27528)
+######*/
+
+enum ScourgedMass
+{
+    NPC_OVERSTUFFED_GOLEM                       = 45851,
+    SPELL_BURN_CORPSE                           = 85555
+};
+
+// Burn Corpse's reach (SpellRange 7 yd)
+float const BurnCorpseRange = 7.0f;
+
+// 85555 - Burn Corpse (Kevin Frost's Crusader's Torch 61369)
+// "Kill Overstuffed Golems, then use the torch on their corpses": effect 0 puts the fire on the nearest Overstuffed Golem within
+// 7 yd that is dead and not burning yet (conditions 13/1/85555), effect 1 is the credit (KILL_CREDIT2 to the caster, which this
+// core gives to the caster's group as well: Player::RewardPlayerAndGroupAtEvent, the DBC's group form of the credit). When effect
+// 0 finds no corpse the cast goes on without a target (Spell::SelectImplicitNearbyTargets returns quietly), so the credit is
+// given only when effect 0 has its corpse, and the torch is refused beforehand with no such corpse in reach. Once per corpse: a
+// burning corpse is not a target (the burn aura is death-persistent), and it despawns 5 s later (its SmartAI)
+class spell_epl_burn_corpse : public SpellScript
+{
+    PrepareSpellScript(spell_epl_burn_corpse);
+
+    static bool IsBurnable(Unit* caster, Creature* golem)
+    {
+        return !golem->IsAlive() && !golem->HasAura(SPELL_BURN_CORPSE) && caster->IsWithinDistInMap(golem, BurnCorpseRange);
+    }
+
+    SpellCastResult CheckCorpse()
+    {
+        Unit* caster = GetCaster();
+        std::list<Creature*> golems;
+        caster->GetCreatureListWithEntryInGrid(golems, NPC_OVERSTUFFED_GOLEM, BurnCorpseRange + 10.0f);
+        for (Creature* golem : golems)
+            if (IsBurnable(caster, golem))
+                return SPELL_CAST_OK;
+        return SPELL_FAILED_NO_VALID_TARGETS;
+    }
+
+    void NoteCorpse(WorldObject*& target)
+    {
+        _corpse = target && target->ToCreature() && target->GetEntry() == NPC_OVERSTUFFED_GOLEM;
+    }
+
+    void HandleCredit(SpellEffIndex effIndex)
+    {
+        if (!_corpse)
+            PreventHitDefaultEffect(effIndex);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_epl_burn_corpse::CheckCorpse);
+        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_epl_burn_corpse::NoteCorpse, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_epl_burn_corpse::HandleCredit, EFFECT_1, SPELL_EFFECT_KILL_CREDIT2);
+    }
+
+    bool _corpse = false;
+};
+
 void AddSC_eastern_plaguelands_finale()
 {
     new spell_script<spell_epl_lieutenant_death_grip>("spell_epl_lieutenant_death_grip");
+    new spell_script<spell_epl_burn_corpse>("spell_epl_burn_corpse");
 }
