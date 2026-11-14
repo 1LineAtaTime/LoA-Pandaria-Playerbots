@@ -92,6 +92,7 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
 ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : PassTroughStrategy(botAI)
 {
     supported.push_back("who");
+    supported.push_back("talents");  // AC ChatCommandHandlerStrategy.cpp:107
     supported.push_back("help");
     supported.push_back("co");
     supported.push_back("nc");

@@ -18,6 +18,7 @@
 #include "BuyAction.h"
 #include "CastCustomSpellAction.h"  // #611 (AC ChatActionContext.h:164-165)
 #include "ChangeStrategyAction.h"
+#include "ChangeTalentsAction.h"  // AC ChatActionContext.h:18
 #include "TaxiAction.h"   // #767
 #include "DebugAction.h"  // #611 build 13 (AC ChatActionContext.h:22)
 #include "GossipHelloAction.h"
@@ -67,6 +68,7 @@ public:
     {
         creators["who"] = &ChatActionContext::who;
         // #611 (AC ChatActionContext.h:149,164-165): the chat actions the old-rpg sub-actions call through DoSpecificAction.
+        creators["talents"] = &ChatActionContext::talents;  // AC ChatActionContext.h:134
         creators["use"] = &ChatActionContext::use;
         creators["reward"] = &ChatActionContext::reward;  // #258 (AC ChatActionContext.h:132)
         creators["hire"] = &ChatActionContext::hire;      // #258 (AC :187)
@@ -164,6 +166,7 @@ private:
     static Action* nc(PlayerbotAI* botAI) { return new ChangeNonCombatStrategyAction(botAI); }
     static Action* dead(PlayerbotAI* botAI) { return new ChangeDeadStrategyAction(botAI); }
     static Action* rti(PlayerbotAI* botAI) { return new RtiAction(botAI); }
+    static Action* talents(PlayerbotAI* botAI) { return new ChangeTalentsAction(botAI); }
     static Action* follow_chat_shortcut(PlayerbotAI* botAI) { return new FollowChatShortcutAction(botAI); }
     static Action* stay_chat_shortcut(PlayerbotAI* botAI) { return new StayChatShortcutAction(botAI); }
     static Action* move_from_group_chat_shortcut(PlayerbotAI* botAI) { return new MoveFromGroupChatShortcutAction(botAI); }

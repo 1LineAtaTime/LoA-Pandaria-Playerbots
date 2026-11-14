@@ -20,6 +20,7 @@ public:
     ChatTriggerContext()
     {
         creators["who"] = &ChatTriggerContext::who;
+        creators["talents"] = &ChatTriggerContext::talents;  // AC ChatTriggerContext.h:60
         creators["help"] = &ChatTriggerContext::help;
         creators["co"] = &ChatTriggerContext::co;
         creators["nc"] = &ChatTriggerContext::nc;
@@ -137,6 +138,7 @@ private:
     static Trigger* drop(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "drop"); }  // #146, AC :249
     static Trigger* share(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "share"); }  // #146, AC :250
     static Trigger* q(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "q"); }  // #146, AC :246
+    static Trigger* talents(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "talents"); }
     static Trigger* help(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "help"); }
     static Trigger* co(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "co"); }
     static Trigger* nc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "nc"); }
