@@ -849,6 +849,12 @@ enum CaravanFollowers
     AREA_DEATHS_BREACH              = 4544,
     AREA_EASTWALL_TOWER             = 2271,
     AREA_IXLARS_DOMAIN              = 5463,
+    AREA_ZULMASHAR                  = 2273,
+
+    NPC_VEXTUL_FOLLOWER             = 45741,   // Out of the Ziggurat 27481 / Into the Flames 27482 (85334)
+    SPELL_SUMMON_VEXTUL             = 85334,
+    QUEST_OUT_OF_THE_ZIGGURAT       = 27481,
+    QUEST_INTO_THE_FLAMES           = 27482,
 
     // The paladins' buffs (the standing Tarenar 45429 / 45729 and Gidwin 45431 / 45730 carry the same spells)
     SPELL_BLESSING_OF_MIGHT         = 79977,
@@ -906,6 +912,9 @@ std::vector<CaravanFollowerInfo> const CaravanFollowerInfos =
         { AREA_LIGHTS_HOPE_CHAPEL, AREA_BROWMAN_MILL, AREA_THE_NOXIOUS_GLADE, AREA_PESTILENT_SCAR, AREA_DEATHS_BREACH }, FollowerKind::Gidwin },
     { NPC_TARENAR_IXLAR, SPELL_SUMMON_TARENAR_IXLAR, { QUEST_IXLAR_THE_UNDERLORD },
         { AREA_EASTWALL_TOWER, AREA_IXLARS_DOMAIN }, FollowerKind::Tarenar },
+    // Its quests are a pair: from Out of the Ziggurat taken until Into the Flames is credited (the existing spell_area row)
+    { NPC_VEXTUL_FOLLOWER, SPELL_SUMMON_VEXTUL, { QUEST_OUT_OF_THE_ZIGGURAT, QUEST_INTO_THE_FLAMES },
+        { AREA_ZULMASHAR }, FollowerKind::Vextul },
 };
 
 static CaravanFollowerInfo const* GetFollowerInfoByEntry(uint32 entry)
@@ -931,7 +940,14 @@ static bool KeepsCaravanFollower(Player* player, CaravanFollowerInfo const* info
         return false;
 
     bool questOk = false;
-    for (uint32 questId : info->Quests)
+    if (info->Kind == FollowerKind::Vextul)
+    {
+        QuestStatus first = player->GetQuestStatus(QUEST_OUT_OF_THE_ZIGGURAT);
+        QuestStatus second = player->GetQuestStatus(QUEST_INTO_THE_FLAMES);
+        questOk = first != QUEST_STATUS_NONE && first != QUEST_STATUS_FAILED
+            && (second == QUEST_STATUS_NONE || second == QUEST_STATUS_INCOMPLETE);
+    }
+    else for (uint32 questId : info->Quests)
     {
         QuestStatus status = player->GetQuestStatus(questId);
         if (status == QUEST_STATUS_INCOMPLETE || status == QUEST_STATUS_COMPLETE)
@@ -1405,6 +1421,191 @@ protected:
     uint32 _talkCooldown = 0;
 };
 
+enum VextulFarewell
+{
+    NPC_INTO_THE_FLAMES_CREDIT      = 45738,   // the bunny on the bonfire, and the quest's kill credit
+    SPELL_DESTROY_THRESHJIN_BODY    = 85327,
+    SPELL_VEXTUL_DEATH              = 85337,
+
+    SAY_VEXTUL_GOING                = 0,       // 45810
+    SAY_VEXTUL_GREEN_FIELDS         = 1,       // 45811
+
+    ACTION_VEXTUL_FAREWELL          = 1,
+
+    POINT_VEXTUL_FIRE_EDGE          = 1,
+    POINT_VEXTUL_FIRE               = 2,
+
+    EVENT_FAREWELL_GOING            = 1,
+    EVENT_FAREWELL_GREEN_FIELDS,
+    EVENT_FAREWELL_JUMP,
+    EVENT_FAREWELL_DIE,
+};
+
+// The edge of the bonfire on the ziggurat and the fire itself (the former SmartAI list 4574100: mop's own positions; the fire
+// is the spot of the credit bunny 375819)
+Position const VextulFireEdge = { 3456.7f, -4998.2f, 198.8f, 0.0f };
+Position const VextulFire     = { 3462.1f, -5004.1f, 202.5f, 0.0f };
+
+// 45741 - Vex'tul (Out of the Ziggurat 27481 / Into the Flames 27482, summoned by 85334 in Zul'Mashar)
+// The follower above, without buffs or lines in fights ("he could actually fight worth a damn"; no ability is sourced), and his
+// end in the fire (wiki notes of 27482): when his master burns Thresh'jin's body at the bonfire he stops fighting, walks to the
+// fire, says "I will be goin' now. I have no reason to remain here. I may be undead, but my will is my own." and "I will see you
+// in green fields on the other side, <name>.", jumps into the fire and dies there (Vex'tul Death 85337, in the quest's id block),
+// and his death gives his master the credit of Into the Flames; his body is gone a moment later (the quest's credit removes
+// the summon aura, which takes him away). Before, the bonfire bunny's SmartAI picked the nearest Vex'tul within 20 yd, so a
+// player whose Vex'tul had died or lagged behind got nothing, another player's Vex'tul could take the credit, and the dead
+// Vex'tul lay on the fire until a hand-in to him (no longer possible: he is neither giver nor ender, 2026_11_14_38).
+// Once the farewell has begun the credit is his master's even if Vex'tul is taken away before he dies (the master leaves
+// Zul'Mashar or dies meanwhile). Ours: the 4 s / 4 s / 2 s steps (the old list's), the fall-back kill if the death spell fails,
+// the credit on an interrupted farewell.
+struct npc_epl_vextul_follower : public npc_epl_caravan_follower
+{
+    npc_epl_vextul_follower(Creature* creature) : npc_epl_caravan_follower(creature) { }
+
+    bool IsBusy() const override { return _farewell; }
+
+    void DoAction(int32 action) override
+    {
+        if (action != ACTION_VEXTUL_FAREWELL || _farewell || !me->IsAlive())
+            return;
+
+        _farewell = true;
+        me->CombatStop(true);
+        me->SetReactState(REACT_PASSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        me->SetWalk(false);
+        me->GetMotionMaster()->Clear(false);
+        me->GetMotionMaster()->MovePoint(POINT_VEXTUL_FIRE_EDGE, VextulFireEdge);
+        // Whether or not he gets there (the ziggurat's top is small), he speaks after a few seconds
+        _farewellEvents.ScheduleEvent(EVENT_FAREWELL_GOING, 4s);
+    }
+
+    void MovementInform(uint32 type, uint32 id) override
+    {
+        if (_farewell && type == EFFECT_MOTION_TYPE && id == POINT_VEXTUL_FIRE)
+            _farewellEvents.ScheduleEvent(EVENT_FAREWELL_DIE, 100ms);
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        if (_farewell)
+            return;
+        npc_epl_caravan_follower::EnterEvadeMode(why);
+    }
+
+    void JustDied(Unit* killer) override
+    {
+        if (!_farewell)
+        {
+            npc_epl_caravan_follower::JustDied(killer);
+            return;
+        }
+
+        _farewellEvents.Reset();
+        me->DespawnOrUnsummon(5000);
+        CreditOwner();
+    }
+
+    // Once the farewell has begun the credit is his master's whatever happens next: the master leaves Zul'Mashar or dies
+    // during it (the summon aura goes and takes Vex'tul with it) or he is unsummoned for any other reason
+    void Unsummoned() override
+    {
+        if (_farewell)
+            CreditOwner();
+    }
+
+    void CreditOwner()
+    {
+        if (_credited)
+            return;
+        _credited = true;
+        if (Player* owner = GetOwnerPlayer())
+            if (owner->GetQuestStatus(QUEST_INTO_THE_FLAMES) == QUEST_STATUS_INCOMPLETE)
+                owner->KilledMonsterCredit(NPC_INTO_THE_FLAMES_CREDIT);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!_farewell)
+        {
+            npc_epl_caravan_follower::UpdateAI(diff);
+            return;
+        }
+
+        _farewellEvents.Update(diff);
+        while (uint32 eventId = _farewellEvents.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_FAREWELL_GOING:
+                    me->SetFacingTo(me->GetAngle(&VextulFire));
+                    Talk(SAY_VEXTUL_GOING, GetOwnerPlayer());
+                    _farewellEvents.ScheduleEvent(EVENT_FAREWELL_GREEN_FIELDS, 4s);
+                    break;
+                case EVENT_FAREWELL_GREEN_FIELDS:
+                    Talk(SAY_VEXTUL_GREEN_FIELDS, GetOwnerPlayer());
+                    _farewellEvents.ScheduleEvent(EVENT_FAREWELL_JUMP, 2s);
+                    break;
+                case EVENT_FAREWELL_JUMP:
+                    me->GetMotionMaster()->Clear(false);
+                    me->GetMotionMaster()->MoveJump(VextulFire, 10.0f, 8.0f, POINT_VEXTUL_FIRE);
+                    // In case the jump never reports its end
+                    _farewellEvents.ScheduleEvent(EVENT_FAREWELL_DIE, 4s);
+                    break;
+                case EVENT_FAREWELL_DIE:
+                    if (me->IsAlive())
+                    {
+                        me->CastSpell(me, SPELL_VEXTUL_DEATH, true);
+                        if (me->IsAlive())
+                            me->Kill(me, false);
+                    }
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    bool _farewell = false;
+    bool _credited = false;
+    EventMap _farewellEvents;
+};
+
+// 85327 - Destroy Thresh'jin's Body (item 61316, Into the Flames 27482), effect 0 on the bunny 45738 on the bonfire
+// The thrower's own Vex'tul (living, within 40 yd, not already saying goodbye) takes his leave and credits him with his death
+// (npc_epl_vextul_follower). A thrower without his Vex'tul at hand (he died, the player relogged in the area and has not been
+// re-joined yet, he is somewhere below) is credited at once (ours: retail left players stuck there, Wowhead 2013 comments).
+// Another player's Vex'tul is never touched.
+class spell_epl_destroy_threshjin_body : public SpellScript
+{
+    PrepareSpellScript(spell_epl_destroy_threshjin_body);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+        if (!player || player->GetQuestStatus(QUEST_INTO_THE_FLAMES) != QUEST_STATUS_INCOMPLETE)
+            return;
+
+        if (Creature* vextul = FindLivingCaravanFollower(player, NPC_VEXTUL_FOLLOWER))
+        {
+            if (vextul->IsAIEnabled && vextul->IsWithinDistInMap(player, 40.0f))
+            {
+                if (!vextul->AI()->GetData(DATA_FOLLOWER_BUSY))
+                    vextul->AI()->DoAction(ACTION_VEXTUL_FAREWELL);
+                return;
+            }
+        }
+
+        player->KilledMonsterCredit(NPC_INTO_THE_FLAMES_CREDIT);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_epl_destroy_threshjin_body::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 void AddSC_eastern_plaguelands_caravan()
 {
     new creature_script<npc_epl_caravan_wagon>("npc_epl_caravan_wagon");
@@ -1418,4 +1619,6 @@ void AddSC_eastern_plaguelands_caravan()
     new spell_script<spell_epl_follower_summon>("spell_epl_follower_summon");
     new aura_script<spell_epl_follower_aura>("spell_epl_follower_aura");
     new creature_script<npc_epl_caravan_follower>("npc_epl_caravan_follower");
+    new creature_script<npc_epl_vextul_follower>("npc_epl_vextul_follower");
+    new spell_script<spell_epl_destroy_threshjin_body>("spell_epl_destroy_threshjin_body");
 }
