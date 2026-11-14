@@ -161,7 +161,10 @@ class spell_q5206_test_fetid_skull : public SpellScriptLoader
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
                 Unit* caster = GetCaster();
-                uint32 spellId = roll_chance_i(50) ? SPELL_CREATE_RESONATING_SKULL : SPELL_CREATE_BONE_DUST;
+                // Three skulls in four resonate. No source gives the rate for the Cataclysm version of the quest (27389): one
+                // classic comment measured a third, a later one only says some Bone Dust is left over. 50 was this
+                // script's own number; the higher value is the less grindy of the uncertain ones.
+                uint32 spellId = roll_chance_i(75) ? SPELL_CREATE_RESONATING_SKULL : SPELL_CREATE_BONE_DUST;
                 caster->CastSpell(caster, spellId, true, NULL);
             }
 
