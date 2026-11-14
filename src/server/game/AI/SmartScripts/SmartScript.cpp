@@ -3272,7 +3272,13 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
             if ((!e.event.spellHit.spell || spell->Id == e.event.spellHit.spell) &&
                 (!e.event.spellHit.school || (spell->SchoolMask & e.event.spellHit.school)))
                 {
+                    // The action may itself hit this creature with a spell the event matches (Speaker Mar'grom 18693:
+                    // "on fire spell hit, cast Fire Ward on self", and Fire Ward is a fire spell): the event then ran inside
+                    // itself until the stack was gone and the server crashed. An event that is still running does not start again.
+                    if (!mSpellHitInProgress.insert(e.event_id).second)
+                        break;
                     ProcessAction(e, unit, 0, 0, bvar, spell);
+                    mSpellHitInProgress.erase(e.event_id);
                     RecalcTimer(e, e.event.spellHit.cooldownMin, e.event.spellHit.cooldownMax);
                 }
             break;

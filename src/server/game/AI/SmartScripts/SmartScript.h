@@ -18,6 +18,7 @@
 #ifndef TRINITY_SMARTSCRIPT_H
 #define TRINITY_SMARTSCRIPT_H
 
+#include <set>
 #include "Common.h"
 #include "Creature.h"
 #include "CreatureAI.h"
@@ -263,6 +264,7 @@ class SmartScript
         uint32 mLastTextID;
         uint32 mTalkerEntry;
         bool mUseTextTimer;
+        std::set<uint32> mSpellHitInProgress;    // ids of SMART_EVENT_SPELLHIT events whose action is running
 
         SMARTAI_TEMPLATE mTemplate;
         void InstallEvents();
