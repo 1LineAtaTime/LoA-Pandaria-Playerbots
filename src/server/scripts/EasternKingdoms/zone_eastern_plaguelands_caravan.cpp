@@ -598,6 +598,15 @@ private:
 enum CaravanParty
 {
     SAY_FIONA_BORROW_SUPPLIES       = 0,       // 46090, on accepting Onward
+
+    QUEST_BEEZILS_FLAG              = 27563,   // [FLAG] Beezil's Flag (tracking)
+    MENU_BEEZIL                     = 12081,
+    GOSSIP_OPTION_BEEZIL_JOIN       = 0,       // "...you're free to join us in our caravan." -> menu 12082 "Sure, I'll join you"
+
+    // Achievement 5442 Full Caravan: Fiona's and Beezil's criteria are "be the target of" these serverside spells, absent from
+    // the client data, so they are credited directly
+    SPELL_FULL_CARAVAN_FIONA        = 94998,
+    SPELL_FULL_CARAVAN_BEEZIL       = 85811,
 };
 
 // 45417 - Fiona (every stop of the caravan)
@@ -611,6 +620,14 @@ struct npc_epl_fiona : public ScriptedAI
     {
         if (quest->GetQuestId() == QUEST_ONWARD)
             Talk(SAY_FIONA_BORROW_SUPPLIES, player);
+    }
+
+    // Fiona's own Full Caravan criterion: when the first ride is handed in to her, the moment she has taken the player along
+    // (ours: the criterion's serverside spell is not in the client data and no source says when retail cast it)
+    void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
+    {
+        if (quest->GetQuestId() == QUEST_ONWARD)
+            player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, SPELL_FULL_CARAVAN_FIONA);
     }
 
     void MoveInLineOfSight(Unit* /*who*/) override { }
@@ -670,6 +687,34 @@ struct npc_epl_gidwin_idle : public ScriptedAI
 
 private:
     uint32 _timer = 0;
+};
+
+// 46022 - Beezil Linkspanner (Light's Hope)
+// Asked to join (menu 12081 option 0, both TDBs) he answers "Sure, I'll join you" (menu 12082, npc_text 16957) and is with the
+// caravan from then on: his flag quest 27563 is rewarded, which switches his greeting to "Hey boss" and offers Beezil's Cog
+// 27562 at the wagon (2026_11_14_05), and his Full Caravan criterion is credited. The core then shows the reply page (the
+// option's ActionMenuID), so the gossip is not closed here. Sourced: the option, the reply, the flag quest, the criterion;
+// ours: that choosing the option is what rewards the flag.
+struct npc_epl_beezil : public ScriptedAI
+{
+    npc_epl_beezil(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+    {
+        if (menuId != MENU_BEEZIL || gossipListId != GOSSIP_OPTION_BEEZIL_JOIN)
+            return false;
+
+        if (!player->IsQuestRewarded(QUEST_BEEZILS_FLAG))
+            if (Quest const* quest = sObjectMgr->GetQuestTemplate(QUEST_BEEZILS_FLAG))
+                player->RewardQuest(quest, 0, player, false);
+
+        player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, SPELL_FULL_CARAVAN_BEEZIL);
+        return false;
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void AttackStart(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
 };
 
 // ---------------------------------------------------------------------------------------------------------------------------
@@ -775,6 +820,7 @@ void AddSC_eastern_plaguelands_caravan()
     new creature_script<npc_epl_caravan_harness>("npc_epl_caravan_harness");
     new creature_script<npc_epl_fiona>("npc_epl_fiona");
     new creature_script<npc_epl_gidwin_idle>("npc_epl_gidwin_idle");
+    new creature_script<npc_epl_beezil>("npc_epl_beezil");
     new aura_script<spell_epl_caravan_buff>("spell_epl_caravan_buff");
     new player_epl_caravan_buff();
 }
