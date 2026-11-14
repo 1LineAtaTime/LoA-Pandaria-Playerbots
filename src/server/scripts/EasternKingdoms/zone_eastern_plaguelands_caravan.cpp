@@ -33,6 +33,7 @@
 #include "Group.h"
 #include "Pet.h"
 #include "ObjectMgr.h"
+#include "DBCStores.h"
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // The rides
@@ -814,6 +815,596 @@ public:
     }
 };
 
+// ---------------------------------------------------------------------------------------------------------------------------
+// The followers: every companion of the zone's quests on one script
+// ---------------------------------------------------------------------------------------------------------------------------
+
+enum CaravanFollowers
+{
+    NPC_TARENAR_DEATHS_STEP         = 45445,   // What I Do Best 27371 (84902)
+    NPC_GIDWIN_UNTABARDED           = 45677,   // A Boyhood Dream 27463, The Trial of the Crypt 27464 (85218)
+    NPC_TARENAR_UNTABARDED          = 45678,   // 27463, 27464 (85217)
+    NPC_TARENAR_TABARD              = 45792,   // The Noxious Glade 27465 (85402)
+    NPC_GIDWIN_TABARD               = 45793,   // 27465 (85404)
+    NPC_TARENAR_IXLAR               = 45794,   // Ix'lar the Underlord 27487 (85405)
+
+    SPELL_SUMMON_TARENAR_DEATHS_STEP = 84902,
+    SPELL_SUMMON_GIDWIN_UNTABARDED  = 85218,
+    SPELL_SUMMON_TARENAR_UNTABARDED = 85217,
+    SPELL_SUMMON_TARENAR_TABARD     = 85402,
+    SPELL_SUMMON_GIDWIN_TABARD      = 85404,
+    SPELL_SUMMON_TARENAR_IXLAR      = 85405,
+
+    QUEST_WHAT_I_DO_BEST            = 27371,
+    QUEST_A_BOYHOOD_DREAM           = 27463,
+    QUEST_TRIAL_OF_THE_CRYPT        = 27464,
+    QUEST_THE_NOXIOUS_GLADE         = 27465,
+    QUEST_IXLAR_THE_UNDERLORD       = 27487,
+
+    AREA_DEATHS_STEP                = 5446,
+    AREA_LIGHTS_HOPE_CHAPEL         = 2268,
+    AREA_BROWMAN_MILL               = 2269,
+    AREA_THE_NOXIOUS_GLADE          = 2270,
+    AREA_PESTILENT_SCAR             = 2622,    // both border Light's Hope on the way to the glade
+    AREA_DEATHS_BREACH              = 4544,
+    AREA_EASTWALL_TOWER             = 2271,
+    AREA_IXLARS_DOMAIN              = 5463,
+
+    // The paladins' buffs (the standing Tarenar 45429 / 45729 and Gidwin 45431 / 45730 carry the same spells)
+    SPELL_BLESSING_OF_MIGHT         = 79977,
+    SPELL_BLESSING_OF_KINGS         = 79968,
+    SPELL_RETRIBUTION_AURA          = 79976,
+    SPELL_DEVOTION_AURA             = 8258,
+    SPELL_SEAL_OF_TRUTH             = 79972,
+    SPELL_DIVINE_STORM              = 79970,
+
+    SAY_FOLLOWER_COMBAT             = 0,
+    SAY_FOLLOWER_KILL               = 1,       // Tarenar 45445 only
+
+    // George's cue when the Trial of the Crypt begins (zone_eastern_plaguelands_chapel.cpp)
+    ACTION_TRIAL_OF_THE_CRYPT_BEGINS = 27464,
+
+    DATA_FOLLOWER_BUSY              = 1,
+
+    EVENT_FOLLOWER_SETUP            = 1,
+    EVENT_FOLLOWER_ASSIST,
+    EVENT_FOLLOWER_CHECK,
+    EVENT_FOLLOWER_BUFF,
+    EVENT_FOLLOWER_DIVINE_STORM,
+};
+
+enum class FollowerKind : uint8
+{
+    Tarenar,
+    Gidwin,
+    Vextul,
+};
+
+struct CaravanFollowerInfo
+{
+    uint32 Entry;
+    uint32 Spell;                   // its summon; effect 1 is the dummy aura on the player that stands for "he is out"
+    std::vector<uint32> Quests;     // he stays while one of them is in the log (incomplete or complete)
+    std::vector<uint32> Areas;      // and the player is in one of these
+    FollowerKind Kind;
+};
+
+// The areas are each spell's AreaGroup (SpellCastingRequirements), plus Browman Mill 2269, Pestilent Scar 2622 and Death's Breach
+// 4544 for the chapel pairs: they lie between the chapel and the Noxious Glade, and "they never left" the player there
+// (chapel-argent 27464 claim 13).
+std::vector<CaravanFollowerInfo> const CaravanFollowerInfos =
+{
+    { NPC_TARENAR_DEATHS_STEP, SPELL_SUMMON_TARENAR_DEATHS_STEP, { QUEST_WHAT_I_DO_BEST },
+        { AREA_DEATHS_STEP }, FollowerKind::Tarenar },
+    { NPC_GIDWIN_UNTABARDED, SPELL_SUMMON_GIDWIN_UNTABARDED, { QUEST_A_BOYHOOD_DREAM, QUEST_TRIAL_OF_THE_CRYPT },
+        { AREA_LIGHTS_HOPE_CHAPEL, AREA_BROWMAN_MILL, AREA_THE_NOXIOUS_GLADE, AREA_PESTILENT_SCAR, AREA_DEATHS_BREACH }, FollowerKind::Gidwin },
+    { NPC_TARENAR_UNTABARDED, SPELL_SUMMON_TARENAR_UNTABARDED, { QUEST_A_BOYHOOD_DREAM, QUEST_TRIAL_OF_THE_CRYPT },
+        { AREA_LIGHTS_HOPE_CHAPEL, AREA_BROWMAN_MILL, AREA_THE_NOXIOUS_GLADE, AREA_PESTILENT_SCAR, AREA_DEATHS_BREACH }, FollowerKind::Tarenar },
+    { NPC_TARENAR_TABARD, SPELL_SUMMON_TARENAR_TABARD, { QUEST_THE_NOXIOUS_GLADE },
+        { AREA_LIGHTS_HOPE_CHAPEL, AREA_BROWMAN_MILL, AREA_THE_NOXIOUS_GLADE, AREA_PESTILENT_SCAR, AREA_DEATHS_BREACH }, FollowerKind::Tarenar },
+    { NPC_GIDWIN_TABARD, SPELL_SUMMON_GIDWIN_TABARD, { QUEST_THE_NOXIOUS_GLADE },
+        { AREA_LIGHTS_HOPE_CHAPEL, AREA_BROWMAN_MILL, AREA_THE_NOXIOUS_GLADE, AREA_PESTILENT_SCAR, AREA_DEATHS_BREACH }, FollowerKind::Gidwin },
+    { NPC_TARENAR_IXLAR, SPELL_SUMMON_TARENAR_IXLAR, { QUEST_IXLAR_THE_UNDERLORD },
+        { AREA_EASTWALL_TOWER, AREA_IXLARS_DOMAIN }, FollowerKind::Tarenar },
+};
+
+static CaravanFollowerInfo const* GetFollowerInfoByEntry(uint32 entry)
+{
+    for (CaravanFollowerInfo const& info : CaravanFollowerInfos)
+        if (info.Entry == entry)
+            return &info;
+    return nullptr;
+}
+
+static CaravanFollowerInfo const* GetFollowerInfoBySpell(uint32 spell)
+{
+    for (CaravanFollowerInfo const& info : CaravanFollowerInfos)
+        if (info.Spell == spell)
+            return &info;
+    return nullptr;
+}
+
+// Is the follower's reason still there: his quest in the player's log and the player where he goes with him
+static bool KeepsCaravanFollower(Player* player, CaravanFollowerInfo const* info)
+{
+    if (!player || !info || !player->IsInWorld() || !player->IsAlive())
+        return false;
+
+    bool questOk = false;
+    for (uint32 questId : info->Quests)
+    {
+        QuestStatus status = player->GetQuestStatus(questId);
+        if (status == QUEST_STATUS_INCOMPLETE || status == QUEST_STATUS_COMPLETE)
+            questOk = true;
+    }
+    // A Boyhood Dream is handed in to Tyrosus, who offers The Trial of the Crypt in the same window: the pair stays with the player
+    // across that hand-over while he is in the chapel's area, and goes if he leaves it without taking the Trial (ours)
+    if (!questOk && (info->Entry == NPC_GIDWIN_UNTABARDED || info->Entry == NPC_TARENAR_UNTABARDED)
+        && player->GetQuestStatus(QUEST_A_BOYHOOD_DREAM) == QUEST_STATUS_REWARDED
+        && player->GetQuestStatus(QUEST_TRIAL_OF_THE_CRYPT) == QUEST_STATUS_NONE)
+        return player->GetAreaId() == AREA_LIGHTS_HOPE_CHAPEL;
+
+    if (!questOk)
+        return false;
+
+    return std::find(info->Areas.begin(), info->Areas.end(), player->GetAreaId()) != info->Areas.end();
+}
+
+static Creature* FindLivingCaravanFollower(Unit* owner, uint32 entry)
+{
+    std::list<Creature*> minions;
+    owner->GetAllMinionsByEntry(minions, entry);
+    for (Creature* minion : minions)
+        if (minion->IsAlive() && !minion->IsDestroyedObject())
+            return minion;
+    return nullptr;
+}
+
+// What a follower attacks for his master: his melee target, else his selected target if he is fighting it (a caster's spells set
+// no melee victim), else whatever attacks him (as npc_wpl_provincial_minuteman in Western Plaguelands)
+static Unit* SelectFollowerTarget(Creature* me, Unit* owner)
+{
+    auto canFight = [me](Unit* target)
+    {
+        return target && target->IsAlive() && me->IsWithinDistInMap(target, 50.0f) && me->IsValidAttackTarget(target);
+    };
+
+    Unit* victim = owner->GetVictim();
+    if (canFight(victim))
+        return victim;
+
+    if (Player* player = owner->ToPlayer())
+    {
+        Unit* selected = player->GetSelectedUnit();
+        if (selected && player->IsInCombatWith(selected) && canFight(selected))
+            return selected;
+    }
+
+    for (Unit* attacker : owner->getAttackers())
+        if (canFight(attacker))
+            return attacker;
+
+    return nullptr;
+}
+
+// 84902, 85217, 85218, 85402, 85404, 85405 - Summon Tarenar Sunstrike / Summon Gidwin Goldbraids (effect 0, the summon)
+// Each is cast on the player by spell_area while its quest is in his log in the spell's areas (on accept, on entering the area,
+// at login and after resurrection there: Player::SendQuestUpdate and UpdateZone run the area auras). Effect 0 summons the
+// follower as the player's guardian (SummonProperties 3030 / 713: at the player's level, with his faction), effect 1 puts the
+// dummy aura on the player that the staging rows use to hide the standing copy while the follower is out (aura_spell -84902 at
+// the Marris Stead, -85405 at Eastwall).
+// - Never two: a player who still has a living follower of that entry (the aura was re-cast after he walked through Browman
+//   Mill, or after an area change) keeps him; a dead one is cleared first.
+// - Slots: 3030 (84902) is the quest summon slot 6, where a new summon unsummons the old one (TempSummon::InitStats); the slot is
+//   left as it was, so Tarenar and another companion in that slot never evict each other (the Zen'Kiki and val'kyr fault of
+//   Western Plaguelands; Pamela's Doll uses slot 6 every 2 minutes). 713 has no slot.
+// - A dead player gets no aura: spell_area casts triggered, which passes a dead caster, but the summon effect does nothing for
+//   one (Spell::EffectSummonType), so he would have had the aura and no follower, and the standing copy hidden, until he left
+//   the area. Refused here, resurrection casts it.
+class spell_epl_follower_summon : public SpellScript
+{
+    PrepareSpellScript(spell_epl_follower_summon);
+
+    SpellCastResult CheckCast()
+    {
+        if (!GetCaster()->IsAlive())
+            return SPELL_FAILED_CASTER_DEAD;
+        return SPELL_CAST_OK;
+    }
+
+    void HandleSummon(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        uint32 entry = uint32(GetSpellInfo()->Effects[effIndex].MiscValue);
+        if (FindLivingCaravanFollower(caster, entry))
+            return;
+        caster->RemoveAllMinionsByEntry(entry);
+
+        int32 slot = 0;
+        if (SummonPropertiesEntry const* properties = sSummonPropertiesStore.LookupEntry(GetSpellInfo()->Effects[effIndex].MiscValueB))
+            slot = properties->Slot;
+
+        if (slot > 0 && slot < SUMMON_SLOT_MAX)
+        {
+            ObjectGuid const kept = caster->m_SummonSlot[slot];
+            caster->m_SummonSlot[slot].Clear();
+            GetSpell()->EffectSummonType(effIndex);
+            caster->m_SummonSlot[slot] = kept;
+        }
+        else
+            GetSpell()->EffectSummonType(effIndex);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_epl_follower_summon::CheckCast);
+        OnEffectHit += SpellEffectFn(spell_epl_follower_summon::HandleSummon, EFFECT_0, SPELL_EFFECT_SUMMON);
+    }
+};
+
+// The same spells, effect 1 (the dummy aura on the player)
+// The summon is not tied to the aura in this core, so the follower stayed when the aura went. He now goes with it: on reward
+// (spell_area no longer fits; for 27487 also its RewardSpell 85807), on abandon, on leaving the spell's areas, and is unsummoned
+// with the player at death or logout. Exception: the chapel pairs stay through Browman Mill, where the aura cannot be (the
+// spells' AreaGroup is the chapel and the glade only); their own check takes them away anywhere else.
+class spell_epl_follower_aura : public AuraScript
+{
+    PrepareAuraScript(spell_epl_follower_aura);
+
+    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEATH)
+            return;
+
+        CaravanFollowerInfo const* info = GetFollowerInfoBySpell(GetId());
+        Player* player = GetTarget()->ToPlayer();
+        if (!info || !player)
+            return;
+
+        // Still on his way with the player (Browman Mill), or just died (his corpse goes by itself)
+        if (KeepsCaravanFollower(player, info))
+            return;
+
+        player->RemoveAllMinionsByEntry(info->Entry);
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_epl_follower_aura::AfterRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// At login: a summon aura saved under the old data (before these auras were made DONT_SAVE) stands for a follower who is gone,
+// blocks spell_area's recast (it casts only when the aura is absent) and keeps the standing copy hidden. It is dropped and the
+// area auras run again, which brings the follower back where his quest and area fit.
+class player_epl_caravan_follower : public PlayerScript
+{
+public:
+    player_epl_caravan_follower() : PlayerScript("player_epl_caravan_follower") { }
+
+    void OnLogin(Player* player) override
+    {
+        bool removed = false;
+        for (CaravanFollowerInfo const& info : CaravanFollowerInfos)
+            if (player->HasAura(info.Spell) && !FindLivingCaravanFollower(player, info.Entry))
+            {
+                player->RemoveAurasDueToSpell(info.Spell);
+                removed = true;
+            }
+
+        if (removed)
+            RestoreCaravanSight(player);
+    }
+};
+
+// 45445, 45677, 45678, 45792, 45793, 45794 - Tarenar Sunstrike / Gidwin Goldbraids, following the player
+// What the player sees (sourced, Wowhead comments of 27371, 27463-27465, 27487 and the wiki): the follower appears beside him,
+// follows him (mounted too), joins what he fights ("Tarenar should engage", "he will attack what you attack"), and buffs him,
+// his pet and his party: Tarenar Blessing of Might, Retribution Aura and Seal of Truth, Gidwin Blessing of Kings and Devotion
+// Aura ("2 auras and 2 blessings ... devotion, ret, might and kings"), again when a blessing has run out. Tarenar of 27371 opens
+// with Divine Storm and says "Take that! Taste the Light!" / "Ahhhhh ha ha haa!" and "Wow. Is it just me, or did that one die
+// really fast?"; the Gidwins shout "Ka-boom!" and the three other lines in fights. He can die; when the Trial of the Crypt
+// begins they rebuff the party (the scroll's buff, chapel-argent: which buff it was is not recorded).
+// How (ours, as Thurman's minutemen and Zen'Kiki in Western Plaguelands):
+// - A plain guardian starts aggressive (Guardian::InitStats) and pulls every pack he passes; he is defensive here, starts no fight
+//   of his own and follows a mounted master without stopping for what he passes.
+// - He is healable: the templates' IMMUNE_TO_PC (45677, 45794) would refuse every heal of the player (Unit::_IsValidAssistTarget).
+// - Left more than 60 yd behind (the player rode on while he fought), he is brought to the player.
+// - He goes when his quest is no longer in the log or the player has left his areas (also covers 27487's reward, where the
+//   cancel spell 85807 removes the aura before the quest is marked rewarded).
+// - When he dies, the player's summon aura is removed: the standing copy hidden by it is visible again (sourced for 27371: "the
+//   questgiver is back"), and at the latest 30 s later the area auras are run again for the player, which brings a new follower
+//   if the quest and area still fit (sooner on any area change or quest status change, e.g. the player's next kill credit;
+//   ours; retail needed a relog, a fault players reported). His corpse goes after 5 s.
+// - Private actors (the Trial's wardens and Lord Raymond George are private to the reader's group) are seen by him as his master
+//   sees them, so he can fight them (CanSeeAlways; WorldObject::CanSeeOrDetect asks it before the private-object check). His
+//   spells still skip them (SpellInfo::CheckTarget refuses a private target to anyone outside its owner's group): he fights
+//   them in melee.
+struct npc_epl_caravan_follower : public ScriptedAI
+{
+    npc_epl_caravan_follower(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        _info = GetFollowerInfoByEntry(me->GetEntry());
+        if (!_info || summoner->GetTypeId() != TYPEID_PLAYER)
+            return;
+
+        _ownerGUID = summoner->GetGUID();
+        me->SetReactState(REACT_DEFENSIVE);
+        // Left behind out of the player's sight (he rode on, or was moved), his grid would stop updating and he would stand
+        // there for good while the player kept the summon aura, which blocks a new summon. Active, Check() brings him along.
+        me->setActive(true, ActiveFlags::Script);
+
+        _events.Reset();
+        // Faction and level are set by Spell::SummonGuardian after this hook
+        _events.ScheduleEvent(EVENT_FOLLOWER_SETUP, 500ms);
+        _events.ScheduleEvent(EVENT_FOLLOWER_ASSIST, 1s);
+        _events.ScheduleEvent(EVENT_FOLLOWER_CHECK, 1s);
+        _events.ScheduleEvent(EVENT_FOLLOWER_BUFF, 1500ms);
+    }
+
+    Player* GetOwnerPlayer() const
+    {
+        return ObjectAccessor::GetPlayer(*me, _ownerGUID);
+    }
+
+    bool CanSeeAlways(WorldObject const* obj) override
+    {
+        if (!obj->IsPrivateObject())
+            return false;
+        Player* owner = GetOwnerPlayer();
+        return owner && obj->CheckPrivateObjectOwnerVisibility(owner);
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+
+    void AttackStart(Unit* who) override
+    {
+        if (!who || IsBusy())
+            return;
+
+        // Riding past: only what has turned on him
+        if (Player* owner = GetOwnerPlayer())
+            if (owner->IsMounted() && who->GetVictim() != me)
+                return;
+
+        ScriptedAI::AttackStart(who);
+    }
+
+    void JustEngagedWith(Unit* who) override
+    {
+        ScriptedAI::JustEngagedWith(who);
+        if (!_info)
+            return;
+
+        if (me->GetEntry() == NPC_TARENAR_DEATHS_STEP)
+        {
+            _events.ScheduleEvent(EVENT_FOLLOWER_DIVINE_STORM, 500ms);
+            if (roll_chance_i(30))
+                Talk(SAY_FOLLOWER_COMBAT);
+        }
+        else if (_info->Kind == FollowerKind::Gidwin && !_talkCooldown)
+        {
+            Talk(SAY_FOLLOWER_COMBAT);
+            _talkCooldown = urand(20, 40) * IN_MILLISECONDS;
+        }
+    }
+
+    void KilledUnit(Unit* /*victim*/) override
+    {
+        if (me->GetEntry() == NPC_TARENAR_DEATHS_STEP && roll_chance_i(30))
+            Talk(SAY_FOLLOWER_KILL);
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        ScriptedAI::EnterEvadeMode(why);
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+    }
+
+    void JustDied(Unit* /*killer*/) override
+    {
+        _events.Reset();
+        me->DespawnOrUnsummon(5000);
+
+        Player* owner = GetOwnerPlayer();
+        if (!owner || !_info)
+            return;
+
+        owner->RemoveAurasDueToSpell(_info->Spell);
+        owner->m_Events.AddLambdaEventAtOffset([owner]()
+        {
+            if (owner->IsInWorld() && owner->IsAlive())
+            {
+                owner->UpdateZoneDependentAuras(owner->GetZoneId());
+                owner->UpdateAreaDependentAuras(owner->GetAreaId());
+            }
+        }, 30 * IN_MILLISECONDS);
+    }
+
+    void DoAction(int32 action) override
+    {
+        if (action == ACTION_TRIAL_OF_THE_CRYPT_BEGINS)
+            Buff(true);
+    }
+
+    uint32 GetData(uint32 type) const override
+    {
+        return type == DATA_FOLLOWER_BUSY && IsBusy() ? 1 : 0;
+    }
+
+    virtual bool IsBusy() const { return false; }
+
+    void Setup()
+    {
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        if (Player* owner = GetOwnerPlayer())
+            if (!me->IsInCombat() && !me->GetVictim())
+            {
+                me->GetMotionMaster()->Clear(false);
+                me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+            }
+    }
+
+    void BuffUnit(Unit* target, uint32 spell, bool force)
+    {
+        if (!target || !target->IsAlive() || !target->IsInMap(me) || !me->IsWithinDistInMap(target, 30.0f))
+            return;
+        if (!force && target->HasAura(spell))
+            return;
+        me->CastSpell(target, spell, true);
+    }
+
+    // His own aura (and seal), and his blessing on the player, his pet and his party members and their pets in reach
+    void Buff(bool force)
+    {
+        Player* owner = GetOwnerPlayer();
+        if (!owner || !_info || _info->Kind == FollowerKind::Vextul)
+            return;
+
+        uint32 blessing = _info->Kind == FollowerKind::Tarenar ? SPELL_BLESSING_OF_MIGHT : SPELL_BLESSING_OF_KINGS;
+        if (_info->Kind == FollowerKind::Tarenar)
+        {
+            BuffUnit(me, SPELL_RETRIBUTION_AURA, force);
+            BuffUnit(me, SPELL_SEAL_OF_TRUTH, force);
+        }
+        else
+            BuffUnit(me, SPELL_DEVOTION_AURA, force);
+
+        std::vector<Player*> players;
+        if (Group* group = owner->GetGroup())
+        {
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+                if (Player* member = ref->GetSource())
+                    players.push_back(member);
+        }
+        else
+            players.push_back(owner);
+
+        for (Player* player : players)
+        {
+            BuffUnit(player, blessing, force);
+            if (Pet* pet = player->GetPet())
+                BuffUnit(pet, blessing, force);
+        }
+    }
+
+    // His master is gone, or his quest, or the player has left his areas: he goes. Left far behind: brought along.
+    bool Check()
+    {
+        Player* owner = GetOwnerPlayer();
+        bool keeps = owner && owner->IsInWorld() && owner->GetMapId() == me->GetMapId();
+        if (keeps && !KeepsCaravanFollower(owner, _info))
+        {
+            // The summon aura decides while the player lives: it goes with the quest and the areas (spell_area) and takes him
+            // along (spell_epl_follower_aura). His own look at the player's area can fall on a zone-only cell the player's
+            // area update never saw, and he then went while the aura stayed, which blocks the next summon.
+            keeps = _info->Kind != FollowerKind::Vextul && owner->IsAlive() && owner->HasAura(_info->Spell);
+            // Going with the aura still on (the player died): the aura goes too, so that the area auras can bring him back
+            if (!keeps)
+                owner->RemoveAurasDueToSpell(_info->Spell);
+        }
+        if (!keeps)
+        {
+            me->DespawnOrUnsummon();
+            return false;
+        }
+
+        if (!IsBusy() && !me->IsWithinDistInMap(owner, 60.0f) && !owner->IsInFlight() && !owner->GetVehicle())
+        {
+            if (me->IsInCombat() || me->GetVictim())
+                EnterEvadeMode(EVADE_REASON_OTHER);
+
+            Position pos = owner->GetNearPosition(owner->GetObjectSize(), 0.0f);
+            me->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), owner->GetOrientation());
+            me->GetMotionMaster()->Clear(false);
+            me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+        }
+        return true;
+    }
+
+    void Assist()
+    {
+        Player* owner = GetOwnerPlayer();
+        if (!owner || IsBusy())
+            return;
+
+        if (owner->IsMounted())
+        {
+            // A mounted player fights nothing (Unit::Attack); a follower in a fight he was only flagged into follows instead
+            if (me->IsInCombat() && me->getAttackers().empty())
+                EnterEvadeMode(EVADE_REASON_OTHER);
+            return;
+        }
+
+        if (!me->GetVictim() && owner->IsInCombat())
+            if (Unit* victim = SelectFollowerTarget(me, owner))
+                AttackStart(victim);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!_info)
+            return;
+
+        if (_talkCooldown)
+            _talkCooldown = _talkCooldown > diff ? _talkCooldown - diff : 0;
+
+        _events.Update(diff);
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_FOLLOWER_SETUP:
+                    Setup();
+                    break;
+                case EVENT_FOLLOWER_ASSIST:
+                    Assist();
+                    _events.ScheduleEvent(EVENT_FOLLOWER_ASSIST, 1s);
+                    break;
+                case EVENT_FOLLOWER_CHECK:
+                    if (!Check())
+                        return;
+                    _events.ScheduleEvent(EVENT_FOLLOWER_CHECK, 1s);
+                    break;
+                case EVENT_FOLLOWER_BUFF:
+                    if (!me->IsInCombat() && !IsBusy())
+                        Buff(false);
+                    _events.ScheduleEvent(EVENT_FOLLOWER_BUFF, 10s);
+                    break;
+                case EVENT_FOLLOWER_DIVINE_STORM:
+                    if (me->IsInCombat())
+                    {
+                        if (Unit* victim = me->GetVictim())
+                            if (me->IsWithinMeleeRange(victim))
+                                me->CastSpell(me, SPELL_DIVINE_STORM, true);
+                        _events.ScheduleEvent(EVENT_FOLLOWER_DIVINE_STORM, Milliseconds(urand(8000, 10000)));
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (IsBusy() || !UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+protected:
+    CaravanFollowerInfo const* _info = nullptr;
+    ObjectGuid _ownerGUID;
+    EventMap _events;
+    uint32 _talkCooldown = 0;
+};
+
 void AddSC_eastern_plaguelands_caravan()
 {
     new creature_script<npc_epl_caravan_wagon>("npc_epl_caravan_wagon");
@@ -823,4 +1414,8 @@ void AddSC_eastern_plaguelands_caravan()
     new creature_script<npc_epl_beezil>("npc_epl_beezil");
     new aura_script<spell_epl_caravan_buff>("spell_epl_caravan_buff");
     new player_epl_caravan_buff();
+    new player_epl_caravan_follower();
+    new spell_script<spell_epl_follower_summon>("spell_epl_follower_summon");
+    new aura_script<spell_epl_follower_aura>("spell_epl_follower_aura");
+    new creature_script<npc_epl_caravan_follower>("npc_epl_caravan_follower");
 }
