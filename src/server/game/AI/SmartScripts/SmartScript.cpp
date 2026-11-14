@@ -919,11 +919,21 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                             (*itr)->GetGUID().GetCounter(), e.action.killedMonster.creature);
                     }
                     else if (IsUnit(*itr)) // Special handling for vehicles
+                    {
                         if (Vehicle* vehicle = (*itr)->ToUnit()->GetVehicleKit())
+                        {
                             for (SeatMap::iterator it = vehicle->Seats.begin(); it != vehicle->Seats.end(); ++it)
                                 if (Player* player = ObjectAccessor::GetPlayer(*(*itr), it->second.Passenger.Guid))
                                     player->KilledMonsterCredit(e.action.killedMonster.creature, ObjectGuid::Empty,
                                         e.action.killedMonster.countMax ? urand(e.action.killedMonster.countMin, e.action.killedMonster.countMax) : (e.action.killedMonster.countMin ? e.action.killedMonster.countMin : 1));
+                        }
+                        // A pet, guardian or charmed unit as the target (the action invoker is the hunter's pet when the
+                        // pet engaged first): the credit goes to the player who owns or controls it, as AzerothCore does
+                        // (SmartScript.cpp, SMART_ACTION_CALL_KILLEDMONSTER, GetCharmerOrOwnerPlayerOrPlayerItself).
+                        else if (Player* owner = (*itr)->ToUnit()->GetCharmerOrOwnerPlayerOrPlayerItself())
+                            owner->KilledMonsterCredit(e.action.killedMonster.creature, ObjectGuid::Empty,
+                                e.action.killedMonster.countMax ? urand(e.action.killedMonster.countMin, e.action.killedMonster.countMax) : (e.action.killedMonster.countMin ? e.action.killedMonster.countMin : 1));
+                    }
                 }
 
                 delete targets;
