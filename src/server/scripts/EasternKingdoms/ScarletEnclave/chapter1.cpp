@@ -116,6 +116,7 @@ public:
         uint32 wait_timer;
         float anchorX, anchorY;
         ObjectGuid anchorGUID;
+        uint32 oocTimer = 0;
 
         EventMap events;
 
@@ -123,6 +124,7 @@ public:
         {
             anchorGUID = ObjectGuid::Empty;
             phase = PHASE_CHAINED;
+            oocTimer = 0;
             events.Reset();
             me->SetFaction(7);
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
@@ -157,6 +159,11 @@ public:
 
         void EventStart(Creature* anchor, Player* target)
         {
+            // A second click on the prison while this initiate is already free must not restart the event for
+            // another player (the prison stays in use until the initiate is back in chains)
+            if (phase != PHASE_CHAINED)
+                return;
+
             wait_timer = 5000;
             phase = PHASE_TO_EQUIP;
 
@@ -202,8 +209,14 @@ public:
                         }
                     }
 
+                    // Only a prison that was used is reset. On the first update after the grid loads the prison can still
+                    // be GO_NOT_READY, which ResetDoorOrButton does not skip: it was set to GO_JUST_DEACTIVATED and then
+                    // despawned for its 180 s respawn time.
                     if (prison)
-                        prison->ResetDoorOrButton();
+                    {
+                        if (prison->getLootState() == GO_ACTIVATED)
+                            prison->ResetDoorOrButton();
+                    }
                     else
                         TC_LOG_ERROR("scripts", "npc_unworthy_initiateAI: unable to find prison!");
                 }
@@ -241,7 +254,24 @@ public:
                 break;
             case PHASE_ATTACKING:
                 if (!UpdateVictim())
+                {
+                    // Nobody to fight (the player who freed him died, left or logged out before the fight started): he
+                    // stood there free and hostile for good, and his prison stayed in use, so nobody else could use it.
+                    // AzerothCore's Unworthy Initiate SmartAI despawns him after 15 s out of combat ("Out of Combat -
+                    // Despawn Instant (Phase 1)"); the respawn puts him back in chains and resets the prison.
+                    if (!me->IsInCombat())
+                    {
+                        oocTimer += diff;
+                        if (oocTimer >= 15000)
+                        {
+                            oocTimer = 0;
+                            me->DespawnOrUnsummon();
+                        }
+                    }
                     return;
+                }
+
+                oocTimer = 0;
 
                 events.Update(diff);
 
