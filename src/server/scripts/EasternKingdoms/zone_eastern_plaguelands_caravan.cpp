@@ -32,6 +32,7 @@
 #include "MotionMaster.h"
 #include "Group.h"
 #include "Pet.h"
+#include "ObjectMgr.h"
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // The rides
@@ -671,10 +672,109 @@ private:
     uint32 _timer = 0;
 };
 
+// ---------------------------------------------------------------------------------------------------------------------------
+// The caravan's buffs
+// ---------------------------------------------------------------------------------------------------------------------------
+
+enum CaravanBuffs
+{
+    SPELL_FIONAS_LUCKY_CHARM        = 85612,   // 85612-85619: the eight buffs, quests 27555-27562 in the same order
+    CARAVAN_BUFF_COUNT              = 8,
+    QUEST_FIONAS_LUCKY_CHARM        = 27555,
+    QUEST_ZONE_BUFF_FLAG_1          = 27552,   // [FLAG] EPL Zone Buff - Flag 1/2/3, 27552-27554
+    ZONE_EASTERN_PLAGUELANDS        = 139,
+};
+
+// The chosen buff as the three flag quests' bits (0-7 = 85612-85619)
+static void StoreCaravanBuff(Player* player, uint32 index)
+{
+    for (uint32 bit = 0; bit < 3; ++bit)
+    {
+        uint32 questId = QUEST_ZONE_BUFF_FLAG_1 + bit;
+        bool want = (index & (1 << bit)) != 0;
+        bool has = player->IsQuestRewarded(questId);
+        if (want && !has)
+        {
+            if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
+                player->RewardQuest(quest, 0, player, false);
+        }
+        else if (!want && has)
+            player->RemoveRewardedQuest(questId);
+    }
+}
+
+// 85612-85619 - Fiona's Lucky Charm, Gidwin's Weapon Oil, Tarenar's Talisman, Pamela's Doll, Vex'tul's Armbands, Argus' Journal,
+// Rimblat's Stone, Beezil's Cog
+// "The last buff you chose will be there when you enter the zone again" (Wowhead, newhon63 [+3]): each buff is limited to the
+// zone (AreaGroup 25) and goes when the player leaves it. The DBC's own means of remembering it are the hidden quests
+// "[FLAG] EPL Zone Buff - Flag 1/2/3" (27552-27554, tracking): whichever buff the player gets, its number is kept in their three
+// bits (set by rewarding, cleared by un-rewarding the flag quest; ours, retail's use of them is not recorded), a moment later
+// so that it never runs inside the buff quest's own reward. player_epl_caravan_buff puts it back on entering the zone.
+class spell_epl_caravan_buff : public AuraScript
+{
+    PrepareAuraScript(spell_epl_caravan_buff);
+
+    void AfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || GetId() < SPELL_FIONAS_LUCKY_CHARM || GetId() >= SPELL_FIONAS_LUCKY_CHARM + CARAVAN_BUFF_COUNT)
+            return;
+
+        uint32 index = GetId() - SPELL_FIONAS_LUCKY_CHARM;
+        player->m_Events.AddLambdaEventAtOffset([player, index]()
+        {
+            if (player->IsInWorld())
+                StoreCaravanBuff(player, index);
+        }, 1);
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_epl_caravan_buff::AfterApply, EFFECT_0, SPELL_AURA_ANY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// Entering Eastern Plaguelands (also at login there): the buff the player chose last comes back, unless one is already on.
+// "Chose one" is a rewarded buff quest (they are repeatable, and stay rewarded); bits 000 count only if it was the charm.
+class player_epl_caravan_buff : public PlayerScript
+{
+public:
+    player_epl_caravan_buff() : PlayerScript("player_epl_caravan_buff") { }
+
+    void OnUpdateZone(Player* player, uint32 newZone, uint32 /*newArea*/) override
+    {
+        if (newZone != ZONE_EASTERN_PLAGUELANDS)
+            return;
+
+        bool chosen = false;
+        for (uint32 i = 0; i < CARAVAN_BUFF_COUNT; ++i)
+        {
+            if (player->HasAura(SPELL_FIONAS_LUCKY_CHARM + i))
+                return;
+            if (player->IsQuestRewarded(QUEST_FIONAS_LUCKY_CHARM + i))
+                chosen = true;
+        }
+        if (!chosen)
+            return;
+
+        uint32 index = 0;
+        for (uint32 bit = 0; bit < 3; ++bit)
+            if (player->IsQuestRewarded(QUEST_ZONE_BUFF_FLAG_1 + bit))
+                index |= 1 << bit;
+
+        if (!index && !player->IsQuestRewarded(QUEST_FIONAS_LUCKY_CHARM))
+            return;
+
+        player->CastSpell(player, SPELL_FIONAS_LUCKY_CHARM + index, true);
+    }
+};
+
 void AddSC_eastern_plaguelands_caravan()
 {
     new creature_script<npc_epl_caravan_wagon>("npc_epl_caravan_wagon");
     new creature_script<npc_epl_caravan_harness>("npc_epl_caravan_harness");
     new creature_script<npc_epl_fiona>("npc_epl_fiona");
     new creature_script<npc_epl_gidwin_idle>("npc_epl_gidwin_idle");
+    new aura_script<spell_epl_caravan_buff>("spell_epl_caravan_buff");
+    new player_epl_caravan_buff();
 }
