@@ -101,7 +101,7 @@ struct CaravanRideLine
 };
 
 // Ride 1 and 2: the order and timing of the former SmartAI lists 4543600 / 4554200 (checked against the wiki's lists of
-// 27373 and 27448).
+// 27373 and 27448); ride 3: the wiki list of 27489 (broadcast_text 46296-46317), at the same 6 s.
 CaravanRideLine const Ride1Lines[] =
 {
     {  4000, NPC_RIDE_TARENAR, 0, false }, {  4000, NPC_RIDE_GIDWIN, 0, false },
@@ -139,6 +139,21 @@ CaravanRideLine const Ride2Lines[] =
     {  6000, NPC_RIDE_GIDWIN, 18, false },                                          // "Walking, eh...?"
 };
 
+CaravanRideLine const Ride3Lines[] =
+{
+    {  4000, NPC_RIDE_3_TARENAR, 0, false }, {  6000, NPC_RIDE_3_FIONA, 0, false },
+    {  6000, NPC_RIDE_3_ARGUS, 0, false },   {  6000, NPC_RIDE_3_TARENAR, 1, false },
+    {  6000, NPC_RIDE_3_TARENAR, 2, false }, {  6000, NPC_RIDE_3_ARGUS, 1, false },
+    {  6000, NPC_RIDE_3_ARGUS, 2, false },   {  6000, NPC_RIDE_3_ARGUS, 3, false },
+    {  6000, NPC_RIDE_3_FIONA, 1, false },   {  6000, NPC_RIDE_3_FIONA, 2, false },
+    {  6000, NPC_RIDE_3_ARGUS, 4, false },   {  6000, NPC_RIDE_3_ARGUS, 5, false },
+    {  6000, NPC_RIDE_3_TARENAR, 3, false }, {  6000, NPC_RIDE_3_FIONA, 3, false },
+    {  6000, NPC_RIDE_3_TARENAR, 4, false }, {  6000, NPC_RIDE_3_FIONA, 4, false },
+    {  6000, NPC_RIDE_3_FIONA, 5, false },   {  6000, NPC_RIDE_3_ARGUS, 6, false },
+    {  6000, NPC_RIDE_3_TARENAR, 5, false }, {  6000, NPC_RIDE_3_ARGUS, 7, false },
+    {  6000, NPC_RIDE_3_TARENAR, 6, false }, {  6000, NPC_RIDE_3_ARGUS, 8, false },
+};
+
 struct CaravanRideInfo
 {
     uint32 GossipOption;            // menu 12035
@@ -158,6 +173,8 @@ CaravanRideInfo const CaravanRides[] =
         { SPELL_DETECT_STOP, SPELL_SEE_QUEST_INVIS_4, SPELL_SEE_QUEST_INVIS_5 }, Ride1Lines, std::size(Ride1Lines) },
     { 1, QUEST_TREK_CONTINUES,  SPELL_SUMMON_CARAVAN_2, NPC_RIDE_2_HARNESS, NPC_RIDE_2_WAGON, NPC_RIDE_FIONA,
         { SPELL_DETECT_STOP }, Ride2Lines, std::size(Ride2Lines) },
+    { 2, QUEST_NOBODY_TO_BLAME, SPELL_SUMMON_CARAVAN_3, NPC_RIDE_3_HARNESS, NPC_RIDE_3_WAGON, NPC_RIDE_3_FIONA,
+        { SPELL_DETECT_STOP, SPELL_DETECT_TYPE_9 }, Ride3Lines, std::size(Ride3Lines) },
 };
 
 static CaravanRideInfo const* GetCaravanRideByHarness(uint32 harness)
