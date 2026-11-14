@@ -590,8 +590,91 @@ private:
     bool _ended = false;
 };
 
+// ---------------------------------------------------------------------------------------------------------------------------
+// The party between the rides
+// ---------------------------------------------------------------------------------------------------------------------------
+
+enum CaravanParty
+{
+    SAY_FIONA_BORROW_SUPPLIES       = 0,       // 46090, on accepting Onward
+};
+
+// 45417 - Fiona (every stop of the caravan)
+// On accepting Onward 27373 she says "By the way, you're welcome to borrow any supplies you find inside the caravan... as long
+// as you bring them back when you're done!" (wiki 27373, broadcast 46090), to the player who took it.
+struct npc_epl_fiona : public ScriptedAI
+{
+    npc_epl_fiona(Creature* creature) : ScriptedAI(creature) { }
+
+    void OnQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == QUEST_ONWARD)
+            Talk(SAY_FIONA_BORROW_SUPPLIES, player);
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void AttackStart(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
+// 45431 / 45730 - Gidwin Goldbraids, three of his standing copies
+// Pacing in front of Crown Guard Tower after the first ride (guid 401103, wiki 27373: "Alright, Gidwin... deep breaths..." and
+// three more, 46100-46104), by the statue of Light's Hope nagging Tarenar (373696, wiki 27455, 45814-45816), circling inside the
+// Eastwall tower (3128014, wiki 27466, 46108-46111). Each copy is quest-invisible to all but the players at that stage of the
+// story, and creature text reaches every player in range whether he can see the speaker or not, so each line is said privately
+// (creature_text TextRange 5) to each player within 25 yd who can see him; with nobody to hear he is silent. Every other copy
+// of the two entries says nothing. Ours: one line every 40-60 s (the first 15-30 s after he is seen).
+struct npc_epl_gidwin_idle : public ScriptedAI
+{
+    npc_epl_gidwin_idle(Creature* creature) : ScriptedAI(creature) { }
+
+    int8 GetTextGroup() const
+    {
+        switch (me->GetDBTableGUIDLow())
+        {
+            case 401103:  return 0;   // 45431, Crown Guard Tower
+            case 373696:  return 1;   // 45431, the statue of Light's Hope
+            case 3128014: return 0;   // 45730, inside the Eastwall tower
+            default:      return -1;
+        }
+    }
+
+    void Reset() override
+    {
+        _timer = urand(15, 30) * IN_MILLISECONDS;
+    }
+
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void AttackStart(Unit* /*who*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        int8 group = GetTextGroup();
+        if (group < 0)
+            return;
+
+        if (_timer > diff)
+        {
+            _timer -= diff;
+            return;
+        }
+        _timer = urand(40, 60) * IN_MILLISECONDS;
+
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, 25.0f);
+        for (Player* player : players)
+            if (player->IsInWorld() && player->CanSeeOrDetect(me))
+                sCreatureTextMgr->SendChat(me, uint8(group), player);
+    }
+
+private:
+    uint32 _timer = 0;
+};
+
 void AddSC_eastern_plaguelands_caravan()
 {
     new creature_script<npc_epl_caravan_wagon>("npc_epl_caravan_wagon");
     new creature_script<npc_epl_caravan_harness>("npc_epl_caravan_harness");
+    new creature_script<npc_epl_fiona>("npc_epl_fiona");
+    new creature_script<npc_epl_gidwin_idle>("npc_epl_gidwin_idle");
 }
