@@ -309,6 +309,7 @@ bool RandomItemManager::CheckItemStats(Classes clazz, uint8 sp, uint8 ap, uint8 
             if (!sp || ap > sp || tank > sp)
                 return false;
             break;
+        case CLASS_DEATH_KNIGHT:
         case CLASS_PALADIN:
         case CLASS_WARRIOR:
             if ((!ap && !tank) || sp > ap || sp > tank)
@@ -325,100 +326,30 @@ bool RandomItemManager::CheckItemStats(Classes clazz, uint8 sp, uint8 ap, uint8 
     return sp || ap || tank;
 }
 
-bool RandomItemManager::ShouldEquipArmorForSpec(uint32 level, Classes playerclass, Specializations spec, ItemTemplate const* proto)
+// AC RandomItemMgr.cpp:1066-1083 (CanEquipArmor): one armor type per class, switching at level 40
+// (plate for warrior/paladin, mail for hunter/shaman). The spec argument is kept for the callers;
+// AC has no per-spec armor rules. 5.4.8 additions (classes AC's WotLK list lacks): death knight wears
+// plate, monk wears leather. Cloaks (INVTYPE_CLOAK) are exempt, as in AC :1082.
+bool RandomItemManager::ShouldEquipArmorForSpec(uint32 level, Classes playerclass, Specializations /*spec*/, ItemTemplate const* proto)
 {
     if (proto->InventoryType == INVTYPE_TABARD)
         return true;
 
-    std::unordered_set<uint32> resultArmorSubClass;
-    switch (playerclass)
+    uint32 const requiredSubClass = [&]() -> uint32
     {
-        case CLASS_WARRIOR:
-        {
-            if (proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
+        if (playerclass == CLASS_WARRIOR || playerclass == CLASS_PALADIN)
+            return level >= 40 ? ITEM_SUBCLASS_ARMOR_PLATE : ITEM_SUBCLASS_ARMOR_MAIL;
+        if (playerclass == CLASS_DEATH_KNIGHT)
+            return ITEM_SUBCLASS_ARMOR_PLATE;
+        if (playerclass == CLASS_HUNTER || playerclass == CLASS_SHAMAN)
+            return level >= 40 ? ITEM_SUBCLASS_ARMOR_MAIL : ITEM_SUBCLASS_ARMOR_LEATHER;
+        if (playerclass == CLASS_DRUID || playerclass == CLASS_ROGUE || playerclass == CLASS_MONK)
+            return ITEM_SUBCLASS_ARMOR_LEATHER;
+        return ITEM_SUBCLASS_ARMOR_CLOTH; // mage/warlock/priest
+    }();
 
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_PLATE };
-            if (spec != Specializations::SPEC_WARRIOR_PROTECTION)
-                resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_MAIL, ITEM_SUBCLASS_ARMOR_PLATE };
-            if (level < 40)
-                resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_LEATHER, ITEM_SUBCLASS_ARMOR_MAIL, ITEM_SUBCLASS_ARMOR_PLATE };
-            break;
-        }
-        case CLASS_DEATH_KNIGHT:
-        {
-            if (proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
-
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_PLATE };
-            break;
-        }
-        case CLASS_PALADIN:
-        {
-            if (spec == Specializations::SPEC_PALADIN_HOLY && proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
-
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_PLATE };
-            if (spec != Specializations::SPEC_PALADIN_PROTECTION)
-                resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_MAIL, ITEM_SUBCLASS_ARMOR_PLATE };
-            if (level < 40)
-                resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_LEATHER, ITEM_SUBCLASS_ARMOR_MAIL, ITEM_SUBCLASS_ARMOR_PLATE };
-
-            break;
-        }
-        case CLASS_HUNTER:
-        {
-            if (proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
-
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_LEATHER, ITEM_SUBCLASS_ARMOR_MAIL };
-            break;
-        }
-        case CLASS_ROGUE:
-        {
-            if (proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_LEATHER };
-            break;
-        }
-        case CLASS_SHAMAN:
-        {
-            if (spec == Specializations::SPEC_SHAMAN_ENHANCEMENT && proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_CLOTH, ITEM_SUBCLASS_ARMOR_LEATHER, ITEM_SUBCLASS_ARMOR_MAIL };
-            if (spec == Specializations::SPEC_SHAMAN_ENHANCEMENT && level > 40)
-                resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_MAIL };
-
-            break;
-        }
-        case CLASS_PRIEST:
-        case CLASS_MAGE:
-        case CLASS_WARLOCK:
-        {
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_CLOTH };
-            break;
-        }
-        case CLASS_DRUID:
-        {
-            if ((spec == Specializations::SPEC_DRUID_FERAL || spec == Specializations::SPEC_DRUID_GUARDIAN) &&
-                proto->InventoryType == INVTYPE_HOLDABLE)
-                return false;
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_CLOTH, ITEM_SUBCLASS_ARMOR_LEATHER };
-            if (spec == Specializations::SPEC_DRUID_FERAL || spec == Specializations::SPEC_DRUID_GUARDIAN)
-                resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_LEATHER };
-
-            break;
-        }
-        case CLASS_MONK:
-        {
-            if (proto->InventoryType == INVTYPE_HOLDABLE && spec != Specializations::SPEC_MONK_MISTWEAVER)
-                return false;
-            resultArmorSubClass = { ITEM_SUBCLASS_ARMOR_LEATHER };
-            break;
-        }
-    }
-
-    return (resultArmorSubClass.find(proto->SubClass) != resultArmorSubClass.end());
+    // wrong subclass (cloaks are exempt)
+    return proto->InventoryType == INVTYPE_CLOAK || proto->SubClass == requiredSubClass;
 }
 
 bool RandomItemManager::ShouldEquipWeaponForSpec(Classes playerclass, Specializations spec, ItemTemplate const* proto)
@@ -716,8 +647,17 @@ bool RandomItemManager::CanEquipArmor(Player* bot, ItemTemplate const* proto)
     if (proto->InventoryType == INVTYPE_TABARD)
         return true;
 
+    // AC RandomItemMgr.cpp:1066-1068: shields are always equippable for warriors, paladins and shamans.
+    if ((clazz == CLASS_WARRIOR || clazz == CLASS_PALADIN || clazz == CLASS_SHAMAN) &&
+        proto->SubClass == ITEM_SUBCLASS_ARMOR_SHIELD)
+        return true;
+
     if (!ShouldEquipArmorForSpec(level, clazz, bot->GetSpecialization(), proto))
         return false;
+
+    // AC :1085-1087: no stat check for poor/normal quality (grey/white) items.
+    if (proto->Quality < ITEM_QUALITY_UNCOMMON)
+        return true;
 
     uint8 sp = 0, ap = 0, tank = 0;
     for (uint8 j = 0; j < MAX_ITEM_PROTO_STATS; ++j)
