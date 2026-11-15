@@ -289,6 +289,8 @@ public:
         // the 27 names; see AoeValues.h.
         creators["aoe count"] = &ValueContext::aoe_count;
         creators["has area debuff"] = &ValueContext::has_area_debuff;
+        creators["area debuff"] = &ValueContext::area_debuff;
+        creators["nearest trap with damage"] = &ValueContext::nearest_trap_with_damage;
         creators["party member without item"] = &ValueContext::party_member_without_item;
         creators["party member without food"] = &ValueContext::party_member_without_food;
         creators["party member without water"] = &ValueContext::party_member_without_water;
@@ -546,6 +548,8 @@ private:
     static UntypedValue* aoe_position(PlayerbotAI* botAI) { return new AoePositionValue(botAI); }
     static UntypedValue* aoe_count(PlayerbotAI* botAI) { return new AoeCountValue(botAI); }
     static UntypedValue* has_area_debuff(PlayerbotAI* botAI) { return new HasAreaDebuffValue(botAI); }
+    static UntypedValue* area_debuff(PlayerbotAI* botAI) { return new AreaDebuffValue(botAI); }
+    static UntypedValue* nearest_trap_with_damage(PlayerbotAI* botAI) { return new NearestTrapWithDamageValue(botAI); }
     static UntypedValue* party_member_without_item(PlayerbotAI* botAI) { return new PartyMemberWithoutItemValue(botAI); }
     static UntypedValue* party_member_without_food(PlayerbotAI* botAI) { return new PartyMemberWithoutFoodValue(botAI); }
     static UntypedValue* party_member_without_water(PlayerbotAI* botAI) { return new PartyMemberWithoutWaterValue(botAI); }

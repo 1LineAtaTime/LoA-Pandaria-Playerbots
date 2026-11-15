@@ -16,6 +16,8 @@
 #include "FleeManager.h"
 #include "PositionValue.h"
 #include "G3D/Vector3.h"
+#include "Creature.h"  // before DynamicObject.h: GridObject<> comes only via Creature.h/GameObject.h
+#include "DynamicObject.h"
 #include "GameObject.h"
 #include "LastMovementValue.h"
 #include "Map.h"
@@ -37,6 +39,7 @@
 #include "ServerFacade.h"
 #include "SharedDefines.h"
 #include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 #include "SpellInfo.h"
 
 #include "Timer.h"
@@ -2012,22 +2015,160 @@ bool SetBehindTargetAction::Execute(Event /*event*/)
     return MoveTo(bot->GetMapId(), nearest.GetPositionX(), nearest.GetPositionY(), nearest.GetPositionZ(), false, false, false, true, MovementPriority::MOVEMENT_COMBAT);
 }
 
-// Ported from AC mod-playerbots MovementActions.cpp:1832-1839 (#149). See the class comment in
-// MovementActions.h for why only the "trigger NPC" case (AvoidUnitWithDamageAura) is ported.
+// Ported from AC mod-playerbots MovementActions.cpp:1832-1984.
 bool AvoidAoeAction::isUseful()
 {
     if (getMSTime() - moveInterval < uint32(lastMoveTimer))
         return false;
 
+    GuidVector traps = AI_VALUE(GuidVector, "nearest trap with damage");
     GuidVector triggers = AI_VALUE(GuidVector, "possible triggers");
-    return !triggers.empty();
+    return AI_VALUE(Aura*, "area debuff") || !traps.empty() || !triggers.empty();
 }
 
 bool AvoidAoeAction::Execute(Event /*event*/)
 {
-    // Case: Trigger npc (e.g. Lesser shadow fissure). AC's other two cases (dynamic-object aura,
-    // damaging trap gameobject) are not ported - see the class comment in MovementActions.h.
-    return AvoidUnitWithDamageAura();
+    // Case #1: Aura with dynamic object (e.g. rain of fire)
+    if (AvoidAuraWithDynamicObj())
+    {
+        return true;
+    }
+    // Case #2: Trap game object with spell (e.g. lava bomb)
+    if (AvoidGameObjectWithDamage())
+    {
+        return true;
+    }
+    // Case #3: Trigger npc (e.g. Lesser shadow fissure)
+    if (AvoidUnitWithDamageAura())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool AvoidAoeAction::AvoidAuraWithDynamicObj()
+{
+    Aura* aura = AI_VALUE(Aura*, "area debuff");
+    if (!aura || aura->IsRemoved() || aura->IsExpired())
+    {
+        return false;
+    }
+    if (!aura->GetOwner() || !aura->GetOwner()->IsInWorld())
+    {
+        return false;
+    }
+    // Crash fix: maybe change owner due to check interval
+    if (aura->GetType() != DYNOBJ_AURA_TYPE)
+    {
+        return false;
+    }
+    SpellInfo const* spellInfo = aura->GetSpellInfo();
+    if (!spellInfo)
+    {
+        return false;
+    }
+    if (sPlayerbotAIConfig->aoeAvoidSpellWhitelist.find(spellInfo->Id) !=
+        sPlayerbotAIConfig->aoeAvoidSpellWhitelist.end())
+        return false;
+
+    DynamicObject* dynOwner = aura->GetDynobjOwner();
+    if (!dynOwner || !dynOwner->IsInWorld())
+    {
+        return false;
+    }
+    float radius = dynOwner->GetRadius();
+    if (!radius || radius > sPlayerbotAIConfig->maxAoeAvoidRadius)
+        return false;
+    if (bot->GetDistance(dynOwner) > radius)
+    {
+        return false;
+    }
+    std::ostringstream name;
+    name << spellInfo->SpellName;
+    if (FleePosition(dynOwner->GetPosition(), radius))
+    {
+        if (sPlayerbotAIConfig->tellWhenAvoidAoe && lastTellTimer < time(NULL) - 10)
+        {
+            lastTellTimer = time(NULL);
+            lastMoveTimer = getMSTime();
+            std::ostringstream out;
+            out << "I'm avoiding " << name.str() << " (" << spellInfo->Id << ")" << " Radius " << radius << " - [Aura]";
+            bot->Say(out.str(), LANG_UNIVERSAL);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool AvoidAoeAction::AvoidGameObjectWithDamage()
+{
+    GuidVector traps = AI_VALUE(GuidVector, "nearest trap with damage");
+    if (traps.empty())
+    {
+        return false;
+    }
+    for (ObjectGuid& guid : traps)
+    {
+        GameObject* go = botAI->GetGameObject(guid);
+        if (!go || !go->IsInWorld())
+        {
+            continue;
+        }
+        if (go->GetGoType() != GAMEOBJECT_TYPE_TRAP)
+        {
+            continue;
+        }
+        GameObjectTemplate const* goInfo = go->GetGOInfo();
+        if (!goInfo)
+        {
+            continue;
+        }
+        // 0 trap with no despawn after cast. 1 trap despawns after cast. 2 bomb casts on spawn.
+        if (goInfo->trap.type != 0)
+            continue;
+
+        uint32 spellId = goInfo->trap.spellId;
+        if (!spellId)
+        {
+            continue;
+        }
+
+        if (sPlayerbotAIConfig->aoeAvoidSpellWhitelist.find(spellId) !=
+            sPlayerbotAIConfig->aoeAvoidSpellWhitelist.end())
+            continue;
+
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo || spellInfo->IsPositive())
+        {
+            continue;
+        }
+
+        // 5.4.8: the trap template stores the activation radius directly (AC's 3.3.5 field is a diameter).
+        float radius = (float)goInfo->trap.radius + go->GetCombatReach();
+        if (!radius || radius > sPlayerbotAIConfig->maxAoeAvoidRadius)
+            continue;
+
+        if (bot->GetDistance(go) > radius)
+        {
+            continue;
+        }
+        std::ostringstream name;
+        name << spellInfo->SpellName;
+        if (FleePosition(go->GetPosition(), radius))
+        {
+            if (sPlayerbotAIConfig->tellWhenAvoidAoe && lastTellTimer < time(NULL) - 10)
+            {
+                lastTellTimer = time(NULL);
+                lastMoveTimer = getMSTime();
+                std::ostringstream out;
+                out << "I'm avoiding " << name.str() << " (" << spellInfo->Id << ")" << " Radius " << radius
+                    << " - [Trap]";
+                bot->Say(out.str(), LANG_UNIVERSAL);
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 // Ported from AC mod-playerbots MovementActions.cpp:1986-2054 (#149), unchanged logic - the
@@ -2082,7 +2223,7 @@ bool AvoidAoeAction::AvoidUnitWithDamageAura()
                         if (!radius || radius > sPlayerbotAIConfig->maxAoeAvoidRadius)
                             continue;
                         std::ostringstream name;
-                        name << triggerSpellInfo->SpellName[LOCALE_enUS];
+                        name << triggerSpellInfo->SpellName;
                         if (FleePosition(unit->GetPosition(), radius))
                         {
                             if (sPlayerbotAIConfig->tellWhenAvoidAoe && lastTellTimer < time(NULL) - 10)
