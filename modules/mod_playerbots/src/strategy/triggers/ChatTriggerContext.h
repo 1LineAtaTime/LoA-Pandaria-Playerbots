@@ -47,6 +47,7 @@ public:
         creators["invite"] = &ChatTriggerContext::invite;
         creators["leave"] = &ChatTriggerContext::leave;
         creators["join"] = &ChatTriggerContext::join;
+        creators["lfg"] = &ChatTriggerContext::lfg;  // AC ChatTriggerContext.h:98
         creators["give leader"] = &ChatTriggerContext::give_leader;
 
         // #188 (S6 of epic #163): loot/gear chat commands.
@@ -170,6 +171,7 @@ private:
     static Trigger* invite(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "invite"); }
     static Trigger* leave(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "leave"); }
     static Trigger* join(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "join"); }
+    static Trigger* lfg(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "lfg"); }  // AC ChatTriggerContext.h:197
     static Trigger* give_leader(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "give leader"); }
 
     static Trigger* repair(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "repair"); }

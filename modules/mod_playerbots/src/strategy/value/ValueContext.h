@@ -32,6 +32,7 @@
 #include "ItemUsageValue.h"
 #include "AlwaysLootListValue.h"
 #include "LastMovementValue.h"
+#include "LastSaidValue.h"  // AC ValueContext.h (last said / last emote)
 #include "LastSpellCastValue.h"
 #include "LastSpellCastTimeValue.h"
 #include "LfgValues.h"
@@ -98,6 +99,8 @@ public:
         creators["has mana"] = &ValueContext::has_mana;
         creators["mounted"] = &ValueContext::mounted;
         creators["last movement"] = &ValueContext::last_movement;
+        creators["last said"] = &ValueContext::last_said;    // AC ValueContext.h:232
+        creators["last emote"] = &ValueContext::last_emote;  // AC ValueContext.h:233
         creators["stay time"] = &ValueContext::stay_time;
         creators["last taxi"] = &ValueContext::last_movement;
         creators["last area trigger"] = &ValueContext::last_movement;
@@ -376,6 +379,8 @@ private:
     static UntypedValue* has_upgrade(PlayerbotAI* botAI) { return new HasUpgradeValue(botAI); }
     static UntypedValue* entry_loot_list(PlayerbotAI* botAI) { return new EntryLootListValue(botAI); }
     static UntypedValue* last_movement(PlayerbotAI* botAI) { return new LastMovementValue(botAI); }
+    static UntypedValue* last_said(PlayerbotAI* botAI) { return new LastSaidValue(botAI); }    // AC ValueContext.h:495
+    static UntypedValue* last_emote(PlayerbotAI* botAI) { return new LastEmoteValue(botAI); }  // AC ValueContext.h:496
     static UntypedValue* stay_time(PlayerbotAI* botAI) { return new StayTimeValue(botAI); }
     static UntypedValue* mounted(PlayerbotAI* botAI) { return new IsMountedValue(botAI); }
     static UntypedValue* health(PlayerbotAI* botAI) { return new HealthValue(botAI); }

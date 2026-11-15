@@ -322,6 +322,23 @@ public:
         }
     }
 
+    // AC Script/Playerbots.cpp:344-353: channel chat goes to the speaker's own bots when the channel has flags 0x18
+    // (CHANNEL_FLAG_NOT_LFG | CHANNEL_FLAG_GENERAL, same values on 5.4.8) and to every random bot, which is how "lfg"
+    // said in a city or LookingForGroup channel fills a party. Core hook: ChatHandler.cpp CHAT_MSG_CHANNEL (world
+    // thread), called before Channel::Say.
+    void OnChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Channel* channel) override
+    {
+        if (!player || !channel)
+            return;
+
+        PlayerbotMgr* const playerbotMgr = GET_PLAYERBOT_MGR(player);
+
+        if (playerbotMgr != nullptr && channel->GetFlags() & 0x18)
+            playerbotMgr->HandleCommand(type, msg);
+
+        sRandomPlayerbotMgr->HandleCommand(type, msg, player);
+    }
+
     // #201 (#614): duel reset for EVERY duel inside a duel spot, bots and players alike (owner decision). Gated by
     // DuelSpotEnable && DuelSpotReset. Hooks: ScriptMgr.h:752-755, called from Player::UpdateDuelFlag / DuelComplete.
     void OnDuelStart(Player* player1, Player* player2) override

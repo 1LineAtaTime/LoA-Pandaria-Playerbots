@@ -720,6 +720,26 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
         return false;
     }
 
+    // leave group if leader is rndbot (AC Bot/RandomPlayerbotMgr.cpp:1522-1527). AC: random bots are not meant to keep
+    // groups of their own outside LFG ("group" strategy and RandomBotGroupNearby are off), and other code relies on it.
+    // AC LeaveOrDisbandGroup queues CMSG_GROUP_DISBAND, whose handler calls RemoveFromGroup(GROUP_REMOVEMETHOD_LEAVE);
+    // bot sessions here do not drain QueuePacket, so the call is made directly (ProcessBot runs on the world thread).
+    // MoP adaptation: battlefield (Wintergrasp / Tol Barad) raid groups and battleground groups are kept - the
+    // battlefield puts bots in its own raid groups, whose leader may be a random bot.
+    if (Group* group = player->GetGroup())
+    {
+        if (!group->isLFGGroup() && !group->isBFGroup() && !group->isBGGroup() &&
+            IsRandomBot(ObjectAccessor::FindConnectedPlayer(group->GetLeaderGUID())))
+        {
+            PlayerbotAI* leaverAI = GET_PLAYERBOT_AI(player);
+            if (!(leaverAI && leaverAI->IsRealPlayer()))  // AC LeaveOrDisbandGroup: never a selfbot
+            {
+                player->RemoveFromGroup(GROUP_REMOVEMETHOD_LEAVE);
+                TC_LOG_INFO("playerbots", "Bot %s remove from group since leader is random bot.", player->GetName().c_str());
+            }
+        }
+    }
+
     // only randomize and teleport idle bots
     bool idleBot = false;
     PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
@@ -3184,6 +3204,39 @@ void RandomBotLevelMgrReloadConfig()
     LoadRandomBotLevelConfig();
     RandomBotLevelMgr::instance().LoadConfig();
     TC_LOG_INFO("playerbots", "[RandomBotLevelMgr] Level management config reloaded.");
+}
+
+// AC Bot/RandomPlayerbotMgr.cpp:2616-2637. Called for every chat-channel message a player sends (mod_playerbots.cpp
+// OnChat(..., Channel*), AC Script/Playerbots.cpp:344-353), so "lfg", "who", "wts"... said in a channel reach every
+// random bot; each bot's HandleCommand applies the usual security and command filters. AC's hook passes no channel
+// name, so the per-channel membership filter below is dormant there and here.
+void RandomPlayerbotMgr::HandleCommand(uint32 type, std::string const text, Player* fromPlayer, std::string channelName)
+{
+    // Beyond AC, measurement only: the fan-out runs on the world thread once per channel line (".pmon" stats).
+    PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_TOTAL, "RandomPlayerbotMgr::HandleCommand");
+
+    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        if (!bot)
+            continue;
+
+        if (!channelName.empty())
+        {
+            if (ChannelMgr* cMgr = ChannelMgr::forTeam(bot->GetTeam()))
+            {
+                Channel* chn = cMgr->GetChannel(channelName, bot);
+                if (!chn)
+                    continue;
+            }
+        }
+
+        if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot))
+            botAI->HandleCommand(type, text, fromPlayer);
+    }
+
+    if (pmo)
+        pmo->finish();
 }
 
 void RandomPlayerbotMgr::OnPlayerLogout(Player* player)

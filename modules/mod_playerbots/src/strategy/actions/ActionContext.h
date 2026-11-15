@@ -12,6 +12,7 @@
 #include "EmoteAction.h"
 #include "GreetAction.h"
 #include "SuggestWhatToDoAction.h"  // #195/#322
+#include "SayAction.h"  // AC ActionContext.h:160 ("say", dormant)
 #include "TalkAction.h"
 #include "BattleGroundTactics.h"
 #include "BgTacticsTB.h"
@@ -364,6 +365,7 @@ public:
         creators["greet"] = &ActionContext::greet;
         // #195/#322 (AC Ai/Base/ActionContext.h): world talk, wired by EmoteStrategy behind RandomBotTalk
         creators["suggest what to do"] = &ActionContext::suggest_what_to_do;
+        creators["say"] = &ActionContext::say;  // AC ActionContext.h:160 (dormant)
         creators["suggest dungeon"] = &ActionContext::suggest_dungeon;
         creators["suggest trade"] = &ActionContext::suggest_trade;
 
@@ -596,6 +598,7 @@ private:
     static Action* talk(PlayerbotAI* botAI) { return new TalkAction(botAI); }
     static Action* greet(PlayerbotAI* botAI) { return new GreetAction(botAI); }
     static Action* suggest_what_to_do(PlayerbotAI* botAI) { return new SuggestWhatToDoAction(botAI); }
+    static Action* say(PlayerbotAI* botAI) { return new SayAction(botAI); }  // AC ActionContext.h:371 (dormant)
     static Action* suggest_dungeon(PlayerbotAI* botAI) { return new SuggestDungeonAction(botAI); }
     static Action* suggest_trade(PlayerbotAI* botAI) { return new SuggestTradeAction(botAI); }
     static Action* check_mail(PlayerbotAI* botAI) { return new CheckMailAction(botAI); }

@@ -538,6 +538,13 @@ bool PlayerbotAIConfig::Initialize()
     maxGuildTaskRewardTime = sConfigMgr->GetIntDefault("AiPlayerbot.MaxGuildTaskRewardTime", 3600);
     guildTaskAdvertCleanupTime = sConfigMgr->GetIntDefault("AiPlayerbot.GuildTaskAdvertCleanupTime", 300);
     guildTaskKillTaskDistance = sConfigMgr->GetIntDefault("AiPlayerbot.GuildTaskKillTaskDistance", 2000);
+
+    // AC PlayerbotAIConfig.cpp:372, 380-382 (BroadcastHelper.cpp reads its own copy of ToxicLinksPrefix)
+    toxicLinksPrefix = sConfigMgr->GetStringDefault("AiPlayerbot.ToxicLinksPrefix", "gnomes");
+    randomBotTalk = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotTalk", false);  // AC PlayerbotAIConfig.cpp:298
+    toxicLinksRepliesChance = sConfigMgr->GetIntDefault("AiPlayerbot.ToxicLinksRepliesChance", 30);    // 0-100
+    thunderfuryRepliesChance = sConfigMgr->GetIntDefault("AiPlayerbot.ThunderfuryRepliesChance", 40);  // 0-100
+    guildRepliesRate = sConfigMgr->GetIntDefault("AiPlayerbot.GuildRepliesRate", 100);                 // 0-100
     summonWhenGroup = sConfigMgr->GetBoolDefault("AiPlayerbot.SummonWhenGroup", true);
     keepAltsInGroup = sConfigMgr->GetBoolDefault("AiPlayerbot.KeepAltsInGroup", false);
     disabledWithoutRealPlayer = sConfigMgr->GetBoolDefault("AiPlayerbot.DisabledWithoutRealPlayer", false);

@@ -108,6 +108,7 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : Pas
     supported.push_back("summon");
     supported.push_back("reset botAI");
     supported.push_back("invite");
+    supported.push_back("lfg");  // AC ChatCommandHandlerStrategy.cpp:128
     supported.push_back("leave");
     supported.push_back("join");
     supported.push_back("give leader");

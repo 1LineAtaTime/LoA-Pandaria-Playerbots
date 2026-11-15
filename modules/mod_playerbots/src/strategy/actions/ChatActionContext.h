@@ -104,6 +104,7 @@ public:
         creators["invite"] = &ChatActionContext::invite;
         creators["leave"] = &ChatActionContext::leave;
         creators["join"] = &ChatActionContext::join;
+        creators["lfg"] = &ChatActionContext::lfg;  // AC ChatActionContext.h:202
         creators["give leader"] = &ChatActionContext::give_leader;
 
         // #188 (S6 of epic #163): loot/gear chat commands (AC ChatActionContext.h:117 for "ll").
@@ -194,6 +195,7 @@ private:
     static Action* invite(PlayerbotAI* botAI) { return new InviteToGroupAction(botAI); }
     static Action* leave(PlayerbotAI* botAI) { return new LeaveGroupAction(botAI); }
     static Action* join(PlayerbotAI* botAI) { return new JoinGroupAction(botAI); }
+    static Action* lfg(PlayerbotAI* botAI) { return new LfgAction(botAI); }  // AC ChatActionContext.h:241
     static Action* give_leader(PlayerbotAI* botAI) { return new GiveLeaderAction(botAI); }
 
     static Action* repair(PlayerbotAI* botAI) { return new RepairAllAction(botAI); }

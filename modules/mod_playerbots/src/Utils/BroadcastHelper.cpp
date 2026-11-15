@@ -1154,3 +1154,22 @@ bool BroadcastHelper::BroadcastSuggestThunderfury(PlayerbotAI* ai, Player* /*bot
 
     return false;
 }
+
+// Shared with the chat replies (strategy/actions/SayAction.cpp); see BroadcastHelper.h.
+bool BroadcastHelper::BotSayToGuild(Player* bot, std::string const& msg) { return SayToGuild(bot, msg); }
+
+bool BroadcastHelper::BotSayToWorld(Player* bot, std::string const& msg) { return SayToWorld(bot, msg); }
+
+bool BroadcastHelper::BotSayToChannel(Player* bot, std::string const& msg, uint32_t chanId)
+{
+    return BroadcastSayToChannel(bot, msg, chanId);
+}
+
+void BroadcastHelper::BotChatPlaceholders(Player* bot, std::map<std::string, std::string>& placeholders)
+{
+    AddAreaPlaceholders(bot, placeholders);
+    AddSelfPlaceholders(bot, placeholders);
+    placeholders["%my_role"] = FormatRole(bot);
+}
+
+std::vector<Item*> BroadcastHelper::BotInventoryAndEquippedItems(Player* bot) { return InventoryAndEquippedItems(bot); }

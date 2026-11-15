@@ -56,6 +56,8 @@
 #include "PerformanceMonitor.h"
 #include "RandomPlayerbotMgr.h"
 #include "ServerFacade.h"
+#include "PlayerbotTextMgr.h"  // ChatQueuedReply
+#include "SayAction.h"  // ChatReplyAction (AC Ai/Base/Actions/SayAction.h)
 #include "ScriptMgr.h"
 #include "SharedDefines.h"
 #include "SocialMgr.h"
@@ -348,8 +350,8 @@ PlayerbotAI::~PlayerbotAI()
 //  - the "debug " remote-command path (AC HandleRemoteCommand) is dropped - nothing ports it;
 //  - the "logout"/"logout cancel"/"wait " branches are dropped - AC itself ships them fully
 //    commented out ("TODO: missing implementation to port"), so this matches AC's actual behaviour;
-//  - AC's IsAllowedCommand() call before the security check also runs before the chat prefix/
-//    separator/filter pipeline (AC PlayerbotAI.cpp:623-624); this fork keeps that ordering.
+//  - the first security check is AC's (Bot/PlayerbotAI.cpp:1124): PLAYERBOT_SECURITY_INVITE for every
+//    sender; IsAllowedCommand() only relaxes the second (ALLOW_ALL) check after the filter pipeline.
 bool PlayerbotAI::IsAllowedCommand(std::string const text)
 {
     if (unsecuredCommands.empty())
@@ -395,8 +397,10 @@ void PlayerbotAI::HandleCommand(uint32 type, std::string const text, Player* fro
 
     std::string filtered = text;
 
-    if (!IsAllowedCommand(filtered) &&
-        !GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, type != CHAT_MSG_WHISPER, fromPlayer))
+    // AC Bot/PlayerbotAI.cpp:1124-1125: every sender needs at least PLAYERBOT_SECURITY_INVITE, unsecured commands
+    // included (IsAllowedCommand only lowers the second check below from ALLOW_ALL to INVITE). This is what keeps an
+    // opposing-faction speaker (DENY_ALL) from commanding random bots once channel chat reaches all of them.
+    if (!GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, type != CHAT_MSG_WHISPER, fromPlayer))
         return;
 
     if (type == CHAT_MSG_ADDON || type == CHAT_MSG_SYSTEM)
@@ -1557,6 +1561,9 @@ void PlayerbotAI::UpdateAIInternal([[maybe_unused]] uint32 elapsed, bool minimal
 
     ExternalEventHelper helper(_aiObjectContext);
 
+    // chat replies (AC Bot/PlayerbotAI.cpp:644-656)
+    ChatReplyAction::ProcessChatReplies(bot);
+
     HandleCommands();
 
     // logout if logout timer is ready or if instant logout is possible
@@ -2526,6 +2533,170 @@ void PlayerbotAI::HandleTeleportAck()
         SetNextCheckDelay(sPlayerbotAIConfig->globalCoolDown);
 }
 
+namespace
+{
+    // The fields of a 5.4.8 SMSG_MESSAGECHAT the chat-reply gate below needs.
+    struct BotChatPacket
+    {
+        uint8 type = 0;
+        uint8 language = 0;
+        bool hasLanguage = false;
+        bool hasPrefix = false;
+        ObjectGuid sender;
+        ObjectGuid receiver;
+        std::string channel;
+        std::string message;
+        std::string senderName;
+    };
+
+    // Reads back exactly what ChatHandler::BuildChatPacket (src/server/game/Chat/Chat.cpp:351-571) writes: the bit
+    // block (flags, string lengths, guid masks) and then the byte block, in the same order. AC reads the plain WotLK
+    // layout (msgtype, lang, guid, ...) instead.
+    bool ReadBotChatPacket(WorldPacket const& packet, BotChatPacket& out)
+    {
+        WorldPacket p(packet);
+        p.rpos(0);
+        p.ResetBitPos();
+
+        try
+        {
+            ObjectGuid groupGuid, guildGuid;
+            ObjectGuid& receiverGuid = out.receiver;
+            ObjectGuid& senderGuid = out.sender;
+
+            bool const hasSenderName = !p.ReadBit();
+            p.ReadBit();  // HideInChatLog
+            uint32 const senderNameLen = hasSenderName ? p.ReadBits(11) : 0;
+            p.ReadBit();  // fake bit
+            bool const hasChannelName = !p.ReadBit();
+            p.ReadBit();  // unk
+            p.ReadBit();  // SendFakeTime
+            bool const hasChatTag = !p.ReadBit();
+            p.ReadBit();  // realm id
+
+            groupGuid[0] = p.ReadBit();
+            groupGuid[1] = p.ReadBit();
+            groupGuid[5] = p.ReadBit();
+            groupGuid[4] = p.ReadBit();
+            groupGuid[3] = p.ReadBit();
+            groupGuid[2] = p.ReadBit();
+            groupGuid[6] = p.ReadBit();
+            groupGuid[7] = p.ReadBit();
+
+            if (hasChatTag)
+                p.ReadBits(9);
+
+            p.ReadBit();  // fake bit
+
+            receiverGuid[7] = p.ReadBit();
+            receiverGuid[6] = p.ReadBit();
+            receiverGuid[1] = p.ReadBit();
+            receiverGuid[4] = p.ReadBit();
+            receiverGuid[0] = p.ReadBit();
+            receiverGuid[2] = p.ReadBit();
+            receiverGuid[3] = p.ReadBit();
+            receiverGuid[5] = p.ReadBit();
+
+            p.ReadBit();  // fake bit
+            out.hasLanguage = !p.ReadBit();
+            out.hasPrefix = !p.ReadBit();
+
+            senderGuid[0] = p.ReadBit();
+            senderGuid[3] = p.ReadBit();
+            senderGuid[7] = p.ReadBit();
+            senderGuid[2] = p.ReadBit();
+            senderGuid[1] = p.ReadBit();
+            senderGuid[5] = p.ReadBit();
+            senderGuid[4] = p.ReadBit();
+            senderGuid[6] = p.ReadBit();
+
+            bool const hasAchievementId = !p.ReadBit();
+            bool const hasMessage = !p.ReadBit();
+            uint32 const channelLen = hasChannelName ? p.ReadBits(7) : 0;
+            uint32 const messageLen = hasMessage ? p.ReadBits(12) : 0;
+            bool const hasReceiverName = !p.ReadBit();
+            uint32 const prefixLen = out.hasPrefix ? p.ReadBits(5) : 0;
+            p.ReadBit();  // realm id
+            uint32 const receiverNameLen = hasReceiverName ? p.ReadBits(11) : 0;
+            p.ReadBit();  // fake bit
+
+            guildGuid[2] = p.ReadBit();
+            guildGuid[5] = p.ReadBit();
+            guildGuid[7] = p.ReadBit();
+            guildGuid[4] = p.ReadBit();
+            guildGuid[0] = p.ReadBit();
+            guildGuid[1] = p.ReadBit();
+            guildGuid[3] = p.ReadBit();
+            guildGuid[6] = p.ReadBit();
+
+            p.ReadByteSeq(guildGuid[4]);
+            p.ReadByteSeq(guildGuid[5]);
+            p.ReadByteSeq(guildGuid[7]);
+            p.ReadByteSeq(guildGuid[3]);
+            p.ReadByteSeq(guildGuid[2]);
+            p.ReadByteSeq(guildGuid[6]);
+            p.ReadByteSeq(guildGuid[0]);
+            p.ReadByteSeq(guildGuid[1]);
+
+            if (hasChannelName)
+                out.channel = p.ReadString(channelLen, false);
+
+            if (out.hasPrefix)
+                p.ReadString(prefixLen, false);
+
+            p.ReadByteSeq(senderGuid[4]);
+            p.ReadByteSeq(senderGuid[7]);
+            p.ReadByteSeq(senderGuid[1]);
+            p.ReadByteSeq(senderGuid[5]);
+            p.ReadByteSeq(senderGuid[0]);
+            p.ReadByteSeq(senderGuid[6]);
+            p.ReadByteSeq(senderGuid[2]);
+            p.ReadByteSeq(senderGuid[3]);
+
+            p >> out.type;
+
+            if (hasAchievementId)
+                p.read_skip<uint32>();
+
+            p.ReadByteSeq(groupGuid[1]);
+            p.ReadByteSeq(groupGuid[3]);
+            p.ReadByteSeq(groupGuid[4]);
+            p.ReadByteSeq(groupGuid[6]);
+            p.ReadByteSeq(groupGuid[0]);
+            p.ReadByteSeq(groupGuid[2]);
+            p.ReadByteSeq(groupGuid[5]);
+            p.ReadByteSeq(groupGuid[7]);
+
+            p.ReadByteSeq(receiverGuid[2]);
+            p.ReadByteSeq(receiverGuid[5]);
+            p.ReadByteSeq(receiverGuid[3]);
+            p.ReadByteSeq(receiverGuid[6]);
+            p.ReadByteSeq(receiverGuid[7]);
+            p.ReadByteSeq(receiverGuid[4]);
+            p.ReadByteSeq(receiverGuid[1]);
+            p.ReadByteSeq(receiverGuid[0]);
+
+            if (out.hasLanguage)
+                p >> out.language;
+
+            if (hasMessage)
+                out.message = p.ReadString(messageLen, false);
+
+            if (hasReceiverName)
+                p.ReadString(receiverNameLen, false);
+
+            if (hasSenderName)
+                out.senderName = p.ReadString(senderNameLen, false);
+        }
+        catch (ByteBufferException const&)
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
 void PlayerbotAI::HandleBotOutgoingPacket(WorldPacket const& packet)
 {
     if (packet.empty())
@@ -2564,6 +2735,117 @@ void PlayerbotAI::HandleBotOutgoingPacket(WorldPacket const& packet)
     }
     case SMSG_MESSAGECHAT:  // do not react to self or if not ready to reply
     {
+        // AC Bot/PlayerbotAI.cpp:1341-1460: queue a reply (ChatReplyAction::ChatReplyDo) to say, party, yell, whisper,
+        // guild and channel chat. 5.4.8 adaptations:
+        //  - the packet is bit-packed; ReadBotChatPacket reads it back (inverse of ChatHandler::BuildChatPacket);
+        //  - this hook runs on the thread that sends the packet (another map's thread for guild chat), so it reads the
+        //    cached AllowActivity() result instead of recomputing it, and the queue / "last said"::"chat" cooldown live
+        //    in ChatReplyAction's locked per-bot table (SayAction.h) rather than in the bot's value context.
+        if (!sPlayerbotAIConfig->randomBotTalk)
+            return;
+
+        if (!_allowActive[ALL_ACTIVITY])
+            return;
+
+        BotChatPacket chat;
+        if (!ReadBotChatPacket(packet, chat))
+            return;
+
+        ObjectGuid guid1 = chat.sender;
+        ObjectGuid guid2 = chat.receiver;
+        if (guid1.IsEmpty())
+            return;
+
+        if (chat.hasPrefix || (chat.hasLanguage && chat.language == LANG_ADDON))
+            return;
+
+        uint32 msgtype = chat.type;
+        std::string name = chat.senderName;
+        std::string chanName = "";
+        std::string message = chat.message;
+
+        switch (msgtype)
+        {
+            case CHAT_MSG_CHANNEL:
+                chanName = chat.channel;
+                [[fallthrough]];
+            case CHAT_MSG_SAY:
+            case CHAT_MSG_PARTY:
+            case CHAT_MSG_YELL:
+            case CHAT_MSG_WHISPER:
+            case CHAT_MSG_GUILD:
+                break;
+            default:
+                return;
+        }
+
+        if (chanName == "World")
+            return;
+
+        // do not reply to self but always try to reply to real player
+        if (guid1 != bot->GetGUID())
+        {
+            bool isFromFreeBot = false;
+            sCharacterCache->GetCharacterNameByGuid(guid1, name);
+            uint32 accountId = sCharacterCache->GetCharacterAccountIdByGuid(guid1);
+            isFromFreeBot = sPlayerbotAIConfig->IsInRandomAccountList(accountId);
+            bool isMentioned = message.find(bot->GetName()) != std::string::npos;
+
+            // ChatChannelSource chatChannelSource = GetChatChannelSource(bot, msgtype, chanName);
+
+            // random bot speaks, chat CD (AC reads "last said"::"chat" first; here only when it matters, to keep the
+            // locked table out of the path of every chat packet a bot receives)
+            if (isFromFreeBot && time(0) < ChatReplyAction::GetLastChatTime(bot))
+                return;
+
+            // BG: react only if mentioned or if not channel and real player spoke
+            if (bot->InBattleground() && !(isMentioned || (msgtype != CHAT_MSG_CHANNEL && !isFromFreeBot)))
+                return;
+
+            if (HasGameClientMaster() && guid1 != GetMaster()->GetGUID())
+                return;
+
+            auto itemIds = ChatReplyAction::ExtractAllItemIds(message);
+            if (message.starts_with(sPlayerbotAIConfig->toxicLinksPrefix) &&
+                (itemIds.size() > 0 || ChatReplyAction::ExtractAllQuestIds(message).size() > 0) &&
+                sPlayerbotAIConfig->toxicLinksRepliesChance)
+            {
+                if (urand(0, 50) > 0 || urand(1, 100) > sPlayerbotAIConfig->toxicLinksRepliesChance)
+                    return;
+            }
+            else if (itemIds.count(19019) && sPlayerbotAIConfig->thunderfuryRepliesChance)
+            {
+                if (urand(0, 60) > 0 || urand(1, 100) > sPlayerbotAIConfig->thunderfuryRepliesChance)
+                    return;
+            }
+            else
+            {
+                if (isFromFreeBot && urand(0, 20))
+                    return;
+
+                // if (msgtype == CHAT_MSG_GUILD && (!sPlayerbotAIConfig->guildRepliesRate || urand(1, 100) >=
+                // sPlayerbotAIConfig->guildRepliesRate)) return;
+
+                if (!isFromFreeBot)
+                {
+                    if (!isMentioned && urand(0, 4))
+                        return;
+                }
+                else
+                {
+                    if (urand(0, 20 + 10 * isMentioned))
+                        return;
+                }
+            }
+
+            bool const inCombat = bot->IsInCombat();
+            ChatReplyAction::QueueChatResponse(
+                bot, ChatQueuedReply{msgtype, guid1.GetCounter(), guid2.GetCounter(), message, chanName, name,
+                                     time(nullptr) + urand(inCombat ? 10 : 5, inCombat ? 25 : 15)});
+            ChatReplyAction::SetLastChatTime(bot, time(0) + urand(5, 25));
+            return;
+        }
+
         return;
     }
     case SMSG_MOVE_KNOCK_BACK:  // handle knockbacks
