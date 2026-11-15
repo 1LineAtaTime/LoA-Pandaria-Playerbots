@@ -24,8 +24,13 @@
 #include "Action.h"
 #include "ItemVisitors.h"
 
+#include <map>
+#include <string>
+#include <vector>
+
 class Item;
 class PlayerbotAI;
+struct ItemTemplate;
 
 class InventoryAction : public Action
 {
@@ -46,6 +51,14 @@ protected:
     // #883: the item-link branch of AC's parseItems (AC InventoryAction.cpp:222-239) lives here, searched in `mask`
     // (AC's parseItems(text, mask); default bags, like every other branch of Find()).
     std::vector<Item*> Find(std::string const qualifier, uint32 mask = ITERATE_ITEMS_IN_BAGS);
+
+    // AC Ai/Base/Actions/InventoryAction.h:23-25: the full chat item resolver and the item listing helpers that
+    // the "c"/"items"/"inv" command (TellItemCountAction) needs. parseItems is AC's InventoryAction::parseItems
+    // (AC InventoryAction.cpp:211-398) without the outfit lookup and the "materials"/"recipe all" qualifiers, whose
+    // visitors and outfit store are not part of this module (see InventoryAction.cpp).
+    void TellItems(std::map<uint32, uint32> items, std::map<uint32, bool> soulbound);
+    void TellItem(ItemTemplate const* proto, uint32 count, bool soulbound);
+    std::vector<Item*> parseItems(std::string const text, uint32 mask = ITERATE_ALL_ITEMS);
 };
 
 #endif

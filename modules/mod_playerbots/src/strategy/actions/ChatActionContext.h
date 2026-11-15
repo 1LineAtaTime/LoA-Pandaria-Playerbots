@@ -61,6 +61,15 @@
 #include "UnlockTradedItemAction.h"
 #include "UseMeetingStoneAction.h"
 #include "WhoAction.h"
+// AC ChatActionContext.h:29,38,50,69,76-77,80,88: the chat-command actions ported with the chat command batch.
+#include "GoAction.h"
+#include "ListSpellsAction.h"
+#include "QueryItemUsageAction.h"
+#include "StatsAction.h"
+#include "TellItemCountAction.h"
+#include "TellReputationAction.h"
+#include "TellTargetAction.h"
+#include "WaitForAttackAction.h"
 
 class ChatActionContext : public NamedObjectContext<Action>
 {
@@ -162,6 +171,24 @@ public:
         creators["taxi"] = &ChatActionContext::taxi;   // #767 (AC ChatActionContext.h:123)
         creators["rpg do quest"] = &ChatActionContext::rpg_do_quest;
         creators["rtsc"] = &ChatActionContext::rtsc;  // #648 (AC ChatActionContext.h:197)
+
+        // AC ChatActionContext.h:102,105,116,127,135,171,176,182,211: the chat-command batch ("stats", "rep"/
+        // "reputation", "qi" and the second half of "q", "c"/"items"/"inv", "spells", "target", "attackers", "go",
+        // "wait for attack time").
+        creators["stats"] = &ChatActionContext::stats;
+        creators["reputation"] = &ChatActionContext::reputation;
+        creators["query item usage"] = &ChatActionContext::query_item_usage;
+        creators["item count"] = &ChatActionContext::item_count;
+        creators["spells"] = &ChatActionContext::spells;
+        creators["tell target"] = &ChatActionContext::tell_target;
+        creators["tell attackers"] = &ChatActionContext::tell_attackers;
+        creators["go"] = &ChatActionContext::go;
+        creators["wait for attack time"] = &ChatActionContext::wait_for_attack_time;
+        // AC ChatActionContext.h:140-143: maintenance / remove glyph / autogear / autogear bis (TrainerAction.h).
+        creators["maintenance"] = &ChatActionContext::maintenance;
+        creators["remove glyph"] = &ChatActionContext::remove_glyph;
+        creators["autogear"] = &ChatActionContext::autogear;
+        creators["autogear bis"] = &ChatActionContext::autogear_bis;
     }
 
 private:
@@ -238,6 +265,21 @@ private:
     static Action* cast_custom_spell(PlayerbotAI* botAI) { return new CastCustomSpellAction(botAI); }
     static Action* cast_custom_nc_spell(PlayerbotAI* botAI) { return new CastCustomNcSpellAction(botAI); }
     static Action* rtsc(PlayerbotAI* botAI) { return new RTSCAction(botAI); }  // #648
+
+    // AC ChatActionContext.h:231,271,294,297,299,327,329 and the matching "go"/"item count"/"query item usage" ones.
+    static Action* stats(PlayerbotAI* botAI) { return new StatsAction(botAI); }
+    static Action* reputation(PlayerbotAI* botAI) { return new TellReputationAction(botAI); }
+    static Action* query_item_usage(PlayerbotAI* botAI) { return new QueryItemUsageAction(botAI); }
+    static Action* item_count(PlayerbotAI* botAI) { return new TellItemCountAction(botAI); }
+    static Action* spells(PlayerbotAI* botAI) { return new ListSpellsAction(botAI); }
+    static Action* tell_target(PlayerbotAI* botAI) { return new TellTargetAction(botAI); }
+    static Action* tell_attackers(PlayerbotAI* botAI) { return new TellAttackersAction(botAI); }
+    static Action* go(PlayerbotAI* botAI) { return new GoAction(botAI); }
+    static Action* wait_for_attack_time(PlayerbotAI* botAI) { return new SetWaitForAttackTimeAction(botAI); }
+    static Action* maintenance(PlayerbotAI* botAI) { return new MaintenanceAction(botAI); }       // AC :263
+    static Action* remove_glyph(PlayerbotAI* botAI) { return new RemoveGlyphAction(botAI); }      // AC :264
+    static Action* autogear(PlayerbotAI* botAI) { return new AutoGearAction(botAI); }             // AC :265
+    static Action* autogear_bis(PlayerbotAI* botAI) { return new BisGearAction(botAI); }          // AC :266
 };
 
 #endif

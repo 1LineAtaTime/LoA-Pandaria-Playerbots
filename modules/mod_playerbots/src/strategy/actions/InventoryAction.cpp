@@ -6,9 +6,14 @@
 #include "InventoryAction.h"
 
 #include "Playerbots.h"
+#include "TradeData.h"
 
 #include <algorithm>
+#include <array>
+#include <map>
 #include <set>
+#include <sstream>
+#include <string_view>
 
 namespace
 {
@@ -33,6 +38,31 @@ bool compare_items(ItemTemplate const* proto1, ItemTemplate const* proto2)
 bool compare_items_by_level(Item const* item1, Item const* item2)
 {
     return compare_items(item1->GetTemplate(), item2->GetTemplate());
+}
+
+// AC InventoryAction.cpp:15-37 (isReservedQualifier): qualifiers that must not fall through to the bare item-name
+// search at the end of parseItems.
+bool isReservedQualifier(std::string const& text)
+{
+    static std::array<std::string_view, 14> const exactQualifiers = {
+        "ammo",
+        "conjured drink",
+        "conjured food",
+        "conjured water",
+        "drink",
+        "food",
+        "healing potion",
+        "materials",
+        "mount",
+        "mana potion",
+        "pet",
+        "quest",
+        "recipe",
+        "water"
+    };
+
+    return std::find(exactQualifiers.begin(), exactQualifiers.end(), text) != exactQualifiers.end() ||
+        text.rfind("usage ", 0) == 0;
 }
 }
 
@@ -234,4 +264,237 @@ std::vector<Item*> InventoryAction::Find(std::string const qualifier, uint32 mas
     }
 
     return found;
+}
+
+// AC InventoryAction.cpp:140-199 (TellItems), 1:1. ItemTemplate lookup by id, sorted by class/subclass/quality/level,
+// with a header line whenever the item class changes.
+void InventoryAction::TellItems(std::map<uint32, uint32> itemMap, std::map<uint32, bool> soulbound)
+{
+    std::vector<ItemTemplate const*> items;
+    for (std::map<uint32, uint32>::iterator i = itemMap.begin(); i != itemMap.end(); i++)
+    {
+        items.push_back(sObjectMgr->GetItemTemplate(i->first));
+    }
+
+    std::sort(items.begin(), items.end(), compare_items);
+
+    uint32 oldClass = -1;
+    for (ItemTemplate const* proto : items)
+    {
+        if (proto->Class != oldClass)
+        {
+            oldClass = proto->Class;
+            switch (proto->Class)
+            {
+                case ITEM_CLASS_CONSUMABLE:
+                    botAI->TellMaster("--- consumable ---");
+                    break;
+                case ITEM_CLASS_CONTAINER:
+                    botAI->TellMaster("--- container ---");
+                    break;
+                case ITEM_CLASS_WEAPON:
+                    botAI->TellMaster("--- weapon ---");
+                    break;
+                case ITEM_CLASS_ARMOR:
+                    botAI->TellMaster("--- armor ---");
+                    break;
+                case ITEM_CLASS_REAGENT:
+                    botAI->TellMaster("--- reagent ---");
+                    break;
+                case ITEM_CLASS_PROJECTILE:
+                    botAI->TellMaster("--- projectile ---");
+                    break;
+                case ITEM_CLASS_TRADE_GOODS:
+                    botAI->TellMaster("--- trade goods ---");
+                    break;
+                case ITEM_CLASS_RECIPE:
+                    botAI->TellMaster("--- recipe ---");
+                    break;
+                case ITEM_CLASS_QUIVER:
+                    botAI->TellMaster("--- quiver ---");
+                    break;
+                case ITEM_CLASS_QUEST:
+                    botAI->TellMaster("--- quest items ---");
+                    break;
+                case ITEM_CLASS_KEY:
+                    botAI->TellMaster("--- keys ---");
+                    break;
+                case ITEM_CLASS_MISCELLANEOUS:
+                    botAI->TellMaster("--- other ---");
+                    break;
+            }
+        }
+
+        TellItem(proto, itemMap[proto->ItemId], soulbound[proto->ItemId]);
+    }
+}
+
+// AC InventoryAction.cpp:201-209 (TellItem), 1:1.
+void InventoryAction::TellItem(ItemTemplate const* proto, uint32 count, bool soulbound)
+{
+    std::ostringstream out;
+    out << chat->FormatItem(proto, count);
+    if (soulbound)
+        out << " (soulbound)";
+
+    botAI->TellMaster(out.str());
+}
+
+// AC InventoryAction.cpp:211-398 (parseItems). The item-link branch, the named qualifiers, the item quality / class /
+// equipment slot filters and the final pass follow AC statement for statement. Left out: the "materials" and
+// "recipe all" qualifiers (FindTradeMaterialsVisitor / FindAnyRecipeVisitor are not part of this module) and the
+// saved-outfit lookup (AC FindOutfitItems: the "outfit list" value and the outfit command are not ported).
+std::vector<Item*> InventoryAction::parseItems(std::string const text, uint32 mask)
+{
+    std::set<Item*> found;
+    size_t pos = text.find(" ");
+
+    int count = pos != std::string::npos ? atoi(text.substr(pos + 1).c_str()) : TRADE_SLOT_TRADED_COUNT;
+    if (count < 1)
+        count = 1;
+    else if (count > TRADE_SLOT_TRADED_COUNT)
+        count = TRADE_SLOT_TRADED_COUNT;
+
+    ItemIds ids = chat->parseItems(text);
+    if (!ids.empty())
+    {
+        for (ItemIds::iterator i = ids.begin(); i != ids.end(); i++)
+        {
+            FindItemByIdVisitor visitor(*i);
+            IterateItems(&visitor, mask);
+            found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+        }
+
+        std::vector<Item*> result;
+        for (std::set<Item*>::iterator i = found.begin(); i != found.end(); ++i)
+            result.push_back(*i);
+
+        std::sort(result.begin(), result.end(), compare_items_by_level);
+
+        return result;
+    }
+
+    if (text == "food" || text == "conjured food")
+    {
+        FindFoodVisitor visitor(bot, 11, text == "conjured food");
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    if (text == "drink" || text == "water" || text == "conjured drink" || text == "conjured water")
+    {
+        FindFoodVisitor visitor(bot, 59, text == "conjured drink" || text == "conjured water");
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+
+        if (found.empty())
+        {
+            FindFoodVisitor foodVisitor(bot, 11);
+            IterateItems(&foodVisitor, ITERATE_ITEMS_IN_BAGS);
+            found.insert(foodVisitor.GetResult().begin(), foodVisitor.GetResult().end());
+        }
+    }
+
+    if (text == "mana potion")
+    {
+        FindPotionVisitor visitor(bot, SPELL_EFFECT_ENERGIZE);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    if (text == "healing potion")
+    {
+        FindPotionVisitor visitor(bot, SPELL_EFFECT_HEAL);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    if (text == "mount")
+    {
+        FindMountVisitor visitor(bot);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    if (text == "pet")
+    {
+        FindPetVisitor visitor(bot);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    if (text == "ammo")
+    {
+        if (Item* const pItem = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED))
+        {
+            FindAmmoVisitor visitor(bot, pItem->GetTemplate()->SubClass);
+            IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+            found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+        }
+    }
+
+    if (text == "recipe")
+    {
+        FindRecipeVisitor visitor(bot);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    if (text == "quest")
+    {
+        FindQuestItemVisitor visitor(bot);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    // "usage <n>" is only meaningful at the start of the qualifier (AC's isReservedQualifier reads it the same way).
+    // At most nine digits so the value always fits an int.
+    if (text.rfind("usage ", 0) == 0)
+    {
+        std::string const usage = text.substr(6, text.find(' ', 6) - 6);
+        if (!usage.empty() && usage.size() <= 9 && usage.find_first_not_of("0123456789") == std::string::npos)
+        {
+            FindItemUsageVisitor visitor(bot, ItemUsage(stoi(usage)));
+            IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+            found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+        }
+    }
+
+    if (!isReservedQualifier(text))
+    {
+        FindNamedItemVisitor visitor(bot, text);
+        IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    uint32 quality = chat->parseItemQuality(text);
+    if (quality != MAX_ITEM_QUALITY)
+    {
+        FindItemsToTradeByQualityVisitor visitor(quality, count);
+        IterateItems(&visitor, mask);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    uint32 itemClass = MAX_ITEM_CLASS, itemSubClass = 0;
+    if (chat->parseItemClass(text, &itemClass, &itemSubClass))
+    {
+        FindItemsToTradeByClassVisitor visitor(itemClass, itemSubClass, count);
+        IterateItems(&visitor, mask);
+        found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+    }
+
+    uint32 fromSlot = chat->parseSlot(text);
+    if (fromSlot != EQUIPMENT_SLOT_END)
+    {
+        if (Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, fromSlot))
+            found.insert(item);
+    }
+
+    std::vector<Item*> result;
+    for (std::set<Item*>::iterator i = found.begin(); i != found.end(); ++i)
+        result.push_back(*i);
+
+    std::sort(result.begin(), result.end(), compare_items_by_level);
+
+    return result;
 }

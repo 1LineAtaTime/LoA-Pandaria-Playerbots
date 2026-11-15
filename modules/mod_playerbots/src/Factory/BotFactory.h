@@ -43,7 +43,23 @@ public:
     /// AC PlayerbotFactory::InitGuild (Bot/Factory/PlayerbotFactory.cpp:4883-4914): join or found a random-bot guild
     /// (PlayerbotGuildMgr) and carry the guild tabard. Public like AC's: RandomPlayerbotMgr::OnBotLoginInternal calls it.
     void InitGuild();
+    /// AC PlayerbotFactory::ApplyEnchantAndGemsNew (Bot/Factory/PlayerbotFactory.cpp:5106): best-scoring enchant and gems for
+    /// every equipped item. Public like AC's: the random-bot paths and the maintenance / autogear chat commands call it.
+    void ApplyEnchantAndGemsNew(bool destroyOld = true);
+    /// AiPlayerbot.MinEnchantingBotLevel (AC default 60): callers gate ApplyEnchantAndGemsNew on it, as AC does.
+    static uint32 GetMinEnchantingBotLevel();
+    /// AC PlayerbotFactory::DestroyEquippedGear / AutoGear (Bot/Factory/PlayerbotFactory.cpp:3917-3942): the gear steps
+    /// the "autogear" and "autogear bis" chat commands drive. AutoGear's finishers (enchants and gems, repair) are on by default.
+    static void DestroyEquippedGear(Player* bot);
+    static void AutoGear(Player* bot, uint32 itemQuality, uint32 ilvl, bool incremental, bool secondChance = false,
+                         bool applyFinishers = true);
 private:
+    std::vector<uint32> GetCurrentGemsCount();
+    /// Builds enchantSpellIdCache / enchantGemIdCache once (called by Init() and lazily by ApplyEnchantAndGemsNew).
+    static void EnsureEnchantCaches();
+    static std::vector<uint32> enchantSpellIdCache;
+    static std::vector<uint32> enchantGemIdCache;
+
     void Prepare();
     void CancelAuras();
 

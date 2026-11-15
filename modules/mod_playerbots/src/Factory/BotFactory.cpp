@@ -1,6 +1,7 @@
 #include "BotFactory.h"
 
 #include <algorithm>
+#include <cstring>
 #include <map>
 #include <mutex>
 #include <random>
@@ -68,80 +69,99 @@ BotFactory::BotFactory(Player* bot, uint32 level, uint32 itemQuality, uint32 gea
 
 void BotFactory::CancelAuras() { bot->RemoveAllAuras(); }
  
-void BotFactory::Init()
+// AC PlayerbotFactory static caches (AC PlayerbotFactory.h:235-236): every spell that enchants an item and every gem
+// the enchant/gem pass may choose from, built once from the DBC stores.
+std::vector<uint32> BotFactory::enchantSpellIdCache;
+std::vector<uint32> BotFactory::enchantGemIdCache;
+
+// AC PlayerbotFactory::Init (Bot/Factory/PlayerbotFactory.cpp:561-:672), enchant and gem cache half. AC's other halves
+// (class quest ids, the pre-quest scan, the CC-break trinket cache) belong to systems this fork does not carry or
+// loads elsewhere. Nothing calls Init() at startup yet, so ApplyEnchantAndGemsNew also builds the caches on first use
+// (EnsureEnchantCaches is idempotent and thread-safe, and the pass runs on map-update threads).
+void BotFactory::Init() { EnsureEnchantCaches(); }
+
+void BotFactory::EnsureEnchantCaches()
 {
-    /*for (std::vector<uint32>::iterator i = sPlayerbotAIConfig->randomBotQuestIds.begin();
-        i != sPlayerbotAIConfig->randomBotQuestIds.end(); ++i)
+    static std::once_flag once;
+    std::call_once(once, []()
     {
-        uint32 questId = *i;
-        AddPrevQuests(questId, specialQuestIds);
-        specialQuestIds.remove(questId);
-        specialQuestIds.push_back(questId);
-    }
-    uint32 maxStoreSize = sSpellMgr->GetSpellInfoStoreSize();
-    for (uint32 id = 1; id < maxStoreSize; ++id)
-    {
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id);
-        if (!spellInfo)
-            continue;
- 
-        if (id == 47181 || id == 50358 || id == 47242 || id == 52639 || id == 47147 || id == 7218)  // Test Enchant
-            continue;
- 
-        uint32 requiredLevel = spellInfo->BaseLevel;
- 
-        for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+        uint32 const maxStoreSize = sSpellMgr->GetSpellInfoStoreSize();
+        for (uint32 id = 1; id < maxStoreSize; ++id)
         {
-            if (spellInfo->Effects[j].Effect != SPELL_EFFECT_ENCHANT_ITEM)
+            if (id == 7218 || id == 19927 || id == 44119 || id == 47147 || id == 47181 ||
+                id == 47242 || id == 50358 || id == 52639)  // Test Enchants
                 continue;
- 
-            uint32 enchant_id = spellInfo->Effects[j].MiscValue;
-            if (!enchant_id)
+
+            if (id == 35791 || id == 39405)  // Grandfathered TBC Enchants
                 continue;
- 
-            SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-            if (!enchant || (enchant->Flags != PERM_ENCHANTMENT_SLOT && enchant->slot != TEMP_ENCHANTMENT_SLOT))
+
+            if (id == 15463 || id == 15490)  // Legendary Arcane Amalgamation
                 continue;
- 
-            // SpellInfo const* enchantSpell = sSpellMgr->GetSpellInfo(enchant->spellid[0]);
-            // if (!enchantSpell)
-            //     continue;
-            if (strstr(spellInfo->SpellName[0], "Test"))
+
+            if (id == 29467 || id == 29475 || id == 29480 || id == 29483)  // Naxx40 Sapphiron Shoulder Enchants
+                continue;
+
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id);
+            if (!spellInfo)
+                continue;
+
+            for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+            {
+                if (spellInfo->Effects[j].Effect != SPELL_EFFECT_ENCHANT_ITEM)
+                    continue;
+
+                uint32 enchant_id = spellInfo->Effects[j].MiscValue;
+                if (!enchant_id)
+                    continue;
+
+                // 5.4.8: SpellItemEnchantmentEntry has no "slot" member; AC's `slot` is the DBC flags column, which
+                // this core names Flags (same column, ENCHANTMENT_FLAG_* bits).
+                SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
+                if (!enchant || (enchant->Flags != PERM_ENCHANTMENT_SLOT && enchant->Flags != TEMP_ENCHANTMENT_SLOT))
+                    continue;
+
+                // 5.4.8: SpellInfo::SpellName is a plain string here (AC's is an array indexed by locale).
+                if (spellInfo->SpellName && strstr(spellInfo->SpellName, "Test"))
+                    break;
+
+                enchantSpellIdCache.push_back(id);
                 break;
- 
-            enchantSpellIdCache.push_back(id);
-            break;
-            // TC_LOG_INFO("playerbots", "Add {} to enchantment spells", id);
+            }
         }
-    }
-    TC_LOG_INFO("playerbots", "Loading {} enchantment spells", enchantSpellIdCache.size());
-    for (auto iter = sSpellItemEnchantmentStore.begin(); iter != sSpellItemEnchantmentStore.end(); iter++)
-    {
-        uint32 gemId = iter->GemID;
-        if (gemId == 0)
+        TC_LOG_INFO("playerbots", "Loading %u enchantment spells", uint32(enchantSpellIdCache.size()));
+
+        for (uint32 i = 0; i < sSpellItemEnchantmentStore.GetNumRows(); ++i)
         {
-            continue;
+            SpellItemEnchantmentEntry const* entry = sSpellItemEnchantmentStore.LookupEntry(i);
+            if (!entry)
+                continue;
+
+            uint32 gemId = entry->GemID;
+            if (gemId == 0)
+                continue;
+
+            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(gemId);
+            if (!proto)
+                continue;
+
+            if (proto->ItemLevel < 60)
+                continue;
+
+            // AC: ITEM_FLAG_UNIQUE_EQUIPPABLE (same bit, 0x00080000).
+            if (proto->Flags & ITEM_PROTO_FLAG_UNIQUE_EQUIPPED)
+                continue;
+
+            // AC: sRandomItemMgr.IsInternalItem(proto); this module keeps the test-item set (RandomItemManager).
+            if (sRandomItemMgr->IsTestItem(gemId))
+                continue;
+
+            if (!sGemPropertiesStore.LookupEntry(proto->GemProperties))
+                continue;
+
+            enchantGemIdCache.push_back(gemId);
         }
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(gemId);
- 
-        if (proto->ItemLevel < 60)
-            continue;
- 
-        if (proto->Flags & ITEM_FLAG_UNIQUE_EQUIPPABLE)
-        {
-            continue;
-        }
-        if (sRandomItemMgr->IsTestItem(gemId))
-            continue;
- 
-        if (!proto || !sGemPropertiesStore.LookupEntry(proto->GemProperties))
-        {
-            continue;
-        }
-        // TC_LOG_INFO("playerbots", "Add {} to enchantment gems", gemId);
-        enchantGemIdCache.push_back(gemId);
-    }
-    TC_LOG_INFO("playerbots", "Loading {} enchantment gems", enchantGemIdCache.size());*/
+        TC_LOG_INFO("playerbots", "Loading %u enchantment gems", uint32(enchantGemIdCache.size()));
+    });
 }
  
 // #521: AC PlayerbotFactory::Randomize (Bot/Factory/PlayerbotFactory.cpp:808-809 ClearSkills/ClearSpells, :824
@@ -876,6 +896,10 @@ void BotFactory::Randomize(bool incremental)
     InitFood();
     InitPotions();
     InitReagents();
+    // AC PlayerbotFactory::Randomize (Bot/Factory/PlayerbotFactory.cpp:975-979): enchants and gems after the
+    // consumables that need bags, for bots at or above AiPlayerbot.MinEnchantingBotLevel.
+    if (bot->GetLevel() >= GetMinEnchantingBotLevel())
+        ApplyEnchantAndGemsNew();
     InitConsumables();
 
     // AC PlayerbotFactory::Randomize (Bot/Factory/PlayerbotFactory.cpp:1004-1013): guilds after the consumables and
@@ -915,6 +939,9 @@ void BotFactory::Refresh()
     // after ClearInventory.
     InitSkills();
 
+    // AC PlayerbotFactory::Refresh (Bot/Factory/PlayerbotFactory.cpp:1080-1081).
+    if (bot->GetLevel() >= GetMinEnchantingBotLevel())
+        ApplyEnchantAndGemsNew();
     bot->DurabilityRepairAll(false, 1.0f, false);
     if (bot->isDead())
         bot->ResurrectPlayer(1.0f, false);
@@ -3191,4 +3218,311 @@ void BotFactory::InitEquipment(bool incremental, bool second_chance)
             bot->AutoUnequipOffhandIfNeed();
         }
     }
+}
+
+namespace
+{
+// AC Item::HasSocket: the item template carries at least one socket. This core has no such member on Item.
+bool BotFactoryHasSocket(Item const* item)
+{
+    ItemTemplate const* proto = item->GetTemplate();
+    if (!proto)
+        return false;
+
+    for (uint32 i = 0; i < MAX_ITEM_PROTO_SOCKETS; ++i)
+        if (proto->Socket[i].Color)
+            return true;
+
+    return false;
+}
+}  // namespace
+
+// AiPlayerbot.MinEnchantingBotLevel (AC PlayerbotAIConfig.cpp:696, default 60): the lowest bot level that gets enchants
+// and gems. Read straight from the config like the other BotFactory keys (PlayerbotAIConfig has no member for it yet).
+uint32 BotFactory::GetMinEnchantingBotLevel()
+{
+    return uint32(sConfigMgr->GetIntDefault("AiPlayerbot.MinEnchantingBotLevel", 60));
+}
+
+// AC PlayerbotFactory::GetCurrentGemsCount (Bot/Factory/PlayerbotFactory.cpp:4117-4162): how many gems of each colour
+// (meta, red, yellow, blue) the equipped, unbroken gear carries; ApplyEnchantAndGemsNew scores meta-gem activation by it.
+std::vector<uint32> BotFactory::GetCurrentGemsCount()
+{
+    std::vector<uint32> curcount(4);
+    for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
+    {
+        Item* pItem2 = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, i);
+        if (pItem2 && !pItem2->IsBroken() && BotFactoryHasSocket(pItem2))
+        {
+            for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot <= PRISMATIC_ENCHANTMENT_SLOT;
+                 ++enchant_slot)
+            {
+                if (enchant_slot == BONUS_ENCHANTMENT_SLOT)
+                    continue;
+
+                uint32 enchant_id = pItem2->GetEnchantmentId(EnchantmentSlot(enchant_slot));
+                if (!enchant_id)
+                    continue;
+
+                SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
+                if (!enchantEntry)
+                    continue;
+
+                uint32 gemid = enchantEntry->GemID;
+                if (!gemid)
+                    continue;
+
+                ItemTemplate const* gemProto = sObjectMgr->GetItemTemplate(gemid);
+                if (!gemProto)
+                    continue;
+
+                GemPropertiesEntry const* gemProperty = sGemPropertiesStore.LookupEntry(gemProto->GemProperties);
+                if (!gemProperty)
+                    continue;
+
+                uint8 GemColor = gemProperty->color;
+
+                for (uint8 b = 0, tmpcolormask = 1; b < 4; b++, tmpcolormask <<= 1)
+                {
+                    if (tmpcolormask & GemColor)
+                        ++curcount[b];
+                }
+            }
+        }
+    }
+    return curcount;
+}
+
+// AC PlayerbotFactory::ApplyEnchantAndGemsNew (Bot/Factory/PlayerbotFactory.cpp:5106-5280): for every equipped item of
+// uncommon quality or better, pick the enchant (from the enchanting spells the bot's skills allow) and the gems that
+// score best for the bot's spec (StatsWeightCalculator::CalculateEnchant), and write them straight onto the item.
+// 5.4.8 / fork differences, each marked at the site:
+//  - AiPlayerbot.LimitEnchantExpansion is read from the config here (PlayerbotAIConfig has no member for it yet);
+//    same key and default (1) as AC. MinEnchantingBotLevel is read by the callers
+//    (Randomize, Refresh and the maintenance command) through GetMinEnchantingBotLevel().
+//  - SpellItemEnchantmentEntry: AC's `slot` is this core's Flags, requiredSkill/requiredSkillValue/requiredLevel are
+//    RequiredSkill/RequiredSkillValue/RequiredLevel.
+//  - Item::HasSocket does not exist here; BotFactoryHasSocket reads the same item-template sockets.
+//  - Gem level gate: AC compares the gem's item level with the bot level, which only works while gem item levels stay
+//    at or under the player level (WotLK). Here the gem's required level is used instead.
+//  - Cogwheel and hydraulic sockets (5.4.8 only) take only gems of their own colour; AC would drop any gem into them.
+void BotFactory::ApplyEnchantAndGemsNew(bool /*destroyOld*/)
+{
+    EnsureEnchantCaches();
+
+    bool const limitEnchantExpansion = sConfigMgr->GetIntDefault("AiPlayerbot.LimitEnchantExpansion", 1) != 0;
+
+    std::vector<uint32> curCount = GetCurrentGemsCount();
+    uint8 jewelersCount = 0;
+    int requiredActive = 2;
+    std::vector<uint32> availableGems;
+    for (uint32 const& enchantGem : enchantGemIdCache)
+    {
+        ItemTemplate const* gemTemplate = sObjectMgr->GetItemTemplate(enchantGem);
+        if (!gemTemplate)
+            continue;
+
+        GemPropertiesEntry const* gemProperties = sGemPropertiesStore.LookupEntry(gemTemplate->GemProperties);
+        if (!gemProperties)
+            continue;
+
+        if (limitEnchantExpansion && bot->GetLevel() <= 70 && enchantGem >= 39900)
+            continue;
+
+        uint32 requiredLevel = gemTemplate->RequiredLevel;
+
+        if (requiredLevel > bot->GetLevel())
+            continue;
+
+        uint32 enchant_id = gemProperties->spellitemenchantement;
+        if (!enchant_id)
+            continue;
+
+        SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
+        if (!enchant || (enchant->Flags != PERM_ENCHANTMENT_SLOT && enchant->Flags != TEMP_ENCHANTMENT_SLOT))
+            continue;
+
+        if (enchant->RequiredSkill && bot->GetSkillValue(enchant->RequiredSkill) < enchant->RequiredSkillValue)
+            continue;
+
+        if (enchant->RequiredLevel > bot->GetLevel())
+            continue;
+
+        availableGems.push_back(enchantGem);
+    }
+    StatsWeightCalculator calculator(bot);
+    for (uint8 slot = 0; slot < EQUIPMENT_SLOT_END; ++slot)
+    {
+        if (slot == EQUIPMENT_SLOT_TABARD || slot == EQUIPMENT_SLOT_BODY)
+            continue;
+        Item* item = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+        if (!item || !item->GetOwner())
+            continue;
+
+        if (item->GetTemplate() && item->GetTemplate()->Quality < ITEM_QUALITY_UNCOMMON)
+            continue;
+        int32 bestEnchantId = -1;
+        float bestScore = 0;
+        for (uint32 const& enchantSpell : enchantSpellIdCache)
+        {
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(enchantSpell);
+            if (!spellInfo)
+                continue;
+
+            if (!item->IsFitToSpellRequirements(spellInfo))
+                continue;
+
+            uint32 requiredLevel = spellInfo->BaseLevel;
+            if (requiredLevel > bot->GetLevel())
+                continue;
+
+            // disable next expansion enchantments
+            if (limitEnchantExpansion && bot->GetLevel() <= 60 && enchantSpell >= 27899)
+                continue;
+
+            if (limitEnchantExpansion && bot->GetLevel() <= 70 && enchantSpell >= 44483)
+                continue;
+
+            for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+            {
+                if (spellInfo->Effects[j].Effect != SPELL_EFFECT_ENCHANT_ITEM)
+                    continue;
+
+                uint32 enchant_id = spellInfo->Effects[j].MiscValue;
+                if (!enchant_id)
+                    continue;
+
+                SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
+                if (!enchant || (enchant->Flags != PERM_ENCHANTMENT_SLOT && enchant->Flags != TEMP_ENCHANTMENT_SLOT))
+                    continue;
+
+                if (enchant->RequiredSkill &&
+                    (!bot->HasSkill(enchant->RequiredSkill) ||
+                     (bot->GetSkillValue(enchant->RequiredSkill) < enchant->RequiredSkillValue)))
+                {
+                    continue;
+                }
+                if (enchant->RequiredLevel > bot->GetLevel())
+                    continue;
+
+                float score = calculator.CalculateEnchant(enchant_id);
+                if (score >= bestScore)
+                {
+                    bestScore = score;
+                    bestEnchantId = enchant_id;
+                }
+            }
+        }
+        // enchant item
+        if (bestEnchantId != -1)
+        {
+            bot->ApplyEnchantment(item, PERM_ENCHANTMENT_SLOT, false);
+            item->SetEnchantment(PERM_ENCHANTMENT_SLOT, bestEnchantId, 0, 0, bot->GetGUID());
+            bot->ApplyEnchantment(item, PERM_ENCHANTMENT_SLOT, true);
+        }
+        if (!BotFactoryHasSocket(item))
+            continue;
+
+        for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT + 3; ++enchant_slot)
+        {
+            uint8 socketColor = item->GetTemplate()->Socket[enchant_slot - SOCK_ENCHANTMENT_SLOT].Color;
+            if (!socketColor)
+                continue;
+
+            int32 enchantIdChosen = -1;
+            bool jewelersGemChosen = false;
+            float bestGemScore = -1;
+            for (uint32& enchantGem : availableGems)
+            {
+                ItemTemplate const* gemTemplate = sObjectMgr->GetItemTemplate(enchantGem);
+                if (!gemTemplate)
+                    continue;
+
+                if (gemTemplate->Quality > item->GetTemplate()->Quality)
+                    continue;
+
+                // Limit jewelers (JC) epic gems to 3
+                bool isJewelersGem = gemTemplate->ItemLimitCategory == 2;
+                if (isJewelersGem && jewelersCount >= 3)
+                    continue;
+
+                GemPropertiesEntry const* gemProperties = sGemPropertiesStore.LookupEntry(gemTemplate->GemProperties);
+                if (!gemProperties)
+                    continue;
+
+                if ((socketColor & gemProperties->color) == 0 && gemProperties->color == 1)  // meta socket
+                    continue;
+
+                // 5.4.8: cogwheel and hydraulic sockets only take their own gems, and those gems fit nothing else.
+                uint32 const specialColors = SOCKET_COLOR_HYDRAULIC | SOCKET_COLOR_COGWHEEL;
+                if (((socketColor | gemProperties->color) & specialColors) && !(socketColor & gemProperties->color))
+                    continue;
+
+                uint32 enchant_id = gemProperties->spellitemenchantement;
+                if (!enchant_id)
+                    continue;
+
+                StatsWeightCalculator calculator(bot);
+                float score = calculator.CalculateEnchant(enchant_id);
+                if (curCount[0] != 0)
+                {
+                    // Ensure meta gem activation
+                    for (size_t i = 1; i < curCount.size(); i++)
+                    {
+                        if (curCount[i] < (uint32)requiredActive && (gemProperties->color & (1 << i)))
+                        {
+                            score *= 2;
+                            break;
+                        }
+                    }
+                }
+                if (socketColor & gemProperties->color)
+                    score *= 1.2;
+                if (score > bestGemScore)
+                {
+                    enchantIdChosen = enchant_id;
+                    bestGemScore = score;
+                    jewelersGemChosen = isJewelersGem;
+                }
+            }
+            if (enchantIdChosen == -1)
+                continue;
+            bot->ApplyEnchantment(item, EnchantmentSlot(enchant_slot), false);
+            item->SetEnchantment(EnchantmentSlot(enchant_slot), enchantIdChosen, 0, 0, bot->GetGUID());
+            bot->ApplyEnchantment(item, EnchantmentSlot(enchant_slot), true);
+            curCount = GetCurrentGemsCount();
+            if (jewelersGemChosen)
+                ++jewelersCount;
+        }
+    }
+}
+
+// AC PlayerbotFactory::DestroyEquippedGear (Bot/Factory/PlayerbotFactory.cpp:3917-3926): empties every equipment slot
+// except the tabard and the shirt, so a regear starts from nothing.
+void BotFactory::DestroyEquippedGear(Player* bot)
+{
+    for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+    {
+        if (slot == EQUIPMENT_SLOT_TABARD || slot == EQUIPMENT_SLOT_BODY)
+            continue;
+        if (bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+            bot->DestroyItem(INVENTORY_SLOT_BAG_0, slot, true);
+    }
+}
+
+// AC PlayerbotFactory::AutoGear (Bot/Factory/PlayerbotFactory.cpp:3928-3942). AC's InitAmmo finisher is gone with
+// 5.0.4 (no ammo), so the finishers are the enchant and gem pass and the repair.
+void BotFactory::AutoGear(Player* bot, uint32 itemQuality, uint32 ilvl, bool incremental, bool secondChance,
+                          bool applyFinishers)
+{
+    uint32 gs = ilvl == 0 ? 0 : CalcMixedGearScore(ilvl, itemQuality);
+    BotFactory factory(bot, bot->GetLevel(), itemQuality, gs);
+    factory.InitEquipment(incremental, secondChance);
+
+    if (!applyFinishers)
+        return;
+
+    if (bot->GetLevel() >= GetMinEnchantingBotLevel())
+        factory.ApplyEnchantAndGemsNew();
+    bot->DurabilityRepairAll(false, 1.0f, false);
 }

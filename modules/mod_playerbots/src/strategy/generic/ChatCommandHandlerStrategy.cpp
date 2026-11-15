@@ -63,11 +63,52 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("ready",
         NextAction::array(0, new NextAction("ready check", relevance), nullptr)));
 
-    // #146 (AC ChatCommandHandlerStrategy.cpp:32-34): "q" runs "query quest" then "query item usage". The
-    // item-usage query action is not ported on this fork (no "query item usage" in any action context), so
-    // only the quest half is wired; add the second NextAction when that action lands.
+    // AC ChatCommandHandlerStrategy.cpp:32-34: "q" runs "query quest" then "query item usage".
     triggers.push_back(new TriggerNode("q",
-        NextAction::array(0, new NextAction("query quest", relevance), nullptr)));
+        NextAction::array(0, new NextAction("query quest", relevance), new NextAction("query item usage", relevance), nullptr)));
+
+    // AC ChatCommandHandlerStrategy.cpp:79: "qi" runs only the item-usage query.
+    triggers.push_back(new TriggerNode("qi",
+        NextAction::array(0, new NextAction("query item usage", relevance), nullptr)));
+
+    // AC ChatCommandHandlerStrategy.cpp:30,35-43,50,60-64,66,68-69: commands whose trigger name differs from the action
+    // name. The actions already exist in the action contexts; these nodes are what makes them reachable from chat.
+    triggers.push_back(new TriggerNode("rep",
+        NextAction::array(0, new NextAction("reputation", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("add all loot",
+        NextAction::array(0, new NextAction("add all loot", relevance), new NextAction("loot", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("u",
+        NextAction::array(0, new NextAction("use", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("c",
+        NextAction::array(0, new NextAction("item count", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("items",
+        NextAction::array(0, new NextAction("item count", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("inv",
+        NextAction::array(0, new NextAction("item count", relevance), nullptr)));
+    // AC maps "e"/"ue" to "equip"/"unequip" (AC :42-43). This fork also keeps the full words in `supported`.
+    triggers.push_back(new TriggerNode("e",
+        NextAction::array(0, new NextAction("equip", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("ue",
+        NextAction::array(0, new NextAction("unequip", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("accept",
+        NextAction::array(0, new NextAction("accept quest", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("enter vehicle",
+        NextAction::array(0, new NextAction("enter vehicle", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("leave vehicle",
+        NextAction::array(0, new NextAction("leave vehicle", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("cast",
+        NextAction::array(0, new NextAction("cast custom spell", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("castnc",
+        NextAction::array(0, new NextAction("cast custom nc spell", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("revive",
+        NextAction::array(0, new NextAction("spirit healer", relevance), nullptr)));
+    // AC :66: "warning" (queued by PlayerbotAI::HandleCommand for a raid warning) runs the runaway shortcut.
+    triggers.push_back(new TriggerNode("warning",
+        NextAction::array(0, new NextAction("runaway chat shortcut", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("attackers",
+        NextAction::array(0, new NextAction("tell attackers", relevance), nullptr)));
+    triggers.push_back(new TriggerNode("target",
+        NextAction::array(0, new NextAction("tell target", relevance), nullptr)));
 
     // #628 (AC ChatCommandHandlerStrategy.cpp:74): "rebuff" opens a force-rebuff pass.
     triggers.push_back(new TriggerNode("rebuff",
@@ -164,4 +205,22 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : Pas
     supported.push_back("guild leave");
     supported.push_back("rtsc");  // #648 AC ChatCommandHandlerStrategy.cpp:164
     supported.push_back("hire");  // #258 AC :152
+
+    // AC ChatCommandHandlerStrategy.cpp:89,91,102,108,119,122,147,165,168-169,177: trigger name == action name.
+    supported.push_back("stats");
+    supported.push_back("reputation");
+    supported.push_back("release");
+    supported.push_back("spells");
+    supported.push_back("home");
+    supported.push_back("emote");
+    supported.push_back("go");
+    supported.push_back("drink");
+    supported.push_back("open items");
+    supported.push_back("unlock items");
+    supported.push_back("wait for attack time");
+    // AC ChatCommandHandlerStrategy.cpp:113-116 (TrainerAction.h): maintenance, remove glyph, autogear, autogear bis.
+    supported.push_back("maintenance");
+    supported.push_back("remove glyph");
+    supported.push_back("autogear");
+    supported.push_back("autogear bis");
 }

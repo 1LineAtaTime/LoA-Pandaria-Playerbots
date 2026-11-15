@@ -134,6 +134,48 @@ public:
         creators["share"] = &ChatTriggerContext::share;
         creators["q"] = &ChatTriggerContext::q;
         creators["rtsc"] = &ChatTriggerContext::rtsc;  // #648 (AC ChatTriggerContext.h:142)
+
+        // AC ChatTriggerContext.h:18-19,23-25,30-31,36-39,45-48,50-53,56,58-59,62,70-71,92,97-99,124,127,152,154-155:
+        // chat commands whose action already exists on this fork, plus the commands ported together with their actions
+        // (stats, rep/reputation, c/items/inventory/inv, go, target, attackers, qi). Trigger names are the ones AC's
+        // factories give them, except "e": AC registers its factory under "equip", so its "e" strategy node can never
+        // fire. Here "e" and "ue" are real triggers; the full words "equip"/"unequip" stay as well.
+        creators["open items"] = &ChatTriggerContext::open_items;
+        creators["unlock items"] = &ChatTriggerContext::unlock_items;
+        creators["stats"] = &ChatTriggerContext::stats;
+        creators["rep"] = &ChatTriggerContext::reputation;
+        creators["reputation"] = &ChatTriggerContext::reputation;
+        creators["add all loot"] = &ChatTriggerContext::loot_all;
+        creators["release"] = &ChatTriggerContext::release;
+        creators["u"] = &ChatTriggerContext::use;
+        creators["use"] = &ChatTriggerContext::use;
+        creators["c"] = &ChatTriggerContext::item_count;
+        creators["items"] = &ChatTriggerContext::item_count;
+        creators["inventory"] = &ChatTriggerContext::item_count;
+        creators["inv"] = &ChatTriggerContext::item_count;
+        creators["e"] = &ChatTriggerContext::equip_short;
+        creators["ue"] = &ChatTriggerContext::unequip_short;
+        creators["spells"] = &ChatTriggerContext::spells;
+        creators["accept"] = &ChatTriggerContext::accept;
+        creators["home"] = &ChatTriggerContext::home;
+        creators["emote"] = &ChatTriggerContext::emote;
+        creators["enter vehicle"] = &ChatTriggerContext::enter_vehicle;
+        creators["leave vehicle"] = &ChatTriggerContext::leave_vehicle;
+        creators["cast"] = &ChatTriggerContext::cast;
+        creators["castnc"] = &ChatTriggerContext::castnc;
+        creators["revive"] = &ChatTriggerContext::revive;
+        creators["warning"] = &ChatTriggerContext::warning;
+        creators["go"] = &ChatTriggerContext::go;
+        creators["attackers"] = &ChatTriggerContext::attackers;
+        creators["target"] = &ChatTriggerContext::target;
+        creators["drink"] = &ChatTriggerContext::drink;
+        creators["qi"] = &ChatTriggerContext::qi;
+        creators["wait for attack time"] = &ChatTriggerContext::wait_for_attack_time;
+        // AC ChatTriggerContext.h:67-70.
+        creators["maintenance"] = &ChatTriggerContext::maintenance;
+        creators["remove glyph"] = &ChatTriggerContext::remove_glyph;
+        creators["autogear"] = &ChatTriggerContext::autogear;
+        creators["autogear bis"] = &ChatTriggerContext::autogear_bis;
     }
 
 private:
@@ -225,6 +267,39 @@ private:
     static Trigger* cancel_moonkin_form(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cancel moonkin form"); }
     static Trigger* cancel_aquatic_form(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cancel aquatic form"); }
     static Trigger* rtsc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rtsc"); }  // #648
+
+    // AC Ai/Base/ChatTriggerContext.h:160-161,172,185-186,193-194,198-199,201-202,213,215-216,231-234,240-241,252,
+    // 254,261-262,275,279,287: factories for the commands registered above.
+    static Trigger* open_items(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "open items"); }
+    static Trigger* unlock_items(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "unlock items"); }
+    static Trigger* stats(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "stats"); }
+    static Trigger* reputation(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "reputation"); }
+    static Trigger* loot_all(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "add all loot"); }
+    static Trigger* release(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "release"); }
+    static Trigger* use(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "use"); }
+    static Trigger* item_count(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "c"); }
+    static Trigger* equip_short(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "e"); }
+    static Trigger* unequip_short(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ue"); }
+    static Trigger* spells(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "spells"); }
+    static Trigger* accept(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "accept"); }
+    static Trigger* home(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "home"); }
+    static Trigger* emote(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "emote"); }
+    static Trigger* enter_vehicle(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "enter vehicle"); }
+    static Trigger* leave_vehicle(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "leave vehicle"); }
+    static Trigger* cast(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cast"); }
+    static Trigger* castnc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "castnc"); }
+    static Trigger* revive(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "revive"); }
+    static Trigger* warning(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "warning"); }
+    static Trigger* go(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "go"); }
+    static Trigger* attackers(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "attackers"); }
+    static Trigger* target(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "target"); }
+    static Trigger* drink(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "drink"); }
+    static Trigger* qi(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "qi"); }
+    static Trigger* wait_for_attack_time(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "wait for attack time"); }
+    static Trigger* maintenance(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "maintenance"); }
+    static Trigger* remove_glyph(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "remove glyph"); }
+    static Trigger* autogear(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear"); }
+    static Trigger* autogear_bis(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear bis"); }
 };
 
 #endif
