@@ -17564,6 +17564,26 @@ void Player::SendQuestUpdate(uint32 questId)
     UpdateForQuestWorldObjects();
     UpdatePhasing();
     UpdateAreaAndZonePhase();
+    SendConditionalQuestPOIUpdate();
+}
+
+// Quest POI blobs can have per-player conditions (CONDITION_SOURCE_TYPE_QUEST_POI_BLOB) that depend on other quests,
+// e.g. a turn-in NPC who stands somewhere else once a side quest is done. The client asks for a quest's blobs when it
+// gets the quest (and at login) and keeps them, so after every quest status change resend the blobs of the quests in
+// the log that have such conditions. Nothing is sent, and only a flag is checked, while no blob has conditions.
+void Player::SendConditionalQuestPOIUpdate()
+{
+    if (!sConditionMgr->HasAnyQuestPOIBlobConditions() || !IsInWorld() || GetSession()->IsBot())
+        return;
+
+    std::vector<uint32> questIds;
+    for (uint16 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
+        if (uint32 questId = GetQuestSlotQuestId(slot))
+            if (sConditionMgr->GetConditionsForQuestPOIBlobs(questId))
+                questIds.push_back(questId);
+
+    if (!questIds.empty())
+        GetSession()->SendQuestPOIQueryResponse(questIds);
 }
 
 QuestGiverStatus Player::GetQuestDialogStatus(Object const* questgiver)

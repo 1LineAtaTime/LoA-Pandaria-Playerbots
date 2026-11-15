@@ -63,7 +63,8 @@ char const* const ConditionMgr::StaticSourceTypeData[CONDITION_SOURCE_TYPE_MAX] 
     "Graveyard",
     "AreaTrigger",
     "Terrain Swap",
-    "AreaTrigger Client Triggered"
+    "AreaTrigger Client Triggered",
+    "Quest POI Blob"
 };
 
 ConditionMgr::ConditionTypeInfo const ConditionMgr::StaticConditionTypeData[CONDITION_MAX] =
@@ -1027,6 +1028,7 @@ bool ConditionMgr::CanHaveSourceGroupSet(ConditionSourceType sourceType)
             sourceType == CONDITION_SOURCE_TYPE_SMART_EVENT ||
             sourceType == CONDITION_SOURCE_TYPE_PHASE_DEFINITION ||
             sourceType == CONDITION_SOURCE_TYPE_NPC_VENDOR ||
+            sourceType == CONDITION_SOURCE_TYPE_QUEST_POI_BLOB ||
 		    sourceType == CONDITION_SOURCE_TYPE_PHASE);
 }
 
@@ -1159,6 +1161,18 @@ bool ConditionMgr::IsObjectMeetingVendorItemConditions(uint32 creatureId, uint32
         }
     }
     return true;
+}
+
+ConditionsByEntryMap const* ConditionMgr::GetConditionsForQuestPOIBlobs(uint32 questId) const
+{
+    if (QuestPOIBlobConditionStore.empty())
+        return nullptr;
+
+    ConditionEntriesByCreatureIdMap::const_iterator itr = QuestPOIBlobConditionStore.find(questId);
+    if (itr == QuestPOIBlobConditionStore.end())
+        return nullptr;
+
+    return &itr->second;
 }
 
 ConditionMgr* ConditionMgr::instance()
@@ -1402,6 +1416,13 @@ void ConditionMgr::LoadConditions(bool isReload)
                     valid = true;
                     ++count;
                     continue;
+                }
+                case CONDITION_SOURCE_TYPE_QUEST_POI_BLOB:
+                {
+                    QuestPOIBlobConditionStore[cond->SourceGroup][cond->SourceEntry].push_back(cond);
+                    valid = true;
+                    ++count;
+                    continue;   // freed in Clean() from QuestPOIBlobConditionStore
                 }
                 case CONDITION_SOURCE_TYPE_PHASE_DEFINITION:
                 {
@@ -1991,6 +2012,30 @@ bool ConditionMgr::isSourceTypeValid(Condition* cond) const
             if (!itemTemplate)
             {
                 TC_LOG_ERROR("sql.sql", "SourceEntry %u in `condition` table, does not exist in `item_template`, ignoring.", cond->SourceEntry);
+                return false;
+            }
+            break;
+        }
+        case CONDITION_SOURCE_TYPE_QUEST_POI_BLOB:
+        {
+            // grouped only: without a SourceGroup the row would land in the ungrouped store, which nothing reads
+            if (!cond->SourceGroup || !sObjectMgr->GetQuestTemplate(cond->SourceGroup))
+            {
+                TC_LOG_ERROR("sql.sql", "%s SourceGroup in `condition` table is not an existing quest id, ignoring.", cond->ToString().c_str());
+                return false;
+            }
+            bool blobFound = false;
+            if (cond->SourceEntry >= 0)
+                if (QuestPOIData const* poi = sObjectMgr->GetQuestPOIData(cond->SourceGroup))
+                    for (QuestPOIBlobData const& blob : poi->Blobs)
+                        if (blob.Idx1 == uint32(cond->SourceEntry))
+                        {
+                            blobFound = true;
+                            break;
+                        }
+            if (!blobFound)
+            {
+                TC_LOG_ERROR("sql.sql", "%s SourceEntry in `condition` table is not an Idx1 of a loaded `quest_poi` blob of quest %u, ignoring.", cond->ToString().c_str(), cond->SourceGroup);
                 return false;
             }
             break;
@@ -2710,6 +2755,13 @@ void ConditionMgr::Clean()
                 delete *i;
 
     NpcVendorConditionContainerStore.clear();
+
+    for (ConditionEntriesByCreatureIdMap::iterator itr = QuestPOIBlobConditionStore.begin(); itr != QuestPOIBlobConditionStore.end(); ++itr)
+        for (ConditionsByEntryMap::iterator it = itr->second.begin(); it != itr->second.end(); ++it)
+            for (ConditionContainer::const_iterator i = it->second.begin(); i != it->second.end(); ++i)
+                delete *i;
+
+    QuestPOIBlobConditionStore.clear();
 
     // this is a BIG hack, feel free to fix it if you can figure out the ConditionMgr ;)
     for (std::vector<Condition*>::const_iterator itr = AllocatedMemoryStore.begin(); itr != AllocatedMemoryStore.end(); ++itr)

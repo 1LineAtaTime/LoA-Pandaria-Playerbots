@@ -165,8 +165,9 @@ enum ConditionSourceType
     CONDITION_SOURCE_TYPE_AREATRIGGER                    = 28, // only master (this refers to dynamically spawned areatriggers, not the ones from AreaTrigger.dbc/db2)    
     CONDITION_SOURCE_TYPE_TERRAIN_SWAP                   = 29,
     CONDITION_SOURCE_TYPE_AREATRIGGER_CLIENT_TRIGGERED   = 30,
+    CONDITION_SOURCE_TYPE_QUEST_POI_BLOB                 = 31, // ours: SourceGroup = quest_poi.QuestID, SourceEntry = quest_poi.Idx1; blob is sent to the player only if met
 
-    CONDITION_SOURCE_TYPE_MAX                            = 31  // MAX
+    CONDITION_SOURCE_TYPE_MAX                            = 32  // MAX
 };
 
 enum RelationType
@@ -288,6 +289,9 @@ class TC_GAME_API ConditionMgr
         bool IsObjectMeetingVehicleSpellConditions(uint32 creatureId, uint32 spellId, Player* player, Unit* vehicle) const;
         bool IsObjectMeetingSmartEventConditions(int32 entryOrGuid, uint32 eventId, uint32 sourceType, Unit* unit, WorldObject* baseObject) const;
         bool IsObjectMeetingVendorItemConditions(uint32 creatureId, uint32 itemId, Player* player, Creature* vendor) const;
+        // Quest POI blob conditions (CONDITION_SOURCE_TYPE_QUEST_POI_BLOB), keyed by quest id then Idx1.
+        bool HasAnyQuestPOIBlobConditions() const { return !QuestPOIBlobConditionStore.empty(); }
+        ConditionsByEntryMap const* GetConditionsForQuestPOIBlobs(uint32 questId) const;
 
 
         void RegisterVehicleAI(VehicleAIBase* ai) { m_vehicleAIs.insert(ai); }
@@ -321,6 +325,7 @@ class TC_GAME_API ConditionMgr
         ConditionEntriesByCreatureIdMap VehicleSpellConditionStore;
         ConditionEntriesByCreatureIdMap SpellClickEventConditionStore;
         ConditionEntriesByCreatureIdMap NpcVendorConditionContainerStore;
+        ConditionEntriesByCreatureIdMap QuestPOIBlobConditionStore;     // questId -> Idx1 -> conditions
         SmartEventConditionContainer    SmartEventConditionStore;
 
         PhaseDefinitionConditionContainer PhaseDefinitionsConditionStore;

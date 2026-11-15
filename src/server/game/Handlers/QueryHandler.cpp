@@ -25,6 +25,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "ConditionMgr.h"
 #include "Player.h"
 #include "UpdateMask.h"
 #include "NPCHandler.h"
@@ -741,73 +742,77 @@ void WorldSession::HandleQuestPOIQuery(WorldPacket& recvData)
         questIds.insert(questId);
     }
 
+    SendQuestPOIQueryResponse(std::vector<uint32>(questIds.begin(), questIds.end()));
+}
+
+// Answers a quest POI query, and is also sent unsolicited by Player::SendConditionalQuestPOIUpdate. A blob that has
+// conditions (CONDITION_SOURCE_TYPE_QUEST_POI_BLOB, SourceGroup = quest, SourceEntry = Idx1) is left out unless the
+// player meets them; a quest with no such conditions costs one lookup in an almost empty map.
+void WorldSession::SendQuestPOIQueryResponse(std::vector<uint32> const& questIds)
+{
     ByteBuffer poiData;
 
-    WorldPacket data(SMSG_QUEST_POI_QUERY_RESPONSE, 4+(4+4)*count);
+    WorldPacket data(SMSG_QUEST_POI_QUERY_RESPONSE, 4+(4+4)*questIds.size());
     data.WriteBits(questIds.size(), 20);
 
+    std::vector<QuestPOIBlobData const*> blobs;
     for (uint32 questId : questIds)
     {
-        bool questOk = false;
+        blobs.clear();
 
         uint16 questSlot = _player->FindQuestSlot(questId);
-
-        if (questSlot != MAX_QUEST_LOG_SIZE)
-            questOk =_player->GetQuestSlotQuestId(questSlot) == questId;
+        bool questOk = questSlot != MAX_QUEST_LOG_SIZE && _player->GetQuestSlotQuestId(questSlot) == questId;
 
         if (questOk)
         {
-            QuestPOIData const* POI = sObjectMgr->GetQuestPOIData(questId);
-
-            if (POI)
+            if (QuestPOIData const* POI = sObjectMgr->GetQuestPOIData(questId))
             {
-                data.WriteBits(POI->Blobs.size(), 18);          // POI count bits
-
-                for (const auto&blob : POI->Blobs)
+                ConditionsByEntryMap const* blobConditions = sConditionMgr->GetConditionsForQuestPOIBlobs(questId);
+                for (auto const& blob : POI->Blobs)
                 {
-                    data.WriteBits(blob.Points.size(), 21);     // POI points count bits
-
-                    poiData << uint32(blob.Floor);              // floor id
-
-                    for (auto point : blob.Points)
+                    if (blobConditions)
                     {
-                        poiData << int32(point.X);              // POI point x
-                        poiData << int32(point.Y);              // POI point y
+                        auto itr = blobConditions->find(blob.Idx1);
+                        if (itr != blobConditions->end() && !sConditionMgr->IsObjectMeetToConditions(_player, itr->second))
+                            continue;
                     }
-
-                    poiData << int32(blob.ObjectiveIndex);      // objective index
-                    poiData << uint32(blob.Idx1);               // POI index
-                    poiData << uint32(blob.QuestObjectiveId);   // quest objective id
-                    poiData << uint32(0);                       // unknown (new 5.x.x)
-                    poiData << uint32(blob.MapId);              // mapid
-                    poiData << uint32(blob.Points.size());      // POI points count
-                    poiData << uint32(blob.WorldMapAreaId);     // areaid
-                    poiData << uint32(0);                       // unknown (new 5.x.x)
-                    poiData << uint32(blob.Flags);              // flags
-                    poiData << uint32(blob.Priority);           // priority
+                    blobs.push_back(&blob);
                 }
-
-                poiData << uint32(questId);                     // quest ID
-                poiData << uint32(POI->Blobs.size());           // POI count
-            }
-            else
-            {
-                poiData << uint32(questId);
-                poiData << uint32(0);
-
-                data.WriteBits(0, 18);
             }
         }
-        else
+
+        // a quest not in the log, without POI data or with every blob filtered out is sent with 0 blobs
+        data.WriteBits(blobs.size(), 18);                   // POI count bits
+
+        for (QuestPOIBlobData const* blob : blobs)
         {
-            poiData << uint32(questId);
-            poiData << uint32(0);
+            data.WriteBits(blob->Points.size(), 21);        // POI points count bits
 
-            data.WriteBits(0, 18);
+            poiData << uint32(blob->Floor);                 // floor id
+
+            for (auto point : blob->Points)
+            {
+                poiData << int32(point.X);                  // POI point x
+                poiData << int32(point.Y);                  // POI point y
+            }
+
+            poiData << int32(blob->ObjectiveIndex);         // objective index
+            poiData << uint32(blob->Idx1);                  // POI index
+            poiData << uint32(blob->QuestObjectiveId);      // quest objective id
+            poiData << uint32(0);                           // unknown (new 5.x.x)
+            poiData << uint32(blob->MapId);                 // mapid
+            poiData << uint32(blob->Points.size());         // POI points count
+            poiData << uint32(blob->WorldMapAreaId);        // areaid
+            poiData << uint32(0);                           // unknown (new 5.x.x)
+            poiData << uint32(blob->Flags);                 // flags
+            poiData << uint32(blob->Priority);              // priority
         }
+
+        poiData << uint32(questId);                         // quest ID
+        poiData << uint32(blobs.size());                    // POI count
     }
 
-    poiData << uint32(count);
+    poiData << uint32(questIds.size());                     // quest count, same as the 20 bits above
 
     data.FlushBits();
     data.append(poiData);

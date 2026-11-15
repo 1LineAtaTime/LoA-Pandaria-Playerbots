@@ -1112,6 +1112,7 @@ class TC_GAME_API WorldSession
         void HandleReadyForAccountDataTimes(WorldPacket& recvData);
         void HandleQuestNPCQuery(WorldPacket& recvData);
         void HandleQuestPOIQuery(WorldPacket& recvData);
+        void SendQuestPOIQueryResponse(std::vector<uint32> const& questIds);
         void HandleEjectPassenger(WorldPacket& data);
         void HandleEnterPlayerVehicle(WorldPacket& recvData);
         void HandleMissileTrajectoryCollision(WorldPacket& recvPacket);
