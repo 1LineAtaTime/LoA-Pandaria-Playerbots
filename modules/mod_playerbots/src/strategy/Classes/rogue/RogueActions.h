@@ -202,6 +202,14 @@ public:
     virtual bool isUseful() override;
 };
 
+// Crimson Tempest 121411 (level 83, 5 combo points): AoE finisher, bleed on every enemy within 8 yd.
+class CrimsonTempestAction : public CastMeleeSpellAction
+{
+public:
+    CrimsonTempestAction(PlayerbotAI* ai) : CastMeleeSpellAction(ai, "crimson tempest") {}
+    ActionThreatType getThreatType() override { return ActionThreatType::Aoe; }
+};
+
 class FanOfKnivesAction : public CastMeleeSpellAction
 {
 public:

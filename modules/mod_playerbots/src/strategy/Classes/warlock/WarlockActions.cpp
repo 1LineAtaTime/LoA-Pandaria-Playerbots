@@ -14,6 +14,12 @@
 #include "Playerbots.h"
 #include "ServerFacade.h"
 
+bool CastGrimoireOfSacrificeAction::isUseful()
+{
+    Pet* pet = bot->GetPet();
+    return pet && pet->IsAlive() && !bot->HasAura(108503);
+}
+
 // #693: AC WarlockActions.cpp:110-116 (mod-playerbots#2855): never while tanking, and not on a player target
 // (players have no threat).
 bool CastSoulShatterAction::isUseful()

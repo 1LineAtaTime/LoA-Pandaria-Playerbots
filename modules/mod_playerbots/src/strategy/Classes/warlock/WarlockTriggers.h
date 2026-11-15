@@ -350,6 +350,24 @@ public:
         : TwoTriggers(botAI, "enemy too close for spell", "metamorphosis not active") {}
 };
 
+// Grimoire of Sacrifice 108503 (Destruction talent): true while the warlock knows the talent, has a live demon out and
+// has not sacrificed it yet. The sacrifice consumes the demon, so the "warlock no pet" trigger below must stay
+// quiet while the buff is up, or the bot would summon and sacrifice in a loop.
+class GrimoireOfSacrificeTrigger : public Trigger
+{
+public:
+    GrimoireOfSacrificeTrigger(PlayerbotAI* botAI) : Trigger(botAI, "grimoire of sacrifice", 2 * 1000) {}
+    bool IsActive() override;
+};
+
+// "no pet" that ignores the missing demon while Grimoire of Sacrifice is active (the demon was sacrificed).
+class WarlockNoPetTrigger : public NoPetTrigger
+{
+public:
+    WarlockNoPetTrigger(PlayerbotAI* botAI) : NoPetTrigger(botAI) {}
+    bool IsActive() override;
+};
+
 class WrongPetTrigger : public Trigger
 {
 public:

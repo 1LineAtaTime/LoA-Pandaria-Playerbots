@@ -523,6 +523,32 @@ public:
     }
 };
 
+// Light of Dawn 85222 (Holy, 3 Holy Power): heals the most injured nearby allies, centred on the caster. Needs the
+// Holy Power gate here because the cast check ignores the power cost.
+class CastLightOfDawnAction : public CastSpellAction
+{
+public:
+    CastLightOfDawnAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "light of dawn") {}
+    std::string const GetTargetName() override { return "self target"; }
+    bool isUseful() override;
+};
+
+// Light's Hammer 114158 (level 90 talent): ground-targeted area heal/damage, 60 s cooldown. Holy casts it on the party
+// member to heal (the ground target lands on that member); Protection casts it on the current target.
+class CastLightsHammerOnPartyAction : public CastAoeHealSpellAction
+{
+public:
+    CastLightsHammerOnPartyAction(PlayerbotAI* botAI)
+        : CastAoeHealSpellAction(botAI, "light's hammer", 25.0f, HealingManaEfficiency::LOW)
+    {
+    }
+};
+
+SPELL_ACTION(CastLightsHammerAction, "light's hammer");
+
+// Denounce 2812 (Holy damage filler, 1.5 s cast).
+SPELL_ACTION(CastDenounceAction, "denounce");
+
 // Execution Sentence on the tank (role tank and health <= 60%).
 class CastExecutionSentenceOnPartyAction : public HealPartyMemberAction
 {

@@ -13,6 +13,19 @@
 #include "Spell.h"
 
 // #521 w13: see DruidTriggers.h - the 5.4.8 Eclipse auras have no duration, so check them without the duration filter.
+bool IncarnationChosenTrigger::IsActive()
+{
+    if (!bot->HasSpell(106731) || bot->HasAura(102560) || bot->HasSpellCooldown(106731))
+        return false;
+    // Eclipse (Solar) 48517 / Eclipse (Lunar) 48518
+    if (!bot->HasAura(48517) && !bot->HasAura(48518))
+        return false;
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (target && target->ToPlayer())
+        return true;
+    return AI_VALUE(uint8, "balance") <= 50;
+}
+
 bool EclipseSolarTrigger::IsActive() { return botAI->HasAura(getName(), GetTarget(), false, false, -1, false); }
 
 bool EclipseLunarTrigger::IsActive() { return botAI->HasAura(getName(), GetTarget(), false, false, -1, false); }

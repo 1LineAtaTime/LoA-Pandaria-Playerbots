@@ -83,6 +83,8 @@ bool ChakraSanctuaryTrigger::IsActive()
 
 bool SurgeOfLightProcTrigger::IsActive() { return bot->HasAura(114255); }
 
+bool SurgeOfDarknessProcTrigger::IsActive() { return bot->HasAura(87160); }
+
 bool LightwellCanCastTrigger::IsActive()
 {
     constexpr uint32 SPELL_LIGHTWELL = 126135;

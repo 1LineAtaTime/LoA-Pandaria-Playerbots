@@ -88,6 +88,15 @@ public:
     bool IsActive() override;
 };
 
+// Surge of Darkness (87160, From Darkness, Comes Light): the next Mind Spike is instant, free and keeps the DoTs.
+class SurgeOfDarknessProcTrigger : public Trigger
+{
+public:
+    SurgeOfDarknessProcTrigger(PlayerbotAI* botAI) : Trigger(botAI, "surge of darkness") {}
+
+    bool IsActive() override;
+};
+
 // Lane 8 / #863: MoP self-defensive health thresholds (shadow rows 25817 PW:S 60%, 25816 Vampiric Embrace 40%,
 // 25819 Renew 30%): the bot is in combat and its own health is at or below `pct`. Registered as "priest self health <n>".
 class PriestSelfHealthTrigger : public Trigger

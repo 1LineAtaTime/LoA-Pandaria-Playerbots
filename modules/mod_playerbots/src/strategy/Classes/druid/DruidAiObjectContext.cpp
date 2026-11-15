@@ -163,6 +163,7 @@ public:
         // Rotation lane 5 (#860): MoP druid ports (DruidTriggers.h tail).
         creators["starsurge"] = &DruidTriggerFactoryInternal::starsurge;
         creators["celestial alignment"] = &DruidTriggerFactoryInternal::celestial_alignment;
+        creators["incarnation: chosen of elune"] = &DruidTriggerFactoryInternal::incarnation_chosen;
         creators["nature's vigil"] = &DruidTriggerFactoryInternal::natures_vigil;
         creators["might of ursoc"] = &DruidTriggerFactoryInternal::might_of_ursoc;
         creators["savage defense"] = &DruidTriggerFactoryInternal::savage_defense;
@@ -256,6 +257,7 @@ private:
     static Trigger* force_of_nature(PlayerbotAI* botAI) { return new ForceOfNatureTrigger(botAI); }
     static Trigger* starsurge(PlayerbotAI* botAI) { return new StarsurgeTrigger(botAI); }
     static Trigger* celestial_alignment(PlayerbotAI* botAI) { return new CelestialAlignmentTrigger(botAI); }
+    static Trigger* incarnation_chosen(PlayerbotAI* botAI) { return new IncarnationChosenTrigger(botAI); }
     static Trigger* natures_vigil(PlayerbotAI* botAI) { return new NaturesVigilTrigger(botAI); }
     static Trigger* might_of_ursoc(PlayerbotAI* botAI) { return new MightOfUrsocTrigger(botAI); }
     static Trigger* savage_defense(PlayerbotAI* botAI) { return new SavageDefenseTrigger(botAI); }
@@ -330,6 +332,7 @@ public:
         creators["moonkin form"] = &DruidAiObjectContextInternal::moonkin_form;
         creators["cat form"] = &DruidAiObjectContextInternal::cat_form;
         creators["tree form"] = &DruidAiObjectContextInternal::tree_form;
+        creators["incarnation: chosen of elune"] = &DruidAiObjectContextInternal::incarnation_chosen;
         creators["travel form"] = &DruidAiObjectContextInternal::travel_form;
         creators["aquatic form"] = &DruidAiObjectContextInternal::aquatic_form;
         creators["caster form"] = &DruidAiObjectContextInternal::caster_form;
@@ -456,6 +459,7 @@ private:
     static Action* dire_bear_form(PlayerbotAI* botAI) { return new CastDireBearFormAction(botAI); }
     static Action* cat_form(PlayerbotAI* botAI) { return new CastCatFormAction(botAI); }
     static Action* tree_form(PlayerbotAI* botAI) { return new CastTreeFormAction(botAI); }
+    static Action* incarnation_chosen(PlayerbotAI* botAI) { return new CastIncarnationChosenAction(botAI); }
     static Action* travel_form(PlayerbotAI* botAI) { return new CastTravelFormAction(botAI); }
     static Action* aquatic_form(PlayerbotAI* botAI) { return new CastAquaticFormAction(botAI); }
     static Action* caster_form(PlayerbotAI* botAI) { return new CastCasterFormAction(botAI); }

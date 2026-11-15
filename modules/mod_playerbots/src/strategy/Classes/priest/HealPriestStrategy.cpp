@@ -101,6 +101,11 @@ void HealPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // Flash Heal free, so spend it on the hurt party member first.
     triggers.push_back(new TriggerNode(
         "surge of light proc", NextAction::array(0, new NextAction("flash heal on party", ACTION_MEDIUM_HEAL + 6), nullptr)));
+    // Divine Star (level 90 talent): the bot turns toward the party member to heal first (see the action).
+    triggers.push_back(new TriggerNode(
+        "medium group heal setting", NextAction::array(0, new NextAction("divine star on party", ACTION_MEDIUM_HEAL + 6), nullptr)));
+    triggers.push_back(new TriggerNode(
+        "party member medium health", NextAction::array(0, new NextAction("divine star on party", ACTION_LIGHT_HEAL + 10), nullptr)));
     // Lane 8 / #863 (MoP rotation row 25607 disc / 25707 holy, group 1/9-1/11): Binding Heal when both the bot
     // and the target are hurt (BindingHealTrigger = party member low health + self below medium).
     triggers.push_back(new TriggerNode(

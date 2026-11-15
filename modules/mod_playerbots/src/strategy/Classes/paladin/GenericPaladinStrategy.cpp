@@ -99,6 +99,8 @@ void PaladinHealerDpsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
                             // ability in MoP, so this now casts the generic "judgement" action.
                             new NextAction("judgement", ACTION_DEFAULT + 0.3f),
                             new NextAction("consecration", ACTION_DEFAULT + 0.2f),
+                            // Denounce is the Holy damage filler (Exorcism is not a Holy spell in 5.4.8).
+                            new NextAction("denounce", ACTION_DEFAULT + 0.15f),
                             new NextAction("exorcism", ACTION_DEFAULT+ 0.1f),
                             nullptr)));
 }

@@ -115,6 +115,8 @@ bool CastEternalFlameOnPartyAction::isUseful()
     return HasHolyPowerForSpender(bot) && HealPartyMemberAction::isUseful();
 }
 
+bool CastLightOfDawnAction::isUseful() { return HasHolyPowerForSpender(bot) && CastSpellAction::isUseful(); }
+
 // Execution Sentence on the tank when it is <= 60% health
 bool CastExecutionSentenceOnPartyAction::isUseful()
 {

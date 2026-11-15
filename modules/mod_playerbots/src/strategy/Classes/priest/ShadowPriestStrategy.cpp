@@ -16,7 +16,9 @@ ShadowPriestStrategy::ShadowPriestStrategy(PlayerbotAI* botAI) : GenericPriestSt
 NextAction** ShadowPriestStrategy::getDefaultActions()
 {
     // Lane 8 / #863: MoP rotation row 25803 Cascade (group 0/10) sits above Mind Blast (0/3); it falls through when on cooldown.
-    return NextAction::array(0, new NextAction("cascade", ACTION_DEFAULT + 0.4f),
+    // Shadow picks Halo (120644) or Cascade at level 90; the one it did not learn fails as not known and falls through.
+    return NextAction::array(0, new NextAction("halo", ACTION_DEFAULT + 0.45f),
+                             new NextAction("cascade", ACTION_DEFAULT + 0.4f),
                              new NextAction("mind blast", ACTION_DEFAULT + 0.3f),
                              new NextAction("mind flay", ACTION_DEFAULT + 0.2f),
                              new NextAction("shadow word: death", ACTION_DEFAULT + 0.1f), // cast during movement
@@ -29,6 +31,10 @@ void ShadowPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // triggers.push_back(new TriggerNode("enemy out of spell", NextAction::array(0, new NextAction("reach spell",
     // ACTION_MOVE + 9), nullptr)));
+    // From Darkness, Comes Light: Surge of Darkness (87160) makes Mind Spike instant, free and DoT-safe. Between Mind
+    // Blast (+0.3) and Mind Flay (+0.2); the DoT and orb edges (ACTION_HIGH + 1..3) stay above it.
+    triggers.push_back(new TriggerNode(
+        "surge of darkness", NextAction::array(0, new NextAction("mind spike", ACTION_DEFAULT + 0.25f), nullptr)));
     triggers.push_back(
         new TriggerNode("shadowform", NextAction::array(0, new NextAction("shadowform", ACTION_HIGH), nullptr)));
     triggers.push_back(new TriggerNode("low mana", NextAction::array(0, new NextAction("dispersion", ACTION_HIGH

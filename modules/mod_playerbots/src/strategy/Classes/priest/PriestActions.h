@@ -154,6 +154,26 @@ public:
     std::string const GetTargetName() override { return "self target"; }
 };
 
+// Mind Spike (73510): a hard cast strips the caster's Shadow damage-over-time effects from the target, so it is only
+// cast on a Surge of Darkness proc (87160: instant, free, and keeps the DoTs). isUseful is in PriestActions.cpp.
+class CastMindSpikeAction : public CastSpellAction
+{
+public:
+    CastMindSpikeAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "mind spike") {}
+    bool isUseful() override;
+};
+
+// Divine Star (110744, MoP talent, Discipline and Holy): the star flies along the caster's facing, healing allies on
+// its path (and the caster twice), so the bot turns toward the party member to heal before casting. Cast on self.
+class CastDivineStarOnPartyAction : public CastSpellAction
+{
+public:
+    CastDivineStarOnPartyAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "divine star") {}
+    std::string const GetTargetName() override { return "self target"; }
+    bool isUseful() override;
+    bool Execute(Event event) override;
+};
+
 // Cascade (127632 / 121135, MoP talent): bouncing bolt. MoP rotation row 25803 (shadow, group 0/10, always).
 SPELL_ACTION(CastCascadeAction, "cascade");
 

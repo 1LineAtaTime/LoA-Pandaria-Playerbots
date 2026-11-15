@@ -90,7 +90,7 @@ bool PaladinHurtGroupTrigger::IsActive()
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
         Player* member = ref->GetSource();
-        if (member && member->IsAlive() && member->GetMapId() == bot->GetMapId() && member->GetHealthPct() < 50.0f &&
+        if (member && member->IsAlive() && member->GetMapId() == bot->GetMapId() && member->GetHealthPct() < pct &&
             bot->GetDistance(member) <= 40.0f)
             hurt.push_back(member);
     }

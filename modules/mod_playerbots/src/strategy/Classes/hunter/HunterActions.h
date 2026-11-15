@@ -181,6 +181,14 @@ public:
     std::string const GetTargetName() override { return "pet target"; }
 };
 
+// Focus Fire 82692 (Beast Mastery): consumes the pet's Frenzy stacks (aura 19615) for ranged haste on the hunter. The
+// spell fails without the stacks, so the trigger gates the cast.
+class CastFocusFireAction : public CastBuffSpellAction
+{
+public:
+    CastFocusFireAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "focus fire") {}
+};
+
 class CastKillCommandAction : public CastAuraSpellAction
 {
 public:

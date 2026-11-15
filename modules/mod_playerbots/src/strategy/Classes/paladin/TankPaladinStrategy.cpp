@@ -57,6 +57,9 @@ NextAction** TankPaladinStrategy::getDefaultActions()
                              // 5.4.8: Judgement of Wisdom does not exist; Judgement is a single unified
                              // ability in MoP, so this now casts the generic "judgement" action.
                              new NextAction("judgement", ACTION_DEFAULT + 0.35f),
+                             // Light's Hammer (level 90 talent, 60 s cooldown) on cooldown; its place in the Protection
+                             // priority is a guess (no 5.4 source found). Fails as not known without the talent.
+                             new NextAction("light's hammer", ACTION_DEFAULT + 0.3f),
                              new NextAction("consecration", ACTION_DEFAULT + 0.2f),
                              new NextAction("holy wrath", ACTION_DEFAULT + 0.1f),
                              new NextAction("melee", ACTION_DEFAULT), NULL);
@@ -87,6 +90,7 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         "light aoe", NextAction::array(0, new NextAction("avenger's shield", ACTION_HIGH + 5), nullptr)));
     triggers.push_back(
         new TriggerNode("medium aoe", NextAction::array(0, new NextAction("consecration", ACTION_HIGH + 7),
+                                                        new NextAction("light's hammer", ACTION_HIGH + 6.5f),
                                                         new NextAction("avenger's shield", ACTION_HIGH + 6),
                                                         // Hammer of the Righteous with >= 3 enemies in 5 yd
                                                         new NextAction("hammer of the righteous", ACTION_HIGH + 5),

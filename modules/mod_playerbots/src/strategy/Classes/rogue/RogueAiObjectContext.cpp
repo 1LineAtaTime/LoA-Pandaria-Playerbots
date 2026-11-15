@@ -89,6 +89,7 @@ public:
         creators["tricks of the trade on main tank"] = &RogueTriggerFactoryInternal::tricks_of_the_trade_on_main_tank;  // AC :83
         creators["adrenaline rush"] = &RogueTriggerFactoryInternal::adrenaline_rush;                // AC :85
         creators["blade flurry"] = &RogueTriggerFactoryInternal::blade_flurry;                      // AC :86
+        creators["crimson tempest"] = &RogueTriggerFactoryInternal::crimson_tempest;
 
         // Rotation port epic #854 / issue #859 (MoP rogue rows; beyond AC, MoP-only spells).
         creators["revealing strike"] = &RogueTriggerFactoryInternal::revealing_strike;
@@ -127,6 +128,11 @@ private:
     static Trigger* tricks_of_the_trade_on_main_tank(PlayerbotAI* botAI) { return new TricksOfTheTradeOnMainTankTrigger(botAI); }
     static Trigger* adrenaline_rush(PlayerbotAI* botAI) { return new AdrenalineRushTrigger(botAI); }
     static Trigger* blade_flurry(PlayerbotAI* botAI) { return new BladeFlurryTrigger(botAI); }
+    // Crimson Tempest: 5 combo points with 4+ enemies within 8 yd. The 4-target breakpoint is a conservative guess.
+    static Trigger* crimson_tempest(PlayerbotAI* botAI)
+    {
+        return new TwoTriggers(botAI, "combo points 5 available", "high aoe");
+    }
     static Trigger* revealing_strike(PlayerbotAI* botAI) { return new RevealingStrikeTrigger(botAI); }
     static Trigger* hemorrhage(PlayerbotAI* botAI) { return new HemorrhageTrigger(botAI); }
     static Trigger* shadowstep(PlayerbotAI* botAI) { return new ShadowstepTrigger(botAI); }
@@ -173,6 +179,7 @@ public:
         creators["envenom"] = &RogueAiObjectContextInternal::envenom;
         creators["tricks of the trade on main tank"] = &RogueAiObjectContextInternal::tricks_of_the_trade_on_main_tank;
         creators["fan of knives"] = &RogueAiObjectContextInternal::fan_of_knives;
+        creators["crimson tempest"] = &RogueAiObjectContextInternal::crimson_tempest;
         creators["killing spree"] = &RogueAiObjectContextInternal::killing_spree;
         // 5.4.8: replaces AC's item-based "use instant/deadly poison on main/off hand" (UseItemAction)
         // with a single self-cast poison buff spell -- MoP poisons have no per-hand item mechanic (#149).
@@ -224,6 +231,7 @@ private:
     static Action* sap(PlayerbotAI* botAI) { return new CastSapAction(botAI); }
     static Action* unstealth(PlayerbotAI* botAI) { return new UnstealthAction(botAI); }
     static Action* envenom(PlayerbotAI* ai) { return new EnvenomAction(ai); }
+    static Action* crimson_tempest(PlayerbotAI* ai) { return new CrimsonTempestAction(ai); }
     static Action* tricks_of_the_trade_on_main_tank(PlayerbotAI* ai)
     {
         return new CastTricksOfTheTradeOnMainTankAction(ai);

@@ -68,6 +68,20 @@ bool HuntersPetMediumHealthTrigger::IsActive()
 //   * AC includes "Player.h" for the `bot` member; this fork exposes it via the same headers.
 // ---------------------------------------------------------------------------
 
+bool FocusFireTrigger::IsActive()
+{
+    if (!bot->HasSpell(82692) || bot->HasAura(82692))
+        return false;
+    Pet* pet = bot->GetPet();
+    if (!pet || !pet->IsAlive())
+        return false;
+    Aura* frenzy = pet->GetAura(19615);
+    if (!frenzy || frenzy->GetStackAmount() < 5)
+        return false;
+    // Bestial Wrath: 19574 on the pet; the hunter-side aura id 34471 is a guess (not checked against the client data).
+    return !pet->HasAura(19574) && !bot->HasAura(34471);
+}
+
 bool KillCommandTrigger::IsActive() { return !botAI->HasAura("kill command", GetTarget()); }
 
 bool BlackArrowTrigger::IsActive()
