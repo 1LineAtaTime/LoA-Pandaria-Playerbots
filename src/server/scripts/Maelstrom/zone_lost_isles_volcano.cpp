@@ -594,6 +594,7 @@ namespace
             _started = false;
             _ended = false;
             _spellTimer = 5000;
+            StopThrall();
         }
 
         void MoveInLineOfSight(Unit* who) override
@@ -612,6 +613,12 @@ namespace
             _started = true;
             Talk(PRINCE_TEXT_ARRIVAL, player);
             AttackStart(player);
+
+            // Thrall (39594) stands next to the Prince and is "locked in combat" with him (Wowpedia, Final Confrontation).
+            // Both are static spawns, so no line-of-sight move ever made Thrall engage: he only stood and watched.
+            if (Creature* thrall = me->FindNearestCreature(NPC_THRALL_GALLYWIX_DOCKS, 60.0f))
+                if (thrall->IsAIEnabled && !thrall->IsInCombat())
+                    thrall->AI()->AttackStart(me);
         }
 
         void DamageTaken(Unit* attacker, uint32& damage) override
@@ -619,6 +626,15 @@ namespace
             if (_ended)
             {
                 damage = 0;
+                return;
+            }
+
+            // Thrall's blows (and any other NPC's) never take the Prince below 10%: the player in the uniform finishes
+            // him and gets the credit.
+            if (attacker && !attacker->GetCharmerOrOwnerPlayerOrPlayerItself())
+            {
+                uint32 const floorHp = me->CountPctFromMaxHealth(10);
+                damage = me->GetHealth() > floorHp ? std::min<uint32>(damage, me->GetHealth() - floorHp) : 0;
                 return;
             }
 
@@ -630,6 +646,7 @@ namespace
             me->SetFaction(35);
             me->CombatStop(true);
             me->GetThreatManager().ClearAllThreat();
+            StopThrall();
 
             if (attacker)
                 if (Player* killer = attacker->GetCharmerOrOwnerPlayerOrPlayerItself())
@@ -656,6 +673,25 @@ namespace
 
             if (!UpdateVictim())
                 return;
+
+            // Only Thrall left on the threat list (the player died or left): the fight resets instead of going on
+            // between the two NPCs, and the next player in a uniform starts it again.
+            if (!me->GetVictim()->GetCharmerOrOwnerPlayerOrPlayerItself())
+            {
+                bool playerLeft = false;
+                for (ThreatReference const* ref : me->GetThreatManager().GetUnsortedThreatList())
+                    if (ref->GetVictim() && ref->GetVictim()->GetCharmerOrOwnerPlayerOrPlayerItself())
+                    {
+                        playerLeft = true;
+                        break;
+                    }
+
+                if (!playerLeft)
+                {
+                    EnterEvadeMode();
+                    return;
+                }
+            }
 
             if (_spellTimer <= diff)
             {
@@ -707,6 +743,17 @@ namespace
                 me->SetRespawnDelay(30);
                 me->DespawnOrUnsummon();
             });
+        }
+
+        // Thrall leaves the fight when it ends (surrender) or when the Prince resets (the player left or died).
+        void StopThrall()
+        {
+            if (!me->IsInWorld())
+                return;
+
+            if (Creature* thrall = me->FindNearestCreature(NPC_THRALL_GALLYWIX_DOCKS, 60.0f))
+                if (thrall->IsAIEnabled && thrall->IsInCombat() && thrall->GetVictim() == me)
+                    thrall->AI()->EnterEvadeMode();
         }
 
         void ThrallTalk(uint8 group)
