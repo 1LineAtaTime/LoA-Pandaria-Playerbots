@@ -8,6 +8,7 @@
 #include "FreeBGJoinAction.h"       // #611 (AC ActionContext.h:196)
 #include "CastCustomSpellAction.h"   // #611 (AC ActionContext.h:195,199)
 #include "GuildCreateActions.h"      // #611 (AC ActionContext.h:204-208)
+#include "GuildManagementActions.h"  // AC ActionContext.h:37 (guild manage nearby)
 #include "EmoteAction.h"
 #include "GreetAction.h"
 #include "SuggestWhatToDoAction.h"  // #195/#322
@@ -134,6 +135,7 @@ public:
         creators["offer petition nearby"] = &ActionContext::offer_petition_nearby;
         creators["turn in petition"] = &ActionContext::turn_in_petition;
         creators["buy tabard"] = &ActionContext::buy_tabard;
+        creators["guild manage nearby"] = &ActionContext::guild_manage_nearby;  // AC ActionContext.h:209 (dormant: "guild" strategy only)
         creators["aggressive target"] = &ActionContext::aggressive_target;
         // #271 (AC ActionContext.h:89,100,104,105,153): the five MovementActions AC both HAS and REGISTERS, and this fork had neither
         // Registered with AC's exact names so the ported classes are reachable - before this they
@@ -437,6 +439,7 @@ private:
     static Action* offer_petition_nearby(PlayerbotAI* botAI) { return new PetitionOfferNearbyAction(botAI); }
     static Action* turn_in_petition(PlayerbotAI* botAI) { return new PetitionTurnInAction(botAI); }
     static Action* buy_tabard(PlayerbotAI* botAI) { return new BuyTabardAction(botAI); }
+    static Action* guild_manage_nearby(PlayerbotAI* botAI) { return new GuildManageNearbyAction(botAI); }
     static Action* move_from_dark_portal(PlayerbotAI* botAI) { return new MoveFromDarkPortalAction(botAI); }
     static Action* aggressive_target(PlayerbotAI* botAI) { return new AggressiveTargetAction(botAI); }
     // #271 - the nine MovementActions ported from AC (AC ActionContext.h:297,318,322,323,366 + the

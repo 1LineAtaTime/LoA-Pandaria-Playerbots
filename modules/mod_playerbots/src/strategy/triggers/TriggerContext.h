@@ -19,6 +19,7 @@
 #include "NewRpgTriggers.h"
 #include "RpgTriggers.h"     // #272/#201 (AC TriggerContext.h:23)
 #include "TravelTriggers.h"  // #269 (AC TriggerContext.h:26)
+#include "GuildTriggers.h"   // AC TriggerContext.h:13
 #include "RangeTriggers.h"
 #include "Player.h"
 
@@ -287,6 +288,10 @@ public:
         creators["rpg home bind"] = &TriggerContext::rpg_home_bind;
         creators["rpg queue bg"] = &TriggerContext::rpg_queue_bg;
         creators["rpg buy petition"] = &TriggerContext::rpg_buy_petition;
+        // AC TriggerContext.h:218-220 (the "guild" strategy only, dormant as in AC)
+        creators["petition signed"] = &TriggerContext::petition_signed;
+        creators["buy tabard"] = &TriggerContext::buy_tabard;
+        creators["leave large guild"] = &TriggerContext::leave_large_guild;
         creators["rpg use"] = &TriggerContext::rpg_use;
         creators["rpg spell"] = &TriggerContext::rpg_spell;
         creators["rpg craft"] = &TriggerContext::rpg_craft;
@@ -479,6 +484,9 @@ private:
     static Trigger* rpg_home_bind(PlayerbotAI* botAI) { return new RpgHomeBindTrigger(botAI); }
     static Trigger* rpg_queue_bg(PlayerbotAI* botAI) { return new RpgQueueBGTrigger(botAI); }
     static Trigger* rpg_buy_petition(PlayerbotAI* botAI) { return new RpgBuyPetitionTrigger(botAI); }
+    static Trigger* petition_signed(PlayerbotAI* botAI) { return new PetitionTurnInTrigger(botAI); }     // AC :435
+    static Trigger* buy_tabard(PlayerbotAI* botAI) { return new BuyTabardTrigger(botAI); }               // AC :436
+    static Trigger* leave_large_guild(PlayerbotAI* botAI) { return new LeaveLargeGuildTrigger(botAI); }  // AC :437
     static Trigger* rpg_use(PlayerbotAI* botAI) { return new RpgUseTrigger(botAI); }
     // AC TriggerContext.h:451: AC creates RpgUseTrigger here, not RpgSpellTrigger - carried verbatim.
     static Trigger* rpg_spell(PlayerbotAI* botAI) { return new RpgUseTrigger(botAI); }

@@ -764,6 +764,13 @@ bool RandomPlayerbotMgr::ProcessBot(Player* player)
         uint32 randomize = GetEventValue(bot, "randomize");
         if (!randomize)
         {
+            // AC Bot/RandomPlayerbotMgr.cpp:1550-1570 keeps the only GuildTaskMgr::Update caller commented out here
+            // (guild tasks stay dormant):
+            // if (player->GetGuildId())
+            //     if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
+            //         if (guild->GetLeaderGUID() == player->GetGUID())
+            //             for (std::vector<Player*>::iterator i = players.begin(); i != players.end(); ++i)
+            //                 GuildTaskMgr::instance().Update(*i, player);
             PerformanceMonitorOperation* pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "Randomize");
             Randomize(player);
             TC_LOG_DEBUG("playerbots", "Bot #%u %s:%u <%s>: randomized", bot.GetCounter(), player->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", player->GetLevel(), player->GetName().c_str());
@@ -3282,6 +3289,11 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
             TC_LOG_INFO("playerbots", "Bot %s (level %u) logged in with %u equipped item(s) - re-geared (#946)",
                 bot->GetName().c_str(), bot->GetLevel(), equipped);
         }
+
+        // AC Bot/RandomPlayerbotMgr.cpp:2675-2680: run guild recovery/assignment at login to handle empty guild tables
+        // after restart.
+        if (sPlayerbotAIConfig->randomBotGuildCount > 0)
+            factory.InitGuild();
     }
 
     // #971: a random bot leaves a stale group at login, as AC does (AC PlayerbotMgr.cpp:485-519, PlayerbotHolder::OnBotLogin:

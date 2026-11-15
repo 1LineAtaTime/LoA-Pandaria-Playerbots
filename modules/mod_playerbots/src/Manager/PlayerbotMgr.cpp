@@ -28,6 +28,7 @@
 #include <mutex>
 #include "Helper.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotGuildMgr.h"
 #include "PlayerbotRepository.h"
 #include "CharacterCache.h"
 #include "ChannelMgr.h"
@@ -988,6 +989,10 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
             if (botLoading.find(guid) != botLoading.end())
                 continue;
             if (ObjectAccessor::FindConnectedPlayer(guid))
+                continue;
+            // AC Bot/PlayerbotMgr.cpp:1174-1176: never hand out an addclass character that is in a real player's guild.
+            uint32 guildId = sCharacterCache->GetCharacterGuildIdByGuid(guid);
+            if (guildId && PlayerbotGuildMgr::instance().IsRealGuild(guildId))
                 continue;
 
             {

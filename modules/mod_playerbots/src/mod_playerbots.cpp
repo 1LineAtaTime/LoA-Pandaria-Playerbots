@@ -18,7 +18,9 @@
 #include "WorldSocket.h"
 
 #include "Playerbots.h"
+#include "GuildTaskMgr.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotGuildMgr.h"
 #include "NewRpgDuelSpot.h"  // #201 (#614): sDuelSpotMgr for the duel reset
 #include "RandomPlayerbotMgr.h"
 #include "RandomItemManager.h"
@@ -150,8 +152,11 @@ class PlayerbotsScript : public PlayerbotScript
 public:
     PlayerbotsScript() : PlayerbotScript("PlayerbotsScript") {}
 
-    void OnPlayerbotCheckKillTask(Player* /*player*/, Unit* /*victim*/) override
+    // AC Script/Playerbots.cpp:499-503 (a no-op while AiPlayerbot.EnableGuildTasks = 0, as in AC).
+    void OnPlayerbotCheckKillTask(Player* player, Unit* victim) override
     {
+        if (player)
+            GuildTaskMgr::instance().CheckKillTask(player, victim);
     }
 
     void OnPlayerbotCheckPetitionAccount(Player* player, bool& found) override
@@ -367,6 +372,7 @@ void AddSC_mod_playerbots()
     new PlayerbotsWorldScript();
     new PlayerbotsScript();
     new PlayerbotsPlayerScript();
+    PlayerBotsGuildValidationScript();  // AC Script/Playerbots.cpp:637 (hourly random-bot guild cache validation)
 
     AddSC_playerbots_commandscript();
 }

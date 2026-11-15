@@ -40,6 +40,9 @@ public:
     void InitPotions();
     void InitConsumables();
     void CleanupConsumables();
+    /// AC PlayerbotFactory::InitGuild (Bot/Factory/PlayerbotFactory.cpp:4883-4914): join or found a random-bot guild
+    /// (PlayerbotGuildMgr) and carry the guild tabard. Public like AC's: RandomPlayerbotMgr::OnBotLoginInternal calls it.
+    void InitGuild();
 private:
     void Prepare();
     void CancelAuras();

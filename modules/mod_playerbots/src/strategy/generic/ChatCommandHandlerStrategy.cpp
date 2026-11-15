@@ -155,6 +155,12 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : Pas
     supported.push_back("share");
     supported.push_back("rpg status");    // #536 AC ChatCommandHandlerStrategy.cpp:95
     supported.push_back("rpg do quest");  // #536 AC :96
+    // AC ChatCommandHandlerStrategy.cpp:159-163: guild management chat commands.
+    supported.push_back("ginvite");
+    supported.push_back("guild promote");
+    supported.push_back("guild demote");
+    supported.push_back("guild remove");
+    supported.push_back("guild leave");
     supported.push_back("rtsc");  // #648 AC ChatCommandHandlerStrategy.cpp:164
     supported.push_back("hire");  // #258 AC :152
 }

@@ -14,6 +14,7 @@
 #include "Config.h"
 #include "Event.h"
 #include "GameObject.h"
+#include "GuildTaskMgr.h"
 #include "LootMgr.h"
 #include "LootStrategyValue.h"
 #include "LootObjectStack.h"
@@ -487,6 +488,14 @@ bool StoreLootAction::Execute(Event /*event*/)
             if (!item->currency)
                 if (ItemTemplate const* lootedProto = sObjectMgr->GetItemTemplate(item->itemid))
                     lootedProtos.push_back(lootedProto);
+
+            // AC LootAction.cpp:463-473: a random bot with a master reports the loot to its group mates' guild tasks
+            // (dormant while AiPlayerbot.EnableGuildTasks = 0). AC's trade-discount half of that block is not on this fork.
+            if (!item->currency && sRandomPlayerbotMgr->IsRandomBot(bot) && botAI->GetMaster())
+                if (Group* group = bot->GetGroup())
+                    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+                        if (ref->GetSource() && ref->GetSource() != bot)
+                            GuildTaskMgr::instance().CheckItemTask(item->itemid, item->count, ref->GetSource(), bot);
         }
 
         if (!allowedSlots.empty())

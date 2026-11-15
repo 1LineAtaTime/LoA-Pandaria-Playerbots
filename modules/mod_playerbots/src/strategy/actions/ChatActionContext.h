@@ -23,6 +23,7 @@
 #include "DebugAction.h"  // #611 build 13 (AC ChatActionContext.h:22)
 #include "GossipHelloAction.h"
 #include "GuildBankAction.h"
+#include "GuildManagementActions.h"  // AC ChatActionContext.h:32
 #include "MailAction.h"
 #include "SellAction.h"
 #include "SetHomeAction.h"  // #611 (AC ChatActionContext.h:149)
@@ -145,6 +146,12 @@ public:
         creators["buy"] = &ChatActionContext::buy;
         creators["trainer"] = &ChatActionContext::trainer;
         creators["gb"] = &ChatActionContext::gb;
+        // AC ChatActionContext.h:192-196: guild management chat commands (on, as in AC).
+        creators["ginvite"] = &ChatActionContext::ginvite;
+        creators["guild promote"] = &ChatActionContext::guild_promote;
+        creators["guild demote"] = &ChatActionContext::guild_demote;
+        creators["guild remove"] = &ChatActionContext::guild_remove;
+        creators["guild leave"] = &ChatActionContext::guild_leave;
         creators["bank"] = &ChatActionContext::bank;
         creators["gossip hello"] = &ChatActionContext::gossip_hello;
         creators["sendmail"] = &ChatActionContext::sendmail;
@@ -212,6 +219,11 @@ private:
     static Action* buy(PlayerbotAI* botAI) { return new BuyAction(botAI); }
     static Action* trainer(PlayerbotAI* botAI) { return new TrainerAction(botAI); }
     static Action* gb(PlayerbotAI* botAI) { return new GuildBankAction(botAI); }
+    static Action* ginvite(PlayerbotAI* botAI) { return new GuildInviteAction(botAI); }         // AC :311
+    static Action* guild_promote(PlayerbotAI* botAI) { return new GuildPromoteAction(botAI); }  // AC :312
+    static Action* guild_demote(PlayerbotAI* botAI) { return new GuildDemoteAction(botAI); }    // AC :313
+    static Action* guild_remove(PlayerbotAI* botAI) { return new GuildRemoveAction(botAI); }    // AC :314
+    static Action* guild_leave(PlayerbotAI* botAI) { return new GuildLeaveAction(botAI); }      // AC :315
     static Action* bank(PlayerbotAI* botAI) { return new BankAction(botAI); }
     static Action* gossip_hello(PlayerbotAI* botAI) { return new GossipHelloAction(botAI); }
     static Action* sendmail(PlayerbotAI* botAI) { return new SendMailAction(botAI); }

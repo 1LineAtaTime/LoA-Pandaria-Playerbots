@@ -94,6 +94,12 @@ public:
         creators["trainer"] = &ChatTriggerContext::trainer;
         creators["gb"] = &ChatTriggerContext::gb;
         creators["gbank"] = &ChatTriggerContext::gb;
+        // AC ChatTriggerContext.h:137-141: guild management chat commands.
+        creators["ginvite"] = &ChatTriggerContext::ginvite;
+        creators["guild promote"] = &ChatTriggerContext::guild_promote;
+        creators["guild demote"] = &ChatTriggerContext::guild_demote;
+        creators["guild remove"] = &ChatTriggerContext::guild_remove;
+        creators["guild leave"] = &ChatTriggerContext::guild_leave;
         creators["bank"] = &ChatTriggerContext::bank;
         creators["talk"] = &ChatTriggerContext::talk;
         creators["sendmail"] = &ChatTriggerContext::sendmail;
@@ -194,6 +200,12 @@ private:
     static Trigger* reward(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "r"); }
     static Trigger* trainer(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "trainer"); }
     static Trigger* gb(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "gb"); }
+    // AC ChatTriggerContext.h:269-273
+    static Trigger* ginvite(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ginvite"); }
+    static Trigger* guild_promote(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild promote"); }
+    static Trigger* guild_demote(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild demote"); }
+    static Trigger* guild_remove(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild remove"); }
+    static Trigger* guild_leave(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild leave"); }
     static Trigger* bank(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "bank"); }
     static Trigger* talk(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "talk"); }
     static Trigger* sendmail(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "sendmail"); }

@@ -17,6 +17,7 @@
 #include "ArenaTeam.h"
 #include "DBCStores.h"
 #include "DBCStructure.h"
+#include "Guild.h"
 #include "GuildMgr.h"
 #include "Helper.h"
 #include "Item.h"
@@ -30,6 +31,7 @@
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotGuildMgr.h"
 #include "PlayerbotRepository.h"
 #include "PlayerbotSpec.h"
 #include "Playerbots.h"
@@ -876,6 +878,14 @@ void BotFactory::Randomize(bool incremental)
     InitReagents();
     InitConsumables();
 
+    // AC PlayerbotFactory::Randomize (Bot/Factory/PlayerbotFactory.cpp:1004-1013): guilds after the consumables and
+    // glyphs (InitGlyphs runs earlier here, after the talents).
+    if (sPlayerbotAIConfig->randomBotGuildCount > 0)
+    {
+        TC_LOG_DEBUG("playerbots", "Initializing guilds...");
+        InitGuild();
+    }
+
     bot->SetMoney(urand(level * 100000, level * 5 * 100000));
     bot->SetHealth(bot->GetMaxHealth());
     bot->SetPower(POWER_MANA, bot->GetMaxPower(POWER_MANA));
@@ -912,7 +922,50 @@ void BotFactory::Refresh()
     if (bot->GetMoney() < money)
         bot->SetMoney(money);
 }
- 
+
+// AC PlayerbotFactory::InitGuild (Bot/Factory/PlayerbotFactory.cpp:4883-4914). World thread only: Guild::Create and
+// GuildMgr are not thread-safe (callers: Randomize from RandomPlayerbotMgr / PlayerbotHolder commands, and
+// RandomPlayerbotMgr::OnBotLoginInternal). MoP-only: a neutral Pandaren (Wandering Isle, before the faction pick) cannot
+// be in a guild on 5.4.8 (Guild::HandleInviteMember refuses RACE_PANDAREN_NEUTRAL), so it gets its guild at the first
+// login or randomize after the pick.
+void BotFactory::InitGuild()
+{
+    if (bot->GetGuildId())
+    {
+        if (!bot->HasItemCount(5976, 1) && bot->GetLevel() > 9)
+            StoreItem(bot, 5976, 1);
+        return;
+    }
+
+    if (sPlayerbotAIConfig->deleteRandomBotGuilds)
+        return;
+
+    if (bot->GetRace() == RACE_PANDAREN_NEUTRAL)  // MoP-only, see above
+        return;
+
+    std::string guildName = PlayerbotGuildMgr::instance().AssignToGuild(bot);
+    if (guildName.empty())
+        return;
+
+    Guild* guild = sGuildMgr->GetGuildByName(guildName);
+    if (!guild)
+    {
+        if (!PlayerbotGuildMgr::instance().CreateGuild(bot, guildName))
+            TC_LOG_ERROR("playerbots", "Failed to create guild %s for bot %s", guildName.c_str(), bot->GetName().c_str());
+        return;
+    }
+    else
+    {
+        if (guild->AddMember(bot->GetGUID(), urand(GR_OFFICER, GR_INITIATE)))
+            PlayerbotGuildMgr::instance().OnGuildUpdate(guild);
+        else
+            TC_LOG_ERROR("playerbots", "Bot %s failed to join guild %s.", bot->GetName().c_str(), guildName.c_str());
+    }
+    // add guild tabard
+    if (bot->GetGuildId() && bot->GetLevel() > 9 && urand(0, 4) && !bot->HasItemCount(5976, 1))
+        StoreItem(bot, 5976, 1);
+}
+
 void BotFactory::InitPet()
 {
     Pet* pet = bot->GetPet();

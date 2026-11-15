@@ -24,6 +24,7 @@
 #include "UseFoodStrategy.h"
 #include "GuardStrategy.h"
 #include "GroupStrategy.h"
+#include "GuildStrategy.h"  // AC StrategyContext.h:30
 #include "LootNonCombatStrategy.h"
 #include "MeleeCombatStrategy.h"
 #include "MoveFromGroupStrategy.h"
@@ -68,6 +69,7 @@ public:
         creators["ranged"] = &StrategyContext::ranged;
         creators["dead"] = &StrategyContext::dead;
         creators["group"] = &StrategyContext::group;
+        creators["guild"] = &StrategyContext::guild;  // AC StrategyContext.h:124 (not added by AiFactory, as in AC)
         // #163 S8 (AC parity, AiFactory.cpp:288): healthstone/potion use at critical health/medium mana.
         creators["potions"] = &StrategyContext::potions;
         // #163 S8 (AC parity): de-prioritize a long cast that won't land before the target dies.
@@ -195,6 +197,7 @@ private:
     static Strategy* ranged(PlayerbotAI* botAI) { return new RangedCombatStrategy(botAI); }
     static Strategy* dead(PlayerbotAI* botAI) { return new DeadStrategy(botAI); }
     static Strategy* group(PlayerbotAI* botAI) { return new GroupStrategy(botAI); }
+    static Strategy* guild(PlayerbotAI* botAI) { return new GuildStrategy(botAI); }  // AC :199
     static Strategy* potions(PlayerbotAI* botAI) { return new UsePotionsStrategy(botAI); }
     static Strategy* cast_time(PlayerbotAI* botAI) { return new CastTimeStrategy(botAI); }
     static Strategy* duel(PlayerbotAI* botAI) { return new DuelStrategy(botAI); }

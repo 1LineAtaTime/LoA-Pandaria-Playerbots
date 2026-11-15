@@ -51,6 +51,7 @@
 #include "PointMovementGenerator.h"
 #include "Playerbots.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotGuildMgr.h"
 #include "PlayerbotSpec.h"
 #include "PerformanceMonitor.h"
 #include "RandomPlayerbotMgr.h"
@@ -2735,22 +2736,15 @@ GuilderType PlayerbotAI::GetGuilderType()
 // AC Bot/PlayerbotAI.cpp:5570
 bool PlayerbotAI::HasSkill(SkillType skill) { return bot->HasSkill(skill) && bot->GetSkillValue(skill) > 0; }
 
-// AC Bot/PlayerbotAI.cpp:6235 -> PlayerbotGuildMgr::IsRealGuild (PlayerbotGuildMgr.cpp:297): a real guild is one whose
-// leader's account is not in the bot accounts list. The fork has no PlayerbotGuildMgr cache, so the same test is
-// evaluated directly against the guild leader's account.
+// AC Bot/PlayerbotAI.cpp:6279-6286: a real guild is one whose leader's account is not in the bot accounts list, read
+// from the PlayerbotGuildMgr cache (Mgr/Guild/PlayerbotGuildMgr.cpp; filled at startup, by bot guild creation and by the
+// hourly validation). The cache read is lock-guarded, so the map threads (AllowActive) may call this.
 bool PlayerbotAI::IsInRealGuild()
 {
     if (!bot->GetGuildId())
         return false;
 
-    Guild* guild = sGuildMgr->GetGuildById(bot->GetGuildId());
-    if (!guild)
-        return false;
-
-    // #72: CharacterCache, not ObjectMgr::GetPlayerAccountIdByGUID - that runs a synchronous character DB query
-    // when the leader is offline, and AllowActive() now calls this from the map threads (AC reads a cache list).
-    uint32 const leaderAccount = sCharacterCache->GetCharacterAccountIdByGuid(guild->GetLeaderGUID());
-    return leaderAccount && !sPlayerbotAIConfig->IsInRandomAccountList(leaderAccount);
+    return PlayerbotGuildMgr::instance().IsRealGuild(bot->GetGuildId());
 }
 
 bool PlayerbotAI::HasActivePlayerMaster()
