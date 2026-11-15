@@ -19,6 +19,7 @@ enum BySkinOfHisTeeth
     QUEST_BY_THE_SKIN_OF_HIS_TEETH = 14154,
 
     SPELL_BSOHT_BUFF               = 66914,
+    SPELL_BSOHT_TIMER              = 68218,
     SPELL_BSOHT_ENRAGE             = 8599,
     SPELL_BSOHT_LEFT_HOOK          = 67825,
     SPELL_BSOHT_DEMORALIZING_SHOUT = 61044,
@@ -108,7 +109,13 @@ public:
         void StartEvent(ObjectGuid playerGUID)
         {
             if (_eventActive)
-                return; // Do not reset an encounter already in progress.
+            {
+                // A restart (or a second player) while the waves are running keeps the current wave cycle
+                // but runs it for the full duration again, matching the new 2-minute aura.
+                _eventTimer = EVENT_BSOHT_DURATION;
+                _playerGUID = playerGUID;
+                return;
+            }
             _firstWave = true;
             _spawnTimer = 0;
             _eventActive = true;
@@ -200,17 +207,35 @@ class npc_lord_darius_crowley_c1 : public CreatureScript
 public:
     npc_lord_darius_crowley_c1() : CreatureScript("npc_lord_darius_crowley_c1") { }
 
+    static void StartScene(Player* player, Creature* creature)
+    {
+        // 66914 force-casts 66894 on the player: the 2-minute aura 68218 completes the quest (66915) when it
+        // runs out, so the player has to survive it. Sean Dempsey sends the worgen waves.
+        creature->CastSpell(player, SPELL_BSOHT_BUFF, true);
+
+        if (Creature* dempsey = creature->FindNearestCreature(NPC_SEAN_DEMPSEY, 100.0f))
+            if (npc_sean_dempsey::npc_sean_dempseyAI* ai = dynamic_cast<npc_sean_dempsey::npc_sean_dempseyAI*>(dempsey->AI()))
+                ai->StartEvent(player->GetGUID());
+    }
+
     bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
     {
         if (quest->GetQuestId() != QUEST_BY_THE_SKIN_OF_HIS_TEETH)
             return true;
 
-        creature->CastSpell(player, SPELL_BSOHT_BUFF, true);
-
-        if (Creature* dempsey = creature->FindNearestCreature(NPC_SEAN_DEMPSEY, 100.0f))
-            CAST_AI(npc_sean_dempsey::npc_sean_dempseyAI, dempsey->AI())->StartEvent(player->GetGUID());
-
+        StartScene(player, creature);
         return true;
+    }
+
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        // Dying (or logging out) removes the 2-minute aura, and the quest would then stay incomplete for good.
+        // Talking to Crowley again while the quest is taken and the aura is gone restarts the scene.
+        if (player->IsAlive() && player->GetQuestStatus(QUEST_BY_THE_SKIN_OF_HIS_TEETH) == QUEST_STATUS_INCOMPLETE
+            && !player->HasAura(SPELL_BSOHT_TIMER))
+            StartScene(player, creature);
+
+        return false; // the normal quest giver window still opens
     }
 
     struct npc_lord_darius_crowley_c1AI : public ScriptedAI
