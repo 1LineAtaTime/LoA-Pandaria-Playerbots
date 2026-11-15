@@ -213,15 +213,15 @@ PlayerbotAI::PlayerbotAI(Player* bot)
     masterIncomingPacketHandlers.AddHandler(CMSG_GROUP_UNINVITE_GUID, "uninvite guid");
     masterIncomingPacketHandlers.AddHandler(CMSG_REPOP_REQUEST, "release spirit");
     masterIncomingPacketHandlers.AddHandler(CMSG_RECLAIM_CORPSE, "revive from corpse");
-    // #179 (AC Bot/PlayerbotAI.cpp:171-177, spec section 3 "following the master"): use game
-    // object (meeting stone summon click), taxi with the master and area trigger / instance
-    // portal follow. 5.4.8 renames CMSG_ACTIVATETAXI(EXPRESS) to CMSG_ACTIVATE_TAXI(_EXPRESS); there
     // Beyond AC (AC Bot/PlayerbotAI.cpp:296-297 maps only the two opcodes above): the master's release puts every alive
     // party bot on "-follow,+stay" (ReleaseSpiritAction) and only a corpse reclaim switched them back, so a master who
     // came back at a spirit healer, or by accepting a resurrection, left the bots standing at the corpse. Both opcodes
     // run the same "welcome back" branch of ReviveFromCorpseAction.
     masterIncomingPacketHandlers.AddHandler(CMSG_SPIRIT_HEALER_ACTIVATE, "revive from corpse");
     masterIncomingPacketHandlers.AddHandler(CMSG_RESURRECT_RESPONSE, "revive from corpse");
+    // #179 (AC Bot/PlayerbotAI.cpp:171-177, spec section 3 "following the master"): use game
+    // object (meeting stone summon click), taxi with the master and area trigger / instance
+    // portal follow. 5.4.8 renames CMSG_ACTIVATETAXI(EXPRESS) to CMSG_ACTIVATE_TAXI(_EXPRESS); there
     // is no 5.4.8 CMSG_TAXICLEARALLNODES/CLEARNODE equivalent (opcode-mapping research), so the AC
     // "taxi done" handler has nothing to bind to and is left out.
     masterIncomingPacketHandlers.AddHandler(CMSG_GAMEOBJ_USE, "use game object");

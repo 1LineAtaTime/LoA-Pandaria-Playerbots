@@ -131,6 +131,7 @@ public:
 
 private:
     static Trigger* who(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "who"); }
+    static Trigger* talents(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "talents"); }
     static Trigger* taxi(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "taxi"); }   // #767 (AC :244)
     static Trigger* rpg_status(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rpg status"); }  // #536, AC :258
     static Trigger* rpg_do_quest(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rpg do quest"); }  // #536, AC :259
@@ -138,7 +139,6 @@ private:
     static Trigger* drop(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "drop"); }  // #146, AC :249
     static Trigger* share(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "share"); }  // #146, AC :250
     static Trigger* q(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "q"); }  // #146, AC :246
-    static Trigger* talents(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "talents"); }
     static Trigger* help(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "help"); }
     static Trigger* co(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "co"); }
     static Trigger* nc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "nc"); }

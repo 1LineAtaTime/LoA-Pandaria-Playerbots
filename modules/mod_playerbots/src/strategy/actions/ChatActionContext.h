@@ -67,8 +67,8 @@ public:
     ChatActionContext()
     {
         creators["who"] = &ChatActionContext::who;
-        // #611 (AC ChatActionContext.h:149,164-165): the chat actions the old-rpg sub-actions call through DoSpecificAction.
         creators["talents"] = &ChatActionContext::talents;  // AC ChatActionContext.h:134
+        // #611 (AC ChatActionContext.h:149,164-165): the chat actions the old-rpg sub-actions call through DoSpecificAction.
         creators["use"] = &ChatActionContext::use;
         creators["reward"] = &ChatActionContext::reward;  // #258 (AC ChatActionContext.h:132)
         creators["hire"] = &ChatActionContext::hire;      // #258 (AC :187)
@@ -158,6 +158,7 @@ public:
 
 private:
     static Action* who(PlayerbotAI* botAI) { return new WhoAction(botAI); }
+    static Action* talents(PlayerbotAI* botAI) { return new ChangeTalentsAction(botAI); }
     static Action* taxi(PlayerbotAI* botAI) { return new TaxiAction(botAI); }   // #767 (AC :285)
     static Action* rpg_status(PlayerbotAI* botAI) { return new TellRpgStatusAction(botAI); }  // #536, AC :301
     static Action* rpg_do_quest(PlayerbotAI* botAI) { return new StartRpgDoQuestAction(botAI); }  // #536, AC :302
@@ -166,7 +167,6 @@ private:
     static Action* nc(PlayerbotAI* botAI) { return new ChangeNonCombatStrategyAction(botAI); }
     static Action* dead(PlayerbotAI* botAI) { return new ChangeDeadStrategyAction(botAI); }
     static Action* rti(PlayerbotAI* botAI) { return new RtiAction(botAI); }
-    static Action* talents(PlayerbotAI* botAI) { return new ChangeTalentsAction(botAI); }
     static Action* follow_chat_shortcut(PlayerbotAI* botAI) { return new FollowChatShortcutAction(botAI); }
     static Action* stay_chat_shortcut(PlayerbotAI* botAI) { return new StayChatShortcutAction(botAI); }
     static Action* move_from_group_chat_shortcut(PlayerbotAI* botAI) { return new MoveFromGroupChatShortcutAction(botAI); }
