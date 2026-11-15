@@ -27,6 +27,15 @@
 #include "SmartScriptMgr.h"
 #include "GameObject.h"
 #include "CreatureTextMgr.h"
+#include "GilneasRidePath.h"
+#include "GilneasCrowleyRoute.h"
+#include "GilneasPrisonEvent.h"
+#include "GilneasCageRecovery.h"
+#include "SpellHistory.h"
+#include "ObjectMgr.h"
+#include "DBCStores.h"
+#include "Chat.h"
+#include <cmath>
 
 enum Gilneas
 {
@@ -624,6 +633,11 @@ struct npc_gilneas_city_guard_gate : public ScriptedAI
                 case EVENT_START_TALK_WITH_CITIZEN:
                 {
                     m_citizenGUID = GetRandomCitizen();
+                    if (m_citizenGUID.IsEmpty())
+                    {
+                        m_events.ScheduleEvent(EVENT_START_TALK_WITH_CITIZEN, 10s);
+                        break;
+                    }
                     m_emote = RAND(EMOTE_ONESHOT_COWER, EMOTE_STATE_TALK, EMOTE_ONESHOT_CRY, EMOTE_ONESHOT_BEG, EMOTE_ONESHOT_EXCLAMATION, EMOTE_ONESHOT_POINT);
                     m_say = 0;
 
@@ -678,6 +692,9 @@ struct npc_gilneas_city_guard_gate : public ScriptedAI
     {
         if (listOfCitizenGUID.empty())
             FillCitizenList();
+
+        if (listOfCitizenGUID.empty())
+            return ObjectGuid::Empty;
 
         uint8 rol = urand(0, listOfCitizenGUID.size() - 1);
         std::list<ObjectGuid>::iterator itr = listOfCitizenGUID.begin();
@@ -1021,12 +1038,17 @@ struct npc_josiah_avery_worgen_form : public PassiveAI
 
     void IsSummonedBy(Unit* summoner) override
     {
+        if (!summoner)
+            return;
         _playerGuid = summoner->GetGUID();
 
-        me->m_Events.AddLambdaEventAtOffset([this, summoner]()
+        me->m_Events.AddLambdaEventAtOffset([this]()
         {
-            me->SetFacingToObject(summoner);
-            _events.ScheduleEvent(EVENT_COSMETIC_ATTACK, 500ms);
+            if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGuid))
+            {
+                me->SetFacingToObject(player);
+                _events.ScheduleEvent(EVENT_COSMETIC_ATTACK, 500ms);
+            }
         }, 200);
     }
 
@@ -1054,10 +1076,12 @@ struct npc_josiah_avery_worgen_form : public PassiveAI
                     {
                         DoCast(player, SPELL_COSMETIC_ATTACK);
 
-                        me->m_Events.AddLambdaEventAtOffset([this, player]()
+                        me->m_Events.AddLambdaEventAtOffset([this]()
                         {
-                            if (Creature* lorna = me->FindNearestCreature(NPC_LORNA_CROWLEY, 30.0f, true))
-                                player->GetMotionMaster()->MoveKnockbackFrom(lorna->GetPositionX(), lorna->GetPositionY(), 30, 30);
+                            if (Player* currentPlayer = ObjectAccessor::GetPlayer(*me, _playerGuid))
+                                if (currentPlayer->IsWithinDistInMap(me, 50.0f))
+                                if (Creature* lorna = me->FindNearestCreature(NPC_LORNA_CROWLEY, 30.0f, true))
+                                    currentPlayer->GetMotionMaster()->MoveKnockbackFrom(lorna->GetPositionX(), lorna->GetPositionY(), 30, 30);
                         }, 400);
 
                         if (Creature* lorna = me->FindNearestCreature(NPC_LORNA_CROWLEY, 30.0f, true))
@@ -1422,12 +1446,13 @@ public:
 
         void PassengerBoarded(Unit* who, int8 /*seatId*/, bool apply) override
         {
+            if (!who)
+                return;
+
             if (who->GetTypeId() == TYPEID_PLAYER)
             {
-                // #998: the escort starts on the next UpdateAI, not here. The 14293 accept script summons this horse and
-                // seats the player in the same call, so this runs before the horse's first Creature::Update, whose
-                // JustAppeared() (npc_escortAI, fired on every creature's first update since upstream c6c7d32e) sets the
-                // escort state back to NONE: a Start() made here was lost and the horse never left its spawn.
+                _playerSeated = apply;
+
                 if (apply)
                     _riderToEscort = who->GetGUID();
             }
@@ -1453,7 +1478,8 @@ public:
             {
                 case 1:
                 {
-                    if (Unit* passenger = me->GetVehicleKit()->GetPassenger(0))
+                    if (Vehicle* kit = me->GetVehicleKit())
+                    if (Unit* passenger = kit->GetPassenger(0))
                     {
                         if (Vehicle* vehicle = me->GetVehicleKit())
                             if (Unit* passenger = vehicle->GetPassenger(0))
@@ -1464,7 +1490,8 @@ public:
                 }
                 case 17:
                 {
-                    if (Unit* passenger = me->GetVehicleKit()->GetPassenger(0))
+                    if (Vehicle* kit = me->GetVehicleKit())
+                    if (Unit* passenger = kit->GetPassenger(0))
                     {
                         if (Creature* aranas = passenger->FindNearestCreature(NPC_KRENNAN_ARANAS, 50.0f))
                             if (Vehicle* vehicle = me->GetVehicleKit())
@@ -1474,9 +1501,12 @@ public:
 
                         me->GetMotionMaster()->MoveJump(-1673.04f, 1344.91f, 15.1353f, 25.0f, 15.0f);
 
-                        me->m_Events.AddLambdaEventAtOffset([this, passenger]()
+                        ObjectGuid passengerGuid = passenger->GetGUID();
+                        me->m_Events.AddLambdaEventAtOffset([this, passengerGuid]()
                         {
-                            Talk(EMOTE_SAVE_KRENNAN_ARANAS, passenger);
+                            if (Player* currentPassenger = ObjectAccessor::GetPlayer(*me, passengerGuid))
+                                if (currentPassenger->GetVehicleBase() == me)
+                                    Talk(EMOTE_SAVE_KRENNAN_ARANAS, currentPassenger);
                         }, 2000);
                     }
                     break;
@@ -1524,7 +1554,8 @@ public:
                 }
                 case 44:
                 {
-                    if (Unit* passenger = me->GetVehicleKit()->GetPassenger(0))
+                    if (Vehicle* kit = me->GetVehicleKit())
+                    if (Unit* passenger = kit->GetPassenger(0))
                     {
                         if (Vehicle* vehicle = me->GetVehicleKit())
                         {
@@ -1572,7 +1603,8 @@ public:
             {
                 _playerSeated = false;
                 if (Player* player = GetPlayerForEscort())
-                    player->SetClientControl(me, 0);
+                    if (player->GetVehicleBase() == me)
+                        player->SetClientControl(me, 0);
             }
         }
     };
@@ -1801,12 +1833,16 @@ class npc_gilneas_children : public CreatureScript
                 {
                     if (Player* player = caster->ToPlayer())
                     {
+                        if (player->GetQuestStatus(14368) != QUEST_STATUS_INCOMPLETE)
+                            return;
                         activated = true;
+                        playerGUID = player->GetGUID();
                         BroadcastText const* bct = sObjectMgr->GetBroadcastText(PlayerText[_playerSayId]);
                         LocaleConstant loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
                         std::string baseText = "";
                         if (bct)
                             baseText = bct->GetText(loc_idx, player->GetGender());
+                        if (!baseText.empty())
                             player->Say(baseText, LANG_UNIVERSAL);
                         player->KilledMonsterCredit(me->GetEntry(), ObjectGuid::Empty);
                         me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
@@ -1855,16 +1891,15 @@ class npc_gilneas_children : public CreatureScript
                         break;
                         case EVENT_OPEN_DOOR:
                         {
+                            uint32 delay = 1;
                             if (GameObject* door = me->FindNearestGameObject(GO_DOOR_TO_THE_BASEMENT, 10.0f))
-                            {
                                 if (door->GetGoState() == GO_STATE_READY)
                                 {
                                     door->UseDoorOrButton();
-                                    events.ScheduleEvent(EVENT_RESUME_RUN, 2s);
+                                    delay = 2000;
                                 }
-                                else
-                                    events.ScheduleEvent(EVENT_RESUME_RUN, 0ms);
-                            }
+                            // Missing/already-open doors must not leave a rescued child permanently activated.
+                            events.ScheduleEvent(EVENT_RESUME_RUN, std::chrono::milliseconds(delay));
                         }
                         break;
                         case EVENT_RESUME_RUN:
@@ -2167,8 +2202,9 @@ public:
 
         void Reset() override
         {
-            if (!me->GetVehicleKit()->GetPassenger(0))
-                me->GetMotionMaster()->MoveRandom(8.0f);
+            if (Vehicle* kit = me->GetVehicleKit())
+                if (!kit->GetPassenger(0))
+                    me->GetMotionMaster()->MoveRandom(8.0f);
         }
 
         void SpellHit(Unit* caster, SpellInfo const* spell) override
@@ -2177,7 +2213,8 @@ public:
             {
                 case SPELL_ROUND_UP_HORSE:
                 {
-                    if (me->GetVehicleKit()->GetPassenger(0))
+                    Vehicle* kit = me->GetVehicleKit();
+                    if (!kit || kit->GetPassenger(0))
                         break;
 
                     me->DespawnOrUnsummon(1);
@@ -2458,9 +2495,11 @@ public:
                 }
                 case 24:
                 {
-                    if (Unit* caravan = me->GetVehicleKit()->GetPassenger(2))
+                    if (Vehicle* kit = me->GetVehicleKit())
+                    if (Unit* caravan = kit->GetPassenger(2))
                     {
-                        if (Unit* lorna = caravan->GetVehicleKit()->GetPassenger(6))
+                        if (Vehicle* caravanKit = caravan->GetVehicleKit())
+                        if (Unit* lorna = caravanKit->GetPassenger(6))
                         {
                             if (lorna->ToCreature())
                                 lorna->ToCreature()->AI()->Talk(0);
@@ -2470,9 +2509,11 @@ public:
                 }
                 case 30:
                 {
-                    if (Unit* caravan = me->GetVehicleKit()->GetPassenger(2))
+                    if (Vehicle* kit = me->GetVehicleKit())
+                    if (Unit* caravan = kit->GetPassenger(2))
                     {
-                        if (Unit* player = caravan->GetVehicleKit()->GetPassenger(1))
+                        if (Vehicle* caravanKit = caravan->GetVehicleKit())
+                        if (Unit* player = caravanKit->GetPassenger(1))
                             player->ExitVehicle();
                     }
                     break;
@@ -2609,9 +2650,9 @@ namespace GilneasLastChanceAtHumanity
         SPELL_SEE_QUEST_INVIS_3         = 60922,
 
         SAY_KRENNAN_NOT_GIVING_UP       = 0,       // BT 36344
-        SAY_GODFREY_PROTOCOL            = 0,       // BT 36336
+        SAY_GODFREY_PROTOCOL            = 1,       // Existing authored Godfrey protocol text.
         SAY_GENN_PROTOCOL               = 0,       // BT 36340
-        SAY_GENN_DOUBLE_DOSAGE          = 1,       // BT 36341
+        SAY_GENN_DOUBLE_DOSAGE          = 2,       // Existing authored double-dosage text.
 
         POINT_KRENNAN_WAIT              = 1,
         POINT_KRENNAN_PILLORY           = 2,
@@ -3175,6 +3216,74 @@ private:
     bool _signal = false;
 };
 
+// Quest 24681: a controllable siege vehicle, not a following minion. The
+// launcher uses native gossip only; stale generic summon-click rows are removed
+// by the paired migration so crafted spell-click packets cannot bypass this gate.
+struct npc_gilneas_glaive_vehicle : public ScriptedAI
+{
+    npc_gilneas_glaive_vehicle(Creature* creature) : ScriptedAI(creature) { }
+    TaskScheduler _scheduler;
+
+    void Reset() override { me->SetReactState(REACT_PASSIVE); }
+    void OnCharmed(bool /*apply*/) override { }
+    void IsSummonedBy(Unit* owner) override
+    {
+        if (owner)
+            me->SetCreatorGUID(owner->GetGUID());
+        // Failed boarding must not leave an accumulating army of empty vehicles.
+        _scheduler.Schedule(5s, [this](TaskContext /*context*/)
+        {
+            if (!me->GetVehicleKit() || !me->GetVehicleKit()->GetPassenger(0))
+                me->DespawnOrUnsummon();
+        });
+    }
+    void PassengerBoarded(Unit* /*who*/, int8 /*seat*/, bool apply) override
+    {
+        if (!apply)
+            me->DespawnOrUnsummon(1000);
+    }
+    void UpdateAI(uint32 diff) override { _scheduler.Update(diff); }
+};
+
+class npc_gilneas_glaive_launcher : public CreatureScript
+{
+public:
+    npc_gilneas_glaive_launcher() : CreatureScript("npc_gilneas_glaive_launcher") { }
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        player->CLOSE_GOSSIP_MENU();
+        if (!player->IsAlive() || player->GetQuestStatus(24681) != QUEST_STATUS_INCOMPLETE || player->GetVehicle())
+            return true;
+        if (player->GetSpellHistory()->GetCooldownDelay(71238))
+            return true;
+        player->GetSpellHistory()->AddCooldown(71238, 0, 3000, 0, 0);
+
+        // Reuse an owned pending vehicle across either nearby launcher.
+        std::list<Creature*> vehicles;
+        player->GetCreatureListWithEntryInGrid(vehicles, 41599, 100.0f);
+        for (Creature* vehicle : vehicles)
+            if (vehicle->IsAlive() && vehicle->GetCreatorGUID() == player->GetGUID() && vehicle->GetVehicleKit())
+            {
+                if (!vehicle->GetVehicleKit()->GetPassenger(0))
+                    player->EnterVehicle(vehicle);
+                return true;
+            }
+
+        CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(41599);
+        if (!info || !info->VehicleId || !sVehicleStore.LookupEntry(info->VehicleId))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("This glaive thrower is currently unavailable.");
+            return true;
+        }
+        float x, y, z;
+        creature->GetNearPoint(player, x, y, z, 3.0f, creature->GetOrientation());
+        if (TempSummon* vehicle = player->SummonCreature(41599, x, y, z, creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN))
+            player->EnterVehicle(vehicle);
+        return true;
+    }
+};
+
 // Hippogryph 43747 (gossip): npc_hippogryph_endgame.
 class npc_hippogryph_endgame : public CreatureScript
 {
@@ -3191,6 +3300,15 @@ public:
         if (player->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_INCOMPLETE || player->GetVehicle())
             return true;
 
+        if (!player->GetQuestRewardStatus(24681))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("Complete 'They Have Allies, But So Do We' before boarding.");
+            return true;
+        }
+        if (player->GetSpellHistory()->GetCooldownDelay(81877))
+            return true;
+        player->GetSpellHistory()->AddCooldown(81877, 0, 3000, 0, 0);
+
         if (Creature* tobias = creature->FindNearestCreature(NPC_TOBIAS_MISTMANTLE_ENDGAME, 60.0f))
         {
             if (tobias->IsAIEnabled && !tobias->AI()->GetData(DATA_TOBIAS_SIGNAL))
@@ -3200,6 +3318,12 @@ public:
             }
         }
 
+        CreatureTemplate const* flightInfo = sObjectMgr->GetCreatureTemplate(NPC_ENDGAME_HIPPOGRYPH_FLIGHT);
+        if (!flightInfo || !flightInfo->VehicleId || !sVehicleStore.LookupEntry(flightInfo->VehicleId))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("This hippogryph ride is currently unavailable.");
+            return true;
+        }
         if (TempSummon* flight = player->SummonCreature(NPC_ENDGAME_HIPPOGRYPH_FLIGHT, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN))
             player->EnterVehicle(flight);
 
@@ -3281,8 +3405,9 @@ struct npc_hippogryph : public ScriptedAI
                 if (Vehicle* kit = me->GetVehicleKit())
                     kit->RemoveAllPassengers();
                 if (rider)
-                    rider->NearTeleportTo(GilneasEndgame::HippogryphEjectPos.GetPositionX(), GilneasEndgame::HippogryphEjectPos.GetPositionY(),
-                        GilneasEndgame::HippogryphEjectPos.GetPositionZ(), GilneasEndgame::HippogryphEjectPos.GetOrientation());
+                    rider->TeleportTo(654, GilneasEndgame::HippogryphEjectPos.GetPositionX(), GilneasEndgame::HippogryphEjectPos.GetPositionY(),
+                        GilneasEndgame::HippogryphEjectPos.GetPositionZ(), GilneasEndgame::HippogryphEjectPos.GetOrientation(),
+                        TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET);
             });
             _scheduler.Schedule(1500ms, [this](TaskContext /*context*/)
             {
@@ -3659,8 +3784,9 @@ private:
         _events.ScheduleEvent(EVENT_ENDGAME_RESET, 123s);
     }
 
-    // ShatterCore gilneas_chapter_4.cpp:1881-1896 (LaunchWyverns): 81779 gives the credit, summons the wyvern and
-    // seats the caster.
+    // Keep boarding and credit ordered explicitly. The legacy 81779 spell can
+    // deliver its credit effect without a usable ride; credit belongs to a
+    // successful escape, not an attempted summon or an unrelated occupied seat.
     void LaunchWyverns()
     {
         using namespace GilneasEndgame;
@@ -3672,10 +3798,16 @@ private:
             if (!player->IsAlive() || player->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_INCOMPLETE)
                 continue;
 
-            if (!player->GetVehicle())
-                player->CastSpell(player, SPELL_SUMMON_WYVERN_RIDE, true);
-            else
-                player->KilledMonsterCredit(NPC_FINALE_CREDIT);
+            if (player->GetVehicle())
+                continue;
+            CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(43713);
+            if (!info || !info->VehicleId || !sVehicleStore.LookupEntry(info->VehicleId))
+            {
+                TC_LOG_ERROR("scripts", "Endgame: escape wyvern 43713 has no valid vehicle kit");
+                continue;
+            }
+            if (TempSummon* flight = player->SummonCreature(43713, *player, TEMPSUMMON_MANUAL_DESPAWN))
+                player->EnterVehicle(flight);
         }
     }
 
@@ -3733,12 +3865,30 @@ public:
         if (!player->IsAlive() || player->GetVehicle())
             return true;
 
+        if (player->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_INCOMPLETE &&
+            player->GetQuestStatus(QUEST_ENDGAME) != QUEST_STATUS_COMPLETE)
+            return true;
+
         Position const* bottom = nullptr;
         for (Position const& pos : SquadMidLevelPos)
             if (!bottom || go->GetExactDist2dSq(&pos) < go->GetExactDist2dSq(bottom))
                 bottom = &pos;
 
-        player->NearTeleportTo(bottom->GetPositionX(), bottom->GetPositionY(), bottom->GetPositionZ() + 0.5f, bottom->GetOrientation());
+        // Search only this scene's collision phase, even for a GM who can see
+        // unrelated transports. Never drop a player onto unverified open air.
+        float floor = go->GetMap()->GetGameObjectFloor(go->GetPhaseMask(), bottom->GetPositionX(), bottom->GetPositionY(),
+            bottom->GetPositionZ() + 3.0f, 8.0f);
+        if (!std::isfinite(floor) || floor < bottom->GetPositionZ() - 4.0f || floor > bottom->GetPositionZ() + 3.0f)
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("The rope cannot find a safe landing on the deck.");
+            TC_LOG_ERROR("scripts", "Endgame rope %u has no safe deck at (%.2f, %.2f, %.2f); floor %.2f",
+                go->GetGUID().GetCounter(), bottom->GetPositionX(), bottom->GetPositionY(), bottom->GetPositionZ(), floor);
+            return true;
+        }
+        // NearTeleportTo deliberately keeps a transport attachment. These are
+        // world-space static-deck coordinates, so detach before transferring.
+        player->TeleportTo(654, bottom->GetPositionX(), bottom->GetPositionY(), floor + 0.5f, bottom->GetOrientation(),
+            TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET);
         return true;
     }
 };
@@ -3762,6 +3912,15 @@ struct npc_wyvern_endgame : public ScriptedAI
     void EnterEvadeMode(EvadeReason /*why*/) override { }
     void OnCharmed(bool /*apply*/) override { }
 
+    void IsSummonedBy(Unit* /*summoner*/) override
+    {
+        _scheduler.Schedule(5s, [this](TaskContext /*context*/)
+        {
+            if (!me->GetVehicleKit() || !me->GetVehicleKit()->GetPassenger(0))
+                me->DespawnOrUnsummon();
+        });
+    }
+
     void PassengerBoarded(Unit* who, int8 /*seatId*/, bool apply) override
     {
         using namespace GilneasEndgame;
@@ -3771,6 +3930,11 @@ struct npc_wyvern_endgame : public ScriptedAI
 
         if (!apply)
         {
+            // Vehicle teardown revokes the old driver's control after restoring
+            // the player. Finish with the rider as camera/mover owner, including
+            // aborts, before this scripted summon disappears.
+            who->ToPlayer()->SetViewpoint(me, false);
+            who->ToPlayer()->SetClientControl(who, true);
             if (!_arrived)
                 me->DespawnOrUnsummon(2000);
             return;
@@ -3781,6 +3945,9 @@ struct npc_wyvern_endgame : public ScriptedAI
 
         _riderGuid = who->GetGUID();
         who->ToPlayer()->SetClientControl(me, false);
+        // The AI pilots; keep the camera on the moving wyvern independently of
+        // input control instead of leaving it at the boarding location.
+        who->ToPlayer()->SetViewpoint(me, true);
         me->SetCanFly(true);
         me->SetDisableGravity(true);
         me->SetSpeed(MOVE_RUN, 16.0f / 7.0f, true);
@@ -3819,8 +3986,15 @@ struct npc_wyvern_endgame : public ScriptedAI
                 if (Vehicle* kit = me->GetVehicleKit())
                     kit->RemoveAllPassengers();
                 if (rider)
-                    rider->NearTeleportTo(GilneasEndgame::WyvernEjectPos.GetPositionX(), GilneasEndgame::WyvernEjectPos.GetPositionY(),
-                        GilneasEndgame::WyvernEjectPos.GetPositionZ(), GilneasEndgame::WyvernEjectPos.GetOrientation());
+                {
+                    rider->SetViewpoint(me, false);
+                    rider->SetClientControl(rider, true);
+                    rider->TeleportTo(654, GilneasEndgame::WyvernEjectPos.GetPositionX(), GilneasEndgame::WyvernEjectPos.GetPositionY(),
+                        GilneasEndgame::WyvernEjectPos.GetPositionZ(), GilneasEndgame::WyvernEjectPos.GetOrientation(),
+                        TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET);
+                    if (rider->GetQuestStatus(GilneasEndgame::QUEST_ENDGAME) == QUEST_STATUS_INCOMPLETE)
+                        rider->KilledMonsterCredit(GilneasEndgame::NPC_FINALE_CREDIT);
+                }
                 me->DespawnOrUnsummon(2000);
             });
         }
@@ -3861,6 +4035,54 @@ namespace GilneasStoutMountainHorse
     Position const LordHewellPos = { -2041.39f, 975.445f, 70.1487f, 0.0f };
 }
 
+// Quest14465 starts a vehicle ride, not a walking trip through locked gates.
+// Also expose a retry after dismount/disconnect, without granting quest credit.
+class npc_gwen_armstead : public CreatureScript
+{
+public:
+    npc_gwen_armstead() : CreatureScript("npc_gwen_armstead") { }
+    static void BeginManorRide(Player* player, Creature* giver)
+    {
+        if (player->GetQuestStatus(14465) != QUEST_STATUS_INCOMPLETE || player->GetVehicle() ||
+            !player->IsAlive() || player->IsInCombat() || player->GetMapId() != 654 ||
+            !player->IsWithinDistInMap(giver, 10.0f))
+            return;
+        std::list<Creature*> horses;
+        giver->GetCreatureListWithEntryInGrid(horses, 38765, 100.0f);
+        for (Creature* horse : horses)
+            if (TempSummon* summon = horse->ToTempSummon())
+                if (summon->GetSummonerGUID() == player->GetGUID() && horse->IsAlive())
+                    return;
+        if (Creature* horse = player->SummonCreature(38765, giver->GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 300s))
+        {
+            horse->SetPhaseMask(player->GetPhaseMask(), true);
+            player->EnterVehicle(horse, 0, true);
+        }
+    }
+    bool OnQuestAccept(Player* player, Creature* giver, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == 14465) BeginManorRide(player, giver);
+        return true;
+    }
+    bool OnGossipHello(Player* player, Creature* giver) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        if (giver->IsQuestGiver()) player->PrepareQuestMenu(giver->GetGUID());
+        if (player->GetQuestStatus(14465) == QUEST_STATUS_INCOMPLETE)
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I am ready to ride to Greymane Manor.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(giver), giver->GetGUID());
+        return true;
+    }
+    bool OnGossipSelect(Player* player, Creature* giver, uint32 sender, uint32 action) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        player->CLOSE_GOSSIP_MENU();
+        if (sender == GOSSIP_SENDER_MAIN && action == GOSSIP_ACTION_INFO_DEF + 1)
+            BeginManorRide(player, giver);
+        return true;
+    }
+};
+
 struct npc_stout_mountain_horse : public ScriptedAI
 {
     npc_stout_mountain_horse(Creature* creature) : ScriptedAI(creature) { }
@@ -3894,15 +4116,17 @@ struct npc_stout_mountain_horse : public ScriptedAI
         _started = true;
         who->ToPlayer()->SetClientControl(me, false);
         _pathId = me->GetDistance2d(LordHewellPos.GetPositionX(), LordHewellPos.GetPositionY()) < 60.0f ? PATH_HEWELL_TO_LIVERY : PATH_DUSKHAVEN_TO_MANOR;
-        _path = sSmartWaypointMgr->GetPath(_pathId);
-        if (!_path || _path->empty())
+        WPPath const* loaded = sSmartWaypointMgr->GetPath(_pathId);
+        _path = loaded ? GilneasRidePath::Copy(*loaded) : GilneasRidePath::Snapshot{};
+        if (_path.empty())
         {
+            TC_LOG_ERROR("scripts", "Stout Mountain Horse %u has a missing, noncontiguous or invalid ride path %u; releasing passenger", me->GetGUID().GetCounter(), _pathId);
             Finish();
             return;
         }
 
         _lastPoint = 0;
-        for (auto const& node : *_path)
+        for (auto const& node : _path)
             _lastPoint = std::max(_lastPoint, node.first);
 
         _point = 1;
@@ -3915,18 +4139,15 @@ struct npc_stout_mountain_horse : public ScriptedAI
         using namespace GilneasStoutMountainHorse;
 
         _legMs = 0;
-        auto itr = _path->find(_point);
-        if (itr == _path->end())
+        auto itr = _path.find(_point);
+        if (itr == _path.end())
         {
-            if (++_point > _lastPoint)
-                Finish();
-            else
-                MoveNext();
+            Finish();
             return;
         }
 
-        WayPoint const* wp = itr->second;
-        me->GetMotionMaster()->MovePoint(POINT_RIDE_BASE + _point, wp->x, wp->y, wp->z, false);
+        GilneasRidePath::Point const& wp = itr->second;
+        me->GetMotionMaster()->MovePoint(POINT_RIDE_BASE + _point, wp.x, wp.y, wp.z, false);
     }
 
     void MovementInform(uint32 type, uint32 pointId) override
@@ -3969,7 +4190,7 @@ struct npc_stout_mountain_horse : public ScriptedAI
         _scheduler.Update(diff);
 
         // Stall guard: a leg that does not finish in 20 s is re-issued (blocked spline or lost inform).
-        if (_started && !_arrived && _path)
+        if (_started && !_arrived && !_path.empty())
         {
             _legMs += diff;
             if (_legMs >= 20000)
@@ -3979,7 +4200,7 @@ struct npc_stout_mountain_horse : public ScriptedAI
 
 private:
     TaskScheduler _scheduler;
-    WPPath* _path = nullptr;
+    GilneasRidePath::Snapshot _path;
     uint32 _pathId = 0;
     uint32 _point = 0;
     uint32 _lastPoint = 0;
@@ -4025,6 +4246,7 @@ namespace GilneasBattle
         NPC_SYLVANAS_BATTLE                 = 38469,
         NPC_GENN_BATTLE                     = 38470,
         NPC_BATTLE_CREDIT                   = 38854,
+        GO_BATTLE_BRIDGE_GATE               = 195578,
         NPC_FORSAKEN_CROSSBOWMAN            = 38210,
         NPC_VILE_ABOMINATION                = 38420,
 
@@ -4141,9 +4363,20 @@ struct npc_prince_liam_greymane_gilneas : public ScriptedAI
         return type == GilneasBattle::DATA_BATTLE_RUNNING ? uint32(_started && !_ended) : 0;
     }
 
+    void OpenBridgeGate()
+    {
+        std::list<GameObject*> gates;
+        me->GetGameObjectListWithEntryInGrid(gates, GilneasBattle::GO_BATTLE_BRIDGE_GATE, 160.0f);
+        for (GameObject* gate : gates)
+            if (gate->GetGoType() == GAMEOBJECT_TYPE_DOOR && gate->GetGoState() == GO_STATE_READY)
+                gate->UseDoorOrButton(40 * MINUTE);
+    }
+
     void StartBattle()
     {
         using namespace GilneasBattle;
+
+        OpenBridgeGate();
 
         _started = true;
         _battleMs = 0;
@@ -4191,6 +4424,9 @@ struct npc_prince_liam_greymane_gilneas : public ScriptedAI
 
     void KeepArmyTogether()
     {
+        // A gate in a neighbouring grid may load after the army starts.
+        if (_checkpoint <= 1)
+            OpenBridgeGate();
         uint8 index = 0;
         for (ObjectGuid guid : _summons)
         {
@@ -4269,7 +4505,21 @@ struct npc_prince_liam_greymane_gilneas : public ScriptedAI
                 break;
             case CheckpointJail:
                 if (Creature* gorerot = me->FindNearestCreature(NPC_GOREROT, 80.0f))
+                {
                     gorerot->AI()->Talk(SAY_GOREROT_CRUSH);
+                    // The old stage only delivered dialogue. Explicitly commit
+                    // the allied fighters so this is a battle, not a tableau.
+                    if (Creature* crowley = me->FindNearestCreature(NPC_DARIUS_CROWLEY_BATTLE, 80.0f))
+                    {
+                        crowley->SetReactState(REACT_DEFENSIVE);
+                        crowley->AI()->AttackStart(gorerot);
+                        gorerot->AI()->AttackStart(crowley);
+                    }
+                    for (ObjectGuid guid : _summons)
+                        if (Creature* militia = ObjectAccessor::GetCreature(*me, guid))
+                            if (militia->IsAlive() && militia->GetEntry() == NPC_GILNEAN_MILITIA_BATTLE)
+                                militia->AI()->AttackStart(gorerot);
+                }
                 _scheduler.Schedule(4s, [this](TaskContext /*context*/)
                 {
                     if (Creature* crowley = me->FindNearestCreature(NPC_DARIUS_CROWLEY_BATTLE, 80.0f))
@@ -4314,6 +4564,10 @@ struct npc_prince_liam_greymane_gilneas : public ScriptedAI
         using namespace GilneasBattle;
 
         BattleCheckpoint const& cp = Checkpoints[_checkpoint];
+        // Gorerot must be defeated, not skipped when the generic hold expires.
+        // The battle's overall timeout still aborts an abandoned event.
+        if (_checkpoint == CheckpointJail && me->FindNearestCreature(NPC_GOREROT, cp.HoldRadius, true))
+            return false;
         if (_holdMs >= cp.MaxHoldMs)
             return true;
         if (_holdMs < 3000)
@@ -4580,6 +4834,59 @@ private:
 
 // Lady Sylvanas Windrunner 38469 (static, Greymane Court): cannot be killed; at 25% (or on Liam's time cap) she
 // wails and the finale runs - only while the battle Liam is near, otherwise she just stays above 25%.
+// Gorerot's template carries a vehicle kit. Without an explicit script it falls
+// back to passive VehicleAI and never retaliates. Ability IDs/cadences adapted
+// from ArkCORE-NG a7304c3075bf8ee7eb5bdf45f31cda01c8626b52,
+// zone_gilneas_city2.cpp (GPL-2.0-or-later). Keep the artillery boss stationary;
+// unlike the reference's always-running timers, cast only during combat.
+struct npc_gorerot_gilneas : public ScriptedAI
+{
+    npc_gorerot_gilneas(Creature* creature) : ScriptedAI(creature) { }
+
+    enum Events { EVENT_SMASH = 1, EVENT_THUNDERCLAP };
+    EventMap _events;
+
+    void Reset() override
+    {
+        _events.Reset();
+        SetCombatMovement(false);
+        me->SetReactState(REACT_DEFENSIVE);
+    }
+
+    void JustEngagedWith(Unit* /*who*/) override
+    {
+        _events.ScheduleEvent(EVENT_SMASH, 13000);
+        _events.ScheduleEvent(EVENT_THUNDERCLAP, 21000);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+        _events.Update(diff);
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SMASH:
+                    if (me->IsWithinDistInMap(me->GetVictim(), 5.0f))
+                        DoCastVictim(71774); // Smash
+                    _events.ScheduleEvent(EVENT_SMASH, 13000);
+                    break;
+                case EVENT_THUNDERCLAP:
+                    DoCastAOE(8078); // Thunderclap
+                    _events.ScheduleEvent(EVENT_THUNDERCLAP, 21000);
+                    break;
+            }
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                break;
+        }
+        DoMeleeAttackIfReady();
+    }
+};
+
 struct npc_lady_sylvanas_gilneas : public ScriptedAI
 {
     npc_lady_sylvanas_gilneas(Creature* creature) : ScriptedAI(creature) { }
@@ -4658,6 +4965,43 @@ private:
     bool _requestFinale = false;
 };
 
+// Gilneas artillery and rapier behaviours adapted from ArkCORE-NG,
+// a7304c3075bf8ee7eb5bdf45f31cda01c8626b52, zone_gilneas_city2.cpp.
+// The ballistic selector can move the impact away from the client-selected
+// target (notably Gorerot above the prison). Keep the requested destination;
+// damage remains the ordinary 72009/72050 spell damage, not scripted kills.
+class spell_gilneas_artillery_trajectory : public SpellScript
+{
+    PrepareSpellScript(spell_gilneas_artillery_trajectory);
+    void SelectDestination(SpellDestination& destination)
+    {
+        if (WorldLocation const* requested = GetExplTargetDest())
+            destination._position.Relocate(*requested);
+    }
+    void Register() override
+    {
+        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_gilneas_artillery_trajectory::SelectDestination, EFFECT_0, TARGET_DEST_TRAJ);
+    }
+};
+
+class spell_gilneas_patriots_inspiration : public SpellScript
+{
+    PrepareSpellScript(spell_gilneas_patriots_inspiration);
+    void SelectMilitia(std::list<WorldObject*>& targets)
+    {
+        targets.remove_if([this](WorldObject* object)
+        {
+            Creature* militia = object->ToCreature();
+            return !militia || militia->GetEntry() != GilneasBattle::NPC_GILNEAN_MILITIA_BATTLE || !GetCaster()->IsFriendlyTo(militia);
+        });
+    }
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_gilneas_patriots_inspiration::SelectMilitia, EFFECT_0, TARGET_UNIT_DEST_AREA_ENTRY);
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_gilneas_patriots_inspiration::SelectMilitia, EFFECT_1, TARGET_UNIT_DEST_AREA_ENTRY);
+    }
+};
+
 // Krennan Aranas 38553 (Livery Outpost): starts the battle, or sends late players to the army.
 class npc_krennan_aranas_battle : public CreatureScript
 {
@@ -4727,7 +5071,10 @@ public:
         if (player->GetQuestStatus(QUEST_THE_BATTLE_FOR_GILNEAS_CITY) == QUEST_STATUS_INCOMPLETE)
         {
             bool running = creature->AI()->GetData(DATA_BATTLE_RUNNING) != 0;
-            player->ADD_GOSSIP_ITEM_DB(GOSSIP_MENU_KRENNAN_BATTLE, 0, GOSSIP_SENDER_MAIN, running ? GOSSIP_ACTION_JOIN_BATTLE : GOSSIP_ACTION_START_BATTLE);
+            if (running)
+                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Join Prince Liam's assault.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_JOIN_BATTLE);
+            else
+                player->ADD_GOSSIP_ITEM_DB(GOSSIP_MENU_KRENNAN_BATTLE, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_START_BATTLE);
         }
 
         if (player->IsGameMaster())
@@ -4751,7 +5098,13 @@ public:
                 break;
             case GOSSIP_ACTION_JOIN_BATTLE:
                 if (Creature* liam = ObjectAccessor::GetCreature(*creature, creature->AI()->GetGUID(GUID_BATTLE_LIAM)))
-                    player->NearTeleportTo(liam->GetPositionX(), liam->GetPositionY(), liam->GetPositionZ(), liam->GetOrientation());
+                {
+                    float x, y, z;
+                    // Rejoin behind the leader on the route, not inside his model
+                    // or over the side of the narrow bridge.
+                    liam->GetNearPoint(player, x, y, z, 3.0f, liam->GetOrientation() + float(M_PI));
+                    player->NearTeleportTo(x, y, z, liam->GetOrientation());
+                }
                 break;
             case GOSSIP_ACTION_GM_RESET:
                 if (player->IsGameMaster())
@@ -4769,8 +5122,372 @@ public:
     }
 };
 
+// Sacrifices14212: local33-point authored route and SmartAI jump/dialogue data.
+// The older MoPCore implementation is a design reference only: its21-point
+// route and unsafe nearest-Crowley/player dereferences are not used here.
+namespace GilneasSacrifices
+{
+    constexpr uint32 QuestId = 14212, Horse = 35231, MountedCrowley = 35230;
+    constexpr uint32 MotionBase = 1421200;
+}
+
+struct npc_crowley_mounted : public PassiveAI
+{
+    npc_crowley_mounted(Creature* creature) : PassiveAI(creature) { }
+    void OnCharmed(bool) override { }
+};
+
+struct npc_crowley_horse : public ScriptedAI
+{
+    npc_crowley_horse(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override { me->SetReactState(REACT_PASSIVE); }
+    void AttackStart(Unit*) override { }
+    void EnterEvadeMode(EvadeReason = EVADE_REASON_OTHER) override { }
+    void OnCharmed(bool) override { }
+
+    void IsSummonedBy(Unit* summoner) override
+    {
+        if (summoner && summoner->ToPlayer())
+            _rider = summoner->GetGUID();
+        _scheduler.Schedule(5s, [this](TaskContext)
+        {
+            if (!_started) Finish(); // Failed boarding must not block a retry for five minutes.
+        });
+    }
+
+    void PassengerBoarded(Unit* passenger, int8 seat, bool apply) override
+    {
+        using namespace GilneasSacrifices;
+        if (!passenger || !passenger->ToPlayer())
+            return;
+        if (!apply)
+        {
+            if (passenger->GetGUID() == _rider && !_finishing)
+                _scheduler.Schedule(1ms, [this](TaskContext) { Finish(); });
+            return;
+        }
+        if (seat != 0 || passenger->GetGUID() != _rider || _finishing)
+        {
+            passenger->ExitVehicle();
+            return;
+        }
+        if (_started)
+            return;
+        _started = true;
+        WPPath const* source = sSmartWaypointMgr->GetPath(Horse);
+        _path = source ? GilneasRidePath::Copy(*source) : GilneasRidePath::Snapshot{};
+        if (_path.size() != 33 || !me->GetVehicleKit())
+        {
+            TC_LOG_ERROR("scripts", "Crowley's Horse requires valid33-point path35231 and vehicle kit; releasing rider");
+            _scheduler.Schedule(1ms, [this](TaskContext) { Finish(); });
+            return;
+        }
+        // Seat0 owns the vehicle action bar (Throw Torch). Revoking client
+        // control here tears that bar down immediately after VehicleSpellInitialize.
+        // Disable steering with the vehicle flag instead; the scripted spline
+        // still drives the horse and the rider retains its spell controls.
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+        me->SetWalk(false);
+        me->ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FIRE, true);
+        // Explicit per-horse actor and seat: concurrent rides never find/mount
+        // whichever Crowley/horse happens to be nearest.
+        if (Creature* crowley = me->SummonCreature(MountedCrowley, me->GetPosition(), TEMPSUMMON_MANUAL_DESPAWN))
+        {
+            _crowley = crowley->GetGUID();
+            crowley->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            crowley->EnterVehicle(me, 1, true);
+        }
+        _scheduler.Schedule(5s, [this](TaskContext)
+        {
+            Vehicle* kit = me->GetVehicleKit();
+            Unit* crowley = kit ? kit->GetPassenger(1) : nullptr;
+            if (!crowley || crowley->GetGUID() != _crowley)
+            {
+                TC_LOG_ERROR("scripts", "Crowley's Horse could not seat its own mounted actor; releasing rider");
+                Finish();
+                return;
+            }
+            TC_LOG_INFO("scripts", "[CROWLEY_RIDE] rider=%u started path35231", _rider.GetCounter());
+            MoveNext();
+        });
+    }
+
+    void MoveNext()
+    {
+        using namespace GilneasSacrifices;
+        if (_finishing)
+            return;
+        _legMs = 0;
+        auto node = _path.find(_progress.Point());
+        if (node == _path.end())
+        {
+            Finish();
+            return;
+        }
+        auto const& p = node->second;
+        if (_progress.Jump())
+            me->GetMotionMaster()->MoveJump(p.x, p.y, p.z, 25.0f, 10.0f, MotionBase + _progress.Point());
+        else
+            me->GetMotionMaster()->MovePoint(MotionBase + _progress.Point(), p.x, p.y, p.z, false);
+    }
+
+    void MovementInform(uint32 type, uint32 id) override
+    {
+        using namespace GilneasSacrifices;
+        if (!_started || _finishing || (type != POINT_MOTION_TYPE && type != EFFECT_MOTION_TYPE) || id < MotionBase)
+            return;
+        uint32 arrived = _progress.Point();
+        if (!_progress.Arrive(id - MotionBase, type == EFFECT_MOTION_TYPE))
+            return;
+        if (arrived == 5 || arrived == 20)
+            if (Creature* crowley = ObjectAccessor::GetCreature(*me, _crowley))
+                crowley->AI()->Talk(arrived == 5 ? 1 : 2);
+        // The reference escort protects horse/rider during its final escape.
+        // On this33-point route that segment follows the second jump/talk.
+        // Without it the collected pack kills the horse before Tobias even
+        // after the rider has earned all30 torch credits.
+        if (arrived == 20)
+        {
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            me->CombatStop(true);
+            if (Player* rider = ObjectAccessor::GetPlayer(*me, _rider))
+            {
+                _riderProtectionAdded = !rider->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                rider->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                rider->CombatStop(true);
+            }
+        }
+        // EffectMovementGenerator finalizes after its callback. Start the next
+        // motion on a later tick so finalization cannot overwrite it.
+        _scheduler.Schedule(1ms, [this](TaskContext)
+        {
+            if (_progress.Finished()) Finish(); else MoveNext();
+        });
+    }
+
+    void Finish()
+    {
+        if (_finishing)
+            return;
+        _finishing = true;
+        TC_LOG_INFO("scripts", "[CROWLEY_RIDE] rider=%u point=%u completed=%u", _rider.GetCounter(), _progress.Point(), uint32(_progress.Finished()));
+        _scheduler.CancelAll();
+        if (Player* player = ObjectAccessor::GetPlayer(*me, _rider))
+        {
+            if (_riderProtectionAdded)
+                player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            if (player->GetVehicleBase() == me)
+                player->SetClientControl(me, true);
+        }
+        if (Vehicle* kit = me->GetVehicleKit())
+            kit->RemoveAllPassengers();
+        if (Creature* crowley = ObjectAccessor::GetCreature(*me, _crowley))
+            crowley->DespawnOrUnsummon();
+        me->DespawnOrUnsummon(1000);
+        // Credit comes from normal vehicle firebomb combat, not arrival.
+    }
+
+    void JustDied(Unit*) override { Finish(); }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _scheduler.Update(diff);
+        if (!_started || _finishing)
+            return;
+        Player* rider = ObjectAccessor::GetPlayer(*me, _rider);
+        if (!rider || !rider->IsAlive() || rider->GetVehicleBase() != me ||
+            (rider->GetQuestStatus(GilneasSacrifices::QuestId) != QUEST_STATUS_INCOMPLETE &&
+             rider->GetQuestStatus(GilneasSacrifices::QuestId) != QUEST_STATUS_COMPLETE))
+        {
+            Finish();
+            return;
+        }
+        _legMs += diff;
+        if (_legMs > 45000)
+        {
+            TC_LOG_ERROR("scripts", "Crowley's Horse stalled at point %u; releasing rider for retry", _progress.Point());
+            Finish();
+        }
+    }
+
+private:
+    ObjectGuid _rider, _crowley;
+    TaskScheduler _scheduler;
+    GilneasRidePath::Snapshot _path;
+    GilneasCrowleyRoute::Progress _progress;
+    uint32 _legMs = 0;
+    bool _started = false, _finishing = false;
+    bool _riderProtectionAdded = false;
+};
+
+class npc_lord_darius_crowley_c2 : public CreatureScript
+{
+public:
+    npc_lord_darius_crowley_c2() : CreatureScript("npc_lord_darius_crowley_c2") { }
+
+    static void BeginRide(Player* player, Creature* giver)
+    {
+        using namespace GilneasSacrifices;
+        if (player->GetQuestStatus(QuestId) != QUEST_STATUS_INCOMPLETE || player->GetVehicle() ||
+            !player->IsAlive() || player->IsInCombat() || player->GetMapId() != 654 || !player->IsWithinDistInMap(giver, 10.0f))
+            return;
+        std::list<Creature*> horses;
+        giver->GetCreatureListWithEntryInGrid(horses, Horse, 200.0f);
+        for (Creature* horse : horses)
+            if (TempSummon* summon = horse->ToTempSummon())
+                if (summon->GetSummonerGUID() == player->GetGUID() && horse->IsAlive())
+                    return; // Existing ride will clean up before another can start.
+        if (Creature* horse = player->SummonCreature(Horse, giver->GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 300s))
+        {
+            horse->SetPhaseMask(player->GetPhaseMask(), true);
+            player->EnterVehicle(horse, 0, true);
+        }
+    }
+
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == GilneasSacrifices::QuestId)
+            BeginRide(player, creature);
+        return true;
+    }
+
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        if (creature->IsQuestGiver()) player->PrepareQuestMenu(creature->GetGUID());
+        if (player->GetQuestStatus(GilneasSacrifices::QuestId) == QUEST_STATUS_INCOMPLETE)
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I'm ready. Let's ride.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        player->CLOSE_GOSSIP_MENU();
+        if (sender == GOSSIP_SENDER_MAIN && action == GOSSIP_ACTION_INFO_DEF + 1)
+            BeginRide(player, creature);
+        return true;
+    }
+};
+
+
+// Quest14272 uses a separate practice-credit creature, not ordinary kill credit.
+// Preserve the ambient guard fight while leaving a living target for a rogue's
+// combo-point builder and finisher. Ordinary players can still kill it normally.
+struct npc_bloodfang_worgen : public ScriptedAI
+{
+    npc_bloodfang_worgen(Creature* creature) : ScriptedAI(creature) { }
+
+    void AttackStart(Unit* target) override
+    {
+        if (target && !target->GetCharmerOrOwnerPlayerOrPlayerItself())
+            AttackStartNoMove(target);
+        else
+            ScriptedAI::AttackStart(target);
+    }
+
+    void DamageTaken(Unit* attacker, uint32& damage) override
+    {
+        if (!attacker)
+            return;
+
+        Player* player = attacker->GetCharmerOrOwnerPlayerOrPlayerItself();
+        uint32 floor = 0;
+        if (!player)
+            floor = std::max<uint32>(1, me->GetMaxHealth() / 2);
+        else if (player->GetClass() == CLASS_ROGUE &&
+            player->GetQuestStatus(14272) == QUEST_STATUS_INCOMPLETE)
+            floor = 1;
+
+        if (floor)
+            damage = std::min(damage, me->GetHealth() > floor ? me->GetHealth() - floor : 0u);
+    }
+
+    void SpellHit(Unit* caster, SpellInfo const* spell) override
+    {
+        if (!caster || !spell || spell->Id != 2098)
+            return;
+        if (Player* player = caster->ToPlayer())
+            if (player->GetClass() == CLASS_ROGUE &&
+                player->GetQuestStatus(14272) == QUEST_STATUS_INCOMPLETE)
+                player->KilledMonsterCredit(44175);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override
+    {
+        if (UpdateVictim())
+            DoMeleeAttackIfReady();
+    }
+};
+
+// Existing characters saved below the pillory must re-enter the same scripted
+// transition as new characters. No quest is granted/completed and no racial is
+// learned early; the repaired spell_area casts the ordinary cage sequence.
+class player_gilneas_cage_recovery : public PlayerScript
+{
+public:
+    player_gilneas_cage_recovery() : PlayerScript("player_gilneas_cage_recovery") { }
+    void OnUpdate(Player* player, uint32 /*diff*/) override
+    {
+        if (player->GetRace() != RACE_WORGEN || player->GetMapId() != 654)
+            return;
+        if (GilneasCageRecovery::Needed(player->GetRace(), player->GetMapId(),
+            player->GetQuestRewardStatus(14222), player->GetQuestRewardStatus(14375),
+            player->IsAlive(), player->IsBeingTeleported(), player->GetVehicle() != nullptr,
+            player->GetPositionX(), player->GetPositionY(), player->GetPositionZ()))
+        {
+            player->RemoveAurasDueToSpell(68630); // release its linked stun before restarting the scene
+            player->RemoveAurasDueToSpell(68631);
+            player->SetFallInformation(0, 42.21f);
+            player->TeleportTo(654, -1818.41f, 2294.27f, 42.21f, 3.16f);
+        }
+    }
+};
+
+// Both new departures and players whose old reward lacked a teleport destination
+// leave through the same canonical spell. Never award the quest from gossip.
+class npc_admiral_nightwind_departure : public CreatureScript
+{
+public:
+    npc_admiral_nightwind_departure() : CreatureScript("npc_admiral_nightwind_departure") { }
+
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        if (creature->IsQuestGiver())
+            player->PrepareQuestMenu(creature->GetGUID());
+        if (player->GetRace() == RACE_WORGEN && player->GetQuestRewardStatus(26706) &&
+            player->GetQuestRewardStatus(14434))
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I am ready to sail to Rut'theran Village.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, Creature* /*creature*/, uint32 sender, uint32 action) override
+    {
+        player->PlayerTalkClass->ClearMenus();
+        player->CLOSE_GOSSIP_MENU();
+        if (sender == GOSSIP_SENDER_MAIN && action == GOSSIP_ACTION_INFO_DEF + 1 &&
+            player->GetRace() == RACE_WORGEN && player->GetQuestRewardStatus(26706) &&
+            player->GetQuestRewardStatus(14434) && player->IsAlive() && !player->IsInCombat() && !player->GetVehicle())
+            player->CastSpell(player, 78107, true);
+        return true;
+    }
+};
+
 void AddSC_gilneas()
 {
+    new player_gilneas_cage_recovery();
+    new npc_gwen_armstead();
+    new SkyfirePrisonEvent::npc_sean_dempsey();
+    new SkyfirePrisonEvent::npc_lord_darius_crowley_c1();
+    new SkyfirePrisonEvent::npc_worgen_runt_c1();
+    new SkyfirePrisonEvent::npc_worgen_runt_c2();
+    new SkyfirePrisonEvent::npc_worgen_alpha_c1();
+    new SkyfirePrisonEvent::npc_worgen_alpha_c2();
+    new creature_script<npc_bloodfang_worgen>("npc_bloodfang_worgen");
     new creature_script<npc_gilneas_crow>("npc_gilneas_crow");
     new creature_script<npc_gilneas_city_guard_gate>("npc_gilneas_city_guard_gate");
     new creature_script<npc_prince_liam_greymane>("npc_prince_liam_greymane");
@@ -4785,6 +5502,9 @@ void AddSC_gilneas()
     new spell_script<spell_attack_lurker>("spell_attack_lurker");
     new npc_king_genn_greymane();
     new npc_vehicle_genn_horse();
+    new npc_lord_darius_crowley_c2();
+    new creature_script<npc_crowley_horse>("npc_crowley_horse");
+    new creature_script<npc_crowley_mounted>("npc_crowley_mounted");
     new creature_script<npc_saved_aranas>("npc_saved_aranas");
     new creature_script<npc_prince_liam_greymane_phase2>("npc_prince_liam_greymane_phase2");
     new creature_script<npc_duskhaven_watchman>("npc_duskhaven_watchman");
@@ -4809,12 +5529,18 @@ void AddSC_gilneas()
     new creature_script<npc_crash_survivor>("npc_crash_survivor");
     new creature_script<npc_tobias_mistmantle_endgame>("npc_tobias_mistmantle_endgame");
     new npc_hippogryph_endgame();
+    new npc_gilneas_glaive_launcher();
+    new creature_script<npc_gilneas_glaive_vehicle>("npc_gilneas_glaive_vehicle");
     new creature_script<npc_hippogryph>("npc_hippogryph");
     new creature_script<npc_lorna_crowley_endgame>("npc_lorna_crowley_endgame");
     new go_gilneas_gunship_rope();
     new creature_script<npc_wyvern_endgame>("npc_wyvern_endgame");
     new creature_script<npc_stout_mountain_horse>("npc_stout_mountain_horse");
+    new spell_script<spell_gilneas_artillery_trajectory>("spell_gilneas_artillery_trajectory");
+    new spell_script<spell_gilneas_patriots_inspiration>("spell_gilneas_patriots_inspiration");
     new npc_krennan_aranas_battle();
     new creature_script<npc_prince_liam_greymane_gilneas>("npc_prince_liam_greymane_gilneas");
     new creature_script<npc_lady_sylvanas_gilneas>("npc_lady_sylvanas_gilneas");
+    new creature_script<npc_gorerot_gilneas>("npc_gorerot_gilneas");
+    new npc_admiral_nightwind_departure();
 }
