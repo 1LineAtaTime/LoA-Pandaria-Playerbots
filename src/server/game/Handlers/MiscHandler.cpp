@@ -2089,7 +2089,9 @@ void WorldSession::HandleCancelMountAuraOpcode(WorldPacket& /*recvData*/)
         return;
     }
 
-    _player->RemoveAurasByType(SPELL_AURA_MOUNTED); // Calls Dismount()
+    // As AzerothCore: dismount first, so a mount flag or display left without a mount aura behind it is cleared too
+    _player->Dismount();
+    _player->RemoveAurasByType(SPELL_AURA_MOUNTED);
 }
 
 void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData)
