@@ -4154,6 +4154,9 @@ bool AnyActive()
 
 void OnUpdate(PlayerbotAI* botAI)
 {
+    // the mount watch has its own fast path (one relaxed atomic load) and runs without any scenario or probe.
+    MountWatchTick(botAI);
+
     if (!AnyActive())
         return;
 
@@ -4847,6 +4850,11 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
     // cast/hit/aura probe ([SPELLWATCH] lines), no player needed.
     if (scenario == "spellwatch")
         return HandleSpellWatchCommand(handler, in);
+
+    // (BotScenarioSpellWatch.cpp): `.botscenario - mountwatch <mapId> on [rowMs] | off | list` - server-global mount
+    // state watch for every playerbot on one map ([MNTW] lines), no player needed.
+    if (scenario == "mountwatch")
+        return HandleMountWatchCommand(handler, in);
 
     // #900/#898: `.botscenario - bf <battleId> start|stop|switch|timer <seconds>|state|ws <id,id,...>` - SOAP-callable twin of
     // the `.bf` GM commands (cs_bf.cpp registers them Console::No; that stays as is). battleId 1 = Wintergrasp, 21 = Tol Barad.

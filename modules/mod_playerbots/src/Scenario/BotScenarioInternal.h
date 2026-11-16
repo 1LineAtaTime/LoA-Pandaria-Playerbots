@@ -430,6 +430,10 @@ namespace BotScenario
     // #793: defined in BotScenarioSpellWatch.cpp. `.botscenario - spellwatch <id,id,...> on|off | off | list`, dispatched
     // from HandleScenarioCommand ahead of every player lookup (the watch set is server-global).
     bool HandleSpellWatchCommand(ChatHandler* handler, std::istringstream& in);
+    // defined in BotScenarioSpellWatch.cpp. `.botscenario - mountwatch <mapId> on [rowMs] | off | list` ([MNTW] lines),
+    // dispatched like spellwatch; MountWatchTick runs first in OnUpdate (its own atomic fast path, no scenario needed).
+    bool HandleMountWatchCommand(ChatHandler* handler, std::istringstream& in);
+    void MountWatchTick(PlayerbotAI* botAI);
     // "stop": clears the bot's scan / rematch overrides.
     void DuelScenarioStopped(Player* bot);
     // Defined in BotScenario.cpp: true when `guid` has a side-table entry (a scenario, .botprobe or
