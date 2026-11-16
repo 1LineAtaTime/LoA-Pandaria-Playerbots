@@ -15,10 +15,12 @@
 --    2011-10-30 [+6] ("the parachute often shows only when you jump off"), 2014-07-24 [+3]. 45472 (the Wintergrasp/gnome
 --    parachute) has the same shape and the script spell_gen_parachute; it now reads the buff from effect 0's base points
 --    (same behaviour for 45472, C++ in this commit) and serves 85882 too.
---    Port: part 2 is left out here: this tree's spell_gen_parachute still handles 45472 only, so 85882 is not bound to it.
 
 DELETE FROM `smart_scripts` WHERE `entryorguid` = 45650 AND `source_type` = 0;
 INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `event_param5`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_param4`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
 (45650, 0, 0, 1, 73, 0, 100, 0, 0, 0, 0, 0, 0, 56, 61292, 1, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'Plague Puffer - On Spellclick - Add Item Plague Puffer'),
 (45650, 0, 1, 2, 61, 0, 100, 0, 0, 0, 0, 0, 0, 85, 85354, 2, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'Plague Puffer - Linked - Invoker Casts Puffer Breath (triggered)'),
 (45650, 0, 2, 0, 61, 0, 100, 0, 0, 0, 0, 0, 0, 41, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 'Plague Puffer - Linked - Despawn');
+
+DELETE FROM `spell_script_names` WHERE `spell_id` = 85882;
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (85882, 'spell_gen_parachute');

@@ -2255,13 +2255,9 @@ class spell_gen_orc_disguise : public SpellScriptLoader
         }
 };
 
-enum ParachuteSpells
-{
-    SPELL_PARACHUTE         = 45472,
-    SPELL_PARACHUTE_BUFF    = 44795,
-};
-
-// 45472 Parachute
+// 45472 Parachute (buff 44795), 85882 Parachute (Argent Parachutes in Eastern Plaguelands, buff 85883)
+// "A portable parachute, automatically activates when the caster begins falling": effect 0 is a 200 ms periodic dummy whose
+// base points name the parachute buff; once the player falls, the buff replaces this aura.
 class spell_gen_parachute : public SpellScriptLoader
 {
     public:
@@ -2271,12 +2267,9 @@ class spell_gen_parachute : public SpellScriptLoader
         {
             PrepareAuraScript(spell_gen_parachute_AuraScript);
 
-            bool Validate(SpellInfo const* /*spellInfo*/) override
+            bool Validate(SpellInfo const* spellInfo) override
             {
-                if (!sSpellMgr->GetSpellInfo(SPELL_PARACHUTE) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_PARACHUTE_BUFF))
-                    return false;
-                return true;
+                return spellInfo->Effects[EFFECT_0].BasePoints > 0 && sSpellMgr->GetSpellInfo(uint32(spellInfo->Effects[EFFECT_0].BasePoints));
             }
 
             void HandleEffectPeriodic(AuraEffect const* /*aurEff*/)
@@ -2284,8 +2277,9 @@ class spell_gen_parachute : public SpellScriptLoader
                 if (Player* target = GetTarget()->ToPlayer())
                     if (target->IsFalling())
                     {
-                        target->RemoveAurasDueToSpell(SPELL_PARACHUTE);
-                        target->CastSpell(target, SPELL_PARACHUTE_BUFF, true);
+                        uint32 buffId = uint32(GetSpellInfo()->Effects[EFFECT_0].BasePoints);
+                        target->RemoveAurasDueToSpell(GetId());
+                        target->CastSpell(target, buffId, true);
                     }
             }
 
