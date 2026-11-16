@@ -57,6 +57,13 @@ static void AlmostAssert(char const* filter, Args... args)
 namespace lfg
 {
 
+// True when the guid is an online playerbot (a server-side session without a client).
+static bool IsBotSession(ObjectGuid guid)
+{
+    Player* player = ObjectAccessor::FindPlayer(guid);
+    return player && player->GetSession() && player->GetSession()->IsBot();
+}
+
 
 LFGMgr::LFGMgr(): m_QueueTimer(0), m_ShortageCheckTimer(0), m_lfgProposalId(1),
     m_options(sWorld->getIntConfig(CONFIG_LFG_OPTIONSMASK))
@@ -1517,6 +1524,20 @@ void LFGMgr::MakeNewGroup(LfgProposal const& proposal)
             ++soloJoinedPlayersCount;
     }
 
+    // With LFG.Boot.BotsFollowLeader, a real player leads a group filled with bots, so the vote-kick (and the rest of
+    // the leader's group controls) is in a player's hands; bots must not lead merely because they queued as tank or
+    // leader (from the public fork's pull request 34 by Nicalicious; off by default).
+    ObjectGuid humanLeader;
+    if (sConfigMgr->GetBoolDefault("LFG.Boot.BotsFollowLeader", false))
+    {
+        auto human = std::find_if(players.begin(), players.end(), [](ProposalPlayer const& p) { return !IsBotSession(p.guid) && ObjectAccessor::FindPlayer(p.guid); });
+        if (human != players.end())
+        {
+            humanLeader = human->guid;
+            players.splice(players.begin(), players, human);
+        }
+    }
+
     // Set the dungeon difficulty
     LFGDungeonData const* dungeon = GetLFGDungeon(proposal.dungeonId);
     ASSERT(dungeon);
@@ -1667,6 +1688,9 @@ void LFGMgr::MakeNewGroup(LfgProposal const& proposal)
         lfgGroup->SetDungeonDifficulty(Difficulty(dungeon->difficulty));
         lfgGroup->SetRaidDifficulty(Difficulty(REGULAR_DIFFICULTY));
     }
+
+    if (humanLeader && IsBotSession(lfgGroup->GetLeaderGUID()))
+        lfgGroup->ChangeLeader(humanLeader);
 
     ObjectGuid gguid = lfgGroup->GetGUID();
     SetDungeon(gguid, dungeon->Entry());
@@ -1941,6 +1965,7 @@ void LFGMgr::InitBoot(ObjectGuid gguid, ObjectGuid kicker, ObjectGuid victim, st
     boot.cancelTime = time_t(time(NULL)) + LFG_TIME_BOOT;
     boot.reason = reason;
     boot.victim = victim;
+    boot.votes.clear();                                    // no votes left over from an earlier boot
 
     LfgGuidSet const& players = GetPlayers(gguid);
 
@@ -1955,9 +1980,26 @@ void LFGMgr::InitBoot(ObjectGuid gguid, ObjectGuid kicker, ObjectGuid victim, st
     boot.votes[victim] = LFG_ANSWER_DENY;                  // Victim auto vote NO
     boot.votes[kicker] = LFG_ANSWER_AGREE;                 // Kicker auto vote YES
 
+    // Bots have no vote-kick UI, so in a bot-filled group a real leader could never kick anyone. With
+    // LFG.Boot.BotsFollowLeader the group's bots copy a real leader's yes vote (from the public fork's
+    // pull request 34 by Nicalicious; off by default).
+    bool botsVoted = false;
+    if (sConfigMgr->GetBoolDefault("LFG.Boot.BotsFollowLeader", false) && !IsBotSession(kicker))
+        if (Group* group = sGroupMgr->GetGroupByGUID(gguid.GetCounter()))
+            if (group->GetLeaderGUID() == kicker)
+                for (auto& vote : boot.votes)
+                    if (vote.first != victim && vote.second == LFG_ANSWER_PENDING && IsBotSession(vote.first))
+                    {
+                        vote.second = LFG_ANSWER_AGREE;
+                        botsVoted = true;
+                    }
+
     // Notify players
     for (LfgGuidSet::const_iterator it = players.begin(); it != players.end(); ++it)
         SendLfgBootProposalUpdate(*it, boot);
+
+    if (botsVoted)
+        ResolveBoot(gguid);
 }
 
 /**
@@ -1988,10 +2030,21 @@ void LFGMgr::UpdateBoot(ObjectGuid guid, bool accept)
 
     LfgPlayerBoot& boot = itBoot->second;
 
-    if (boot.votes[guid] != LFG_ANSWER_PENDING)    // Cheat check: Player can't vote twice
+    auto vote = boot.votes.find(guid);
+    if (vote == boot.votes.end() || vote->second != LFG_ANSWER_PENDING)    // Cheat check: only members, and only once
         return;
 
-    boot.votes[guid] = LfgAnswer(accept);
+    vote->second = LfgAnswer(accept);
+    ResolveBoot(gguid);
+}
+
+void LFGMgr::ResolveBoot(ObjectGuid gguid)
+{
+    LfgPlayerBootContainer::iterator itBoot = BootsStore.find(gguid);
+    if (itBoot == BootsStore.end())
+        return;
+
+    LfgPlayerBoot& boot = itBoot->second;
 
     uint8 votesNum = 0;
     uint8 agreeNum = 0;
@@ -2014,13 +2067,13 @@ void LFGMgr::UpdateBoot(ObjectGuid guid, bool accept)
     for (LfgAnswerContainer::const_iterator itVotes = boot.votes.begin(); itVotes != boot.votes.end(); ++itVotes)
     {
         ObjectGuid pguid = itVotes->first;
-        if (pguid != boot.victim || agreeNum != sLFGMgr->GetBootVotesNeeded(gguid))
+        if (pguid != boot.victim || agreeNum < sLFGMgr->GetBootVotesNeeded(gguid))
             SendLfgBootProposalUpdate(pguid, boot);
         RestoreState(pguid, GetActiveQueueId(pguid), "Boot Finished");
     }
 
     RestoreState(gguid, GetActiveQueueId(gguid), "Boot Finished");
-    if (agreeNum == sLFGMgr->GetBootVotesNeeded(gguid))           // Vote passed - Kick player
+    if (agreeNum >= sLFGMgr->GetBootVotesNeeded(gguid))           // Vote passed - Kick player (bot votes can overshoot)
     {
         if (Group* group = sGroupMgr->GetGroupByGUID(gguid.GetCounter()))
             Player::RemoveFromGroup(group, boot.victim, GROUP_REMOVEMETHOD_KICK_LFG);
