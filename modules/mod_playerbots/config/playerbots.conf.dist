@@ -518,6 +518,8 @@ AiPlayerbot.AutoPickReward = yes
 AiPlayerbot.SyncQuestWithPlayer = 1
 
 # Bots will auto-complete quests for the player when handing in
+# When enabled, talking to a quest giver with a bot in the group grants the player's objectives for the
+# in-progress quests that giver lists and marks them complete (a cheat; kill/collect quests finish at once).
 # Default: 0 (disabled)
 AiPlayerbot.SyncQuestForPlayer = 0
 
