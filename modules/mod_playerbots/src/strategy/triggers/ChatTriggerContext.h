@@ -176,6 +176,15 @@ public:
         creators["remove glyph"] = &ChatTriggerContext::remove_glyph;
         creators["autogear"] = &ChatTriggerContext::autogear;
         creators["autogear bis"] = &ChatTriggerContext::autogear_bis;
+        // AC ChatTriggerContext.h:28,42,75,79,81,129: pvp stats, teleport, chat, destroy, buff, wts. The strategy lists
+        // "tell pvp stats" as a supported name (AC :92), so that name gets a trigger as well.
+        creators["pvp stats"] = &ChatTriggerContext::pvp_stats;
+        creators["tell pvp stats"] = &ChatTriggerContext::tell_pvp_stats;
+        creators["teleport"] = &ChatTriggerContext::teleport;
+        creators["chat"] = &ChatTriggerContext::chat;
+        creators["destroy"] = &ChatTriggerContext::destroy;
+        creators["buff"] = &ChatTriggerContext::buff;
+        creators["wts"] = &ChatTriggerContext::wts;
     }
 
 private:
@@ -300,6 +309,13 @@ private:
     static Trigger* remove_glyph(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "remove glyph"); }
     static Trigger* autogear(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear"); }
     static Trigger* autogear_bis(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear bis"); }
+    static Trigger* pvp_stats(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "pvp stats"); }
+    static Trigger* tell_pvp_stats(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "tell pvp stats"); }
+    static Trigger* teleport(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "teleport"); }
+    static Trigger* chat(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "chat"); }
+    static Trigger* destroy(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "destroy"); }
+    static Trigger* buff(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "buff"); }
+    static Trigger* wts(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "wts"); }
 };
 
 #endif

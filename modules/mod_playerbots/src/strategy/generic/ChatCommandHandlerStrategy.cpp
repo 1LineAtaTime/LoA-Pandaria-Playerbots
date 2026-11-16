@@ -110,6 +110,10 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("target",
         NextAction::array(0, new NextAction("tell target", relevance), nullptr)));
 
+    // AC ChatCommandHandlerStrategy.cpp:31: "pvp stats" runs "tell pvp stats".
+    triggers.push_back(new TriggerNode("pvp stats",
+        NextAction::array(0, new NextAction("tell pvp stats", relevance), nullptr)));
+
     // #628 (AC ChatCommandHandlerStrategy.cpp:74): "rebuff" opens a force-rebuff pass.
     triggers.push_back(new TriggerNode("rebuff",
         NextAction::array(0, new NextAction("force rebuff", relevance), nullptr)));
@@ -223,4 +227,11 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : Pas
     supported.push_back("remove glyph");
     supported.push_back("autogear");
     supported.push_back("autogear bis");
+    // AC ChatCommandHandlerStrategy.cpp:92,103,118,120,123,151: trigger name == action name.
+    supported.push_back("tell pvp stats");
+    supported.push_back("teleport");
+    supported.push_back("chat");
+    supported.push_back("destroy");
+    supported.push_back("buff");
+    supported.push_back("wts");
 }

@@ -70,6 +70,13 @@
 #include "TellReputationAction.h"
 #include "TellTargetAction.h"
 #include "WaitForAttackAction.h"
+// AC ChatActionContext.h:13,16,23,72,78,91: buff, chat, destroy, teleport, tell pvp stats, wts.
+#include "BuffAction.h"
+#include "ChangeChatAction.h"
+#include "DestroyItemAction.h"
+#include "TeleportAction.h"
+#include "TellPvpStatsAction.h"
+#include "WtsAction.h"
 
 class ChatActionContext : public NamedObjectContext<Action>
 {
@@ -184,6 +191,12 @@ public:
         creators["tell attackers"] = &ChatActionContext::tell_attackers;
         creators["go"] = &ChatActionContext::go;
         creators["wait for attack time"] = &ChatActionContext::wait_for_attack_time;
+        creators["buff"] = &ChatActionContext::buff;
+        creators["chat"] = &ChatActionContext::chat;
+        creators["destroy"] = &ChatActionContext::destroy;
+        creators["teleport"] = &ChatActionContext::teleport;
+        creators["tell pvp stats"] = &ChatActionContext::tell_pvp_stats;
+        creators["wts"] = &ChatActionContext::wts;
         // AC ChatActionContext.h:140-143: maintenance / remove glyph / autogear / autogear bis (TrainerAction.h).
         creators["maintenance"] = &ChatActionContext::maintenance;
         creators["remove glyph"] = &ChatActionContext::remove_glyph;
@@ -276,6 +289,12 @@ private:
     static Action* tell_attackers(PlayerbotAI* botAI) { return new TellAttackersAction(botAI); }
     static Action* go(PlayerbotAI* botAI) { return new GoAction(botAI); }
     static Action* wait_for_attack_time(PlayerbotAI* botAI) { return new SetWaitForAttackTimeAction(botAI); }
+    static Action* buff(PlayerbotAI* botAI) { return new BuffAction(botAI); }                    // AC :255
+    static Action* chat(PlayerbotAI* botAI) { return new ChangeChatAction(botAI); }              // AC :258
+    static Action* destroy(PlayerbotAI* botAI) { return new DestroyItemAction(botAI); }          // AC :256
+    static Action* teleport(PlayerbotAI* botAI) { return new TeleportAction(botAI); }            // AC :286
+    static Action* tell_pvp_stats(PlayerbotAI* botAI) { return new TellPvpStatsAction(botAI); }  // AC :298
+    static Action* wts(PlayerbotAI* botAI) { return new WtsAction(botAI); }                      // AC :223
     static Action* maintenance(PlayerbotAI* botAI) { return new MaintenanceAction(botAI); }       // AC :263
     static Action* remove_glyph(PlayerbotAI* botAI) { return new RemoveGlyphAction(botAI); }      // AC :264
     static Action* autogear(PlayerbotAI* botAI) { return new AutoGearAction(botAI); }             // AC :265

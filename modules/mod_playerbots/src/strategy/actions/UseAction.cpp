@@ -30,7 +30,16 @@ bool UseAction::Execute(Event event)
     {
         if (!items.empty())
         {
-            return UseItem(*items.begin());  // AC: UseItemAuto(*items.begin())
+            // AC UseItemAuto tells "Using %item" before casting; here it is told once the item was really used.
+            // The template is read before the use: using the last charge of a consumable destroys the Item.
+            Item* item = *items.begin();
+            ItemTemplate const* proto = item->GetTemplate();
+            if (!UseItem(item))
+                return false;
+
+            botAI->TellMasterNoFacing(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+                "use_item", "Using %item", {{"%item", ChatHelper::FormatItem(proto)}}));
+            return true;
         }
     }
     else
