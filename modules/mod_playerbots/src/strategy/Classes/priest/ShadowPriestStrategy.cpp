@@ -31,10 +31,18 @@ void ShadowPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // triggers.push_back(new TriggerNode("enemy out of spell", NextAction::array(0, new NextAction("reach spell",
     // ACTION_MOVE + 9), nullptr)));
-    // From Darkness, Comes Light: Surge of Darkness (87160) makes Mind Spike instant, free and DoT-safe. Between Mind
-    // Blast (+0.3) and Mind Flay (+0.2); the DoT and orb edges (ACTION_HIGH + 1..3) stay above it.
+    // From Darkness, Comes Light: Surge of Darkness (87160) makes Mind Spike instant, free and DoT-safe. A proc
+    // spender sits above the filler rotation, as AC's proc edges do (Hot Streak -> pyroblast 25, Brain Freeze ->
+    // frostfire bolt 19.5, Molten Core -> incinerate 16.5): at ACTION_DEFAULT + 0.25 it lost to the Mind Blast node's
+    // "mind flay" alternative (pushed at Mind Blast + 0.003) whenever Mind Blast was on cooldown, so it never went
+    // out. The DoT and orb edges (ACTION_HIGH + 1..3), Vampiric Embrace (16) and the multi-DoT edges stay above it.
     triggers.push_back(new TriggerNode(
-        "surge of darkness", NextAction::array(0, new NextAction("mind spike", ACTION_DEFAULT + 0.25f), nullptr)));
+        "surge of darkness", NextAction::array(0, new NextAction("mind spike", ACTION_NORMAL + 3), nullptr)));
+    // AC's "<spell> channel check" -> "cancel channel" pattern (AC ShadowPriestStrategy.cpp:91-95, Mind Sear): a
+    // proc gained during a Mind Flay channel clips the channel just above the spender, so the next tick casts it.
+    triggers.push_back(new TriggerNode(
+        "mind flay surge channel check",
+        NextAction::array(0, new NextAction("cancel channel", ACTION_NORMAL + 3.5f), nullptr)));
     triggers.push_back(
         new TriggerNode("shadowform", NextAction::array(0, new NextAction("shadowform", ACTION_HIGH), nullptr)));
     triggers.push_back(new TriggerNode("low mana", NextAction::array(0, new NextAction("dispersion", ACTION_HIGH

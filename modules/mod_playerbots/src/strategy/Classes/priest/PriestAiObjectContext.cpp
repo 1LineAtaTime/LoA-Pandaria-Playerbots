@@ -114,6 +114,7 @@ public:
         creators["chakra: sanctuary"] = &PriestTriggerFactoryInternal::chakra_sanctuary;
         creators["surge of light proc"] = &PriestTriggerFactoryInternal::surge_of_light_proc;
         creators["surge of darkness"] = &PriestTriggerFactoryInternal::surge_of_darkness;
+        creators["mind flay surge channel check"] = &PriestTriggerFactoryInternal::mind_flay_surge_channel_check;
         creators["lightwell can cast"] = &PriestTriggerFactoryInternal::lightwell_can_cast;
         creators["chakra: sanctuary missing"] = &PriestTriggerFactoryInternal::chakra_sanctuary_missing;
         creators["void tendrils target close"] = &PriestTriggerFactoryInternal::void_tendrils_target_close;
@@ -178,6 +179,7 @@ private:
     static Trigger* chakra_sanctuary(PlayerbotAI* botAI) { return new ChakraSanctuaryTrigger(botAI); }
     static Trigger* surge_of_light_proc(PlayerbotAI* botAI) { return new SurgeOfLightProcTrigger(botAI); }
     static Trigger* surge_of_darkness(PlayerbotAI* botAI) { return new SurgeOfDarknessProcTrigger(botAI); }
+    static Trigger* mind_flay_surge_channel_check(PlayerbotAI* botAI) { return new MindFlaySurgeChannelCheckTrigger(botAI); }
     static Trigger* lightwell_can_cast(PlayerbotAI* botAI) { return new LightwellCanCastTrigger(botAI); }
     static Trigger* chakra_sanctuary_missing(PlayerbotAI* botAI) { return new ChakraSanctuaryMissingTrigger(botAI); }
     static Trigger* void_tendrils_target_close(PlayerbotAI* botAI) { return new VoidTendrilsTargetCloseTrigger(botAI); }

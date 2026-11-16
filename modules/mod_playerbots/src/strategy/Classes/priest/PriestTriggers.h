@@ -97,6 +97,18 @@ public:
     bool IsActive() override;
 };
 
+// MoP-only, AC's "<spell> channel check" pattern (MindSearChannelCheckTrigger below): CanCastSpell refuses every
+// cast while a channel runs, so a Surge of Darkness proc gained during Mind Flay waited for the channel to end. Fires
+// while Mind Flay (15407) is channeled, the proc is up and the GCD is over, so "cancel channel" clips the flay and
+// the instant Mind Spike goes out on the next tick. Mind Flay (Insanity) is not clipped.
+class MindFlaySurgeChannelCheckTrigger : public Trigger
+{
+public:
+    MindFlaySurgeChannelCheckTrigger(PlayerbotAI* botAI) : Trigger(botAI, "mind flay surge channel check") {}
+
+    bool IsActive() override;
+};
+
 // Lane 8 / #863: MoP self-defensive health thresholds (shadow rows 25817 PW:S 60%, 25816 Vampiric Embrace 40%,
 // 25819 Renew 30%): the bot is in combat and its own health is at or below `pct`. Registered as "priest self health <n>".
 class PriestSelfHealthTrigger : public Trigger
