@@ -104,6 +104,26 @@ bool QueueGateOn();
 
 namespace
 {
+    // The AI's master pointer can already be stale on a map thread (the master logging out on another thread), so the
+    // probes never dereference it directly: a bot that is its own master stays itself, otherwise the master is looked
+    // up through ObjectAccessor as the group leader and used only when it is that same player (pointers are compared,
+    // never dereferenced).
+    Player* SafeMaster(PlayerbotAI* botAI, Player* bot)
+    {
+        if (!botAI || !bot)
+            return nullptr;
+        Player* const raw = botAI->GetMaster();
+        if (!raw)
+            return nullptr;
+        if (raw == bot)
+            return bot;
+        if (Group* group = bot->GetGroup())
+            if (Player* leader = ObjectAccessor::FindConnectedPlayer(group->GetLeaderGUID()))
+                if (leader == raw)
+                    return leader;
+        return nullptr;
+    }
+
     // --- side table ------------------------------------------------------------------------------
     std::mutex g_mutex;
     std::unordered_map<uint32, ScenarioState> g_bots; // key: bot guid counter
@@ -3963,7 +3983,7 @@ namespace
         // target (issue #206): a real player has no PlayerbotAI, so no "master" of its own.
         char masterBuf[64] = "-";
         float mdist = -1.0f;
-        if (Player* master = botAI ? botAI->GetMaster() : nullptr)
+        if (Player* master = SafeMaster(botAI, bot))
         {
             snprintf(masterBuf, sizeof(masterBuf), "%s", master->GetName().c_str());
             mdist = bot->GetDistance(master);
@@ -4157,7 +4177,7 @@ void OnUpdate(PlayerbotAI* botAI)
     // following the same master do not duplicate the line. Kept as a fast/early emission right
     // after grouping - MasterProbeSweep above is the reliability backstop for when this pointer
     // goes stale (#209 round 6 finding).
-    if (Player* master = botAI->GetMaster())
+    if (Player* master = SafeMaster(botAI, bot))
     {
         if (master != bot && !master->IsBeingTeleported())
         {
@@ -6166,7 +6186,7 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
         // is a distinct state rather than a reaction worth printing. The master null check is
         // load-bearing, not defensive noise: the core's GetReactionTo dereferences its argument
         // unconditionally (Unit.cpp:6837) and MoP is the only tree that guards it.
-        Player* const master = botAI->GetMaster();
+        Player* const master = SafeMaster(botAI, bot);
         int reaction = -1;
         char masterBuf[48];
         if (!master)
