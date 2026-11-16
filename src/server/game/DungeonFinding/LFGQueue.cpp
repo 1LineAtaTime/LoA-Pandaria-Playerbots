@@ -29,6 +29,7 @@
 #include "Player.h"
 #include "SocialMgr.h"
 #include "Config.h"
+#include "WorldSession.h"
 
 namespace lfg
 {
@@ -129,11 +130,29 @@ bool Bucket::CanAdd(Queuer const& queuer) const
     return CanAdd(queuer, assignedRoles);
 }
 
+// A queued group, or a player with a game client (not a playerbot session).
+static bool IsRealQueuer(Queuer const& queuer)
+{
+    if (queuer.IsGroup())
+        return true;
+
+    Player* player = ObjectAccessor::FindConnectedPlayer(queuer.GetGUID());
+    return player && player->GetSession() && !player->GetSession()->IsBot();
+}
+
 bool Bucket::CanAdd(Queuer const& queuer, LfgRolesMap& assignedRoles) const
 {
     auto roles = m_queue->GetManager()->GetQueuerData(queuer).Roles;
 
     if (GetRemainingSlots() < roles.size())
+        return false;
+
+    // The queuer that completes a bucket must leave a real player in it: playerbots alone never pop a dungeon group,
+    // as in AzerothCore (LFGQueue::CheckCompatibility refuses a proposal whose members are all bots, and counts a
+    // queued group as a player). Without it, random bots that queued for a real player's dungeon filled whole groups
+    // among themselves and stayed in those dungeons, so the player's own queue found no one left.
+    if (GetRemainingSlots() == roles.size() && !IsRealQueuer(queuer) &&
+        std::none_of(m_uniqueQueuers.begin(), m_uniqueQueuers.end(), IsRealQueuer))
         return false;
 
     for (auto&& q : m_uniqueQueuers)
