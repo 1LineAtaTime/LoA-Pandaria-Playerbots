@@ -6900,6 +6900,8 @@ class PlayState:
     def too_strong(self, o):
         """careful: a unit with more than 8x this character's health (a quest elite such as Koroth the Hillbreaker,
         7410 hp against 484) is not fought back - a player runs from it and lets the quest script handle it."""
+        if getattr(self, "brave", False):
+            return False  # kill brave=1: fight the elite whatever its health (an encounter boss the quest needs)
         me_ = self.me()
         if not (getattr(self, "careful", False) and me_ is not None and me_.max_health > 0
                 and o.max_health > 8 * me_.max_health):
@@ -8944,6 +8946,7 @@ def run_play_verb(w, args_cli, verb, rest):
             w.move_guid = None
         # nopet=1: do not send the pet in (fight alone while the pet stays back, e.g. after pet-stay)
         ps.no_pet_attack = kv.get("nopet", "0") == "1"
+        ps.brave = kv.get("brave", "0") == "1"
         try:
             n = ps.kill_loop(verb, args, entry, done, loot, float(kv.get("timeout", 900)), stuck_s, quest)
         except SystemExit as e_:
@@ -8954,6 +8957,7 @@ def run_play_verb(w, args_cli, verb, rest):
             log("%s: optional - skipped" % verb)
         finally:
             ps.no_pet_attack = False
+            ps.brave = False
         ps.ok(verb, args, "kills=%d quest=%s" % (n, ps.quest_state_str(quest)))
     elif verb in ("accept", "accept-go"):
         if verb == "accept-go":
