@@ -178,7 +178,8 @@ its last position, so a later verb for the same entry walks back there.
 | `vehicle-cast SLOT\|SPELL [target=ENTRY] [at=x,y,z] [aim=PITCH] [speed=S]` | Cast an action-bar spell of the vehicle. `at=` / `aim=` add the ground target and the elevation and missile-speed fields used by aimed launchers. |
 | `pet-cast SLOT\|SPELL [target=ENTRY\|at=x,y,z]` | `CMSG_PET_ACTION` with a button from the pet or charm bar. |
 | `hold x,y,z seconds=S [fight=1] [entries=a,b] [radius=R] [until=COND]` | Stay at a spot and fight what attacks you (and any `entries` in `radius`), until S seconds pass or COND is met. |
-| `follow ENTRY [range=R] [until=COND] [fight=1]` | Stay within R of a moving NPC (escort, summoned guide). Fights what attacks you or the NPC. |
+| `leave-camp [entries=a,b] [radius=R] [dist=D]` | When live hostile units (of `entries`, else any attackable unit without NPC flags) are within R yd (default 30), walk D yd (default 35) to the side farthest from all of them, even when one is already hitting, then fight what followed out there. For a login spot or a step start inside a camp. |
+| `follow ENTRY [range=R] [until=COND] [fight=1] [avoid=ENTRY:R]` | Stay within R of a moving NPC (escort, summoned guide). Fights what attacks you or the NPC. `avoid=` keeps the character more than R yd from every live unit of that entry (comma list allowed); when the escort stands inside that radius it holds at the nearest point outside. `sticky=1` keeps the same unit across follow steps and walks to where it was last seen when it is out of view (instead of taking another unit of that entry). |
 | `wait-quest QUEST complete\|rewarded\|accepted [timeout=S]`, `wait-level N`, `wait-map MAP`, `vehicle-wait [on\|off]` | Wait for the state from the packets, or STUCK. |
 | `quest-log`, `inventory`, `objects [ENTRY]` | Print what the client knows. `inventory` also lists worn items as `[EQUIP] slot=N`. |
 | `buy VENDOR ITEM [slot=N] [count=N]` | Open the vendor list (`CMSG_LIST_INVENTORY`) and buy into the backpack (`CMSG_BUY_ITEM`); `slot` is the 1-based vendor list position. |
@@ -186,11 +187,15 @@ its last position, so a later verb for the same entry walks back there.
 | `abandon QUEST` | Abandon the quest (`CMSG_QUESTLOG_REMOVE_QUEST`); a no-op when it is not in the log. |
 | `pet-passive`, `pet-defensive`, `pet-assist` | The pet bar reaction buttons (`CMSG_PET_ACTION`, ACT_REACTION). |
 | `cast SPELL pet`, `cast SPELL item=mainhand`/`offhand`/`ITEM` | `cast` on the character's own pet, or with an item target (for example a runeforge rune on the equipped weapon). |
+| `guild-chat TEXT...` | Guild chat (`CMSG_MESSAGECHAT_GUILD`). |
+| `join-channel NAME [ID]` | `CMSG_JOIN_CHANNEL`. ID is the `ChatChannels.dbc` id of a constant channel (such as LookingForGroup); omit it (0) to join a custom channel by name. The reply is logged as `[CHANNEL] notify type=N channel=NAME`. |
+| `channel-say NAME TEXT...` | Say in a joined channel (`CMSG_MESSAGECHAT_CHANNEL`). |
+| `guild-accept` | Accept the pending guild invite (`CMSG_GUILD_ACCEPT`). An incoming `SMSG_GUILD_INVITE` is logged as `[GUILD] SMSG_GUILD_INVITE from=NAME guild=NAME`. |
 
 More options: `kill ... until=COND` (ends when the objective is already done), `kill ... nopet=1` (the pet is not sent in),
 `kill ... vehicle=1` (keep a vehicle seat; otherwise a seated character steps out first, or logs STUCK `in-vehicle`),
 `kill ... deaths=N`. `kill` counts a target that yields with quest credit (a faction swap or "not attackable") or vanishes right
-after the credit as a kill, and rests out of combat before the next pull when health is below 60 % (`HEADLESS_REST_S`, default 45 s).
+after the credit as a kill, fights the unit it last swung at (else the most damaged attacker) before a fresh one, and rests out of combat before the next pull when health is below 60 % (`HEADLESS_REST_S`, default 45 s).
 `cast-on ... fresh=1` (one cast per target), `use-item ... at=go:ENTRY|npc:ENTRY` (ground target at the nearest such object),
 `use-item ... fail=ok` (a failed use is logged, not STUCK; `on=` never picks a dead unit or one whose use already failed),
 `spellclick ... optional=1` and `talk ... optional=1` (nothing to click / no gossip is OK), `talk ... go=1` (a gameobject
