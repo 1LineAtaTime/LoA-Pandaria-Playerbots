@@ -1057,7 +1057,6 @@ void AddSC_boss_sha_of_anger();
 void AddSC_generic_pet_scripts();
 void AddSC_monk_pet_scripts();
 void AddSC_priest_pet_scripts();
-void AddSC_warlock_pet_scripts();
 
 // battlegrounds
 
@@ -2143,7 +2142,8 @@ void AddPetScripts()
     AddSC_generic_pet_scripts();
     AddSC_monk_pet_scripts();
     AddSC_priest_pet_scripts();
-    AddSC_warlock_pet_scripts();
+    // AddSC_warlock_pet_scripts() (Pet/pet_warlock.cpp) is not loaded: its only script is an older npc_wild_imp, and
+    // spell_warlock.cpp registers npc_wild_imp already; a second script with that name stops the server at startup.
 #endif
 }
 
