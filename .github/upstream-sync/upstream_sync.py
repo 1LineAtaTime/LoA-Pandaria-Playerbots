@@ -367,6 +367,14 @@ def main():
     a = ap.parse_args()
 
     work = os.path.abspath(a.work)
+    # skip.txt (next to this script): upstream commits the owner decided not to take, one "<sha> <reason>" per line.
+    skip = {}
+    skip_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skip.txt")
+    if os.path.exists(skip_file):
+        for line in open(skip_file, encoding="utf-8"):
+            parts = line.split(None, 1)
+            if parts and not parts[0].startswith("#"):
+                skip[parts[0].lower()] = parts[1].strip() if len(parts) > 1 else ""
     head, how, commits = window(work, a.upstream, a.since, a.window_hours)
     pulled = pulled_shas(work, a.branch)
     our_rows = our_sql_targets(work, a.branch, a.upstream) if commits else set()
@@ -375,8 +383,11 @@ def main():
     for sha in commits:
         subject = git("log", "-1", "--format=%s", sha, cwd=work).strip()
         entry = {"sha": sha, "subject": subject}
+        skipped = next((r for s, r in skip.items() if len(s) >= 7 and sha.startswith(s)), None)
         if sha in pulled or subprocess.run(["git", "merge-base", "--is-ancestor", sha, a.branch], cwd=work).returncode == 0:
             entry["verdict"] = "already"
+        elif skipped is not None:
+            entry.update(verdict="already", reasons=["skipped by the owner (skip.txt): " + (skipped or "no reason given")])
         elif already_equivalent(work, sha):
             entry.update(verdict="already", reasons=["the same change is already in this fork (ported by hand)"])
         elif blocked:
@@ -396,7 +407,20 @@ def main():
                 entry["verdict"] = "auto"
         results.append(entry)
 
+    # How far the state tag may move: the last commit of the leading run of handled commits. done_ok counts the "auto"
+    # ones (for when the gates pass and they are merged), done_already only those already in (for a failed gate). A
+    # commit that needs review, and everything after it, stays ahead of the tag, so the next run looks at it again.
+    done_ok = done_already = ""
+    for r in results:
+        if r["verdict"] not in ("already", "auto"):
+            break
+        done_ok = r["sha"]
+    for r in results:
+        if r["verdict"] != "already":
+            break
+        done_already = r["sha"]
     report = {"upstream_head": head, "window": how, "commits": results,
+              "done_ok": done_ok, "done_already": done_already,
               "auto": sum(1 for r in results if r["verdict"] == "auto"),
               "review": sum(1 for r in results if r["verdict"] == "review"),
               "already": sum(1 for r in results if r["verdict"] == "already")}
