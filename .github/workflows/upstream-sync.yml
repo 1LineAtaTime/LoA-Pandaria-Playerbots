@@ -65,6 +65,8 @@ jobs:
       branch: ${{ steps.plan.outputs.branch }}
       base: ${{ steps.plan.outputs.base }}
       upstream_head: ${{ steps.plan.outputs.upstream_head }}
+      done_ok: ${{ steps.plan.outputs.done_ok }}
+      done_already: ${{ steps.plan.outputs.done_already }}
     steps:
     - name: Checkout the sync script
       uses: actions/checkout@v4
@@ -111,7 +113,8 @@ jobs:
         import json, os
         r = json.load(open("../upstream-sync.json"))
         out = open(os.environ["GITHUB_OUTPUT"], "a")
-        out.write("auto=%d\nreview=%d\nupstream_head=%s\n" % (r["auto"], r["review"], r["upstream_head"]))
+        out.write("auto=%d\nreview=%d\nupstream_head=%s\ndone_ok=%s\ndone_already=%s\n"
+                  % (r["auto"], r["review"], r["upstream_head"], r["done_ok"], r["done_already"]))
         s = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
         s.write("## Upstream sync\n\nUpstream head `%s`, window: %s. %d new: %d auto, %d review, %d already in.\n\n"
                 % (r["upstream_head"][:8], r["window"], len(r["commits"]), r["auto"], r["review"], r["already"]))
@@ -311,6 +314,8 @@ jobs:
         BRANCH: ${{ needs.select.outputs.branch }}
         BASE: ${{ needs.select.outputs.base }}
         UPSTREAM_HEAD: ${{ needs.select.outputs.upstream_head }}
+        DONE_OK: ${{ needs.select.outputs.done_ok }}
+        DONE_ALREADY: ${{ needs.select.outputs.done_already }}
         BUILD: ${{ needs.build.result }}
         DATABASE: ${{ needs.database.result }}
         NO_PUSH: ${{ inputs.no_push }}
@@ -318,6 +323,10 @@ jobs:
         set -euo pipefail
         fail=0
         move_tag=1
+        # The tag only moves past the upstream commits this run really handled: the merged ones and those already in.
+        # A commit that needs review (and everything after it) or a candidate whose gate failed stays ahead of the tag,
+        # so the next run checks it again instead of skipping it for good.
+        tag_to="$DONE_OK"
         summary() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
         if [ "${AUTO:-0}" -gt 0 ]; then
           if [ "$BUILD" = success ] && [ "$DATABASE" = success ]; then
@@ -335,22 +344,24 @@ jobs:
           else
             summary "- A gate failed (build: $BUILD, database: $DATABASE): nothing merged. The candidate stays on branch $BRANCH for inspection."
             fail=1
+            tag_to="$DONE_ALREADY"
           fi
         fi
         if [ "${REVIEW:-0}" -gt 0 ]; then
-          summary "- $REVIEW upstream commit(s) need a manual review (see the select job's table)."
+          summary "- $REVIEW upstream commit(s) need a manual review (see the select job's table). Port them by hand with 'git cherry-pick -x', or list them in .github/upstream-sync/skip.txt; until then every run stops at the first one."
           fail=1
         fi
         if [ "$NO_PUSH" = true ]; then move_tag=0; fi
-        if [ "$move_tag" = 1 ] && [ -n "$UPSTREAM_HEAD" ]; then
+        if [ -z "$tag_to" ]; then move_tag=0; fi
+        if [ "$move_tag" = 1 ]; then
           # An annotated tag on our own branch tip that names the upstream commit: GITHUB_TOKEN may not push a ref
           # whose history adds workflow files, which a tag on the upstream commit itself would do.
           git fetch --quiet origin "+refs/heads/$TARGET:refs/remotes/origin/$TARGET"
           git push --quiet origin ":refs/tags/$STATE_TAG" 2>/dev/null || true
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            tag -f -a "$STATE_TAG" -m "upstream $UPSTREAM_HEAD" "origin/$TARGET"
+            tag -f -a "$STATE_TAG" -m "upstream $tag_to" "origin/$TARGET"
           git push --quiet origin "refs/tags/$STATE_TAG"
-          summary "- $STATE_TAG -> ${UPSTREAM_HEAD:0:8}: the next run looks only at newer upstream commits."
+          summary "- $STATE_TAG -> ${tag_to:0:8} (upstream head ${UPSTREAM_HEAD:0:8}): the next run starts after it."
         fi
         if [ -n "$BRANCH" ] && { [ "$fail" = 0 ] || [ "$NO_PUSH" = true ]; }; then
           git push --quiet origin ":refs/heads/$BRANCH" || true

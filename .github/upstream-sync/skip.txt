@@ -1,0 +1,2 @@
+# Upstream commits this fork does not take, one per line: <sha> <reason>. The upstream sync treats them as already in.
+a8f32ee3bdcf0c743dc7b575e66b19c54f0b4f6f Module/Playerbots compile fix for upstream's WorldPackets::Party::GroupInviteResponse; this fork's core and its AzerothCore-ported playerbots module do not use that packet class
