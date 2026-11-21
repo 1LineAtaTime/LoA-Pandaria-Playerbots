@@ -25,6 +25,7 @@
 #include "DBCStores.h"  // #201 (#612): sMapStore for the duel-spot map check
 #include "Helper.h"
 #include "Playerbots.h"
+#include "PlayerbotGuildMgr.h"
 #include "RandomPlayerbotMgr.h"
 #include "Factory/RandomPlayerbotFactory.h"
 #include "World.h"  // #201 (#612): CONFIG_MAX_PLAYER_LEVEL for the duel-spot level clamp
@@ -518,6 +519,32 @@ bool PlayerbotAIConfig::Initialize()
 
     randomBotGroupNearby = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotGroupNearby", false);
     inviteChat = sConfigMgr->GetBoolDefault("AiPlayerbot.InviteChat", false);
+    // AC PlayerbotAIConfig.cpp:189-190
+    randomBotGuildNearby = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotGuildNearby", false);
+    randomBotInvitePlayer = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotInvitePlayer", false);
+
+    // AC PlayerbotAIConfig.cpp:580-582
+    randomBotGuildCount = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotGuildCount", 20);
+    randomBotGuildSizeMax = sConfigMgr->GetIntDefault("AiPlayerbot.RandomBotGuildSizeMax", 15);
+    deleteRandomBotGuilds = sConfigMgr->GetBoolDefault("AiPlayerbot.DeleteRandomBotGuilds", false);
+
+    // AC PlayerbotAIConfig.cpp:586-594
+    guildTaskEnabled = sConfigMgr->GetBoolDefault("AiPlayerbot.EnableGuildTasks", false);
+    minGuildTaskChangeTime = sConfigMgr->GetIntDefault("AiPlayerbot.MinGuildTaskChangeTime", 3 * 24 * 3600);
+    maxGuildTaskChangeTime = sConfigMgr->GetIntDefault("AiPlayerbot.MaxGuildTaskChangeTime", 4 * 24 * 3600);
+    minGuildTaskAdvertisementTime = sConfigMgr->GetIntDefault("AiPlayerbot.MinGuildTaskAdvertisementTime", 300);
+    maxGuildTaskAdvertisementTime = sConfigMgr->GetIntDefault("AiPlayerbot.MaxGuildTaskAdvertisementTime", 12 * 3600);
+    minGuildTaskRewardTime = sConfigMgr->GetIntDefault("AiPlayerbot.MinGuildTaskRewardTime", 300);
+    maxGuildTaskRewardTime = sConfigMgr->GetIntDefault("AiPlayerbot.MaxGuildTaskRewardTime", 3600);
+    guildTaskAdvertCleanupTime = sConfigMgr->GetIntDefault("AiPlayerbot.GuildTaskAdvertCleanupTime", 300);
+    guildTaskKillTaskDistance = sConfigMgr->GetIntDefault("AiPlayerbot.GuildTaskKillTaskDistance", 2000);
+
+    // AC PlayerbotAIConfig.cpp:372, 380-382 (BroadcastHelper.cpp reads its own copy of ToxicLinksPrefix)
+    toxicLinksPrefix = sConfigMgr->GetStringDefault("AiPlayerbot.ToxicLinksPrefix", "gnomes");
+    randomBotTalk = sConfigMgr->GetBoolDefault("AiPlayerbot.RandomBotTalk", false);  // AC PlayerbotAIConfig.cpp:298
+    toxicLinksRepliesChance = sConfigMgr->GetIntDefault("AiPlayerbot.ToxicLinksRepliesChance", 30);    // 0-100
+    thunderfuryRepliesChance = sConfigMgr->GetIntDefault("AiPlayerbot.ThunderfuryRepliesChance", 40);  // 0-100
+    guildRepliesRate = sConfigMgr->GetIntDefault("AiPlayerbot.GuildRepliesRate", 100);                 // 0-100
     summonWhenGroup = sConfigMgr->GetBoolDefault("AiPlayerbot.SummonWhenGroup", true);
     keepAltsInGroup = sConfigMgr->GetBoolDefault("AiPlayerbot.KeepAltsInGroup", false);
     disabledWithoutRealPlayer = sConfigMgr->GetBoolDefault("AiPlayerbot.DisabledWithoutRealPlayer", false);
@@ -622,6 +649,10 @@ bool PlayerbotAIConfig::Initialize()
             zoneBrackets[zoneId] = std::make_pair(minLevel, maxLevel);
         }
     }
+
+    // AC PlayerbotAIConfig.cpp:920: the random-bot guild cache (guilds are loaded before OnConfigLoad, World.cpp). Here
+    // and not at AC's spot after the random-bot init above, because the RandomBotGuild* keys are read further down.
+    PlayerbotGuildMgr::instance().Init();
 
     TC_LOG_INFO("server.loading", "---------------------------------------");
     TC_LOG_INFO("server.loading", "        AI Playerbots initialized       ");

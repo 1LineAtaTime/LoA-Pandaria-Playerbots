@@ -204,6 +204,8 @@ public:
         creators["curse of tongues"] = &WarlockTriggerFactoryInternal::curse_of_tongues;
         creators["curse of weakness"] = &WarlockTriggerFactoryInternal::curse_of_weakness;
         creators["wrong pet"] = &WarlockTriggerFactoryInternal::wrong_pet;
+        creators["warlock no pet"] = &WarlockTriggerFactoryInternal::warlock_no_pet;
+        creators["grimoire of sacrifice"] = &WarlockTriggerFactoryInternal::grimoire_of_sacrifice;
         creators["rain of fire channel check"] = &WarlockTriggerFactoryInternal::rain_of_fire_channel_check;
 
         // -- talents
@@ -301,6 +303,8 @@ private:
     static Trigger* curse_of_tongues(PlayerbotAI* botAI) { return new CurseOfTonguesTrigger(botAI); }
     static Trigger* curse_of_weakness(PlayerbotAI* botAI) { return new CurseOfWeaknessTrigger(botAI); }
     static Trigger* wrong_pet(PlayerbotAI* botAI) { return new WrongPetTrigger(botAI); }
+    static Trigger* warlock_no_pet(PlayerbotAI* botAI) { return new WarlockNoPetTrigger(botAI); }
+    static Trigger* grimoire_of_sacrifice(PlayerbotAI* botAI) { return new GrimoireOfSacrificeTrigger(botAI); }
     static Trigger* rain_of_fire_channel_check(PlayerbotAI* botAI) { return new RainOfFireChannelCheckTrigger(botAI); }
 
     // -- talents

@@ -161,6 +161,16 @@ public:
     IntimidationTrigger(PlayerbotAI* botAI) : BuffTrigger(botAI, "intimidation") {}
 };
 
+// Focus Fire: the pet carries 5 Frenzy stacks (19615), the hunter does not have the haste buff (82692) yet, and
+// Bestial Wrath is not running (the two should not overlap).
+class FocusFireTrigger : public Trigger
+{
+public:
+    FocusFireTrigger(PlayerbotAI* botAI) : Trigger(botAI, "focus fire") {}
+
+    bool IsActive() override;
+};
+
 class KillCommandTrigger : public BuffTrigger
 {
 public:

@@ -124,6 +124,8 @@ public:
     
     void Clear(Player* bot);
     
+    // AC Bot/RandomPlayerbotMgr.h:120: chat-channel text routed to every random bot (mod_playerbots.cpp OnChat).
+    void HandleCommand(uint32 type, std::string const text, Player* fromPlayer, std::string channelName = "");
     void OnPlayerLogout(Player* player);
     void OnPlayerLogin(Player* player);
     void OnPlayerLoginError(uint32 bot);

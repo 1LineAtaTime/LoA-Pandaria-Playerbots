@@ -130,6 +130,13 @@ inline void Cell::VisitCircle(TypeContainerVisitor<T, CONTAINER>& visitor, Map& 
 {
     //here is an algorithm for 'filling' circum-squared octagon
     uint32 x_shift = (uint32)ceilf((end_cell.x_coord - begin_cell.x_coord) * 0.3f - 0.5f);
+    // Beyond AC (MoP battleground range): this cut (AC CellImpl.h:119) leaves cells inside the circle unvisited
+    // on the diagonals. AC caps visibility at 250 yd and sends values updates and SMSG_* to its visible-player sets, so
+    // it does not depend on the walk; here Map::SendObjectUpdates and MessageDistDeliverer walk r = 533 + 20 yd and
+    // reached only ~505 yd at 45 deg, so a unit the client legitimately held lost its updates (a lost dismount stays
+    // drawn: the update mask is cleared). One cell less cut keeps the walk a superset of the circle (+9% cells, r>=533).
+    if (x_shift > 0)
+        --x_shift;
     //lets calculate x_start/x_end coords for central strip...
     const uint32 x_start = begin_cell.x_coord + x_shift;
     const uint32 x_end = end_cell.x_coord - x_shift;

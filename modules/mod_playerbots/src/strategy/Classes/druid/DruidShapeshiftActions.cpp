@@ -63,6 +63,11 @@ bool CastTreeFormAction::isUseful()
     return GetTarget() && CastSpellAction::isUseful() && !botAI->HasAura(33891, bot);
 }
 
+bool CastIncarnationChosenAction::isUseful()
+{
+    return !bot->HasAura(102560) && CastBuffSpellAction::isUseful();
+}
+
 // #363 (AC parity, Ai/Class/Druid/Action/DruidShapeshiftActions.cpp:47-53).
 bool CastCancelDruidAction::Execute(Event /*event*/)
 {

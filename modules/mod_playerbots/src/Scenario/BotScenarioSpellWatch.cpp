@@ -49,21 +49,29 @@
 
 #include "Chat.h"
 #include "Log.h"
+#include "MoveSpline.h"        // mount watch: smode= (status movement mode)
 #include "ObjectGuid.h"
+#include "Player.h"            // mount watch
+#include "Playerbots.h"        // mount watch: PlayerbotAI, "current target"
 #include "ScriptMgr.h"
 #include "Spell.h"
+#include "SpellAuraEffects.h"  // mount watch: AuraEffect::GetId
 #include "SpellAuras.h"
 #include "SpellInfo.h"
+#include "Timer.h"
 #include "Unit.h"
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace BotScenario
@@ -346,6 +354,280 @@ bool HandleSpellWatchCommand(ChatHandler* handler, std::istringstream& in)
     SpellWatchLog("[SCENARIO] spellwatch " + verb + " ids=" + reqText + " watching=" + now);
     // plain-string reply: PSendSysMessage is printf-style on MoP and fmt-style on AC
     handler->SendSysMessage(("botscenario: spellwatch " + verb + " ids=" + reqText + " watching=" + now).c_str());
+    return true;
+}
+
+// =====================================================================================================================
+// mount watch - the server-side truth for "bots stay visually mounted while fighting in battlegrounds".
+// Same file as the spell watch (a new .cpp would need a CMake re-run: the module sources are globbed). Written to be
+// identical on the MoP fork and the AC test tree; only the core-API spelling (Mw* helpers below, the UnitScript base
+// constructor, the log macro) differs, and every [MNTW] line is byte-identical in layout on both.
+//
+// Verb (no player needed; the name slot is "-"):
+//   `.botscenario - mountwatch <mapId> on [rowMs]`   watch every PLAYERBOT on map <mapId> (every instance); rowMs = the
+//                                                    periodic row interval (default 5000, min 250)
+//   `.botscenario - mountwatch off`                  stop (and forget the per-bot state)
+//   `.botscenario - mountwatch list`                 print the current setting
+// Sampling: on each bot's own AI tick (BotScenario::OnUpdate, before the scenario fast path), at most every 250 ms.
+// Lines (playerbots debug channel, like [PROBE]):
+//   [MNTW] chg|row <name> g=<guidlow> ut=<unix s.ms> iid=<instance> cls=<class> team=A|H alive=0|1 ghost=0|1 ds=<deathState>
+//          flag=<UNIT_FLAG_MOUNT> disp=<mount display id> aura=<first SPELL_AURA_MOUNTED spell|0> nau=<count> form=<shapeshift>
+//          cmb=<IsInCombat> bst=<bot engine state> tgt=<current target|-> tdist=<yd|-1> cast=<generic spell|0>
+//          smode=<status-movement 0|1, '-' on AC> hp=<pct> x= y= z= mcms=<ms mounted+in combat so far> bad=<tags|->
+//     chg = the (alive, ghost, flag, disp, aura, cmb, bad) tuple changed since the bot's last line; row = periodic.
+//     bad tags (server-side inconsistencies): disp_noaura (alive, display set, no mount aura), aura_noflag, flag_noaura,
+//     dead_mounted (dead or ghost with the flag or a display still set).
+//   [MNTW] mcend <name> g= ut= dur=<ms> cls= tdist=<at the end>   a mounted+in-combat span ended (any reason)
+//   [MNTW] aura+|aura- <name> g= ut= spell= flag= disp= alive= mode=<AuraRemoveMode, 0 on aura+>   a mount aura was applied /
+//          removed on a player on the watched map (bots and real players). aura- runs after the effect handlers
+//          (Unit::_UnapplyAura), so flag=1 or disp!=0 on an aura- line means the removal did not clear the mount state.
+// Thread safety: the setting is two atomics; the per-bot table is guarded by a mutex (a few dozen bots, 4 Hz). The command
+// runs on the world thread while the map threads are parked (see "Hook registration" above).
+// =====================================================================================================================
+namespace
+{
+    // ---- core-API spelling (MoP fork) -------------------------------------------------------------------------------
+    uint8 MwClass(Player const* p) { return p->GetClass(); }
+    bool MwGhost(Player const* p) { return p->HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_GHOST); }
+    uint32 MwDisp(Unit const* u) { return u->GetMountDisplayId(); }
+    char const* MwStatusMode(Unit const* u) { return (u->movespline && u->movespline->statusMode) ? "1" : "0"; }
+    int MwDeathState(Unit* u) { return int(u->getDeathState()); }
+
+    std::atomic<uint32> g_mwMap{0};       // 0 = off
+    std::atomic<uint32> g_mwRowMs{5000};
+
+    struct MountWatchBot
+    {
+        uint32 lastSampleMs = 0;
+        uint32 lastRowMs = 0;
+        uint32 mcStartMs = 0;            // getMSTime() when mounted (flag or aura) + in combat began; 0 = not in that state
+        std::string key;
+    };
+    std::mutex g_mwMutex;
+    std::unordered_map<uint32, MountWatchBot> g_mwBots;
+
+    void MountWatchLog(std::string const& line)
+    {
+        TC_LOG_DEBUG("playerbots", "%s", line.c_str());
+    }
+
+    std::string MwUt()
+    {
+        uint64 const ms = uint64(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%llu.%03u", (unsigned long long)(ms / 1000), unsigned(ms % 1000));
+        return buf;
+    }
+
+    uint32 MwMountAura(Unit* u, uint32& count)
+    {
+        auto const& list = u->GetAuraEffectsByType(SPELL_AURA_MOUNTED);
+        count = uint32(list.size());
+        return list.empty() ? 0 : list.front()->GetId();
+    }
+
+    void MwAuraEvent(char const* ev, Unit* unit, Aura const* aura, int mode)
+    {
+        uint32 const map = g_mwMap.load(std::memory_order_relaxed);
+        if (!map || !unit || !aura || unit->GetTypeId() != TYPEID_PLAYER || unit->GetMapId() != map)
+            return;
+        SpellInfo const* info = aura->GetSpellInfo();
+        if (!info || !info->HasAura(SPELL_AURA_MOUNTED))
+            return;
+        char buf[256];
+        std::snprintf(buf, sizeof(buf), " g=%u ut=%s spell=%u flag=%d disp=%u alive=%d mode=%d", unit->GetGUID().GetCounter(),
+                      MwUt().c_str(), info->Id, unit->IsMounted() ? 1 : 0, MwDisp(unit), unit->IsAlive() ? 1 : 0, mode);
+        MountWatchLog(std::string("[MNTW] ") + ev + " " + unit->GetName() + buf);
+    }
+
+    class BotScenarioMountWatchScript : public UnitScript
+    {
+    public:
+        BotScenarioMountWatchScript() : UnitScript("BotScenarioMountWatchScript") {}
+
+        void OnAuraApply(Unit* unit, Aura* aura) override
+        {
+            if (!g_mwMap.load(std::memory_order_relaxed))
+                return;
+            MwAuraEvent("aura+", unit, aura, 0);
+        }
+
+        void OnAuraRemove(Unit* unit, AuraApplication* aurApp, AuraRemoveMode mode) override
+        {
+            if (!g_mwMap.load(std::memory_order_relaxed) || !aurApp)
+                return;
+            MwAuraEvent("aura-", unit, aurApp->GetBase(), int(mode));
+        }
+    };
+
+    void EnsureMountWatchScript()
+    {
+        static std::once_flag once;
+        std::call_once(once, [] { new BotScenarioMountWatchScript(); });
+    }
+} // anonymous namespace
+
+void MountWatchTick(PlayerbotAI* botAI)
+{
+    uint32 const map = g_mwMap.load(std::memory_order_relaxed);
+    if (!map || !botAI)
+        return;
+    Player* bot = botAI->GetBot();
+    if (!bot || !bot->IsInWorld() || bot->GetMapId() != map)
+        return;
+
+    uint32 const now = getMSTime();
+    uint32 const guidLow = bot->GetGUID().GetCounter();
+
+    uint32 nAura = 0;
+    uint32 const aura = MwMountAura(bot, nAura);
+    bool const flag = bot->IsMounted();
+    uint32 const disp = MwDisp(bot);
+    bool const alive = bot->IsAlive();
+    bool const ghost = MwGhost(bot);
+    bool const cmb = bot->IsInCombat();
+    bool const mounted = flag || aura;
+
+    std::string bad;
+    if (alive && disp && !aura)
+        bad += "disp_noaura,";
+    if (aura && !flag)
+        bad += "aura_noflag,";
+    if (flag && !aura)
+        bad += "flag_noaura,";
+    if ((!alive || ghost) && (flag || disp))
+        bad += "dead_mounted,";
+    if (bad.empty())
+        bad = "-";
+    else
+        bad.pop_back();
+
+    std::string const key = std::to_string(alive) + std::to_string(ghost) + std::to_string(flag) + ":" +
+                            std::to_string(disp) + ":" + std::to_string(aura) + ":" + std::to_string(cmb) + ":" + bad;
+
+    bool emitLine = false;
+    char const* ev = "row";
+    uint32 mcms = 0;
+    uint32 mcEnded = 0;
+    {
+        std::lock_guard<std::mutex> lock(g_mwMutex);
+        MountWatchBot& s = g_mwBots[guidLow];
+        if (s.lastSampleMs && getMSTimeDiff(s.lastSampleMs, now) < 250)
+            return;
+        s.lastSampleMs = now;
+
+        if (mounted && cmb)
+        {
+            if (!s.mcStartMs)
+                s.mcStartMs = now ? now : 1;
+            mcms = getMSTimeDiff(s.mcStartMs, now);
+        }
+        else if (s.mcStartMs)
+        {
+            mcEnded = getMSTimeDiff(s.mcStartMs, now);
+            if (!mcEnded)
+                mcEnded = 1;
+            s.mcStartMs = 0;
+        }
+
+        if (key != s.key)
+        {
+            emitLine = true;
+            ev = "chg";
+            s.key = key;
+            s.lastRowMs = now;
+        }
+        else if (getMSTimeDiff(s.lastRowMs, now) >= g_mwRowMs.load(std::memory_order_relaxed))
+        {
+            emitLine = true;
+            s.lastRowMs = now;
+        }
+    }
+
+    Unit* target = botAI->GetAiObjectContext()->GetValue<Unit*>("current target")->Get();
+    float tdist = -1.0f;
+    std::string tname = "-";
+    if (target && target->IsInWorld() && target->GetMapId() == bot->GetMapId())
+    {
+        tdist = bot->GetExactDist(target);
+        tname = target->GetName();
+    }
+    std::string const ut = MwUt();
+
+    if (mcEnded)
+    {
+        char buf[160];
+        std::snprintf(buf, sizeof(buf), " g=%u ut=%s dur=%u cls=%u tdist=%.1f", guidLow, ut.c_str(), mcEnded,
+                      uint32(MwClass(bot)), tdist);
+        MountWatchLog("[MNTW] mcend " + bot->GetName() + buf);
+    }
+
+    if (!emitLine)
+        return;
+
+    Spell* spell = bot->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+    uint32 const castId = (spell && spell->GetSpellInfo()) ? spell->GetSpellInfo()->Id : 0;
+    char buf[512];
+    std::snprintf(buf, sizeof(buf),
+                  " g=%u ut=%s iid=%u cls=%u team=%s alive=%d ghost=%d ds=%d flag=%d disp=%u aura=%u nau=%u form=%u cmb=%d "
+                  "bst=%d tgt=%s tdist=%.1f cast=%u smode=%s hp=%.0f x=%.1f y=%.1f z=%.1f mcms=%u bad=%s",
+                  guidLow, ut.c_str(), bot->GetInstanceId(), uint32(MwClass(bot)),
+                  bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", alive ? 1 : 0, ghost ? 1 : 0, MwDeathState(bot),
+                  flag ? 1 : 0, disp, aura, nAura, uint32(bot->GetShapeshiftForm()), cmb ? 1 : 0, int(botAI->GetState()),
+                  tname.c_str(), tdist, castId, MwStatusMode(bot), bot->GetHealthPct(), bot->GetPositionX(),
+                  bot->GetPositionY(), bot->GetPositionZ(), mcms, bad.c_str());
+    MountWatchLog(std::string("[MNTW] ") + ev + " " + bot->GetName() + buf);
+}
+
+bool HandleMountWatchCommand(ChatHandler* handler, std::istringstream& in)
+{
+    std::string a, b, c;
+    in >> a >> b >> c;
+
+    if (a == "list" || a.empty())
+    {
+        handler->SendSysMessage(("botscenario: mountwatch map=" + std::to_string(g_mwMap.load()) +
+                                 " rowMs=" + std::to_string(g_mwRowMs.load())).c_str());
+        return true;
+    }
+
+    if (a == "off")
+    {
+        g_mwMap.store(0, std::memory_order_relaxed);
+        {
+            std::lock_guard<std::mutex> lock(g_mwMutex);
+            g_mwBots.clear();
+        }
+        MountWatchLog("[SCENARIO] mountwatch off ut=" + MwUt());
+        handler->SendSysMessage("botscenario: mountwatch off");
+        return true;
+    }
+
+    char* end = nullptr;
+    unsigned long const map = std::strtoul(a.c_str(), &end, 10);
+    if (!end || *end != '\0' || map == 0 || b != "on")
+    {
+        handler->SendSysMessage("botscenario: usage: botscenario - mountwatch <mapId> on [rowMs] | off | list");
+        return false;
+    }
+    uint32 rowMs = 5000;
+    if (!c.empty())
+    {
+        unsigned long const v = std::strtoul(c.c_str(), &end, 10);
+        if (end && *end == '\0' && v >= 250)
+            rowMs = uint32(v);
+    }
+
+    EnsureMountWatchScript();
+    {
+        std::lock_guard<std::mutex> lock(g_mwMutex);
+        g_mwBots.clear();
+    }
+    g_mwRowMs.store(rowMs, std::memory_order_relaxed);
+    g_mwMap.store(uint32(map), std::memory_order_relaxed);
+    MountWatchLog("[SCENARIO] mountwatch on map=" + std::to_string(map) + " rowMs=" + std::to_string(rowMs) + " ut=" + MwUt());
+    handler->SendSysMessage(("botscenario: mountwatch on map=" + std::to_string(map) + " rowMs=" + std::to_string(rowMs)).c_str());
     return true;
 }
 

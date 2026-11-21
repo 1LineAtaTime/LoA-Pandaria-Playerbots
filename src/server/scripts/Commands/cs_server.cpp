@@ -24,6 +24,7 @@ EndScriptData */
 
 #include "Chat.h"
 #include "Config.h"
+#include "GitRevision.h"
 #include "Language.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
@@ -125,7 +126,7 @@ public:
         if (maxActiveClientsNum > sWorld->getIntConfig(CONFIG_MAX_ICORE))
             maxActiveClientsNum = (maxActiveClientsNum * sWorld->getRate(RATE_MAX_MODW));
 
-        handler->PSendSysMessage("-=Project=- " REV_DATE " |cffff0000 Update Pack 3 (11.06.2019)");
+        handler->PSendSysMessage("%s", GitRevision::GetFullVersion()); // as AC's .server info: release tag, commit, date and branch
         handler->PSendSysMessage(LANG_CONNECTED_USERS, playersNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);
         handler->PSendSysMessage(LANG_UPTIME, uptime.c_str());
 

@@ -15991,6 +15991,24 @@ void Player::PrepareQuestMenu(ObjectGuid guid)
     }
 }
 
+// True when every objective of the quest is one the turn-in page checks itself (items, currency, money), or it has none.
+static bool IsPlainTurnIn(Quest const* quest)
+{
+    for (QuestObjective const& objective : quest->Objectives)
+    {
+        switch (objective.Type)
+        {
+            case QUEST_OBJECTIVE_ITEM:
+            case QUEST_OBJECTIVE_CURRENCY:
+            case QUEST_OBJECTIVE_MONEY:
+                break;
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+
 void Player::SendPreparedQuest(WorldObject* source)
 {
     QuestMenu& questMenu = PlayerTalkClass->GetQuestMenu();
@@ -16019,6 +16037,13 @@ void Player::SendPreparedQuest(WorldObject* source)
 
                 if (quest->IsTurnIn() && quest->IsRepeatable() && !quest->IsDailyOrWeekly())
                     PlayerTalkClass->SendQuestGiverRequestItems(quest, source->GetGUID(), CanCompleteRepeatableQuest(quest), true);
+                // A turn-in quest (QuestType 0) has nothing to accept: the giver that also ends it hands it in on the first talk,
+                // as when it is picked from his quest list (HandleQuestgiverQueryQuestOpcode). The details page it got here had no
+                // text and an Accept button (Lower the Boom 26936). Only for turn-ins whose requirements the turn-in page itself
+                // checks (items, currency, money): a few QuestType 0 quests carry kill or reputation objectives, which nothing
+                // on that path would check.
+                else if (quest->IsTurnIn() && source->hasInvolvedQuest(questId) && IsPlainTurnIn(quest))
+                    PlayerTalkClass->SendQuestGiverRequestItems(quest, source->GetGUID(), CanRewardQuest(quest, false), true);
                 else
                     PlayerTalkClass->SendQuestGiverQuestDetails(quest, source->GetGUID(), true);
             }
@@ -17539,6 +17564,26 @@ void Player::SendQuestUpdate(uint32 questId)
     UpdateForQuestWorldObjects();
     UpdatePhasing();
     UpdateAreaAndZonePhase();
+    SendConditionalQuestPOIUpdate();
+}
+
+// Quest POI blobs can have per-player conditions (CONDITION_SOURCE_TYPE_QUEST_POI_BLOB) that depend on other quests,
+// e.g. a turn-in NPC who stands somewhere else once a side quest is done. The client asks for a quest's blobs when it
+// gets the quest (and at login) and keeps them, so after every quest status change resend the blobs of the quests in
+// the log that have such conditions. Nothing is sent, and only a flag is checked, while no blob has conditions.
+void Player::SendConditionalQuestPOIUpdate()
+{
+    if (!sConditionMgr->HasAnyQuestPOIBlobConditions() || !IsInWorld() || GetSession()->IsBot())
+        return;
+
+    std::vector<uint32> questIds;
+    for (uint16 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
+        if (uint32 questId = GetQuestSlotQuestId(slot))
+            if (sConditionMgr->GetConditionsForQuestPOIBlobs(questId))
+                questIds.push_back(questId);
+
+    if (!questIds.empty())
+        GetSession()->SendQuestPOIQueryResponse(questIds);
 }
 
 QuestGiverStatus Player::GetQuestDialogStatus(Object const* questgiver)
@@ -17781,11 +17826,12 @@ void Player::AreaExploredOrEventHappens(uint32 questId)
             {
                 q_status.Explored = true;
                 m_QuestStatusSave[questId] = true;
-                SetQuestSlotState(log_slot, QUEST_STATE_COMPLETE);
-                // m_QuestStatusSave[questId] = QUEST_DEFAULT_SAVE_TYPE;
-                // Todo 
-
-                SendQuestComplete(questId);
+                // Only the explored flag is set here. The quest log's COMPLETE state and SMSG_QUEST_UPDATE_COMPLETE belong
+                // to CompleteQuest below, once every objective is done: sent here (3.3.5's "exploration succeeded"), they
+                // marked a quest with objectives still open as complete on the client (Unusual Behavior... Even For
+                // Gnolls 27152: investigated before Moldfang was killed). The client then had nothing to react to when the
+                // quest really completed, so a quest handed in from the log (QUEST_FLAGS_AUTO_COMPLETE) never offered its
+                // turn-in. An event objective shows as done through its own credit (SendQuestUpdateAddCreditSimple).
             }
 
             // An event objective (type AREATRIGGER, ObjectID -1: "the event happened") is what this call reports, so it is

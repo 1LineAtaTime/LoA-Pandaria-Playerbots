@@ -4,27 +4,25 @@
  */
 
 /*
- * Ported from AC mod-playerbots Ai/Base/Actions/InviteToGroupAction.h (#149; GroupStrategy.cpp already
- * referenced "invite nearby"/"invite guild" as dead action names). AC's Invite() builds a hand-crafted
- * CMSG_GROUP_INVITE WorldPacket and feeds it to WorldSession::HandleGroupInviteOpcode(); this core's
- * opcode handler (GroupHandler.cpp) reads a bit-packed player name/realm GUID that is fragile to
- * reconstruct by hand, so Invite() below calls the same Group::AddInvite()/AddLeaderInvite() the
- * handler itself calls, skipping packet (de)serialization entirely.
- *
- * AC's isUseful()/Execute() also lean on several concepts this fork does not have - GrouperType,
- * HasGameClientMaster(), PlayerbotOperations/PlayerbotWorldThreadProcessor (raid auto-convert),
- * PlayerbotTextMgr/BroadcastHelper (invite chat) - same gap already called out in LeaveGroupAction.h
- * for LeaveFarAwayAction. Those are dropped rather than guessed at. This is also a
- * server with no config toggle for this behaviour (PlayerbotAIConfig.h is off-limits to add one to),
- * so both actions only ever recruit *other unowned bots* (GET_PLAYERBOT_AI() set, not real-player-
- * controlled) - never a real human player - to keep the blast radius at zero for anyone actually
- * playing on the server.
+ * Ported from AC mod-playerbots Ai/Base/Actions/InviteToGroupAction.h/.cpp: "invite", "join", "invite nearby",
+ * "invite guild" and the "lfg" chat command (LfgAction). AC is the spec; the 5.4.8 adaptations are:
+ *  - AC's Invite() builds a CMSG_GROUP_INVITE WorldPacket and feeds it to WorldSession::HandleGroupInviteOpcode().
+ *    This core's opcode handler (GroupHandler.cpp) reads a bit-packed player name/realm GUID that is fragile to
+ *    reconstruct by hand, so Invite() calls the same Group::AddInvite()/AddLeaderInvite() the handler itself calls.
+ *  - AC's free functions IsRealPlayer(p) (p && !GET_PLAYERBOT_AI(p)) and IsSelfBot(p) (the bot's master is itself)
+ *    are file-local helpers in the .cpp; AC GetGroupLeader() is this fork's GetGroupMaster() (same body).
+ *  - LfgAction: AC IsTank/IsHeal(player, bySpec) are PlayerBotSpec::IsTank/IsHeal here, which read the 5.4.8
+ *    specialisation (monk brewmaster/mistweaver included). DEFAULT_MAX_LEVEL is the MoP 90 (DBCEnums.h).
+ * Default state, as AC: "invite"/"join"/"lfg" are chat commands (ON). "invite nearby"/"invite guild" belong to the
+ * "group" strategy, which AiFactory never adds (as AC), and are gated by AiPlayerbot.RandomBotGroupNearby = 0 (dormant).
  */
 
 #ifndef _PLAYERBOT_INVITETOGROUPACTION_H
 #define _PLAYERBOT_INVITETOGROUPACTION_H
 
 #include "Action.h"
+
+#include <vector>
 
 class Player;
 class PlayerbotAI;
@@ -36,17 +34,13 @@ public:
 
     bool Execute(Event event) override;
 
-    /// Shared invite logic: puts `player` on `inviter`'s pending group invite, creating the group if
-    /// `inviter` is not already in one. Mirrors WorldSession::HandleGroupInviteOpcode's checks
-    /// (GroupHandler.cpp) without going through the opcode/WorldPacket layer.
+    /// AC InviteToGroupAction.cpp:25-53. Puts `player` on `inviter`'s pending group invite, creating the group if
+    /// `inviter` is not already in one (see the file header for why the opcode handler is not used).
     virtual bool Invite(Player* inviter, Player* player);
 };
 
-// Ported from AC mod-playerbots InviteToGroupAction.h:38-42 (#177): the "join" chat command - the
-// bot's master invites the bot into the *master's own* group (Invite() with the arguments reversed
-// from the plain "invite" command). Unlike InviteNearbyToGroupAction/InviteGuildToGroupAction this
-// always targets the command's sender, so the real-player-safety gate on those two classes does not
-// apply here - the bot only ever joins whoever is already allowed to command it.
+// AC InviteToGroupAction.h:38-43: the "join" chat command - the command's sender invites the bot into the sender's
+// own group (Invite() with the arguments reversed from the plain "invite" command).
 class JoinGroupAction : public InviteToGroupAction
 {
 public:
@@ -67,6 +61,20 @@ public:
     bool isUseful() override;
 };
 
+// AC InviteToGroupAction.h:53-65: generic guild member finder
+class FindGuildMembers
+{
+public:
+    FindGuildMembers() {}
+
+    void operator()(Player* player) { data.push_back(player); }
+
+    std::vector<Player*> const GetResult() { return data; }
+
+private:
+    std::vector<Player*> data;
+};
+
 class InviteGuildToGroupAction : public InviteNearbyToGroupAction
 {
 public:
@@ -77,6 +85,21 @@ public:
 
     bool Execute(Event event) override;
     bool isUseful() override;
+
+private:
+    std::vector<Player*> getGuildMembers();
+};
+
+// AC InviteToGroupAction.h:82-87 / .cpp:287-467: the "lfg" chat command. A player whispers "lfg" (optionally
+// 5/10/20/25/40) to a random bot, or says it in a chat channel (RandomPlayerbotMgr::HandleCommand routes channel
+// chat to every random bot); each bot within 4 levels whose role still has a free slot in the requester's group
+// leaves its own group, invites itself into the requester's group and accepts.
+class LfgAction : public InviteToGroupAction
+{
+public:
+    LfgAction(PlayerbotAI* botAI, std::string const name = "lfg") : InviteToGroupAction(botAI, name) {}
+
+    bool Execute(Event event) override;
 };
 
 #endif

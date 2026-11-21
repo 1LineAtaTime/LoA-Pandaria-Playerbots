@@ -509,6 +509,16 @@ public:
     NaturesVigilTrigger(PlayerbotAI* botAI) : BoostTrigger(botAI, "nature's vigil") {}
 };
 
+// Incarnation: Chosen of Elune (talent 106731): ready, not already up, and an Eclipse is active (the +25% only applies
+// during Eclipse). Same "boost" gate as BoostTrigger (player target, or enemies stronger than the group).
+class IncarnationChosenTrigger : public Trigger
+{
+public:
+    IncarnationChosenTrigger(PlayerbotAI* botAI) : Trigger(botAI, "incarnation: chosen of elune") {}
+
+    bool IsActive() override;
+};
+
 // MoP rotation row 1100 (class): Might of Ursoc at own health <= 25% (explicit 25, not the configurable
 // "critical health", so the threshold stays MoP's).
 class MightOfUrsocTrigger : public LowHealthTrigger

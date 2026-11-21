@@ -103,6 +103,7 @@ public:
         creators["tranquilizing shot magic"] = &HunterTriggerFactoryInternal::remove_magic;          // AC :91
         creators["immolation trap no cd"] = &HunterTriggerFactoryInternal::immolation_trap_no_cd;    // AC :92
         creators["kill command"] = &HunterTriggerFactoryInternal::kill_command;                      // AC :93
+        creators["focus fire"] = &HunterTriggerFactoryInternal::focus_fire;
         creators["explosive shot"] = &HunterTriggerFactoryInternal::explosive_shot;                  // AC :94
         creators["lock and load"] = &HunterTriggerFactoryInternal::lock_and_load;                    // AC :95
         creators["silencing shot"] = &HunterTriggerFactoryInternal::silencing_shot;                // AC :96
@@ -154,6 +155,7 @@ private:
     static Trigger* remove_magic(PlayerbotAI* botAI) { return new TargetRemoveMagicTrigger(botAI); }
     static Trigger* immolation_trap_no_cd(PlayerbotAI* botAI) { return new ImmolationTrapNoCdTrigger(botAI); }
     static Trigger* kill_command(PlayerbotAI* botAI) { return new KillCommandTrigger(botAI); }
+    static Trigger* focus_fire(PlayerbotAI* botAI) { return new FocusFireTrigger(botAI); }
     static Trigger* explosive_shot(PlayerbotAI* botAI) { return new ExplosiveShotTrigger(botAI); }
     static Trigger* lock_and_load(PlayerbotAI* botAI) { return new LockAndLoadTrigger(botAI); }
     static Trigger* silencing_shot(PlayerbotAI* botAI) { return new SilencingShotTrigger(botAI); }
@@ -197,6 +199,7 @@ public:
         creators["hunter's mark"] = &HunterAiObjectContextInternal::hunters_mark;
         creators["mend pet"] = &HunterAiObjectContextInternal::mend_pet;
         creators["kill command"] = &HunterAiObjectContextInternal::kill_command;
+        creators["focus fire"] = &HunterAiObjectContextInternal::focus_fire;
         creators["revive pet"] = &HunterAiObjectContextInternal::revive_pet;
         creators["call pet 1"] = &HunterAiObjectContextInternal::call_pet;
         creators["black arrow"] = &HunterAiObjectContextInternal::black_arrow;
@@ -263,6 +266,7 @@ private:
     static Action* hunters_mark(PlayerbotAI* botAI) { return new CastHuntersMarkAction(botAI); }
     static Action* mend_pet(PlayerbotAI* botAI) { return new CastMendPetAction(botAI); }
     static Action* kill_command(PlayerbotAI* botAI) { return new CastKillCommandAction(botAI); }
+    static Action* focus_fire(PlayerbotAI* botAI) { return new CastFocusFireAction(botAI); }
     static Action* revive_pet(PlayerbotAI* botAI) { return new CastRevivePetAction(botAI); }
     static Action* call_pet(PlayerbotAI* botAI) { return new CastCallPetAction(botAI); }
     static Action* black_arrow(PlayerbotAI* botAI) { return new CastBlackArrow(botAI); }

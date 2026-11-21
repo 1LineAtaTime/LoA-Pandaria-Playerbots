@@ -1,0 +1,11 @@
+-- Desiccated Magus 44315 and Desiccated Spearman 44316 (Andorhal, first battle, phase 259) stand and fight
+-- Sourced: unit_flags2 33556480 for both (TDB 1210 creature_template, and the 4.3.4 sniff in TCPP
+-- TDB01_to_TDB02 132_creature_template.sql; TDB 442 has 2048). None of the three sources has
+-- UNIT_FLAG2_FEIGN_DEATH 0x1, which mop alone carried (33556481): it made all 54 spawns lie as if dead while they kept their
+-- faction 974, their SmartAI (Frostbolt, Blast Wave, Shadowed Spear, Throw) and could be attacked. No source has a feign
+-- death aura, a dead stand state or an emote for either entry (both TDBs: creature_template_addon only sheath 1, no
+-- creature_addon rows). Wowhead 27159: the Scourge are "in perpetual conflict" with the faction NPCs, so they are live
+-- fighters, not battle corpses.
+-- Ours: nothing else changed. unit_flags stay as mop has them (512 / 33280, IMMUNE_TO_NPC), although every source has 0
+-- (4.3.4 sniff 32768 for the Spearman): see the commit message.
+UPDATE `creature_template` SET `unit_flags2` = 33556480 WHERE `entry` IN (44315, 44316);

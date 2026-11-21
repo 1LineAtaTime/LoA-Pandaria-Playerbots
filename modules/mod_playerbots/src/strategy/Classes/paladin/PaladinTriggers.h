@@ -330,8 +330,9 @@ public:
 class PaladinHurtGroupTrigger : public Trigger
 {
 public:
-    PaladinHurtGroupTrigger(PlayerbotAI* botAI, std::string const name, float radius)
-        : Trigger(botAI, name), radius(radius)
+    // `pct`: a member counts as hurt below this health percentage (default 50).
+    PaladinHurtGroupTrigger(PlayerbotAI* botAI, std::string const name, float radius, float pct = 50.0f)
+        : Trigger(botAI, name), radius(radius), pct(pct)
     {
     }
 
@@ -339,6 +340,7 @@ public:
 
 private:
     float radius;
+    float pct;
 };
 
 // Cooldowns fired "always in combat" (Ret Holy Avenger, Prot/Ret GoAK). AC pattern: BoostTrigger.

@@ -174,10 +174,24 @@ AiPlayerbot.AllowGuildBots = 1
 # Allow linking accounts for shared altbot control
 AiPlayerbot.AllowTrustedAccountBots = 1
 
-# Randombots will invite nearby bots to guilds
+# Randombots will create guilds with nearby randombots
+# Note: currently, randombots will not invite more bots after a guild is created,
+# meaning randombot guilds will have only the 10 initial randombots needed to sign the charter
+# Default: 0 (disabled)
 AiPlayerbot.RandomBotGuildNearby = 0
 
-# Randombots will invite players to groups/raids/guilds.
+# Number of guilds created by randombots
+AiPlayerbot.RandomBotGuildCount = 20
+
+# Maximum number of members in randombot guilds (minimum is hardcoded to 10)
+AiPlayerbot.RandomBotGuildSizeMax = 15
+
+# Delete all randombot (and any addclass bot) guilds on startup. While enabled,
+# no new randombot guilds are created or joined. Set back to 0 and restart the
+# server to resume normal random bot guild assignment.
+AiPlayerbot.DeleteRandomBotGuilds = 0
+
+# Randombots will invite players to groups/raids/guilds
 AiPlayerbot.RandomBotInvitePlayer = 0
 
 # Bots will chat in say/guild when they invite other bots to groups/raids/guilds
@@ -504,6 +518,8 @@ AiPlayerbot.AutoPickReward = yes
 AiPlayerbot.SyncQuestWithPlayer = 1
 
 # Bots will auto-complete quests for the player when handing in
+# When enabled, talking to a quest giver with a bot in the group grants the player's objectives for the
+# in-progress quests that giver lists and marks them complete (a cheat; kill/collect quests finish at once).
 # Default: 0 (disabled)
 AiPlayerbot.SyncQuestForPlayer = 0
 
@@ -3098,12 +3114,6 @@ AiPlayerbot.EnableGuildTasks = 0
 
 # Enable dungeon suggestions in lower case randomly
 AiPlayerbot.SuggestDungeonsInLowerCaseRandomly = 0
-
-# Random bot guild count
-AiPlayerbot.RandomBotGuildCount = 20
-
-# Delete all random bot guilds
-AiPlayerbot.DeleteRandomBotGuilds = 0
 
 # Chance bot chooses RPG (Teleport to random camp for their level) instead of grinding
 # In the "new rpg" strategy: chance a status change prefers an rpg camp destination over grinding

@@ -38,6 +38,22 @@ private:
     float range;
 };
 
+/// AC Ai/Base/Value/NearestGameObjects.h:50-63. Hostile trap gameobjects within `range` whose spell deals damage.
+class NearestTrapWithDamageValue : public ObjectGuidListCalculatedValue
+{
+public:
+    NearestTrapWithDamageValue(PlayerbotAI* botAI, float range = 15.0f)
+        : ObjectGuidListCalculatedValue(botAI, "nearest trap with damage", 1 * 1000), range(range)
+    {
+    }
+
+protected:
+    GuidVector Calculate() override;
+
+private:
+    float range;
+};
+
 /// A bot's assigned job inside a battleground. Set by the tactics, not calculated - it only needs
 /// to persist between decisions, which is what ManualSetValue is for.
 class BgRoleValue : public ManualSetValue<uint32>

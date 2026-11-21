@@ -20,6 +20,8 @@
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"
 #include "CreatureTextMgr.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 
 const Position MySerpentPath[2]
 {
@@ -3296,6 +3298,14 @@ class npc_wounded_pilot : public CreatureScript
         {
             npc_wounded_pilotAI(Creature* creature) : ScriptedAI(creature) { }
 
+            // The starting health comes from the wound spell's data, not from its aura: the aura is not always on the
+            // pilot right after the cast, and reading it then dereferenced a null pointer (crash reported upstream).
+            void SetWoundedHealth(uint32 spellId)
+            {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+                me->SetHealth(me->CountPctFromMaxHealth(spellInfo ? spellInfo->Effects[EFFECT_0].BasePoints : 75));
+            }
+
             void Reset() override
             {
                 me->AddAura(SPELL_WOUNDED_HEALING_TRACKER, me);
@@ -3310,25 +3320,25 @@ class npc_wounded_pilot : public CreatureScript
                 {
                     case NPC_WOUNDED_PILOT:
                         me->CastSpell(me, SPELL_WOUNDED);
-                        me->SetHealth(me->CountPctFromMaxHealth(me->GetAura(SPELL_WOUNDED)->GetSpellInfo()->Effects[EFFECT_0].BasePoints));
+                        SetWoundedHealth(SPELL_WOUNDED);
                         for (uint8 i = 0; i < 3; i++)
                             me->m_Events.Schedule(delay += 20000, [this, i]() { me->DealDamage(me, me->CountPctFromMaxHealth(i == 2 ? 26 : 25)); });
                         break;
                     case NPC_TERRIBLY_WOUNDED_PILOT:
                         me->CastSpell(me, SPELL_TERRIBLY_WOUNDED);
-                        me->SetHealth(me->CountPctFromMaxHealth(me->GetAura(SPELL_TERRIBLY_WOUNDED)->GetSpellInfo()->Effects[EFFECT_0].BasePoints));
+                        SetWoundedHealth(SPELL_TERRIBLY_WOUNDED);
                         for (uint8 i = 0; i < 5; i++)
                             me->m_Events.Schedule(delay += 12000, [this, i]() { me->DealDamage(me, me->CountPctFromMaxHealth(i == 4 ? 11 : 10)); });
                         break;
                     case NPC_CRITICALLY_WOUNDED_PILOT:
                         me->CastSpell(me, SPELL_CRITICALLY_WOUNDED);
-                        me->SetHealth(me->CountPctFromMaxHealth(me->GetAura(SPELL_CRITICALLY_WOUNDED)->GetSpellInfo()->Effects[EFFECT_0].BasePoints));
+                        SetWoundedHealth(SPELL_CRITICALLY_WOUNDED);
                         for (uint8 i = 0; i < 5; i++)
                             me->m_Events.Schedule(delay += 12000, [this, i]() { me->DealDamage(me, me->CountPctFromMaxHealth(i == 4 ? 6 : 5)); });
                         break;
                     case NPC_MORTALLY_WOUNDED_PILOT:
                         me->CastSpell(me, SPELL_MORTALLY_WOUNDED);
-                        me->SetHealth(me->CountPctFromMaxHealth(me->GetAura(SPELL_MORTALLY_WOUNDED)->GetSpellInfo()->Effects[EFFECT_0].BasePoints));
+                        SetWoundedHealth(SPELL_MORTALLY_WOUNDED);
                         me->m_Events.Schedule(delay += 20000, [this]() { me->DealDamage(me, me->CountPctFromMaxHealth(1)); });
                         break;
                 }

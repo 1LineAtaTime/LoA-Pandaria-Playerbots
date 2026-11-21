@@ -200,6 +200,9 @@ public:
         creators["bastion of glory"] = &PaladinTriggerFactoryInternal::bastion_of_glory;
         creators["paladin 3 hurt group"] = &PaladinTriggerFactoryInternal::paladin_3_hurt_group;
         creators["paladin holy radiance group"] = &PaladinTriggerFactoryInternal::paladin_holy_radiance_group;
+        creators["paladin lights hammer group"] = &PaladinTriggerFactoryInternal::paladin_lights_hammer_group;
+        creators["paladin light of dawn group"] = &PaladinTriggerFactoryInternal::paladin_light_of_dawn_group;
+        creators["light of dawn ready"] = &PaladinTriggerFactoryInternal::light_of_dawn_ready;
         creators["holy avenger"] = &PaladinTriggerFactoryInternal::holy_avenger;
         creators["guardian of ancient kings"] = &PaladinTriggerFactoryInternal::guardian_of_ancient_kings;
     }
@@ -274,6 +277,19 @@ private:
     static Trigger* paladin_holy_radiance_group(PlayerbotAI* botAI)
     {
         return new PaladinHurtGroupTrigger(botAI, "paladin holy radiance group", 10.0f);
+    }
+    // Light's Hammer: 3+ members below 80% within its 10 yd area. Light of Dawn: 3+ below 80% within 30 yd.
+    static Trigger* paladin_lights_hammer_group(PlayerbotAI* botAI)
+    {
+        return new PaladinHurtGroupTrigger(botAI, "paladin lights hammer group", 10.0f, 80.0f);
+    }
+    static Trigger* paladin_light_of_dawn_group(PlayerbotAI* botAI)
+    {
+        return new PaladinHurtGroupTrigger(botAI, "paladin light of dawn group", 30.0f, 80.0f);
+    }
+    static Trigger* light_of_dawn_ready(PlayerbotAI* botAI)
+    {
+        return new TwoTriggers(botAI, "holy power 3 available", "paladin light of dawn group");
     }
     static Trigger* holy_avenger(PlayerbotAI* botAI) { return new HolyAvengerTrigger(botAI); }
     static Trigger* guardian_of_ancient_kings(PlayerbotAI* botAI) { return new GuardianOfAncientKingsTrigger(botAI); }
@@ -408,6 +424,10 @@ public:
         creators["eternal flame on party"] = &PaladinAiObjectContextInternal::eternal_flame_on_party;
         creators["divine light on party"] = &PaladinAiObjectContextInternal::divine_light_on_party;
         creators["holy radiance on party"] = &PaladinAiObjectContextInternal::holy_radiance_on_party;
+        creators["light of dawn"] = &PaladinAiObjectContextInternal::light_of_dawn;
+        creators["light's hammer on party"] = &PaladinAiObjectContextInternal::lights_hammer_on_party;
+        creators["light's hammer"] = &PaladinAiObjectContextInternal::lights_hammer;
+        creators["denounce"] = &PaladinAiObjectContextInternal::denounce;
     }
 
 private:
@@ -521,6 +541,10 @@ private:
     static Action* eternal_flame_on_party(PlayerbotAI* botAI) { return new CastEternalFlameOnPartyAction(botAI); }
     static Action* divine_light_on_party(PlayerbotAI* botAI) { return new CastDivineLightOnPartyAction(botAI); }
     static Action* holy_radiance_on_party(PlayerbotAI* botAI) { return new CastHolyRadianceOnPartyAction(botAI); }
+    static Action* light_of_dawn(PlayerbotAI* botAI) { return new CastLightOfDawnAction(botAI); }
+    static Action* lights_hammer_on_party(PlayerbotAI* botAI) { return new CastLightsHammerOnPartyAction(botAI); }
+    static Action* lights_hammer(PlayerbotAI* botAI) { return new CastLightsHammerAction(botAI); }
+    static Action* denounce(PlayerbotAI* botAI) { return new CastDenounceAction(botAI); }
     static Action* divine_illumination(PlayerbotAI* ai) { return new CastDivineIlluminationAction(ai); }
     static Action* divine_sacrifice(PlayerbotAI* ai) { return new CastDivineSacrificeAction(ai); }
     static Action* cancel_divine_sacrifice(PlayerbotAI* ai) { return new CastCancelDivineSacrificeAction(ai); }

@@ -417,6 +417,8 @@ class LFGMgr
         void InitBoot(ObjectGuid gguid, ObjectGuid kguid, ObjectGuid vguid, std::string const& reason);
         /// Updates player boot proposal with new player answer
         void UpdateBoot(ObjectGuid guid, bool accept);
+        /// Ends the boot vote of a group once enough votes are in (kicks the victim if it passed)
+        void ResolveBoot(ObjectGuid gguid);
         /// Updates proposal to join dungeon with player answer
         void UpdateProposal(uint32 proposalId, ObjectGuid guid, bool accept);
         /// Updates the role check with player answer

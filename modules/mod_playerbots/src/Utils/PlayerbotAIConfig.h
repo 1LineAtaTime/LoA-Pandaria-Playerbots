@@ -265,6 +265,31 @@ public:
     // Grouping.
     bool randomBotGroupNearby;
     bool inviteChat;
+    // AC PlayerbotAIConfig.h:123 (randomBotGuildNearby, randomBotInvitePlayer, inviteChat): guild management
+    // ("guild manage nearby") and the nearby group invites read these.
+    bool randomBotGuildNearby;
+    bool randomBotInvitePlayer;
+
+    // Random-bot guilds, AC PlayerbotAIConfig.h:314-315 (PlayerbotGuildMgr, BotFactory::InitGuild).
+    uint32 randomBotGuildCount;
+    uint32 randomBotGuildSizeMax;
+    bool deleteRandomBotGuilds;
+
+    // Guild tasks, AC PlayerbotAIConfig.h:332-337 (GuildTaskMgr, dormant as in AC).
+    bool guildTaskEnabled;
+    uint32 minGuildTaskChangeTime, maxGuildTaskChangeTime;
+    uint32 minGuildTaskAdvertisementTime, maxGuildTaskAdvertisementTime;
+    uint32 minGuildTaskRewardTime, maxGuildTaskRewardTime;
+    uint32 guildTaskAdvertCleanupTime;
+    uint32 guildTaskKillTaskDistance;
+
+    // Chat replies, AC PlayerbotAIConfig.h:254-262 (read by PlayerbotAI's SMSG_MESSAGECHAT reply gate and ChatReplyAction).
+    std::string toxicLinksPrefix;
+    // AC PlayerbotAIConfig.h:198: random bots talk (say / yell / general chatting / lfg) and reply to chat.
+    bool randomBotTalk;
+    uint32 toxicLinksRepliesChance;
+    uint32 thunderfuryRepliesChance;
+    uint32 guildRepliesRate;
     bool summonWhenGroup;
     bool keepAltsInGroup;
     bool disabledWithoutRealPlayer;

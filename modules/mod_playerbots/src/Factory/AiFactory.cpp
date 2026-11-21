@@ -780,6 +780,10 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
 
         if (!player->GetGroup() || player->GetGroup()->GetLeaderGUID() == player->GetGUID())
         {
+            // AC AiFactory.cpp:612-613, commented out in AC itself (the strategies exist; "+group" / "+guild" in
+            // AiPlayerbot.RandomBotNonCombatStrategies opts in):
+            // nonCombatEngine->addStrategy("group");
+            // nonCombatEngine->addStrategy("guild");
             nonCombatEngine->addStrategy("grind", false);
 
             if (sPlayerbotAIConfig->enableNewRpgStrategy)
@@ -802,7 +806,9 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
         else if (facade && master)
         {
             if (GET_PLAYERBOT_AI(master) || sRandomPlayerbotMgr->IsRandomBot(player))
-                // #269/#272: AC AiFactory.cpp:648-656, commented out in AC itself (grouped bot, bot/random master):
+                // #269/#272: AC AiFactory.cpp:643-656, commented out in AC itself (grouped bot, bot/random master):
+                // nonCombatEngine->addStrategy("group");
+                // nonCombatEngine->addStrategy("guild");
                 // if (sPlayerbotAIConfig.autoDoQuests)
                 // {
                 //     // nonCombatEngine->addStrategy("travel");

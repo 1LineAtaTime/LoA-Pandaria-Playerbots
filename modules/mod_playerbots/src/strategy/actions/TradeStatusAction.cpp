@@ -84,6 +84,7 @@
 #include "TradeStatusAction.h"
 
 #include "Event.h"
+#include "GuildTaskMgr.h"
 #include "ItemUsageValue.h"
 #include "ItemVisitors.h"
 #include "ChatHelper.h"
@@ -234,6 +235,13 @@ bool TradeStatusAction::Execute(Event event)
         uint32 discount = GetTradeDiscount(bot, trader);
         if (CheckTrade())
         {
+            // AC TradeStatusAction.cpp:81-90: what the trader gives, read before the trade completes.
+            std::map<uint32, uint32> givenItemIds;
+            if (trader->GetTradeData())
+                for (uint32 slot = 0; slot < TRADE_SLOT_TRADED_COUNT; ++slot)
+                    if (Item* item = trader->GetTradeData()->GetItem((TradeSlots)slot))
+                        givenItemIds[item->GetTemplate()->ItemId] += item->GetCount();
+
             bot->GetSession()->HandleAcceptTradeOpcode(accept);
             if (bot->GetTradeData())
             {
@@ -241,8 +249,11 @@ bool TradeStatusAction::Execute(Event event)
                 return false;
             }
 
-            // 5.4.8: no craft-order system on this fork (see the file header) - AC's
-            // CraftData/GuildTaskMgr bookkeeping over givenItemIds/takenItemIds is dropped.
+            // 5.4.8: no craft-order system on this fork (see the file header) - AC's CraftData bookkeeping over
+            // givenItemIds/takenItemIds is dropped. AC TradeStatusAction.cpp:110: the guild task check (dormant while
+            // AiPlayerbot.EnableGuildTasks = 0).
+            for (auto const& given : givenItemIds)
+                GuildTaskMgr::instance().CheckItemTask(given.first, given.second, trader, bot);
             return true;
         }
     }

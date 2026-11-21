@@ -919,11 +919,21 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                             (*itr)->GetGUID().GetCounter(), e.action.killedMonster.creature);
                     }
                     else if (IsUnit(*itr)) // Special handling for vehicles
+                    {
                         if (Vehicle* vehicle = (*itr)->ToUnit()->GetVehicleKit())
+                        {
                             for (SeatMap::iterator it = vehicle->Seats.begin(); it != vehicle->Seats.end(); ++it)
                                 if (Player* player = ObjectAccessor::GetPlayer(*(*itr), it->second.Passenger.Guid))
                                     player->KilledMonsterCredit(e.action.killedMonster.creature, ObjectGuid::Empty,
                                         e.action.killedMonster.countMax ? urand(e.action.killedMonster.countMin, e.action.killedMonster.countMax) : (e.action.killedMonster.countMin ? e.action.killedMonster.countMin : 1));
+                        }
+                        // A pet, guardian or charmed unit as the target (the action invoker is the hunter's pet when the
+                        // pet engaged first): the credit goes to the player who owns or controls it, as AzerothCore does
+                        // (SmartScript.cpp, SMART_ACTION_CALL_KILLEDMONSTER, GetCharmerOrOwnerPlayerOrPlayerItself).
+                        else if (Player* owner = (*itr)->ToUnit()->GetCharmerOrOwnerPlayerOrPlayerItself())
+                            owner->KilledMonsterCredit(e.action.killedMonster.creature, ObjectGuid::Empty,
+                                e.action.killedMonster.countMax ? urand(e.action.killedMonster.countMin, e.action.killedMonster.countMax) : (e.action.killedMonster.countMin ? e.action.killedMonster.countMin : 1));
+                    }
                 }
 
                 delete targets;
@@ -3262,7 +3272,13 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
             if ((!e.event.spellHit.spell || spell->Id == e.event.spellHit.spell) &&
                 (!e.event.spellHit.school || (spell->SchoolMask & e.event.spellHit.school)))
                 {
+                    // The action may itself hit this creature with a spell the event matches (Speaker Mar'grom 18693:
+                    // "on fire spell hit, cast Fire Ward on self", and Fire Ward is a fire spell): the event then ran inside
+                    // itself until the stack was gone and the server crashed. An event that is still running does not start again.
+                    if (!mSpellHitInProgress.insert(e.event_id).second)
+                        break;
                     ProcessAction(e, unit, 0, 0, bvar, spell);
+                    mSpellHitInProgress.erase(e.event_id);
                     RecalcTimer(e, e.event.spellHit.cooldownMin, e.event.spellHit.cooldownMax);
                 }
             break;

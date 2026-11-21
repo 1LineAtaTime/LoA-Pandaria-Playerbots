@@ -1313,6 +1313,17 @@ TicketSystem.FeedBackTickets = 1
 #        Default:     1
 
 DungeonFinder.OptionsMask = 1
+
+#
+#    LFG.Boot.BotsFollowLeader
+#        Description: In a dungeon-finder group filled with playerbots, a real player is made the group
+#                     leader, and the bots copy that leader's "yes" when the leader starts a vote-kick (bots
+#                     have no vote UI, so otherwise a real player in a bot-filled group can never kick
+#                     anyone). Beyond AzerothCore playerbots.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+LFG.Boot.BotsFollowLeader = 0
 #
 #    LFGSolo.Enabled
 #        Description: Solo dungeon finder. Every dungeon queue becomes 0 tanks / 0 healers / 1 damage dealer, so a

@@ -1743,6 +1743,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
     void RemoveActiveQuest(uint32 quest_id, bool update = true, bool removeFromQuestLog = false);
     void RemoveRewardedQuest(uint32 quest_id, bool update = true);
     void SendQuestUpdate(uint32 questId);
+    void SendConditionalQuestPOIUpdate();
     void DestroyQuestItems(uint32 questId);
 
     void SetDailyQuestStatus(uint32 quest_id);

@@ -261,6 +261,10 @@ void RogueAoeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         new TriggerNode("light aoe", NextAction::array(0, new NextAction("blade flurry", ACTION_HIGH + 4), nullptr)));  // #386 (AC CombatRogueStrategy.cpp:355)
     triggers.push_back(new TriggerNode(
         "medium aoe", NextAction::array(0, new NextAction("fan of knives", ACTION_NORMAL + 5), nullptr)));
+    // Crimson Tempest (level 83 finisher): above the single-target finishers (Envenom +5, Rupture/Eviscerate) when 4+
+    // enemies are close.
+    triggers.push_back(new TriggerNode(
+        "crimson tempest", NextAction::array(0, new NextAction("crimson tempest", ACTION_HIGH + 6), nullptr)));
 }
 
 void RogueBoostStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

@@ -7,6 +7,27 @@
 
 #include "Event.h"
 #include "Playerbots.h"
+#include "ServerFacade.h"
+
+// Mind Spike only on the Surge of Darkness proc (87160), never as a hard cast (it would strip the DoTs).
+bool CastMindSpikeAction::isUseful() { return bot->HasAura(87160) && CastSpellAction::isUseful(); }
+
+// Divine Star travels 24 yd along the facing: worth casting when the party member to heal is inside that reach.
+bool CastDivineStarOnPartyAction::isUseful()
+{
+    Unit* member = AI_VALUE(Unit*, "party member to heal");
+    if (!member || !member->IsAlive() || bot->GetDistance(member) > 24.0f)
+        return false;
+    return CastSpellAction::isUseful();
+}
+
+bool CastDivineStarOnPartyAction::Execute(Event event)
+{
+    Unit* member = AI_VALUE(Unit*, "party member to heal");
+    if (member && member != bot)
+        sServerFacade->SetFacingTo(bot, member, true);
+    return CastSpellAction::Execute(event);
+}
 
 bool CastFadeAction::isUseful()
 {

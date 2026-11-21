@@ -6,10 +6,13 @@
  *  - PlayerbotAIConfig::instance() -> sPlayerbotAIConfig-> (this fork's config is an instance() pointer).
  *  - PreparedStatement::SetData() -> setUInt32() (core PreparedStatement.h:73).
  *  - Player::GetMails() does not exist on 5.4.8; GetMailBegin()/GetMailEnd() (core Player.h:1983-1995).
- *  - GuildTaskMgr does not exist in this fork. See the #258 comment in ProcessMail().
+ *  - GuildTaskMgr (Mgr/Guild/GuildTaskMgr.cpp) is dormant as in AC: with AiPlayerbot.EnableGuildTasks = 0 CheckItemTask
+ *    never matches, so every mailed item goes back to its sender, as before.
  */
 
 #include "CheckMailAction.h"
+
+#include "GuildTaskMgr.h"
 
 #include "CharacterDatabase.h"
 #include "DatabaseEnv.h"
@@ -103,10 +106,8 @@ void CheckMailAction::ProcessMail(Mail* mail, Player* owner, CharacterDatabaseTr
         if (!item)
             continue;
 
-        // #258: GuildTaskMgr (AC Mgr/GuildTaskMgr.h, CheckItemTask) is not ported into this fork, so
-        // the "is this a guild task item" test AC does here cannot run. The !CheckItemTask branch -
-        // mail the item straight back to its sender - is taken unconditionally; when GuildTaskMgr
-        // lands this call must be restored before the fallback.
+        // AC CheckMailAction.cpp:84: an item that is not a guild task item goes straight back to its sender.
+        if (!GuildTaskMgr::instance().CheckItemTask(i->item_template, item->GetCount(), owner, bot, true))
         {
             std::ostringstream body;
             body << "Hello, " << owner->GetName() << ",\n";

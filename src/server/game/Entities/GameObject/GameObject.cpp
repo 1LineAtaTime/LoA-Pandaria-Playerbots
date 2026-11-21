@@ -1199,7 +1199,10 @@ void GameObject::TriggeringLinkedGameObject(uint32 trapEntry, Unit* target)
     if (!trapSpell)                                          // checked at load already
         return;
 
-    float range = float(target->GetSpellMaxRangeForTarget(GetOwner(), trapSpell));
+    // The linked trap stands on this object, so it is looked for around the object and not around its user. With
+    // the user as centre a trap whose spell has self range (0 yd) was found only by a user standing on the trap.
+    // The spell's range is kept as the upper bound for the objects that rely on it, with the use distance as minimum.
+    float range = std::max(float(target->GetSpellMaxRangeForTarget(GetOwner(), trapSpell)), INTERACTION_DISTANCE);
 
     // search nearest linked GO
     GameObject* trapGO = NULL;
@@ -1208,11 +1211,25 @@ void GameObject::TriggeringLinkedGameObject(uint32 trapEntry, Unit* target)
         CellCoord p(Trinity::ComputeCellCoord(GetPositionX(), GetPositionY()));
         Cell cell(p);
 
-        Trinity::NearestGameObjectEntryInObjectRangeCheck go_check(*target, trapEntry, range);
-        Trinity::GameObjectLastSearcher<Trinity::NearestGameObjectEntryInObjectRangeCheck> checker(this, trapGO, go_check);
+        // Plain distance between the two positions: IsWithinDistInMap on a GameObject tests its model box grown by
+        // the range instead. The trap has to share a phase with the user as before (and with this object: searcher).
+        float nearest = range;
+        auto go_check = [this, trapEntry, target, &nearest](GameObject* go)
+        {
+            if (go->GetEntry() != trapEntry || !go->InSamePhase(target))
+                return false;
 
-        TypeContainerVisitor<Trinity::GameObjectLastSearcher<Trinity::NearestGameObjectEntryInObjectRangeCheck>, GridTypeMapContainer > object_checker(checker);
-        cell.Visit(p, object_checker, *GetMap(), *target, range);
+            float dist = GetExactDist(go);
+            if (dist > nearest)
+                return false;
+
+            nearest = dist;                                 // use found GO range as new range limit for next check
+            return true;
+        };
+        Trinity::GameObjectLastSearcher<decltype(go_check)> checker(this, trapGO, go_check);
+
+        TypeContainerVisitor<Trinity::GameObjectLastSearcher<decltype(go_check)>, GridTypeMapContainer > object_checker(checker);
+        cell.Visit(p, object_checker, *GetMap(), *this, range);
     }
 
     // found correct GO

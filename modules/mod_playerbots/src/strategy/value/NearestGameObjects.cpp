@@ -17,6 +17,8 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "Playerbots.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 
 namespace
 {
@@ -62,5 +64,61 @@ GuidVector NearestGameObjects::Calculate()
         if (go)
             result.push_back(go->GetGUID());
 
+    return result;
+}
+
+// AC Ai/Base/Value/NearestGameObjects.cpp:32-84.
+GuidVector NearestTrapWithDamageValue::Calculate()
+{
+    std::list<GameObject*> targets;
+
+    GameObjectWithinRange check(bot, range);
+    Trinity::GameObjectListSearcher<GameObjectWithinRange> searcher(bot, targets, check);
+    Cell::VisitAllObjects(bot, searcher, range);
+
+    GuidVector result;
+    for (GameObject* go : targets)
+    {
+        if (go->GetGoType() != GAMEOBJECT_TYPE_TRAP)
+        {
+            continue;
+        }
+        Unit* owner = go->GetOwner();
+        if (owner && owner->IsFriendlyTo(bot))
+        {
+            continue;
+        }
+        GameObjectTemplate const* goInfo = go->GetGOInfo();
+        if (!goInfo)
+        {
+            continue;
+        }
+        uint32 spellId = goInfo->trap.spellId;
+        if (!spellId)
+        {
+            continue;
+        }
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo || spellInfo->IsPositive())
+        {
+            continue;
+        }
+        for (int i = 0; i < MAX_SPELL_EFFECTS; i++)
+        {
+            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA)
+            {
+                if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE)
+                {
+                    result.push_back(go->GetGUID());
+                    break;
+                }
+            }
+            else if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE)
+            {
+                result.push_back(go->GetGUID());
+                break;
+            }
+        }
+    }
     return result;
 }

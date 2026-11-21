@@ -79,6 +79,7 @@ enum LostIslesIds
     NPC_BASTIA_RIDE                     = 36585,
     SPELL_INFRARED_QUEST_ACCEPT         = 68344,
     SPELL_INFRARED_ORC_SCOUT            = 68338,
+    SPELL_INFRARED_SUMMON_ORC_SCOUT     = 68336,
     SPELL_INFRARED_HEAT_FOCALS          = 69303,
 
     // 14242 Precious Cargo
@@ -675,6 +676,25 @@ class loi_aura_infrared_orc_scout : public AuraScript
     }
 };
 
+// 14238: the Infrared aura 68338 (whose effect 1 force-casts the scout summon 68336) is not saved with the character,
+// and the scout is a temporary summon, so after a relog during the quest the player had neither and the scout was lost.
+class loi_player_infrared_orc_scout_login : public PlayerScript
+{
+public:
+    loi_player_infrared_orc_scout_login() : PlayerScript("loi_player_infrared_orc_scout_login") { }
+
+    void OnLogin(Player* player) override
+    {
+        // Neither the aura (68338) nor the scout survives a relog, so key on the quest itself and re-run what the quest
+        // accept did: 68344 applies 68338 again, which summons the scout.
+        if (player->GetQuestStatus(QUEST_INFRARED_INFRADEAD) != QUEST_STATUS_INCOMPLETE || player->HasAura(SPELL_INFRARED_ORC_SCOUT))
+            return;
+
+        if (FindSummonsOf(player, NPC_ORC_SCOUT_COMPANION, 200.0f).empty())
+            player->CastSpell(player, SPELL_INFRARED_QUEST_ACCEPT, true);
+    }
+};
+
 // 36585 Bastia (npc_pant_gob): rides the 18 script_waypoint points, the last one ends the ride
 struct loi_npc_bastia : public loi_escort_base
 {
@@ -1205,6 +1225,7 @@ void AddSC_lost_isles()
     new spell_script<loi_spell_weed_whacker>("spell_weed_whacker");
     new creature_script<loi_npc_kilag_overlook>("npc_killag_sangrecroc");
     new aura_script<loi_aura_infrared_orc_scout>("aura_infrared_orc_scout");
+    new loi_player_infrared_orc_scout_login();
     new creature_script<loi_npc_bastia>("npc_pant_gob");
     new creature_script<loi_npc_gyrochoppa_giver>("npc_gyrocoptere_quest_giver");
     new creature_script<loi_npc_gyrochoppa>("npc_girocoptere");

@@ -46,6 +46,16 @@ public:
     bool isUseful() override;
 };
 
+// Incarnation: Chosen of Elune (talent 106731, Balance form 102560): +25% Arcane and Nature damage while an Eclipse is
+// active, 3 min cooldown. Separate from the Restoration "tree of life" action above, whose isUseful tests aura 33891.
+class CastIncarnationChosenAction : public CastBuffSpellAction
+{
+public:
+    CastIncarnationChosenAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "incarnation") {}
+    std::string const getName() override { return "incarnation: chosen of elune"; }
+    bool isUseful() override;
+};
+
 class CastMoonkinFormAction : public CastBuffSpellAction
 {
 public:

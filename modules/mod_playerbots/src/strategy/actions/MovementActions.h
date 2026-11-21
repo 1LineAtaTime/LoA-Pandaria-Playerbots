@@ -127,15 +127,11 @@ public:
     bool Execute(Event event) override;
 };
 
-/// Ported from AC mod-playerbots MovementActions.h:105 / .cpp:1832-2054 (#149). AC's isUseful()/
-/// Execute() cover three cases: an aura backed by a damaging DynamicObject (e.g. Rain of Fire), a
-/// trap GameObject with a damage spell (e.g. Lava Bomb), and a trigger NPC with a periodic damage
-/// aura (e.g. Lesser Shadow Fissure). Only the third case is ported here: it is the only one whose
-/// prerequisite AI value ("possible triggers", a GuidVector - see PossibleTargetsValue.h) already
-/// exists on this fork. The other two need AC's "area debuff" (Aura*) and "nearest trap with
-/// damage" (GuidVector) AI values, which do not exist here and are out of this port's file scope
-/// (strategy/value/* beyond the item-count value added alongside it); a follow-up should add them
-/// to strategy/value before completing AvoidAuraWithDynamicObj/AvoidGameObjectWithDamage.
+/// Ported from AC mod-playerbots MovementActions.h:105 / .cpp:1832-2054. isUseful()/Execute() cover
+/// three cases: an aura backed by a damaging DynamicObject (e.g. Rain of Fire), a trap GameObject
+/// with a damage spell (e.g. Lava Bomb), and a trigger NPC with a periodic damage aura (e.g. Lesser
+/// Shadow Fissure). Backed by the "area debuff", "nearest trap with damage" and "possible triggers"
+/// values.
 class AvoidAoeAction : public MovementAction
 {
 public:
@@ -148,6 +144,8 @@ public:
     bool Execute(Event event) override;
 
 protected:
+    bool AvoidAuraWithDynamicObj();
+    bool AvoidGameObjectWithDamage();
     bool AvoidUnitWithDamageAura();
     time_t lastTellTimer = 0;
     int lastMoveTimer = 0;

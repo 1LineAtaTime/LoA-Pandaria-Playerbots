@@ -20,6 +20,7 @@ public:
     ChatTriggerContext()
     {
         creators["who"] = &ChatTriggerContext::who;
+        creators["talents"] = &ChatTriggerContext::talents;  // AC ChatTriggerContext.h:60
         creators["help"] = &ChatTriggerContext::help;
         creators["co"] = &ChatTriggerContext::co;
         creators["nc"] = &ChatTriggerContext::nc;
@@ -46,6 +47,7 @@ public:
         creators["invite"] = &ChatTriggerContext::invite;
         creators["leave"] = &ChatTriggerContext::leave;
         creators["join"] = &ChatTriggerContext::join;
+        creators["lfg"] = &ChatTriggerContext::lfg;  // AC ChatTriggerContext.h:98
         creators["give leader"] = &ChatTriggerContext::give_leader;
 
         // #188 (S6 of epic #163): loot/gear chat commands.
@@ -93,6 +95,12 @@ public:
         creators["trainer"] = &ChatTriggerContext::trainer;
         creators["gb"] = &ChatTriggerContext::gb;
         creators["gbank"] = &ChatTriggerContext::gb;
+        // AC ChatTriggerContext.h:137-141: guild management chat commands.
+        creators["ginvite"] = &ChatTriggerContext::ginvite;
+        creators["guild promote"] = &ChatTriggerContext::guild_promote;
+        creators["guild demote"] = &ChatTriggerContext::guild_demote;
+        creators["guild remove"] = &ChatTriggerContext::guild_remove;
+        creators["guild leave"] = &ChatTriggerContext::guild_leave;
         creators["bank"] = &ChatTriggerContext::bank;
         creators["talk"] = &ChatTriggerContext::talk;
         creators["sendmail"] = &ChatTriggerContext::sendmail;
@@ -126,10 +134,62 @@ public:
         creators["share"] = &ChatTriggerContext::share;
         creators["q"] = &ChatTriggerContext::q;
         creators["rtsc"] = &ChatTriggerContext::rtsc;  // #648 (AC ChatTriggerContext.h:142)
+
+        // AC ChatTriggerContext.h:18-19,23-25,30-31,36-39,45-48,50-53,56,58-59,62,70-71,92,97-99,124,127,152,154-155:
+        // chat commands whose action already exists on this fork, plus the commands ported together with their actions
+        // (stats, rep/reputation, c/items/inventory/inv, go, target, attackers, qi). Trigger names are the ones AC's
+        // factories give them, except "e": AC registers its factory under "equip", so its "e" strategy node can never
+        // fire. Here "e" and "ue" are real triggers; the full words "equip"/"unequip" stay as well.
+        creators["open items"] = &ChatTriggerContext::open_items;
+        creators["unlock items"] = &ChatTriggerContext::unlock_items;
+        creators["stats"] = &ChatTriggerContext::stats;
+        creators["rep"] = &ChatTriggerContext::reputation;
+        creators["reputation"] = &ChatTriggerContext::reputation;
+        creators["add all loot"] = &ChatTriggerContext::loot_all;
+        creators["release"] = &ChatTriggerContext::release;
+        creators["u"] = &ChatTriggerContext::use;
+        creators["use"] = &ChatTriggerContext::use;
+        creators["c"] = &ChatTriggerContext::item_count;
+        creators["items"] = &ChatTriggerContext::item_count;
+        creators["inventory"] = &ChatTriggerContext::item_count;
+        creators["inv"] = &ChatTriggerContext::item_count;
+        creators["e"] = &ChatTriggerContext::equip_short;
+        creators["ue"] = &ChatTriggerContext::unequip_short;
+        creators["spells"] = &ChatTriggerContext::spells;
+        creators["accept"] = &ChatTriggerContext::accept;
+        creators["home"] = &ChatTriggerContext::home;
+        creators["emote"] = &ChatTriggerContext::emote;
+        creators["enter vehicle"] = &ChatTriggerContext::enter_vehicle;
+        creators["leave vehicle"] = &ChatTriggerContext::leave_vehicle;
+        creators["cast"] = &ChatTriggerContext::cast;
+        creators["castnc"] = &ChatTriggerContext::castnc;
+        creators["revive"] = &ChatTriggerContext::revive;
+        creators["warning"] = &ChatTriggerContext::warning;
+        creators["go"] = &ChatTriggerContext::go;
+        creators["attackers"] = &ChatTriggerContext::attackers;
+        creators["target"] = &ChatTriggerContext::target;
+        creators["drink"] = &ChatTriggerContext::drink;
+        creators["qi"] = &ChatTriggerContext::qi;
+        creators["wait for attack time"] = &ChatTriggerContext::wait_for_attack_time;
+        // AC ChatTriggerContext.h:67-70.
+        creators["maintenance"] = &ChatTriggerContext::maintenance;
+        creators["remove glyph"] = &ChatTriggerContext::remove_glyph;
+        creators["autogear"] = &ChatTriggerContext::autogear;
+        creators["autogear bis"] = &ChatTriggerContext::autogear_bis;
+        // AC ChatTriggerContext.h:28,42,75,79,81,129: pvp stats, teleport, chat, destroy, buff, wts. The strategy lists
+        // "tell pvp stats" as a supported name (AC :92), so that name gets a trigger as well.
+        creators["pvp stats"] = &ChatTriggerContext::pvp_stats;
+        creators["tell pvp stats"] = &ChatTriggerContext::tell_pvp_stats;
+        creators["teleport"] = &ChatTriggerContext::teleport;
+        creators["chat"] = &ChatTriggerContext::chat;
+        creators["destroy"] = &ChatTriggerContext::destroy;
+        creators["buff"] = &ChatTriggerContext::buff;
+        creators["wts"] = &ChatTriggerContext::wts;
     }
 
 private:
     static Trigger* who(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "who"); }
+    static Trigger* talents(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "talents"); }
     static Trigger* taxi(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "taxi"); }   // #767 (AC :244)
     static Trigger* rpg_status(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rpg status"); }  // #536, AC :258
     static Trigger* rpg_do_quest(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rpg do quest"); }  // #536, AC :259
@@ -162,6 +222,7 @@ private:
     static Trigger* invite(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "invite"); }
     static Trigger* leave(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "leave"); }
     static Trigger* join(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "join"); }
+    static Trigger* lfg(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "lfg"); }  // AC ChatTriggerContext.h:197
     static Trigger* give_leader(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "give leader"); }
 
     static Trigger* repair(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "repair"); }
@@ -192,6 +253,12 @@ private:
     static Trigger* reward(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "r"); }
     static Trigger* trainer(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "trainer"); }
     static Trigger* gb(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "gb"); }
+    // AC ChatTriggerContext.h:269-273
+    static Trigger* ginvite(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ginvite"); }
+    static Trigger* guild_promote(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild promote"); }
+    static Trigger* guild_demote(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild demote"); }
+    static Trigger* guild_remove(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild remove"); }
+    static Trigger* guild_leave(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guild leave"); }
     static Trigger* bank(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "bank"); }
     static Trigger* talk(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "talk"); }
     static Trigger* sendmail(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "sendmail"); }
@@ -209,6 +276,46 @@ private:
     static Trigger* cancel_moonkin_form(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cancel moonkin form"); }
     static Trigger* cancel_aquatic_form(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cancel aquatic form"); }
     static Trigger* rtsc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rtsc"); }  // #648
+
+    // AC Ai/Base/ChatTriggerContext.h:160-161,172,185-186,193-194,198-199,201-202,213,215-216,231-234,240-241,252,
+    // 254,261-262,275,279,287: factories for the commands registered above.
+    static Trigger* open_items(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "open items"); }
+    static Trigger* unlock_items(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "unlock items"); }
+    static Trigger* stats(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "stats"); }
+    static Trigger* reputation(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "reputation"); }
+    static Trigger* loot_all(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "add all loot"); }
+    static Trigger* release(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "release"); }
+    static Trigger* use(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "use"); }
+    static Trigger* item_count(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "c"); }
+    static Trigger* equip_short(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "e"); }
+    static Trigger* unequip_short(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ue"); }
+    static Trigger* spells(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "spells"); }
+    static Trigger* accept(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "accept"); }
+    static Trigger* home(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "home"); }
+    static Trigger* emote(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "emote"); }
+    static Trigger* enter_vehicle(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "enter vehicle"); }
+    static Trigger* leave_vehicle(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "leave vehicle"); }
+    static Trigger* cast(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cast"); }
+    static Trigger* castnc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "castnc"); }
+    static Trigger* revive(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "revive"); }
+    static Trigger* warning(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "warning"); }
+    static Trigger* go(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "go"); }
+    static Trigger* attackers(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "attackers"); }
+    static Trigger* target(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "target"); }
+    static Trigger* drink(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "drink"); }
+    static Trigger* qi(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "qi"); }
+    static Trigger* wait_for_attack_time(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "wait for attack time"); }
+    static Trigger* maintenance(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "maintenance"); }
+    static Trigger* remove_glyph(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "remove glyph"); }
+    static Trigger* autogear(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear"); }
+    static Trigger* autogear_bis(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear bis"); }
+    static Trigger* pvp_stats(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "pvp stats"); }
+    static Trigger* tell_pvp_stats(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "tell pvp stats"); }
+    static Trigger* teleport(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "teleport"); }
+    static Trigger* chat(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "chat"); }
+    static Trigger* destroy(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "destroy"); }
+    static Trigger* buff(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "buff"); }
+    static Trigger* wts(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "wts"); }
 };
 
 #endif

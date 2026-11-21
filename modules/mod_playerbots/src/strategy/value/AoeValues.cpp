@@ -8,8 +8,12 @@
 
 #include "AoeValues.h"
 
+#include "Creature.h"  // before DynamicObject.h: it derives from GridObject<>, which only Creature.h/GameObject.h pull in
+#include "DynamicObject.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
+#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 
 static GuidVector FindMaxDensity(Player* bot)
 {
@@ -116,4 +120,42 @@ bool HasAreaDebuffValue::Calculate()
     }
 
     return false;
+}
+
+// AC Ai/Base/Value/AoeValues.cpp:121-160.
+Aura* AreaDebuffValue::Calculate()
+{
+    Unit::AuraEffectList const& aurasPeriodicDamage = bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_DAMAGE);
+    Unit::AuraEffectList const& aurasPeriodicDamagePercent =
+        bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+    Unit::AuraEffectList const& aurasPeriodicTriggerSpell =
+        bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    Unit::AuraEffectList const& aurasPeriodicTriggerWithValueSpell =
+        bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE);
+    Unit::AuraEffectList const& aurasDummy = bot->GetAuraEffectsByType(SPELL_AURA_DUMMY);
+    for (Unit::AuraEffectList const& list : {aurasPeriodicDamage, aurasPeriodicDamagePercent, aurasPeriodicTriggerSpell,
+                                             aurasPeriodicTriggerWithValueSpell, aurasDummy})
+    {
+        for (auto i = list.begin(); i != list.end(); ++i)
+        {
+            AuraEffect* aurEff = *i;
+            if (!aurEff)
+                continue;
+            Aura* aura = aurEff->GetBase();
+            if (!aura)
+                continue;
+            AuraObjectType type = aura->GetType();
+            bool isPositive = aura->GetSpellInfo()->IsPositive();
+            if (type == DYNOBJ_AURA_TYPE && !isPositive)
+            {
+                DynamicObject* dynOwner = aura->GetDynobjOwner();
+                if (!dynOwner)
+                {
+                    continue;
+                }
+                return aura;
+            }
+        }
+    }
+    return nullptr;
 }

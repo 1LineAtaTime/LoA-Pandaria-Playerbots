@@ -83,6 +83,23 @@ bool ChakraSanctuaryTrigger::IsActive()
 
 bool SurgeOfLightProcTrigger::IsActive() { return bot->HasAura(114255); }
 
+bool SurgeOfDarknessProcTrigger::IsActive() { return bot->HasAura(87160); }
+
+bool MindFlaySurgeChannelCheckTrigger::IsActive()
+{
+    constexpr uint32 SPELL_MIND_FLAY = 15407;
+    constexpr uint32 SPELL_MIND_SPIKE = 73510;
+    constexpr uint32 SPELL_SURGE_OF_DARKNESS = 87160;
+
+    Spell* spell = bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+    if (!spell || spell->m_spellInfo->Id != SPELL_MIND_FLAY || !bot->HasAura(SPELL_SURGE_OF_DARKNESS))
+        return false;
+
+    // Clip only once Mind Spike could go out now: cancelling during the GCD would drop flay ticks for nothing.
+    SpellInfo const* spike = sSpellMgr->GetSpellInfo(SPELL_MIND_SPIKE);
+    return spike && bot->HasSpell(SPELL_MIND_SPIKE) && !bot->GetGlobalCooldownMgr().HasGlobalCooldown(spike);
+}
+
 bool LightwellCanCastTrigger::IsActive()
 {
     constexpr uint32 SPELL_LIGHTWELL = 126135;

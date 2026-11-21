@@ -17,9 +17,7 @@
  *  - botAI->HasSkill(SkillType) does not exist on this fork's PlayerbotAI (see
  *    strategy/value/LootObjectStack.cpp's own note on the same gap); ported as a local BotHasSkill()
  *    helper using Player::HasSkill()+GetSkillValue(), the same fix LootObjectStack.cpp already uses.
- *  - GuildTaskMgr does not exist anywhere on this fork (no guild-task system ported at all yet) -
- *    the whole ITEM_USAGE_GUILD_TASK branch is dropped. Flagged as an AC feature that could not be
- *    ported (needs its own guild-task-system port first, out of scope for #188).
+ *  - The ITEM_USAGE_GUILD_TASK branch calls GuildTaskMgr (Mgr/Guild/GuildTaskMgr.cpp), dormant as in AC.
  *  - RandomItemMgr (AC) is named RandomItemManager here (Manager/RandomItemManager.h) with a
  *    different signature: `sRandomItemMgr->CanEquipWeapon(Player*, ItemTemplate const*)` and
  *    `CanEquipArmor(Player*, ItemTemplate const*)` (pointer singleton, no separate class/level args -
@@ -59,6 +57,7 @@
 #include "ItemUsageValue.h"
 
 #include "Config.h"
+#include "GuildTaskMgr.h"
 #include "Item.h"
 #include "LootObjectStack.h"
 #include "Playerbots.h"
@@ -172,7 +171,9 @@ ItemUsage ItemUsageValue::Calculate()
         }
     }
 
-    // 5.4.8: no GuildTaskMgr on this fork (see file header) - ITEM_USAGE_GUILD_TASK never fires.
+    // AC ItemUsageValue.cpp:96 (GuildTaskMgr is dormant as in AC: no task item while AiPlayerbot.EnableGuildTasks = 0).
+    if (bot->GetGuildId() && GuildTaskMgr::instance().IsGuildTaskItem(itemId, bot->GetGuildId()))
+        return ITEM_USAGE_GUILD_TASK;
 
     ItemUsage equip = QueryItemUsageForEquip(proto, randomPropertyId);
     if (equip != ITEM_USAGE_NONE)

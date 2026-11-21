@@ -69,6 +69,10 @@ void GenericWarlockNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& tr
     // (cast by me)"): see DarkIntentTrigger (WarlockTriggers.cpp) - own-aura test by spell id.
     triggers.push_back(new TriggerNode("dark intent", NextAction::array(0, new NextAction("dark intent", 60.0f), nullptr)));
     triggers.push_back(new TriggerNode("has pet", NextAction::array(0, new NextAction("toggle pet spell", 60.0f), nullptr)));
+    // Grimoire of Sacrifice (Destruction talent): 52 = just above the demon summon (51), so it fires on the tick after
+    // the demon appears. "warlock no pet" stays quiet while the buff is up, so the sacrificed demon is not summoned
+    // again. The trigger is false for a warlock that does not know the talent.
+    triggers.push_back(new TriggerNode("grimoire of sacrifice", NextAction::array(0, new NextAction("grimoire of sacrifice", 52.0f), nullptr)));
     triggers.push_back(new TriggerNode("no healthstone", NextAction::array(0, new NextAction("create healthstone", 15.0f), nullptr)));
     // #521 (AC GenericWarlockNonCombatStrategy.cpp:84,86-88,90,93): armor / underwater breath / soul link /
     // life tap. Priorities keep AC's relative order on this module's lower scale (healthstone 15 above).
@@ -103,7 +107,7 @@ SummonImpStrategy::SummonImpStrategy(PlayerbotAI* ai) : NonCombatStrategy(ai) {}
 
 void SummonImpStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon imp", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
+    triggers.push_back(new TriggerNode("warlock no pet", NextAction::array(0, new NextAction("summon imp", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
     // #521 (AC GenericWarlockNonCombatStrategy.cpp:98-160): re-summon when the wrong demon is out
     triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon imp", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
 }
@@ -112,7 +116,7 @@ SummonFelguardStrategy::SummonFelguardStrategy(PlayerbotAI* ai) : NonCombatStrat
 
 void SummonFelguardStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon felguard", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
+    triggers.push_back(new TriggerNode("warlock no pet", NextAction::array(0, new NextAction("summon felguard", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
     // #521 (AC GenericWarlockNonCombatStrategy.cpp:98-160): re-summon when the wrong demon is out
     triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon felguard", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
 }
@@ -121,7 +125,7 @@ SummonFelhunterStrategy::SummonFelhunterStrategy(PlayerbotAI* ai) : NonCombatStr
 
 void SummonFelhunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon felhunter", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
+    triggers.push_back(new TriggerNode("warlock no pet", NextAction::array(0, new NextAction("summon felhunter", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
     // #521 (AC GenericWarlockNonCombatStrategy.cpp:98-160): re-summon when the wrong demon is out
     triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon felhunter", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
 }
@@ -156,14 +160,14 @@ void SoulstoneHealerStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 // "no pet" trigger; #521 added AC's "wrong pet" edge below.
 void SummonVoidwalkerStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon voidwalker", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
+    triggers.push_back(new TriggerNode("warlock no pet", NextAction::array(0, new NextAction("summon voidwalker", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
     // #521 (AC GenericWarlockNonCombatStrategy.cpp:110-132)
     triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon voidwalker", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
 }
 
 void SummonSuccubusStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon succubus", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
+    triggers.push_back(new TriggerNode("warlock no pet", NextAction::array(0, new NextAction("summon succubus", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
     // #521 (AC GenericWarlockNonCombatStrategy.cpp:110-132)
     triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon succubus", WARLOCK_SUMMON_PET_PRIORITY), NULL)));
 }

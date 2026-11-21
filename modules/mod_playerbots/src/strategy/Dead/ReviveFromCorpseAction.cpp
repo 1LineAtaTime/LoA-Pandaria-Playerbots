@@ -37,7 +37,27 @@ bool ReviveFromCorpseAction::Execute(Event event)
 
     // follow master when master revives
     WorldPacket& p = event.getPacket();
-    if (!p.empty() && p.GetOpcode() == CMSG_RECLAIM_CORPSE && master && !corpse && bot->IsAlive())
+    uint16 const opcode = p.empty() ? 0 : p.GetOpcode();
+
+    // Beyond AC (AC only maps CMSG_RECLAIM_CORPSE here): the master came back at a spirit healer or by accepting a
+    // resurrection (handlers in PlayerbotAI.cpp). The master's packet is handled before this bot's next tick, so the
+    // master is alive here unless the server refused it (a declined resurrection sends the same opcode). Neither
+    // opcode makes a dead bot reclaim its own corpse, and battleground bots keep their "-follow" (PlayerbotAI master
+    // check), as on AC.
+    bool const masterResurrected = opcode == CMSG_SPIRIT_HEALER_ACTIVATE || opcode == CMSG_RESURRECT_RESPONSE;
+    if (masterResurrected && (!master || !master->IsAlive() || !bot->IsAlive() || corpse || bot->InBattleground()))
+        return false;
+
+    // The spirit healer stands at the graveyard, far from the corpse where the master's release left the bots
+    // waiting, so that path has no farDistance gate. A resurrection is accepted at the corpse: AC's reclaim gate.
+    if (opcode == CMSG_SPIRIT_HEALER_ACTIVATE && !botAI->HasStrategy("follow", BOT_STATE_NON_COMBAT))
+    {
+        botAI->TellMasterNoFacing("Welcome back!");
+        botAI->ChangeStrategy("+follow,-stay", BOT_STATE_NON_COMBAT);
+        return true;
+    }
+
+    if ((opcode == CMSG_RECLAIM_CORPSE || opcode == CMSG_RESURRECT_RESPONSE) && master && !corpse && bot->IsAlive())
     {
         if (sServerFacade->IsDistanceLessThan(AI_VALUE2(float, "distance", "master target"),
             sPlayerbotAIConfig->farDistance))

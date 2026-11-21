@@ -1,0 +1,66 @@
+/*
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
+ * and/or modify it under version 2 of the License, or (at your option), any later version.
+ *
+ * Ported from AC mod-playerbots Ai/Base/Actions/TellTargetAction.cpp, 1:1 apart from the threat list walk
+ * (AC TellTargetAction.cpp:41-57): this core's ThreatManager exposes GetThreatenedByMeList() as an
+ * unordered_map of ThreatReference* (Combat/ThreatManager.h), and ThreatReference::GetOwner() is the creature
+ * whose list holds the bot, the same unit AC reads from its reference.
+ */
+
+#include "TellTargetAction.h"
+
+#include "Playerbots.h"
+#include "ThreatManager.h"
+
+bool TellTargetAction::Execute(Event /*event*/)
+{
+    Unit* target = context->GetValue<Unit*>("current target")->Get();
+    if (target)
+    {
+        std::ostringstream out;
+        out << "Attacking " << target->GetName();
+        botAI->TellMaster(out);
+
+        context->GetValue<Unit*>("old target")->Set(target);
+    }
+
+    return true;
+}
+
+bool TellAttackersAction::Execute(Event /*event*/)
+{
+    botAI->TellMaster("--- Attackers ---");
+
+    GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
+    int32 count = 0;
+    for (ObjectGuid const guid : attackers)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive())
+            continue;
+
+        botAI->TellMaster(std::to_string(++count) + std::string(".") + unit->GetName());
+    }
+
+    botAI->TellMaster("--- Threat ---");
+
+    auto const& threatenedByMe = bot->GetThreatManager().GetThreatenedByMeList();
+    if (threatenedByMe.empty())
+        return true;
+
+    for (auto const& [guid, ref] : threatenedByMe)
+    {
+        Unit* unit = ref->GetOwner();
+        if (!unit)
+            continue;
+
+        float threat = ref->GetThreat();
+
+        std::ostringstream out;
+        out << unit->GetName() << " (" << threat << ")";
+        botAI->TellMaster(out);
+    }
+
+    return true;
+}

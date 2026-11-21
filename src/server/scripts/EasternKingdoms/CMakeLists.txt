@@ -120,6 +120,10 @@ set(scripts_STAT_SRCS
   EasternKingdoms/ScarletEnclave/chapter1.cpp
   EasternKingdoms/ScarletEnclave/zone_the_scarlet_enclave.cpp
   EasternKingdoms/zone_eastern_plaguelands.cpp
+  EasternKingdoms/zone_eastern_plaguelands_caravan.cpp
+  EasternKingdoms/zone_eastern_plaguelands_chapel.cpp
+  EasternKingdoms/zone_eastern_plaguelands_darrowshire.cpp
+  EasternKingdoms/zone_eastern_plaguelands_finale.cpp
   EasternKingdoms/Stratholme/boss_baroness_anastari.cpp
   EasternKingdoms/Stratholme/boss_nerubenkan.cpp
   EasternKingdoms/Stratholme/instance_stratholme.cpp

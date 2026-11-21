@@ -15,6 +15,7 @@
 
 #include "BotScenario.h"
 #include "Chat.h"
+#include "GuildTaskMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
@@ -45,7 +46,7 @@ public:
     std::vector<ChatCommand> GetCommands() const override
     {
         // #650: AC's ".playerbots ..." table (AC Script/PlayerbotCommandScript.cpp:42-49) - "bot", "pmon" and (#808)
-        // "rndbot" exist on this fork; gtask / debug / account have no counterpart here yet. The older top-level
+        // "rndbot" exist on this fork; "gtask" too; debug / account have no counterpart here yet. The older top-level
         // ".npcbot" and ".pmon" stay as aliases so existing harness scripts keep working.
         static std::vector<ChatCommand> playerbotsCommandTable =
         {
@@ -53,6 +54,8 @@ public:
             { "pmon", &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
             // #808: AC SEC_GAMEMASTER + Console::Yes (PlayerbotCommandScript.cpp:45); console/SOAP only needs Console::Yes.
             { "rndbot", &HandleRandomPlayerbotCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
+            // AC SEC_GAMEMASTER + Console::Yes (Script/PlayerbotCommandScript.cpp:44); refuses while guild tasks are off.
+            { "gtask", &HandleGuildTaskCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -75,6 +78,12 @@ public:
     static bool HandleRandomPlayerbotCommand(ChatHandler* handler, char const* args)
     {
         return HandleRandomPlayerbotConsoleCommand(handler, args);
+    }
+
+    // AC Script/PlayerbotCommandScript.cpp:70-73
+    static bool HandleGuildTaskCommand(ChatHandler* handler, char const* args)
+    {
+        return GuildTaskMgr::HandleConsoleCommand(handler, args);
     }
 
     static bool HandlePerfMonCommand(ChatHandler* handler, char const* args)

@@ -56,6 +56,12 @@ void HealPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // Light / Divine Light / Holy Light (rows 6511-6513), below Holy Shock / Eternal Flame (rows 6507-6509).
     triggers.push_back(new TriggerNode("paladin holy radiance group",
         NextAction::array(0, new NextAction("holy radiance on party", ACTION_CRITICAL_HEAL + 4.8f), nullptr)));
+    // Light of Dawn (spec spell, 3 Holy Power, 6 most injured within 30 yd): above Eternal Flame (+5), below Holy Shock
+    // (+6). Light's Hammer (level 90 talent, 60 s cooldown): 3+ members below 80% within its 10 yd area.
+    triggers.push_back(new TriggerNode("light of dawn ready",
+        NextAction::array(0, new NextAction("light of dawn", ACTION_CRITICAL_HEAL + 5.5f), nullptr)));
+    triggers.push_back(new TriggerNode("paladin lights hammer group",
+        NextAction::array(0, new NextAction("light's hammer on party", ACTION_CRITICAL_HEAL + 4.9f), nullptr)));
     triggers.push_back(new TriggerNode("party member to heal out of spell range", NextAction::array(0, new NextAction("reach party member to heal", ACTION_EMERGENCY + 3), nullptr)));
 
     // rotation lane 6 (#861): "divine sacrifice" removed from both edges below - no such spell in 5.4.8

@@ -22,7 +22,15 @@ SPELL_ACTION(CastSacrificialPactAction, "sacrificial pact");
 SPELL_ACTION(CastDarkBarginAction, "dark bargain");
 SPELL_ACTION(CastBloodHorrorAction, "blood horror");
 SPELL_ACTION(CastGrmoireOfSupremacyAction, "grimoire of supremacy");
-SPELL_ACTION(CastGrimoireOfSacrificeAction, "grimoire of sacrifice");
+// Grimoire of Sacrifice 108503 is cast on the warlock's own demon (the spell hits the pet), so the target is the pet,
+// not the current target. Only useful while a live demon is out and the buff is not already up.
+class CastGrimoireOfSacrificeAction : public CastSpellAction
+{
+public:
+    CastGrimoireOfSacrificeAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "grimoire of sacrifice") {}
+    std::string const GetTargetName() override { return "pet target"; }
+    bool isUseful() override;
+};
 SPELL_ACTION(CastMannorothFuryAction, "mannoroth's fury");
 class CastShadowFuryAction : public CastSpellAction
 {

@@ -23,9 +23,6 @@ SDCategory: Eastern Plaguelands
 EndScriptData */
 
 /* ContentData
-npc_ghoul_flayer
-npc_augustus_the_touched
-npc_darrowshire_spirit
 npc_tirion_fordring
 EndContentData */
 
@@ -33,104 +30,8 @@ EndContentData */
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "Player.h"
+#include "Group.h"
 #include "WorldSession.h"
-
-class npc_ghoul_flayer : public CreatureScript
-{
-public:
-    npc_ghoul_flayer() : CreatureScript("npc_ghoul_flayer") { }
-
-    struct npc_ghoul_flayerAI : public ScriptedAI
-    {
-        npc_ghoul_flayerAI(Creature* creature) : ScriptedAI(creature) { }
-
-        void Reset() override { }
-
-        void JustEngagedWith(Unit* /*who*/) override { }
-
-        void JustDied(Unit* killer) override
-        {
-            if (killer->GetTypeId() == TYPEID_PLAYER)
-                me->SummonCreature(11064, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN, 60000ms);
-        }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const override
-    {
-        return new npc_ghoul_flayerAI(creature);
-    }
-};
-
-/*######
-## npc_augustus_the_touched
-######*/
-
-class npc_augustus_the_touched : public CreatureScript
-{
-public:
-    npc_augustus_the_touched() : CreatureScript("npc_augustus_the_touched") { }
-
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
-    {
-        player->PlayerTalkClass->ClearMenus();
-        if (action == GOSSIP_ACTION_TRADE)
-            player->GetSession()->SendListInventory(creature->GetGUID());
-        return true;
-    }
-
-    bool OnGossipHello(Player* player, Creature* creature) override
-    {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
-        if (creature->IsVendor() && player->GetQuestRewardStatus(6164))
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
-
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-        return true;
-    }
-};
-
-/*######
-## npc_darrowshire_spirit
-######*/
-
-enum DarrowshireSpirit
-{
-    SPELL_SPIRIT_SPAWNIN    = 17321
-};
-
-class npc_darrowshire_spirit : public CreatureScript
-{
-public:
-    npc_darrowshire_spirit() : CreatureScript("npc_darrowshire_spirit") { }
-
-    bool OnGossipHello(Player* player, Creature* creature) override
-    {
-        player->SEND_GOSSIP_MENU(3873, creature->GetGUID());
-        player->TalkedToCreature(creature->GetEntry(), creature->GetGUID());
-        creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-        return true;
-    }
-
-    CreatureAI* GetAI(Creature* creature) const override
-    {
-        return new npc_darrowshire_spiritAI(creature);
-    }
-
-    struct npc_darrowshire_spiritAI : public ScriptedAI
-    {
-        npc_darrowshire_spiritAI(Creature* creature) : ScriptedAI(creature) { }
-
-        void Reset() override
-        {
-            DoCast(me, SPELL_SPIRIT_SPAWNIN);
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-        }
-
-        void JustEngagedWith(Unit* /*who*/) override { }
-    };
-};
 
 /*######
 ## npc_tirion_fordring
@@ -190,6 +91,7 @@ enum
     TALK_DIED                  = 0,
     TALK_CREDIT_1              = 1,
     TALK_CREDIT_2              = 2,
+    TALK_NONE                  = 0xFF,               // no line: the player is not on the quest
 
     EVENT_THROW_DYNAMITE       = 1,
     SPELL_THROW_DYNAMITE       = 86088,
@@ -221,26 +123,73 @@ struct npc_scourge_siege_engineer : public ScriptedAI
         events.ScheduleEvent(EVENT_THROW_DYNAMITE, 10000);
     }
 
+    // What this death tells one player on Beat it Out of Them: Gidwin's location once he has beaten three engineers, his
+    // captor once he has beaten six, else nothing (a fail line). His engineer count was already raised by this kill:
+    // Unit::Kill rewards the kill credit before it calls JustDied.
+    static uint8 GetOutcome(Player* player)
+    {
+        if (player->GetQuestStatus(QUEST_BEAT_IT_OUT_OF_THEM) != QUEST_STATUS_INCOMPLETE)
+            return TALK_NONE;
+
+        uint32 beaten = player->GetQuestObjectiveCounter(OBJECTIVE_ENGINEERS);
+        if (beaten >= 3 && !player->GetQuestObjectiveCounter(OBJECTIVE_GIDVINS_LOCATION))
+            return TALK_CREDIT_1;
+        if (beaten >= 6 && !player->GetQuestObjectiveCounter(OBJECTIVE_GIDVINS_CAPTOR))
+            return TALK_CREDIT_2;
+        return TALK_DIED;
+    }
+
+    // Every player who got this kill's credit gets his own "Discover" credit: the same players Unit::Kill and KillRewarder
+    // credit (the tapper, else the killer's owner, so a pet's or guardian's kill counts for its owner; with a group, every
+    // member within reward distance who is alive or has not released). The engineer speaks one line: the tapper's credit
+    // line, else the first credit line someone else gets, else a fail line.
     void JustDied(Unit* killer) override
     {
-        if (Player* player = killer->ToPlayer())
+        if (!me->IsDamageEnoughForLootingAndReward())
+            return;
+
+        Player* tapper = killer ? killer->GetCharmerOrOwnerPlayerOrPlayerItself() : nullptr;
+        if (Player* looter = me->GetLootRecipient())
+            if (looter->IsInMap(me))
+                tapper = looter;
+        if (!tapper)
+            return;
+
+        std::vector<Player*> credited;
+        if (Group* group = tapper->GetGroup())
         {
-            if (player->GetQuestStatus(QUEST_BEAT_IT_OUT_OF_THEM) == QUEST_STATUS_INCOMPLETE)
+            for (Player* member : *group)
+                if (member && member->IsInMap(me) && member->IsAtGroupRewardDistance(me) && (member->IsAlive() || !member->GetCorpse()))
+                    credited.push_back(member);
+        }
+        else
+            credited.push_back(tapper);
+
+        uint8 line = TALK_NONE;
+        uint8 lineRank = 0;                                 // 3 the tapper's credit, 2 someone else's credit, 1 a fail line
+        Player* lineTarget = nullptr;
+        for (Player* player : credited)
+        {
+            uint8 outcome = GetOutcome(player);
+            if (outcome == TALK_NONE)
+                continue;
+
+            if (outcome == TALK_CREDIT_1)
+                player->KilledMonsterCredit(NPC_CREDIT_1);
+            else if (outcome == TALK_CREDIT_2)
+                player->KilledMonsterCredit(NPC_CREDIT_2);
+
+            uint8 rank = outcome == TALK_DIED ? 1 : (player == tapper ? 3 : 2);
+            if (rank > lineRank)
             {
-                if (player->GetQuestObjectiveCounter(OBJECTIVE_ENGINEERS) == 3 && !player->GetQuestObjectiveCounter(OBJECTIVE_GIDVINS_LOCATION))
-                {
-                    Talk(TALK_CREDIT_1, player);
-                    player->KilledMonsterCredit(NPC_CREDIT_1);
-                }
-                else if (player->GetQuestObjectiveCounter(OBJECTIVE_ENGINEERS) == 6 && !player->GetQuestObjectiveCounter(OBJECTIVE_GIDVINS_CAPTOR))
-                {
-                    Talk(TALK_CREDIT_2, player);
-                    player->KilledMonsterCredit(NPC_CREDIT_2);
-                }
-                else
-                    Talk(TALK_DIED, player);
+                line = outcome;
+                lineRank = rank;
+                lineTarget = player;
             }
         }
+
+        if (lineTarget)
+            Talk(line, lineTarget);
     }
 
     void UpdateAI(uint32 diff) override
@@ -272,9 +221,6 @@ struct npc_scourge_siege_engineer : public ScriptedAI
 
 void AddSC_eastern_plaguelands()
 {
-    new npc_ghoul_flayer();
-    new npc_augustus_the_touched();
-    new npc_darrowshire_spirit();
     new npc_tirion_fordring();
     new creature_script<npc_scourge_siege_engineer>("npc_scourge_siege_engineer");
 }

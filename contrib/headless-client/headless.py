@@ -42,10 +42,41 @@ import re
 import select
 import socket
 import struct
+import subprocess
 import sys
 import time
 import threading
 import zlib
+import faulthandler
+
+
+# Stall watchdog: a verb that spins without pumping the socket shows nothing in the log. When pump() has not run for
+# HEADLESS_STALL_DUMP seconds (default 45, 0 = off), dump every thread's Python stack once per stall.
+_STALL_LAST = [time.time(), False]
+
+
+def _stall_watchdog_touch():
+    _STALL_LAST[0] = time.time()
+    _STALL_LAST[1] = False
+
+
+def _stall_watchdog_start():
+    limit = float(os.environ.get("HEADLESS_STALL_DUMP", "45") or 0)
+    if limit <= 0:
+        return
+
+    def _run():
+        while True:
+            time.sleep(5)
+            if not _STALL_LAST[1] and time.time() - _STALL_LAST[0] > limit:
+                _STALL_LAST[1] = True
+                print("STALL-DUMP: no socket pump for %.0f s - Python stacks follow" % (time.time() - _STALL_LAST[0]), flush=True)
+                try:
+                    faulthandler.dump_traceback(file=sys.stdout, all_threads=True)
+                    sys.stdout.flush()
+                except Exception as exc:  # noqa: BLE001 - diagnostics only
+                    print("STALL-DUMP failed: %s" % exc, flush=True)
+    threading.Thread(target=_run, name="stall-watchdog", daemon=True).start()
 
 # w17: every print (log() and emit()) must survive characters the Windows console encoding cannot represent - a
 # party-member-stats line with such characters killed two dungeon masters (UnicodeEncodeError in cp1252).
@@ -122,6 +153,13 @@ CMSG_MESSAGECHAT_SAY = 0x0A9A
 CMSG_MESSAGECHAT_PARTY = 0x109A
 CMSG_MESSAGECHAT_RAID = 0x083E
 CMSG_MESSAGECHAT_WHISPER = 0x123E
+# channel + guild chat, channel join, guild invite accept (Opcodes.h:300,303,251,202,646,766)
+CMSG_MESSAGECHAT_CHANNEL = 0x00BB
+CMSG_MESSAGECHAT_GUILD = 0x0CAE
+CMSG_JOIN_CHANNEL = 0x148E
+CMSG_GUILD_ACCEPT = 0x18A2
+SMSG_CHANNEL_NOTIFY = 0x0F06
+SMSG_GUILD_INVITE = 0x0F71
 SMSG_MESSAGECHAT = 0x1A9A
 
 CMSG_GROUP_INVITE_RESPONSE = 0x0D61
@@ -157,6 +195,7 @@ MSG_MOVE_STOP = 0x08F1
 MSG_MOVE_SET_FACING = 0x1050
 
 CMSG_CAST_SPELL = 0x0206
+CMSG_CANCEL_AUTO_REPEAT_SPELL = 0x1272
 CMSG_ACTIVATE_TAXI = 0x03C9
 
 CMSG_PUSHQUESTTOPARTY = 0x03D2
@@ -204,6 +243,7 @@ SMSG_SUMMON_REQUEST = 0x081F
 # Server/Protocol/Opcodes.h (wire numbers match the enum values directly on
 # this build, same convention already used above for every other opcode).
 CMSG_AREATRIGGER = 0x1C44
+CMSG_SELECT_FACTION = 0x0027   # Handlers/MiscHandler.cpp HandleSelectFactionOpcode: u32 choice (0 = Horde, 1 = Alliance)
 CMSG_USE_ITEM = 0x1CC1
 TARGET_FLAG_UNIT = 0x00000002
 TARGET_FLAG_DEST_LOCATION = 0x00000040
@@ -705,6 +745,8 @@ MOVEMENTFLAG_FORWARD = 0x00000001
 # silently fails to fire (see the issue #191 report for the caveat).
 KNOWN_AREATRIGGERS = {
     2230: {"map": 1, "pos": (1818.4, -4427.26, -10.45), "radius": 4.0, "name": "Ragefire Chasm entrance"},
+    # Wandering Isle (map 860): AreaTrigger.dbc rows (Pos / Radius), trigger scripts in zone_wandering_island_north.cpp
+    7835: {"map": 860, "pos": (964.26, 3603.69, 196.52), "radius": 15.15, "name": "Temple of Five Dawns entrance (29423)"},
 }
 
 
@@ -954,6 +996,54 @@ def auth_login(host, port, account, password, timeout=15.0):
 # ---------------------------------------------------------------------------
 # world connection
 # ---------------------------------------------------------------------------
+SMSG_SPELLNONMELEEDAMAGELOG = 0x1450                 # Opcodes.h
+
+
+def decode_spellnonmeleedamagelog(body):
+    """SMSG_SPELLNONMELEEDAMAGELOG, mirroring Unit::SendSpellNonMeleeDamageLog (Unit.cpp): 20 mask bits, then
+    blocked, overkill, resist, absorb, damage, school, hit info and the spell id between the guid byte-seq bytes.
+    Returns a dict with attacker, victim, spell, dmg. A spell hit (Gorerot's Smash 71774) is otherwise invisible."""
+    r = ByteReader(body)
+    a, t = [0] * 8, [0] * 8
+    for kind, i in (("t", 2), ("a", 7), ("a", 6), ("a", 1), ("a", 5), ("x", 0), ("a", 0), ("t", 0), ("t", 7), ("a", 3),
+                    ("t", 6), ("x", 0), ("p", 0), ("t", 1), ("f", 0), ("t", 5), ("a", 2), ("a", 4), ("t", 3), ("t", 4)):
+        v = r.read_bit()
+        if kind == "a":
+            a[i] = v
+        elif kind == "t":
+            t[i] = v
+        elif kind in ("p", "f") and v:
+            raise ValueError("power/float data not supported")
+    out = {}
+    out["blocked"] = r.read_u32()
+    a[1] = r.read_byte_seq(a[1])
+    out["overkill"] = r.read_u32()
+    t[3] = r.read_byte_seq(t[3])
+    a[0] = r.read_byte_seq(a[0])
+    t[6] = r.read_byte_seq(t[6])
+    t[4] = r.read_byte_seq(t[4])
+    a[7] = r.read_byte_seq(a[7])
+    out["resist"] = r.read_u32()
+    out["absorb"] = r.read_u32()
+    a[5] = r.read_byte_seq(a[5])
+    t[5] = r.read_byte_seq(t[5])
+    a[3] = r.read_byte_seq(a[3])
+    a[2] = r.read_byte_seq(a[2])
+    t[2] = r.read_byte_seq(t[2])
+    a[6] = r.read_byte_seq(a[6])
+    t[0] = r.read_byte_seq(t[0])
+    a[4] = r.read_byte_seq(a[4])
+    out["dmg"] = r.read_u32()
+    out["school"] = r.read_u8()
+    t[7] = r.read_byte_seq(t[7])
+    out["hit"] = r.read_u32()
+    t[1] = r.read_byte_seq(t[1])
+    out["spell"] = r.read_u32()
+    out["attacker"] = int.from_bytes(bytes(a), "little")
+    out["victim"] = int.from_bytes(bytes(t), "little")
+    return out
+
+
 def decode_attackerstateupdate(body):
     """SMSG_ATTACKERSTATEUPDATE, mirroring Unit::SendAttackStateUpdate: a flag bit, a size
     placeholder, hit info, both packed guids, damage, overkill, the sub-damage list, absorb and
@@ -1066,6 +1156,10 @@ class WorldClient:
         # path (board_natural(), below) - see its docstring. None means "use the anchor/self.pos
         # arithmetic instead" (the older board_transport() path).
         self.transport_local = None
+        self.gossip = None                # last SMSG_GOSSIP_MESSAGE (gossip-select / talk)
+        self.char_class = None
+        self.char_create_result = None    # last SMSG_CHAR_CREATE result byte (ResponseCodes)
+        self.play = PlayState(self)       # client-side world model + real-player verbs (no GM help)
 
     # --- S1a: common EVT output (kept identical to headless335.py) --------
     def emit(self, kind, **fields):
@@ -1468,6 +1562,7 @@ class WorldClient:
 
     # --- housekeeping -----------------------------------------------------
     def auto(self, op, body):
+        self.play.on_packet(op, body)
         if op == SMSG_TIME_SYNC_REQUEST:
             counter = struct.unpack("<I", body[:4])[0] if len(body) >= 4 else 0
             # w32: a sync request before login_time is set made ticks = epoch ms (1.8e12) and struct.pack('<I') raised, killing the
@@ -1566,8 +1661,18 @@ class WorldClient:
             # the result-specific trailing payload some failure codes append.
             try:
                 spell_id, result = struct.unpack("<II", body[0:8])
-                log("SMSG_CAST_FAILED spell=%d result=%d" % (spell_id, result))
-                self.events.append(("cast_failed", "%d:%d" % (spell_id, result)))
+                # The server repeats an Auto Shot failure on every world tick (Unit::_UpdateAutoRepeatSpell),
+                # thousands per second: log a repeat of the same spell/result at most once a second.
+                now_cf = time.time()
+                last_cf = getattr(self, "_cast_fail_last", None)
+                if last_cf and last_cf[0] == (spell_id, result) and now_cf - last_cf[1] < 1.0:
+                    self._cast_fail_last = (last_cf[0], last_cf[1], last_cf[2] + 1)
+                else:
+                    rep_n = last_cf[2] if last_cf and last_cf[0] == (spell_id, result) else 0
+                    log("SMSG_CAST_FAILED spell=%d result=%d%s" % (spell_id, result,
+                        (" (+%d repeats)" % rep_n) if rep_n else ""))
+                    self.events.append(("cast_failed", "%d:%d" % (spell_id, result)))
+                    self._cast_fail_last = ((spell_id, result), now_cf, 0)
             except struct.error as exc:
                 log("SMSG_CAST_FAILED parse failed: %s" % exc)
         elif op == SMSG_SPELL_GO:
@@ -1590,6 +1695,8 @@ class WorldClient:
                 pass
             cand_s = "|".join(str(c) for c in cands) or "?"
             log("SMSG_SPELL_GO (%d bytes) spell_candidates=%s %s" % (len(body), cand_s, body[:16].hex()))
+            if os.environ.get("HEADLESS_DUMP_SPELLGO") == "1":
+                log("SMSG_SPELL_GO-FULL %s" % body.hex())   # diagnostics: the whole packet, to decode the spell id offline
             self.events.append(("spell_go", cand_s))
             self.emit("spell_go", size=len(body), spell=cand_s)
         elif op == SMSG_INVENTORY_CHANGE_FAILURE:
@@ -1622,17 +1729,34 @@ class WorldClient:
         elif op == SMSG_MESSAGECHAT:
             msg = self._parse_messagechat(body)
             if msg:
+                # kept for `react` (a player answering a whispered/emoted prompt, e.g. the Kezan vault tools)
+                if not hasattr(self, "chat_lines"):
+                    self.chat_lines = []
+                self.chat_lines.append((time.time(), msg["type_name"], str(msg.get("message", ""))))
+                del self.chat_lines[:-200]
                 self.emit("chat", type=msg["type_name"], lang=msg["lang"],
                            frm=msg.get("sender_name") or msg.get("sender_guid"),
                            msg=json.dumps(msg["message"]))
+        elif op == SMSG_GUILD_INVITE:
+            gi = self._parse_guild_invite(body)
+            if gi:
+                self.guild_invite = gi
+                log("[GUILD] SMSG_GUILD_INVITE from=%s guild=%s" % (gi[0], gi[1]))
+                self.emit("guild_invite", frm=gi[0], guild=json.dumps(gi[1]))
+        elif op == SMSG_CHANNEL_NOTIFY:
+            if body:
+                log("[CHANNEL] notify type=%d channel=%s" % (body[0], body[1:].split(b"\0")[0].decode("utf-8", "replace")))
+                self.emit("channel_notify", ntype=body[0],
+                           channel=body[1:].split(b"\0")[0].decode("utf-8", "replace"))
         elif op == SMSG_GROUP_LIST:
             self._parse_group_list(body)
         elif op == SMSG_PARTY_MEMBER_STATS:
             self._parse_party_member_stats(body)
         elif op == SMSG_CHAR_CREATE:
             code = body[0] if body else 0xFF
-            log("SMSG_CHAR_CREATE result=0x%02X" % code)
-            self.emit("char_create", result="0x%02X" % code)
+            self.char_create_result = code
+            log("SMSG_CHAR_CREATE result=%d (%s)" % (code, CHAR_CREATE_CODES.get(code, "unknown")))
+            self.emit("char_create", result=code, name=CHAR_CREATE_CODES.get(code, "unknown"))
         elif op == SMSG_LOOT_RESPONSE:
             self._parse_loot_response(body)
         elif op == SMSG_LOOT_START_ROLL:
@@ -1654,12 +1778,36 @@ class WorldClient:
                 self._parse_battle_pay(op, body)
             except (IndexError, struct.error) as exc:
                 log("BattlePay 0x%04X parse failed: %s (body=%s)" % (op, exc, body[:48].hex()))
+        elif op == 0x12AF and body:
+            # SMSG_ATTACKSTOP: a stun / knock-down stops this character's own auto-attack server-side; remember it so the
+            # fight sends CMSG_ATTACKSWING again (a raptor's Head Butt left a warrior swinging at nothing for the rest of the fight)
+            self.attackstop_t = time.time()
+        elif op == SMSG_SPELLNONMELEEDAMAGELOG:
+            # a spell hit on (or by) this character - logged, and counted as a hit in melee_log so attackers() /
+            # hit_by() see a caster whose target field never showed this character (four Smashes, no pull-back)
+            try:
+                m = decode_spellnonmeleedamagelog(body)
+                me_g = self.char_guid or 0
+                if me_g and me_g in (m["attacker"], m["victim"]):
+                    log("[SPELLDMG] attacker=0x%016X spell=%d dmg=%d overkill=%d absorb=%d resist=%d blocked=%d victim=0x%016X"
+                        % (m["attacker"], m["spell"], m["dmg"], m["overkill"], m["absorb"], m["resist"], m["blocked"],
+                           m["victim"]))
+                if not hasattr(self, "melee_log"):
+                    self.melee_log = []
+                self.melee_log.append((time.time(), m["attacker"], m["victim"], m["dmg"]))
+                del self.melee_log[:-300]
+            except (IndexError, struct.error, ValueError) as exc:
+                log("SMSG_SPELLNONMELEEDAMAGELOG parse failed: %s (body=%s)" % (exc, body[:48].hex()))
         elif op == 0x06AA:
             try:
                 m = decode_attackerstateupdate(body)
-                log("[MELEE] attacker=0x%016X entry=%d hit=0x%x dmg=%d absorb=%d resist=%d blocked=%d state=%d"
+                log("[MELEE] attacker=0x%016X entry=%d hit=0x%x dmg=%d absorb=%d resist=%d blocked=%d state=%d victim=0x%016X"
                     % (m["attacker"], m["entry"], m["hit"], m["dmg"], m["absorb"], m["resist"],
-                       m["blocked"], m["state"]))
+                       m["blocked"], m["state"], m.get("victim") or 0))
+                if not hasattr(self, "melee_log"):
+                    self.melee_log = []
+                self.melee_log.append((time.time(), m["attacker"], m.get("victim") or 0, m["dmg"]))
+                del self.melee_log[:-300]
             except (IndexError, struct.error, ValueError) as exc:
                 log("SMSG_ATTACKERSTATEUPDATE parse failed: %s (body=%s)" % (exc, body[:48].hex()))
             self.emit("observed", op="SMSG_ATTACKERSTATEUPDATE", size=len(body))
@@ -1702,6 +1850,7 @@ class WorldClient:
         return False
 
     def pump(self, seconds, stop_on=(), stop_map=None):
+        _stall_watchdog_touch()
         deadline = time.time() + seconds
         events = []
         while time.time() < deadline:
@@ -1728,6 +1877,7 @@ class WorldClient:
             if stop_map is not None and self.map_id == stop_map and op == SMSG_LOGIN_VERIFY_WORLD:
                 events.append(op)
                 break
+        self.play.tick()
         return events
 
     def queue_bg(self, bg_type=SOTA_BG_TYPE):
@@ -2254,8 +2404,14 @@ class WorldClient:
         for idx in (6, 5, 7, 0, 3, 1, 4, 2):
             bw.bit(gb[idx] != 0)
         self.send_packet(CMSG_ATTACKSWING, bw.flush() + guid_byte_seq(guid, (6, 7, 1, 3, 2, 0, 4, 5)))
+        self.last_attack_guid = guid      # the unit last swung at - a kill/hold step finishes it before a fresh one
         log("sent CMSG_ATTACKSWING guid=%d" % guid)
         self.emit("attack", guid=guid)
+
+    def cancel_auto_repeat(self):
+        """CMSG_CANCEL_AUTO_REPEAT_SPELL (SpellHandler.cpp HandleCancelAutoRepeatSpellOpcode): empty body."""
+        self.send_packet(CMSG_CANCEL_AUTO_REPEAT_SPELL, b"")
+        log("sent CMSG_CANCEL_AUTO_REPEAT_SPELL")
 
     def attack_stop(self):
         """CMSG_ATTACKSTOP (CombatHandler.cpp:90): empty body."""
@@ -2323,6 +2479,7 @@ class WorldClient:
     _CHAT_SEND_OPCODES = {
         "say": CMSG_MESSAGECHAT_SAY, "party": CMSG_MESSAGECHAT_PARTY,
         "raid": CMSG_MESSAGECHAT_RAID, "whisper": CMSG_MESSAGECHAT_WHISPER,
+        "guild": CMSG_MESSAGECHAT_GUILD,   # same layout as say (ChatHandler.cpp: textLen bits(8) + msg)
     }
 
     def send_chat(self, chat_type, message, target=None, language=None):
@@ -2347,6 +2504,86 @@ class WorldClient:
         self.send_packet(op, body)
         log("sent chat %s%s: %r" % (chat_type, (" -> %s" % target) if target else "", message))
         self.emit("chat_sent", type=chat_type, msg=json.dumps(message))
+
+    def send_channel_chat(self, channel, message, language=None):
+        """CMSG_MESSAGECHAT_CHANNEL (ChatHandler.cpp, case CHAT_MSG_CHANNEL): u32 lang, bits(9) channelLen,
+        bits(8) textLen, then the TEXT first, then the channel name (the handler's variables are named
+        confusingly: textLength -> channel, receiverLength -> msg, msg read first)."""
+        lang = language if language is not None else self.language
+        msg_b = message.encode("utf-8")
+        ch_b = channel.encode("utf-8")
+        body = struct.pack("<I", lang)
+        bw = BitWriter()
+        bw.bits(len(ch_b), 9)
+        bw.bits(len(msg_b), 8)
+        body += bw.flush() + msg_b + ch_b
+        self.send_packet(CMSG_MESSAGECHAT_CHANNEL, body)
+        log("sent chat channel %s: %r" % (channel, message))
+        self.emit("chat_sent", type="channel", msg=json.dumps(message))
+
+    def join_channel(self, name, channel_id=0, password=""):
+        """CMSG_JOIN_CHANNEL (ChannelHandler.cpp HandleJoinChannel): u32 channelId, bit unk, bits(7) nameLen,
+        bits(7) passLen, bit unk, then password, then name. channel_id 0 = custom channel by name; a DBC id
+        (e.g. the LookingForGroup constant channel) joins the zone/global channel and ignores the name
+        except for the city/zone pattern checks."""
+        nb = name.encode("utf-8")
+        pb = password.encode("utf-8")
+        body = struct.pack("<I", channel_id)
+        bw = BitWriter()
+        bw.bit(0)
+        bw.bits(len(nb), 7)
+        bw.bits(len(pb), 7)
+        bw.bit(0)
+        body += bw.flush() + pb + nb
+        self.send_packet(CMSG_JOIN_CHANNEL, body)
+        log("sent CMSG_JOIN_CHANNEL id=%d name=%r" % (channel_id, name))
+        self.emit("join_channel", name=name, id=channel_id)
+
+    def guild_accept(self):
+        """CMSG_GUILD_ACCEPT (GuildHandler.cpp HandleGuildAcceptOpcode): empty body."""
+        self.send_packet(CMSG_GUILD_ACCEPT, b"")
+        log("sent CMSG_GUILD_ACCEPT")
+        self.emit("guild_accept")
+
+    def _parse_guild_invite(self, body):
+        """SMSG_GUILD_INVITE (Guild.cpp Guild::HandleInviteMember send): bit-packed, returns
+        (inviter, guild_name, old_guild_name) or None."""
+        try:
+            r = ByteReader(body)
+            ng = [0] * 8
+            og = [0] * 8
+            ng[4] = r.read_bit()
+            guild_len = r.read_bits(7)
+            og[4] = r.read_bit()
+            ng[6] = r.read_bit()
+            for i in (2, 1, 5, 7):
+                og[i] = r.read_bit()
+            ng[0] = r.read_bit()
+            og[3] = r.read_bit()
+            ng[5] = r.read_bit()
+            og[6] = r.read_bit()
+            inviter_len = r.read_bits(6)
+            ng[1] = r.read_bit()
+            ng[3] = r.read_bit()
+            og[0] = r.read_bit()
+            ng[7] = r.read_bit()
+            old_len = r.read_bits(7)
+            ng[2] = r.read_bit()
+            r.read_byte_seq(ng[1]); r.read_u32()
+            r.read_byte_seq(ng[4])
+            inviter = r.read_string(inviter_len).decode("utf-8", "replace")
+            r.read_u32()
+            r.read_byte_seq(og[7]); r.read_byte_seq(ng[0]); r.read_byte_seq(ng[2])
+            r.read_u32()
+            r.read_byte_seq(og[2]); r.read_byte_seq(og[5])
+            r.read_u32(); r.read_u32()
+            r.read_byte_seq(ng[7]); r.read_byte_seq(ng[3]); r.read_byte_seq(og[4])
+            r.read_u32()
+            gname = r.read_string(guild_len).decode("utf-8", "replace")
+            return inviter, gname, ""
+        except (IndexError, struct.error) as exc:
+            log("SMSG_GUILD_INVITE parse failed: %s" % exc)
+            return None
 
     # ChatMsg values (SharedDefines.h:3826-3876) - verified against this repo,
     # NOT assumed: SYSTEM=0 shifts every other type up by one versus a naive
@@ -2501,8 +2738,10 @@ class WorldClient:
 
     def group_set_leader(self, target_guid):
         """CMSG_GROUP_SET_LEADER (GroupHandler.cpp:444-483): bits
-        [1,7,0,2,5,3,4,6], ByteSeq 1,5,7,6,0,2,4,3. No leading skip byte."""
-        body = guid_mask_bits(target_guid, (1, 7, 0, 2, 5, 3, 4, 6))
+        [1,7,0,2,5,3,4,6], ByteSeq 1,5,7,6,0,2,4,3. The handler starts with read_skip<uint8>
+        (GroupHandler.cpp:451), so a leading 0 byte is required (without it the guid is
+        misread and the leader never changes)."""
+        body = bytes([0]) + guid_mask_bits(target_guid, (1, 7, 0, 2, 5, 3, 4, 6))
         body += guid_byte_seq(target_guid, (1, 5, 7, 6, 0, 2, 4, 3))
         self.send_packet(CMSG_GROUP_SET_LEADER, body)
         log("sent CMSG_GROUP_SET_LEADER -> %s" % target_guid)
@@ -3084,7 +3323,7 @@ class WorldClient:
         log("sent CMSG_CAST_SPELL (self-cast) spell=%d (%d bytes)" % (spell_id, len(body)))
         self.emit("cast", spell=spell_id)
 
-    def cast(self, spell_id, target_guid=None, dest=None, elevation=None, speed=None):
+    def cast(self, spell_id, target_guid=None, dest=None, elevation=None, speed=None, item_guid=None):
         """CMSG_CAST_SPELL with a real TARGET, for the player-facing "use this spell on that
         NPC" mechanic (issue #207: the Hot Rod's 61178 Grab Passenger on Ace/Izzy/Gobber).
 
@@ -3132,7 +3371,10 @@ class WorldClient:
         bw.bit(1 if dest is not None else 0)  # hasDestLocation (direct)
         bw.bit(0)   # hasSpellId=true (inverted)
         bw.bits(0, 2)  # researchDataCount=0
-        has_mask = target_guid is not None or dest is not None
+        # item_guid: an item target (TARGET_FLAG_ITEM), e.g. a runeforge rune engraved on the equipped weapon.
+        # itemTargetGuid mask bits [1,0,7,4,6,5,3,2] (SpellHandler.cpp:822-829), byte seq [4,2,1,5,7,3,6,0] (939-946).
+        ib = int(item_guid).to_bytes(8, "little") if item_guid else bytes(8)
+        has_mask = target_guid is not None or dest is not None or bool(item_guid)
         bw.bit(0 if has_mask else 1)  # hasTargetMask (inverted)
         bw.bit(0 if speed is not None else 1)  # hasMissileSpeed (inverted)
         bw.bit(1)   # hasGlyphIndex=false (inverted)
@@ -3146,18 +3388,20 @@ class WorldClient:
         if dest is not None:
             for _ in range(8):
                 bw.bit(0)                 # destTransportGuid mask: all-zero (world coords)
-        for _ in range(8):
-            bw.bit(0)                     # itemTargetGuid mask: all-zero
+        for idx in (1, 0, 7, 4, 6, 5, 3, 2):
+            bw.bit(ib[idx] != 0)          # itemTargetGuid mask (all-zero without an item target)
         if has_mask:
             # a GameObject guid (HighGuid::GameObject 0xF11 in the top 12 bits) must carry TARGET_FLAG_GAMEOBJECT:
             # SpellCastTargets::Update resolves the object by mask, and the quest-chest lock cast
             # (OPEN_LOCK, GetGOTarget, SpellHandler.cpp:1078) needs the GO target, not a unit one.
             tflag = TARGET_FLAG_GAMEOBJECT if (guid >> 52) == 0xF11 else TARGET_FLAG_UNIT
-            mask = (tflag if target_guid is not None else 0) |                    (TARGET_FLAG_DEST_LOCATION if dest is not None else 0)
+            mask = (tflag if target_guid is not None else 0) |                    (TARGET_FLAG_DEST_LOCATION if dest is not None else 0) |                    (TARGET_FLAG_ITEM if item_guid else 0)
             bw.bits(mask, 20)             # hasTargetMask=true
         # hasCastFlags=false, so no 5-bit castFlags. researchDataCount==0 consumes no bytes.
         tail = bytearray()
-        # itemTargetGuid byte-seq: all zero -> WriteByteSeq emits nothing.
+        for idx in (4, 2, 1, 5, 7, 3, 6, 0):
+            if ib[idx]:
+                tail.append(ib[idx] ^ 1)  # itemTargetGuid byte-seq (nothing without an item target)
         if dest is not None:
             tail += struct.pack("<fff", float(dest[0]), float(dest[1]), float(dest[2]))
         if target_guid is not None:
@@ -3174,6 +3418,9 @@ class WorldClient:
             log("sent CMSG_CAST_SPELL spell=%d dest=(%.2f,%.2f,%.2f) target=%s elev=%s speed=%s (%d bytes)"
                 % (spell_id, dest[0], dest[1], dest[2], target_guid, elevation, speed, len(body)))
             self.emit("cast", spell=spell_id, dest="%g,%g,%g" % tuple(dest))
+        elif item_guid:
+            log("sent CMSG_CAST_SPELL spell=%d item=%d (%d bytes)" % (spell_id, int(item_guid), len(body)))
+            self.emit("cast", spell=spell_id, item=int(item_guid))
         elif target_guid is not None:
             log("sent CMSG_CAST_SPELL spell=%d target=%d (%d bytes)"
                 % (spell_id, guid, len(body)))
@@ -4106,7 +4353,7 @@ def run_soap(args, command):
     try:
         status, payload = soap_command(args.soap_host, args.soap_port,
                                         args.soap_user, args.soap_pass, command)
-    except OSError as exc:
+    except (OSError, RuntimeError) as exc:
         log("SOAP helper failed: %s (check SOAP.Enabled/IP/Port in worldserver.conf)" % exc)
         return False
     text = payload.strip()
@@ -4195,6 +4442,8 @@ def run_verb(w, args_cli, line):
     if not parts:
         return
     verb, rest = parts[0].lower(), parts[1:]
+    if verb in PLAY_VERBS and run_play_verb(w, args_cli, verb, rest):
+        return
 
     def resolve(arg):
         g = w.resolve_target(arg)
@@ -4351,6 +4600,17 @@ def run_verb(w, args_cli, line):
         target = rest[0] if chat_type == "whisper" else None
         msg = " ".join(rest[1:]) if chat_type == "whisper" else " ".join(rest)
         w.send_chat(chat_type, msg, target=target)
+    elif verb == "guild-chat":
+        w.send_chat("guild", " ".join(rest))
+    elif verb == "join-channel":
+        # join-channel NAME [ID]   (ID = ChatChannels.dbc id for a constant channel; 0/omitted = custom channel)
+        w.join_channel(rest[0], int(rest[1]) if len(rest) > 1 else 0)
+    elif verb == "channel-say":
+        # channel-say NAME text...
+        w.send_channel_chat(rest[0], " ".join(rest[1:]))
+    elif verb == "guild-accept":
+        # accept the pending guild invite (SMSG_GUILD_INVITE is logged as "[GUILD] SMSG_GUILD_INVITE from=.. guild=..")
+        w.guild_accept()
     elif verb == "create":
         # create <name> <race> <class> [gender]
         w.char_create(rest[0], int(rest[1]), int(rest[2]),
@@ -4395,7 +4655,15 @@ def run_verb(w, args_cli, line):
             w.move_guid = g
             log("mover: movement packets now carry guid %d" % g)
     elif verb == "face":
-        w.move_face(float(rest[0]))
+        # face <orientation> | face (no argument: toward the `npcguid` creature, if this client can see it)
+        if rest:
+            w.move_face(float(rest[0]))
+        else:
+            o = w.play.objs.get(int(w.harness_guid.get("npc", 0)))
+            if o is not None and o.position():
+                w.play.face(o.position())
+            else:
+                log("face: no orientation given and no visible `npcguid` creature")
     elif verb == "stop":
         w.move_stop()
     elif verb == "mount":
@@ -4569,9 +4837,31 @@ def run_verb(w, args_cli, line):
         # value, so resolve_target() passes it through unchanged (> 0xFFFFFFFF).
         kvc = dict(t.split("=", 1) for t in rest if "=" in t)      # autoloot=1: loot-all after the cast
         rest = [t for t in rest if "=" not in t]
+        if "item" in kvc:
+            # cast SPELL item=mainhand|offhand|ENTRY: an item-targeted cast (runeforging a rune onto the weapon)
+            me_ = w.play.me()
+            ig = 0
+            if me_ is not None:
+                slot_ = {"mainhand": 15, "offhand": 16}.get(kvc["item"].lower())
+                if slot_ is not None:
+                    ig = me_.u64(UF_PLAYER_INV_SLOTS + 2 * slot_)
+                else:
+                    ig = next((g_ for _b, _s, g_, e_, _c in w.play.inventory() if e_ == int(kvc["item"])), 0)
+            if not ig:
+                log("cast %s: no item %s" % (rest[0], kvc["item"]))
+                return
+            w.cast(int(rest[0]), None, item_guid=ig)
+            return
         if len(rest) > 1:
             key = rest[1].lower()
-            if key in ("npc", "corpse", "go"):
+            if key == "pet":
+                # the character's own summoned pet (UNIT_FIELD_SUMMON), e.g. `cast 2641 pet` (Dismiss Pet)
+                me_ = w.play.me()
+                g = me_.u64(UF_UNIT_SUMMON) if me_ else 0
+                if not g:
+                    log("cast %s: no pet out" % rest[0])
+                    return
+            elif key in ("npc", "corpse", "go"):
                 # the guid cached by the `npcguid` / `nearcorpse` harness verb - the Hot Rod's
                 # guid is generated fresh per spawn, so it cannot be hardcoded in a --step list
                 # (same idiom taxi() uses, see its docstring).
@@ -4796,7 +5086,7 @@ def run_verb(w, args_cli, line):
         try:
             status, payload = soap_command(args_cli.soap_host, args_cli.soap_port,
                                             args_cli.soap_user, args_cli.soap_pass, cmd)
-        except OSError as exc:
+        except (OSError, RuntimeError) as exc:       # RuntimeError: no SOAP credentials configured
             log("SOAP helper failed: %s" % exc)
             return
         log("SOAP HTTP %d: %s" % (status, payload.strip()[:300]))
@@ -4828,7 +5118,13 @@ def _session_budget(args_cli, steps):
     # #875: a step without timeout= still blocks for its verb's DEFAULT wait (wait-for 30 s, wait-for-server-pos
     # 60 s, wait-file 120 s, walk = path length / speed), so count that and not a flat 10 s - otherwise a legitimate
     # chain step list would be killed by the budget it is supposed to merely backstop.
-    verb_default = {"wait-for": 30.0, "wait-for-server-pos": 60.0, "wait-file": 120.0}
+    verb_default = {"wait-for": 30.0, "wait-for-server-pos": 60.0, "wait-file": 120.0,
+                    # real-player verbs: their default timeout= (a STUCK line ends the run earlier)
+                    "goto-path": 300.0, "goto-npc": 300.0, "goto-go": 300.0, "kill": 900.0, "collect": 1200.0,
+                    "accept": 300.0, "accept-go": 300.0, "turnin": 300.0, "turnin-go": 300.0, "talk": 300.0,
+                    "use-go": 300.0, "use-item": 300.0, "spellclick": 300.0, "wait-quest": 60.0,
+                    "vehicle-wait": 60.0, "wait-map": 120.0, "wait-level": 60.0, "hold": 300.0, "follow": 1800.0,
+                    "repeat": 3600.0, "retry": 600.0}
     for line in steps:
         parts = line.split()
         verb = parts[0] if parts else ""
@@ -4881,13 +5177,8 @@ def run_steps(w, args_cli, steps):
     wd.daemon = True
     wd.start()
     try:
-        for n, line in enumerate(steps, 1):
-            if time.time() - t0 > budget:
-                _session_timeout(w, n, line, budget)
-            state["n"], state["line"] = n, line
-            log("step: %s" % line)
-            run_verb(w, args_cli, line)
-            w.pump(1)
+        state["t0"], state["budget"] = t0, budget
+        exec_steps(w, args_cli, expand_inline_blocks(steps), state)
     finally:
         wd.cancel()
 
@@ -5558,8 +5849,6 @@ def mv_read_create_movement(r):
     has_tpos = r.bit()
     r.bit()
     has_stat = r.bit()
-    if has_at:
-        raise MvParseError("create block: area trigger movement not decoded")
     out["living"] = has_living
     ut = None
     sp = {"has": 0}
@@ -5615,6 +5904,16 @@ def mv_read_create_movement(r):
         tp_t2 = r.bit()
         tp.masks(r, (6, 5, 3, 2, 7))
         tp_t3 = r.bit()
+    at_spline = at_scale = 0
+    if has_at:                                   # Object.cpp hasAreaTriggerData bits
+        for _ in range(6):
+            r.bit()
+        at_scale = r.bit()
+        r.bit()
+        at_spline = r.bit()
+        r.bit()
+        at_n = r.bits(20) if at_spline else 0
+        r.bit(); r.bit(); r.bit()
     if has_anim:
         kit_mv, kit_me, kit_ai = r.bit(), r.bit(), r.bit()
     victim = None
@@ -5636,6 +5935,7 @@ def mv_read_create_movement(r):
                 r.u32()
             ut.seq(r, 0); r.i8(); ut.seqs(r, (6, 2)); r.u32()
         g.seq(r, 4)
+        spd = {}
         if has_spline:
             if sp["has"]:
                 out["passed"] = r.u32()
@@ -5660,7 +5960,7 @@ def mv_read_create_movement(r):
             dx = r.f32(); dz = r.f32(); out["sid"] = r.u32(); dy = r.f32()
             out["dest"] = (dx, dy, dz)
             out["spline"] = 1 if sp["has"] else 0
-        r.f32()
+        spd["flight"] = r.f32()
         if not no_counter:
             r.u32()
         g.seq(r, 2)
@@ -5669,27 +5969,33 @@ def mv_read_create_movement(r):
                 r.f32(); r.f32(); r.f32()
             r.u32(); r.f32()
         g.seq(r, 1)
-        r.f32()
+        spd["turn"] = r.f32()
         if not no_time:
             r.u32()
-        r.f32()
+        spd["runback"] = r.f32()
         if not no_selev:
             r.f32()
         g.seq(r, 7)
-        r.f32()
+        spd["pitch"] = r.f32()
         px = r.f32()
         if has_pitch:
             r.f32()
-        if not orient0:
-            r.f32()
-        r.f32()
+        out["orient"] = 0.0 if orient0 else r.f32()
+        spd["walk"] = r.f32()
         py = r.f32()
-        r.f32()
+        spd["flightback"] = r.f32()
         g.seqs(r, (3, 5, 6, 0))
-        r.f32(); r.f32(); r.f32()
+        spd["swimback"] = r.f32(); spd["run"] = r.f32(); spd["swim"] = r.f32()
         pz = r.f32()
         out["pos"] = (px, py, pz)
         out["mflags"] = mflags
+        out["speeds"] = spd
+        out["transport"] = ut.value() if ut is not None else 0
+    if has_at:
+        r.raw(12 * at_n)
+        r.u32()
+        if at_scale:
+            r.f32(); r.f32()
     if has_tpos:
         if tp_t2:
             r.u32()
@@ -5702,9 +6008,10 @@ def mv_read_create_movement(r):
     if has_target:
         victim.seqs(r, (7, 1, 5, 2, 6, 3, 0, 4))
     if has_vehicle:
-        r.u32(); r.f32()
+        out["vehicle_id"] = r.u32(); r.f32()
     if has_stat:
-        r.f32(); r.f32(); r.f32(); r.f32()
+        sy, sz, so, sx = r.f32(), r.f32(), r.f32(), r.f32()
+        out["stat"] = (sx, sy, sz, so)
     if has_anim:
         if not kit_ai:
             r.raw(2)
@@ -6072,6 +6379,3632 @@ def attach_movement_log(w, spec, out_path=""):
     w.auto = auto
     return mlog
 
+# ===========================================================================
+# Playing without GM help.
+#
+# Everything below works only from what a real 5.4.8 client receives and sends: objects from
+# SMSG_UPDATE_OBJECT (Object::BuildCreateUpdateBlockForPlayer / BuildValuesUpdate, UpdateFields.h),
+# the quest log from PLAYER_FIELD_QUEST_LOG, inventory from PLAYER_FIELD_INV_SLOTS + container slots,
+# known spells from SMSG_INITIAL_SPELLS / SMSG_LEARNED_SPELL, and the quest/loot/cast replies. The
+# real-player verbs (goto-path, goto-npc, kill, accept, turnin, ...) never call a GM/SOAP verb.
+# Read-only lookups (spawn positions from the world DB, see db_spawns) are optional hints only.
+# ===========================================================================
+
+NAVPATH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "navpath")
+
+SMSG_DESTROY_OBJECT = 0x14C2
+SMSG_MONSTER_MOVE = 0x1A07
+SMSG_PLAYER_MOVE = 0x1A32
+SMSG_MOVE_UPDATE_TELEPORT = 0x15A9
+SMSG_INITIAL_SPELLS = 0x045A
+SMSG_LEARNED_SPELL = 0x129A
+SMSG_REMOVED_SPELL = 0x14C3
+SMSG_SPELL_FAILURE = 0x04AF
+SMSG_ATTACK_SWING_ERROR = 0x11E1
+SMSG_QUESTGIVER_OFFER_REWARD = 0x074F
+SMSG_QUESTGIVER_QUEST_COMPLETE = 0x0346
+SMSG_QUESTGIVER_QUEST_DETAILS = 0x134C
+SMSG_QUESTGIVER_QUEST_FAILED = 0x12DE
+SMSG_QUESTGIVER_QUEST_INVALID = 0x027D
+SMSG_QUESTGIVER_QUEST_LIST = 0x02D4
+SMSG_QUESTGIVER_REQUEST_ITEMS = 0x0277
+SMSG_QUESTGIVER_STATUS = 0x1275
+SMSG_QUESTGIVER_STATUS_MULTIPLE = 0x06CE
+SMSG_QUESTUPDATE_ADD_CREDIT = 0x1645
+SMSG_QUESTUPDATE_ADD_CREDIT_SIMPLE = 0x07F5
+SMSG_QUEST_UPDATE_COMPLETE = 0x0776
+SMSG_QUESTUPDATE_FAILED = 0x07DD
+SMSG_QUESTUPDATE_FAILEDTIMER = 0x06FF
+SMSG_QUESTLOG_FULL = 0x07FD
+SMSG_CORPSE_QUERY = 0x0E0B
+SMSG_DEATH_RELEASE_LOC = 0x1063
+SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA = 0x1A2A
+SMSG_CLIENT_CONTROL_UPDATE = 0x1043
+SMSG_MOVE_ROOT = 0x15AE
+SMSG_MOVE_UNROOT = 0x1FAE
+CMSG_QUESTGIVER_HELLO = 0x02DB
+CMSG_QUESTGIVER_QUERY_QUEST = 0x12F0
+CMSG_QUESTGIVER_REQUEST_REWARD = 0x0378
+CMSG_QUESTGIVER_STATUS_QUERY = 0x036A
+CMSG_CORPSE_QUERY = 0x1FBE
+CMSG_PET_ACTION = 0x025B
+CMSG_AUTOEQUIP_ITEM = 0x025F
+CMSG_SELL_ITEM = 0x1358
+CMSG_SET_PRIMARY_TALENT_TREE = 0x06C6       # u32 specialization tab (SkillHandler.cpp HandeSetTalentSpecialization)
+# `spec`: the damage specialization a player picks at level 10 when the step does not name one (tab order of
+# ChrSpecialization per class): Arms, Retribution, Beast Mastery, Assassination, Shadow, Frost, Elemental, Arcane,
+# Affliction, Windwalker, Balance
+DEFAULT_DPS_SPEC_TAB = {1: 0, 2: 2, 3: 0, 4: 0, 5: 2, 6: 1, 7: 0, 8: 0, 9: 0, 10: 1, 11: 0}
+CMSG_REPAIR_ITEM = 0x02C1        # NPCHandler.cpp HandleRepairItemOpcode (item guid 0 = repair all)
+CMSG_QUESTLOG_REMOVE_QUEST = 0x0779   # QuestHandler.cpp HandleQuestLogRemoveQuest: u8 log slot
+CMSG_BUY_ITEM = 0x02E2          # ItemHandler.cpp HandleBuyItemOpcode
+CMSG_LIST_INVENTORY = 0x02D8    # ItemHandler.cpp HandleListInventoryOpcode
+CMSG_DESTROY_ITEM = 0x0026
+CMSG_SPIRIT_HEALER_ACTIVATE = 0x0340
+SMSG_SPIRIT_HEALER_CONFIRM = 0x1EAA
+SMSG_SPELL_START = 0x107A
+# Spells with SPELL_EFFECT_OPEN_LOCK a character knows from creation. A locked chest / goober (Lock.dbc
+# LOCK_KEY_SKILL) is opened by casting the matching one on it, as the real client does; the server accepts it
+# even when it is not in the spellbook (GameObject::GetSpellForLock, SpellHandler.cpp "special lock cases").
+OPENING_SPELLS = (3365, 6478, 21651, 22810, 6477, 6247, 61437, 21288, 6246)
+CMSG_REQUEST_VEHICLE_EXIT = 0x1DC3
+SMSG_TRIGGER_CINEMATIC = 0x0B01
+SMSG_TRIGGER_MOVIE = 0x1C2E
+CMSG_NEXT_CINEMATIC_CAMERA = 0x1124
+CMSG_COMPLETE_CINEMATIC = 0x1F34
+CMSG_COMPLETE_MOVIE = 0x1362
+SMSG_PET_SPELLS_MESSAGE = 0x095A
+CINEMATIC_WATCH_S = 3.0          # seconds a cinematic / movie "plays" before this client reports it complete
+
+# SharedDefines.h ResponseCodes (the SMSG_CHAR_CREATE result byte)
+CHAR_CREATE_CODES = {
+    46: "CHAR_CREATE_IN_PROGRESS", 47: "CHAR_CREATE_SUCCESS", 48: "CHAR_CREATE_ERROR", 49: "CHAR_CREATE_FAILED",
+    50: "CHAR_CREATE_NAME_IN_USE", 51: "CHAR_CREATE_DISABLED", 52: "CHAR_CREATE_PVP_TEAMS_VIOLATION",
+    53: "CHAR_CREATE_SERVER_LIMIT", 54: "CHAR_CREATE_ACCOUNT_LIMIT", 55: "CHAR_CREATE_SERVER_QUEUE",
+    56: "CHAR_CREATE_ONLY_EXISTING", 57: "CHAR_CREATE_EXPANSION", 58: "CHAR_CREATE_EXPANSION_CLASS",
+    59: "CHAR_CREATE_LEVEL_REQUIREMENT", 60: "CHAR_CREATE_UNIQUE_CLASS_LIMIT", 61: "CHAR_CREATE_CHARACTER_IN_GUILD",
+    62: "CHAR_CREATE_RESTRICTED_RACECLASS", 63: "CHAR_CREATE_CHARACTER_CHOOSE_RACE",
+    64: "CHAR_CREATE_CHARACTER_ARENA_LEADER", 65: "CHAR_CREATE_CHARACTER_DELETE_MAIL",
+    66: "CHAR_CREATE_CHARACTER_SWAP_FACTION", 67: "CHAR_CREATE_CHARACTER_RACE_ONLY",
+    68: "CHAR_CREATE_CHARACTER_GOLD_LIMIT", 69: "CHAR_CREATE_FORCE_LOGIN", 70: "CHAR_CREATE_TRIAL",
+    92: "CHAR_NAME_SUCCESS", 93: "CHAR_NAME_FAILURE", 94: "CHAR_NAME_NO_NAME", 95: "CHAR_NAME_TOO_SHORT",
+    96: "CHAR_NAME_TOO_LONG", 97: "CHAR_NAME_INVALID_CHARACTER", 98: "CHAR_NAME_MIXED_LANGUAGES",
+    99: "CHAR_NAME_PROFANE", 100: "CHAR_NAME_RESERVED", 101: "CHAR_NAME_INVALID_APOSTROPHE",
+    102: "CHAR_NAME_MULTIPLE_APOSTROPHES", 103: "CHAR_NAME_THREE_CONSECUTIVE", 104: "CHAR_NAME_INVALID_SPACE",
+    105: "CHAR_NAME_CONSECUTIVE_SPACES", 106: "CHAR_NAME_RUSSIAN_CONSECUTIVE_SILENT_CHARACTERS",
+    107: "CHAR_NAME_RUSSIAN_SILENT_CHARACTER_AT_BEGINNING_OR_END", 108: "CHAR_NAME_DECLENSION_DOESNT_MATCH_BASE_NAME",
+}
+
+# SharedDefines.h SpellCastResult (the ones a fight loop reacts to)
+AUTO_REPEAT_SPELLS = (75, 5019)   # Auto Shot, Shoot (wand)
+SPELL_FAILED_NAMES = {
+    1: "AFFECTING_COMBAT", 13: "BAD_TARGETS", 24: "CASTER_AURASTATE", 25: "CASTER_DEAD", 30: "EQUIPPED_ITEM",
+    34: "ERROR", 39: "HIGHLEVEL", 43: "INTERRUPTED", 47: "ITEM_NOT_FOUND", 48: "ITEM_NOT_READY",
+    50: "LINE_OF_SIGHT", 54: "MOVING", 58: "NEED_MORE_ITEMS", 60: "NOT_BEHIND", 67: "NOT_MOUNTED",
+    70: "NOT_READY", 71: "NOT_SHAPESHIFT", 78: "NO_AMMO", 81: "NO_COMBO_POINTS", 87: "NO_PET", 88: "NO_POWER",
+    89: "NOTHING_TO_DISPEL", 98: "ONLY_STEALTHED", 100: "OUT_OF_RANGE", 103: "REAGENTS",
+    105: "REQUIRES_SPELL_FOCUS", 108: "SPELL_IN_PROGRESS", 110: "SPELL_UNAVAILABLE", 112: "TARGETS_DEAD",
+    114: "TARGET_AURASTATE", 116: "TARGET_ENEMY", 118: "TARGET_FRIENDLY", 132: "TOO_CLOSE",
+    137: "UNIT_NOT_BEHIND", 138: "UNIT_NOT_INFRONT", 185: "CANT_DO_THAT_RIGHT_NOW",
+}
+SPELL_FAILED_OUT_OF_RANGE = 100
+SPELL_FAILED_LINE_OF_SIGHT = 50
+SPELL_FAILED_UNIT_NOT_INFRONT = 138
+
+# UpdateFields.h (5.4.8 build 18414)
+UF_OBJECT_END = 0x008
+UF_ENTRY = 0x005
+UF_DYNAMIC_FLAGS = 0x006
+UF_ITEM_OWNER = UF_OBJECT_END + 0x000
+UF_ITEM_CONTAINED = UF_OBJECT_END + 0x002
+UF_ITEM_STACK = UF_OBJECT_END + 0x008
+UF_ITEM_END = UF_OBJECT_END + 0x03D
+UF_CONTAINER_SLOTS = UF_ITEM_END + 0x000            # 36 slot guids
+UF_CONTAINER_NUM_SLOTS = UF_ITEM_END + 0x048
+UF_UNIT_CHARM = UF_OBJECT_END + 0x000
+UF_UNIT_SUMMON = UF_OBJECT_END + 0x002
+UF_UNIT_CHARMED_BY = UF_OBJECT_END + 0x006
+UF_UNIT_TARGET = UF_OBJECT_END + 0x00E
+UF_UNIT_HEALTH = UF_OBJECT_END + 0x019
+UF_UNIT_POWER = UF_OBJECT_END + 0x01A               # 5 power slots, slot 0 = the class's primary power
+UF_UNIT_MAX_HEALTH = UF_OBJECT_END + 0x01F
+UF_UNIT_MAX_POWER = UF_OBJECT_END + 0x020
+UF_UNIT_LEVEL = UF_OBJECT_END + 0x02F
+UF_UNIT_FACTION = UF_OBJECT_END + 0x031
+UF_UNIT_FLAGS = UF_OBJECT_END + 0x035
+UF_UNIT_FLAGS2 = UF_OBJECT_END + 0x036
+UF_UNIT_NPC_FLAGS = UF_OBJECT_END + 0x04F
+UF_UNIT_END = UF_OBJECT_END + 0x098
+UF_PLAYER_FLAGS = UF_UNIT_END + 0x002
+UF_PLAYER_QUEST_LOG = UF_UNIT_END + 0x00B           # 50 slots x MAX_QUEST_OFFSET 15: id, state, 12 x (2 x u16 counts), time
+UF_PLAYER_INV_SLOTS = UF_UNIT_END + 0x325           # 86 slot guids
+UF_PLAYER_XP = UF_UNIT_END + 0x3DF
+UF_PLAYER_NEXT_XP = UF_UNIT_END + 0x3E0
+UF_GO_FLAGS = UF_OBJECT_END + 0x003
+UF_GO_BYTES_1 = UF_OBJECT_END + 0x00A
+UF_CORPSE_OWNER = UF_OBJECT_END + 0x000
+QUEST_LOG_SLOTS = 50
+QUEST_SLOT_FIELDS = 15
+QUEST_STATE_COMPLETE = 0x1
+QUEST_STATE_FAIL = 0x2
+PLAYER_FLAGS_GHOST = 0x10
+INVENTORY_SLOT_BAG_0 = 255
+UNIT_FLAG_NON_ATTACKABLE = 0x2
+UNIT_FLAG_IMMUNE_TO_PC = 0x100
+UNIT_FLAG_IN_COMBAT = 0x80000
+UNIT_FLAG_NOT_SELECTABLE = 0x02000000
+UNIT_DYNFLAG_LOOTABLE = 0x2
+UNIT_DYNFLAG_TAPPED = 0x8
+UNIT_DYNFLAG_TAPPED_BY_PLAYER = 0x10
+UNIT_DYNFLAG_DEAD = 0x40
+GO_DYNFLAG_LO_ACTIVATE = 0x2
+UNIT_NPC_FLAG_SPELLCLICK = 0x01000000
+SPLINEFLAG_TRANSPORT_ENTER = 0x8000
+SPLINEFLAG_TRANSPORT_EXIT = 0x10000
+TYPEID_NAMES = {0: "object", 1: "item", 2: "container", 3: "unit", 4: "player", 5: "gameobject",
+                6: "dynobj", 7: "corpse", 8: "areatrigger", 9: "sceneobject"}
+
+# A simple starter rotation per class (ChrClasses id): (spellId, kind, castSeconds, cooldownSeconds).
+# kind: m = melee (5 yd), r = ranged (30 yd), dot = ranged, re-applied after `cooldown` on the same target,
+# auto = start once per target (Auto Shot). Only spells the character knows (SMSG_INITIAL_SPELLS /
+# SMSG_LEARNED_SPELL) are used; a failed cast (SMSG_CAST_FAILED) backs the spell off for a few seconds.
+# rage costs (5.4.8) of the warrior rotation spells that spend rage; UF_UNIT_POWER holds rage x10
+WARRIOR_RAGE_COST = {78: 30, 1464: 25, 5308: 30}
+
+CLASS_ROTATIONS = {
+    1: [(12294, "m", 0, 6), (23881, "m", 0, 4.5), (23922, "m", 0, 6), (34428, "m", 0, 2), (6572, "m", 0, 9),
+        (20243, "m", 0, 1.5), (5308, "m", 0, 1.5), (78, "m", 0, 1.5), (88161, "m", 0, 1.5), (1464, "m", 0, 1.5)],
+    2: [(35395, "m", 0, 4.5), (20271, "r", 0, 6), (24275, "r", 0, 6), (53595, "m", 0, 4.5), (85256, "m", 0, 1.5),
+        (879, "r", 0, 15)],
+    3: [(75, "auto", 0, 0), (34026, "r", 0, 6), (53351, "r", 0, 10), (3044, "r", 0, 1.5), (77767, "r", 2.0, 1.5),
+        (56641, "r", 2.0, 1.5)],
+    4: [(2098, "m", 0, 1.5), (1329, "m", 0, 1.5), (84617, "m", 0, 1.5), (1752, "m", 0, 1.5)],
+    5: [(589, "dot", 0, 15), (8092, "r", 1.5, 8), (47540, "r", 2.0, 9), (14914, "r", 1.5, 10), (15407, "r", 3.0, 1.5),
+        (585, "r", 1.5, 1.5)],
+    6: [(45477, "r", 0, 3), (45462, "m", 0, 3), (49998, "m", 0, 3), (55050, "m", 0, 3), (49020, "m", 0, 3),
+        (49143, "m", 0, 1.5), (47541, "r", 0, 1.5)],
+    7: [(8050, "dot", 0, 18), (73899, "m", 0, 8), (17364, "m", 0, 8), (8042, "r", 0, 6), (51505, "r", 2.0, 8),
+        (403, "r", 2.0, 1.5)],
+    8: [(2136, "r", 0, 8), (30455, "r", 0, 1.5), (44614, "r", 2.75, 1.5), (133, "r", 2.25, 1.5), (116, "r", 2.0, 1.5),
+        (30451, "r", 2.25, 1.5)],
+    9: [(172, "dot", 0, 18), (348, "dot", 1.5, 15), (29722, "r", 2.0, 1.5), (686, "r", 2.0, 1.5), (77799, "r", 0, 1.5)],
+    10: [(107428, "m", 0, 8), (100784, "m", 0, 1.5), (100787, "m", 0, 1.5), (100780, "m", 0, 1.5)],
+    11: [(8921, "dot", 0, 15), (2912, "r", 2.7, 1.5), (5176, "r", 2.0, 1.5)],
+}
+RANGED_CLASSES = {3, 5, 7, 8, 9, 11}
+MELEE_RANGE = 4.5
+NAV_Z_LIFT = 0.5
+SPELL_RANGE = 29.0
+
+_NAV_MODULE = None
+
+
+def nav_module():
+    """The navmesh pathfinder (navpath/nav.py: find_path(map_id, start_xyz, end_xyz) -> [(x,y,z), ...] or None),
+    imported once. Missing module = None: callers walk a straight line and log NAV-FALLBACK."""
+    global _NAV_MODULE
+    if _NAV_MODULE is None:
+        try:
+            if NAVPATH_DIR not in sys.path:
+                sys.path.insert(0, NAVPATH_DIR)
+            import nav as _nav            # noqa: E402 - optional module, imported on first use
+            _NAV_MODULE = _nav
+            log("NAV module loaded from %s" % getattr(_nav, "__file__", NAVPATH_DIR))
+        except Exception as exc:          # noqa: BLE001 - any import problem means "no navmesh"
+            _NAV_MODULE = False
+            log("NAV-FALLBACK navmesh module unavailable (%s: %s); walking straight lines" % (type(exc).__name__, exc))
+    return _NAV_MODULE or None
+
+
+def db_spawns(kind, entry, map_id):
+    """Optional read-only hint: spawn positions of a creature/gameobject entry on `map_id` from the world DB, via the
+    mysql command-line client. Needs MOP_MYSQL_BIN (path of mysql) and MOP_DB_HOST / MOP_DB_PORT / MOP_DB_USER /
+    MOP_DB_PASS / MOP_DB_WORLD; returns [] when they are not set or the query fails. Never writes."""
+    mysql = os.environ.get("MOP_MYSQL_BIN")
+    db = os.environ.get("MOP_DB_WORLD")
+    if not mysql or not db:
+        return []
+    table = "creature" if kind == "unit" else "gameobject"
+    query = "SELECT position_x, position_y, position_z FROM %s WHERE id=%d AND map=%d" % (table, int(entry), int(map_id))
+    cmd = [mysql, "-h", os.environ.get("MOP_DB_HOST", "127.0.0.1"), "-P", os.environ.get("MOP_DB_PORT", "3306"),
+           "-u", os.environ.get("MOP_DB_USER", ""), "-N", "-B", db, "-e", query]
+    env = dict(os.environ)
+    if os.environ.get("MOP_DB_PASS") is not None:
+        env["MYSQL_PWD"] = os.environ["MOP_DB_PASS"]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=15, env=env).stdout
+    except (OSError, subprocess.SubprocessError) as exc:
+        log("db_spawns: lookup failed (%s)" % exc)
+        return []
+    pts = []
+    for line in out.splitlines():
+        try:
+            pts.append(tuple(float(v) for v in line.split("\t")[:3]))
+        except ValueError:
+            pass
+    return pts
+
+
+def db_items(entries):
+    """Optional read-only item facts for gear-up , the way a real client knows them from its item cache:
+    {entry: (class, subclass, InventoryType, ItemLevel, RequiredLevel, ContainerSlots, Quality, SellPrice)} from item_template, via the
+    same MOP_MYSQL_BIN / MOP_DB_* settings as db_spawns. {} when they are not set. Never writes."""
+    mysql = os.environ.get("MOP_MYSQL_BIN")
+    db = os.environ.get("MOP_DB_WORLD")
+    ids = sorted({int(e) for e in entries if int(e) > 0})
+    if not mysql or not db or not ids:
+        return {}
+    query = ("SELECT entry, class, subclass, InventoryType, ItemLevel, RequiredLevel, ContainerSlots, Quality, SellPrice FROM item_template "
+             "WHERE entry IN (%s)" % ",".join(str(i) for i in ids))
+    cmd = [mysql, "-h", os.environ.get("MOP_DB_HOST", "127.0.0.1"), "-P", os.environ.get("MOP_DB_PORT", "3306"),
+           "-u", os.environ.get("MOP_DB_USER", ""), "-N", "-B", db, "-e", query]
+    env = dict(os.environ)
+    if os.environ.get("MOP_DB_PASS") is not None:
+        env["MYSQL_PWD"] = os.environ["MOP_DB_PASS"]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=15, env=env).stdout
+    except (OSError, subprocess.SubprocessError) as exc:
+        log("db_items: lookup failed (%s)" % exc)
+        return {}
+    res = {}
+    for line in out.splitlines():
+        try:
+            v = [int(x) for x in line.split("\t")[:9]]
+        except ValueError:
+            continue
+        res[v[0]] = tuple(v[1:])
+    return res
+
+
+# gear-up: InventoryType -> candidate equipment slots (5.4.8: ranged weapons go in the main hand)
+GEAR_SLOTS = {1: (0,), 2: (1,), 3: (2,), 5: (4,), 20: (4,), 6: (5,), 7: (6,), 8: (7,), 9: (8,), 10: (9,),
+              11: (10, 11), 12: (12, 13), 16: (14,), 13: (15,), 17: (15,), 21: (15,), 15: (15,), 26: (15,),
+              25: (15,), 22: (16,), 14: (16,), 23: (16,)}
+
+def po_read_values(r):
+    """BuildValuesUpdate read back: u8 mask block count, the mask (bit i = field i), one u32 per set bit in index
+    order; then BuildDynamicValuesUpdate (skipped). Returns {field index: u32}."""
+    nb = r.u8()
+    mask = r.raw(4 * nb)
+    vals = {}
+    for bi, b in enumerate(mask):
+        if b:
+            for bit in range(8):
+                if b & (1 << bit):
+                    vals[bi * 8 + bit] = struct.unpack("<I", r.raw(4))[0]
+    if r.u8():
+        tabmask = r.u32()
+        for i in range(32):
+            if tabmask & (1 << i):
+                n = r.u8() & 0x7F
+                cnt = 0
+                for _ in range(n):
+                    cnt += mv_pop(r.u32())
+                r.raw(4 * cnt)
+    return vals
+
+
+def _d3(a, b):
+    return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
+
+
+def _d2(a, b):
+    return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+class TrackedObject:
+    """One object this client has been told about (create block + later values / movement packets)."""
+
+    def __init__(self, guid, typeid):
+        self.guid = guid
+        self.typeid = typeid
+        self.fields = {}
+        self.pos = None
+        self.o = 0.0
+        self.spline = None
+        self.speeds = {}
+        self.seen = time.time()
+
+    @property
+    def kind(self):
+        return {3: "unit", 4: "player", 5: "go", 7: "corpse", 1: "item", 2: "item"}.get(self.typeid, "other")
+
+    def u32(self, idx, default=0):
+        return self.fields.get(idx, default)
+
+    def u64(self, idx):
+        return self.fields.get(idx, 0) | (self.fields.get(idx + 1, 0) << 32)
+
+    @property
+    def entry(self):
+        e = self.fields.get(UF_ENTRY)
+        if e:
+            return e
+        if (self.guid >> 52) in (0xF11, 0xF13, 0xF15, 0xF14):
+            return (self.guid >> 32) & 0xFFFFF
+        return 0
+
+    @property
+    def health(self):
+        return self.fields.get(UF_UNIT_HEALTH, 0)
+
+    @property
+    def max_health(self):
+        return self.fields.get(UF_UNIT_MAX_HEALTH, 0)
+
+    @property
+    def dynflags(self):
+        return self.fields.get(UF_DYNAMIC_FLAGS, 0)
+
+    @property
+    def unit_flags(self):
+        return self.fields.get(UF_UNIT_FLAGS, 0)
+
+    def alive(self):
+        return self.health > 0 and not (self.dynflags & UNIT_DYNFLAG_DEAD)
+
+    def attackable(self):
+        f = self.unit_flags
+        return not (f & (UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC))
+
+    def tapped_by_other(self):
+        d = self.dynflags
+        return bool(d & UNIT_DYNFLAG_TAPPED) and not (d & UNIT_DYNFLAG_TAPPED_BY_PLAYER)
+
+    def position(self, t=None):
+        if self.spline is not None:
+            return self.spline.pos_at(time.time() if t is None else t)
+        return self.pos
+
+    def short(self):
+        p = self.position()
+        ps = "%.1f,%.1f,%.1f" % p if p else "-"
+        extra = ""
+        if self.typeid in (3, 4):
+            extra = " hp=%d/%d lvl=%d flags=0x%X dyn=0x%X npc=0x%X" % (
+                self.health, self.max_health, self.u32(UF_UNIT_LEVEL), self.unit_flags, self.dynflags,
+                self.u32(UF_UNIT_NPC_FLAGS))
+        elif self.typeid == 5:
+            extra = " dyn=0x%X state=%d" % (self.dynflags, self.u32(UF_GO_BYTES_1) & 0xFF)
+        return "guid=%d type=%s entry=%d pos=%s%s" % (self.guid, TYPEID_NAMES.get(self.typeid, self.typeid),
+                                                      self.entry, ps, extra)
+
+
+class PlayState:
+    """Client-side world model and the real-player step verbs. Attached to a WorldClient as `w.play`."""
+
+    def __init__(self, w):
+        self.w = w
+        self.objs = {}
+        self.known_spells = set()
+        self.quest_prev = None          # qid -> (state, counts) at the last own-player update
+        self.quest_required = {}        # qid -> {count_value: required} from SMSG_QUESTUPDATE_ADD_CREDIT
+        self.quest_credit = {}          # (qid, objectId) -> (count, required)
+        self.quest_rewarded = set()
+        self.quest_completed_pkt = set()
+        self.quest_failed = set()
+        self.quest_details = None       # last SMSG_QUESTGIVER_QUEST_DETAILS quest id
+        self.offer = None               # last SMSG_QUESTGIVER_OFFER_REWARD {quest, choices}
+        self.request_items = None       # last SMSG_QUESTGIVER_REQUEST_ITEMS {quest, can_complete}
+        self.quest_invalid = None
+        self.qg_status = {}             # guid -> SMSG_QUESTGIVER_STATUS value
+        self.cast_fail = []             # (t, spell, result)
+        self.swing_error = None         # (t, code)
+        self.corpse_pos = None          # (map, x, y, z) from SMSG_CORPSE_QUERY
+        self.vehicle = False
+        self.vehicle_guid = None
+        self.vehicle_t = 0.0
+        self.rooted = False
+        self.pos_corrected = 0          # bumps on every server-side change of this client's position
+        self.own_spline = None          # (t_end, end_pos) of a server spline moving this character
+        self.errors = {}
+        self.parsed_updates = 0
+        self.auto_shot = set()
+        self.rest_s = float(os.environ.get("HEADLESS_REST_S", "45"))   # kill: max out-of-combat rest before a pull (0 = off)
+        self.spell_cd = {}
+        self.gcd_until = 0.0
+        self.dot_until = {}
+        self.char_class = None
+        self.used_go = {}               # guid -> time (collect from GOs: do not reuse a just-used node)
+        self._nav_fallback_logged = False
+        self.cine_complete_at = 0.0
+        self.movie_complete_at = 0.0
+        self.action_bar = []
+        self.action_bar_t = 0.0
+        self.used_targets = {}          # (verb, entry) -> guids already used (distinct-target selection)
+        self.extra_move_flags = 0       # MOVEMENTFLAG_SWIMMING while a `swim=1` walk runs
+        self.last_seen = {}             # (kind, entry) -> {guid: (map, pos)} of objects that left this client's view
+        self.cur_near = None            # the running verb's near=x,y,z hint (goto_object uses it when no target is in view)
+        self.spirit_confirm = None      # time of the last SMSG_SPIRIT_HEALER_CONFIRM
+        self.spirit_healer_pos = None   # (map, x, y, z) from SMSG_DEATH_RELEASE_LOC
+        self.spell_seen_t = 0.0         # last SMSG_SPELL_START / SMSG_SPELL_GO
+        self.max_deaths = 3             # a kill/collect verb that dies more often than this logs STUCK (deaths=N)
+        self.max_dry_kills = 10         # collect from=: kills without the item count changing before STUCK (dry=N)
+
+    # ------------------------------------------------------------------ helpers
+    def me(self):
+        return self.objs.get(self.w.char_guid)
+
+    def run_speed(self):
+        me = self.me()
+        spd = me.speeds.get("run") if me else None
+        return spd if spd and 1.0 < spd < 60.0 else 7.0
+
+    def is_dead(self):
+        me = self.me()
+        if me is None:
+            return False
+        return (me.max_health > 0 and me.health == 0) or bool(me.u32(UF_PLAYER_FLAGS) & PLAYER_FLAGS_GHOST)
+
+    def is_ghost(self):
+        me = self.me()
+        return bool(me and me.u32(UF_PLAYER_FLAGS) & PLAYER_FLAGS_GHOST)
+
+    def _forget(self, guid):
+        """Drop an object, remembering where it was last seen (a player remembers where the quest giver stood)."""
+        o = self.objs.pop(guid, None)
+        if o is not None and o.kind in ("unit", "go") and o.position():
+            per = self.last_seen.setdefault((o.kind, o.entry), {})
+            per[guid] = (self.w.map_id, o.position())
+            if len(per) > 20:
+                per.pop(next(iter(per)))
+
+    def remembered(self, entry, kinds):
+        """Last-seen positions (this map) of objects of `entry` that are out of view, nearest first."""
+        pts = []
+        for k in kinds:
+            for _g, (m, p) in self.last_seen.get((k, int(entry)), {}).items():
+                if m == self.w.map_id:
+                    pts.append(p)
+        return sorted(pts, key=lambda p: _d3(p, self.w.pos)) if self.w.pos else pts
+
+    def objects_of(self, entry, kinds):
+        return [o for o in self.objs.values() if o.entry == int(entry) and o.kind in kinds and o.position()]
+
+    def nearest(self, entry, kinds, pred=None, exclude=()):
+        best, bd = None, 1e18
+        me = self.w.pos
+        if me is None:
+            return None
+        # never pick the vehicle this character sits in (riding a Mountain Horse 36540 and lassoing other
+        # 36540s: the nearest one was always the own mount, OUT_OF_RANGE / no credit)
+        own = (self.vehicle_guid, getattr(self.w, "move_guid", None)) if getattr(self, "vehicle", False) else ()
+        for o in self.objects_of(entry, kinds):
+            if o.guid in exclude or (own and o.guid in own) or (pred and not pred(o)):
+                continue
+            d = _d3(o.position(), me)
+            if d < bd:
+                best, bd = o, d
+        return best
+
+    def attackers(self):
+        """Live units whose target is this character and that are in combat (fight back)."""
+        me = self.w.char_guid
+        out = []
+        for o in self.objs.values():
+            if o.typeid == 3 and o.alive() and o.u64(UF_UNIT_TARGET) == me and o.unit_flags & UNIT_FLAG_IN_COMBAT:
+                if o.position() and self.w.pos and _d3(o.position(), self.w.pos) < 40:
+                    out.append(o)
+        # a unit that hit this character in the last 4 s is an attacker even when the 40 yd check (own position
+        # out of date after a server spline) or its target field says otherwise - a careful rest sat through 40 hits
+        seen = {o.guid for o in out}
+        now = time.time()
+        for t, att, vic, _dmg in getattr(self.w, "melee_log", [])[-60:]:
+            if vic == me and now - t <= 4.0 and att not in seen:
+                o = self.objs.get(att)
+                if o is not None and o.typeid == 3 and o.alive():
+                    out.append(o)
+                    seen.add(att)
+        return out
+
+    def too_strong(self, o):
+        """careful: a unit with more than 8x this character's health (a quest elite such as Koroth the Hillbreaker,
+        7410 hp against 484) is not fought back - a player runs from it and lets the quest script handle it."""
+        if getattr(self, "brave", False):
+            return False  # kill brave=1: fight the elite whatever its health (an encounter boss the quest needs)
+        me_ = self.me()
+        if not (getattr(self, "careful", False) and me_ is not None and me_.max_health > 0
+                and o.max_health > 8 * me_.max_health):
+            return False
+        # owner 2026-11-15: an elite that a friendly NPC is tanking (Gorerot on Prince Liam in the 24904 battle) is
+        # helped down like a player would - only when its victim is an ally, never when it is on this character
+        tv = o.u64(UF_UNIT_TARGET)
+        # a unit that hit this character in the last 6 s (melee or spell) is on it, whatever its target field says
+        if tv and tv != self.w.char_guid and not self.hit_by(o.guid, 6.0):
+            ally = self.objs.get(tv)
+            if ally is not None and ally.typeid == 3 and ally.alive() and not ally.attackable():
+                return False
+        return True
+
+    def pick_attacker(self, att):
+        """which attacker to fight first, like a player keeps hitting the mob already on them: the unit this
+        character last swung at, else the most damaged one, else the nearest (a hold left a Slavedriver at 8 hp and
+        the next kill step turned to a fresh one at full health, and the character died between the two)."""
+        last = getattr(self.w, "last_attack_guid", None)
+        for a in att:
+            if last is not None and a.guid == last:
+                return a
+
+        def frac(a):
+            return (a.health / float(a.max_health)) if getattr(a, "max_health", 0) else 1.0
+        return min(att, key=lambda a: (round(frac(a), 2), _d3(a.position(), self.w.pos)))
+
+    def in_avoid(self, pt, avoid):
+        """follow avoid=: the live unit of an avoided entry whose radius contains `pt` (2D), else None."""
+        for e, r in avoid:
+            for o in self.objects_of(e, ("unit",)):
+                op = o.position()
+                if o.alive() and op and math.hypot(pt[0] - op[0], pt[1] - op[1]) < r:
+                    return (o, r)
+        return None
+
+    def avoid_point(self, pt, avoid, margin=2.0):
+        """follow avoid=: `pt` moved out to the nearest point just outside every avoided unit's radius (straight
+        out from the unit; from the unit toward this character when `pt` is the unit's own spot)."""
+        for _k in range(4):
+            hit = self.in_avoid(pt, avoid)
+            if hit is None:
+                return pt
+            o, r = hit
+            op = o.position()
+            vx, vy = pt[0] - op[0], pt[1] - op[1]
+            if math.hypot(vx, vy) < 0.5 and self.w.pos:
+                vx, vy = self.w.pos[0] - op[0], self.w.pos[1] - op[1]
+            vl = math.hypot(vx, vy) or 1.0
+            pt = (op[0] + (r + margin) * vx / vl, op[1] + (r + margin) * vy / vl, pt[2])
+        return pt
+
+    def camp_foes(self, center, radius, entries=()):
+        """positions of the live hostile units within `radius` yd of `center` (units of `entries` when given, else
+        every attackable unit without NPC flags above level 1)."""
+        out = []
+        for o in self.objs.values():
+            if o.typeid != 3 or not o.alive() or not o.attackable() or not o.position():
+                continue
+            if entries:
+                if o.entry not in entries:
+                    continue
+            elif o.u32(UF_UNIT_NPC_FLAGS) or o.u32(UF_UNIT_LEVEL) <= 1:
+                continue
+            if _d3(o.position(), center) < radius:
+                out.append(o.position())
+        return out
+
+    def quiet_point(self, center, foes, rings=(30.0,), n=16):
+        """the point on a ring around `center` farthest from every foe position. Returns (point, nearest-foe yd)."""
+        best_pt, best_d = None, -1.0
+        for r in rings:
+            for k in range(n):
+                ang = k * 2.0 * math.pi / n
+                pt = (center[0] + r * math.cos(ang), center[1] + r * math.sin(ang), center[2])
+                dmin = min(math.hypot(pt[0] - f[0], pt[1] - f[1]) for f in foes) if foes else 1e9
+                if dmin > best_d:
+                    best_pt, best_d = pt, dmin
+        return best_pt, best_d
+
+    def hit_by(self, guid, secs=4.0):
+        """`guid` hit this character in the last `secs` seconds."""
+        me = self.w.char_guid
+        now = time.time()
+        return any(att == guid and vic == me and now - t <= secs for t, att, vic, _d in getattr(self.w, "melee_log", [])[-60:])
+
+    def hit_recently(self, secs=3.0):
+        """this character took a melee hit in the last `secs` seconds."""
+        me = self.w.char_guid
+        now = time.time()
+        return any(vic == me and now - t <= secs for t, _a, vic, _d in getattr(self.w, "melee_log", [])[-60:])
+
+    def quest_log(self):
+        me = self.me()
+        out = {}
+        if me is None:
+            return out
+        for s in range(QUEST_LOG_SLOTS):
+            base = UF_PLAYER_QUEST_LOG + s * QUEST_SLOT_FIELDS
+            qid = me.fields.get(base, 0)
+            if not qid:
+                continue
+            counts = []
+            for i in range(12):
+                v = me.fields.get(base + 2 + i, 0)
+                counts += [v & 0xFFFF, v >> 16]
+            out[qid] = {"slot": s, "state": me.fields.get(base + 1, 0), "counts": counts}
+        return out
+
+    def quest_status(self, qid):
+        """none | incomplete | complete | failed | rewarded (rewarded = the reward packet came and it left the log)."""
+        qid = int(qid)
+        log_ = self.quest_log()
+        if qid in log_:
+            st = log_[qid]["state"]
+            if st & QUEST_STATE_FAIL:
+                return "failed"
+            if st & QUEST_STATE_COMPLETE or qid in self.quest_completed_pkt:
+                return "complete"
+            return "incomplete"
+        if qid in self.quest_rewarded:
+            return "rewarded"
+        return "none"
+
+    def quest_state_str(self, qid):
+        if not qid:
+            return "-"
+        qid = int(qid)
+        st = self.quest_status(qid)
+        q = self.quest_log().get(qid)
+        cnt = ""
+        if q:
+            nz = [c for c in q["counts"] if c]
+            if nz:
+                cnt = "(" + ",".join(str(c) for c in nz) + ")"
+        return "%d:%s%s" % (qid, st, cnt)
+
+    def inventory(self):
+        """[(bag, slot, item guid, entry, count)] for the backpack and the four bags (CMSG_USE_ITEM bag/slot)."""
+        me = self.me()
+        items = []
+        if me is None:
+            return items
+        for slot in range(23, 39):
+            g = me.u64(UF_PLAYER_INV_SLOTS + 2 * slot)
+            if g:
+                it = self.objs.get(g)
+                items.append((INVENTORY_SLOT_BAG_0, slot, g, it.entry if it else 0,
+                              max(1, it.u32(UF_ITEM_STACK)) if it else 1))
+        for bslot in range(19, 23):
+            bg = me.u64(UF_PLAYER_INV_SLOTS + 2 * bslot)
+            bag = self.objs.get(bg) if bg else None
+            if bag is None:
+                continue
+            for s in range(min(36, bag.u32(UF_CONTAINER_NUM_SLOTS))):
+                g = bag.u64(UF_CONTAINER_SLOTS + 2 * s)
+                if g:
+                    it = self.objs.get(g)
+                    items.append((bslot, s, g, it.entry if it else 0, max(1, it.u32(UF_ITEM_STACK)) if it else 1))
+        return items
+
+    def item_count(self, entry):
+        return sum(c for _b, _s, _g, e, c in self.inventory() if e == int(entry))
+
+    def free_bag_slots(self):
+        """empty slots in the backpack (16) and the equipped bags."""
+        me = self.me()
+        if me is None:
+            return 0
+        total = 16
+        for bslot in range(19, 23):
+            bg = me.u64(UF_PLAYER_INV_SLOTS + 2 * bslot)
+            bag = self.objs.get(bg) if bg else None
+            if bag is not None:
+                total += min(36, bag.u32(UF_CONTAINER_NUM_SLOTS))
+        return total - len(self.inventory())
+
+    def _sell_item(self, vendor_guid, g, c):
+        """CMSG_SELL_ITEM (ItemHandler.cpp): u32 count, then the vendor/item guid bits and bytes interleaved."""
+        w = self.w
+        vb, ib = int(vendor_guid).to_bytes(8, "little"), int(g).to_bytes(8, "little")
+        bw = BitWriter()
+        for which, idx in (("i", 4), ("i", 3), ("i", 7), ("v", 6), ("v", 5), ("v", 1), ("i", 5), ("i", 2),
+                           ("i", 1), ("v", 2), ("i", 6), ("v", 4), ("v", 0), ("v", 7), ("v", 3), ("i", 0)):
+            bw.bit((vb if which == "v" else ib)[idx] != 0)
+        body = bytearray(struct.pack("<I", c) + bw.flush())
+        for which, idx in (("v", 6), ("v", 3), ("v", 1), ("i", 1), ("v", 2), ("i", 7), ("i", 5), ("v", 7),
+                           ("i", 2), ("v", 0), ("v", 5), ("i", 3), ("i", 6), ("v", 4), ("i", 4), ("i", 0)):
+            v = (vb if which == "v" else ib)[idx]
+            if v:
+                body.append(v ^ 1)
+        w.send_packet(CMSG_SELL_ITEM, bytes(body))
+        w.pump(0.3)
+
+    def find_item(self, entry):
+        for b, s, g, e, c in self.inventory():
+            if e == int(entry):
+                return b, s, g
+        return None
+
+    def pos_str(self):
+        p = self.w.pos or (0.0, 0.0, 0.0)
+        return "%s %.1f %.1f %.1f" % (self.w.map_id, p[0], p[1], p[2])
+
+    def stuck(self, verb, args, reason, quest=None):
+        try:
+            self.w.move_stop()
+        except Exception:                  # noqa: BLE001 - best effort before exiting
+            pass
+        log("STUCK verb=%s args=%s reason=%s pos=%s quest=%s"
+            % (verb, ",".join(args) or "-", str(reason).replace(" ", "_"), self.pos_str(), self.quest_state_str(quest)))
+        raise SystemExit(3)
+
+    def ok(self, verb, args, extra=""):
+        log("OK %s %s%s" % (verb, " ".join(args), (" " + extra) if extra else ""))
+
+    # ------------------------------------------------------------------ packets
+    def on_packet(self, op, body):
+        try:
+            self._on_packet(op, body)
+        except Exception as exc:          # noqa: BLE001 - a decode error must never end the session
+            n = self.errors.get(op, 0) + 1
+            self.errors[op] = n
+            if n <= 20:
+                log("PLAY-PARSE-ERR op=0x%04X size=%d %s: %s" % (op, len(body), type(exc).__name__, exc))
+        # a server spline moving this character (knockback, charge, vehicle exit): adopt its end when it is done
+        if self.own_spline is not None and time.time() >= self.own_spline[0]:
+            self.w.pos = self.own_spline[1]
+            self.own_spline = None
+            self.pos_corrected += 1
+
+    def _on_packet(self, op, body):
+        w = self.w
+        if op == SMSG_UPDATE_OBJECT:
+            self._update_object(body)
+        elif op == SMSG_COMPRESSED_UPDATE_OBJECT:
+            self._update_object(zlib.decompress(body[4:]))
+        elif op == SMSG_DESTROY_OBJECT:
+            r = MvReader(body)
+            g = MvGuid()
+            g.masks(r, (3, 2, 4, 1))
+            on_death = r.bit()
+            g.masks(r, (7, 0, 6, 5))
+            r.flush()
+            g.seqs(r, (0, 4, 7, 2, 6, 3, 1, 5))
+            self._forget(g.value())
+            if on_death:
+                pass
+        elif op == SMSG_MONSTER_MOVE:
+            mm = mv_read_monster_move(body)
+            g = mm["guid"]
+            if g == w.char_guid:
+                self._own_spline(mm)
+            o = self.objs.get(g)
+            if o is not None and not mm["transport"]:
+                o.spline = _MvSpline(time.time(), mm["pts"], mm["duration"]) if mm["duration"] > 0 else None
+                o.pos = mm["pts"][-1]
+        elif op == SMSG_PLAYER_MOVE:
+            mi = mv_read_status(body, MV_SEQ_PLAYER_MOVE)
+            o = self.objs.get(mi["guid"])
+            if o is not None and not mi["transport"]:
+                o.pos, o.o, o.spline = (mi["x"], mi["y"], mi["z"]), mi["o"], None
+        elif op == SMSG_MOVE_UPDATE_TELEPORT:
+            mi = mv_read_move_update_teleport(body)
+            o = self.objs.get(mi["guid"])
+            if o is not None:
+                o.pos, o.o, o.spline = (mi["x"], mi["y"], mi["z"]), mi["o"], None
+        elif op == SMSG_MOVE_TELEPORT:
+            self._move_teleport(body)
+        elif op == SMSG_NEW_WORLD and len(body) >= 20:
+            x, mapid, y, z, o = struct.unpack("<fIfff", body[:20])
+            w.pos, w.orientation = (x, y, z), o
+            self.pos_corrected += 1
+            keep = {g: ob for g, ob in self.objs.items() if g == w.char_guid or ob.typeid in (1, 2)}
+            self.objs = keep
+            log("[MOVE] worldport map=%d pos=(%.1f, %.1f, %.1f)" % (mapid, x, y, z))
+        elif op == SMSG_INITIAL_SPELLS:
+            r = ByteReader(body)
+            r.read_bit()
+            n = r.read_bits(22)
+            self.known_spells = set(r.read_u32() for _ in range(n))
+            rot = [s for s, _k, _c, _d in CLASS_ROTATIONS.get(self.char_class or 0, []) if s in self.known_spells]
+            log("[SPELLS] initial known=%d rotation=%s" % (len(self.known_spells), rot or "-"))
+        elif op == SMSG_LEARNED_SPELL:
+            r = ByteReader(body)
+            n = r.read_bits(22)
+            r.read_bit()
+            new = [r.read_u32() for _ in range(n)]
+            self.known_spells.update(new)
+            log("[SPELLS] learned %s" % new)
+        elif op == SMSG_REMOVED_SPELL:
+            r = ByteReader(body)
+            n = r.read_bits(22)
+            gone = [r.read_u32() for _ in range(n)]
+            self.known_spells.difference_update(gone)
+        elif op == SMSG_CAST_FAILED and len(body) >= 8:
+            spell, res = struct.unpack("<II", body[:8])
+            self.cast_fail.append((time.time(), spell, res))
+            del self.cast_fail[:-50]
+        elif op == SMSG_SPELL_FAILURE:
+            pass
+        elif op == SMSG_QUESTGIVER_QUEST_LIST:
+            self.quest_window_t = time.time()     # a quest-giver answer to a hello (talk on a quest-only NPC)
+        elif op == SMSG_ATTACK_SWING_ERROR and body:
+            self.swing_error = (time.time(), body[0] >> 6)
+        elif op == SMSG_QUESTGIVER_QUEST_DETAILS and len(body) >= 92:
+            self.quest_window_t = time.time()
+            self.quest_details = struct.unpack_from("<I", body, 88)[0]
+            log("[QUEST] id=%d event=details" % self.quest_details)
+        elif op == SMSG_QUESTGIVER_OFFER_REWARD and len(body) >= 66 * 4:
+            u = struct.unpack_from("<66I", body, 0)
+            choices = [u[i] for i in (37, 40, 55, 23, 58, 65)]
+            n = u[25]
+            self.offer = {"quest": u[1], "choices": [c for c in choices[:max(n, 0)] if c] if n else [],
+                          "t": time.time()}
+            self.quest_window_t = time.time()
+            log("[QUEST] id=%d event=offer-reward choices=%s" % (u[1], self.offer["choices"] or "-"))
+        elif op == SMSG_QUESTGIVER_REQUEST_ITEMS and len(body) >= 36:
+            u = struct.unpack_from("<9I", body, 0)
+            self.request_items = {"quest": u[8], "can_complete": u[3] == 0x5F, "t": time.time()}
+            self.quest_window_t = time.time()
+            log("[QUEST] id=%d event=request-items can_complete=%d" % (u[8], int(u[3] == 0x5F)))
+        elif op == SMSG_QUESTGIVER_QUEST_COMPLETE and len(body) >= 13:
+            qid = struct.unpack_from("<I", body, 9)[0]
+            self.quest_rewarded.add(qid)
+            self.quest_completed_pkt.discard(qid)
+            log("[QUEST] id=%d event=rewarded" % qid)
+        elif op == SMSG_QUEST_UPDATE_COMPLETE and len(body) >= 4:
+            qid = struct.unpack_from("<I", body, 0)[0]
+            if qid not in self.quest_completed_pkt:
+                self.quest_completed_pkt.add(qid)
+                log("[QUEST] id=%d event=complete" % qid)
+        elif op in (SMSG_QUESTUPDATE_FAILED, SMSG_QUESTUPDATE_FAILEDTIMER, SMSG_QUESTGIVER_QUEST_FAILED) and len(body) >= 4:
+            qid = struct.unpack_from("<I", body, 0)[0]
+            self.quest_failed.add(qid)
+            reason = struct.unpack_from("<I", body, 4)[0] if op == SMSG_QUESTGIVER_QUEST_FAILED and len(body) >= 8 else None
+            # SMSG_QUESTGIVER_QUEST_FAILED carries an InventoryResult (e.g. 50 = bags full): the reward did not fit
+            log("[QUEST] id=%d event=failed%s" % (qid, "" if reason is None else " reward-error=%d" % reason))
+            if reason is not None:
+                self.quest_reward_error = (time.time(), qid, reason)
+        elif op == SMSG_QUESTUPDATE_ADD_CREDIT and len(body) >= 15:
+            cnt, otype, qid, req, obj = struct.unpack_from("<HBIHI", body, 0)
+            self.quest_credit[(qid, obj)] = (cnt, req)
+            self.quest_required.setdefault(qid, {})[cnt] = req
+        elif op == SMSG_QUESTUPDATE_ADD_CREDIT_SIMPLE and len(body) >= 9:
+            obj, qid, otype = struct.unpack_from("<IIB", body, 0)
+            self.quest_credit[(qid, obj)] = (1, 1)
+            log("[QUEST] id=%d event=progress i=1/1 object=%d" % (qid, obj))
+        elif op == SMSG_QUESTGIVER_QUEST_INVALID and len(body) >= 5:
+            self.quest_invalid = (time.time(), struct.unpack_from("<I", body, 1)[0])
+            log("[QUEST] questgiver refused: QUEST_INVALID reason=%d" % self.quest_invalid[1])
+        elif op == SMSG_QUESTLOG_FULL:
+            self.quest_invalid = (time.time(), -1)
+            log("[QUEST] quest log full")
+        elif op == SMSG_QUESTGIVER_STATUS:
+            r = MvReader(body)
+            g = MvGuid()
+            g.masks(r, (1, 7, 4, 2, 5, 3, 6, 0))
+            g.seq(r, 7)
+            st = r.u32()
+            g.seqs(r, (4, 6, 1, 5, 2, 0, 3))
+            self.qg_status[g.value()] = st
+        elif op == SMSG_QUESTGIVER_STATUS_MULTIPLE and len(body) >= 3:
+            r = MvReader(body)
+            n = r.bits(21)
+            gs = []
+            for _ in range(n):
+                g = MvGuid()
+                g.masks(r, (4, 0, 3, 6, 5, 7, 1, 2))
+                gs.append(g)
+            r.flush()
+            for g in gs:
+                g.seqs(r, (6, 2, 7, 5, 4))
+                st = r.u32()
+                g.seqs(r, (1, 3, 0))
+                self.qg_status[g.value()] = st
+        elif op == SMSG_CORPSE_QUERY and len(body) >= 2:
+            r = ByteReader(body)
+            bits = [r.read_bit() for _ in range(9)]
+            if bits[3] and r.remaining() >= 20 and not any(bits[i] for i in (0, 1, 2, 4, 5, 6, 7, 8)):
+                z = r.read_f32(); mapid = r.read_u32(); x = r.read_f32(); r.read_i32(); y = r.read_f32()
+                self.corpse_pos = (mapid, x, y, z)
+                log("[DEATH] corpse at map=%d (%.1f, %.1f, %.1f)" % (mapid, x, y, z))
+        elif op == SMSG_DEATH_RELEASE_LOC and len(body) >= 16:
+            mapid, y, x, z = struct.unpack("<Ifff", body[:16])
+            if mapid != 0xFFFFFFFF:
+                self.spirit_healer_pos = (mapid, x, y, z)
+                log("[DEATH] spirit healer at map=%d (%.1f, %.1f, %.1f)" % (mapid, x, y, z))
+        elif op == SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA:
+            self._set_vehicle(True, "ride-aura")
+        elif op == SMSG_CLIENT_CONTROL_UPDATE and body:
+            r = MvReader(body)
+            g = MvGuid()
+            g.masks(r, (2, 7))
+            allow = r.bit()
+            g.masks(r, (0, 3, 6, 5, 1, 4))
+            r.flush()
+            g.seqs(r, (1, 5, 7, 4, 2, 6, 3, 0))
+            gv = g.value()
+            log("[VEHICLE] client control guid=%d allowMove=%d" % (gv, allow))
+            if gv and gv != w.char_guid:
+                self.vehicle_guid = gv
+                self._set_vehicle(True, "control")
+                if allow:
+                    w.move_guid = gv          # this client now moves the vehicle (MovementHandler drops other guids)
+                    log("[VEHICLE] driving: movement packets now carry the vehicle guid %d" % gv)
+            elif gv == w.char_guid:
+                if w.move_guid and w.move_guid != w.char_guid:
+                    log("[VEHICLE] control back to the character")
+                w.move_guid = None
+                if self.vehicle:
+                    self._set_vehicle(False, "control")
+        elif op == SMSG_TRIGGER_CINEMATIC:
+            cid = struct.unpack_from("<I", body, 0)[0] if len(body) >= 4 else 0
+            w.send_packet(CMSG_NEXT_CINEMATIC_CAMERA, b"")
+            self.cine_complete_at = time.time() + CINEMATIC_WATCH_S
+            log("[CINEMATIC] cinematic %d started -> CMSG_NEXT_CINEMATIC_CAMERA (complete in %.0fs)" % (cid, CINEMATIC_WATCH_S))
+        elif op == SMSG_TRIGGER_MOVIE:
+            self.movie_complete_at = time.time() + CINEMATIC_WATCH_S
+            log("[CINEMATIC] movie started (complete in %.0fs)" % CINEMATIC_WATCH_S)
+        elif op == SMSG_PET_SPELLS_MESSAGE:
+            self._parse_action_bar(body)
+        elif op in (SMSG_SPELL_START, SMSG_SPELL_GO):
+            self.spell_seen_t = time.time()
+        elif op == SMSG_SPIRIT_HEALER_CONFIRM:
+            self.spirit_confirm = time.time()
+            log("[DEATH] spirit healer asks to confirm the resurrection")
+        elif op == SMSG_MOVE_ROOT:
+            self.rooted = True
+        elif op == SMSG_MOVE_UNROOT:
+            self.rooted = False
+
+    def _set_vehicle(self, on, why):
+        if self.vehicle != on:
+            self.vehicle = on
+            self.vehicle_t = time.time()
+            self.vehicle_why = why
+            if not on:
+                self.vehicle_guid = None      # a stale seat guid must not make the next ride-aura look like a seat
+            log("[VEHICLE] %s (%s)" % ("entered" if on else "left", why))
+
+    def _own_spline(self, mm):
+        fl = mm["flags"]
+        if fl & SPLINEFLAG_TRANSPORT_ENTER or mm["transport"]:
+            self.vehicle_guid = mm["transport"] or self.vehicle_guid
+            self._set_vehicle(True, "spline-enter")
+            return
+        if fl & SPLINEFLAG_TRANSPORT_EXIT:
+            self._set_vehicle(False, "spline-exit")
+            self.w.move_guid = None
+        if mm["pts"]:
+            self.own_spline = (time.time() + mm["duration"] / 1000.0, mm["pts"][-1])
+
+    def _move_teleport(self, body):
+        """SMSG_MOVE_TELEPORT (MovementStructures.cpp MoveTeleport, Unit::WriteMovementInfo)."""
+        r = MvReader(body)
+        g, tg = MvGuid(), MvGuid()
+        g.masks(r, (0, 6, 5, 7, 2))
+        trans = r.bit()
+        g.mask(r, 4)
+        if trans:
+            tg.masks(r, (1, 3, 6, 4, 5, 2, 0, 7))
+        g.masks(r, (3, 1))
+        r.bit()
+        r.flush()
+        if trans:
+            tg.seqs(r, (4, 3, 7, 1, 6, 0, 2, 5))
+        g.seqs(r, (4, 7))
+        z = r.f32()
+        y = r.f32()
+        g.seqs(r, (2, 3, 5))
+        x = r.f32()
+        r.u32()
+        g.seqs(r, (0, 6, 1))
+        o = r.f32()
+        self.w.pos = (x, y, z)
+        self.w.orientation = o
+        self.pos_corrected += 1
+        log("[MOVE] server teleport -> (%.1f, %.1f, %.1f)%s" % (x, y, z, " on transport" if trans else ""))
+
+    def _update_object(self, body):
+        r = MvReader(body)
+        r.raw(2)
+        n = r.u32()
+        for _ in range(n):
+            typ = r.u8()
+            if typ == 3:
+                for _ in range(r.u32()):
+                    g = mv_read_packed_guid(r)
+                    if g != self.w.char_guid:
+                        self._forget(g)
+            elif typ in (1, 2):
+                g = mv_read_packed_guid(r)
+                tid = r.u8()
+                mv = mv_read_create_movement(r)
+                vals = po_read_values(r)
+                self._on_create(g, tid, mv, vals)
+            elif typ == 0:
+                g = mv_read_packed_guid(r)
+                vals = po_read_values(r)
+                o = self.objs.get(g)
+                if o is None:
+                    o = self.objs[g] = TrackedObject(g, None)
+                self._merge(o, vals)
+            else:
+                raise MvParseError("update block type %d" % typ)
+        self.parsed_updates += 1
+
+    def _on_create(self, g, tid, mv, vals):
+        o = TrackedObject(g, tid)
+        prev = self.objs.get(g)
+        if prev is not None and g == self.w.char_guid:
+            o.speeds = prev.speeds
+        self.objs[g] = o
+        if mv.get("pos") is not None:
+            o.pos = mv["pos"]
+            o.o = mv.get("orient", 0.0)
+        elif mv.get("stat") is not None:
+            o.pos = mv["stat"][:3]
+            o.o = mv["stat"][3]
+        if mv.get("speeds"):
+            o.speeds = mv["speeds"]
+        if mv.get("spline") and mv.get("pts") and mv.get("dur", 0) > 0:
+            o.spline = _MvSpline(time.time() - mv.get("passed", 0) / 1000.0, mv["pts"], mv["dur"])
+        self._merge(o, vals, created=True)
+        if g == self.w.char_guid:
+            if mv.get("pos") is not None and mv.get("self"):
+                self.w.pos = mv["pos"]
+                self.w.orientation = mv.get("orient", self.w.orientation)
+            log("[SELF] create level=%d hp=%d/%d run=%.2f quests=%d items=%d" % (
+                o.u32(UF_UNIT_LEVEL), o.health, o.max_health, self.run_speed(), len(self.quest_log()),
+                len(self.inventory())))
+
+    def _merge(self, o, vals, created=False):
+        me = o.guid == self.w.char_guid
+        if me:
+            was_dead = self.is_dead() if o.fields else False
+            old_lvl = o.u32(UF_UNIT_LEVEL)
+        o.fields.update(vals)
+        o.seen = time.time()
+        if me:
+            if any(UF_PLAYER_QUEST_LOG <= k < UF_PLAYER_QUEST_LOG + QUEST_LOG_SLOTS * QUEST_SLOT_FIELDS for k in vals) \
+                    or self.quest_prev is None:
+                self._quest_diff()
+            lvl = o.u32(UF_UNIT_LEVEL)
+            if old_lvl and lvl > old_lvl:
+                log("[SELF] level up %d -> %d" % (old_lvl, lvl))
+            dead = self.is_dead()
+            if dead and not was_dead:
+                log("[DEATH] this character died at %s (hp=%d ghost=%d)" % (self.pos_str(), o.health, int(self.is_ghost())))
+            elif was_dead and not dead:
+                log("[DEATH] alive again at %s hp=%d/%d" % (self.pos_str(), o.health, o.max_health))
+
+    def _quest_diff(self):
+        cur = self.quest_log()
+        snap = {q: (v["state"], tuple(v["counts"])) for q, v in cur.items()}
+        if self.quest_prev is None:
+            self.quest_prev = snap
+            for q, (st, cnt) in snap.items():
+                log("[QUEST] id=%d event=inlog state=%d counts=%s" % (q, st, [c for c in cnt if c] or 0))
+            return
+        prev = self.quest_prev
+        for q, (st, cnt) in snap.items():
+            if q not in prev:
+                log("[QUEST] id=%d event=accepted" % q)
+                pst, pcnt = 0, (0,) * len(cnt)
+            else:
+                pst, pcnt = prev[q]
+            for i, (a, b) in enumerate(zip(pcnt, cnt)):
+                if b != a:
+                    req = self.quest_required.get(q, {}).get(b, "?")
+                    log("[QUEST] id=%d event=progress i=%d/%s obj=%d" % (q, b, req, i))
+            if st & QUEST_STATE_COMPLETE and not pst & QUEST_STATE_COMPLETE:
+                if q not in self.quest_completed_pkt:
+                    log("[QUEST] id=%d event=complete" % q)
+                self.quest_completed_pkt.add(q)
+            if st & QUEST_STATE_FAIL and not pst & QUEST_STATE_FAIL:
+                log("[QUEST] id=%d event=failed" % q)
+        for q in prev:
+            if q not in snap:
+                if q in self.quest_rewarded:
+                    log("[QUEST] id=%d event=left-log (rewarded)" % q)
+                else:
+                    log("[QUEST] id=%d event=removed" % q)
+        self.quest_prev = snap
+
+    # ------------------------------------------------------------------ client packets
+    def _guid_packet(self, op, guid, mask_order, byte_order, prefix=b"", extra_bit_after=None):
+        gb = int(guid).to_bytes(8, "little")
+        bw = BitWriter()
+        for k, idx in enumerate(mask_order):
+            bw.bit(gb[idx] != 0)
+            if extra_bit_after is not None and k == extra_bit_after:
+                bw.bit(0)
+        body = prefix + bw.flush() + guid_byte_seq(guid, byte_order)
+        self.w.send_packet(op, body)
+
+    def questgiver_hello(self, guid):
+        """CMSG_QUESTGIVER_HELLO (QuestHandler.cpp:102): bits [5,6,7,3,4,2,1,0], bytes [4,1,7,3,6,0,5,2]."""
+        self.w.gossip = None
+        self._guid_packet(CMSG_QUESTGIVER_HELLO, guid, (5, 6, 7, 3, 4, 2, 1, 0), (4, 1, 7, 3, 6, 0, 5, 2))
+        log("sent CMSG_QUESTGIVER_HELLO guid=%d" % guid)
+
+    def questgiver_query(self, guid, qid):
+        """CMSG_QUESTGIVER_QUERY_QUEST (QuestHandler.cpp:365): u32 quest, bits [2,6,5,0,4,3,1,7] + 1 unused bit,
+        bytes [2,0,4,7,5,1,3,6]."""
+        self._guid_packet(CMSG_QUESTGIVER_QUERY_QUEST, guid, (2, 6, 5, 0, 4, 3, 1, 7), (2, 0, 4, 7, 5, 1, 3, 6),
+                          prefix=struct.pack("<I", int(qid)), extra_bit_after=7)
+        log("sent CMSG_QUESTGIVER_QUERY_QUEST quest=%d guid=%d" % (qid, guid))
+
+    def questgiver_request_reward(self, guid, qid):
+        """CMSG_QUESTGIVER_REQUEST_REWARD (QuestHandler.cpp:521): u32 quest, bits [6,3,1,2,4,0,5,7],
+        bytes [3,0,7,6,2,1,5,4]."""
+        self._guid_packet(CMSG_QUESTGIVER_REQUEST_REWARD, guid, (6, 3, 1, 2, 4, 0, 5, 7), (3, 0, 7, 6, 2, 1, 5, 4),
+                          prefix=struct.pack("<I", int(qid)))
+        log("sent CMSG_QUESTGIVER_REQUEST_REWARD quest=%d guid=%d" % (qid, guid))
+
+    def questgiver_status_query(self, guid):
+        """CMSG_QUESTGIVER_STATUS_QUERY (QuestHandler.cpp:37): bits [4,3,2,1,0,5,7,6], bytes [5,7,4,0,2,1,6,3]."""
+        self._guid_packet(CMSG_QUESTGIVER_STATUS_QUERY, guid, (4, 3, 2, 1, 0, 5, 7, 6), (5, 7, 4, 0, 2, 1, 6, 3))
+
+    def corpse_query(self):
+        self.w.send_packet(CMSG_CORPSE_QUERY, b"")
+
+    def pet_attack(self, target):
+        """CMSG_PET_ACTION (PetHandler.cpp:116) with ACT_COMMAND(7) << 24 | COMMAND_ATTACK(2) on the target."""
+        me = self.me()
+        pet = me.u64(UF_UNIT_SUMMON) if me else 0
+        if not pet:
+            return False
+        pb, tb = pet.to_bytes(8, "little"), int(target).to_bytes(8, "little")
+        bw = BitWriter()
+        for which, idx in (("p", 1), ("p", 0), ("p", 6), ("p", 7), ("p", 5), ("t", 7), ("p", 2), ("p", 3), ("t", 6),
+                           ("t", 3), ("t", 0), ("t", 2), ("t", 5), ("p", 4), ("t", 4), ("t", 1)):
+            bw.bit((pb if which == "p" else tb)[idx] != 0)
+        body = bytearray(struct.pack("<Ifff", 0x07000002, 0.0, 0.0, 0.0) + bw.flush())
+        for which, idx in (("p", 7), ("p", 6), ("p", 1), ("p", 2), ("p", 5), ("p", 4), ("t", 5), ("p", 3), ("t", 0),
+                           ("t", 1), ("t", 7), ("t", 4), ("t", 6), ("t", 2), ("t", 3), ("p", 0)):
+            b = (pb if which == "p" else tb)[idx]
+            if b:
+                body.append(b ^ 1)
+        self.w.send_packet(CMSG_PET_ACTION, bytes(body))
+        log("sent CMSG_PET_ACTION attack pet=%d target=%d" % (pet, target))
+        return True
+
+    def use_item_target(self, bag, slot, item_guid, target_guid=None, dest=None):
+        """CMSG_USE_ITEM (SpellHandler.cpp HandleUseItemOpcode) with a unit/GO target (targetGuid mask [1,0,5,3,6,4,7,2],
+        byte-seq [1,4,3,6,2,0,7,5] after the itemTargetGuid seq) or a ground dest; plain use otherwise."""
+        if target_guid is None:
+            return self.w.use_item(bag, slot, item_guid, dest=dest)
+        igb = int(item_guid).to_bytes(8, "little")
+        tgb = int(target_guid).to_bytes(8, "little")
+        bw = BitWriter()
+        bw.bit(1); bw.bit(igb[6] != 0); bw.bit(1); bw.bit(igb[1] != 0); bw.bit(1); bw.bit(0)
+        bw.bit(igb[2] != 0); bw.bit(igb[7] != 0); bw.bit(igb[0] != 0); bw.bit(0); bw.bit(1); bw.bit(0)
+        bw.bit(0); bw.bit(1); bw.bit(0); bw.bit(1); bw.bit(0); bw.bit(igb[4] != 0); bw.bit(0)
+        bw.bit(igb[3] != 0); bw.bit(igb[5] != 0); bw.bits(0, 2)
+        for idx in (1, 0, 5, 3, 6, 4, 7, 2):
+            bw.bit(tgb[idx] != 0)
+        for _ in range(8):
+            bw.bit(0)
+        tflag = TARGET_FLAG_GAMEOBJECT if (int(target_guid) >> 52) == 0xF11 else TARGET_FLAG_UNIT
+        bw.bits(tflag, 20)
+        tail = bytearray()
+        for idx in (0, 5, 6, 3, 4, 2, 1):
+            if igb[idx]:
+                tail.append(igb[idx] ^ 1)
+        if igb[7]:
+            tail.append(igb[7] ^ 1)
+        for idx in (1, 4, 3, 6, 2, 0, 7, 5):
+            if tgb[idx]:
+                tail.append(tgb[idx] ^ 1)
+        tail += struct.pack("<B", 1)
+        self.w.send_packet(CMSG_USE_ITEM, struct.pack("<BB", int(slot), int(bag)) + bw.flush() + bytes(tail))
+        log("sent CMSG_USE_ITEM bag=%d slot=%d item=%d target=%d" % (bag, slot, item_guid, target_guid))
+
+    def use_gameobject(self, go, wait=2.0, open_wait=8.0):
+        """Use a gameobject like a client: CMSG_GAMEOBJ_USE + CMSG_GAMEOBJ_REPORT_USE; if a chest / goober (type
+        from GAMEOBJECT_BYTES_1) opens nothing, cast the character's opening spell on it. Returns loot windows."""
+        w = self.w
+        w.loot_windows = []
+        w.gameobject_use(go.guid)
+        w.gameobject_use(go.guid, report=True)
+        self.used_go[go.guid] = time.time()
+        self._wait(lambda: bool(w.loot_windows), wait)
+        gotype = (go.u32(UF_GO_BYTES_1) >> 8) & 0xFF
+        if w.loot_windows or gotype not in (3, 10):
+            return w.loot_windows
+        cands = [s for s in OPENING_SPELLS if s in self.known_spells] +                 [s for s in OPENING_SPELLS if s not in self.known_spells]
+        # the spell that opened this entry before goes first (e.g. Kaja'mite Chunks: 6478, while 22810 is accepted but opens nothing)
+        good = getattr(self, "open_spell_ok", {}).get(go.entry)
+        if good in cands:
+            cands = [good] + [c for c in cands if c != good]
+        for sp in cands:
+            t0 = time.time()
+            w.cast(sp, go.guid)
+            if not self._wait(lambda: self.spell_seen_t >= t0 or any(t >= t0 for t, _s, _r in self.cast_fail), 1.0):
+                continue                                  # silently ignored: not this lock's spell
+            if any(t >= t0 and s == sp for t, s, _r in self.cast_fail):
+                continue
+            log("[GO] opening guid=%d with spell %d" % (go.guid, sp))
+            if self._wait(lambda: bool(w.loot_windows), open_wait):
+                if not hasattr(self, "open_spell_ok"):
+                    self.open_spell_ok = {}
+                self.open_spell_ok[go.entry] = sp
+                break                                     # (a spell event from another caster just costs one wait)
+        return w.loot_windows
+
+    def face(self, p):
+        if p is None or self.w.pos is None:
+            return
+        o = math.atan2(p[1] - self.w.pos[1], p[0] - self.w.pos[0]) % (2 * math.pi)
+        diff = abs((o - (self.w.orientation or 0.0) + math.pi) % (2 * math.pi) - math.pi)
+        if diff > 0.25:
+            self.w.move_face(o)
+
+    # ------------------------------------------------------------------ movement
+    def nav_path(self, start, end):
+        nav = nav_module()
+        if nav is None:
+            return None, "nonav"
+        status = "ok"
+        try:
+            pts = nav.find_path(int(self.w.map_id), tuple(start), tuple(end))
+            if not pts:
+                # a partial path (transport, portal, off-mesh goal) still gets this character most of the way
+                pts = nav.find_path(int(self.w.map_id), tuple(start), tuple(end), allow_partial=True)
+                status = "partial"
+        except Exception as exc:          # noqa: BLE001
+            log("NAV-FALLBACK find_path raised %s: %s" % (type(exc).__name__, exc))
+            return None, "error"
+        if not pts:
+            return None, "nopath"
+        # the mesh z is the raw ground surface: send positions NAV_Z_LIFT above it like the server's own paths
+        out = [(float(p[0]), float(p[1]), float(p[2]) + NAV_Z_LIFT) for p in pts]
+        if status == "partial":
+            log("NAV partial path (%d points) toward (%.1f, %.1f, %.1f); the rest is a straight line"
+                % (len(out), end[0], end[1], end[2]))
+        return out, status
+
+    def walk_to(self, goal_fn, stop_range, verb, args, timeout=300.0, stuck_s=30.0, abort_fn=None, quest=None,
+                repath=4.0, fail="stuck"):
+        """Walk with real movement packets (MSG_MOVE_START_FORWARD, a HEARTBEAT every 500 ms at the run speed,
+        MSG_MOVE_STOP) along the navmesh path to goal_fn() until within stop_range. Re-paths when the goal moves
+        more than `repath` yd or the server moves this character. Returns ok | gone | abort; on no progress it
+        logs STUCK and exits 3 (fail="return" returns "stuck" instead)."""
+        w = self.w
+        t0 = time.time()
+        dt = 0.5
+        path, idx, goal_used = None, 0, None
+        moving = False
+        best, last_prog = 1e18, time.time()
+        corr = self.pos_corrected
+        status = "ok"
+        result = None
+        try:
+            while True:
+                goal = goal_fn()
+                if goal is None:
+                    result = "gone"
+                    return result
+                d = _d3(w.pos, goal)
+                # arrived: within range on the ground plane and not on another floor (mesh z differs from DB z)
+                if d <= stop_range or (_d2(w.pos, goal) <= stop_range and abs(w.pos[2] - goal[2]) <= 4.0):
+                    result = "ok"
+                    return result
+                if abort_fn is not None and abort_fn():
+                    result = "abort"
+                    return result
+                now = time.time()
+                # progress = the remaining length of the path being walked (a navmesh detour may first lead away
+                # from the goal); before the first path and after a re-path the new length is the baseline
+                rem = self._path_remaining(w.pos, path, idx) if path else d
+                if rem < best - 0.5:
+                    best, last_prog = rem, now
+                if now - t0 > timeout or now - last_prog > stuck_s:
+                    reason = "timeout" if now - t0 > timeout else "no-position-progress"
+                    if status == "nopath":
+                        reason = "path-not-found"
+                    if fail == "return":
+                        result = "stuck"
+                        return result
+                    self.stuck(verb, args, "%s dist=%.1f" % (reason, d), quest)
+                # SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA alone is also sent when the character itself becomes a vehicle base
+                # (aura 296 SET_VEHICLE, e.g. the Kezan villa disguise 67435): with no seat after 3 s it is not a ride
+                if (self.vehicle and getattr(self, "vehicle_why", "") == "ride-aura" and not self.vehicle_guid
+                        and not w.move_guid and time.time() - self.vehicle_t > 3.0):
+                    self._set_vehicle(False, "ride-aura without a seat: own vehicle kit")
+                # killed mid-walk and still dead (not released) after 10 s, i.e. no scripted resurrection
+                # coming: release, run back to the corpse, then go on walking from there (was: STUCK no-position-progress)
+                if self.is_dead() and not self.is_ghost() and not getattr(self, "_walk_corpse_run", False):
+                    if getattr(self, "_walk_dead_since", None) is None:
+                        self._walk_dead_since = time.time()
+                    elif time.time() - self._walk_dead_since > 10.0:
+                        if moving:
+                            w.move_stop()
+                            moving = False
+                        self._walk_corpse_run = True
+                        try:
+                            self.corpse_run(verb, args, quest)
+                        finally:
+                            self._walk_corpse_run = False
+                            self._walk_dead_since = None
+                        if getattr(self, "careful", False):
+                            self._careful_rest(verb)   # back to full before walking on into what killed it
+                        path, idx, goal_used = None, 0, None
+                        best, last_prog, t0 = 1e18, time.time(), time.time()
+                        continue
+                elif not self.is_dead():
+                    self._walk_dead_since = None
+                # careful: hit while walking -> stop and fight back like a player, then walk on (walking on while
+                # nine Slavedrivers hit the character killed it without a swing)
+                if (getattr(self, "careful", False) and not self.vehicle and not self.is_dead()
+                        and not getattr(self, "_walk_fightback", False) and self.hit_recently(1.5)
+                        and [a for a in self.attackers() if not self.too_strong(a)]):
+                    if moving:
+                        w.move_stop()
+                        moving = False
+                    self._walk_fightback = True
+                    try:
+                        n_fb = 0
+                        while self.attackers() and not self.is_dead() and n_fb < 8:
+                            n_fb += 1
+                            if not self.fight_nearby(verb, args, stuck_s, quest, (), 15.0):
+                                break
+                    finally:
+                        self._walk_fightback = False
+                    path, idx, goal_used = None, 0, None
+                    best, last_prog, t0 = 1e18, time.time(), time.time()
+                    continue
+                # seated (unless this client drives the vehicle via `mover`), rooted, or dead before release: wait
+                if self.rooted or (self.vehicle and not w.move_guid) or (self.is_dead() and not self.is_ghost()):
+                    if moving:
+                        w.move_stop()
+                        moving = False
+                    w.pump(dt)
+                    continue
+                if (path is None or idx >= len(path) or self.pos_corrected != corr
+                        or (goal_used is not None and _d3(goal, goal_used) > repath)):
+                    if self.pos_corrected != corr and moving:
+                        moving = False
+                    corr = self.pos_corrected
+                    # fly=1 (goto-path): a flying mount/vehicle goes straight through the air, no navmesh
+                    pts, status = ((None, "fly") if self.extra_move_flags & 0x1000000 else self.nav_path(w.pos, goal))
+                    if pts is None:
+                        if status != "nonav" or not self._nav_fallback_logged:
+                            log("NAV-FALLBACK %s (%s) -> straight line to (%.1f, %.1f, %.1f)"
+                                % (verb, status, goal[0], goal[1], goal[2]))
+                            self._nav_fallback_logged = True
+                        path = [goal]
+                    else:
+                        while len(pts) > 1 and _d2(pts[0], w.pos) < 0.5:
+                            pts = pts[1:]
+                        path = pts
+                        if _d3(path[-1], goal) > max(stop_range, 2.0):
+                            path.append(goal)
+                    idx, goal_used = 0, goal
+                    # a new path gets its own baseline: the switch itself earns no progress credit
+                    best = self._path_remaining(w.pos, path, idx)
+                nxt = path[min(idx, len(path) - 1)]
+                o = math.atan2(nxt[1] - w.pos[1], nxt[0] - w.pos[0]) % (2 * math.pi)
+                if not moving:
+                    w.orientation = o
+                    x, y, z = w.pos
+                    w.send_packet(MSG_MOVE_START_FORWARD, build_movement_body(
+                        MSE_START_FORWARD, w._mguid(), x, y, z, o,
+                        movement_flags=MOVEMENTFLAG_FORWARD | self.extra_move_flags,
+                        timestamp_ms=w._move_ts(), transport=w._transport_tuple()))
+                    moving = True
+                    w.pump(dt)
+                    continue
+                # do not overshoot: the last step stops just inside stop_range (min ranges, e.g. Charge, matter)
+                remaining = min(self.run_speed() * dt, max(0.3, self._path_remaining(w.pos, path, idx) - stop_range + 0.5))
+                x, y, z = w.pos
+                while remaining > 1e-6 and idx < len(path):
+                    tx, ty, tz = path[idx]
+                    seg = math.hypot(tx - x, ty - y)
+                    if seg <= remaining:
+                        x, y, z = tx, ty, tz
+                        remaining -= seg
+                        idx += 1
+                    else:
+                        f = remaining / seg
+                        x, y, z = x + (tx - x) * f, y + (ty - y) * f, z + (tz - z) * f
+                        remaining = 0.0
+                if idx < len(path):
+                    o = math.atan2(path[idx][1] - y, path[idx][0] - x) % (2 * math.pi)
+                w.pos, w.orientation = (x, y, z), o
+                w.send_packet(MSG_MOVE_HEARTBEAT, build_movement_body(
+                    MSE_HEARTBEAT, w._mguid(), x, y, z, o, movement_flags=MOVEMENTFLAG_FORWARD | self.extra_move_flags,
+                    timestamp_ms=w._move_ts(), transport=w._transport_tuple()))
+                w.pump(dt)
+        finally:
+            if moving:
+                w.move_stop()
+                w.emit("pos", x="%.1f" % w.pos[0], y="%.1f" % w.pos[1], z="%.1f" % w.pos[2])
+
+    @staticmethod
+    def _path_remaining(pos, path, idx):
+        """Length still to walk: to the next waypoint, then along the rest of the path."""
+        if not path or idx >= len(path):
+            return 0.0 if not path else _d3(pos, path[-1])
+        total = _d3(pos, path[idx])
+        for a, b in zip(path[idx:], path[idx + 1:]):
+            total += _d3(a, b)
+        return total
+
+    def goto_object(self, verb, args, entry, kinds, rng, timeout, stuck_s, wait_s=8.0, near=None, pred=None,
+                    quest=None, exclude=(), fresh_key=None):
+        """Walk to the nearest tracked object of `entry`; returns it. When none is in view: walk to `near` or the
+        nearest DB spawn (read-only hint) while watching for it, else wait `wait_s` s; then STUCK not-visible."""
+        w = self.w
+        t0 = time.time()
+        target = None
+        used = self.used_targets.get(fresh_key, set()) if fresh_key else set()
+        while time.time() - t0 < wait_s:
+            target = self.nearest(entry, kinds, pred, set(exclude) | used)
+            if target is None and used and time.time() - t0 > min(3.0, wait_s / 2):
+                target = self.nearest(entry, kinds, pred, exclude)       # only used ones left: take one again
+            if target:
+                break
+            w.pump(0.5)
+        if target is None:
+            near = near or self.cur_near
+            hints = [tuple(near)] if near else []
+            if not hints:
+                hints = self.remembered(entry, kinds)[:3]
+                if hints:
+                    log("%s: entry %d not in view; walking to where it was last seen (%.1f, %.1f, %.1f)"
+                        % (verb, entry, hints[0][0], hints[0][1], hints[0][2]))
+            if not hints:
+                sp = db_spawns("unit" if "unit" in kinds else "go", entry, w.map_id)
+                if sp:
+                    hints = sorted(sp, key=lambda p: _d3(p, w.pos))[:3]
+                    log("%s: entry %d not in view; walking to the nearest DB spawn (%.1f, %.1f, %.1f)"
+                        % (verb, entry, hints[0][0], hints[0][1], hints[0][2]))
+            for h in hints:
+                self.walk_to(lambda h=h: h, 5.0, verb, args, timeout=timeout, stuck_s=stuck_s, quest=quest,
+                             abort_fn=lambda: self.nearest(entry, kinds, pred, exclude) is not None)
+                target = self.nearest(entry, kinds, pred, exclude)
+                if target:
+                    break
+                w.pump(2.0)
+                target = self.nearest(entry, kinds, pred, exclude)
+                if target:
+                    break
+        if target is None:
+            self.stuck(verb, args, "not-visible entry=%d" % entry, quest)
+        guid = target.guid
+        if fresh_key:
+            self.used_targets.setdefault(fresh_key, set()).add(guid)
+
+        def goal():
+            o = self.objs.get(guid)
+            return o.position() if o else None
+        res = self.walk_to(goal, rng, verb, args, timeout=timeout, stuck_s=stuck_s, quest=quest)
+        if res == "gone":
+            if getattr(self, "gone_ok", False):
+                return None              # use-item ... fail=ok: a freed NPC that runs off / despawns is not a STUCK
+            self.stuck(verb, args, "target-gone entry=%d" % entry, quest)
+        return self.objs.get(guid)
+
+    # ------------------------------------------------------------------ combat
+    def _cast_result(self, spell, t0, wait):
+        end = time.time() + wait
+        while True:
+            for t, s, res in self.cast_fail:
+                if t >= t0 and s == spell:
+                    return res
+            if time.time() >= end:
+                return None
+            self.w.pump(min(0.1, max(0.0, end - time.time())))
+
+    def _warrior_openers(self, verb, tgt, d):
+        """Warrior (class-gated, additive): Battle Shout (6673) when it is not running, then Charge (100) from 8-25 yd,
+        like a player opens a fight. Both only when the spellbook has them (SMSG_INITIAL_SPELLS / LEARNED_SPELL)."""
+        now = time.time()
+        if not getattr(self, "_war_known_logged", False):
+            self._war_known_logged = True
+            log("[WARRIOR] known: %s" % ", ".join("%d=%d" % (sp, int(sp in self.known_spells))
+                                                 for sp in (100, 6673, 6343, 78, 34428, 5308, 1464, 12294)))
+        if 6673 in self.known_spells and now - getattr(self, "_bshout_t", 0) > 110:
+            t0 = time.time()
+            self.w.cast(6673)
+            if self._cast_result(6673, t0, 0.6) is None:
+                self._bshout_t = t0
+                log("%s: Battle Shout" % verb)
+        if 100 in self.known_spells and 8.0 <= d <= 25.0 and self.spell_cd.get(100, 0) <= now:
+            self.face(tgt.position())
+            self.w.set_selection(tgt.guid)
+            t0 = time.time()
+            self.w.cast(100, tgt.guid)
+            res = self._cast_result(100, t0, 0.8)
+            self.spell_cd[100] = t0 + (20.0 if res is None else 3.0)
+            log("%s: Charge -> %s" % (verb, "ok" if res is None else SPELL_FAILED_NAMES.get(res, res)))
+            if res is None:
+                self.w.pump(0.8)
+
+    def rotation_step(self, tgt, dist):
+        now = time.time()
+        if now < self.gcd_until:
+            return None
+        rot_list = CLASS_ROTATIONS.get(self.char_class or 0, [])
+        if (self.char_class == 1 and 6343 in self.known_spells and self.spell_cd.get(6343, 0) <= now and self.w.pos
+                and sum(1 for a in self.attackers() if a.position() and _d3(a.position(), self.w.pos) <= 8.0) >= 2):
+            # Thunder Clap (6343): warrior AoE when two or more are on us in melee
+            t0 = time.time()
+            self.w.cast(6343)
+            res = self._cast_result(6343, t0, 0.5)
+            self.spell_cd[6343] = t0 + (6.0 if res is None else 2.5)
+            if res is None:
+                self.gcd_until = t0 + 1.5
+                return ("cast", 6343)
+        if self.char_class == 10:
+            # monk (class-gated): Jab (100780, energy) builds Chi; Tiger Palm (100787, 1 chi), Blackout Kick (100784, 2 chi) and
+            # Rising Sun Kick (107428, 2 chi) spend it. Without the chi estimate Tiger Palm was tried first and only earned
+            # SPELL_FAILED_NO_POWER back-offs. The estimate is local (jab +1, spend on success, 0 on a NO_POWER failure).
+            me_ = self.me()
+            if (me_ is not None and me_.max_health and me_.health < 0.55 * me_.max_health and 115072 in self.known_spells
+                    and self.spell_cd.get(115072, 0) <= now):
+                # Expel Harm (115072): the monk's self heal, used like a player would when hurt in a fight
+                t0 = time.time()
+                self.w.cast(115072, self.w.char_guid)
+                res = self._cast_result(115072, t0, 0.7)
+                self.spell_cd[115072] = t0 + (3.0 if res is None else 6.0)
+                if res is None:
+                    self.gcd_until = t0 + 1.5
+                    return ("cast", 115072)
+            chi = getattr(self, "_monk_chi", 0)
+            if me_ is not None and (UF_UNIT_POWER + 4) in me_.fields:
+                chi = me_.fields[UF_UNIT_POWER + 4]     # the server's Chi (power slot 4, seen live: 0-4); energy is slot 1
+            by_spell = {sp: (sp, k, c, d) for sp, k, c, d in rot_list}
+            pref = []
+            if chi >= 2:
+                pref += [by_spell[x] for x in (107428, 100784) if x in by_spell]
+            if chi >= 1:
+                pref += [by_spell[x] for x in (100787,) if x in by_spell]
+            if 100780 in by_spell:
+                pref.append(by_spell[100780])
+            rot_list = pref or rot_list
+        for spell, kind, cast_s, cd_s in rot_list:
+            if spell not in self.known_spells or self.spell_cd.get(spell, 0) > now:
+                continue
+            rng = MELEE_RANGE if kind == "m" else SPELL_RANGE
+            if dist > rng + 0.5:
+                continue
+            if kind == "auto" and tgt.guid in self.auto_shot:
+                continue
+            if kind == "dot" and self.dot_until.get((spell, tgt.guid), 0) > now:
+                continue
+            # warrior: Victory Rush (34428) only works for 20 s after a kill that gave XP (CASTER_AURASTATE otherwise, seen live)
+            if self.char_class == 1 and spell == 34428 and time.time() - getattr(self, "last_kill_t", 0) > 20.0:
+                continue
+            # warrior rage gate: a low-level warrior lives on auto-attack rage; casting Heroic Strike / Slam /
+            # Execute without the rage only earns SPELL_FAILED_NO_POWER (88) and a back-off
+            if self.char_class == 1 and spell in WARRIOR_RAGE_COST:
+                me_ = self.me()
+                if me_ is not None and me_.fields.get(UF_UNIT_POWER, 0) < WARRIOR_RAGE_COST[spell] * 10:
+                    continue
+            t0 = time.time()
+            self.w.cast(spell, tgt.guid)
+            res = self._cast_result(spell, t0, max(0.35, cast_s + 0.35))
+            if res is None:
+                if self.char_class == 10:
+                    self._monk_chi = (min(4, getattr(self, "_monk_chi", 0) + 1) if spell == 100780
+                                      else max(0, getattr(self, "_monk_chi", 0) - {100787: 1, 100784: 2, 107428: 2}.get(spell, 0)))
+                self.spell_cd[spell] = t0 + max(cd_s, 0.5)
+                self.gcd_until = t0 + (0.2 if kind == "auto" else 1.5)
+                if kind == "auto":
+                    self.auto_shot.add(tgt.guid)
+                if kind == "dot":
+                    self.dot_until[(spell, tgt.guid)] = t0 + cd_s
+                return ("cast", spell)
+            if self.char_class == 10 and res == 88:
+                self._monk_chi = 0 if spell != 100780 else getattr(self, "_monk_chi", 0)   # NO_POWER on a chi spell: no chi; on Jab: wait for energy
+            backoff = {70: 1.5, 88: 2.5, 100: 1.0, 50: 1.0, 138: 0.5}.get(res, 5.0)
+            self.spell_cd[spell] = time.time() + backoff
+            if kind == "auto":
+                self.w.cancel_auto_repeat()
+            return ("fail", spell, res)
+        return None
+
+    def fight(self, verb, args, guid, stuck_s, quest=None):
+        """Fight one unit until it dies: approach (melee or spell range by class), face it, auto-attack, pet attack,
+        class rotation. Returns dead | gone | died | tapped | evade."""
+        w = self.w
+        ranged = self.char_class in RANGED_CLASSES and any(
+            s in self.known_spells for s, k, _c, _d in CLASS_ROTATIONS.get(self.char_class or 0, []) if k != "m")
+        engage = 24.0 if ranged else 2.5
+        swing_sent = False
+        swing_t = time.time()
+        last_hp, last_dmg = None, time.time()
+        fails = 0
+        t_fight = time.time()
+        t0_obj = self.objs.get(guid)
+        fac0 = t0_obj.fields.get(UF_UNIT_FACTION) if t0_obj is not None else None
+        was_attackable = t0_obj.attackable() if t0_obj is not None else True
+        qsum_f = self._quest_count_sum(quest)
+        # the leash is measured from where the target stood when the fight began (not from the character, which may
+        # still be walking up to it)
+        fight_anchor = t0_obj.position() if t0_obj is not None and t0_obj.position() else None
+        while True:
+            if self.is_dead():
+                return "died"
+            tgt = self.objs.get(guid)
+            if tgt is None:
+                return "gone"
+            if not tgt.alive():
+                return "dead"
+            # careful: an elite helped down while an NPC tanked it (too_strong() exception) that turns on this
+            # character - stop at once and let the caller pull back (Gorerot 38331 switched to Wolfplay and its Smash
+            # 71774, a single-target hit on its victim, killed the level 14 warrior three times at -1702,1403)
+            if (getattr(self, "careful", False) and (tgt.u64(UF_UNIT_TARGET) == w.char_guid or self.hit_by(tgt.guid, 3.0))
+                    and self.too_strong(tgt)):
+                log("%s: %s turned on this character - breaking off" % (verb, tgt.short()))
+                try:
+                    w.attack_stop()
+                except OSError:
+                    pass
+                return "evade"
+            # careful: a low-health target that runs (creatures flee) is not chased past 25 yd from where the fight
+            # began - chasing a fleeing Slavedriver into the camp pulled the rest of it
+            if (getattr(self, "careful", False) and fight_anchor and tgt.position() and tgt.max_health > 0
+                    and tgt.health * 4 <= tgt.max_health and _d3(tgt.position(), fight_anchor) > 25.0
+                    and tgt.u64(UF_UNIT_TARGET) != w.char_guid):
+                log("%s: target guid=%d fled past the 25 yd leash - letting it go" % (verb, guid))
+                try:
+                    w.attack_stop()
+                except OSError:
+                    pass
+                return "evade"
+            fac = tgt.fields.get(UF_UNIT_FACTION)
+            low_hp = tgt.max_health > 0 and tgt.health * 20 <= tgt.max_health
+            # a faction swap at low health, or one that came with this quest's credit (e.g. "At 30% credit, faction 35")
+            credited = quest is not None and self._quest_count_sum(quest) > qsum_f
+            if ((low_hp or credited) and fac0 is not None and fac is not None and fac != fac0) or (was_attackable and not tgt.attackable()):
+                log("%s: target guid=%d yielded (faction %s->%s attackable=%d)" % (verb, guid, fac0, fac, int(tgt.attackable())))
+                try:
+                    w.attack_stop()
+                except OSError:
+                    pass
+                return "yielded"
+            # an Auto Shot that started fine but then fails on every tick (LOS, range): cancel it and re-cast later
+            if guid in self.auto_shot:
+                bad = [r for t, s_, r in self.cast_fail if t >= t_fight and s_ in AUTO_REPEAT_SPELLS]
+                if bad:
+                    self.auto_shot.discard(guid)
+                    w.cancel_auto_repeat()
+                    t_fight = time.time()
+                    if bad[-1] in (SPELL_FAILED_OUT_OF_RANGE, SPELL_FAILED_LINE_OF_SIGHT) and engage > 5:
+                        engage = max(5.0, engage - 8.0)
+                        log("%s: auto-repeat failed (%s) - closing in to %.0f yd" % (verb, SPELL_FAILED_NAMES.get(bad[-1]), engage))
+            if tgt.tapped_by_other() and last_hp is not None and tgt.health == tgt.max_health:
+                return "tapped"
+            hp = tgt.health
+            now = time.time()
+            if last_hp is None or hp < last_hp:
+                last_dmg = now
+            last_hp = hp
+            if now - last_dmg > stuck_s:
+                return "evade"
+            p = tgt.position()
+            d = _d3(w.pos, p)
+            thr = engage + 1.5 if engage > 5 else MELEE_RANGE
+            # warrior opener: Charge (100, 8-25 yd) closes in, stuns and gives the rage a low-level warrior lacks
+            if (d > thr and self.char_class == 1 and 100 in self.known_spells and 8.5 <= d <= 24.0
+                    and self.spell_cd.get(100, 0) <= time.time() and time.time() >= self.gcd_until):
+                self.face(p)
+                t_c = time.time()
+                w.cast(100, guid)
+                res_c = self._cast_result(100, t_c, 0.6)
+                self.spell_cd[100] = t_c + (15.0 if res_c is None else 3.0)
+                if res_c is None:
+                    log("%s: charge -> guid=%d (%.1f yd)" % (verb, guid, d))
+                    w.pump(1.0)
+                    swing_sent = False
+                    continue
+            if self.char_class == 1 and not swing_sent:
+                self._warrior_openers(verb, tgt, d)
+                d = _d3(w.pos, tgt.position()) if tgt.position() else d
+            if d > thr:
+                # walk until inside the same threshold: an engage of exactly 5 yd used to stop walk_to at 5 yd while this
+                # check wanted MELEE_RANGE, so the loop spun without ever pumping the socket (the i27 Wandering Isle hang)
+                res = self.walk_to(lambda: (self.objs[guid].position() if guid in self.objs else None),
+                                   min(engage, thr), verb, args, timeout=stuck_s * 3, stuck_s=stuck_s, quest=quest,
+                                   abort_fn=lambda: self.is_dead() or guid not in self.objs
+                                   or not self.objs[guid].alive(), fail="return")
+                if res == "stuck":
+                    return "evade"
+                swing_sent = False
+                last_dmg = time.time()
+                w.pump(0.1)                      # never spin: a walk that ends at once still yields to the socket
+                continue
+            self.face(p)
+            # re-swing after the server stopped the auto-attack (stun, fear, knock-down: SMSG_ATTACKSTOP)
+            if swing_sent and getattr(w, "attackstop_t", 0) > swing_t and time.time() - w.attackstop_t > 0.3:
+                log("%s: auto-attack was stopped by the server - swinging again" % verb)
+                swing_sent = False
+            if not swing_sent:
+                w.set_selection(guid)
+                w.attack(guid)
+                if not getattr(self, "no_pet_attack", False):
+                    self.pet_attack(guid)
+                swing_sent = True
+                swing_t = time.time()
+            if self.swing_error and now - self.swing_error[0] < 1.0:
+                code = self.swing_error[1]
+                self.swing_error = None
+                if code == 0 and engage > 2.0:
+                    engage = max(2.0, engage - 2.0)
+                elif code == 1:
+                    w.orientation = (w.orientation + 1.0) % (2 * math.pi)   # force a re-face next tick
+                swing_sent = False
+            if os.environ.get("HEADLESS_FIGHT_TRACE") == "1" and now - getattr(self, "_ftrace_t", 0) >= 1.0:
+                # diagnostics: target and own health, the server's own power slots (UF_UNIT_POWER x5), the attackers on us
+                self._ftrace_t = now
+                me_t = self.me()
+                pw = [me_t.fields.get(UF_UNIT_POWER + i, 0) for i in range(5)] if me_t is not None else []
+                log("[FTRACE] tgt=%d hp=%d/%d dist=%.1f my_hp=%s/%s power=%s attackers=%d" % (
+                    tgt.entry, tgt.health, tgt.max_health, d, getattr(me_t, "health", "?"), getattr(me_t, "max_health", "?"),
+                    pw, len(self.attackers())))
+            r = self.rotation_step(tgt, d)
+            if r and r[0] == "fail":
+                fails += 1
+                if r[2] in (SPELL_FAILED_OUT_OF_RANGE, SPELL_FAILED_LINE_OF_SIGHT) and engage > 5:
+                    engage = max(5.0, engage - 8.0)
+                    log("%s: cast %d failed (%s) - closing in to %.0f yd" % (verb, r[1], SPELL_FAILED_NAMES.get(r[2]), engage))
+                elif r[2] == SPELL_FAILED_UNIT_NOT_INFRONT:
+                    w.orientation = (w.orientation + 1.0) % (2 * math.pi)
+            w.pump(0.25)
+
+    def loot_unit(self, verb, args, guid, wait=2.0):
+        t0 = time.time()
+        while time.time() - t0 < wait:
+            o = self.objs.get(guid)
+            if o is not None and o.dynflags & UNIT_DYNFLAG_LOOTABLE:
+                break
+            self.w.pump(0.25)
+        o = self.objs.get(guid)
+        if o is None or not o.dynflags & UNIT_DYNFLAG_LOOTABLE:
+            return 0
+        if self.walk_to(lambda: (self.objs[guid].position() if guid in self.objs else None), 3.0, verb, args,
+                        timeout=60, stuck_s=20, fail="return") != "ok":
+            return 0
+        self.w.loot_windows = []
+        self.w.loot_open(guid)
+        return self.w.loot_all(3.0)
+
+    def _quest_count_sum(self, quest):
+        if not quest:
+            return 0
+        q = self.quest_log().get(int(quest))
+        return sum(q["counts"]) if q else 0
+
+    def _careful_rest(self, verb, full=0.95, max_s=None):
+        """careful pull: out of combat, rest until `full` health (or max_s, default 2x HEADLESS_REST_S)."""
+        w = self.w
+        me_ = self.me()
+        if me_ is None or me_.max_health <= 0 or me_.health >= me_.max_health * full or self.attackers() or self.is_dead():
+            return
+        log("%s: careful - resting to full (hp=%d/%d)" % (verb, me_.health, me_.max_health))
+        t_rest, lim = time.time(), (max_s if max_s is not None else max(30.0, self.rest_s * 2))
+        if os.environ.get("HEADLESS_EAT", "0") == "1" and me_.health < me_.max_health * 0.7:
+            # a player eats instead of waiting out the slow out-of-combat regeneration (opt-in; food entries seen in the bags)
+            for food in (117, 77272, 4540, 4541, 4542, 4544, 4601):
+                fnd = self.find_item(food)
+                if fnd:
+                    try:
+                        w.use_item(fnd[0], fnd[1], fnd[2])
+                        log("%s: careful - eating item %d" % (verb, food))
+                        w.pump(2.0)
+                        lim = max(lim, 30.0)
+                    except OSError:
+                        pass
+                    break
+        while time.time() - t_rest < lim and not self.attackers() and not self.hit_recently() and not self.is_dead():
+            m2 = self.me()
+            if m2 is None or m2.health >= m2.max_health * full:
+                break
+            w.pump(1.0)
+
+    def _careful_pick(self, verb, entry, black=(), radius=12.0):
+        """careful pull: rest to full, then the live, attackable, untapped unit of `entry` with the fewest other
+        live units within `radius` yd of it (packs are one entry; anything already in combat counts too), nearest
+        first on a tie."""
+        self._careful_rest(verb)
+        if self.attackers() or self.is_dead():
+            return None
+        me = self.w.pos
+        cands = [o for o in self.objects_of(entry, ("unit",))
+                 if o.guid not in black and o.alive() and o.attackable() and not o.tapped_by_other() and o.position()]
+        if not cands or me is None:
+            return None
+        near = [c for c in cands if _d3(c.position(), me) <= 50.0]
+        cands = near or cands
+        # with near=x,y,z: clear toward the objective (the camp around near=), still the least crowded one first
+        if getattr(self, "cur_near", None):
+            wn = getattr(self, "cur_within", 30.0)
+            if wn > 0:
+                # within=R (default 30 yd, 0 = the old behaviour): only targets that close to near= are candidates; none there
+                # means no pull (the loop walks to near= and waits) instead of a unit 80-100 yd away in another camp
+                around = [c for c in cands if _d3(c.position(), self.cur_near) <= wn]
+                if not around:
+                    if time.time() - getattr(self, "_within_log", 0) > 20:
+                        self._within_log = time.time()
+                        log("%s: careful - no live %d within %.0f yd of near=%.0f,%.0f,%.0f" % (
+                            verb, entry, wn, self.cur_near[0], self.cur_near[1], self.cur_near[2]))
+                    return None
+                cands = around
+            else:
+                around = [c for c in cands if _d3(c.position(), self.cur_near) <= 25.0]
+                cands = around or cands
+        units = [o for o in self.objs.values() if o.typeid == 3 and o.alive() and o.position() and o.attackable()]
+
+        def crowd(c):
+            cp = c.position()
+            # a pack mixes entries (Oomlot Shaman 38644 + 38574 + Tribesman 38575, all faction 14): the same faction template
+            # counts as the pack too - "0 others within 28 yd" by entry pulled seven at once
+            cf = c.fields.get(UF_UNIT_FACTION)
+            return sum(1 for o in units if o.guid != c.guid and _d3(o.position(), cp) <= radius
+                       and (o.entry == c.entry or o.unit_flags & UNIT_FLAG_IN_COMBAT
+                            or (cf and o.fields.get(UF_UNIT_FACTION) == cf and o.u32(UF_UNIT_LEVEL) > 1)))
+        # path-aware (HEADLESS_CAREFUL_PATH=1, opt-in): also count the pack members within aggro range (18 yd) of the navmesh
+        # walk to the candidate - a "lone" shaman reached through two other packs pulled five (the walk fights back)
+        path_r = float(os.environ.get("HEADLESS_CAREFUL_PATH_R", "18"))
+        use_path = os.environ.get("HEADLESS_CAREFUL_PATH", "0") not in ("0", "")
+        nav = nav_module() if use_path else None
+        path_cache = {}
+
+        def path_crowd(c):
+            if not nav:
+                return 0
+            if c.guid in path_cache:
+                return path_cache[c.guid]
+            cp = c.position()
+            try:
+                pth = nav.find_path(self.w.map_id, tuple(me), tuple(cp)) or [tuple(me), tuple(cp)]
+            except Exception:             # noqa: BLE001 - no path: the straight line
+                pth = [tuple(me), tuple(cp)]
+            cf = c.fields.get(UF_UNIT_FACTION)
+            pts = []
+            for a, b2 in zip(pth, pth[1:]):
+                n = max(1, int(_d3(a, b2) / 3.0))
+                pts += [tuple(a[k] + (b2[k] - a[k]) * i / n for k in range(3)) for i in range(n)]
+            pts.append(tuple(cp))
+            hit = set()
+            for o in units:
+                if o.guid == c.guid or o.u32(UF_UNIT_LEVEL) <= 1:
+                    continue
+                if not (o.entry == c.entry or o.unit_flags & UNIT_FLAG_IN_COMBAT
+                        or (cf and o.fields.get(UF_UNIT_FACTION) == cf)):
+                    continue
+                op = o.position()
+                if _d3(op, cp) <= radius:
+                    continue                  # already in crowd(c)
+                if any(_d3(op, q) <= path_r for q in pts):
+                    hit.add(o.guid)
+            path_cache[c.guid] = len(hit)
+            return len(hit)
+        best = min(cands, key=lambda c: (crowd(c) + path_crowd(c), _d3(c.position(), me)))
+        log("%s: careful - picked %s (%d others within %.0f yd, %d along the walk)"
+            % (verb, best.short(), crowd(best), radius, path_crowd(best)))
+        return best
+
+    def kill_loop(self, verb, args, entry, done_fn, loot, timeout, stuck_s, quest=None, progress_fn=None):
+        """Kill units of `entry` until done_fn(). Fights back when attacked; runs back to the corpse after a death."""
+        w = self.w
+        t0 = time.time()
+        kills = 0
+        deaths = 0
+        last_prog = time.time()
+        black = {}
+        prog_val = progress_fn() if progress_fn else None
+        kills_at_prog = 0
+        while not done_fn(kills):
+            now = time.time()
+            if now - t0 > timeout:
+                self.stuck(verb, args, "timeout kills=%d" % kills, quest)
+            if progress_fn:
+                v = progress_fn()
+                if v != prog_val:
+                    prog_val, last_prog, kills_at_prog = v, now, kills
+                elif kills - kills_at_prog >= self.max_dry_kills:
+                    self.stuck(verb, args, "no-item-progress after %d kills have=%s" % (kills - kills_at_prog, v), quest)
+            if self.is_dead():
+                deaths += 1
+                if deaths > self.max_deaths:
+                    self.stuck(verb, args, "died-%d-times kills=%d" % (deaths, kills), quest)
+                self.corpse_run(verb, args, quest)
+                if getattr(self, "careful", False):
+                    self._careful_rest(verb)   # careful pull: back to full before walking into the camp again
+                last_prog = time.time()
+                continue
+            black = {g: t for g, t in black.items() if t > now}
+            # a blacklisted unit that is hitting the character is fought anyway (a target let go at the leash kept
+            # hitting, was skipped as blacklisted, and the character stood still for two minutes until it died)
+            att = [a for a in self.attackers() if (a.guid not in black or self.hit_by(a.guid)) and not self.too_strong(a)]
+            strong = [a for a in self.attackers() if self.too_strong(a)]
+            if strong and not att:
+                # careful: only a far stronger unit is on the character - run 35 yd straight away from it like a
+                # player (the kill loop used to spin here without pumping the socket until the client stalled)
+                big = min(strong, key=lambda a: _d3(a.position(), w.pos))
+                bp = big.position()
+                vx, vy = w.pos[0] - bp[0], w.pos[1] - bp[1]
+                vl = math.hypot(vx, vy) or 1.0
+                away = (w.pos[0] + 35.0 * vx / vl, w.pos[1] + 35.0 * vy / vl, w.pos[2])
+                log("%s: careful - %s is far too strong, running away to (%.1f, %.1f)" % (verb, big.short(), away[0], away[1]))
+                try:
+                    w.attack_stop()
+                except OSError:
+                    pass
+                self.walk_to(lambda: away, 4.0, verb, args, timeout=20.0, stuck_s=8.0, quest=quest,
+                             abort_fn=lambda: self.is_dead(), fail="return")
+                w.pump(0.5)
+                continue
+            if att and getattr(self, "careful", False) and len(att) >= 3 and getattr(self, "_careful_anchor", None):
+                # careful pull: two or more adds joined - back off along the way we came, so the fight moves
+                # away from the camp and no further adds join; then fight what followed, nearest first
+                anchor = self._careful_anchor
+                self._careful_anchor = None
+                if _d3(anchor, w.pos) > 8.0:
+                    log("%s: careful - %d attackers, backing off to (%.1f, %.1f, %.1f)" % (verb, len(att), anchor[0], anchor[1], anchor[2]))
+                    try:
+                        w.attack_stop()
+                    except OSError:
+                        pass
+                    self.walk_to(lambda: anchor, 3.0, verb, args, timeout=25.0, stuck_s=10.0, quest=quest,
+                                 abort_fn=lambda: self.is_dead(), fail="return")
+                continue
+            if att:
+                tgt = self.pick_attacker(att)
+            elif getattr(self, "careful", False):
+                tgt = self._careful_pick(verb, entry, black, radius=getattr(self, "careful_radius", 12.0))
+                if tgt is not None:
+                    self._careful_anchor = tuple(w.pos)
+                if self.attackers() or self.is_dead():
+                    w.pump(0.2)                  # never spin without reading the socket
+                    continue
+            else:
+                # like a player: rest out of combat before the next pull when health is low (crowded camps killed
+                # a low-level character pull after pull, then again right after each corpse run)
+                me_ = self.me()
+                if me_ is not None and me_.max_health > 0 and me_.health * 10 < me_.max_health * 6 and self.rest_s > 0:
+                    log("%s: resting (hp=%d/%d)" % (verb, me_.health, me_.max_health))
+                    t_rest = time.time()
+                    while time.time() - t_rest < self.rest_s and not self.attackers() and not self.is_dead():
+                        m2 = self.me()
+                        if m2 is None or m2.health * 10 >= m2.max_health * 9:
+                            break
+                        w.pump(1.0)
+                    last_prog = time.time()
+                    if self.attackers() or self.is_dead():
+                        continue
+                tgt = self.nearest(entry, ("unit",), lambda o: o.alive() and o.attackable() and not o.tapped_by_other(),
+                                   exclude=black)
+            if tgt is None:
+                if now - last_prog > stuck_s * 2:
+                    self.stuck(verb, args, "no-target entry=%d visible=%d kills=%d"
+                               % (entry, len(self.objects_of(entry, ("unit",))), kills), quest)
+                if not self.objects_of(entry, ("unit",)):
+                    sp = ([self.cur_near] if self.cur_near else []) or self.remembered(entry, ("unit",))                         or db_spawns("unit", entry, w.map_id)
+                    if sp:
+                        h = min(sp, key=lambda p: _d3(p, w.pos))
+                        if _d3(h, w.pos) > 20:
+                            self.walk_to(lambda: h, 10.0, verb, args, timeout=stuck_s * 4, stuck_s=stuck_s, quest=quest,
+                                         abort_fn=lambda: bool(self.objects_of(entry, ("unit",))), fail="return")
+                w.pump(1.0)
+                continue
+            log("%s: engaging %s" % (verb, tgt.short()))
+            qsum0 = self._quest_count_sum(quest)
+            res = self.fight(verb, args, tgt.guid, stuck_s, quest)
+            if res in ("yielded", "gone") and quest:
+                # sparring/duel NPCs give credit and despawn instead of dying: give the quest update a moment
+                self._wait(lambda: self._quest_count_sum(quest) > qsum0 or self.quest_status(quest) in ("complete", "rewarded"), 3.0)
+                if self._quest_count_sum(quest) > qsum0 or self.quest_status(quest) in ("complete", "rewarded"):
+                    kills += 1
+                    last_prog = time.time()
+                    log("[KILL] entry=%d guid=%d kills=%d (%s, quest credit)" % (tgt.entry, tgt.guid, kills, res))
+                else:
+                    log("[KILL] entry=%d guid=%d %s with NO quest credit" % (tgt.entry, tgt.guid, res))
+                black[tgt.guid] = time.time() + 120
+                continue
+            if res == "yielded":
+                black[tgt.guid] = time.time() + 120
+                continue
+            if res == "dead":
+                o = self.objs.get(tgt.guid)
+                if o is not None and o.entry == int(entry):
+                    kills += 1
+                    last_prog = time.time()
+                    log("[KILL] entry=%d guid=%d kills=%d" % (o.entry, o.guid, kills))
+                    self.last_kill_t = time.time()
+                elif o is not None:
+                    log("[KILL] entry=%d guid=%d (attacker, not counted)" % (o.entry, o.guid))
+                try:
+                    w.attack_stop()
+                except OSError:
+                    pass
+                if loot:
+                    self.loot_unit(verb, args, tgt.guid)
+            elif res in ("evade", "tapped"):
+                log("%s: giving up on guid=%d (%s)" % (verb, tgt.guid, res))
+                black[tgt.guid] = time.time() + 120
+                w.attack_stop()
+                if time.time() - last_prog > stuck_s * 3:
+                    self.stuck(verb, args, "no-damage entry=%d kills=%d" % (entry, kills), quest)
+            elif res == "died":
+                continue
+        return kills
+
+    def corpse_run(self, verb, args, quest=None, timeout=420.0):
+        """Death: CMSG_REPOP_REQUEST, walk back to the corpse as a ghost (CMSG_CORPSE_QUERY position), and
+        CMSG_RECLAIM_CORPSE once in range and the reclaim delay has passed."""
+        w = self.w
+        death_pos = (w.map_id,) + tuple(w.pos)
+        log("[DEATH] releasing spirit (died at %s)" % self.pos_str())
+        t0 = time.time()
+        if not self.is_ghost():
+            w.release_spirit()
+            while not self.is_ghost() and time.time() - t0 < 20:
+                if not self.is_dead():
+                    break                 # resurrected on the spot (a scripted revive, e.g. aboard the Vengeance Wake)
+                w.pump(0.5)
+            if not self.is_dead():
+                log("[DEATH] resurrected without a corpse run (%s)" % self.pos_str())
+                return
+            if not self.is_ghost():
+                self.stuck(verb, args, "release-failed", quest)
+        w.pump(2.0)
+        # HEADLESS_SPIRIT_RES_BELOW=N (opt-in): below level N the spirit healer costs nothing (no resurrection sickness before
+        # level 10), so take it instead of walking back into the pack that killed the character
+        lim = int(os.environ.get("HEADLESS_SPIRIT_RES_BELOW", "0") or 0)
+        me_ = self.me()
+        shp = self.spirit_healer_pos
+        if lim and me_ is not None and me_.u32(UF_UNIT_LEVEL) < lim and shp and shp[0] == w.map_id:
+            log("[DEATH] level %d < %d: resurrecting at the spirit healer" % (me_.u32(UF_UNIT_LEVEL), lim))
+            # the spirit healer entry differs per zone (6491, 39660 on the Lost Isles...): take any visible unit with the
+            # spirit-healer NPC flag (0x4000), waiting a moment for the graveyard to come into view
+            sh_entry = None
+            t_sh = time.time()
+            while time.time() - t_sh < 10.0 and sh_entry is None:
+                shs = [o for o in self.objs.values() if o.typeid == 3 and o.u32(UF_UNIT_NPC_FLAGS) & 0x4000 and o.position()]
+                if shs:
+                    sh_entry = min(shs, key=lambda o: _d3(o.position(), w.pos)).entry
+                else:
+                    w.pump(0.5)
+            npc = self.goto_object(verb, args, sh_entry or 6491, ("unit",), 4.0, 300.0, 45.0, wait_s=10.0,
+                                   near=tuple(shp[1:]))
+            self.face(npc.position())
+            w.gossip_hello(npc.guid)
+            self._wait(lambda: self.spirit_confirm is not None, 3.0)
+            self._guid_packet(CMSG_SPIRIT_HEALER_ACTIVATE, npc.guid, (2, 7, 6, 0, 5, 4, 1, 3), (1, 5, 6, 3, 2, 0, 7, 4))
+            if self._wait(lambda: not self.is_dead(), 10.0):
+                log("[DEATH] resurrected at the spirit healer (%s)" % self.pos_str())
+                w.pump(1.0)
+                return
+            log("[DEATH] spirit healer resurrection failed - walking back to the corpse")
+        self.corpse_pos = None
+        self.corpse_query()
+        w.pump(2.0)
+        if os.environ.get("HEADLESS_SPIRIT_RES") == "1" and self.spirit_healer_pos and self.spirit_healer_pos[0] == w.map_id:
+            # opt-in: take the spirit healer's resurrection (a real player's choice when the corpse lies in a mob pack);
+            # when the healer cannot be reached (not in view, a STUCK) fall back to the ordinary corpse run
+            shp = self.spirit_healer_pos
+            try:
+                w.pump(4.0)   # the graveyard's objects arrive a few seconds after the release teleport
+                npc = self.goto_object(verb, args, 6491, ("unit",), 4.0, timeout, 45, wait_s=20, near=tuple(shp[1:]))
+                self.face(npc.position())
+                w.gossip_hello(npc.guid)
+                self._wait(lambda: self.spirit_confirm is not None, 3.0)
+                self._guid_packet(CMSG_SPIRIT_HEALER_ACTIVATE, npc.guid, (2, 7, 6, 0, 5, 4, 1, 3), (1, 5, 6, 3, 2, 0, 7, 4))
+                log("sent CMSG_SPIRIT_HEALER_ACTIVATE guid=%d" % npc.guid)
+                if self._wait(lambda: not self.is_dead(), 10.0):
+                    log("[DEATH] resurrected by the spirit healer (%s)" % self.pos_str())
+                    w.pump(1.0)
+                    return
+            except SystemExit:
+                log("[DEATH] spirit healer not reachable - falling back to the corpse run")
+        cp = self.corpse_pos or death_pos
+        if cp[0] != w.map_id:
+            self.stuck(verb, args, "corpse-on-other-map map=%s" % cp[0], quest)
+        goal = tuple(cp[1:4])
+        # like a player: reclaim from the edge of the reclaim radius (39 yd), not on top of the corpse, so the mobs that killed the
+        # character do not catch it again at half health (a corpse in a mob pack gave a death loop)
+        # HEADLESS_RECLAIM_TOWARD=x,y,z (opt-in): reclaim from the side of the corpse that faces a safe spot (a quest camp), up to
+        # 35 yd from the body, so the character comes back to life next to safety instead of inside the pack
+        tow = os.environ.get("HEADLESS_RECLAIM_TOWARD")
+        if tow:
+            try:
+                tx, ty, tz = (float(v) for v in tow.split(","))
+                dx, dy = tx - goal[0], ty - goal[1]
+                dl = math.hypot(dx, dy)
+                if 0 < dl < 200:
+                    k = min(35.0, dl) / dl
+                    goal = (goal[0] + dx * k, goal[1] + dy * k, goal[2] + (tz - goal[2]) * k)
+                    log("[DEATH] reclaiming toward (%.0f, %.0f): from (%.1f, %.1f, %.1f)" % (tx, ty, goal[0], goal[1], goal[2]))
+            except ValueError:
+                pass
+        if not tow and getattr(self, "careful", False):
+            # careful: as a ghost the pack around the body is in sight - come back to life on the point of the
+            # reclaim circle (33 yd) farthest from every live hostile unit (two reclaims inside a pack ended in two deaths)
+            body = goal
+            self.walk_to(lambda: body, 45.0, verb, args, timeout=timeout, stuck_s=45, quest=quest)
+            foes = [o.position() for o in self.objs.values() if o.typeid == 3 and o.alive() and o.attackable()
+                    and o.position() and _d3(o.position(), body) < 80.0]
+            if foes:
+                best_pt, best_d = None, -1.0
+                for k in range(16):
+                    ang = k * math.pi / 8.0
+                    pt = (body[0] + 30.0 * math.cos(ang), body[1] + 30.0 * math.sin(ang), body[2])
+                    dmin = min(math.hypot(pt[0] - f[0], pt[1] - f[1]) for f in foes)
+                    if dmin > best_d:
+                        best_pt, best_d = pt, dmin
+                goal = best_pt
+                tow = "edge"
+                log("[DEATH] reclaiming from the quiet edge (%.1f, %.1f): nearest hostile %.0f yd (%d in sight)"
+                    % (goal[0], goal[1], best_d, len(foes)))
+        self.walk_to(lambda: goal, 1.5 if tow else float(os.environ.get("HEADLESS_RECLAIM_DIST", "28")), verb, args,
+                     timeout=timeout, stuck_s=45, quest=quest)
+        # the server ignores CMSG_RECLAIM_CORPSE from more than 39 yd (CORPSE_RECLAIM_RADIUS, Corpse.h): make sure we are
+        # within 38 yd of the body before asking (an edge point reached within the walk tolerance can be just outside)
+        body_pos = tuple(cp[1:4])
+        if w.pos and _d3(w.pos, body_pos) > 38.0:
+            log("[DEATH] %.1f yd from the body - closing in to reclaim" % _d3(w.pos, body_pos))
+            self.walk_to(lambda: body_pos, 30.0, verb, args, timeout=60, stuck_s=30, quest=quest)
+        t1 = time.time()
+        # the reclaim delay grows with repeated deaths (Player::GetCorpseReclaimDelay), so keep asking for a while
+        closed_in = False
+        while self.is_dead() and time.time() - t1 < 360:
+            corpse = next((o for o in self.objs.values() if o.typeid == 7 and o.u64(UF_CORPSE_OWNER) == w.char_guid), None)
+            w.reclaim_corpse(corpse.guid if corpse else w.char_guid)
+            w.pump(5.0)
+            if not closed_in and self.is_dead() and time.time() - t1 > 75.0 and w.pos and _d3(w.pos, body_pos) > (12.0 if os.environ.get("HEADLESS_CAREFUL", "0") in ("0", "") else 36.0):
+                # the reclaim is silently ignored (no reply packet) when the ghost is not really inside the radius, e.g. its
+                # last walk did not reach the edge point: after 75 s go to the body itself and ask there
+                # (HEADLESS_CAREFUL: only when really outside the 39 yd radius - at 75 s the reclaim delay of repeated deaths is still running, and
+                # walking onto the body walked the half-health ghost into the tiger that guards it: a death loop on the Wandering Isle)
+                closed_in = True
+                log("[DEATH] reclaim ignored for 75 s at %.1f yd - walking to the body" % _d3(w.pos, body_pos))
+                try:
+                    self.walk_to(lambda: body_pos, 5.0, verb, args, timeout=60, stuck_s=30, quest=quest)
+                except SystemExit:
+                    pass
+        if self.is_dead():
+            self.stuck(verb, args, "reclaim-failed", quest)
+        log("[DEATH] resurrected at the corpse (%s)" % self.pos_str())
+        w.pump(1.0)
+        if tow == "edge" and len(self.attackers()) <= 2:
+            # careful: alive at half health on the quiet edge - walk 30 yd further out, away from the body and the
+            # pack, before resting (a rest on the reclaim spot was found by the pack 20 s later); one or two units already
+            # on the character are led out too and fought there, away from the camp, by the step that follows
+            vx, vy = goal[0] - body[0], goal[1] - body[1]
+            vl = math.hypot(vx, vy) or 1.0
+            out = (goal[0] + 30.0 * vx / vl, goal[1] + 30.0 * vy / vl, goal[2])
+            try:
+                self.walk_to(lambda: out, 4.0, verb, args, timeout=40, stuck_s=12, quest=quest)
+            except SystemExit:
+                pass
+
+    # ------------------------------------------------------------------ quest giver flows
+    def _wait(self, cond, timeout, step=0.25):
+        end = time.time() + timeout
+        while time.time() < end:
+            if cond():
+                return True
+            self.w.pump(step)
+        return cond()
+
+    def accept(self, verb, args, entry, qid, kv):
+        st = self.quest_status(qid)
+        if st in ("incomplete", "complete"):
+            self.ok(verb, args, "already-in-log")
+            return
+        is_go = kv.get("go", "0") not in ("0", "")
+        stuck_s = float(kv.get("stuck", 30))
+        npc = self.goto_object(verb, args, entry, ("go",) if is_go else ("unit",), float(kv.get("range", 3.5)),
+                               float(kv.get("timeout", 300)), stuck_s, quest=qid)
+        for attempt in range(3):
+            self.quest_details = None
+            self.quest_invalid = None
+            if is_go:
+                self.w.gameobject_use(npc.guid)
+            else:
+                self.face(npc.position())
+                self.questgiver_hello(npc.guid)
+            self._wait(lambda: self.w.gossip is not None or self.quest_details is not None, 3.0)
+            if self.quest_details != qid:
+                self.questgiver_query(npc.guid, qid)
+                self._wait(lambda: self.quest_details == qid or self.quest_invalid is not None, 5.0)
+            if self.quest_status(qid) not in ("incomplete", "complete"):
+                self.w.quest_accept(qid, npc.guid)
+            if self._wait(lambda: self.quest_status(qid) in ("incomplete", "complete"), 8.0):
+                self.ok(verb, args, "state=%s" % self.quest_state_str(qid))
+                return
+            if self.quest_invalid is not None:
+                break
+        self.stuck(verb, args, "accept-failed%s" % (" invalid=%d" % self.quest_invalid[1] if self.quest_invalid else ""), qid)
+
+    def choose_reward(self, verb, args, guid, qid, index):
+        off = self.offer
+        choices = off["choices"] if off and off["quest"] == qid else []
+        item = choices[index] if 0 <= index < len(choices) else (choices[0] if choices else 0)
+        self.w.quest_reward(qid, item, guid)
+        if self._wait(lambda: qid in self.quest_rewarded, 8.0):
+            self.ok(verb, args, "reward-item=%d" % item)
+            return True
+        return False
+
+    def turnin(self, verb, args, entry, qid, kv):
+        if qid in self.quest_rewarded and self.quest_status(qid) == "rewarded":
+            self.ok(verb, args, "already-rewarded")
+            return
+        if self.quest_status(qid) == "none":
+            self.stuck(verb, args, "quest-not-in-log", qid)
+        is_go = kv.get("go", "0") not in ("0", "")
+        idx = int(kv.get("reward", 0))
+        npc = self.goto_object(verb, args, entry, ("go",) if is_go else ("unit",), float(kv.get("range", 3.5)),
+                               float(kv.get("timeout", 300)), float(kv.get("stuck", 30)), quest=qid)
+        for attempt in range(3):
+            self.offer = None
+            self.request_items = None
+            if is_go:
+                self.w.gameobject_use(npc.guid)
+            else:
+                self.face(npc.position())
+                self.questgiver_hello(npc.guid)
+            self.w.pump(1.0)
+            self.w.quest_complete(qid, npc.guid)
+            self._wait(lambda: (self.offer and self.offer["quest"] == qid)
+                       or (self.request_items and self.request_items["quest"] == qid), 5.0)
+            if self.request_items and self.request_items["quest"] == qid and not self.offer:
+                if not self.request_items["can_complete"]:
+                    self.stuck(verb, args, "quest-items-missing", qid)
+                self.questgiver_request_reward(npc.guid, qid)
+                self._wait(lambda: self.offer and self.offer["quest"] == qid, 5.0)
+            if self.offer and self.offer["quest"] == qid:
+                if self.choose_reward(verb, args, npc.guid, qid, idx):
+                    return
+            if qid in self.quest_rewarded:
+                self.ok(verb, args)
+                return
+        err = getattr(self, "quest_reward_error", None)
+        self.stuck(verb, args, "turnin-failed status=%s%s" % (
+            self.quest_status(qid), " reward-error=%d" % err[2] if err and err[1] == qid else ""), qid)
+
+    # ------------------------------------------------------------------ cinematics, action bars, conditions
+    def tick(self):
+        now = time.time()
+        if self.cine_complete_at and now >= self.cine_complete_at:
+            self.cine_complete_at = 0.0
+            self.w.send_packet(CMSG_COMPLETE_CINEMATIC, b"")
+            log("[CINEMATIC] sent CMSG_COMPLETE_CINEMATIC")
+        if self.movie_complete_at and now >= self.movie_complete_at:
+            self.movie_complete_at = 0.0
+            self.w.send_packet(CMSG_COMPLETE_MOVIE, b"")
+            log("[CINEMATIC] sent CMSG_COMPLETE_MOVIE")
+
+    def _parse_action_bar(self, body):
+        """SMSG_PET_SPELLS_MESSAGE (Player::PetSpellInitialize / PossessSpellInitialize / VehicleSpellInitialize):
+        guid mask + three counts in bits, then the 10-button action bar (u32 MAKE_UNIT_ACTION_BUTTON(spell, type))."""
+        if len(body) < 8 + 40:
+            self.action_bar = []
+            log("[ACTIONBAR] cleared")
+            return
+        r = ByteReader(body)
+        r.read_bits(2)
+        r.read_bits(21)
+        r.read_bits(22)
+        r.read_bit()
+        r.read_bits(20)
+        r.read_bits(5)
+        bar = [r.read_u32() for _ in range(10)]
+        self.action_bar = [(v & 0xFFFFFF, v >> 24) for v in bar]
+        self.action_bar_t = time.time()
+        log("[ACTIONBAR] %s" % " ".join("%d:%d/0x%X" % (i + 1, s, t) for i, (s, t) in enumerate(self.action_bar) if s))
+
+    def bar_spell(self, tok):
+        """SLOT (1-10, an action-bar button) or a spell id -> (spellId, raw button value)."""
+        n = int(tok)
+        if 1 <= n <= 10 and self.action_bar and self.action_bar[n - 1][0]:
+            s, t = self.action_bar[n - 1]
+            return s, s | (t << 24)
+        for s, t in self.action_bar:
+            if s == n:
+                return s, s | (t << 24)
+        return n, n | (0xC1 << 24)          # ACT_ENABLED spell
+
+    def controlled_guid(self):
+        me = self.me()
+        if me is None:
+            return 0
+        return me.u64(UF_UNIT_CHARM) or me.u64(UF_UNIT_SUMMON)
+
+    def pet_action(self, pet, action, target=0, pos=(0.0, 0.0, 0.0)):
+        """CMSG_PET_ACTION (PetHandler.cpp:116): u32 action, y z x, pet/target guid bits and bytes interleaved."""
+        pb, tb = int(pet).to_bytes(8, "little"), int(target).to_bytes(8, "little")
+        bw = BitWriter()
+        for which, idx in (("p", 1), ("p", 0), ("p", 6), ("p", 7), ("p", 5), ("t", 7), ("p", 2), ("p", 3), ("t", 6),
+                           ("t", 3), ("t", 0), ("t", 2), ("t", 5), ("p", 4), ("t", 4), ("t", 1)):
+            bw.bit((pb if which == "p" else tb)[idx] != 0)
+        body = bytearray(struct.pack("<Ifff", int(action), float(pos[1]), float(pos[2]), float(pos[0])) + bw.flush())
+        for which, idx in (("p", 7), ("p", 6), ("p", 1), ("p", 2), ("p", 5), ("p", 4), ("t", 5), ("p", 3), ("t", 0),
+                           ("t", 1), ("t", 7), ("t", 4), ("t", 6), ("t", 2), ("t", 3), ("p", 0)):
+            b = (pb if which == "p" else tb)[idx]
+            if b:
+                body.append(b ^ 1)
+        self.w.send_packet(CMSG_PET_ACTION, bytes(body))
+        log("sent CMSG_PET_ACTION action=0x%08X pet=%d target=%d" % (int(action), pet, target))
+
+    def cond(self, spec):
+        """until= conditions: quest:Q:complete|rewarded|accepted|none, obj:Q:i:COUNT, level:N, item:ENTRY:N,
+        vehicle:on|off, map:M, dead:0|1, visible:ENTRY, gone:ENTRY."""
+        p = spec.split(":")
+        k = p[0]
+        if k == "quest":
+            st = self.quest_status(int(p[1]))
+            want = p[2] if len(p) > 2 else "complete"
+            return {"complete": st in ("complete", "rewarded"), "rewarded": st == "rewarded",
+                    "accepted": st in ("incomplete", "complete", "rewarded"), "none": st == "none"}.get(want, st == want)
+        if k == "obj":
+            q = self.quest_log().get(int(p[1]))
+            if q is None:
+                return self.quest_status(int(p[1])) == "rewarded"
+            return q["counts"][int(p[2])] >= int(p[3]) or bool(q["state"] & QUEST_STATE_COMPLETE)
+        if k == "level":
+            me = self.me()
+            return bool(me) and me.u32(UF_UNIT_LEVEL) >= int(p[1])
+        if k == "item":
+            return self.item_count(int(p[1])) >= int(p[2] if len(p) > 2 else 1)
+        if k == "vehicle":
+            return self.vehicle == (p[1] in ("on", "1"))
+        if k == "map":
+            return self.w.map_id == int(p[1])
+        if k == "dead":
+            return self.is_dead() == (p[1] == "1")
+        if k == "visible":
+            return any(o.alive() or o.kind == "go" for o in self.objects_of(int(p[1]), ("unit", "go")))
+        if k == "gone":
+            return not self.objects_of(int(p[1]), ("unit", "go"))
+        raise ValueError("unknown condition %r" % spec)
+
+    def fight_nearby(self, verb, args, stuck_s, quest=None, entries=(), radius=30.0, center=None, protect=None, avoid=()):
+        """One engagement: an attacker of this character (or of `protect`), else a live unit of `entries` within
+        `radius` of `center`. Returns True when something was fought. avoid=[(entry, R)]: no target standing within R yd
+        of a live unit of that entry (follow avoid=)."""
+        tgt = None
+        # careful: never take on a far stronger unit (Gorerot 38331, 81900 hp, one-shot a level 13 warrior in the
+        # 24904 battle) - keep doing the step (follow Liam, hold the spot) and let the NPC army deal with it
+        att = [a for a in self.attackers() if not self.too_strong(a)]
+        if protect:
+            att += [o for o in self.objs.values() if o.typeid == 3 and o.alive() and o.u64(UF_UNIT_TARGET) == protect
+                    and o.unit_flags & UNIT_FLAG_IN_COMBAT and o.position() and _d3(o.position(), self.w.pos) < radius
+                    and not self.too_strong(o)]
+        if avoid:
+            att = [a for a in att if a.position() and not self.in_avoid(a.position(), avoid)]
+        if att:
+            tgt = self.pick_attacker(att)
+        elif entries:
+            c = center or self.w.pos
+            cands = [o for e in entries for o in self.objects_of(e, ("unit",))
+                     if o.alive() and o.attackable() and not o.tapped_by_other() and _d3(o.position(), c) <= radius]
+            if cands:
+                tgt = min(cands, key=lambda a: _d3(a.position(), self.w.pos))
+        if tgt is None:
+            return False
+        log("%s: fighting %s" % (verb, tgt.short()))
+        res = self.fight(verb, args, tgt.guid, stuck_s, quest)
+        if res == "died":
+            self.corpse_run(verb, args, quest)
+        if res == "dead":
+            o = self.objs.get(tgt.guid)
+            log("[KILL] entry=%d guid=%d (%s)" % (o.entry if o else 0, tgt.guid, verb))
+        try:
+            self.w.attack_stop()
+        except OSError:
+            pass
+        if getattr(self, "careful", False):
+            self._careful_rest(verb)       # careful pull: back to full health before the next fight
+        return True
+
+
+def _kv_split(rest):
+    kv = dict(t.split("=", 1) for t in rest if "=" in t)
+    pos = [t for t in rest if "=" not in t]
+    return pos, kv
+
+
+def _xyz(tok):
+    return tuple(float(v) for v in tok.split(","))
+
+
+def _is_int(tok):
+    try:
+        int(tok)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+PLAY_VERBS = ("goto-path", "goto-npc", "goto-go", "kill", "accept", "accept-go", "turnin", "turnin-go", "talk",
+              "use-go", "use-item", "spellclick", "collect", "wait-quest", "vehicle-wait", "wait-map", "wait-level",
+              "choose-reward", "hold", "follow", "pet-cast", "vehicle-cast", "quest-log", "inventory", "objects",
+              "equip", "pet-attack", "pet-follow", "pet-stay", "vehicle-exit", "relog", "spirit-healer", "sell", "destroy", "cast-on", "buy", "react", "abandon", "repair", "rest", "probe-attack", "pet-passive", "pet-defensive", "pet-assist", "select-faction",
+              "gear-up", "spec", "leave-camp", "select-nearest")
+
+
+def run_play_verb(w, args_cli, verb, rest):
+    """The real-player verbs. Returns False when the line is an old-style verb of the same name (group `accept`,
+    bag/slot `use-item`, guid `spellclick`, GM `kill` without an entry) so run_verb handles it as before."""
+    ps = w.play
+    pos, kv = _kv_split(rest)
+    if verb == "accept" and len(pos) < 2:
+        return False
+    if verb == "use-item" and len(pos) >= 2 and _is_int(pos[0]) and _is_int(pos[1]):
+        return False
+    if verb == "spellclick" and (not pos or not _is_int(pos[0]) or int(pos[0]) > 0xFFFFFFFF):
+        return False
+    if verb == "kill" and (not pos or not _is_int(pos[0])):
+        return False
+    if verb == "equip" and (len(pos) != 1 or not _is_int(pos[0]) or kv.get("gm") == "1"):
+        return False
+    args = list(rest)
+    ps.cur_near = _xyz(kv["near"]) if "near" in kv else None
+    # HEADLESS_CAREFUL_WITHIN=R (opt-in): the default within= for every step (0 = the old "prefer 25 yd of near=, else any" pick,
+    # which spread-out targets such as the 24954 children and the 25024 paratroopers need)
+    _wdef = os.environ.get("HEADLESS_CAREFUL_WITHIN", "30")
+    ps.cur_within = float(kv.get("within", _wdef)) if "near" in kv else float(_wdef)
+    ps.max_deaths = int(kv.get("deaths", 3))
+    ps.max_dry_kills = int(kv.get("dry", 10))
+    # careful pull (kill / collect from= / hold): least-crowded target, rest to full, back off from adds.
+    # Also on for every verb when HEADLESS_CAREFUL=1.
+    ps.careful = kv.get("careful", os.environ.get("HEADLESS_CAREFUL", "0")) not in ("0", "")
+    # crowd=R: the careful pull counts the other mobs within R yd of a candidate (default 12; the Oomlot shamans that joined a
+    # "lone" pull came from 23-25 yd)
+    ps.careful_radius = float(kv.get("crowd", os.environ.get("HEADLESS_CAREFUL_CROWD", "12")))
+    # onlyif=x,y,z,R: run the step only when the character is within R yd of that point (a waypoint walk that only applies from one
+    # starting area, e.g. out of a graveyard; later iterations of a resumed block skip it)
+    if "onlyif" in kv and not ps.is_dead():
+        try:
+            _ox, _oy, _oz, _orr = (float(v_) for v_ in kv["onlyif"].split(","))
+            if w.pos is not None and _d3(w.pos, (_ox, _oy, _oz)) > _orr:
+                log("%s: onlyif %s - not near, skipped" % (verb, kv["onlyif"]))
+                return True
+        except ValueError:
+            pass
+    # dead (or a ghost from an earlier session): do what a player does first - run back and take the body
+    if ps.is_dead() and verb not in ("spirit-healer", "quest-log", "inventory", "objects", "relog", "wait-quest",
+                                     "wait-map", "wait-level", "vehicle-wait"):
+        ps.corpse_run(verb, args, quest=int(kv["quest"]) if "quest" in kv else None)
+    # HEADLESS_AUTOFIGHT=1 (opt-in): like a player, fight off what is attacking before a non-combat step (walking, talking,
+    # equipping, using). Without it, mobs that followed the character into a quest camp killed it during turn-ins and equips.
+    if (os.environ.get("HEADLESS_AUTOFIGHT", "0") not in ("0", "") and not ps.vehicle and not ps.is_dead()
+            and verb in ("goto-path", "goto-npc", "goto-go", "accept", "accept-go", "turnin", "turnin-go", "talk", "equip",
+                         "use-item", "use-go", "spellclick", "cast-on", "buy", "sell", "repair", "follow")):
+        for _n in range(8):
+            att = ps.attackers()
+            if not att or ps.is_dead():
+                break
+            a0 = ps.pick_attacker(att)
+            log("%s: autofight - %s attacks first" % (verb, a0.short()))
+            ps.fight(verb, list(rest), a0.guid, 30.0, None)
+    if (ps.char_class == 3 and not ps.is_dead() and not ps.vehicle and os.environ.get("HEADLESS_PET", "1") == "1"
+            and verb in ("goto-path", "goto-npc", "goto-go", "kill", "collect", "follow", "hold", "accept", "turnin", "talk")
+            and not ps.controlled_guid() and 883 in ps.known_spells):
+        # a hunter's pet is a tank: after a login, a death or a vehicle ride there is none out. Call Pet (883); a dead pet
+        # fails the cast, then Revive Pet (982) (the pet then needs 883 again)
+        try:
+            for _try in range(2):
+                t_p = time.time()
+                w.cast(883)
+                res_p = ps._cast_result(883, t_p, 6.0)
+                w.pump(1.0)
+                if ps.controlled_guid():
+                    log("%s: hunter pet called (Call Pet 883)" % verb)
+                    break
+                if 982 in ps.known_spells:
+                    t_p = time.time()
+                    w.cast(982)
+                    ps._cast_result(982, t_p, 12.0)
+                    w.pump(1.0)
+                    log("%s: Call Pet failed (result=%s) - cast Revive Pet 982" % (verb, res_p))
+        except OSError:
+            pass
+    if (ps.char_class == 3 and not ps.is_dead() and verb in ("use-item", "use-go", "talk", "accept", "accept-go", "turnin",
+            "turnin-go", "equip", "spellclick", "collect", "goto-path", "goto-npc", "goto-go")):
+        # a hunter's Auto Shot keeps repeating at a dead target: every tick fails BAD_TARGETS (13) and the flood both
+        # swamps the log and is read as the failure of the next cast (use-item cast-failed=13)
+        try:
+            w.cancel_auto_repeat()
+        except OSError:
+            pass
+    stuck_s = float(kv.get("stuck", 30))
+    timeout = float(kv.get("timeout", 300))
+    quest = int(kv["quest"]) if "quest" in kv else None
+
+    if verb == "goto-path":
+        # goto-path x,y,z [map=M] [range=R] [timeout=S] [stuck=S]
+        goal = _xyz(pos[0])
+        if "map" in kv and w.map_id != int(kv["map"]):
+            ps.stuck(verb, args, "wrong-map have=%s want=%s" % (w.map_id, kv["map"]))
+        ps.extra_move_flags = 0x100000 if kv.get("swim", "0") not in ("0", "") else 0    # MOVEMENTFLAG_SWIMMING
+        if kv.get("fly", "0") not in ("0", ""):
+            ps.extra_move_flags |= 0x1000000 | 0x800000     # MOVEMENTFLAG_FLYING | CAN_FLY (a flying vehicle this client drives)
+        try:
+            ps.walk_to(lambda: goal, float(kv.get("range", 1.5)), verb, args, timeout=timeout, stuck_s=stuck_s)
+        finally:
+            ps.extra_move_flags = 0
+        ps.ok(verb, args, "pos=%s" % ps.pos_str())
+    elif verb in ("goto-npc", "goto-go"):
+        # goto-npc ENTRY [range=R] [near=x,y,z] [wait=S] [timeout=S] / goto-go ENTRY [...]
+        kinds = ("unit",) if verb == "goto-npc" else ("go",)
+        o = ps.goto_object(verb, args, int(pos[0]), kinds, float(kv.get("range", 3.0)), timeout, stuck_s,
+                           wait_s=float(kv.get("wait", 8)), near=_xyz(kv["near"]) if "near" in kv else None)
+        ps.ok(verb, args, "guid=%d dist=%.1f" % (o.guid, _d3(o.position(), w.pos)) if o else "")
+    elif verb == "kill":
+        # kill ENTRY [count=N] [quest=Q] [loot=1] [timeout=S] [stuck=S]
+        entry = int(pos[0])
+        count = int(kv["count"]) if "count" in kv else (None if quest else 1)
+        loot = kv.get("loot", "0") not in ("0", "")
+
+        def done(kills):
+            if count is not None and kills >= count:
+                return True
+            # until=COND (e.g. obj:Q:i:N): ends the kill when that objective is already done (a resumed run)
+            if "until" in kv and ps.cond(kv["until"]):
+                return True
+            if quest:
+                st = ps.quest_status(quest)
+                if st in ("complete", "rewarded"):
+                    return True
+                c = ps.quest_credit.get((quest, entry))
+                if c and c[0] >= c[1] > 0:
+                    return True
+            return False
+        # seated in a vehicle: the server drops melee from a passenger (ATTACKSTOP after each swing). Step out first, or
+        # STUCK in-vehicle; vehicle=1 keeps the seat (a vehicle form that kills by itself, e.g. the Weed Whacker).
+        if ps.vehicle and ps.vehicle_guid and kv.get("vehicle", "0") != "1":
+            log("%s: seated in vehicle %d - stepping out first" % (verb, ps.vehicle_guid))
+            w.send_packet(CMSG_REQUEST_VEHICLE_EXIT, b"")
+            if not ps._wait(lambda: not ps.vehicle, 8.0):
+                ps.stuck(verb, args, "in-vehicle guid=%d" % (ps.vehicle_guid or 0), quest)
+            w.move_guid = None
+        # nopet=1: do not send the pet in (fight alone while the pet stays back, e.g. after pet-stay)
+        ps.no_pet_attack = kv.get("nopet", "0") == "1"
+        ps.brave = kv.get("brave", "0") == "1"
+        try:
+            n = ps.kill_loop(verb, args, entry, done, loot, float(kv.get("timeout", 900)), stuck_s, quest)
+        except SystemExit as e_:
+            # optional=1: no target in reach / a STUCK is not fatal (e.g. clearing the tigers on a road: none may be left)
+            if kv.get("optional", "0") != "1" or e_.code != 3:
+                raise
+            n = 0
+            log("%s: optional - skipped" % verb)
+        finally:
+            ps.no_pet_attack = False
+            ps.brave = False
+        ps.ok(verb, args, "kills=%d quest=%s" % (n, ps.quest_state_str(quest)))
+    elif verb in ("accept", "accept-go"):
+        if verb == "accept-go":
+            kv["go"] = "1"
+        ps.accept(verb, args, int(pos[0]), int(pos[1]), kv)
+    elif verb in ("turnin", "turnin-go"):
+        if verb == "turnin-go":
+            kv["go"] = "1"
+        ps.turnin(verb, args, int(pos[0]), int(pos[1]), kv)
+    elif verb == "wait-level":
+        # wait-level N [timeout=S]
+        want = int(pos[0])
+        if not ps._wait(lambda: ps.cond("level:%d" % want), float(kv.get("timeout", 60)), 0.5):
+            me = ps.me()
+            ps.stuck(verb, args, "level=%d" % (me.u32(UF_UNIT_LEVEL) if me else 0))
+        ps.ok(verb, args, "level=%d" % ps.me().u32(UF_UNIT_LEVEL))
+    elif verb == "hold":
+        # hold x,y,z seconds=S [fight=1] [entries=a,b] [radius=R] [until=COND] [leash=R]
+        spot = _xyz(pos[0])
+        secs = float(kv.get("seconds", 60))
+        fight_on = kv.get("fight", "1") not in ("0", "")
+        entries = [int(e) for e in kv["entries"].split(",")] if "entries" in kv else []
+        radius = float(kv.get("radius", 30))
+        leash = float(kv.get("leash", 8))
+        until = kv.get("until")
+        ps.walk_to(lambda: spot, 2.0, verb, args, timeout=timeout, stuck_s=stuck_s, quest=quest)
+        if getattr(ps, "careful", False):
+            ps._careful_rest(verb)   # a careful hold starts at full health (it was walked into at half after a death)
+        t0 = time.time()
+        fought = 0
+        while time.time() - t0 < secs and not (until and ps.cond(until)):
+            if ps.is_dead():
+                ps.corpse_run(verb, args, quest)
+                if getattr(ps, "careful", False):
+                    ps._careful_rest(verb)
+            if fight_on and ps.fight_nearby(verb, args, stuck_s, quest, entries, radius, center=spot):
+                fought += 1
+                continue
+            if _d3(w.pos, spot) > leash:
+                ps.walk_to(lambda: spot, 2.0, verb, args, timeout=timeout, stuck_s=stuck_s, quest=quest)
+            w.pump(0.5)
+        ps.ok(verb, args, "fights=%d until=%s quest=%s" % (fought, until and int(ps.cond(until)), ps.quest_state_str(quest)))
+    elif verb == "follow":
+        # follow ENTRY [range=R] [until=COND] [timeout=S] [fight=1] [lost=S] [avoid=ENTRY:R[,ENTRY:R]]
+        # avoid= : never step within R yd of a live unit of that entry; when the escort stands inside that radius,
+        # hold at the nearest point outside it (Liam held the 24904 jail next to Gorerot 38331, each new follow leg walked
+        # Wolfplay onto Gorerot and his Smash 71774 one-shot it)
+        avoid = [(int(a.split(":")[0]), float(a.split(":")[1])) for a in kv["avoid"].split(",")] if kv.get("avoid") else []
+        # sticky=1 : keep following the same unit across follow steps (and relogs); when it is out of view, walk to
+        # where it was last seen instead of taking the nearest other unit of ENTRY - after Gorerot died the march leader
+        # Liam walked on out of view and the next leg took the static Liam 38218 world spawn at the jail instead
+        sticky = kv.get("sticky", "0") not in ("0", "")
+        if not hasattr(ps, "follow_sticky"):
+            ps.follow_sticky = {}
+        entry = int(pos[0])
+        rng = float(kv.get("range", 8))
+        until = kv.get("until")
+        fight_on = kv.get("fight", "1") not in ("0", "")
+        tmo = float(kv.get("timeout", 1800))
+        lost_s = float(kv.get("lost", 45))
+        t0 = time.time()
+        guid, last_seen = None, time.time()
+        if sticky and entry in ps.follow_sticky:
+            guid = ps.follow_sticky[entry][0]
+        while not (until and ps.cond(until)):
+            if time.time() - t0 > tmo:
+                if until:
+                    ps.stuck(verb, args, "timeout-until=%s" % until, quest)
+                break
+            if ps.is_dead():
+                ps.corpse_run(verb, args, quest)
+            o = ps.objs.get(guid) if guid else None
+            if sticky and guid and (o is None or not o.position() or not o.alive()) and entry in ps.follow_sticky:
+                sg, sp, st = ps.follow_sticky[entry]
+                if time.time() - st < max(lost_s, 120.0):
+                    if sp and w.pos and _d3(w.pos, sp) > 8.0:
+                        log("%s: sticky - guid=%d out of view, walking to where it was last seen (%.1f, %.1f)" % (verb, sg, sp[0], sp[1]))
+                        gp = ps.avoid_point(sp, avoid) if avoid else sp
+                        ps.walk_to(lambda: gp, 4.0, verb, args, timeout=90, stuck_s=max(stuck_s, 45), quest=quest, fail="return",
+                                   abort_fn=lambda: (sg in ps.objs and ps.objs[sg].position() is not None) or bool(ps.attackers()))
+                    w.pump(0.5)
+                    if sg in ps.objs and ps.objs[sg].position() is not None:
+                        continue
+                    if fight_on and ps.attackers():
+                        ps.fight_nearby(verb, args, stuck_s, quest, avoid=avoid)
+                    continue
+                log("%s: sticky - guid=%d not seen for %.0f s, taking the nearest %d" % (verb, sg, time.time() - st, entry))
+                del ps.follow_sticky[entry]
+                guid, o = None, None
+            if o is None or not o.position():
+                o = ps.nearest(entry, ("unit",), lambda x: x.alive())
+                guid = o.guid if o else None
+            if sticky and o is not None and o.position():
+                ps.follow_sticky[entry] = (o.guid, o.position(), time.time())
+            if o is None:
+                if time.time() - last_seen > lost_s:
+                    ps.stuck(verb, args, "lost-entry=%d" % entry, quest)
+                w.pump(0.5)
+                continue
+            last_seen = time.time()
+            if avoid and w.pos:
+                hit = ps.in_avoid(w.pos, avoid)
+                if hit is not None:
+                    out = ps.avoid_point(tuple(w.pos), avoid, margin=3.0)
+                    log("%s: avoid - within %.0f yd of %s, stepping out to (%.1f, %.1f)" % (verb, hit[1], hit[0].short(), out[0], out[1]))
+                    try:
+                        w.attack_stop()
+                    except OSError:
+                        pass
+                    ps.walk_to(lambda: out, 1.5, verb, args, timeout=20, stuck_s=8, quest=quest, fail="return")
+                    w.pump(0.5)
+                    continue
+            # careful: an elite that turned on this character (Gorerot's 71774 smash) - pull back ~25 yd straight away
+            # from it and come back to the escort once an NPC holds it again (too_strong() is False then)
+            if getattr(ps, "careful", False) and fight_on:
+                big = [a for a in ps.attackers() if ps.too_strong(a) and a.position()]
+                if big:
+                    b = min(big, key=lambda a: _d3(a.position(), w.pos))
+                    bp = b.position()
+                    if _d3(bp, w.pos) < 25.0:
+                        vx, vy = w.pos[0] - bp[0], w.pos[1] - bp[1]
+                        vl = math.hypot(vx, vy) or 1.0
+                        away = (bp[0] + 27.0 * vx / vl, bp[1] + 27.0 * vy / vl, w.pos[2])
+                        log("%s: %s is on this character - pulling back to (%.1f, %.1f)" % (verb, b.short(), away[0], away[1]))
+                        try:
+                            w.attack_stop()
+                        except OSError:
+                            pass
+                        ps.walk_to(lambda: away, 3.0, verb, args, timeout=20, stuck_s=8, quest=quest, fail="return")
+                        w.pump(1.0)
+                        continue
+            if fight_on and ps.fight_nearby(verb, args, stuck_s, quest, protect=guid, radius=25.0, avoid=avoid):
+                if getattr(ps, "careful", False):
+                    # rest between fights like a player (fight after fight killed Wolfplay), but only while the
+                    # escort stands still - resting while Liam marched on left the character behind in the respawns
+                    lp0 = ps.objs[guid].position() if guid in ps.objs else None
+                    w.pump(1.5)
+                    lp1 = ps.objs[guid].position() if guid in ps.objs else None
+                    if lp0 and lp1 and _d3(lp0, lp1) < 2.0:
+                        ps._careful_rest(verb, max_s=10)
+                continue
+            if avoid and ps.in_avoid(o.position(), avoid) is not None:
+                # the escort stands inside an avoided radius: hold at the nearest point outside it
+                g = guid
+                goal_fn = lambda: (ps.avoid_point(ps.objs[g].position(), avoid) if g in ps.objs and ps.objs[g].position() else None)
+                gp = goal_fn()
+                if gp and _d3(w.pos, gp) > 4.0:
+                    ps.walk_to(goal_fn, 2.0, verb, args, timeout=60, stuck_s=max(stuck_s, 45), quest=quest, fail="return",
+                               abort_fn=lambda: bool(ps.attackers()) or ps.in_avoid(w.pos, avoid) is not None)
+                else:
+                    w.pump(0.5)
+            elif _d3(w.pos, o.position()) > rng:
+                g = guid
+                ps.walk_to(lambda: (ps.objs[g].position() if g in ps.objs else None), rng * 0.6, verb, args,
+                           timeout=60, stuck_s=max(stuck_s, 45), quest=quest, fail="return",
+                           abort_fn=(lambda: bool(ps.attackers()) or (bool(avoid) and ps.in_avoid(w.pos, avoid) is not None))
+                           if fight_on else ((lambda: ps.in_avoid(w.pos, avoid) is not None) if avoid else None))
+            else:
+                w.pump(0.5)
+        ps.ok(verb, args, "until=%s quest=%s" % (until, ps.quest_state_str(quest)))
+    elif verb == "pet-cast":
+        # pet-cast SLOT|SPELL [target=ENTRY|at=x,y,z]  (CMSG_PET_ACTION with the button the server sent)
+        pet = ps.controlled_guid()
+        if not pet:
+            ps.stuck(verb, args, "no-pet-or-charm")
+        spell, button = ps.bar_spell(pos[0])
+        tgt, at = 0, (0.0, 0.0, 0.0)
+        if "target" in kv:
+            o = ps.nearest(int(kv["target"]), ("unit", "go"), lambda x: x.kind == "go" or x.alive())
+            if o is None:
+                ps.stuck(verb, args, "target-not-visible=%s" % kv["target"], quest)
+            tgt = o.guid
+        elif "at" in kv:
+            at = _xyz(kv["at"])
+        t0 = time.time()
+        ps.pet_action(pet, button, tgt, at)
+        w.pump(float(kv.get("wait", 1.0)))
+        ps.ok(verb, args, "spell=%d pet=%d" % (spell, pet))
+    elif verb == "vehicle-cast":
+        # vehicle-cast SLOT|SPELL [target=ENTRY|at=x,y,z] [aim=PITCH] [speed=S]
+        # CMSG_CAST_SPELL: the server casts it from the vehicle when the vehicle has the spell. `at=` adds the
+        # ground target; `aim=` (radians, default 0.785 with at=) and the missile speed derived from the distance
+        # fill the 5.4.8 elevation / missile-speed fields used by trajectory spells (catapults, throwers, bombs).
+        spell, _button = ps.bar_spell(pos[0])
+        tgt, dest, elev, spd = None, None, None, None
+        if "target" in kv:
+            o = ps.nearest(int(kv["target"]), ("unit", "go"), lambda x: x.kind == "go" or x.alive(),
+                           exclude=ps.used_targets.get((verb, int(kv["target"])), set()) if kv.get("fresh") == "1" else ())
+            if o is not None and "cluster" in kv:
+                # cluster=R: aim an area spell at the live target with the most others of that entry within R yd
+                # (nearest-target aiming killed too few Alliance Sailors before the 15-minute cyclone ran out)
+                cr = float(kv["cluster"])
+                live = [x for x in ps.objects_of(int(kv["target"]), ("unit",)) if x.alive() and x.position()]
+                if live:
+                    o = max(live, key=lambda x: (sum(1 for y in live if _d3(x.position(), y.position()) <= cr),
+                                                 -_d3(x.position(), w.pos)))
+            if o is None and kv.get("optional", "0") == "1":
+                # optional=1: nothing to shoot in view yet (fighters that fly in around a moving vehicle) is OK
+                ps.ok(verb, args, "none-in-view")
+                return True
+            if o is None:
+                ps.stuck(verb, args, "target-not-visible=%s" % kv["target"], quest)
+            tgt = o.guid
+            if kv.get("fresh") == "1":
+                ps.used_targets.setdefault((verb, int(kv["target"])), set()).add(o.guid)
+            if "aim" in kv or kv.get("ground") == "1":
+                dest = o.position()
+                # beyond=D: aim D yd past the target, on the line from the vehicle, so a knockback from the impact point
+                # pushes the target toward the shooter instead of away (24681 War Machines knocked uphill out of sight)
+                if dest and "beyond" in kv and w.pos:
+                    bx, by = dest[0] - w.pos[0], dest[1] - w.pos[1]
+                    bl = math.hypot(bx, by) or 1.0
+                    bd = float(kv["beyond"])
+                    dest = (dest[0] + bd * bx / bl, dest[1] + bd * by / bl, dest[2])
+        if "at" in kv:
+            dest = _xyz(kv["at"])
+        if dest is not None:
+            if "aim" in kv or "speed" in kv or kv.get("ground") == "1" or "at" in kv:
+                elev = float(kv.get("aim", 0.785))
+                src = w.pos
+                x = max(1.0, _d2(src, dest))
+                h = dest[2] - src[2]
+                denom = 2.0 * math.cos(elev) ** 2 * (x * math.tan(elev) - h)
+                spd = float(kv["speed"]) if "speed" in kv else (math.sqrt(19.2911 * x * x / denom) if denom > 0 else 30.0)
+            if tgt is not None and "aim" not in kv:
+                dest = None
+        # like a player, turn the vehicle toward what it shoots at first. Vehicle spells with a cone
+        # (e.g. the Gilneas Rebel Cannon 67279/67278, SpellTargetRestrictions ConeAngle 60) never hit anything
+        # outside the vehicle's facing. Only when this client drives the vehicle (w.move_guid), so a passenger seat
+        # or a plain character cast is untouched; face=0 turns it off.
+        if kv.get("face", "1") not in ("0", "") and getattr(w, "move_guid", None):
+            aim_p = None
+            if "at" in kv:
+                aim_p = _xyz(kv["at"])
+            elif tgt and ps.objs.get(tgt) is not None:
+                aim_p = ps.objs[tgt].position()
+            if aim_p is not None:
+                ps.face(aim_p)
+                w.pump(0.3)
+        t0 = time.time()
+        w.cast(spell, tgt, dest=dest, elevation=elev, speed=spd)
+        res = ps._cast_result(spell, t0, float(kv.get("wait", 0.8)))
+        if res is not None and kv.get("strict", "0") == "1":
+            ps.stuck(verb, args, "cast-failed result=%d(%s)" % (res, SPELL_FAILED_NAMES.get(res, "?")), quest)
+        ps.ok(verb, args, "spell=%d result=%s quest=%s" % (spell, "ok" if res is None else SPELL_FAILED_NAMES.get(res, res),
+                                                          ps.quest_state_str(quest)))
+    elif verb == "choose-reward":
+        # choose-reward [i] - answer the pending SMSG_QUESTGIVER_OFFER_REWARD (e.g. after an auto-complete quest)
+        off = ps.offer
+        if not off:
+            ps.stuck(verb, args, "no-offer-pending")
+        if not ps.choose_reward(verb, args, int(kv.get("guid", 0)) or (w.gossip or {}).get("guid", 0) or w.char_guid,
+                                off["quest"], int(pos[0]) if pos else 0):
+            ps.stuck(verb, args, "reward-not-confirmed", off["quest"])
+    elif verb == "talk":
+        # talk ENTRY [option=text-substring] [range=R] [go=1]  (go=1: a gameobject with a gossip menu, opened by using it)
+        is_go = kv.get("go", "0") not in ("0", "")
+        npc = ps.goto_object(verb, args, int(pos[0]), ("go",) if is_go else ("unit",), float(kv.get("range", 3.5)),
+                             timeout, stuck_s)
+        ps.face(npc.position())
+        w.gossip = None
+        t_hello = time.time()
+        if is_go:
+            w.gameobject_use(npc.guid)
+        else:
+            w.gossip_hello(npc.guid)
+        if not ps._wait(lambda: w.gossip is not None or getattr(ps, "quest_window_t", 0) >= t_hello, 8.0):
+            if kv.get("optional", "0") == "1":      # e.g. an event NPC that is busy (no gossip) on a resumed run
+                ps.ok(verb, args, "no-gossip-menu (optional)")
+                return True
+            ps.stuck(verb, args, "no-gossip-menu")
+        if w.gossip is None:
+            # the NPC answered with a quest window only (quest list / details / request items / reward), no gossip menu
+            if "option" in kv and kv.get("optional", "0") != "1":
+                ps.stuck(verb, args, "quest-window-only no-option=%s" % kv["option"])
+            ps.ok(verb, args, "quest-window (no gossip menu)")
+            return True
+        if "option" in kv:
+            want = kv["option"].replace("_", " ").lower()
+            opt = next((o for o in w.gossip["options"] if want in o["text"].lower()), None)
+            if opt is None:
+                if kv.get("optional", "0") == "1":
+                    ps.ok(verb, args, "no-option-matching (optional)")
+                    return True
+                ps.stuck(verb, args, "no-option-matching=%s" % kv["option"])
+            w.gossip_select(opt["id"], npc.guid, w.gossip["menu"], kv.get("code", ""))
+            w.pump(2.0)
+        ps.ok(verb, args, "menu=%s" % (w.gossip or {}).get("menu"))
+    elif verb == "use-go":
+        # use-go ENTRY [range=R] [loot=1] [quest=Q] [wait=S]
+        entry = int(pos[0])
+        go = ps.goto_object(verb, args, entry, ("go",), float(kv.get("range", 3.0)), timeout, stuck_s, quest=quest,
+                            pred=lambda o: o.guid not in ps.used_go or time.time() - ps.used_go[o.guid] > 60)
+        before = (ps.quest_state_str(quest), len(ps.inventory()))
+        ps.use_gameobject(go, float(kv.get("wait", 2.0)))
+        n = w.loot_all(1.0) if w.loot_windows and kv.get("loot", "1") not in ("0", "") else 0
+        ps.ok(verb, args, "guid=%d looted=%d quest=%s changed=%d" % (
+            go.guid, n, ps.quest_state_str(quest), int(before != (ps.quest_state_str(quest), len(ps.inventory())))))
+    elif verb == "use-item":
+        # use-item ITEM_ENTRY [on=ENTRY|at=x,y,z|self] [range=R] [quest=Q]
+        item = int(pos[0])
+        found = ps.find_item(item)
+        if not found:
+            ps.stuck(verb, args, "item-not-in-bags item=%d" % item, quest)
+        bag, slot, iguid = found
+        target, dest = None, None
+        if "on" in kv:
+            on = kv["on"]
+            kinds = ("go",) if on.startswith("go:") else ("unit",) if on.startswith("npc:") else ("unit", "go")
+            on_entry = int(on.split(":", 1)[1]) if ":" in on else int(on)
+            bad_key = ("use-item-failed", on_entry)
+            bad = ps.used_targets.setdefault(bad_key, set())
+            ps.gone_ok = kv.get("fail", "stuck") == "ok"
+            try:
+                o = ps.goto_object(verb, args, on_entry, kinds, float(kv.get("range", 5.0)), timeout,
+                                   stuck_s, quest=quest,
+                                   fresh_key=None if kv.get("fresh", "1") == "0" else (verb, on_entry),
+                                   # dead=1: the item is used on a corpse (25123 Blastshadow's Soulstone 73702 on his body)
+                                   pred=lambda x: (x.kind == "go" or (x.alive() != (kv.get("dead", "0") == "1")))
+                                   and x.guid not in bad
+                                   and ("maxdz" not in kv or (x.position() and w.pos
+                                                             and abs(x.position()[2] - w.pos[2]) <= float(kv["maxdz"]))))
+            finally:
+                ps.gone_ok = False
+            if o is None:
+                ps.ok(verb, args, "target-gone")
+                return True
+            target = o.guid
+            ps.face(o.position())
+        elif "at" in kv and kv["at"].split(":", 1)[0] in ("go", "npc"):
+            # at=go:ENTRY / at=npc:ENTRY: a ground-targeted item thrown at the nearest such object (fresh by default)
+            kind_, ent_ = kv["at"].split(":", 1)
+            o = ps.goto_object(verb, args, int(ent_), ("go",) if kind_ == "go" else ("unit",), float(kv.get("range", 5.0)),
+                               timeout, stuck_s, quest=quest,
+                               fresh_key=None if kv.get("fresh", "1") == "0" else (verb, "at", int(ent_)))
+            p_ = o.position()
+            # aim a little above the object's origin: a rock/deposit model blocks the line of sight to its own base
+            dest = (p_[0], p_[1], p_[2] + float(kv.get("lift", 2.0)))
+            ps.face(dest)
+        elif "at" in kv:
+            dest = _xyz(kv["at"])
+            ps.walk_to(lambda: dest, float(kv.get("range", 5.0)), verb, args, timeout=timeout, stuck_s=stuck_s, quest=quest)
+        elif "self" in pos[1:] or "self" in kv:
+            target = w.char_guid
+        t0 = time.time()
+        ps.use_item_target(bag, slot, iguid, target, dest)
+        w.pump(1.5)
+        fails = [(s, r) for t, s, r in ps.cast_fail if t >= t0]
+        if fails and "on" in kv and target:
+            ps.used_targets.setdefault(("use-item-failed", on_entry), set()).add(target)   # never pick it again
+        if fails and kv.get("fail", "stuck") != "ok":
+            ps.stuck(verb, args, "cast-failed result=%d(%s)" % (fails[-1][1], SPELL_FAILED_NAMES.get(fails[-1][1], "?")), quest)
+        ps.ok(verb, args, "bag=%d slot=%d quest=%s%s" % (bag, slot, ps.quest_state_str(quest),
+              (" cast-failed=%d" % fails[-1][1]) if fails else ""))
+    elif verb == "spellclick":
+        # spellclick ENTRY [range=R] [vehicle=1] [optional=1]  (optional=1: nothing to click in view is OK, e.g. fires that
+        # only exist in one phase of a fight)
+        if kv.get("optional", "0") == "1":
+            used_sc = ps.used_targets.get((verb, int(pos[0])), set()) if kv.get("fresh", "1") != "0" else set()
+            if not [o for o in ps.objects_of(int(pos[0]), ("unit",)) if o.alive() and o.guid not in used_sc]:
+                ps.ok(verb, args, "none-in-view")
+                return True
+        npc = ps.goto_object(verb, args, int(pos[0]), ("unit",), float(kv.get("range", 3.5)), timeout, stuck_s,
+                             fresh_key=None if kv.get("fresh", "1") == "0" else (verb, int(pos[0])),
+                             pred=lambda o: o.alive())
+        ps.face(npc.position())
+        w.spellclick(npc.guid)
+        if kv.get("vehicle", "0") not in ("0", ""):
+            if not ps._wait(lambda: ps.vehicle, float(kv.get("wait", 10))):
+                ps.stuck(verb, args, "no-vehicle-after-click")
+        else:
+            w.pump(1.5)
+        ps.ok(verb, args, "guid=%d vehicle=%d" % (npc.guid, int(ps.vehicle)))
+    elif verb == "collect":
+        # collect ITEM_ENTRY count=N [from=ENTRY|go=ENTRY] [quest=Q] [timeout=S] [stuck=S]
+        item = int(pos[0])
+        need = int(kv.get("count", 1))
+        tmo = float(kv.get("timeout", 1200))
+        t0 = time.time()
+        last_cnt, last_prog = ps.item_count(item), time.time()
+        if "from" in kv:
+            ps.kill_loop(verb, args, int(kv["from"]), lambda k: ps.item_count(item) >= need, True, tmo, stuck_s, quest,
+                         progress_fn=lambda: ps.item_count(item))
+        elif "go" in kv:
+            ge = int(kv["go"])
+            while ps.item_count(item) < need:
+                if time.time() - t0 > tmo:
+                    ps.stuck(verb, args, "timeout have=%d" % ps.item_count(item), quest)
+                if ps.is_dead():
+                    ps.corpse_run(verb, args, quest)
+                c = ps.item_count(item)
+                if c != last_cnt:
+                    last_cnt, last_prog = c, time.time()
+                elif time.time() - last_prog > stuck_s * 6:
+                    ps.stuck(verb, args, "no-item-progress have=%d" % c, quest)
+                # fight off what attacks first (a chest guarded by mobs: opening it under attack got the character killed,
+                # and a dead character cannot see the chest, which then looked like a missing gameobject)
+                for _n in range(10):
+                    att = ps.attackers()
+                    if not att or ps.is_dead():
+                        break
+                    a0 = ps.pick_attacker(att)
+                    log("%s: fighting attacker %s before using the object" % (verb, a0.short()))
+                    ps.fight(verb, args, a0.guid, stuck_s, quest)
+                if ps.is_dead():
+                    continue                      # the loop top does the corpse run
+                go = ps.goto_object(verb, args, ge, ("go",), float(kv.get("range", 3.0)), tmo, stuck_s, quest=quest,
+                                    wait_s=float(kv.get("wait", 15)),
+                                    pred=lambda o: o.guid not in ps.used_go or time.time() - ps.used_go[o.guid] > 90)
+                ps.use_gameobject(go, float(kv.get("usewait", 2.5)))
+                if w.loot_windows:
+                    w.loot_all(1.0)
+                else:
+                    ps.used_go.pop(go.guid, None)  # the use failed (e.g. the Opening cast was interrupted): try it again
+                w.pump(0.5)
+        else:
+            ps.stuck(verb, args, "collect-needs-from-or-go")
+        if ps.item_count(item) < need:
+            ps.stuck(verb, args, "have=%d need=%d" % (ps.item_count(item), need), quest)
+        ps.ok(verb, args, "have=%d quest=%s" % (ps.item_count(item), ps.quest_state_str(quest)))
+    elif verb == "wait-quest":
+        # wait-quest QUEST complete|rewarded|accepted [timeout=S]
+        qid, want = int(pos[0]), (pos[1] if len(pos) > 1 else "complete")
+        ok_states = {"complete": ("complete", "rewarded"), "rewarded": ("rewarded",),
+                     "accepted": ("incomplete", "complete", "rewarded")}.get(want, (want,))
+        if not ps._wait(lambda: ps.quest_status(qid) in ok_states, float(kv.get("timeout", 60)), 0.5):
+            ps.stuck(verb, args, "quest-not-%s" % want, qid)
+        ps.ok(verb, args, "state=%s" % ps.quest_state_str(qid))
+    elif verb == "vehicle-wait":
+        # vehicle-wait [on|off] [timeout=S]
+        want_on = not (pos and pos[0].lower() == "off")
+        if not ps._wait(lambda: ps.vehicle == want_on, float(kv.get("timeout", 60)), 0.25):
+            ps.stuck(verb, args, "vehicle-%s-not-seen" % ("enter" if want_on else "exit"))
+        ps.ok(verb, args, "vehicle=%d" % int(ps.vehicle))
+    elif verb == "select-faction":
+        # select-faction alliance|horde - the Pandaren neutral faction pick (quest 31450 "A New Fate"). Gossip "I'm ready to choose
+        # my destiny" on Spirit of Master Shang Xi 56013 (talk 56013 option=destiny) makes the server send
+        # SMSG_SHOW_NEURTRAL_PLAYER_FACTION_SELECT_UI; the client answers with CMSG_SELECT_FACTION (u32: 1 Alliance, 0 Horde).
+        choice = 0 if (pos and pos[0].lower() in ("horde", "0")) else 1
+        w.send_packet(CMSG_SELECT_FACTION, struct.pack("<I", choice))
+        log("sent CMSG_SELECT_FACTION choice=%d (%s)" % (choice, "Alliance" if choice else "Horde"))
+        w.pump(3.0)
+        ps.ok(verb, args, "pos=%s" % ps.pos_str())
+    elif verb == "wait-map":
+        # wait-map MAP [timeout=S]
+        want = int(pos[0])
+        if not ps._wait(lambda: w.map_id == want, float(kv.get("timeout", 120)), 0.5):
+            ps.stuck(verb, args, "map-not-reached have=%s" % w.map_id)
+        ps.ok(verb, args, "pos=%s" % ps.pos_str())
+    elif verb == "equip":
+        # equip ITEM_ENTRY - CMSG_AUTOEQUIP_ITEM (ItemHandler.cpp: u8 slot, u8 bag) from the bag slot holding it
+        item = int(pos[0])
+        found = ps.find_item(item)
+        if not found:
+            # already worn (a resumed run): equipment slots 0-18 of PLAYER_FIELD_INV_SLOTS
+            me_ = ps.me()
+            worn = [es for es in range(19) if me_ is not None and me_.u64(UF_PLAYER_INV_SLOTS + 2 * es)
+                    and getattr(ps.objs.get(me_.u64(UF_PLAYER_INV_SLOTS + 2 * es)), "entry", 0) == item]
+            if worn:
+                ps.ok(verb, args, "already-equipped slot=%d" % worn[0])
+                return True
+            ps.stuck(verb, args, "item-not-in-bags item=%d" % item)
+        bag, slot, iguid = found
+        w.send_packet(CMSG_AUTOEQUIP_ITEM, struct.pack("<BB", slot, bag))
+        log("sent CMSG_AUTOEQUIP_ITEM bag=%d slot=%d item=%d" % (bag, slot, item))
+        if not ps._wait(lambda: all(g != iguid for _b, _s, g, _e, _c in ps.inventory()), float(kv.get("wait", 5))):
+            ps.stuck(verb, args, "equip-failed item=%d" % item)
+        ps.ok(verb, args)
+    elif verb in ("pet-attack", "pet-follow", "pet-stay"):
+        # pet-attack [target=ENTRY] / pet-follow / pet-stay - CMSG_PET_ACTION with ACT_COMMAND (7) << 24 | command
+        pet = ps.controlled_guid()
+        if not pet:
+            ps.stuck(verb, args, "no-pet-or-charm")
+        tgt = 0
+        if verb == "pet-attack":
+            if "target" in kv:
+                o = ps.nearest(int(kv["target"]), ("unit",), lambda x: x.alive())
+                if o is None:
+                    ps.stuck(verb, args, "target-not-visible=%s" % kv["target"])
+                tgt = o.guid
+            else:
+                att = ps.attackers()
+                tgt = att[0].guid if att else 0
+            if not tgt:
+                ps.stuck(verb, args, "no-target")
+        ps.pet_action(pet, 0x07000000 | {"pet-attack": 2, "pet-follow": 1, "pet-stay": 0}[verb], tgt)
+        w.pump(1.0)
+        ps.ok(verb, args, "pet=%d target=%d" % (pet, tgt))
+    elif verb in ("pet-passive", "pet-defensive", "pet-assist"):
+        # the pet bar's reaction buttons: CMSG_PET_ACTION with ACT_REACTION (6) << 24 | REACT_PASSIVE 0 / DEFENSIVE 1 / ASSIST 3
+        pet = ps.controlled_guid()
+        if not pet:
+            ps.stuck(verb, args, "no-pet-or-charm")
+        ps.pet_action(pet, 0x06000000 | {"pet-passive": 0, "pet-defensive": 1, "pet-assist": 3}[verb], 0)
+        w.pump(1.0)
+        ps.ok(verb, args, "pet=%d" % pet)
+    elif verb == "vehicle-exit":
+        # vehicle-exit [timeout=S] - CMSG_REQUEST_VEHICLE_EXIT (VehicleHandler.cpp), then wait to be off it
+        w.send_packet(CMSG_REQUEST_VEHICLE_EXIT, b"")
+        log("sent CMSG_REQUEST_VEHICLE_EXIT")
+        if not ps._wait(lambda: not ps.vehicle, float(kv.get("timeout", 10))):
+            ps.stuck(verb, args, "still-on-vehicle")
+        w.move_guid = None
+        ps.ok(verb, args, "pos=%s" % ps.pos_str())
+    elif verb == "cast-on":
+        # cast-on SPELL ENTRY [range=R] [go=1] [wait=S] - walk into range of the nearest ENTRY, face it and cast SPELL
+        spell, entry = int(pos[0]), int(pos[1])
+        kinds = ("go",) if kv.get("go", "0") not in ("0", "") else ("unit",)
+        rng = float(kv.get("range", 20.0))
+        min_rng = float(kv.get("min", 0.0))            # e.g. Charge: min=8
+        # fresh=1: never the same target twice (one cast per NPC, e.g. entertaining partygoers)
+        used_co = ps.used_targets.setdefault((verb, spell, entry), set()) if kv.get("fresh", "0") == "1" else set()
+        res = None
+        for attempt in range(5):
+            # a target already between min= and range=: cast from here (a charge needs the gap, a mob closes it)
+            inwin = [x for x in ps.objects_of(entry, kinds) if (x.kind == "go" or x.alive()) and x.guid not in used_co
+                     and min_rng + 1.0 <= _d3(x.position(), w.pos) <= rng]
+            if inwin:
+                o = min(inwin, key=lambda x: _d3(x.position(), w.pos))
+            else:
+                o = ps.goto_object(verb, args, entry, kinds, rng, timeout, stuck_s, quest=quest,
+                                   pred=lambda x: (x.kind == "go" or x.alive()) and x.guid not in used_co)
+            ps.face(o.position())
+            w.set_selection(o.guid)
+            log("%s: try %d target=%d hp=%d dist=%.1f" % (verb, attempt + 1, o.guid, o.health, _d3(o.position(), w.pos)))
+            t0 = time.time()
+            w.cast(spell, o.guid)
+            res = ps._cast_result(spell, t0, float(kv.get("wait", 1.5)))
+            if res is None:
+                break
+            if res in (SPELL_FAILED_LINE_OF_SIGHT, SPELL_FAILED_OUT_OF_RANGE):
+                rng = max(min_rng + 1.0, rng / 2.0)       # closer (round the obstacle) and try again
+                log("%s: %s - moving to %.0f yd and casting again" % (verb, SPELL_FAILED_NAMES.get(res), rng))
+                continue
+            if res == SPELL_FAILED_UNIT_NOT_INFRONT:
+                w.orientation = (w.orientation + 1.0) % (2 * math.pi)
+                continue
+            if res == 132 and o.position():                     # TOO_CLOSE: step back out past min=
+                tp = o.position()
+                dx, dy = w.pos[0] - tp[0], w.pos[1] - tp[1]
+                dl = math.hypot(dx, dy) or 1.0
+                back = max(min_rng, 5.0) + 3.0
+                spot = (tp[0] + dx / dl * back, tp[1] + dy / dl * back, w.pos[2])
+                log("%s: TOO_CLOSE - stepping back to %.0f yd" % (verb, back))
+                ps.walk_to(lambda: spot, 1.0, verb, args, timeout=60, stuck_s=stuck_s, fail="return")
+                rng = back + 1.0
+                continue
+            break
+        if res is not None:
+            ps.stuck(verb, args, "cast-failed result=%d(%s)" % (res, SPELL_FAILED_NAMES.get(res, "?")), quest)
+        if kv.get("fresh", "0") == "1":
+            used_co.add(o.guid)
+        ps.ok(verb, args, "target=%d quest=%s" % (o.guid, ps.quest_state_str(quest)))
+    elif verb == "sell":
+        # sell VENDOR_ENTRY items=a,b,... | sell VENDOR_ENTRY all [except=a,b,...]   (CMSG_SELL_ITEM, ItemHandler.cpp)
+        vendor = ps.goto_object(verb, args, int(pos[0]), ("unit",), float(kv.get("range", 3.5)), timeout, stuck_s)
+        ps.face(vendor.position())
+        w.gossip_hello(vendor.guid)
+        w.pump(1.0)
+        want = set(int(x) for x in kv["items"].split(",")) if "items" in kv else None
+        keep = set(int(x) for x in kv.get("except", "").split(",") if x)
+        # `sell VENDOR junk` sells grey (Quality 0) items that have a sell price, from the read-only db_items facts
+        junk = set()
+        if "junk" in pos[1:]:
+            junk = {e for e, f in db_items([e for _b, _s, _g, e, _c in ps.inventory()]).items() if f[6] == 0 and f[7] > 0}
+        sold = 0
+        for b, sl, g, e, c in ps.inventory():
+            if (want is not None and e in want) or (want is None and "all" in pos[1:] and e not in keep) or e in junk:
+                ps._sell_item(vendor.guid, g, c)
+                sold += 1
+        w.pump(1.0)
+        ps.ok(verb, args, "sold=%d free-slots-used=%d" % (sold, len(ps.inventory())))
+    elif verb == "abandon":
+        # abandon QUEST: CMSG_QUESTLOG_REMOVE_QUEST with the quest's log slot (right-click > Abandon Quest)
+        qid = int(pos[0])
+        q = ps.quest_log().get(qid)
+        if not q:
+            ps.ok(verb, args, "not-in-log")
+            return True
+        w.send_packet(CMSG_QUESTLOG_REMOVE_QUEST, struct.pack("<B", int(q["slot"])))
+        log("sent CMSG_QUESTLOG_REMOVE_QUEST quest=%d slot=%d" % (qid, q["slot"]))
+        if not ps._wait(lambda: qid not in ps.quest_log(), float(kv.get("timeout", 8))):
+            ps.stuck(verb, args, "still-in-log", qid)
+        ps.ok(verb, args, "removed")
+    elif verb == "react":
+        # react SECONDS map=KEY:SPELL,KEY:SPELL... [until=COND] [once=1]: watch incoming chat (whispers, emotes, raid-boss
+        # whispers) and cast the mapped spell (self/vehicle-bar cast) when a new line contains KEY (case-insensitive,
+        # `_` = space). Answers each line once. Used for prompts such as "Use your Blastcrackers!" in the Kezan vault.
+        secs = float(pos[0]) if pos else 60.0
+        pairs = []
+        for item_ in kv.get("map", "").split(","):
+            if ":" in item_:
+                k_, v_ = item_.rsplit(":", 1)
+                pairs.append((k_.replace("_", " ").lower(), int(v_)))
+        until = kv.get("until")
+        t0 = time.time()
+        seen_t = t0
+        answered = 0
+        while time.time() - t0 < secs and not (until and ps.cond(until)):
+            new = [(t_, ty_, m_) for t_, ty_, m_ in getattr(w, "chat_lines", []) if t_ > seen_t]
+            if new:
+                seen_t = new[-1][0]
+            for _t, _ty, m_ in new:
+                low = m_.lower()
+                hit = next((sp for k_, sp in pairs if k_ in low), None)
+                if hit:
+                    w.pump(float(kv.get("delay", 0.6)))
+                    w.cast(hit)
+                    answered += 1
+                    log("react: '%s' -> cast %d" % (m_[:60], hit))
+            w.pump(0.25)
+        if until and not ps.cond(until):
+            ps.stuck(verb, args, "until-not-met answered=%d" % answered, quest)
+        ps.ok(verb, args, "answered=%d quest=%s" % (answered, ps.quest_state_str(quest)))
+    elif verb == "probe-attack":
+        # probe-attack ENTRY at=x,y,z [seconds=S]: walk next to the unit of ENTRY nearest to the point and try to melee it like a
+        # player (CMSG_ATTACKSWING); report its flags and whether any swing landed. For "should not be attackable" checks.
+        entry = int(pos[0])
+        pt = _xyz(kv["at"])
+        cand = [o for o in ps.objects_of(entry, ("unit",)) if o.position()]
+        if not cand:
+            ps.stuck(verb, args, "not-visible entry=%d" % entry)
+        o = min(cand, key=lambda x: _d3(x.position(), pt))
+        ps.walk_to(lambda: o.position(), 2.0, verb, args, timeout=60, stuck_s=stuck_s, fail="return")
+        ps.face(o.position())
+        log("[PROBE-ATTACK] target %s dist-to-point=%.1f" % (o.short(), _d3(o.position(), pt)))
+        t0 = time.time()
+        w.set_selection(o.guid)
+        w.attack(o.guid)
+        w.pump(float(kv.get("seconds", 5)))
+        hits = [(t, a, v, d) for t, a, v, d in getattr(w, "melee_log", []) if t >= t0 and v == o.guid and a == w.char_guid]
+        log("[PROBE-ATTACK] guid=%d unit_flags=0x%X hits=%d dmg=%d hp=%d/%d" % (o.guid, o.unit_flags, len(hits),
+            sum(d for _t, _a, _v, d in hits), o.health, o.max_health))
+        try:
+            w.attack_stop()
+        except OSError:
+            pass
+        ps.ok(verb, args, "guid=%d hits=%d" % (o.guid, len(hits)))
+    elif verb == "leave-camp":
+        # leave-camp [entries=a,b] [radius=R] [dist=D] [fights=N]: like a player who logged in (or came back to life)
+        # inside a camp - when live hostile units are within R yd (default 30), walk D yd (default 35) to the side farthest
+        # from all of them, even when one is already hitting, then fight what followed out there (no adds join) before the
+        # next step. A level 10 warrior that logged in between two Slavedrivers 37701 and fought on the spot died in 45 s.
+        entries = [int(e) for e in kv["entries"].split(",")] if "entries" in kv else []
+        radius = float(kv.get("radius", 30))
+        dist = float(kv.get("dist", 35))
+        here = tuple(w.pos)
+        foes = ps.camp_foes(here, radius, entries)
+        moved = 0
+        if foes:
+            pt, dmin = ps.quiet_point(here, foes, rings=(dist, dist * 0.7))
+            log("%s: %d hostile within %.0f yd - walking out to (%.1f, %.1f), nearest hostile there %.0f yd"
+                % (verb, len(foes), radius, pt[0], pt[1], dmin))
+            try:
+                w.attack_stop()
+            except OSError:
+                pass
+            ps.walk_to(lambda: pt, 3.0, verb, args, timeout=40.0, stuck_s=10.0, quest=quest,
+                       abort_fn=lambda: ps.is_dead(), fail="return")
+            moved = 1
+        fights = 0
+        for _n in range(int(kv.get("fights", 6))):
+            if ps.is_dead() or not ps.attackers():
+                break
+            if ps.fight_nearby(verb, args, stuck_s, quest):
+                fights += 1
+        ps.ok(verb, args, "foes=%d moved=%d fights=%d" % (len(foes), moved, fights))
+    elif verb == "rest":
+        # rest [full=F] [max=S]: out of combat, sit until F (default 0.95) of max health, like a player before the next leg
+        ps._careful_rest(verb, full=float(kv.get("full", 0.95)), max_s=float(kv["max"]) if "max" in kv else None)
+        me_ = ps.me()
+        ps.ok(verb, args, "hp=%s" % ("%d/%d" % (me_.health, me_.max_health) if me_ is not None else "?"))
+    elif verb == "repair":
+        # repair VENDOR_ENTRY: walk to a repair NPC, open it and repair everything (CMSG_REPAIR_ITEM with item guid 0).
+        # Gear breaks after about ten deaths (durability 0): a broken weapon makes every weapon ability fail EQUIPPED_ITEM_CLASS.
+        vendor = ps.goto_object(verb, args, int(pos[0]), ("unit",), float(kv.get("range", 3.5)), timeout, stuck_s)
+        ps.face(vendor.position())
+        w.gossip_hello(vendor.guid)
+        w.pump(1.0)
+        nb = int(vendor.guid).to_bytes(8, "little")
+        ib = bytes(8)
+        bw = BitWriter()
+        for which, idx in (("i", 2), ("i", 5), ("n", 3), ("g", 0), ("n", 7), ("i", 4), ("n", 2), ("i", 0), ("i", 3),
+                           ("n", 6), ("n", 1), ("n", 4), ("i", 6), ("n", 5), ("n", 0), ("i", 7), ("i", 1)):
+            bw.bit(False if which == "g" else ((nb if which == "n" else ib)[idx] != 0))
+        body = bytearray(bw.flush())
+        for which, idx in (("i", 2), ("n", 1), ("i", 1), ("n", 4), ("n", 7), ("n", 3), ("n", 2), ("i", 7), ("n", 5),
+                           ("n", 0), ("i", 5), ("i", 3), ("i", 4), ("i", 6), ("n", 6), ("i", 0)):
+            v = (nb if which == "n" else ib)[idx]
+            if v:
+                body.append(v ^ 1)
+        w.send_packet(CMSG_REPAIR_ITEM, bytes(body))
+        log("sent CMSG_REPAIR_ITEM npc=%d (all items)" % vendor.guid)
+        w.pump(1.5)
+        ps.ok(verb, args, "npc=%d" % vendor.guid)
+    elif verb == "buy":
+        # buy VENDOR_ENTRY ITEM [slot=N] [count=N]: CMSG_LIST_INVENTORY (the vendor window), then CMSG_BUY_ITEM into the
+        # backpack (bag guid = the player). slot = the 1-based vendor list position (npc_vendor.slot + 1 for the first items).
+        item = int(pos[1])
+        vendor = ps.goto_object(verb, args, int(pos[0]), ("unit",), float(kv.get("range", 3.5)), timeout, stuck_s)
+        ps.face(vendor.position())
+        vg = int(vendor.guid)
+        w.send_packet(CMSG_LIST_INVENTORY, guid_mask_bits(vg, (6, 7, 3, 1, 2, 0, 4, 5)) + guid_byte_seq(vg, (0, 7, 1, 6, 4, 3, 5, 2)))
+        w.pump(1.0)
+        before = ps.item_count(item)
+        vb, bb = vg.to_bytes(8, "little"), int(w.char_guid).to_bytes(8, "little")
+        bw = BitWriter()
+        for which, idx in (("v", 6), ("b", 6), ("b", 4), ("v", 4)):
+            bw.bit((vb if which == "v" else bb)[idx] != 0)
+        bw.bits(1, 2)                                     # itemType 1 = item (2 = currency)
+        for which, idx in (("v", 0), ("v", 3), ("b", 3), ("v", 7), ("v", 5), ("b", 2), ("v", 1), ("b", 7), ("v", 2),
+                           ("b", 1), ("b", 0), ("b", 5)):
+            bw.bit((vb if which == "v" else bb)[idx] != 0)
+        body = bytearray(struct.pack("<IIII", 255, int(kv.get("count", 1)), item, int(kv.get("slot", 1))) + bw.flush())
+        for which, idx in (("v", 5), ("v", 0), ("b", 3), ("b", 1), ("b", 6), ("v", 2), ("v", 7), ("v", 6), ("b", 0),
+                           ("b", 5), ("v", 4), ("b", 2), ("v", 3), ("b", 7), ("v", 1), ("b", 4)):
+            v = (vb if which == "v" else bb)[idx]
+            if v:
+                body.append(v ^ 1)
+        w.send_packet(CMSG_BUY_ITEM, bytes(body))
+        log("sent CMSG_BUY_ITEM vendor=%d item=%d slot=%s" % (vg, item, kv.get("slot", 1)))
+        if not ps._wait(lambda: ps.item_count(item) > before, float(kv.get("wait", 5))):
+            ps.stuck(verb, args, "not-bought item=%d have=%d" % (item, ps.item_count(item)), quest)
+        ps.ok(verb, args, "have=%d quest=%s" % (ps.item_count(item), ps.quest_state_str(quest)))
+    elif verb == "gear-up":
+        # gear-up - , what a player does after a turn-in: put empty bag slots to use (equip carried bags) and wear
+        # bag items that are upgrades (higher item level for the slot, usable at this level), each by CMSG_AUTOEQUIP_ITEM
+        # like a right-click. Item facts come from the optional read-only db_items lookup; without it this is a no-op.
+        me_ = ps.me()
+        level = me_.u32(UF_UNIT_LEVEL) if me_ is not None else 0
+        worn = {}
+        if me_ is not None:
+            for es in range(23):
+                g = me_.u64(UF_PLAYER_INV_SLOTS + 2 * es)
+                if g:
+                    worn[es] = getattr(ps.objs.get(g), "entry", 0)
+        bag_items = ps.inventory()
+        facts = db_items([e for e in worn.values()] + [e for _b, _s, _g, e, _c in bag_items])
+        if not facts:
+            ps.ok(verb, args, "no-item-facts (set MOP_MYSQL_BIN / MOP_DB_*)")
+            return True
+        done = []
+        for b, s_, g, e, _c in bag_items:
+            f = facts.get(e)
+            if not f:
+                continue
+            cls, sub, inv, ilvl, req, cslots = f[:6]
+            if req > level:
+                continue
+            if cls == 1 and inv == 18 and cslots > 0:            # a bag: only while a bag slot is empty
+                if len([es for es in range(19, 23) if es in worn]) >= 4:
+                    continue
+            elif cls in (2, 4) and inv in GEAR_SLOTS:
+                if cls == 2 and inv in (15, 25, 26) and sub in (2, 3, 16, 18) and (ps.char_class or 0) != 3:
+                    # a bow, gun, crossbow or thrown weapon goes in the main hand in 5.4.8; only a
+                    # hunter fights with one - a warrior that wore a higher-level Compact Shotgun had Mortal Strike and
+                    # Heroic Strike fail EQUIPPED_ITEM_CLASS (31) and died swinging bare-handed
+                    continue
+                cur = [facts.get(worn.get(es, 0), (0, 0, 0, 0, 0, 0))[3] if worn.get(es) else -1 for es in GEAR_SLOTS[inv]]
+                if min(cur) >= ilvl:
+                    continue
+            else:
+                continue
+            w.send_packet(CMSG_AUTOEQUIP_ITEM, struct.pack("<BB", s_, b))
+            log("gear-up: CMSG_AUTOEQUIP_ITEM bag=%d slot=%d item=%d (ilvl %d)" % (b, s_, e, ilvl))
+            ps._wait(lambda: all(gg != g for _b2, _s2, gg, _e2, _c2 in ps.inventory()), 3.0)
+            if all(gg != g for _b2, _s2, gg, _e2, _c2 in ps.inventory()):
+                done.append(e)
+                me_ = ps.me()                                      # refresh what is worn for the next comparisons
+                worn = {}
+                for es in range(23):
+                    gw = me_.u64(UF_PLAYER_INV_SLOTS + 2 * es) if me_ is not None else 0
+                    if gw:
+                        worn[es] = getattr(ps.objs.get(gw), "entry", 0)
+                        facts.setdefault(worn[es], facts.get(worn[es], (0, 0, 0, 0, 0, 0)))
+        # bags nearly full (fewer than junk-below=4 free slots) -> sell grey items at a vendor within 60 yd, if one is
+        # in sight (the quest hubs have one); junk-below=0 turns it off
+        sold = 0
+        if ps.free_bag_slots() < int(kv.get("junk-below", 4)):
+            facts = db_items([e for _b, _s, _g, e, _c in ps.inventory()])
+            junk = [(g, c) for _b, _s, g, e, c in ps.inventory() if e in facts and facts[e][6] == 0 and facts[e][7] > 0]
+            vendors = [o for o in ps.objs.values() if o.typeid == 3 and o.alive() and o.u32(UF_UNIT_NPC_FLAGS) & 0x80
+                       and o.position() and _d3(o.position(), w.pos) <= 60.0]
+            if junk and vendors:
+                vend = min(vendors, key=lambda o: _d3(o.position(), w.pos))
+                back = tuple(w.pos)
+                ps.walk_to(lambda: vend.position(), 3.0, verb, args, timeout=60, stuck_s=15)
+                ps.face(vend.position())
+                w.gossip_hello(vend.guid)
+                w.pump(1.0)
+                for g, c in junk:
+                    ps._sell_item(vend.guid, g, c)
+                    sold += 1
+                w.pump(1.0)
+                log("gear-up: sold %d junk item(s) to %s, %d bag slots free" % (sold, vend.short(), ps.free_bag_slots()))
+                ps.walk_to(lambda: back, 2.0, verb, args, timeout=60, stuck_s=15)
+            elif junk:
+                log("gear-up: bags nearly full (%d free) and no vendor in sight" % ps.free_bag_slots())
+        ps.ok(verb, args, "equipped=%s sold=%d" % (",".join(str(x) for x in done) or "-", sold))
+    elif verb == "spec":
+        # spec [TAB] - choose the specialization at level 10 like a player does in the talent pane
+        # (CMSG_SET_PRIMARY_TALENT_TREE); without TAB the class's damage spec. The server ignores it once one is set.
+        me_ = ps.me()
+        level = me_.u32(UF_UNIT_LEVEL) if me_ is not None else 0
+        if level < 10:
+            ps.ok(verb, args, "skipped level=%d" % level)
+            return True
+        tab = int(pos[0]) if pos else DEFAULT_DPS_SPEC_TAB.get(ps.char_class or 0, 0)
+        before = len(ps.known_spells)
+        w.send_packet(CMSG_SET_PRIMARY_TALENT_TREE, struct.pack("<I", tab))
+        ps._wait(lambda: len(ps.known_spells) > before, 5.0)
+        ps.ok(verb, args, "tab=%d learned=%d" % (tab, len(ps.known_spells) - before))
+    elif verb == "destroy":
+        # destroy ITEM_ENTRY [count=N]   (CMSG_DESTROY_ITEM: u32 count, u8 slot, u8 bag) - every stack of that entry
+        item = int(pos[0])
+        n = 0
+        for b, sl, g, e, c in ps.inventory():
+            if e == item:
+                w.send_packet(CMSG_DESTROY_ITEM, struct.pack("<iBB", int(kv.get("count", c)), sl, b))
+                n += 1
+        w.pump(1.0)
+        ps.ok(verb, args, "stacks=%d left=%d" % (n, ps.item_count(item)))
+    elif verb == "spirit-healer":
+        # spirit-healer [ENTRY=6491] - as a ghost, walk to the spirit healer, talk to it and accept its resurrection
+        # (CMSG_GOSSIP_HELLO -> SMSG_SPIRIT_HEALER_CONFIRM -> CMSG_SPIRIT_HEALER_ACTIVATE, NPCHandler.cpp:556)
+        entry = int(pos[0]) if pos else 6491
+        if not ps.is_dead():
+            ps.ok(verb, args, "alive")
+            return True
+        if not ps.is_ghost():
+            w.release_spirit()
+            if not ps._wait(ps.is_ghost, 20):
+                ps.stuck(verb, args, "release-failed")
+        shp = ps.spirit_healer_pos
+        near = ps.cur_near or (tuple(shp[1:]) if shp and shp[0] == w.map_id else None)
+        # near=x,y,z picks the healer standing there (within=R yd, default 60), not the one at the graveyard the ghost
+        # was sent to: a player may walk to any spirit healer
+        sh_pred = None
+        if ps.cur_near:
+            nx_, wr_ = tuple(ps.cur_near), float(kv.get("within", 60))
+            sh_pred = lambda o, nx_=nx_, wr_=wr_: o.position() is not None and _d3(o.position(), nx_) < wr_
+        npc = ps.goto_object(verb, args, entry, ("unit",), float(kv.get("range", 4.0)), timeout, stuck_s,
+                             wait_s=float(kv.get("wait", 10)), near=near, pred=sh_pred)
+        ps.face(npc.position())
+        w.gossip_hello(npc.guid)
+        ps._wait(lambda: ps.spirit_confirm is not None, 3.0)
+        ps._guid_packet(CMSG_SPIRIT_HEALER_ACTIVATE, npc.guid, (2, 7, 6, 0, 5, 4, 1, 3), (1, 5, 6, 3, 2, 0, 7, 4))
+        log("sent CMSG_SPIRIT_HEALER_ACTIVATE guid=%d" % npc.guid)
+        if not ps._wait(lambda: not ps.is_dead(), float(kv.get("reswait", 10))):
+            ps.stuck(verb, args, "not-resurrected")
+        ps.ok(verb, args, "pos=%s" % ps.pos_str())
+    elif verb == "relog":
+        # relog [wait=S] - log out like a client and log the same character back in, in the same run
+        relog_client(w, args_cli, float(kv.get("wait", 2)))
+        ps = w.play
+        ps.ok(verb, args, "pos=%s" % ps.pos_str())
+    elif verb == "quest-log":
+        for q, v in sorted(ps.quest_log().items()):
+            log("[QUEST-LOG] id=%d slot=%d status=%s counts=%s" % (q, v["slot"], ps.quest_status(q),
+                                                                   [c for c in v["counts"] if c] or 0))
+        log("[QUEST-LOG] rewarded this session: %s" % (sorted(ps.quest_rewarded) or "-"))
+    elif verb == "inventory":
+        for b, s, g, e, c in ps.inventory():
+            log("[INV] bag=%d slot=%d entry=%d count=%d guid=%d" % (b, s, e, c, g))
+        me_ = ps.me()
+        for es in range(19):   # worn items: equipment slots 0-18 (15 main hand, 16 off hand)
+            g = me_.u64(UF_PLAYER_INV_SLOTS + 2 * es) if me_ is not None else 0
+            if g:
+                log("[EQUIP] slot=%d entry=%d guid=%d" % (es, getattr(ps.objs.get(g), "entry", 0), g))
+    elif verb == "select-nearest":
+        # select-nearest ENTRY: CMSG_SET_SELECTION on the nearest visible unit/GO of ENTRY (a GM observer's `.npc info`)
+        o = ps.nearest(int(pos[0]), ("unit", "go"))
+        if o is None:
+            ps.ok(verb, args, "none-in-view")
+            return True
+        w.set_selection(o.guid)
+        w.pump(0.5)
+        ps.ok(verb, args, o.short())
+    elif verb == "objects":
+        want = int(pos[0]) if pos else None
+        for o in sorted(ps.objs.values(), key=lambda o: _d3(o.position(), w.pos) if o.position() else 1e9):
+            if want is None or o.entry == want:
+                if o.kind in ("item",):
+                    continue
+                p = o.position()
+                log("[OBJ] %s dist=%s" % (o.short(), "%.1f" % _d3(p, w.pos) if p else "-"))
+    else:
+        return False
+    return True
+
+
+def relog_client(w, args_cli, wait=2.0):
+    """Log the character out (CMSG_LOGOUT_REQUEST), then authenticate again and log the same character in on a
+    new world connection; the WorldClient object `w` is kept so the step runner keeps going."""
+    guid = int(w.char_guid or 0) & 0xFFFFFFFFFFFF
+    keep = {k: getattr(w, k) for k in ("char_name", "char_race", "char_class", "language", "bf_accept")}
+    log("relog: logging out %s" % keep["char_name"])
+    w.logout()
+    try:
+        w.s.close()
+    except OSError:
+        pass
+    w.pump_sleep = None
+    time.sleep(max(0.0, wait))
+    K = auth_login(args_cli.host, args_cli.auth_port, args_cli.account, args_cli.password)
+    nw = WorldClient(args_cli.host, args_cli.world_port, K, args_cli.account)
+    nw.handshake(K, realm_id=args_cli.realm)
+    nw.char_enum()
+    if not nw.player_login(guid):
+        log("STUCK verb=relog args=- reason=login-failed pos=- quest=-")
+        raise SystemExit(3)
+    auto = w.__dict__.get("auto")             # a --log-movement wrapper installed on the old object stays
+    w.__dict__.clear()
+    w.__dict__.update(nw.__dict__)
+    if auto is not None:
+        w.auto = auto
+    for k, v in keep.items():
+        setattr(w, k, v)
+    w.play.w = w
+    w.play.char_class = w.char_class
+    log("relog: back in world map=%s pos=(%.1f, %.1f, %.1f)" % (w.map_id, w.pos[0], w.pos[1], w.pos[2]))
+    w.pump(3)
+
+
+def expand_inline_blocks(steps):
+    """`repeat ... { a ; b ; c } end` on one line -> repeat / a / b / c / end lines (nesting allowed)."""
+    out = []
+    for line in steps:
+        if "{" in line and "}" in line:
+            head, rest = line.split("{", 1)
+            body, tail = rest.rsplit("}", 1)
+            out.append(head.strip())
+            out.extend(expand_inline_blocks([b.strip() for b in _split_top(body) if b.strip()]))
+            out.append(tail.strip() or "end")
+        else:
+            out.append(line)
+    return out
+
+
+def _split_top(body):
+    parts, depth, cur = [], 0, ""
+    for ch in body:
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+        if ch == ";" and depth == 0:
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    parts.append(cur)
+    return parts
+
+
+def _step_verb(line):
+    parts = line.split()
+    return parts[0].lower() if parts else ""
+
+
+def _block_end(steps, i):
+    """Index of the `end` matching the `repeat` at steps[i]."""
+    depth = 0
+    for j in range(i + 1, len(steps)):
+        v = _step_verb(steps[j])
+        if v == "repeat":
+            depth += 1
+        elif v == "end":
+            if depth == 0:
+                return j
+            depth -= 1
+    log("STUCK verb=repeat args=%s reason=repeat-without-end pos=- quest=-" % steps[i].replace(" ", ","))
+    raise SystemExit(3)
+
+
+def exec_steps(w, args_cli, steps, state):
+    """Run step lines in order. Control lines:
+      repeat N | repeat until=COND [max=N] [timeout=S]  ...  end    (COND: see PlayState.cond)
+      retry VERB ... until=COND [every=S] [max=N]   - run VERB, then wait up to S s for COND; again up to N times
+    A STUCK inside a retried verb counts as one failed try; anywhere else it ends the run with exit code 3."""
+    i = 0
+    while i < len(steps):
+        line = steps[i]
+        verb = _step_verb(line)
+        if time.time() - state["t0"] > state["budget"]:
+            _session_timeout(w, state["n"] + 1, line, state["budget"])
+        if verb == "repeat":
+            j = _block_end(steps, i)
+            body = steps[i + 1:j]
+            pos, kv = _kv_split(line.split()[1:])
+            count = int(pos[0]) if pos else None
+            until = kv.get("until")
+            mx = int(kv.get("max", count if count is not None else 1000))
+            tmo = float(kv.get("timeout", 3600))
+            ts, k = time.time(), 0
+            log("step: %s (%d body lines)" % (line, len(body)))
+            while True:
+                if until and w.play.cond(until):
+                    break
+                if count is not None and k >= count:
+                    break
+                if k >= mx or time.time() - ts > tmo:
+                    if until:
+                        w.play.stuck("repeat", line.split()[1:], "until-not-met=%s iterations=%d" % (until, k))
+                    break
+                exec_steps(w, args_cli, body, state)
+                k += 1
+            log("OK repeat iterations=%d%s" % (k, (" until=%s" % until) if until else ""))
+            i = j + 1
+            continue
+        if verb == "end":
+            i += 1
+            continue
+        state["n"] += 1
+        if verb == "retry":
+            toks = line.split()[1:]
+            own = [t for t in toks if t.split("=", 1)[0] in ("until", "every", "max")]
+            inner = " ".join(t for t in toks if t not in own)
+            kv = dict(t.split("=", 1) for t in own)
+            until = kv.get("until")
+            every = float(kv.get("every", 10))
+            mx = int(kv.get("max", 10))
+            log("step: %s" % line)
+            done = False
+            for k in range(1, mx + 1):
+                try:
+                    run_verb(w, args_cli, inner)
+                except SystemExit as exc:
+                    if exc.code != 3:
+                        raise
+                    log("RETRY try=%d/%d of %r failed (STUCK above); trying again" % (k, mx, inner))
+                if not until:
+                    done = True
+                    break
+                if w.play._wait(lambda: w.play.cond(until), every, 0.5):
+                    done = True
+                    break
+            if not done:
+                w.play.stuck("retry", toks, "until-not-met=%s tries=%d" % (until, mx))
+            log("OK retry %s tries=%d" % (inner, k))
+        else:
+            state["line"] = line
+            log("step: %s" % line)
+            run_verb(w, args_cli, line)
+        w.pump(1)
+        i += 1
+
 
 def _load_local_defaults():
     """Optional JSON file of local defaults: $MOP_HEADLESS_DEFAULTS, else headless.local.json next to
@@ -6096,6 +10029,7 @@ def _default(env, key, fallback, local):
 
 
 def main():
+    _stall_watchdog_start()
     local = _load_local_defaults()
     ap = argparse.ArgumentParser(description="headless 5.4.8 real-client login")
     ap.add_argument("--cmd", default="test", choices=["test", "login", "play", "botchecks", "create"])
@@ -6190,11 +10124,20 @@ def main():
         if not args.create_name or not args.create_race or not args.create_class:
             log("ERROR: --cmd create needs --create-name/--create-race/--create-class")
             return 1
-        w.pump(2)  # let the post-handshake burst (char_enum reply etc.) settle first
+        # a real client lists the characters first, then creates; the server answers SMSG_CHAR_CREATE after its async
+        # name / account-limit / realm-limit queries (CharacterHandler.cpp HandleCharCreateOpcode)
+        existing = w.char_enum()
+        log("account %s has %d character(s) before create" % (args.account, len(existing)))
         w.char_create(args.create_name, args.create_race, args.create_class, args.create_gender)
-        w.pump(10, stop_on=(SMSG_CHAR_CREATE,))
+        w.pump(30, stop_on=(SMSG_CHAR_CREATE,))
+        code = w.char_create_result
+        name = CHAR_CREATE_CODES.get(code, "NO_REPLY" if code is None else "unknown")
+        print("CREATE-RESULT code=%s name=%s char=%s race=%d class=%d"
+              % ("-" if code is None else code, name, args.create_name, args.create_race, args.create_class), flush=True)
         print("CREATE-DONE", flush=True)
-        return 0
+        if code == 47:                          # CHAR_CREATE_SUCCESS
+            return 0
+        return 2 if code is None else 1
     # --- play ---
     chars = w.char_enum()
     for c in chars:
@@ -6226,6 +10169,8 @@ def main():
     if chosen_meta:
         w.char_name = chosen_meta["name"]
         w.char_race = chosen_meta.get("race")
+        w.char_class = chosen_meta.get("class")
+        w.play.char_class = w.char_class
         w.language = RACE_LANGUAGE.get(w.char_race, LANG_COMMON)
     w.pump(3)
 

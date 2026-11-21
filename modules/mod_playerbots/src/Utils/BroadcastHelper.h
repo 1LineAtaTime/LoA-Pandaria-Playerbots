@@ -9,6 +9,7 @@
 #include "Define.h"
 #include <cstdint>
 #include <list>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,6 +19,7 @@ class Player;
 class Quest;
 class Creature;
 class Group;
+class Item;
 
 struct ItemTemplate;
 
@@ -160,6 +162,17 @@ public:
         PlayerbotAI* ai,
         Player* bot
     );
+
+    // Not part of AC's BroadcastHelper: AC's chat replies (Ai/Base/Actions/SayAction.cpp) call PlayerbotAI::SayToGuild/
+    // SayToWorld/SayToChannel, GetCurrentArea/GetCurrentZone/GetLocalizedAreaName and GetInventoryAndEquippedItems
+    // (Bot/PlayerbotAI.cpp:2897-3100, 5919). This fork implements those once, file-local in BroadcastHelper.cpp (see
+    // its header); these wrappers let SayAction.cpp share them without touching PlayerbotAI.h.
+    static bool BotSayToGuild(Player* bot, std::string const& msg);
+    static bool BotSayToWorld(Player* bot, std::string const& msg);
+    static bool BotSayToChannel(Player* bot, std::string const& msg, uint32_t chanId);
+    // %area_name, %zone_name, %my_class, %my_race, %my_level and %my_role, as AC's reply handlers fill them.
+    static void BotChatPlaceholders(Player* bot, std::map<std::string, std::string>& placeholders);
+    static std::vector<Item*> BotInventoryAndEquippedItems(Player* bot);
 };
 
 #endif

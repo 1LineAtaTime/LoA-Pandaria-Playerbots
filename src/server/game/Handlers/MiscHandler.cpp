@@ -1902,6 +1902,15 @@ void WorldSession::HandleTimeSyncResp(WorldPacket& recvData)
     uint32 counter, clientTicks;
     recvData >> counter >> clientTicks;
 
+    // An answer with no request pending (a late or repeated reply, e.g. around logout) must not touch the empty
+    // queue: front()/pop() on it is undefined behaviour and crashed the map thread. TrinityCore and AzerothCore
+    // drop a response whose counter matches no pending request the same way.
+    if (!_player || _player->m_timeSyncQueue.empty())
+    {
+        TC_LOG_DEBUG("network", "CMSG_TIME_SYNC_RESP counter %u with no pending time sync request, ignored", counter);
+        return;
+    }
+
     if (counter != _player->m_timeSyncQueue.front())
         TC_LOG_DEBUG("network", "Wrong time sync counter from player %s (cheater?)", _player->GetName().c_str());
 
@@ -2080,7 +2089,9 @@ void WorldSession::HandleCancelMountAuraOpcode(WorldPacket& /*recvData*/)
         return;
     }
 
-    _player->RemoveAurasByType(SPELL_AURA_MOUNTED); // Calls Dismount()
+    // As AzerothCore: dismount first, so a mount flag or display left without a mount aura behind it is cleared too
+    _player->Dismount();
+    _player->RemoveAurasByType(SPELL_AURA_MOUNTED);
 }
 
 void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData)

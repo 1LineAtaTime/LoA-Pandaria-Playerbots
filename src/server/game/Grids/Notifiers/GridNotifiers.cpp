@@ -66,6 +66,22 @@ void VisibleNotifier::SendToSelf()
 
     for (Player::ClientGUIDs::const_iterator it = vis_guids.begin();it != vis_guids.end(); ++it)
     {
+        // AC parity (AC VisibleNotifier::SendToSelf, GridNotifiers.cpp:61-70): an object the cell walk did not
+        // reach leaves the client only when it is really out of sight. The walk is an octagon (Cell::VisitCircle); at the
+        // 533 yd battleground range it misses cells on the diagonals from ~470 yd, and dropping every unvisited guid
+        // unlinked two players that still saw each other. A stationary viewer then kept the mover at its client with
+        // nothing left to update or destroy it (bots drawn mounted for 20-40 s, SMSG_DISMOUNT never delivered).
+        // The other player still re-checks its own view of this one: it may not see back (a ghost sees the living
+        // around its corpse, the living do not see the ghost), and nothing else would update it while it stands still.
+        if (WorldObject* obj = ObjectAccessor::GetWorldObject(i_player, *it))
+            if (i_player.CanSeeOrDetect(obj, false, true))
+            {
+                if (Player* player = obj->ToPlayer())
+                    if (player->IsInWorld())
+                        player->UpdateVisibilityOf(&i_player);
+                continue;
+            }
+
         i_player.m_clientGUIDs.erase(*it);
         i_data.AddOutOfRangeGUID(*it);
 

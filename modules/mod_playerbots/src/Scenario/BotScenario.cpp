@@ -104,6 +104,26 @@ bool QueueGateOn();
 
 namespace
 {
+    // The AI's master pointer can already be stale on a map thread (the master logging out on another thread), so the
+    // probes never dereference it directly: a bot that is its own master stays itself, otherwise the master is looked
+    // up through ObjectAccessor as the group leader and used only when it is that same player (pointers are compared,
+    // never dereferenced).
+    Player* SafeMaster(PlayerbotAI* botAI, Player* bot)
+    {
+        if (!botAI || !bot)
+            return nullptr;
+        Player* const raw = botAI->GetMaster();
+        if (!raw)
+            return nullptr;
+        if (raw == bot)
+            return bot;
+        if (Group* group = bot->GetGroup())
+            if (Player* leader = ObjectAccessor::FindConnectedPlayer(group->GetLeaderGUID()))
+                if (leader == raw)
+                    return leader;
+        return nullptr;
+    }
+
     // --- side table ------------------------------------------------------------------------------
     std::mutex g_mutex;
     std::unordered_map<uint32, ScenarioState> g_bots; // key: bot guid counter
@@ -3963,7 +3983,7 @@ namespace
         // target (issue #206): a real player has no PlayerbotAI, so no "master" of its own.
         char masterBuf[64] = "-";
         float mdist = -1.0f;
-        if (Player* master = botAI ? botAI->GetMaster() : nullptr)
+        if (Player* master = SafeMaster(botAI, bot))
         {
             snprintf(masterBuf, sizeof(masterBuf), "%s", master->GetName().c_str());
             mdist = bot->GetDistance(master);
@@ -4134,6 +4154,9 @@ bool AnyActive()
 
 void OnUpdate(PlayerbotAI* botAI)
 {
+    // the mount watch has its own fast path (one relaxed atomic load) and runs without any scenario or probe.
+    MountWatchTick(botAI);
+
     if (!AnyActive())
         return;
 
@@ -4157,7 +4180,7 @@ void OnUpdate(PlayerbotAI* botAI)
     // following the same master do not duplicate the line. Kept as a fast/early emission right
     // after grouping - MasterProbeSweep above is the reliability backstop for when this pointer
     // goes stale (#209 round 6 finding).
-    if (Player* master = botAI->GetMaster())
+    if (Player* master = SafeMaster(botAI, bot))
     {
         if (master != bot && !master->IsBeingTeleported())
         {
@@ -4827,6 +4850,11 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
     // cast/hit/aura probe ([SPELLWATCH] lines), no player needed.
     if (scenario == "spellwatch")
         return HandleSpellWatchCommand(handler, in);
+
+    // (BotScenarioSpellWatch.cpp): `.botscenario - mountwatch <mapId> on [rowMs] | off | list` - server-global mount
+    // state watch for every playerbot on one map ([MNTW] lines), no player needed.
+    if (scenario == "mountwatch")
+        return HandleMountWatchCommand(handler, in);
 
     // #900/#898: `.botscenario - bf <battleId> start|stop|switch|timer <seconds>|state|ws <id,id,...>` - SOAP-callable twin of
     // the `.bf` GM commands (cs_bf.cpp registers them Console::No; that stays as is). battleId 1 = Wintergrasp, 21 = Tol Barad.
@@ -6166,7 +6194,7 @@ bool HandleScenarioCommandImpl(ChatHandler* handler, char const* args)
         // is a distinct state rather than a reaction worth printing. The master null check is
         // load-bearing, not defensive noise: the core's GetReactionTo dereferences its argument
         // unconditionally (Unit.cpp:6837) and MoP is the only tree that guards it.
-        Player* const master = botAI->GetMaster();
+        Player* const master = SafeMaster(botAI, bot);
         int reaction = -1;
         char masterBuf[48];
         if (!master)

@@ -843,6 +843,7 @@ void ObjectMgr::LoadCreatureSparringTemplate()
         }
 
         _creatureSparringTemplateStore[entry] = healthPct;
+        ++count;
     } while (result->NextRow());
 
     TC_LOG_INFO("server.loading", ">> Loaded %u creature sparring templates in %u ms", count, GetMSTimeDiffToNow(oldMSTime));

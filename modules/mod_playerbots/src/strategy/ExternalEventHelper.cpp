@@ -9,6 +9,12 @@
 #include "Playerbots.h"
 #include "Trigger.h"
 
+// AC ChatHelper::parseableItem, defined in AI/ChatHelper.cpp (see the note there).
+namespace PlayerbotChatParse
+{
+bool ParseableItem(std::string const& text);
+}
+
 bool ExternalEventHelper::ParseChatCommand(std::string const command, Player* owner)
 {
     if (HandleCommand(command, "", owner))
@@ -30,11 +36,18 @@ bool ExternalEventHelper::ParseChatCommand(std::string const command, Player* ow
             return true;
     }
 
-    //if (!ChatHelper::parseable(command))
-        //return false;
+    // AC Bot/Engine/ExternalEventHelper.cpp:33-40: only a command that names an item (link, class, quality, slot,
+    // money...) falls through to the item-count / trade commands, and only with AiPlayerbot.EnableAutoTradeOnItemMention.
+    // Without this gate every unknown whisper, such as "talents spec list" before "talents" existed, opened a trade
+    // window with the master. ("c" has no trigger on this fork yet, so that call finds nothing, as before.)
+    if (!PlayerbotChatParse::ParseableItem(command))
+        return false;
 
-    HandleCommand("c", command, owner);
-    HandleCommand("t", command, owner);
+    if (sPlayerbotAIConfig->enableAutoTradeOnItemMention)
+    {
+        HandleCommand("c", command, owner);
+        HandleCommand("t", command, owner);
+    }
 
     return true;
 }

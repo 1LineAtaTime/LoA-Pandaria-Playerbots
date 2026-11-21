@@ -100,6 +100,8 @@ void GenericWarlockStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(new TriggerNode("warlock pet low health", NextAction::array(0, new NextAction("dark regeneration", 60.0f), new NextAction("health funnel", 60.0f), nullptr)));
 
     triggers.push_back(new TriggerNode("soul link", NextAction::array(0, new NextAction("soul link", ACTION_EMERGENCY + 5), nullptr)));
+    // Grimoire of Sacrifice after a mid-fight resummon (a new demon cancels the buff).
+    triggers.push_back(new TriggerNode("grimoire of sacrifice", NextAction::array(0, new NextAction("grimoire of sacrifice", 22.0f), nullptr)));
     triggers.push_back(new TriggerNode("low mana", NextAction::array(0, new NextAction("life tap", ACTION_EMERGENCY + 5), nullptr)));
     // #521: "dark bargaing" was a typo for the registered "dark bargain" action (Dark Bargain, MoP talent).
     // "soul burn" is the existing action key; its spell is now "soulburn" 74434 (see WarlockActions.h).

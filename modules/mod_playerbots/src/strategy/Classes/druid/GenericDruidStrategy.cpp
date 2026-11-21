@@ -179,6 +179,9 @@ void DruidBoostStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             new TriggerNode("new pet", NextAction::array(0, new NextAction("set pet stance", 60.0f), nullptr)));
         // Rotation lane 5 (#860), MoP rotation row 10213/10218 (Celestial Alignment) and 10214 (Nature's
         // Vigil), spec 102, prio group 5/1: the Balance cooldowns, on "boost" next to Force of Nature (29.0).
+        // Incarnation: Chosen of Elune (talent): popped when an Eclipse is active, just above Celestial Alignment.
+        triggers.push_back(new TriggerNode("incarnation: chosen of elune",
+                                           NextAction::array(0, new NextAction("incarnation: chosen of elune", 29.1f), nullptr)));
         triggers.push_back(new TriggerNode("celestial alignment",
                                            NextAction::array(0, new NextAction("celestial alignment", 29.0f), nullptr)));
         triggers.push_back(new TriggerNode("nature's vigil",

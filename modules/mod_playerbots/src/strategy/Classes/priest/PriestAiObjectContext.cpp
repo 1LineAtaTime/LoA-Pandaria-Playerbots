@@ -113,6 +113,8 @@ public:
         // Lane 8 / #863 (MoP priest rotations)
         creators["chakra: sanctuary"] = &PriestTriggerFactoryInternal::chakra_sanctuary;
         creators["surge of light proc"] = &PriestTriggerFactoryInternal::surge_of_light_proc;
+        creators["surge of darkness"] = &PriestTriggerFactoryInternal::surge_of_darkness;
+        creators["mind flay surge channel check"] = &PriestTriggerFactoryInternal::mind_flay_surge_channel_check;
         creators["lightwell can cast"] = &PriestTriggerFactoryInternal::lightwell_can_cast;
         creators["chakra: sanctuary missing"] = &PriestTriggerFactoryInternal::chakra_sanctuary_missing;
         creators["void tendrils target close"] = &PriestTriggerFactoryInternal::void_tendrils_target_close;
@@ -176,6 +178,8 @@ private:
     static Trigger* chakra_serenity(PlayerbotAI* botAI) { return new ChakraSerenityTrigger(botAI); }
     static Trigger* chakra_sanctuary(PlayerbotAI* botAI) { return new ChakraSanctuaryTrigger(botAI); }
     static Trigger* surge_of_light_proc(PlayerbotAI* botAI) { return new SurgeOfLightProcTrigger(botAI); }
+    static Trigger* surge_of_darkness(PlayerbotAI* botAI) { return new SurgeOfDarknessProcTrigger(botAI); }
+    static Trigger* mind_flay_surge_channel_check(PlayerbotAI* botAI) { return new MindFlaySurgeChannelCheckTrigger(botAI); }
     static Trigger* lightwell_can_cast(PlayerbotAI* botAI) { return new LightwellCanCastTrigger(botAI); }
     static Trigger* chakra_sanctuary_missing(PlayerbotAI* botAI) { return new ChakraSanctuaryMissingTrigger(botAI); }
     static Trigger* void_tendrils_target_close(PlayerbotAI* botAI) { return new VoidTendrilsTargetCloseTrigger(botAI); }
@@ -299,6 +303,8 @@ public:
         creators["holy word: sanctuary on party"] = &PriestAiObjectContextInternal::holy_word_sanctuary_on_party;
         creators["halo"] = &PriestAiObjectContextInternal::halo;
         creators["cascade"] = &PriestAiObjectContextInternal::cascade;
+        creators["mind spike"] = &PriestAiObjectContextInternal::mind_spike;
+        creators["divine star on party"] = &PriestAiObjectContextInternal::divine_star_on_party;
         creators["void tendrils"] = &PriestAiObjectContextInternal::void_tendrils;
         creators["penance"] = &PriestAiObjectContextInternal::penance;
         creators["silence on enemy caster"] = &PriestAiObjectContextInternal::silence_on_enemy_caster;
@@ -422,6 +428,8 @@ private:
     static Action* holy_word_sanctuary_on_party(PlayerbotAI* ai) { return new CastHolyWordSanctuaryOnPartyAction(ai); }
     static Action* halo(PlayerbotAI* ai) { return new CastHaloAction(ai); }
     static Action* cascade(PlayerbotAI* ai) { return new CastCascadeAction(ai); }
+    static Action* mind_spike(PlayerbotAI* ai) { return new CastMindSpikeAction(ai); }
+    static Action* divine_star_on_party(PlayerbotAI* ai) { return new CastDivineStarOnPartyAction(ai); }
     static Action* void_tendrils(PlayerbotAI* ai) { return new CastVoidTendrilsAction(ai); }
     static Action* penance(PlayerbotAI* ai) { return new CastPenanceAction(ai); }
     static Action* silence_on_enemy_caster(PlayerbotAI* ai) { return new CastSilenceOnEnemyCasterAction(ai); }

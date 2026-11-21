@@ -56,6 +56,9 @@ void BeastMasteryHunterStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     // #856 Binding Shot (target 15-30 yd), between Serpent Sting and Stampede.
     triggers.push_back(new TriggerNode("binding shot range",
                                        NextAction::array(0, new NextAction("binding shot", 5.78f), nullptr)));
+    // Focus Fire at 5 Frenzy stacks (not during Bestial Wrath): above Kill Command, below Bestial Wrath (19.0).
+    triggers.push_back(new TriggerNode("focus fire",
+                                       NextAction::array(0, new NextAction("focus fire", 18.8f), nullptr)));
     triggers.push_back(new TriggerNode("kill command",
                                        NextAction::array(0, new NextAction("kill command", 18.5f), nullptr)));
     triggers.push_back(new TriggerNode("target critical health",

@@ -207,6 +207,22 @@ bool WrongPetTrigger::IsActive()
     return pet->GetEntry() != baseEntry && (!overrideEntry || pet->GetEntry() != overrideEntry);
 }
 
+bool GrimoireOfSacrificeTrigger::IsActive()
+{
+    if (!bot->HasSpell(108503) || bot->HasAura(108503))
+        return false;
+    Pet* pet = bot->GetPet();
+    return pet && pet->IsAlive() && !AI_VALUE2(bool, "mounted", "self target");
+}
+
+bool WarlockNoPetTrigger::IsActive()
+{
+    // Sacrificed demon: the buff replaces the pet, do not resummon it.
+    if (bot->HasAura(108503))
+        return false;
+    return NoPetTrigger::IsActive();
+}
+
 const std::set<uint32> RainOfFireChannelCheckTrigger::RAIN_OF_FIRE_SPELL_IDS = {
     5740, 6219, 11677, 11678, 27212, 47819, 47820
 };

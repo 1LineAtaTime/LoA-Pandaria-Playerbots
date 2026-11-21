@@ -536,7 +536,10 @@ void Vehicle::InstallAccessory(uint32 entry, int8 seatId, bool minion, uint8 typ
             passenger->ExitVehicle(); // this should not happen
     }
 
-    TempSummon* accessory = _me->SummonCreature(entry, *_me, TempSummonType(type), Milliseconds(summonTime));
+    // An accessory of a private (personal) vehicle is private to the same owner. A public accessory could never board it: its
+    // ride spell fails in SpellInfo::CheckTarget, which refuses a target that is private to someone else, and the accessory
+    // was unsummoned at once (Fiona's Caravan Harness 45436 lost its horses and wagon, so the ride ended before it began).
+    TempSummon* accessory = _me->SummonCreature(entry, *_me, TempSummonType(type), Milliseconds(summonTime), 0, _me->GetPrivateObjectOwner());
     // #169: a vehicle standing at an invalid position (e.g. Z = INVALID_HEIGHT over a map hole) cannot summon
     // its accessory; log it instead of aborting the whole server.
     if (!accessory)

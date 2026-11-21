@@ -12,6 +12,7 @@
 #include "NamedObjectContext.h"
 #include "Value.h"
 
+class Aura;
 class PlayerbotAI;
 class Unit;
 
@@ -40,6 +41,16 @@ public:
     HasAreaDebuffValue(PlayerbotAI* botAI) : BoolCalculatedValue(botAI, "has area debuff") {}
 
     bool Calculate() override;
+};
+
+// AC Ai/Base/Value/AoeValues.h:47-53. The harmful dynamic-object aura (e.g. Rain of Fire) currently on the
+// bot, or nullptr.
+class AreaDebuffValue : public CalculatedValue<Aura*>
+{
+public:
+    AreaDebuffValue(PlayerbotAI* botAI) : CalculatedValue<Aura*>(botAI, "area debuff", 1) {}
+
+    Aura* Calculate() override;
 };
 
 #endif

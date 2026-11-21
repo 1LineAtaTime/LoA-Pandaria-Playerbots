@@ -102,7 +102,54 @@ std::map<std::string, uint32> const& Slots()
         {"tabard", EQUIPMENT_SLOT_TABARD}};
     return slots;
 }
+
+// AC Bot/Cmd/ChatHelper.cpp:105-126 (skills, chats). Only parseableItem below reads them here, and only their keys.
+std::map<std::string, uint32> const& Skills()
+{
+    static std::map<std::string, uint32> const skills = {
+        {"first aid", SKILL_FIRST_AID},           {"fishing", SKILL_FISHING},
+        {"cooking", SKILL_COOKING},               {"alchemy", SKILL_ALCHEMY},
+        {"enchanting", SKILL_ENCHANTING},         {"engineering", SKILL_ENGINEERING},
+        {"leatherworking", SKILL_LEATHERWORKING}, {"blacksmithing", SKILL_BLACKSMITHING},
+        {"tailoring", SKILL_TAILORING},           {"herbalism", SKILL_HERBALISM},
+        {"mining", SKILL_MINING},                 {"skinning", SKILL_SKINNING},
+        {"jewelcrafting", SKILL_JEWELCRAFTING}};
+    return skills;
+}
+
+std::map<std::string, uint32> const& Chats()
+{
+    static std::map<std::string, uint32> const chats = {
+        {"party", CHAT_MSG_PARTY},     {"p", CHAT_MSG_PARTY}, {"guild", CHAT_MSG_GUILD},     {"g", CHAT_MSG_GUILD},
+        {"raid", CHAT_MSG_RAID},       {"r", CHAT_MSG_RAID},  {"whisper", CHAT_MSG_WHISPER}, {"w", CHAT_MSG_WHISPER}};
+    return chats;
+}
+
+// AC Bot/Cmd/ChatHelper.cpp:27-38. One-letter keys never match, as on AC.
+bool SubstrContainsInMap(std::string const& searchTerm, std::map<std::string, uint32> const& searchIn)
+{
+    for (auto const& i : searchIn)
+        if (i.first.size() > 1 && searchTerm.find(i.first) != std::string::npos)
+            return true;
+    return false;
+}
 }  // namespace
+
+// AC Bot/Cmd/ChatHelper.cpp:630-637 (ChatHelper::parseableItem): does the text name an item, an item class or
+// quality, a slot, a chat type, a profession or an amount of money? ExternalEventHelper::ParseChatCommand only hands
+// an unknown chat command to the trade fallback when it does. A free function rather than a ChatHelper member so that
+// ChatHelper.h, which PlayerbotAI.h pulls into most of the module, stays unchanged; declared in ExternalEventHelper.cpp.
+namespace PlayerbotChatParse
+{
+bool ParseableItem(std::string const& text)
+{
+    return text.find("|Hitem:") != std::string::npos || text == "questitem" || text == "ammo" ||
+           SubstrContainsInMap(text, ConsumableSubClasses()) || SubstrContainsInMap(text, TradeSubClasses()) ||
+           SubstrContainsInMap(text, ItemQualitiesTable()) || SubstrContainsInMap(text, Slots()) ||
+           SubstrContainsInMap(text, Chats()) || SubstrContainsInMap(text, Skills()) ||
+           ChatHelper::parseMoney(text) > 0;
+}
+}  // namespace PlayerbotChatParse
 
 // #331 - AC Bot/Cmd/ChatHelper.cpp:190-229. No 5.4.8 divergence. The file-local copy MailAction.cpp and
 // TrainerAction.cpp each carried was byte-identical, so the mail/trainer money output is unchanged by
