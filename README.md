@@ -179,6 +179,14 @@ database if clients connect from other machines.
    (1 auth + 2 characters + 4 world + 8 playerbots), `SourceDirectory` = the extracted
    `sql-sources` folder, the one that contains `sql/` and `modules/` (for a `Source code`
    zip, its top folder), `MySQLExecutable` = your `mysql` client (`mysql.exe` on Windows).
+   The SQL sources hold every update file, so they upgrade an install from any earlier release.
+
+   **3b. Only for an install from v1.0.0 to v1.0.4:** run
+   `modules/mod_playerbots/data/sql/playerbots/upgrade/v1.0.x-register-updates.sql` (inside the
+   SQL sources) once on your playerbots database, e.g.
+   `mysql -u<user> -p playerbots < v1.0.x-register-updates.sql`. Those database zips already hold
+   the playerbots updates of their time without listing them, and the updater would otherwise
+   apply them again and stop on a duplicate row.
 4. Start the worldserver once: the updater applies only the missing updates, in order, and
    records them.
 

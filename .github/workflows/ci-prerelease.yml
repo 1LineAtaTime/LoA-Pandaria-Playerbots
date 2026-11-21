@@ -559,7 +559,7 @@ jobs:
           echo "- \`$BRANCH-ci-linux-x86_64.zip\`: Linux x86-64 baseline, runs on any x86-64 CPU."
           echo "$MACOS_LINE"
           echo "- \`$BRANCH-ci-database.zip\`: \`auth.sql\`, \`characters.sql\`, \`world.sql\` and \`playerbots.sql\` for a **new install**: the $BASELINE release database with every SQL update up to this commit applied ($APPLIED new since $BASELINE). Import it as the README describes."
-          echo "- \`$BRANCH-ci-sql.zip\`: the SQL update files up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install."
+          echo "- \`$BRANCH-ci-sql.zip\`: every SQL update file up to this commit, in the \`sql-sources\` folder the database updater reads, for **upgrading** an existing install from any earlier release (v1.0.0 or newer)."
           echo
           echo "Extracted map data is not included: extract it from your own client (see the README)."
           echo
@@ -567,6 +567,7 @@ jobs:
           echo "1. Back up all four databases (\`mysqldump\`)."
           echo "2. Replace the binaries. Keep your \`.conf\` files and add any new keys from the \`.conf.dist\` files."
           echo "3. Extract \`$BRANCH-ci-sql.zip\` and set, in \`worldserver.conf\`: \`Updates.EnableDatabases = 15\`, \`SourceDirectory\` = the extracted \`sql-sources\` folder, \`MySQLExecutable\` = your \`mysql\` client (\`mysql.exe\` on Windows)."
+          echo "   Only for an install from v1.0.0 to v1.0.4: run \`sql-sources/modules/mod_playerbots/data/sql/playerbots/upgrade/v1.0.x-register-updates.sql\` once on your playerbots database first (those databases hold their playerbots updates without listing them)."
           echo "4. Start the worldserver once: it applies only the missing updates and keeps your accounts and characters."
           echo "5. Never import \`auth.sql\`, \`characters.sql\` or \`playerbots.sql\` from the database zip over an existing install: they replace your saves. The database zip is for new installs."
           echo
