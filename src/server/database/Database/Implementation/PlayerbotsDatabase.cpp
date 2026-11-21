@@ -73,13 +73,15 @@ void PlayerbotsDatabaseConnection::DoPrepareStatements()
     PrepareStatement(PLAYERBOTS_INS_TELE_CACHE, "INSERT INTO playerbots_tele_cache (level, map_id, x, y, z) VALUES (?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(PLAYERBOTS_SEL_TRAVELNODE, "SELECT id, name, map_id, x, y, z, linked FROM playerbots_travelnode", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_TRAVELNODE, "INSERT INTO `playerbots_travelnode` (`id`, `name`, `map_id`, `x`, `y`, `z`, `linked`) VALUES (?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_DEL_TRAVELNODE, "DELETE FROM playerbots_travelnode", CONNECTION_ASYNC);
+    // The three travel node wipes run inside an async transaction (TravelNodeMap::saveNodeStore) and a
+    // synchronous one (TravelNodeMap::WipeNodeStore, when the stored data version differs): both connections.
+    PrepareStatement(PLAYERBOTS_DEL_TRAVELNODE, "DELETE FROM playerbots_travelnode", CONNECTION_BOTH);
     PrepareStatement(PLAYERBOTS_SEL_TRAVELNODE_LINK, "SELECT node_id, to_node_id,type,object,distance,swim_distance, extra_cost,calculated, max_creature_0,max_creature_1,max_creature_2 FROM playerbots_travelnode_link", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_TRAVELNODE_LINK, "INSERT INTO `playerbots_travelnode_link` (`node_id`, `to_node_id`,`type`,`object`,`distance`,`swim_distance`, `extra_cost`,`calculated`, `max_creature_0`,`max_creature_1`,`max_creature_2`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_DEL_TRAVELNODE_LINK, "DELETE FROM playerbots_travelnode_link", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_DEL_TRAVELNODE_LINK, "DELETE FROM playerbots_travelnode_link", CONNECTION_BOTH);
     PrepareStatement(PLAYERBOTS_SEL_TRAVELNODE_PATH, "SELECT node_id, to_node_id, nr, map_id, x, y, z FROM playerbots_travelnode_path order by node_id, to_node_id, nr", CONNECTION_SYNCH);
     PrepareStatement(PLAYERBOTS_INS_TRAVELNODE_PATH, "INSERT INTO `playerbots_travelnode_path` (`node_id`, `to_node_id`, `nr`, `map_id`, `x`, `y`, `z`) VALUES (?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-    PrepareStatement(PLAYERBOTS_DEL_TRAVELNODE_PATH, "DELETE FROM playerbots_travelnode_path", CONNECTION_ASYNC);
+    PrepareStatement(PLAYERBOTS_DEL_TRAVELNODE_PATH, "DELETE FROM playerbots_travelnode_path", CONNECTION_BOTH);
     PrepareStatement(PLAYERBOTS_SEL_TEXT, "SELECT `name`, `text`, `say_type`, `reply_type`, `text_loc1`, `text_loc2`, `text_loc3`, `text_loc4`, `text_loc5`, `text_loc6`, `text_loc7`, `text_loc8` FROM `ai_playerbot_texts`", CONNECTION_SYNCH);
     PrepareStatement(
         PLAYERBOTS_SEL_DUNGEON_SUGGESTION,
