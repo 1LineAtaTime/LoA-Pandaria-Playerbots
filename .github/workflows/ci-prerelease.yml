@@ -1,13 +1,14 @@
-name: playerbot-beta pre-release
+name: playerbot pre-release
 
-# Daily rolling pre-release "ci-playerbot-beta": an untested development build of the
-# playerbot-beta branch, with Windows, Linux and macOS binaries and a database zip.
+# Daily rolling pre-release "ci-playerbot": an untested development build of the
+# playerbot branch (the default branch), with Windows, Linux and macOS binaries and a
+# database zip.
 #
 # Scheduled workflows only run from the default branch, so this file lives on the
-# default branch and builds the playerbot-beta branch.
+# default branch and builds it.
 #
-# Once a day the job compares the head of playerbot-beta with the commit the
-# ci-playerbot-beta tag points at. Equal: nothing new, no build. Different (or a manual
+# Once a day the job compares the head of playerbot with the commit the
+# ci-playerbot tag points at. Equal: nothing new, no build. Different (or a manual
 # run with "force"): the three builds and the database run on that commit, then the
 # pre-release assets and notes are replaced and the tag is moved last, so a failed run is
 # retried the next day. The release stays a pre-release and never becomes "Latest".
@@ -30,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: "Build and publish even if playerbot-beta has no new commits"
+        description: "Build and publish even if playerbot has no new commits"
         type: boolean
         default: false
       baseline:
@@ -46,12 +47,12 @@ permissions: {}
 
 # Runs queue instead of overlapping: a queued run sees the tag the previous one moved.
 concurrency:
-  group: beta-prerelease
+  group: ci-prerelease
   cancel-in-progress: false
 
 env:
-  BRANCH: playerbot-beta
-  TAG: ci-playerbot-beta
+  BRANCH: playerbot
+  TAG: ci-playerbot
   # The release notes' macOS line when the attached macOS zip matches the published commit
   MACOS_NOTE: "macOS arm64, built on macOS 15 against the Homebrew mysql, openssl, boost and readline packages."
 
@@ -65,7 +66,7 @@ jobs:
       sha: ${{ steps.check.outputs.sha }}
       macos_retry: ${{ steps.check.outputs.macos_retry }}
     steps:
-    - name: Compare playerbot-beta with the ci-playerbot-beta tag
+    - name: Compare playerbot with the ci-playerbot tag
       id: check
       env:
         GH_TOKEN: ${{ github.token }}
@@ -393,8 +394,8 @@ jobs:
         mkdir -p sqlsrc/sql-sources/sql sqlsrc/sql-sources/modules/mod_playerbots/data/sql
         cp -a sql/base sql/archive sql/updates sqlsrc/sql-sources/sql/
         cp -a modules/mod_playerbots/data/sql/playerbots sqlsrc/sql-sources/modules/mod_playerbots/data/sql/
-        (cd sqlsrc && zip -X -q -r ../playerbot-beta-ci-sql.zip sql-sources)
-        echo "playerbot-beta-ci-sql.zip: $(stat -c %s playerbot-beta-ci-sql.zip) bytes" | tee -a "$GITHUB_STEP_SUMMARY"
+        (cd sqlsrc && zip -X -q -r ../playerbot-ci-sql.zip sql-sources)
+        echo "playerbot-ci-sql.zip: $(stat -c %s playerbot-ci-sql.zip) bytes" | tee -a "$GITHUB_STEP_SUMMARY"
 
     # Proof that the zip is what the updater needs: extracted, it has the base files and
     # every update directory the databases list, and against the updated databases the
@@ -402,7 +403,7 @@ jobs:
     - name: Check the SQL sources against the databases
       run: |
         set -euo pipefail
-        rm -rf sqlcheck && mkdir sqlcheck && unzip -q playerbot-beta-ci-sql.zip -d sqlcheck
+        rm -rf sqlcheck && mkdir sqlcheck && unzip -q playerbot-ci-sql.zip -d sqlcheck
         python3 - <<'PY'
         import os, pathlib, subprocess, sys
 
@@ -454,10 +455,10 @@ jobs:
     - name: Zip the database
       run: |
         set -euo pipefail
-        (cd dump && zip -X -q ../playerbot-beta-ci-database.zip auth.sql characters.sql playerbots.sql world.sql)
-        unzip -l playerbot-beta-ci-database.zip
-        size=$(stat -c %s playerbot-beta-ci-database.zip)
-        echo "playerbot-beta-ci-database.zip: $size bytes" | tee -a "$GITHUB_STEP_SUMMARY"
+        (cd dump && zip -X -q ../playerbot-ci-database.zip auth.sql characters.sql playerbots.sql world.sql)
+        unzip -l playerbot-ci-database.zip
+        size=$(stat -c %s playerbot-ci-database.zip)
+        echo "playerbot-ci-database.zip: $size bytes" | tee -a "$GITHUB_STEP_SUMMARY"
         # GitHub release assets must be under 2 GiB.
         if [ "$size" -ge 2147483648 ]; then
           echo "::error::The database zip is over GitHub's 2 GiB release asset limit"; exit 1
@@ -470,8 +471,8 @@ jobs:
       with:
         name: ci-package-database
         path: |
-          playerbot-beta-ci-database.zip
-          playerbot-beta-ci-sql.zip
+          playerbot-ci-database.zip
+          playerbot-ci-sql.zip
         retention-days: 7
         compression-level: 0
         if-no-files-found: error
@@ -575,10 +576,10 @@ jobs:
 
     # Assets and notes first, the tag last: if anything fails, the tag still points at the
     # previous build and the next daily run tries again.
-    - name: Update the ci-playerbot-beta pre-release
+    - name: Update the ci-playerbot pre-release
       run: |
         set -euo pipefail
-        TITLE="Latest beta CI build (playerbot-beta)"
+        TITLE="Latest CI build (playerbot)"
         # GITHUB_TOKEN may not move a ref across commits that change .github/workflows
         # (HTTP 403, it has no "workflows" permission); creating the ref is allowed, so
         # the tag is then deleted and created again at the new commit.

@@ -1,7 +1,7 @@
 name: macOS arm64
 
 # No push trigger: pull requests are checked here, builds can be run by hand, and the
-# daily playerbot-beta pre-release (beta-prerelease.yml) calls this workflow.
+# daily playerbot pre-release (ci-prerelease.yml) calls this workflow.
 on:
   pull_request:
     paths-ignore:
@@ -85,7 +85,7 @@ jobs:
         cd ${{ github.workspace }}/check_install/bin
         ./authserver --version
         ./worldserver --version
-    # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml).
+    # Binaries-only zip for the daily playerbot pre-release (ci-prerelease.yml).
     # Zipped here so the executables keep their permissions.
     - name: Package (CI)
       if: ${{ inputs.package }}

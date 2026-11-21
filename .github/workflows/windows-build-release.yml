@@ -1,7 +1,7 @@
 name: windows-build-release
 
 # No push trigger: pull requests are checked here, builds can be run by hand, and the
-# daily playerbot-beta pre-release (beta-prerelease.yml) calls this workflow.
+# daily playerbot pre-release (ci-prerelease.yml) calls this workflow.
 on:
   pull_request:
     paths-ignore:
@@ -135,7 +135,7 @@ jobs:
         # Set a custom retention for artifacts
         #retention-days: 7
 
-    # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml):
+    # Binaries-only zip for the daily playerbot pre-release (ci-prerelease.yml):
     # no .pdb files, plus the playerbots module config.
     - name: Package (CI)
       if: ${{ inputs.package }}

@@ -1,8 +1,8 @@
 name: Linux x86-64
 
 # Portable x86-64 baseline without host-specific tuning.
-# Called by the daily playerbot-beta pre-release
-# (beta-prerelease.yml) alongside linux_gcc.yml (host-tuned).
+# Called by the daily playerbot pre-release
+# (ci-prerelease.yml) alongside linux_gcc.yml (host-tuned).
 on:
   pull_request:
     paths-ignore:
@@ -56,7 +56,7 @@ jobs:
         cd bin/check_install/bin
         ./authserver --version
         ./worldserver --version
-    # Binaries-only zip for the daily playerbot-beta pre-release (beta-prerelease.yml).
+    # Binaries-only zip for the daily playerbot pre-release (ci-prerelease.yml).
     # Same layout as linux_gcc.yml so it stays drop-in compatible.
     # Zipped here so the executables keep their permissions.
     - name: Package (CI)
