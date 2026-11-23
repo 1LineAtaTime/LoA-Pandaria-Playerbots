@@ -3486,6 +3486,7 @@ void WorldObject::MovePosition(Position &pos, float dist, float angle)
 void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float angle, float offsetZ)
 {
     angle += GetOrientation();
+    float const srcZ = pos.m_positionZ;
     float destx, desty, destz;
     destx = pos.m_positionX + dist * std::cos(angle);
     desty = pos.m_positionY + dist * std::sin(angle);
@@ -3501,7 +3502,10 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
     // Use a detour raycast to get our first collision point
     PathGenerator path(this);
     path.SetUseRaycast(true);
-    path.CalculatePath(destx, desty, destz, false);
+    // CalculatePath fails without building a path when the source or destination height is invalid
+    // (e.g. a unit standing at INVALID_HEIGHT); GetPath().back() on the empty path would crash
+    if (!path.CalculatePath(destx, desty, destz, false) || path.GetPath().empty())
+        return;
 
     // Check for valid path types before we proceed
     if (!(path.GetPathType() & PATHFIND_NOT_USING_PATH))
@@ -3565,9 +3569,13 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
     {
         if (Unit const* unit = ToUnit())
         {
-            // unit can fly, ignore.
+            // unit can fly, ignore; but never leave it at an invalid height
             if (unit->CanFly())
+            {
+                if (pos.m_positionZ <= INVALID_HEIGHT)
+                    pos.m_positionZ = srcZ;
                 return;
+            }
 
             // fall back to gridHeight if any
             float gridHeight = GetMap()->GetGridHeight(pos.m_positionX, pos.m_positionY);
