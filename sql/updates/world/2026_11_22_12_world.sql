@@ -1,0 +1,11 @@
+-- Zixil (3537, Hillsbrad Foothills, merchant and repairer): move him to the position the sniff-based references have.
+-- Problem: spawn 175883 stands at -229.734 -726.782, about 200 yards from where he is found in the sniffs; the position
+--   comes from an older database.
+-- Checked: two independent sniff-based references (Cataclysm Preservation and the SkyFire sniff database) have exactly
+--   one spawn at the new coordinates with MovementType 0 and no path, waypoints or SmartAI; he is the only spawn of
+--   this entry and has no creature_addon, formation, pool or event row.
+-- Change: position_x, position_y, position_z and orientation of the spawn (MovementType is already 0).
+-- Source: Cataclysm Preservation and SkyFire sniff world databases.
+-- Rollback:
+--   UPDATE `creature` SET `position_x`=-229.734,`position_y`=-726.782,`position_z`=60.6245,`orientation`=3.28665 WHERE `guid`=175883 AND `id`=3537;
+UPDATE `creature` SET `position_x`=-416.987,`position_y`=-653.933,`position_z`=54.5461,`orientation`=5.03489 WHERE `guid`=175883 AND `id`=3537;
