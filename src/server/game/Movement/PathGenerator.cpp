@@ -117,7 +117,7 @@ bool PathGenerator::CalculatePath(float x, float y, float z, float destX, float 
 
     BuildPolyPath(start, dest);
 
-    if (_sourceUnit->VisualizePathfinding)
+    if (_sourceUnit && _sourceUnit->VisualizePathfinding)   // the source can be any WorldObject, e.g. a door
     {
         VisualizePath(2500);
         VisualizeNavmesh(2500);
