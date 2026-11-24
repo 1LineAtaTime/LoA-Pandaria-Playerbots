@@ -1558,7 +1558,9 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
     AuraRemoveMode removeMode = aurApp->GetRemoveMode();
     // handle spell_area table
     SpellAreaForAreaMapBounds saBounds = sSpellMgr->GetSpellAreaForAuraMapBounds(GetId());
-    if (saBounds.first != saBounds.second)
+    // A unit that is already detached from its map (grid unload at shutdown, Map::UnloadAll) has no zone or area to
+    // re-check; GetZoneAndAreaId would hit ASSERT(m_currMap) in WorldObject::GetBaseMap.
+    if (saBounds.first != saBounds.second && (apply || target->FindMap()))
     {
         uint32 zone, area;
         target->GetZoneAndAreaId(zone, area);
