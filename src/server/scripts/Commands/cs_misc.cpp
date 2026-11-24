@@ -436,9 +436,9 @@ public:
         }
 
         handler->PSendSysMessage(LANG_MAP_POSITION,
-            mapId, (mapEntry ? mapEntry->name : "<unknown>"),
-            zoneId, (zoneEntry ? zoneEntry->area_name : "<unknown>"),
-            areaId, (areaEntry ? areaEntry->area_name : "<unknown>"),
+            mapId, (mapEntry && mapEntry->name ? mapEntry->name : "<unknown>"),
+            zoneId, (zoneEntry && zoneEntry->area_name ? zoneEntry->area_name : "<unknown>"),
+            areaId, (areaEntry && areaEntry->area_name ? areaEntry->area_name : "<unknown>"),
             object->GetPhaseMask(),
             object->GetPositionX(), object->GetPositionY(), object->GetPositionZ(), object->GetOrientation(),
             cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), object->GetInstanceId(),
